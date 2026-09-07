@@ -7,14 +7,14 @@ import sqlite3
 import sys
 from datetime import datetime
 
-from yt_cache import DEFAULT_MAX_AGE, connect, load_source, store_source, update_entries
+from yt_cache import DEFAULT_MAX_AGE, connect, load_source, source_status, store_source, update_entries
 from yt_metadata import normalise_entries
 from yt_planner import explain_plan, plan_query
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 from yt_sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +69,16 @@ def parse_args() -> argparse.Namespace:
         "--refresh-details",
         action="store_true",
         help="Refresh detailed metadata for incomplete cached entries",
+    )
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Use cached metadata only and never contact a source backend",
+    )
+    parser.add_argument(
+        "--cache-status",
+        action="store_true",
+        help="Show cached source status before execution",
     )
     parser.add_argument(
         "--after",
@@ -233,6 +243,12 @@ def sort_key(entry: dict[str, object], field: str) -> object:
 
 
 def validate_args(args: argparse.Namespace) -> str | None:
+    if args.offline and args.no_cache:
+        return "--offline cannot be combined with --no-cache"
+    if args.offline and args.refresh:
+        return "--offline cannot be combined with --refresh"
+    if args.offline and args.refresh_details:
+        return "--offline cannot be combined with --refresh-details"
     if args.min_duration is not None and args.min_duration < 0:
         return "--min-duration cannot be negative"
     if args.max_duration is not None and args.max_duration < 0:
@@ -298,36 +314,61 @@ def main() -> int:
         print(f"invalid YT-SQL: {exc}", file=sys.stderr)
         return 2
 
-    try:
-        plan = plan_query(
-            query=query,
-            where_expression=where_expression,
-            requested_backend=args.source_backend,
-        )
-    except RuntimeError as exc:
-        print(f"could not plan query: {exc}", file=sys.stderr)
-        return 1
-
-    if args.explain:
-        print(explain_plan(plan), file=sys.stderr)
-
     cache_connection = None
+    cached_status = None
     raw_entries = None
 
     try:
         if not args.no_cache:
             cache_connection = connect(args.cache)
-            if not args.refresh:
-                raw_entries = load_source(
-                    cache_connection,
-                    args.source,
-                    max_age=args.cache_max_age,
+            cached_status = source_status(
+                cache_connection,
+                args.source,
+                max_age=args.cache_max_age,
+            )
+            raw_entries = load_source(
+                cache_connection,
+                args.source,
+                max_age=args.cache_max_age,
+                allow_stale=args.offline,
+            )
+
+        plan = plan_query(
+            query=query,
+            where_expression=where_expression,
+            requested_backend=args.source_backend,
+            cache_status=cached_status if raw_entries is not None else None,
+            offline=args.offline,
+        )
+
+        if args.explain:
+            print(explain_plan(plan), file=sys.stderr)
+
+        if args.cache_status:
+            if cached_status is None:
+                print("cache: no entry for source", file=sys.stderr)
+            else:
+                freshness = "fresh" if cached_status["fresh"] else "stale"
+                backend = cached_status["backend"] or "unknown"
+                print(
+                    f"cache: {freshness}, {cached_status['entry_count']} entries, "
+                    f"age {cached_status['age']}s, backend {backend}",
+                    file=sys.stderr,
                 )
 
+        if plan["mode"] == "live":
+            if args.refresh or raw_entries is None:
+                raw_entries = enumerate_source(args.source, str(plan["backend"]))
+                if cache_connection is not None:
+                    store_source(
+                        cache_connection,
+                        args.source,
+                        raw_entries,
+                        backend=str(plan["backend"]),
+                    )
+
         if raw_entries is None:
-            raw_entries = enumerate_source(args.source, plan["backend"])
-            if cache_connection is not None:
-                store_source(cache_connection, args.source, raw_entries)
+            raise RuntimeError("no source metadata is available")
 
         entries = normalise_entries(raw_entries)
 
@@ -342,7 +383,7 @@ def main() -> int:
                 )
             ]
             if incomplete_ids:
-                detailed = fetch_details(incomplete_ids, plan["backend"])
+                detailed = fetch_details(incomplete_ids, str(plan["backend"]))
                 if cache_connection is not None:
                     update_entries(cache_connection, args.source, detailed)
                 by_id = {

@@ -87,3 +87,9 @@ Capability planning is separate from YT-SQL evaluation. Missing metadata can sti
 ## Cached metadata
 
 YT-SQL evaluation remains independent from acquisition. When a fresh cached source is available, Discover can evaluate the same normalised metadata without repeating source enumeration.
+
+## Offline execution
+
+YT-SQL queries can now execute entirely from cached source metadata with `--offline`. Planning distinguishes cache-native execution from live acquisition, but query semantics are unchanged.
+
+Offline mode accepts stale cache entries because it is explicitly prohibited from contacting a live backend.

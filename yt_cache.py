@@ -6,7 +6,7 @@ import sqlite3
 import time
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_MAX_AGE = 24 * 60 * 60
 
 
@@ -38,18 +38,59 @@ def initialise(connection: sqlite3.Connection) -> None:
         )
         """
     )
+
     row = connection.execute(
         "SELECT value FROM cache_meta WHERE key = 'schema_version'"
     ).fetchone()
+
     if row is None:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS cached_sources (
+                source TEXT PRIMARY KEY,
+                backend TEXT,
+                fetched_at INTEGER NOT NULL,
+                entry_count INTEGER NOT NULL
+            )
+            """
+        )
         connection.execute(
             "INSERT INTO cache_meta (key, value) VALUES ('schema_version', ?)",
             (str(SCHEMA_VERSION),),
         )
-    elif int(row["value"]) != SCHEMA_VERSION:
-        raise RuntimeError(
-            f"unsupported cache schema version: {row['value']}"
-        )
+    else:
+        version = int(row["value"])
+        if version == 1:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS cached_sources (
+                    source TEXT PRIMARY KEY,
+                    backend TEXT,
+                    fetched_at INTEGER NOT NULL,
+                    entry_count INTEGER NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO cached_sources
+                    (source, backend, fetched_at, entry_count)
+                SELECT
+                    source,
+                    NULL,
+                    MAX(fetched_at),
+                    COUNT(*)
+                FROM source_entries
+                GROUP BY source
+                """
+            )
+            connection.execute(
+                "UPDATE cache_meta SET value = ? WHERE key = 'schema_version'",
+                (str(SCHEMA_VERSION),),
+            )
+        elif version != SCHEMA_VERSION:
+            raise RuntimeError(f"unsupported cache schema version: {version}")
+
     connection.commit()
 
 
@@ -57,6 +98,7 @@ def load_source(
     connection: sqlite3.Connection,
     source: str,
     max_age: int = DEFAULT_MAX_AGE,
+    allow_stale: bool = False,
 ) -> list[dict[str, object]] | None:
     rows = connection.execute(
         """
@@ -71,16 +113,44 @@ def load_source(
         return None
 
     newest_fetch = max(int(row["fetched_at"]) for row in rows)
-    if int(time.time()) - newest_fetch > max_age:
+    if not allow_stale and int(time.time()) - newest_fetch > max_age:
         return None
 
     return [json.loads(row["entry_json"]) for row in rows]
+
+
+def source_status(
+    connection: sqlite3.Connection,
+    source: str,
+    max_age: int = DEFAULT_MAX_AGE,
+) -> dict[str, object] | None:
+    row = connection.execute(
+        """
+        SELECT source, backend, fetched_at, entry_count
+        FROM cached_sources
+        WHERE source = ?
+        """,
+        (source,),
+    ).fetchone()
+    if row is None:
+        return None
+
+    age = max(0, int(time.time()) - int(row["fetched_at"]))
+    return {
+        "source": row["source"],
+        "backend": row["backend"],
+        "fetched_at": int(row["fetched_at"]),
+        "entry_count": int(row["entry_count"]),
+        "age": age,
+        "fresh": age <= max_age,
+    }
 
 
 def store_source(
     connection: sqlite3.Connection,
     source: str,
     entries: list[dict[str, object]],
+    backend: str | None = None,
 ) -> None:
     fetched_at = int(time.time())
     connection.execute("DELETE FROM source_entries WHERE source = ?", (source,))
@@ -101,6 +171,14 @@ def store_source(
             for position, entry in enumerate(entries)
             if entry.get("id")
         ],
+    )
+    connection.execute(
+        """
+        INSERT OR REPLACE INTO cached_sources
+            (source, backend, fetched_at, entry_count)
+        VALUES (?, ?, ?, ?)
+        """,
+        (source, backend, fetched_at, len(entries)),
     )
     connection.commit()
 

@@ -59,10 +59,31 @@ def score_backend(backend: str, fields: set[str]) -> tuple[int, list[str], list[
     return score, approximate, unavailable
 
 
-def plan_query(query, where_expression, requested_backend: str) -> dict[str, object]:
+def plan_query(
+    query,
+    where_expression,
+    requested_backend: str,
+    cache_status: dict[str, object] | None = None,
+    offline: bool = False,
+) -> dict[str, object]:
     fields = required_fields(query, where_expression)
-    availability = available_backends()
 
+    if cache_status is not None and (offline or bool(cache_status.get("fresh"))):
+        return {
+            "mode": "cache",
+            "backend": cache_status.get("backend"),
+            "fields": sorted(fields),
+            "score": None,
+            "approximate": [],
+            "unavailable": [],
+            "cache_fresh": bool(cache_status.get("fresh")),
+            "cache_age": int(cache_status.get("age", 0)),
+        }
+
+    if offline:
+        raise RuntimeError("offline mode requires cached metadata for this source")
+
+    availability = available_backends()
     candidates = (
         [requested_backend]
         if requested_backend != "auto"
@@ -76,11 +97,14 @@ def plan_query(query, where_expression, requested_backend: str) -> dict[str, obj
         score, approximate, unavailable = score_backend(backend, fields)
         plans.append(
             {
+                "mode": "live",
                 "backend": backend,
                 "fields": sorted(fields),
                 "score": score,
                 "approximate": approximate,
                 "unavailable": unavailable,
+                "cache_fresh": False,
+                "cache_age": None,
             }
         )
 
@@ -100,10 +124,19 @@ def plan_query(query, where_expression, requested_backend: str) -> dict[str, obj
 
 def explain_plan(plan: dict[str, object]) -> str:
     lines = [
-        f"backend: {plan['backend']}",
+        f"mode: {plan['mode']}",
         f"fields: {', '.join(plan['fields'])}",
     ]
 
+    if plan["mode"] == "cache":
+        freshness = "fresh" if plan["cache_fresh"] else "stale"
+        lines.append(f"cache: {freshness}, age {plan['cache_age']}s")
+        backend = plan.get("backend")
+        if backend:
+            lines.append(f"cached backend: {backend}")
+        return "\n".join(lines)
+
+    lines.append(f"backend: {plan['backend']}")
     approximate = plan["approximate"]
     unavailable = plan["unavailable"]
     if approximate:

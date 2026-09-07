@@ -162,6 +162,16 @@ The initial cache schema stores raw source entries together with source order an
 
 `--refresh-details` asks Discover to enrich incomplete cached entries without re-enumerating the whole source. Detailed refresh is best-effort: deleted, private or otherwise inaccessible videos are left with their existing cached metadata while refresh continues for the remaining entries.
 
+The cache can now act as an execution source in its own right. `--offline` requires cached metadata and prevents live source access. Stale cached metadata is accepted in offline mode because no network refresh is permitted.
+
+```bash
+./yt-discover.py CHANNEL_URL --offline --query 'select id, title where duration >= 600'
+```
+
+Use `--cache-status` to report whether the cached source is fresh or stale, how many entries it contains, its age, and the backend that originally populated it. `--explain` now reports whether execution is cache-native or live.
+
+Cache schema version 2 records source-level acquisition metadata. Existing schema version 1 databases are migrated in place.
+
 ## Query planning
 
 Discover can now choose a source backend according to the fields required by a query.
