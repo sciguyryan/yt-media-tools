@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
@@ -230,7 +230,7 @@ def validate_runtime_files(args: argparse.Namespace) -> str | None:
     if archive.exists() and not archive.is_file():
         return f"archive path is not a file: {archive}"
 
-    output = pathlib.Path(args.output
+    output = pathlib.Path(args.output)
     if output.exists() and not output.is_dir():
         return f"output path is not a directory: {output}"
 
@@ -277,16 +277,16 @@ def main() -> int:
         print(error, file=sys.stderr)
         return 2
 
-    error = validate_runtime_files(args)
-    if error:
-        print(error, file=sys.stderr)
-        return 2
-
     command = build_command(args, targets)
 
     if args.dry_run:
         print(shlex.join(command))
         return 0
+
+    error = validate_runtime_files(args)
+    if error:
+        print(error, file=sys.stderr)
+        return 2
 
     if shutil.which("yt-dlp") is None:
         print("yt-dlp was not found in PATH.", file=sys.stderr)

@@ -75,7 +75,7 @@ Relative paths in a profile are resolved relative to that profile file.
 
 Command-line options override the corresponding profile settings.
 
-The downloader now checks that the configured cookies file exists before invoking `yt-dlp`. It also rejects an archive path that already exists as something other than a file and an output path that already exists as something other than a directory.
+Before a real download, the downloader checks that the configured cookies file exists. It also rejects an archive path that already exists as something other than a file and an output path that already exists as something other than a directory. Dry-run mode does not require those runtime paths to exist.
 
 ## Other options
 
