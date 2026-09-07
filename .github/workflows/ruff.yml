@@ -11,6 +11,7 @@ jobs:
   ruff:
     name: Ruff
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -23,12 +24,38 @@ jobs:
 
       - name: Report Ruff environment
         run: |
+          echo "Commit:"
           git rev-parse HEAD
+
+          echo "Ruff version:"
           ruff --version
+
+          echo "Working directory:"
           pwd
 
       - name: Run Ruff lint checks
         run: ruff check --config ./ruff.toml .
+
+      - name: Diagnose Ruff formatter inputs
+        run: |
+          echo "Git status:"
+          git status --porcelain=v1
+
+          echo "Tracked line endings:"
+          git ls-files --eol \
+            yt-download.py \
+            yt_discover_tests/test_conformance.py \
+            yt_media_tools/dates.py
+
+          echo "File hashes:"
+          sha256sum \
+            yt-download.py \
+            yt_discover_tests/test_conformance.py \
+            yt_media_tools/dates.py \
+            ruff.toml
+
+          echo "Resolved Ruff settings:"
+          ruff check --config ./ruff.toml yt-download.py --show-settings
 
       - name: Run Ruff format checks
         run: ruff format --config ./ruff.toml --check --diff .
