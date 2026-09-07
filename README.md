@@ -197,3 +197,9 @@ ruff format --check .
 ```
 
 CI never runs `ruff check --fix` or `ruff format`, so repository changes remain an explicit local development action.
+
+## Downloader 1.3
+
+Downloader input handling now resolves direct targets, standard input and file-backed queues into an explicit `InputSource` model before command construction. The older `resolve_targets()` interface remains as a compatibility wrapper during this transition.
+
+The yt-dlp runtime policy has also been brought closer to the intended stable behaviour. It now embeds chapters and subtitles, preserves modification times, removes SponsorBlock segments, enables audio and video multistreams, uses a dedicated temporary path, sorts formats by the requested resolution and supplies the selected YouTube player-client extractor arguments.

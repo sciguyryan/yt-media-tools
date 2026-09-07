@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from dataclasses import dataclass
 import pathlib
 import shlex
 import shutil
@@ -8,7 +9,7 @@ import subprocess
 import sys
 
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 
@@ -21,6 +22,15 @@ DEFAULT_COOKIES = "cookies.txt"
 DEFAULT_ARCHIVE = "archive.txt"
 DEFAULT_RATE_LIMIT = "20M"
 DEFAULT_RESOLUTION = 1440
+
+
+@dataclass(frozen=True)
+class InputSource:
+    """Resolved downloader input source."""
+
+    kind: str
+    targets: list[str]
+    batch_file: pathlib.Path | None = None
 
 
 def script_directory() -> pathlib.Path:
@@ -269,43 +279,54 @@ def read_stdin_targets() -> list[str]:
     return [line.strip() for line in sys.stdin if line.strip() and not line.lstrip().startswith("#")]
 
 
-def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
-    targets: list[str] = []
+def resolve_input_source(
+    args: argparse.Namespace,
+) -> tuple[InputSource | None, str | None]:
+    """Resolve CLI input into one explicit source without changing its content."""
 
     if args.input_file:
         if args.targets:
-            return [], "--input-file cannot be combined with positional targets"
+            return None, "--input-file cannot be combined with positional targets"
         input_path = pathlib.Path(args.input_file)
         if not input_path.is_file():
-            return [], f"input file not found: {input_path}"
-        args.batch_file = str(input_path)
-        return [], None
+            return None, f"input file not found: {input_path}"
+        return InputSource("file", [], input_path), None
 
-    for target in args.targets:
-        if target == "-":
-            if len(args.targets) != 1:
-                return [], "'-' for standard input cannot be combined with other targets"
-            targets.extend(read_stdin_targets())
-        else:
-            targets.append(target)
+    if "-" in args.targets:
+        if len(args.targets) != 1:
+            return None, "'-' for standard input cannot be combined with other targets"
+        targets = read_stdin_targets()
+        if not targets:
+            return None, "no download targets were supplied on standard input"
+        return InputSource("stdin", targets), None
 
+    targets = list(args.targets)
     if len(targets) == 1:
         possible_file = pathlib.Path(targets[0])
         if possible_file.is_file():
-            args.batch_file = str(possible_file)
-            return [], None
+            return InputSource("file", [], possible_file), None
 
     if targets:
-        return targets, None
-
-    if args.targets:
-        return [], "no download targets were supplied on standard input"
+        return InputSource("direct", targets), None
 
     batch_file = pathlib.Path(args.batch_file)
     if not batch_file.is_file():
-        return [], f"batch file not found: {batch_file}"
+        return None, f"batch file not found: {batch_file}"
 
-    return [], None
+    return InputSource("file", [], batch_file), None
+
+
+def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
+    """Compatibility wrapper around the resolved input-source model."""
+
+    source, error = resolve_input_source(args)
+    if error or source is None:
+        return [], error
+
+    if source.batch_file is not None:
+        args.batch_file = str(source.batch_file)
+
+    return source.targets, None
 
 
 def validate_remove_completed_ids(
@@ -386,13 +407,25 @@ def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
         "--limit-rate",
         args.rate_limit,
         "--windows-filenames",
+        "--mtime",
+        "--embed-chapters",
         "--embed-metadata",
         "--embed-thumbnail",
-        "--write-subs",
+        "--embed-subs",
         "--sub-langs",
-        "en.*",
+        "all,-live_chat",
+        "--sponsorblock-remove",
+        "all",
+        "--video-multistreams",
+        "--audio-multistreams",
+        "--paths",
+        "temp:/mnt/storage/Temp/yt-dlp",
+        "--format-sort",
+        f"res:{args.resolution}",
+        "--extractor-args",
+        "youtube:player-client=default,-android_sdkless",
         "-f",
-        f"bv*[height<={args.resolution}]+ba/b[height<={args.resolution}]",
+        "bv+ba/best",
         "-o",
         output_path,
     ]
@@ -411,10 +444,14 @@ def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
 def main() -> int:
     args = parse_args()
 
-    targets, error = resolve_targets(args)
-    if error:
+    source, error = resolve_input_source(args)
+    if error or source is None:
         print(error, file=sys.stderr)
         return 2
+
+    targets = source.targets
+    if source.batch_file is not None:
+        args.batch_file = str(source.batch_file)
 
     error = validate_remove_completed_ids(args, targets)
     if error:

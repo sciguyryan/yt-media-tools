@@ -120,3 +120,54 @@ def test_remove_completed_ids_requires_file_backed_input():
     assert module.validate_remove_completed_ids(args, ["abc123"]) == (
         "--remove-completed-ids requires a batch or input file"
     )
+
+
+def test_resolve_input_source_preserves_direct_targets():
+    module = load_downloader()
+    args = argparse.Namespace(
+        input_file=None,
+        targets=["abc123", "https://example.invalid/video"],
+        batch_file="/tmp/default-ids.txt",
+    )
+
+    source, error = module.resolve_input_source(args)
+
+    assert error is None
+    assert source.kind == "direct"
+    assert source.targets == ["abc123", "https://example.invalid/video"]
+    assert source.batch_file is None
+
+
+def test_resolve_input_source_tracks_file_backed_queue(tmp_path):
+    module = load_downloader()
+    batch = tmp_path / "ids"
+    batch.write_text("abc123\n", encoding="utf-8")
+    args = argparse.Namespace(
+        input_file=str(batch),
+        targets=[],
+        batch_file="/tmp/default-ids.txt",
+    )
+
+    source, error = module.resolve_input_source(args)
+
+    assert error is None
+    assert source.kind == "file"
+    assert source.targets == []
+    assert source.batch_file == batch
+
+
+def test_build_command_uses_1_3_runtime_policy():
+    module = load_downloader()
+    command = module.build_command(make_args(resolution=900), ["abc123"])
+
+    assert "--mtime" in command
+    assert "--embed-chapters" in command
+    assert "--embed-subs" in command
+    assert "--write-subs" not in command
+    assert "--sponsorblock-remove" in command
+    assert "--video-multistreams" in command
+    assert "--audio-multistreams" in command
+    assert "temp:/mnt/storage/Temp/yt-dlp" in command
+    assert "res:900" in command
+    assert "youtube:player-client=default,-android_sdkless" in command
+    assert "bv+ba/best" in command
