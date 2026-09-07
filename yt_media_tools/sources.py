@@ -1,177 +1,143 @@
+"""YouTube source classification and URL normalisation."""
+
 from __future__ import annotations
 
-import json
-import pathlib
-import shutil
-import subprocess
+import re
+from dataclasses import dataclass
+from urllib.parse import parse_qs, quote, urlsplit, urlunsplit
 
 
-SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
-YOUTUBEJS_BRIDGE = SCRIPT_DIR / "youtubejs_bridge.mjs"
+YOUTUBE_BASE_URL = "https://www.youtube.com"
+
+TAB_SUFFIXES = {
+    "all": None,
+    "videos": "videos",
+    "shorts": "shorts",
+    "live": "streams",
+}
+KNOWN_TAB_SUFFIXES = frozenset({"videos", "shorts", "streams", "featured"})
+
+_CHANNEL_ID_RE = re.compile(r"UC[A-Za-z0-9_-]{20,}")
+# YouTube uses several playlist families. These prefixes are intentionally limited to
+# recognisable collection identifiers rather than treating every arbitrary token as a playlist.
+_PLAYLIST_ID_RE = re.compile(r"(?:PL|UU|LL|FL|RD|UL|TL|OLAK5uy_)[A-Za-z0-9_-]{8,}")
 
 
-def yt_dlp_available() -> bool:
-    return shutil.which("yt-dlp") is not None
+@dataclass(frozen=True)
+class SourceSpec:
+    """Resolved input source used by the acquisition layer."""
+
+    kind: str
+    original: str
+    canonical_url: str
+    identifier: str | None = None
 
 
-def youtubejs_available() -> tuple[bool, str]:
-    node = shutil.which("node")
-    if node is None:
-        return False, "node was not found"
-    if not YOUTUBEJS_BRIDGE.is_file():
-        return False, "bridge script is missing"
+def resolve_source(value: str, *, source_type: str = "auto", tab: str = "all") -> SourceSpec:
+    """Classify a channel or playlist source without network-driven guessing."""
+    text = value.strip()
+    if not text:
+        raise ValueError("SOURCE cannot be empty")
+    if source_type not in {"auto", "channel", "playlist"}:
+        raise ValueError(f"unknown source type: {source_type}")
+    if tab not in TAB_SUFFIXES:
+        raise ValueError(f"unknown channel tab: {tab}")
 
-    completed = subprocess.run(
-        [node, str(YOUTUBEJS_BRIDGE), "--probe"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
-        detail = completed.stderr.strip() or "youtubei.js could not be loaded"
-        return False, detail
+    if source_type == "playlist":
+        spec = _resolve_as_playlist(text)
+    elif source_type == "channel":
+        spec = _resolve_as_channel(text, tab)
+    else:
+        if text.startswith(("http://", "https://")):
+            spec = _resolve_url(text, tab)
+        elif _CHANNEL_ID_RE.fullmatch(text):
+            spec = _channel_from_id(text, tab)
+        elif _PLAYLIST_ID_RE.fullmatch(text):
+            spec = _playlist_from_id(text)
+        else:
+            spec = _resolve_as_channel(text, tab)
 
-    return True, completed.stdout.strip() or "youtubei.js"
-
-
-def backend_status() -> list[tuple[str, bool, str]]:
-    youtubejs_ok, youtubejs_detail = youtubejs_available()
-    return [
-        (
-            "yt-dlp",
-            yt_dlp_available(),
-            "yt-dlp executable" if yt_dlp_available() else "yt-dlp was not found",
-        ),
-        ("youtubejs", youtubejs_ok, youtubejs_detail),
-    ]
+    if spec.kind == "playlist" and tab != "all":
+        raise ValueError("--tab applies only to channel sources")
+    return spec
 
 
-def enumerate_yt_dlp(source: str, limit: int | None = None) -> list[dict[str, object]]:
-    command = [
-        "yt-dlp",
-        "--flat-playlist",
-        "--dump-single-json",
-    ]
-    if limit is not None:
-        command.extend(["--playlist-end", str(limit)])
-    command.append(source)
+def _resolve_url(value: str, tab: str) -> SourceSpec:
+    parts = urlsplit(value)
+    host = parts.netloc.lower().split(":", 1)[0]
+    if host not in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}:
+        raise ValueError("SOURCE URL must be a YouTube URL")
 
-    completed = subprocess.run(
-        command,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
-        message = completed.stderr.strip() or "yt-dlp failed"
-        raise RuntimeError(message)
+    query = parse_qs(parts.query)
+    playlist_ids = query.get("list", [])
+    if playlist_ids:
+        playlist_id = playlist_ids[0].strip()
+        if not playlist_id:
+            raise ValueError("playlist URL contains an empty list parameter")
+        return _playlist_from_id(playlist_id, original=value)
 
-    try:
-        data = json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("yt-dlp returned invalid JSON") from exc
-
-    entries = data.get("entries") or []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    path_parts = [part for part in parts.path.split("/") if part]
+    if host == "youtu.be" or (path_parts and path_parts[0] in {"watch", "shorts", "embed"}):
+        raise ValueError("SOURCE must identify a channel or playlist, not an individual video")
+    return _resolve_as_channel(value, tab)
 
 
-def enumerate_youtubejs(source: str) -> list[dict[str, object]]:
-    available, detail = youtubejs_available()
-    if not available:
-        raise RuntimeError(f"YouTube.js backend is unavailable: {detail}")
-
-    node = shutil.which("node")
-    assert node is not None
-
-    completed = subprocess.run(
-        [node, str(YOUTUBEJS_BRIDGE), source],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
-        message = completed.stderr.strip() or "YouTube.js enumeration failed"
-        raise RuntimeError(message)
-
-    try:
-        data = json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("YouTube.js bridge returned invalid JSON") from exc
-
-    if not isinstance(data, list):
-        raise TypeError("YouTube.js bridge returned an unexpected result")
-
-    return [entry for entry in data if isinstance(entry, dict)]
+def _resolve_as_playlist(value: str) -> SourceSpec:
+    if value.startswith(("http://", "https://")):
+        parts = urlsplit(value)
+        host = parts.netloc.lower().split(":", 1)[0]
+        if host not in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+            raise ValueError("playlist URL must be a YouTube URL")
+        playlist_ids = parse_qs(parts.query).get("list", [])
+        if not playlist_ids or not playlist_ids[0].strip():
+            raise ValueError("playlist URL must contain a non-empty list parameter")
+        return _playlist_from_id(playlist_ids[0].strip(), original=value)
+    return _playlist_from_id(value)
 
 
-def fetch_details_yt_dlp(video_ids: list[str]) -> list[dict[str, object]]:
-    entries: list[dict[str, object]] = []
-    for video_id in video_ids:
-        completed = subprocess.run(
-            [
-                "yt-dlp",
-                "--skip-download",
-                "--dump-single-json",
-                f"https://www.youtube.com/watch?v={video_id}",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        if completed.returncode != 0:
-            # A private, deleted or otherwise inaccessible item cannot be
-            # enriched, but it must not abort refresh of the remaining IDs.
-            continue
-        try:
-            entry = json.loads(completed.stdout)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(entry, dict):
-            entries.append(entry)
-    return entries
+def _playlist_from_id(playlist_id: str, original: str | None = None) -> SourceSpec:
+    if not re.fullmatch(r"[A-Za-z0-9_-]{8,}", playlist_id):
+        raise ValueError("playlist ID contains unsupported characters or is unexpectedly short")
+    url = f"{YOUTUBE_BASE_URL}/playlist?list={quote(playlist_id, safe='_-')}"
+    return SourceSpec("playlist", original or playlist_id, url, playlist_id)
 
 
-def fetch_details_youtubejs(video_ids: list[str]) -> list[dict[str, object]]:
-    available, detail = youtubejs_available()
-    if not available:
-        raise RuntimeError(f"YouTube.js backend is unavailable: {detail}")
-
-    node = shutil.which("node")
-    assert node is not None
-    completed = subprocess.run(
-        [node, str(YOUTUBEJS_BRIDGE), "--details", *video_ids],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
-        message = completed.stderr.strip() or "YouTube.js detail refresh failed"
-        raise RuntimeError(message)
-
-    try:
-        data = json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("YouTube.js bridge returned invalid detail JSON") from exc
-
-    return [entry for entry in data if isinstance(entry, dict)]
-
-
-def fetch_details(video_ids: list[str], backend: str) -> list[dict[str, object]]:
-    if backend == "yt-dlp":
-        return fetch_details_yt_dlp(video_ids)
-    if backend == "youtubejs":
-        return fetch_details_youtubejs(video_ids)
-    raise RuntimeError(f"unknown source backend: {backend}")
+def _resolve_as_channel(value: str, tab: str) -> SourceSpec:
+    if _CHANNEL_ID_RE.fullmatch(value):
+        return _channel_from_id(value, tab)
+    if value.startswith("@"):
+        base = f"{YOUTUBE_BASE_URL}/{value}"
+        return SourceSpec("channel", value, _append_tab(base, tab), value)
+    if re.fullmatch(r"[A-Za-z0-9_.-]+", value):
+        base = f"{YOUTUBE_BASE_URL}/@{value}"
+        return SourceSpec("channel", value, _append_tab(base, tab), value)
+    if value.startswith(("http://", "https://")):
+        parts = urlsplit(value)
+        host = parts.netloc.lower().split(":", 1)[0]
+        if host not in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+            raise ValueError("channel URL must be a YouTube URL")
+        path_parts = [part for part in parts.path.split("/") if part]
+        if not path_parts:
+            raise ValueError("channel URL does not contain a channel")
+        if path_parts[0] in {"watch", "playlist", "shorts", "embed"}:
+            raise ValueError("SOURCE must identify a channel, not a video or playlist")
+        if path_parts[-1].casefold() in KNOWN_TAB_SUFFIXES:
+            path_parts.pop()
+        if not path_parts:
+            raise ValueError("channel URL does not contain a channel")
+        base_path = "/" + "/".join(path_parts)
+        base = urlunsplit(("https", "www.youtube.com", base_path, "", ""))
+        return SourceSpec("channel", value, _append_tab(base, tab), None)
+    raise ValueError("SOURCE must be a YouTube channel/playlist URL, @handle, channel ID, playlist ID, or bare handle")
 
 
-def enumerate_source(
-    source: str,
-    backend: str = "yt-dlp",
-    limit: int | None = None,
-) -> list[dict[str, object]]:
-    """Enumerate a source using the selected backend."""
-    if backend == "yt-dlp":
-        return enumerate_yt_dlp(source, limit=limit)
-    if backend == "youtubejs":
-        return enumerate_youtubejs(source)
-    raise RuntimeError(f"unknown source backend: {backend}")
+def _channel_from_id(channel_id: str, tab: str) -> SourceSpec:
+    base = f"{YOUTUBE_BASE_URL}/channel/{channel_id}"
+    return SourceSpec("channel", channel_id, _append_tab(base, tab), channel_id)
+
+
+def _append_tab(base: str, tab: str) -> str:
+    suffix = TAB_SUFFIXES[tab]
+    if suffix is None:
+        return base.rstrip("/")
+    return f"{base.rstrip('/')}/{suffix}"

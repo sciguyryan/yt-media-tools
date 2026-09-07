@@ -1,111 +1,46 @@
-# YT-SQL
+# yt-sql language reference
 
-YT-SQL is the query language used by `yt-discover.py`.
+yt-sql is the SQL-inspired metadata query language used by `yt-discover`. It is deliberately not a claim of SQL-standard or PostgreSQL compatibility. The language borrows relational query concepts where they map naturally to media discovery and analysis, while retaining domain-specific conveniences such as duration literals, relative dates, `CONTAINS`, and `MATCHES`.
 
-Version 0.7.0 expands the language with richer predicates while keeping the existing statement form.
+The preferred filename extension for saved query text is `.yt-sql`.
 
-## Query form
+## Current grammar surface
+
+A complete yt-sql query has the following broad form:
 
 ```text
-SELECT fields
-[WHERE expression]
-[ORDER BY field [ASC|DESC]]
-[LIMIT number]
+[SELECT [DISTINCT] <projection> [, ...]]
+[FROM <source>]
+[WHERE <expression>]
+[ORDER BY <field-or-projection-alias> [ASC|DESC] [, ...]]
+[LIMIT <positive integer>]
+[OFFSET <non-negative integer>]
 ```
 
-Keywords are case-insensitive.
+If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested.
 
-## Fields
+Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
 
-- `id`
-- `title`
-- `uploader`
-- `duration`
-- `date`
-- `live`
+Current projection functions are `LOWER`, `UPPER`, `LENGTH`, and `COALESCE`. Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
 
-## Predicates
+## Intentional dialect behaviour
 
-General comparisons are available with:
+yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, relative calendar expressions, and source forms such as `@handle`.
 
-- `=`
-- `!=`
-- `<`
-- `<=`
-- `>`
-- `>=`
+`JOIN` is out of scope by design. yt-discover queries media-source metadata rather than exposing its internal persistence tables as a relational database. If multi-source composition is added later, it should use a domain-appropriate abstraction rather than forcing users to join implementation tables.
 
-Additional predicates are:
+Database mutation and administration statements such as `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, transactions, indexes, triggers, stored procedures, and database permissions are also outside the purpose of yt-sql.
 
-- `BETWEEN value AND value`
-- `IN (value, value, ...)`
-- `IS NULL`
-- `IS NOT NULL`
-- `CONTAINS value`
-- `MATCHES value`
+## Conformance suite
 
-`CONTAINS` and `MATCHES` apply to text fields. `MATCHES` uses a case-insensitive regular expression.
+The executable semantics of yt-sql are guarded by the conformance architecture under `yt_discover_tests/conformance/`. Test datasets are generated ephemerally rather than committed as canonical output blobs. Four deterministic profiles, `small`, `normal`, `large`, and `huge`, provide increasing scales, and tests may request an exact custom record count when needed. For a fixed generator version, seed, and size, the logical dataset is reproducible; smaller datasets are exact prefixes of larger datasets for the same version and seed.
 
-## Boolean expressions
+Expected semantic results come from an independently authored LINQ-style Python oracle. A test author writes the yt-sql query and separately writes the equivalent collection algorithm using operations such as filtering, ordering, projection, distinctness, skipping, and taking. The oracle is not generated from yt-sql, does not use the yt-sql parser or AST, and does not import the production planner, evaluator, schema, metadata normalisation, or output implementation. This avoids a query-engine defect automatically reproducing itself in the expected answer.
 
-Expressions support:
+The harness generates the requested dataset and real SQLite cache at test time, visibly reports profile generation progress, evaluates the Python oracle, runs the equivalent yt-sql through the real `yt-discover` CLI in offline mode, compares the complete serialised results, and allows pytest to remove the temporary corpus after the session. The same semantic case can therefore run against different sizes and seeds without manually curating new expected files.
 
-- `and`
-- `or`
-- `not`
-- parentheses
+The generated corpus deliberately includes same-day uploads, identical and NULL timestamps, exact duration boundaries, duplicate values, case variants, Unicode, regex metacharacters, large counts, availability and live-state values, dynamic scalar metadata, stable source ordering, repeated categorical values, and multiple synthetic channel identities. New yt-sql syntax must add independent oracle coverage, boundary cases, and cross-feature interactions as part of its implementation.
 
-`and` and `or` still have equal precedence and are evaluated from left to right. Use parentheses when mixing them if grouping matters.
+## Planned analytical expansion
 
-## Examples
-
-```bash
-./yt-discover.py CHANNEL_URL --query 'select id, title where duration between 600 and 1800'
-./yt-discover.py CHANNEL_URL --query 'select id where title matches "interview|discussion"'
-./yt-discover.py CHANNEL_URL --query 'select id where uploader in ("example", "another")'
-./yt-discover.py CHANNEL_URL --query 'select id where date is not null'
-```
-
-## NULL behaviour
-
-Missing metadata can be tested explicitly with `IS NULL` and `IS NOT NULL`.
-
-In this version, ordinary inequality comparisons treat a missing value as unequal to a non-NULL value. This behaviour is retained for compatibility with the first implementation and may be revised as YT-SQL semantics become more formal.
-
-## Metadata model
-
-YT-SQL now evaluates a normalised internal metadata record rather than raw yt-dlp entries. Source acquisition and extractor-specific field handling are kept outside the query module.
-
-YT-SQL remains backend-independent. Both yt-dlp and the experimental YouTube.js path are normalised before query evaluation.
-
-## Query planning
-
-Discover now inspects the fields required by a YT-SQL query before choosing an acquisition backend. `--explain` reports the selected backend and whether required metadata is expected to be exact, approximate or unavailable.
-
-Capability planning is separate from YT-SQL evaluation. Missing metadata can still occur for individual videos even when a backend normally provides a field.
-
-## Cached metadata
-
-YT-SQL evaluation remains independent from acquisition. When a fresh cached source is available, Discover can evaluate the same normalised metadata without repeating source enumeration.
-
-## Offline execution
-
-YT-SQL queries can now execute entirely from cached source metadata with `--offline`. Planning distinguishes cache-native execution from live acquisition, but query semantics are unchanged.
-
-Offline mode accepts stale cache entries because it is explicitly prohibited from contacting a live backend.
-
-## LIMIT-aware source execution
-
-A plain `LIMIT` without `WHERE` or `ORDER BY` can now bound yt-dlp source acquisition. Discover applies this optimisation only when it can prove that early termination preserves the query result. Other queries continue to enumerate the complete source.
-
-## 0.16.1 semantic corrections
-
-`DISTINCT` disables LIMIT-aware early acquisition because duplicate projected rows may require additional source entries.
-
-Comparisons involving `NULL` do not evaluate as true, including `NULL != value`. Use `IS NULL` and `IS NOT NULL` for explicit missing-value tests.
-
-Parameters may be used with `CONTAINS` and `MATCHES`.
-
-## 0.16.2 parameter binding
-
-A named parameter may be bound only once. Repeating the same parameter name is an error.
+The next yt-sql language pass is expected to evaluate and, where appropriate, add `SELECT *`, general scalar expressions, arithmetic, `CASE`, `LIKE`/`ILIKE`, aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, expression ordering, explicit NULL ordering, PostgreSQL-inspired `DISTINCT ON`, and a curated set of additional scalar/date functions. These are planned capabilities, not syntax accepted by the current parser.

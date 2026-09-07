@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.18.0
+
+- Converged Discover on the mature typed YT-SQL parser, schema and execution model.
+- Added dedicated archive, date, output, report, tool-registry, YouTube.js and yt-dlp support modules.
+- Expanded acquisition planning, observability, source handling and cache semantics.
+- Replaced the preliminary conformance harness with the mature deterministic generator, dataset specification and independent oracle suite.
+- Kept large and huge conformance profiles available for deliberate stress runs while disabling them in the default automated suite.
+- Added the current Discover and YT-SQL reference documentation.
+- Downloader remains at 1.4.2.
+
 ## Repository - Executable-mode correction
 
 - Restored executable file modes on the two shebang-bearing CLI entry points after the Phase 37 packaging workflow dropped them.

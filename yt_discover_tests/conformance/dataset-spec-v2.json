@@ -1,0 +1,33 @@
+{
+  "kind": "yt-sql-conformance-generator-specification",
+  "generator_version": 2,
+  "default_seed": 31415926,
+  "profiles": {
+    "small": 36,
+    "normal": 1000,
+    "large": 10000,
+    "huge": 100000
+  },
+  "source_handle": "@yt_sql_fixture",
+  "source_url": "https://www.youtube.com/@yt_sql_fixture/videos",
+  "purpose": "Deterministic extractor-like scalar metadata generated ephemerally for independent yt-sql semantic conformance, stress and performance testing.",
+  "determinism_contract": "For a fixed generator version, seed and requested size, the logical record sequence is identical. Smaller datasets are exact prefixes of larger datasets for the same version and seed.",
+  "required_edge_classes": [
+    "same-day uploads",
+    "identical timestamps",
+    "NULL timestamps",
+    "NULL numeric values",
+    "duration boundary values",
+    "duplicate projected values",
+    "case-variant titles",
+    "regex metacharacters",
+    "Unicode text",
+    "large integer counts",
+    "availability states",
+    "live-state booleans",
+    "dynamic raw scalar fields",
+    "stable source ordering",
+    "controlled repeated categorical values",
+    "multiple synthetic channel identities"
+  ]
+}
