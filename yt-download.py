@@ -221,7 +221,7 @@ def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
     return [], None
 
 
-def validate_files(args: argparse.Namespace) -> str | None:
+def validate_runtime_files(args: argparse.Namespace) -> str | None:
     cookies = pathlib.Path(args.cookies)
     if not cookies.is_file():
         return f"cookies file not found: {cookies}"
@@ -230,7 +230,7 @@ def validate_files(args: argparse.Namespace) -> str | None:
     if archive.exists() and not archive.is_file():
         return f"archive path is not a file: {archive}"
 
-    output = pathlib.Path(args.output)
+    output = pathlib.Path(args.output
     if output.exists() and not output.is_dir():
         return f"output path is not a directory: {output}"
 
@@ -277,7 +277,7 @@ def main() -> int:
         print(error, file=sys.stderr)
         return 2
 
-    error = validate_files(args)
+    error = validate_runtime_files(args)
     if error:
         print(error, file=sys.stderr)
         return 2
