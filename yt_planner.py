@@ -11,7 +11,7 @@ def expression_fields(node) -> set[str]:
     kind = node[0]
     if kind in {"and", "or"}:
         return expression_fields(node[1]) | expression_fields(node[2])
-    if kind == "not"
+    if kind == "not":
         return expression_fields(node[1])
     if kind in {
         "is_null",

@@ -11,7 +11,7 @@ from yt_query import evaluate_expression, field_value, parse_expression, parse_q
 from yt_sources import backend_status, enumerate_source
 
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 
 
 def parse_args() -> argparse.Namespace:
