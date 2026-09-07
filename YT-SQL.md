@@ -89,3 +89,5 @@ The earlier `--where` option remains available for queries that only need ID out
 ## Implementation
 
 YT-SQL parsing and evaluation now live in a separate `yt_query.py` module rather than inside the command-line script.
+
+`ORDER BY` is applied before `LIMIT`, so limited ordered queries select from the correctly ordered result set.

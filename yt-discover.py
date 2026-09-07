@@ -10,7 +10,7 @@ from datetime import datetime
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 
 
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 
 
 def parse_args() -> argparse.Namespace:
@@ -266,7 +266,7 @@ def main() -> int:
     query = None
     try:
         if args.query:
-            query = parse_query(args.query)
+            query = parse_query_statement(args.query)
             where_expression = query["where"]
         else:
             where_expression = parse_expression(args.where) if args.where else None
@@ -287,16 +287,16 @@ def main() -> int:
     ]
 
     if query is not None:
-        query_limit = query["limit"]
-        if query_limit is not None:
-            matches_found = matches_found[:query_limit]
-
         order_field = query["order"]
         if order_field is not None:
             matches_found.sort(
                 key=lambda entry: query_sort_key(entry, order_field),
                 reverse=query["direction"] == "desc",
             )
+
+        query_limit = query["limit"]
+        if query_limit is not None:
+            matches_found = matches_found[:query_limit]
 
         for entry in matches_found:
             print_row(entry, query["fields"])
