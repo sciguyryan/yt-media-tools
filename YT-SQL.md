@@ -77,3 +77,9 @@ In this version, ordinary inequality comparisons treat a missing value as unequa
 YT-SQL now evaluates a normalised internal metadata record rather than raw yt-dlp entries. Source acquisition and extractor-specific field handling are kept outside the query module.
 
 YT-SQL remains backend-independent. Both yt-dlp and the experimental YouTube.js path are normalised before query evaluation.
+
+## Query planning
+
+Discover now inspects the fields required by a YT-SQL query before choosing an acquisition backend. `--explain` reports the selected backend and whether required metadata is expected to be exact, approximate or unavailable.
+
+Capability planning is separate from YT-SQL evaluation. Missing metadata can still occur for individual videos even when a backend normally provides a field.

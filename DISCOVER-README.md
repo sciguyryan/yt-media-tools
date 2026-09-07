@@ -152,6 +152,22 @@ Backend availability can be inspected without enumerating a source:
 
 The YouTube.js backend is experimental in this version. It assumes a fairly simple response shape from `youtubei.js` and is expected to need compatibility work as more channel and playlist forms are exercised.
 
+## Query planning
+
+Discover can now choose a source backend according to the fields required by a query.
+
+The default backend mode is `auto`. A backend can still be forced explicitly with `--source-backend`.
+
+Use `--explain` to inspect the selected backend and metadata coverage:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, duration where live = false' --explain
+```
+
+The first capability model distinguishes metadata as `exact`, `approximate` or `unavailable`. Planning prefers an available backend with fewer unavailable fields and then stronger metadata coverage.
+
+This is an early planner. Capability declarations describe what the backend integration expects to provide rather than guaranteeing that every individual source contains every field.
+
 ## Acquisition and metadata normalisation
 
 Discover now separates source enumeration from query evaluation.

@@ -6,11 +6,12 @@ import sys
 from datetime import datetime
 
 from yt_metadata import normalise_entries
+from yt_planner import explain_plan, plan_query
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 from yt_sources import backend_status, enumerate_source
 
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,9 +26,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source", nargs="?", help="YouTube channel or playlist URL")
     parser.add_argument(
         "--source-backend",
-        choices=("yt-dlp", "youtubejs"),
-        default="yt-dlp",
+        choices=("auto", "yt-dlp", "youtubejs"),
+        default="auto",
         help="Source enumeration backend",
+    )
+    parser.add_argument(
+        "--explain",
+        action="store_true",
+        help="Explain the query acquisition plan before execution",
     )
     parser.add_argument(
         "--list-backends",
@@ -263,7 +269,20 @@ def main() -> int:
         return 2
 
     try:
-        raw_entries = enumerate_source(args.source, args.source_backend)
+        plan = plan_query(
+            query=query,
+            where_expression=where_expression,
+            requested_backend=args.source_backend,
+        )
+    except RuntimeError as exc:
+        print(f"could not plan query: {exc}", file=sys.stderr)
+        return 1
+
+    if args.explain:
+        print(explain_plan(plan), file=sys.stderr)
+
+    try:
+        raw_entries = enumerate_source(args.source, plan["backend"])
         entries = normalise_entries(raw_entries)
     except RuntimeError as exc:
         print(f"could not enumerate source: {exc}", file=sys.stderr)
