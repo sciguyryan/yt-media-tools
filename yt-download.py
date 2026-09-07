@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 
@@ -243,7 +243,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--remove-completed-ids",
         action="store_true",
-        help="Remove IDs already present in the download archive from the batch file",
+        help="Remove completed IDs from a file-backed queue as downloads finish",
+    )
+    parser.add_argument(
+        "--_remove-completed-id",
+        metavar="VIDEO_ID",
+        help=argparse.SUPPRESS,
     )
 
     args = parser.parse_args()
@@ -394,6 +399,29 @@ def remove_completed_ids(batch_path: pathlib.Path, archive_path: pathlib.Path) -
     return removed
 
 
+def remove_completed_id(batch_path: pathlib.Path, video_id: str) -> bool:
+    """Remove the first exact video ID line without changing unrelated queue bytes."""
+
+    original = batch_path.read_bytes()
+    retained: list[bytes] = []
+    removed = False
+
+    for raw_line in original.splitlines(keepends=True):
+        candidate = raw_line.strip()
+        if not removed and candidate and candidate.decode("utf-8") == video_id:
+            removed = True
+            continue
+        retained.append(raw_line)
+
+    if not removed:
+        return False
+
+    temporary_path = batch_path.with_name(batch_path.name + ".tmp")
+    temporary_path.write_bytes(b"".join(retained))
+    temporary_path.replace(batch_path)
+    return True
+
+
 def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
     output_template = args.profile_output or "%(title)s [%(id)s].%(ext)s"
     output_path = f"{args.output.rstrip('/')}/{output_template.lstrip('/')}"
@@ -433,6 +461,24 @@ def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
     if args.playlist_reverse:
         command.append("--playlist-reverse")
 
+    if getattr(args, "remove_completed_ids", False) and not targets:
+        command.extend(
+            [
+                "--exec",
+                "after_move:"
+                + shlex.join(
+                    [
+                        sys.executable,
+                        str(pathlib.Path(__file__).resolve()),
+                        "--_remove-completed-id",
+                        "%(id)s",
+                        "--batch-file",
+                        args.batch_file,
+                    ]
+                ),
+            ]
+        )
+
     if targets:
         command.extend(targets)
     else:
@@ -443,6 +489,14 @@ def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
 
 def main() -> int:
     args = parse_args()
+
+    if args._remove_completed_id:
+        batch_path = pathlib.Path(args.batch_file)
+        if not batch_path.is_file():
+            print(f"batch file not found: {batch_path}", file=sys.stderr)
+            return 2
+        remove_completed_id(batch_path, args._remove_completed_id)
+        return 0
 
     source, error = resolve_input_source(args)
     if error or source is None:
@@ -482,15 +536,6 @@ def main() -> int:
             print(f"Removed {removed} archived ID(s) from {args.batch_file} before download.")
 
     completed = subprocess.run(command, check=False)
-
-    if completed.returncode == 0 and args.remove_completed_ids:
-        removed = remove_completed_ids(
-            pathlib.Path(args.batch_file),
-            pathlib.Path(args.archive),
-        )
-        if removed:
-            print(f"Removed {removed} completed ID(s) from {args.batch_file}.")
-
     return completed.returncode
 
 

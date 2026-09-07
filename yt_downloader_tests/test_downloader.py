@@ -171,3 +171,46 @@ def test_build_command_uses_1_3_runtime_policy():
     assert "res:900" in command
     assert "youtube:player-client=default,-android_sdkless" in command
     assert "bv+ba/best" in command
+
+
+def test_remove_completed_id_removes_only_first_exact_match(tmp_path):
+    module = load_downloader()
+    batch = tmp_path / "ids"
+    batch.write_bytes(b"abc\nabc\nhttps://example.invalid/abc\n")
+
+    assert module.remove_completed_id(batch, "abc") is True
+    assert batch.read_bytes() == b"abc\nhttps://example.invalid/abc\n"
+
+
+def test_remove_completed_id_absent_preserves_bytes(tmp_path):
+    module = load_downloader()
+    batch = tmp_path / "ids"
+    original = b"# note\r\nabc\r\n"
+
+    batch.write_bytes(original)
+
+    assert module.remove_completed_id(batch, "missing") is False
+    assert batch.read_bytes() == original
+
+
+def test_build_command_adds_after_move_callback_for_file_queue():
+    module = load_downloader()
+    args = make_args(remove_completed_ids=True)
+    command = module.build_command(args, [])
+
+    index = command.index("--exec")
+    callback = command[index + 1]
+
+    assert callback.startswith("after_move:")
+    assert "--_remove-completed-id" in callback
+    assert "%(id)s" in callback
+    assert "--batch-file" in callback
+    assert args.batch_file in callback
+
+
+def test_build_command_omits_after_move_callback_for_direct_targets():
+    module = load_downloader()
+    args = make_args(remove_completed_ids=False)
+    command = module.build_command(args, ["abc123"])
+
+    assert "--exec" not in command
