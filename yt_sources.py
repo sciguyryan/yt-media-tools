@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import subprocess
 
+
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 YOUTUBEJS_BRIDGE = SCRIPT_DIR / "youtubejs_bridge.mjs"
 

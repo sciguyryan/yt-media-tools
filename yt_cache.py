@@ -5,6 +5,7 @@ import pathlib
 import sqlite3
 import time
 
+
 SCHEMA_VERSION = 3
 DEFAULT_MAX_AGE = 24 * 60 * 60
 
@@ -38,9 +39,7 @@ def initialise(connection: sqlite3.Connection) -> None:
         """
     )
 
-    row = connection.execute(
-        "SELECT value FROM cache_meta WHERE key = 'schema_version'"
-    ).fetchone()
+    row = connection.execute("SELECT value FROM cache_meta WHERE key = 'schema_version'").fetchone()
 
     if row is None:
         connection.execute(
@@ -88,14 +87,9 @@ def initialise(connection: sqlite3.Connection) -> None:
             version = 2
 
         if version == 2:
-            columns = {
-                row["name"]
-                for row in connection.execute("PRAGMA table_info(cached_sources)")
-            }
+            columns = {row["name"] for row in connection.execute("PRAGMA table_info(cached_sources)")}
             if "head_video_id" not in columns:
-                connection.execute(
-                    "ALTER TABLE cached_sources ADD COLUMN head_video_id TEXT"
-                )
+                connection.execute("ALTER TABLE cached_sources ADD COLUMN head_video_id TEXT")
             if "overlap_confirmations" not in columns:
                 connection.execute(
                     """
@@ -253,9 +247,7 @@ def append_new_entries(
             break
 
     if overlap_index is None:
-        raise RuntimeError(
-            "incremental refresh could not confirm overlap with the cached source"
-        )
+        raise RuntimeError("incremental refresh could not confirm overlap with the cached source")
 
     prefix: list[dict[str, object]] = []
     prefix_ids: set[str] = set()

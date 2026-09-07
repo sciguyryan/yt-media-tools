@@ -164,3 +164,23 @@ This release applies the first substantive Ruff-driven cleanup after local Ruff 
 Date parsing now produces timezone-aware UTC datetimes where a datetime object is required, filter branches are simplified without changing their conditions, and unexpected YouTube.js bridge result types raise `TypeError`.
 
 The automated test suite remains the primary behavioural regression check. Ruff is still being used locally without a committed repository configuration in this release.
+
+## Ruff configuration
+
+The repository now carries its local Ruff configuration in `ruff.toml`.
+
+Check the project with:
+
+```bash
+ruff check .
+ruff format --check .
+```
+
+Apply safe automatic lint fixes and formatting during local development with:
+
+```bash
+ruff check --fix .
+ruff format .
+```
+
+The repository configuration is now the shared definition for local Ruff checks. GitHub Actions integration is not present yet.

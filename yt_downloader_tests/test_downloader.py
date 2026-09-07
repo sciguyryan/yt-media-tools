@@ -42,9 +42,7 @@ def test_build_command_uses_profile_output_template():
     module = load_downloader()
     command = module.build_command(make_args(), ["abc123"])
     output_index = command.index("-o") + 1
-    assert command[output_index] == (
-        "/downloads/%(title)s [%(id)s] [%(uploader)s].%(ext)s"
-    )
+    assert command[output_index] == ("/downloads/%(title)s [%(id)s] [%(uploader)s].%(ext)s")
 
 
 def test_arbitrary_positive_resolution_is_accepted():

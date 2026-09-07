@@ -18,14 +18,9 @@ from yt_cache import (
 )
 from yt_metadata import normalise_entries
 from yt_planner import acquisition_limit, execution_analysis, explain_plan, plan_query
-from yt_query import (
-    evaluate_expression,
-    parse_expression,
-    parse_query_statement,
-    print_row,
-    query_sort_key,
-)
+from yt_query import evaluate_expression, parse_expression, parse_query_statement, print_row, query_sort_key
 from yt_sources import backend_status, enumerate_source, fetch_details
+
 
 VERSION = "0.17.0"
 
@@ -248,29 +243,20 @@ def matches(
     where_expression,
     query_params: dict[str, object] | None = None,
 ) -> bool:
-    if where_expression is not None and not evaluate_expression(
-        entry, where_expression, query_params
-    ):
+    if where_expression is not None and not evaluate_expression(entry, where_expression, query_params):
         return False
 
     title = entry.get("title")
 
-    if args.title and (
-        not isinstance(title, str) or args.title.lower() not in title.lower()
-    ):
+    if args.title and (not isinstance(title, str) or args.title.lower() not in title.lower()):
         return False
 
-    if title_pattern and (
-        not isinstance(title, str) or not title_pattern.search(title)
-    ):
+    if title_pattern and (not isinstance(title, str) or not title_pattern.search(title)):
         return False
 
     if args.uploader:
         uploader = entry.get("uploader") or entry.get("channel")
-        if (
-            not isinstance(uploader, str)
-            or args.uploader.lower() not in uploader.lower()
-        ):
+        if not isinstance(uploader, str) or args.uploader.lower() not in uploader.lower():
             return False
 
     if after or before:
@@ -283,13 +269,9 @@ def matches(
             return False
 
     entry_duration = duration(entry)
-    if args.min_duration is not None and (
-        entry_duration is None or entry_duration < args.min_duration
-    ):
+    if args.min_duration is not None and (entry_duration is None or entry_duration < args.min_duration):
         return False
-    if args.max_duration is not None and (
-        entry_duration is None or entry_duration > args.max_duration
-    ):
+    if args.max_duration is not None and (entry_duration is None or entry_duration > args.max_duration):
         return False
 
     if args.live is not None:
@@ -329,11 +311,7 @@ def validate_args(args: argparse.Namespace) -> str | None:
         return "--min-duration cannot be negative"
     if args.max_duration is not None and args.max_duration < 0:
         return "--max-duration cannot be negative"
-    if (
-        args.min_duration is not None
-        and args.max_duration is not None
-        and args.min_duration > args.max_duration
-    ):
+    if args.min_duration is not None and args.max_duration is not None and args.min_duration > args.max_duration:
         return "--min-duration cannot be greater than --max-duration"
     if args.limit is not None and args.limit < 1:
         return "--limit must be at least 1"
@@ -370,9 +348,7 @@ def main() -> int:
         return 2
 
     try:
-        title_pattern = (
-            re.compile(args.title_regex, re.IGNORECASE) if args.title_regex else None
-        )
+        title_pattern = re.compile(args.title_regex, re.IGNORECASE) if args.title_regex else None
     except re.error as exc:
         print(f"invalid title regular expression: {exc}", file=sys.stderr)
         return 2
@@ -416,11 +392,7 @@ def main() -> int:
             query=query,
             where_expression=where_expression,
             requested_backend=args.source_backend,
-            cache_status=(
-                cached_status
-                if raw_entries is not None and not args.incremental
-                else None
-            ),
+            cache_status=(cached_status if raw_entries is not None and not args.incremental else None),
             offline=args.offline,
         )
 
@@ -503,26 +475,17 @@ def main() -> int:
                 str(entry["id"])
                 for entry in entries
                 if entry.get("id")
-                and any(
-                    entry.get(field) is None
-                    for field in ("title", "uploader", "duration", "date", "live")
-                )
+                and any(entry.get(field) is None for field in ("title", "uploader", "duration", "date", "live"))
             ]
             if incomplete_ids:
                 detailed = fetch_details(incomplete_ids, str(plan["backend"]))
                 if cache_connection is not None:
                     update_entries(cache_connection, args.source, detailed)
-                by_id = {
-                    str(entry.get("id")): entry
-                    for entry in raw_entries
-                    if entry.get("id")
-                }
+                by_id = {str(entry.get("id")): entry for entry in raw_entries if entry.get("id")}
                 for detail in detailed:
                     if detail.get("id"):
                         by_id[str(detail["id"])] = detail
-                raw_entries = [
-                    by_id.get(str(entry.get("id")), entry) for entry in raw_entries
-                ]
+                raw_entries = [by_id.get(str(entry.get("id")), entry) for entry in raw_entries]
                 entries = normalise_entries(raw_entries)
     except (RuntimeError, OSError, sqlite3.Error) as exc:
         print(f"could not acquire source metadata: {exc}", file=sys.stderr)
@@ -532,11 +495,7 @@ def main() -> int:
             cache_connection.close()
 
     matches_found = [
-        entry
-        for entry in entries
-        if matches(
-            entry, args, after, before, title_pattern, where_expression, query_params
-        )
+        entry for entry in entries if matches(entry, args, after, before, title_pattern, where_expression, query_params)
     ]
 
     if query is not None:

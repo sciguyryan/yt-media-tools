@@ -9,9 +9,7 @@ def normalise_date(value: object) -> str | None:
 
     for fmt in ("%Y%m%d", "%Y-%m-%d"):
         try:
-            return (
-                datetime.strptime(value, fmt).replace(tzinfo=UTC).strftime("%Y-%m-%d")
-            )
+            return datetime.strptime(value, fmt).replace(tzinfo=UTC).strftime("%Y-%m-%d")
         except ValueError:
             pass
     return None

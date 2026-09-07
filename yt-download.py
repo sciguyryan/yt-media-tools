@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 
+
 VERSION = "1.2.0"
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -67,11 +68,7 @@ def available_profiles() -> list[str]:
     directory = profile_directory()
     if not directory.is_dir():
         return []
-    return sorted(
-        path.name
-        for path in directory.iterdir()
-        if path.is_file() and not path.name.startswith(".")
-    )
+    return sorted(path.name for path in directory.iterdir() if path.is_file() and not path.name.startswith("."))
 
 
 def load_profile(name: str) -> dict[str, str]:
@@ -108,9 +105,7 @@ def load_profile(name: str) -> dict[str, str]:
 
         if not signature_seen:
             if line != PROFILE_SIGNATURE:
-                raise ValueError(
-                    f"{path}:{line_number}: expected {PROFILE_SIGNATURE} profile signature"
-                )
+                raise ValueError(f"{path}:{line_number}: expected {PROFILE_SIGNATURE} profile signature")
             signature_seen = True
             continue
 
@@ -271,11 +266,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def read_stdin_targets() -> list[str]:
-    return [
-        line.strip()
-        for line in sys.stdin
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
+    return [line.strip() for line in sys.stdin if line.strip() and not line.lstrip().startswith("#")]
 
 
 def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
@@ -293,10 +284,7 @@ def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
     for target in args.targets:
         if target == "-":
             if len(args.targets) != 1:
-                return (
-                    [],
-                    "'-' for standard input cannot be combined with other targets",
-                )
+                return [], "'-' for standard input cannot be combined with other targets"
             targets.extend(read_stdin_targets())
         else:
             targets.append(target)
@@ -454,9 +442,7 @@ def main() -> int:
             pathlib.Path(args.archive),
         )
         if removed:
-            print(
-                f"Removed {removed} archived ID(s) from {args.batch_file} before download."
-            )
+            print(f"Removed {removed} archived ID(s) from {args.batch_file} before download.")
 
     completed = subprocess.run(command, check=False)
 

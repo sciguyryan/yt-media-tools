@@ -248,18 +248,13 @@ def parse_projection(expression: str):
     if lowered in allowed_fields:
         return ("field", lowered)
 
-    match = re.fullmatch(
-        r"(?P<name>lower|upper|length|coalesce)\((?P<args>.*)\)",
-        expression,
-        re.IGNORECASE,
-    )
+    match = re.fullmatch(r"(?P<name>lower|upper|length|coalesce)\((?P<args>.*)\)", expression, re.IGNORECASE)
     if not match:
         raise ValueError(f"unknown SELECT expression: {expression}")
     name = match.group("name").lower()
     args = [
         parse_projection(arg)
-        if arg.strip().lower() in allowed_fields
-        or re.match(r"^(lower|upper|length|coalesce)\(", arg.strip(), re.IGNORECASE)
+        if arg.strip().lower() in allowed_fields or re.match(r"^(lower|upper|length|coalesce)\(", arg.strip(), re.I)
         else ("literal", unquote(arg.strip()))
         for arg in split_projection_list(match.group("args"))
     ]
@@ -308,9 +303,7 @@ def parse_query_statement(query: str) -> dict[str, object]:
         flags=re.IGNORECASE | re.VERBOSE,
     )
     if not match:
-        raise ValueError(
-            "expected SELECT with optional DISTINCT, WHERE, ORDER BY, LIMIT and OFFSET"
-        )
+        raise ValueError("expected SELECT with optional DISTINCT, WHERE, ORDER BY, LIMIT and OFFSET")
 
     projection_text = split_projection_list(match.group("select"))
     if not projection_text:
@@ -408,19 +401,13 @@ def compare_values(actual: object, operator: str, expected: object) -> bool:
     raise ValueError(f"unsupported comparison operator: {operator}")
 
 
-def evaluate_expression(
-    entry: dict[str, object], node, params: dict[str, object] | None = None
-) -> bool:
+def evaluate_expression(entry: dict[str, object], node, params: dict[str, object] | None = None) -> bool:
     kind = node[0]
 
     if kind == "and":
-        return evaluate_expression(entry, node[1], params) and evaluate_expression(
-            entry, node[2], params
-        )
+        return evaluate_expression(entry, node[1], params) and evaluate_expression(entry, node[2], params)
     if kind == "or":
-        return evaluate_expression(entry, node[1], params) or evaluate_expression(
-            entry, node[2], params
-        )
+        return evaluate_expression(entry, node[1], params) or evaluate_expression(entry, node[2], params)
     if kind == "not":
         return not evaluate_expression(entry, node[1], params)
 
@@ -433,11 +420,7 @@ def evaluate_expression(
         _, field, expected_text = node
         value = field_value(entry, field)
         expected = resolve_parameter(expected_text, params)
-        return (
-            isinstance(value, str)
-            and expected is not None
-            and str(expected).lower() in value.lower()
-        )
+        return isinstance(value, str) and expected is not None and str(expected).lower() in value.lower()
 
     if kind == "matches":
         _, field, expected_text = node
@@ -473,10 +456,7 @@ def evaluate_expression(
     if kind == "in":
         _, field, raw_values = node
         actual = coerce_value(field, field_value(entry, field))
-        expected_values = [
-            coerce_value(field, resolve_parameter(value, params))
-            for value in raw_values
-        ]
+        expected_values = [coerce_value(field, resolve_parameter(value, params)) for value in raw_values]
         return actual in expected_values
 
     raise ValueError(f"unknown expression node: {kind}")
