@@ -483,13 +483,17 @@ CASES = (
     ConformanceCase(
         "comparison_not_equal",
         "SELECT id FROM @yt_sql_fixture WHERE view_count != 42 AND source_index <= 36 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) != 42 and int(r["source_index"]) <= 36),
+        _ids_where(
+            lambda r: r["view_count"] is not None and int(r["view_count"]) != 42 and int(r["source_index"]) <= 36
+        ),
         features=("comparison.ne",),
     ),
     ConformanceCase(
         "comparison_not_equal_angle",
         "SELECT id FROM @yt_sql_fixture WHERE view_count <> 42 AND source_index <= 36 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) != 42 and int(r["source_index"]) <= 36),
+        _ids_where(
+            lambda r: r["view_count"] is not None and int(r["view_count"]) != 42 and int(r["source_index"]) <= 36
+        ),
         features=("comparison.ne_alt",),
     ),
     ConformanceCase(
@@ -592,7 +596,13 @@ CASES = (
     ConformanceCase(
         "not_in",
         "SELECT id FROM @yt_sql_fixture WHERE availability NOT IN ('PRIVATE', 'subscriber_only') AND source_index <= 36 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["availability"] is not None and str(r["availability"]).casefold() not in {"private", "subscriber_only"} and int(r["source_index"]) <= 36),
+        _ids_where(
+            lambda r: (
+                r["availability"] is not None
+                and str(r["availability"]).casefold() not in {"private", "subscriber_only"}
+                and int(r["source_index"]) <= 36
+            )
+        ),
         features=("in.not",),
     ),
     ConformanceCase(
@@ -634,13 +644,21 @@ CASES = (
     ConformanceCase(
         "not_contains",
         "SELECT id FROM @yt_sql_fixture WHERE title NOT CONTAINS 'mars' AND source_index <= 20 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["title"] is not None and "mars" not in str(r["title"]).casefold() and int(r["source_index"]) <= 20),
+        _ids_where(
+            lambda r: (
+                r["title"] is not None and "mars" not in str(r["title"]).casefold() and int(r["source_index"]) <= 20
+            )
+        ),
         features=("text.not_contains",),
     ),
     ConformanceCase(
         "does_not_contain",
         "SELECT id FROM @yt_sql_fixture WHERE title DOES NOT CONTAIN 'mars' AND source_index <= 20 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["title"] is not None and "mars" not in str(r["title"]).casefold() and int(r["source_index"]) <= 20),
+        _ids_where(
+            lambda r: (
+                r["title"] is not None and "mars" not in str(r["title"]).casefold() and int(r["source_index"]) <= 20
+            )
+        ),
         features=("text.does_not_contain",),
     ),
     ConformanceCase(
@@ -652,25 +670,50 @@ CASES = (
     ConformanceCase(
         "not_matches",
         "SELECT id FROM @yt_sql_fixture WHERE title NOT MATCHES '^Mars' AND source_index <= 20 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["title"] is not None and re.search(r"^Mars", str(r["title"])) is None and int(r["source_index"]) <= 20),
+        _ids_where(
+            lambda r: (
+                r["title"] is not None and re.search(r"^Mars", str(r["title"])) is None and int(r["source_index"]) <= 20
+            )
+        ),
         features=("text.not_matches",),
     ),
     ConformanceCase(
         "does_not_match",
         "SELECT id FROM @yt_sql_fixture WHERE title DOES NOT MATCH '^Mars' AND source_index <= 20 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["title"] is not None and re.search(r"^Mars", str(r["title"])) is None and int(r["source_index"]) <= 20),
+        _ids_where(
+            lambda r: (
+                r["title"] is not None and re.search(r"^Mars", str(r["title"])) is None and int(r["source_index"]) <= 20
+            )
+        ),
         features=("text.does_not_match",),
     ),
     ConformanceCase(
         "boolean_precedence",
         "SELECT id FROM @yt_sql_fixture WHERE view_count = 0 OR view_count = 42 AND duration = 20m ORDER BY source_index ASC",
-        _ids_where(lambda r: (r["view_count"] is not None and int(r["view_count"]) == 0) or (r["view_count"] is not None and int(r["view_count"]) == 42 and r["duration"] is not None and int(r["duration"]) == 1200)),
+        _ids_where(
+            lambda r: (
+                (r["view_count"] is not None and int(r["view_count"]) == 0)
+                or (
+                    r["view_count"] is not None
+                    and int(r["view_count"]) == 42
+                    and r["duration"] is not None
+                    and int(r["duration"]) == 1200
+                )
+            )
+        ),
         features=("boolean.precedence",),
     ),
     ConformanceCase(
         "parentheses_override_precedence",
         "SELECT id FROM @yt_sql_fixture WHERE (view_count = 0 OR view_count = 42) AND duration = 20m ORDER BY source_index ASC",
-        _ids_where(lambda r: r["duration"] is not None and int(r["duration"]) == 1200 and r["view_count"] is not None and int(r["view_count"]) in {0, 42}),
+        _ids_where(
+            lambda r: (
+                r["duration"] is not None
+                and int(r["duration"]) == 1200
+                and r["view_count"] is not None
+                and int(r["view_count"]) in {0, 42}
+            )
+        ),
         features=("boolean.parentheses",),
     ),
     ConformanceCase(
@@ -688,7 +731,9 @@ CASES = (
     ConformanceCase(
         "ordinary_null_comparison_is_unknown",
         "SELECT id FROM @yt_sql_fixture WHERE view_count != 0 AND source_index <= 36 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) != 0 and int(r["source_index"]) <= 36),
+        _ids_where(
+            lambda r: r["view_count"] is not None and int(r["view_count"]) != 0 and int(r["source_index"]) <= 36
+        ),
         features=("null.three_valued",),
     ),
     # Count and duration literal forms.
@@ -805,13 +850,17 @@ CASES = (
     ConformanceCase(
         "datetime_zulu",
         "SELECT id FROM @yt_sql_fixture WHERE release_timestamp = 2026-08-31T20:30:00Z ORDER BY source_index ASC",
-        _ids_where(lambda r: r["release_timestamp"] == int(datetime(2026, 8, 31, 20, 30, tzinfo=timezone.utc).timestamp())),
+        _ids_where(
+            lambda r: r["release_timestamp"] == int(datetime(2026, 8, 31, 20, 30, tzinfo=timezone.utc).timestamp())
+        ),
         features=("datetime.zulu",),
     ),
     ConformanceCase(
         "datetime_offset",
         "SELECT id FROM @yt_sql_fixture WHERE release_timestamp = 2026-08-31T22:30:00+02:00 ORDER BY source_index ASC",
-        _ids_where(lambda r: r["release_timestamp"] == int(datetime(2026, 8, 31, 20, 30, tzinfo=timezone.utc).timestamp())),
+        _ids_where(
+            lambda r: r["release_timestamp"] == int(datetime(2026, 8, 31, 20, 30, tzinfo=timezone.utc).timestamp())
+        ),
         features=("datetime.offset",),
     ),
     # Ordering, projection aliases, functions and output formats.
@@ -830,7 +879,9 @@ CASES = (
     ConformanceCase(
         "stable_order_tie",
         "SELECT id FROM @yt_sql_fixture WHERE view_count = 42 ORDER BY view_count ASC",
-        _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) == 42, order=(("view_count", False),)),
+        _ids_where(
+            lambda r: r["view_count"] is not None and int(r["view_count"]) == 42, order=(("view_count", False),)
+        ),
         features=("order.stable_tie",),
     ),
     ConformanceCase(
@@ -850,7 +901,14 @@ CASES = (
         "SELECT id, views, date, url FROM @yt_sql_fixture WHERE source_index <= 3 ORDER BY source_index ASC",
         _project_where(
             lambda r: int(r["source_index"]) <= 3,
-            lambda r: {"id": r["id"], "views": r["view_count"], "date": None if r["upload_date"] is None else f"{str(r["upload_date"])[0:4]}-{str(r["upload_date"])[4:6]}-{str(r["upload_date"])[6:8]}", "url": r["webpage_url"]},
+            lambda r: {
+                "id": r["id"],
+                "views": r["view_count"],
+                "date": None
+                if r["upload_date"] is None
+                else f"{str(r['upload_date'])[0:4]}-{str(r['upload_date'])[4:6]}-{str(r['upload_date'])[6:8]}",
+                "url": r["webpage_url"],
+            },
         ),
         ("id", "views", "date", "url"),
         "jsonl",
@@ -859,7 +917,10 @@ CASES = (
     ConformanceCase(
         "upper_projection",
         "SELECT id, UPPER(title) AS shouted FROM @yt_sql_fixture WHERE source_index <= 4 ORDER BY source_index ASC",
-        _project_where(lambda r: int(r["source_index"]) <= 4, lambda r: {"id": r["id"], "shouted": None if r["title"] is None else str(r["title"]).upper()}),
+        _project_where(
+            lambda r: int(r["source_index"]) <= 4,
+            lambda r: {"id": r["id"], "shouted": None if r["title"] is None else str(r["title"]).upper()},
+        ),
         ("id", "shouted"),
         "jsonl",
         features=("projection.upper",),
@@ -867,7 +928,17 @@ CASES = (
     ConformanceCase(
         "coalesce_multiple_arguments",
         "SELECT id, COALESCE(fixture_nullable, title, 'fallback') AS chosen FROM @yt_sql_fixture WHERE source_index <= 6 ORDER BY source_index ASC",
-        _project_where(lambda r: int(r["source_index"]) <= 6, lambda r: {"id": r["id"], "chosen": r["fixture_nullable"] if r["fixture_nullable"] is not None else r["title"] if r["title"] is not None else "fallback"}),
+        _project_where(
+            lambda r: int(r["source_index"]) <= 6,
+            lambda r: {
+                "id": r["id"],
+                "chosen": r["fixture_nullable"]
+                if r["fixture_nullable"] is not None
+                else r["title"]
+                if r["title"] is not None
+                else "fallback",
+            },
+        ),
         ("id", "chosen"),
         "jsonl",
         features=("projection.coalesce",),
@@ -990,31 +1061,49 @@ CASES = (
     ConformanceCase(
         "today_fixed_relative",
         "SELECT id FROM @yt_sql_fixture WHERE upload_date >= TODAY()-3day ORDER BY upload_date ASC, release_timestamp ASC",
-        _ids_where(lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260829", order=(("upload_date", False), ("release_timestamp", False))),
+        _ids_where(
+            lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260829",
+            order=(("upload_date", False), ("release_timestamp", False)),
+        ),
         features=("temporal.today_fixed",),
     ),
     ConformanceCase(
         "today_calendar_relative",
         "SELECT id FROM @yt_sql_fixture WHERE upload_date >= TODAY()-1month ORDER BY upload_date ASC, release_timestamp ASC",
-        _ids_where(lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260801", order=(("upload_date", False), ("release_timestamp", False))),
+        _ids_where(
+            lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260801",
+            order=(("upload_date", False), ("release_timestamp", False)),
+        ),
         features=("temporal.today_calendar",),
     ),
     ConformanceCase(
         "today_welsh_relative",
         "SELECT id FROM @yt_sql_fixture WHERE upload_date >= TODAY()-3dydd ORDER BY upload_date ASC, release_timestamp ASC",
-        _ids_where(lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260829", order=(("upload_date", False), ("release_timestamp", False))),
+        _ids_where(
+            lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260829",
+            order=(("upload_date", False), ("release_timestamp", False)),
+        ),
         features=("temporal.localised",),
     ),
     ConformanceCase(
         "relative_date_ago",
         "SELECT id FROM @yt_sql_fixture WHERE upload_date >= '3 days ago' ORDER BY upload_date ASC, release_timestamp ASC",
-        _ids_where(lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260829", order=(("upload_date", False), ("release_timestamp", False))),
+        _ids_where(
+            lambda r: r["upload_date"] is not None and str(r["upload_date"]) >= "20260829",
+            order=(("upload_date", False), ("release_timestamp", False)),
+        ),
         features=("date.relative_ago",),
     ),
     ConformanceCase(
         "now_fixed_relative",
         "SELECT id FROM @yt_sql_fixture WHERE release_timestamp >= NOW()-36h ORDER BY release_timestamp ASC",
-        _ids_where(lambda r: r["release_timestamp"] is not None and int(r["release_timestamp"]) >= int(datetime(2026, 8, 31, 0, 0, tzinfo=timezone.utc).timestamp()), order=(("release_timestamp", False),)),
+        _ids_where(
+            lambda r: (
+                r["release_timestamp"] is not None
+                and int(r["release_timestamp"]) >= int(datetime(2026, 8, 31, 0, 0, tzinfo=timezone.utc).timestamp())
+            ),
+            order=(("release_timestamp", False),),
+        ),
         features=("temporal.now_fixed",),
     ),
     ConformanceCase(
