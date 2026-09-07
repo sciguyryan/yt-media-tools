@@ -7,14 +7,14 @@ import sqlite3
 import sys
 from datetime import datetime
 
-from yt_cache import DEFAULT_MAX_AGE, connect, load_source, store_source
+from yt_cache import DEFAULT_MAX_AGE, connect, load_source, store_source, update_entries
 from yt_metadata import normalise_entries
 from yt_planner import explain_plan, plan_query
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
-from yt_sources import backend_status, enumerate_source
+from yt_sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -64,6 +64,11 @@ def parse_args() -> argparse.Namespace:
         "--refresh",
         action="store_true",
         help="Ignore cached source metadata and refresh it",
+    )
+    parser.add_argument(
+        "--refresh-details",
+        action="store_true",
+        help="Refresh detailed metadata for incomplete cached entries",
     )
     parser.add_argument(
         "--after",
@@ -325,6 +330,34 @@ def main() -> int:
                 store_source(cache_connection, args.source, raw_entries)
 
         entries = normalise_entries(raw_entries)
+
+        if args.refresh_details:
+            incomplete_ids = [
+                str(entry["id"])
+                for entry in entries
+                if entry.get("id")
+                and any(
+                    entry.get(field) is None
+                    for field in ("title", "uploader", "duration", "date", "live")
+                )
+            ]
+            if incomplete_ids:
+                detailed = fetch_details(incomplete_ids, plan["backend"])
+                if cache_connection is not None:
+                    update_entries(cache_connection, args.source, detailed)
+                by_id = {
+                    str(entry.get("id")): entry
+                    for entry in raw_entries
+                    if entry.get("id")
+                }
+                for detail in detailed:
+                    if detail.get("id"):
+                        by_id[str(detail["id"])] = detail
+                raw_entries = [
+                    by_id.get(str(entry.get("id")), entry)
+                    for entry in raw_entries
+                ]
+                entries = normalise_entries(raw_entries)
     except (RuntimeError, OSError, sqlite3.Error) as exc:
         print(f"could not acquire source metadata: {exc}", file=sys.stderr)
         return 1

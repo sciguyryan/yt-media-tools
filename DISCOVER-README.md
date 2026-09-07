@@ -160,6 +160,8 @@ The default cache file is `discover-cache.sqlite3` beside the script. Use `--cac
 
 The initial cache schema stores raw source entries together with source order and fetch time. Cache schema compatibility is checked explicitly.
 
+`--refresh-details` asks Discover to enrich incomplete cached entries without re-enumerating the whole source. Detailed refresh is best-effort: deleted, private or otherwise inaccessible videos are left with their existing cached metadata while refresh continues for the remaining entries.
+
 ## Query planning
 
 Discover can now choose a source backend according to the fields required by a query.

@@ -15,6 +15,33 @@ if (process.argv[2] === "--probe") {
     process.exit(0);
 }
 
+if (process.argv[2] === "--details") {
+    const ids = process.argv.slice(3);
+    const { Innertube } = await loadYoutubeJs();
+    const youtube = await Innertube.create();
+    const entries = [];
+
+    for (const id of ids) {
+        try {
+            const info = await youtube.getInfo(id);
+            const basic = info.basic_info ?? {};
+            entries.push({
+                id: basic.id ?? id,
+                title: basic.title ?? null,
+                uploader: basic.author ?? null,
+                duration: basic.duration ?? null,
+                upload_date: basic.upload_date ?? null,
+                is_live: basic.is_live ?? false,
+            });
+        } catch {
+            // Deleted, private and otherwise inaccessible videos are skipped.
+        }
+    }
+
+    process.stdout.write(JSON.stringify(entries));
+    process.exit(0);
+}
+
 const source = process.argv[2];
 if (!source) {
     console.error("source URL is required");

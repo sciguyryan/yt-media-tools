@@ -103,3 +103,30 @@ def store_source(
         ],
     )
     connection.commit()
+
+
+def update_entries(
+    connection: sqlite3.Connection,
+    source: str,
+    entries: list[dict[str, object]],
+) -> None:
+    """Replace cached metadata for selected source entries without reordering them."""
+    fetched_at = int(time.time())
+    for entry in entries:
+        video_id = entry.get("id")
+        if not video_id:
+            continue
+        connection.execute(
+            """
+            UPDATE source_entries
+            SET fetched_at = ?, entry_json = ?
+            WHERE source = ? AND video_id = ?
+            """,
+            (
+                fetched_at,
+                json.dumps(entry, separators=(",", ":")),
+                source,
+                str(video_id),
+            ),
+        )
+    connection.commit()
