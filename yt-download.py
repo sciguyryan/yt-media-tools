@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
@@ -56,7 +56,10 @@ def load_profile(name: str) -> dict[str, str]:
     if not path.is_file():
         raise ValueError(f"profile not found: {name}")
 
+    path = path.resolve()
     settings: dict[str, str] = {}
+    path_keys = {"batch_file", "cookies", "archive"}
+
     for line_number, raw_line in enumerate(path.read_text().splitlines(), start=1):
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -65,7 +68,15 @@ def load_profile(name: str) -> dict[str, str]:
             raise ValueError(f"{path}:{line_number}: expected key=value")
 
         key, value = line.split("=", 1)
-        settings[key.strip()] = value.strip()
+        key = key.strip()
+        value = value.strip()
+
+        if key in path_keys:
+            value_path = pathlib.Path(value)
+            if not value_path.is_absolute():
+                value = str((path.parent / value_path).resolve())
+
+        settings[key] = value
 
     return settings
 
