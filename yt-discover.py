@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -74,7 +74,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--where",
-        help="Experimental filter expression",
+        help="YT-SQL filter expression",
+    )
+    parser.add_argument(
+        "--query",
+        help="Complete YT-SQL query statement",
     )
     return parser.parse_args()
 
@@ -375,6 +379,86 @@ def evaluate_expression(entry: dict[str, object], node) -> bool:
 
 
 
+def parse_query_statement(query: str) -> dict[str, object]:
+    match = re.fullmatch(
+        r"""\s*select\s+(?P<select>.+?)
+        (?:\s+where\s+(?P<where>.+?))?
+        (?:\s+order\s+by\s+(?P<order>[a-z_]+)(?:\s+(?P<direction>asc|desc))?)?
+        (?:\s+limit\s+(?P<limit>\d+))?
+        \s*""",
+        query,
+        flags=re.IGNORECASE | re.VERBOSE,
+    )
+    if not match:
+        raise ValueError("expected SELECT with optional WHERE, ORDER BY and LIMIT")
+
+    select_text = match.group("select").strip()
+    fields = [field.strip().lower() for field in select_text.split(",") if field.strip()]
+    if not fields:
+        raise ValueError("SELECT requires at least one field")
+
+    allowed_fields = {"id", "title", "uploader", "duration", "date", "live"}
+    unknown = [field for field in fields if field not in allowed_fields]
+    if unknown:
+        raise ValueError(f"unknown SELECT field: {unknown[0]}")
+
+    order_field = match.group("order")
+    if order_field is not None:
+        order_field = order_field.lower()
+        if order_field not in allowed_fields:
+            raise ValueError(f"unknown ORDER BY field: {order_field}")
+
+    limit_text = match.group("limit")
+    limit = int(limit_text) if limit_text is not None else None
+    if limit is not None and limit < 1:
+        raise ValueError("LIMIT must be at least 1")
+
+    where_text = match.group("where")
+    where_expression = parse_expression(where_text) if where_text else None
+
+    return {
+        "fields": fields,
+        "where": where_expression,
+        "order": order_field,
+        "direction": (match.group("direction") or "asc").lower(),
+        "limit": limit,
+    }
+
+
+def field_value(entry: dict[str, object], field: str) -> object:
+    if field == "id":
+        return entry.get("id")
+    if field == "title":
+        return entry.get("title")
+    if field == "uploader":
+        return entry.get("uploader") or entry.get("channel")
+    if field == "duration":
+        return duration(entry)
+    if field == "date":
+        value = upload_date(entry)
+        return value.strftime("%Y-%m-%d") if value else None
+    if field == "live":
+        return is_live(entry)
+    raise ValueError(f"unknown field: {field}")
+
+
+def query_sort_key(entry: dict[str, object], field: str) -> tuple[bool, object]:
+    value = field_value(entry, field)
+    if isinstance(value, str):
+        value = value.lower()
+    return (value is None, value if value is not None else "")
+
+
+def print_row(entry: dict[str, object], fields: list[str]) -> None:
+    values = [field_value(entry, field) for field in fields]
+    if len(values) == 1:
+        value = values[0]
+        print("" if value is None else value)
+        return
+
+    print("\t".join("" if value is None else str(value) for value in values))
+
+
 def matches(
     entry: dict[str, object],
     args: argparse.Namespace,
@@ -482,10 +566,19 @@ def main() -> int:
         print(f"invalid title regular expression: {exc}", file=sys.stderr)
         return 2
 
+    if args.query and args.where:
+        print("--query and --where cannot be used together", file=sys.stderr)
+        return 2
+
+    query = None
     try:
-        where_expression = parse_expression(args.where) if args.where else None
+        if args.query:
+            query = parse_query_statement(args.query)
+            where_expression = query["where"]
+        else:
+            where_expression = parse_expression(args.where) if args.where else None
     except ValueError as exc:
-        print(f"invalid YT-SQL expression: {exc}", file=sys.stderr)
+        print(f"invalid YT-SQL: {exc}", file=sys.stderr)
         return 2
 
     try:
@@ -499,6 +592,22 @@ def main() -> int:
         for entry in entries
         if matches(entry, args, after, before, title_pattern, where_expression)
     ]
+
+    if query is not None:
+        query_limit = query["limit"]
+        if query_limit is not None:
+            matches_found = matches_found[:query_limit]
+
+        order_field = query["order"]
+        if order_field is not None:
+            matches_found.sort(
+                key=lambda entry: query_sort_key(entry, order_field),
+                reverse=query["direction"] == "desc",
+            )
+
+        for entry in matches_found:
+            print_row(entry, query["fields"])
+        return 0
 
     if args.sort != "source":
         matches_found.sort(key=lambda entry: sort_key(entry, args.sort))

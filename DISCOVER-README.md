@@ -83,6 +83,38 @@ Existing command-line filters still work and are combined with YT-SQL expression
 
 This first named YT-SQL parser is intentionally small. `and` and `or` currently have the same precedence and are evaluated from left to right, so parentheses should be used when mixing them.
 
+## Complete YT-SQL queries
+
+YT-SQL can now be supplied as a complete query statement with `--query`.
+
+The simplest query is:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id'
+```
+
+Filtering can be included with `where`:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id where title contains "interview" and duration >= 900'
+```
+
+Multiple fields are printed as tab-separated values:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title, duration where duration >= 600'
+```
+
+Queries can also order and limit results:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title order by date desc limit 20'
+```
+
+Supported selected fields are `id`, `title`, `uploader`, `duration`, `date` and `live`.
+
+The older `--where` expression option remains available for ID-only output. `--where` and `--query` cannot be used together.
+
 ## Metadata limitations
 
 The discovery script relies on metadata available from `yt-dlp --flat-playlist`. Entries with missing metadata cannot satisfy filters that require that field. For example, an entry without an upload date cannot match `--after` or `--before`, and an entry without duration cannot match a duration range.

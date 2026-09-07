@@ -1,32 +1,67 @@
 # YT-SQL
 
-YT-SQL is the experimental query language used by `yt-discover.py`.
+YT-SQL is the query language used by `yt-discover.py`.
 
-At version 0.4.0 it is only a boolean filter expression supplied through `--where`. It is not yet a complete SQL-like statement language.
+Version 0.5.0 expands the earlier boolean filter expressions into complete query statements.
 
-## Example
+## Query form
 
-```bash
-./yt-discover.py CHANNEL_URL --where '(title contains "interview" or title contains "discussion") and duration >= 900'
+```text
+SELECT fields
+[WHERE expression]
+[ORDER BY field [ASC|DESC]]
+[LIMIT number]
 ```
 
-## Supported fields
+Keywords are case-insensitive.
 
+## Examples
+
+Print IDs:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id'
+```
+
+Filter results:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id where title contains "interview" and duration >= 900'
+```
+
+Select several fields:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title, duration where duration >= 600'
+```
+
+Order and limit results:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title order by date desc limit 20'
+```
+
+When several fields are selected, output is tab-separated.
+
+## Fields
+
+- `id`
 - `title`
 - `uploader`
 - `duration`
 - `date`
 - `live`
 
-## Boolean operators
+## Boolean expressions
+
+`where` expressions support:
 
 - `and`
 - `or`
 - `not`
+- parentheses
 
-Parentheses can be used for grouping.
-
-At this stage, `and` and `or` have equal precedence and are evaluated from left to right. Use parentheses when mixing them if the intended grouping matters.
+At this stage, `and` and `or` still have equal precedence and are evaluated from left to right. Use parentheses when mixing them if grouping matters.
 
 ## Comparisons
 
@@ -42,3 +77,11 @@ At this stage, `and` and `or` have equal precedence and are evaluated from left 
 - `>=`
 
 `live` supports equality with `true` or `false`.
+
+## Legacy expression mode
+
+The earlier `--where` option remains available for queries that only need ID output:
+
+```bash
+./yt-discover.py CHANNEL_URL --where 'duration >= 900'
+```
