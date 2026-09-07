@@ -1,8 +1,8 @@
 # YouTube discovery
 
-`yt-discover.py` is a small companion to the downloader for finding video IDs from a YouTube channel or playlist.
+`yt-discover.py` is a companion to the downloader for finding video IDs from a YouTube channel or playlist.
 
-It uses `yt-dlp` to enumerate the source and prints matching video IDs, one per line. The output can be redirected to a file or piped into the downloader.
+It uses `yt-dlp` to enumerate the source, applies the requested filters and prints matching video IDs one per line. The output can be redirected to a file or piped into the downloader.
 
 ## Basic use
 
@@ -20,19 +20,38 @@ Filter by upload date:
 ./yt-discover.py CHANNEL_URL --after 2024-01-01 --before 2024-12-31
 ```
 
-Filter titles using a case-insensitive substring:
+Filter titles using a case-insensitive substring or regular expression:
 
 ```bash
 ./yt-discover.py CHANNEL_URL --title interview
+./yt-discover.py CHANNEL_URL --title-regex 'interview|discussion'
 ```
 
-Print matching entries in reverse source order:
+Uploader, duration and live-status filters can be combined:
 
 ```bash
-./yt-discover.py CHANNEL_URL --reverse
+./yt-discover.py CHANNEL_URL --uploader example --min-duration 600
+./yt-discover.py CHANNEL_URL --max-duration 300 --live no
 ```
 
-The current discovery script relies on the metadata available from `yt-dlp --flat-playlist`. Entries without an upload date cannot match date filters.
+Sort and limit the matching entries:
+
+```bash
+./yt-discover.py CHANNEL_URL --sort date --reverse --limit 20
+./yt-discover.py CHANNEL_URL --sort title --limit 50
+```
+
+All supplied filters are combined. For example:
+
+```bash
+./yt-discover.py CHANNEL_URL --after 2024-01-01 --title interview --min-duration 900 --live no --sort date --reverse --limit 25
+```
+
+This is becoming cumbersome for complicated searches, but each option can still be useful on its own.
+
+## Metadata limitations
+
+The discovery script relies on metadata available from `yt-dlp --flat-playlist`. Entries with missing metadata cannot satisfy filters that require that field. For example, an entry without an upload date cannot match `--after` or `--before`, and an entry without duration cannot match a duration range.
 
 ## Downloader integration
 
@@ -47,4 +66,12 @@ Or pass them through standard input:
 
 ```bash
 ./yt-discover.py CHANNEL_URL --title interview | ./yt-download.py -
+```
+
+## Options
+
+Run the built-in help for the complete option list:
+
+```bash
+./yt-discover.py --help
 ```
