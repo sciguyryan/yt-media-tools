@@ -1,3 +1,4 @@
+import importlib
 import importlib.util
 from pathlib import Path
 
@@ -5,11 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_cache():
-    spec = importlib.util.spec_from_file_location("yt_cache_test", ROOT / "yt_cache.py")
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    return importlib.import_module("yt_media_tools.cache")
 
 
 def test_incremental_append_requires_overlap(tmp_path):

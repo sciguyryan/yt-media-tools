@@ -7,7 +7,7 @@ import sqlite3
 import sys
 from datetime import UTC, datetime
 
-from yt_cache import (
+from yt_media_tools.cache import (
     DEFAULT_MAX_AGE,
     append_new_entries,
     connect,
@@ -16,10 +16,10 @@ from yt_cache import (
     store_source,
     update_entries,
 )
-from yt_metadata import normalise_entries
-from yt_planner import acquisition_limit, execution_analysis, explain_plan, plan_query
-from yt_query import evaluate_expression, parse_expression, parse_query_statement, print_row, query_sort_key
-from yt_sources import backend_status, enumerate_source, fetch_details
+from yt_media_tools.metadata import normalise_entries
+from yt_media_tools.planner import acquisition_limit, execution_analysis, explain_plan, plan_query
+from yt_media_tools.query import evaluate_expression, parse_expression, parse_query_statement, print_row, query_sort_key
+from yt_media_tools.sources import backend_status, enumerate_source, fetch_details
 
 
 VERSION = "0.17.0"
@@ -509,7 +509,7 @@ def main() -> int:
         if query["distinct"]:
             seen: set[tuple[object, ...]] = set()
             distinct_entries: list[dict[str, object]] = []
-            from yt_query import projection_value
+            from yt_media_tools.query import projection_value
 
             for entry in matches_found:
                 key = tuple(projection_value(entry, field) for field in query["fields"])

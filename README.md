@@ -219,3 +219,11 @@ This patch hardens the per-item queue update path introduced in 1.4.0. Exact ID 
 Runtime paths are centralised as script-relative constants for profiles, the default archive, cookies and ID queue. The temporary download path remains `/mnt/storage/Temp/yt-dlp`.
 
 Dry-run command construction remains suitable for inspecting configuration without requiring a runnable download environment.
+
+## Shared package foundation
+
+The mature Discover support modules now live under the `yt_media_tools` package rather than as a growing collection of root-level `yt_*.py` files. The command-line entry points remain at repository root.
+
+The YouTube.js bridge now lives beside the packaged source backend, and the existing tests import the package normally rather than loading the former root modules by filename.
+
+This is an internal structural refactor rather than a release. Discover remains 0.17.0 and the downloader remains 1.4.1. The move establishes the package boundary needed for the later conformance and reusable execution infrastructure.

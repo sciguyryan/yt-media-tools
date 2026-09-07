@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from yt_capabilities import APPROXIMATE, EXACT, capability
-from yt_sources import backend_status
+from .capabilities import APPROXIMATE, EXACT, capability
+from .sources import backend_status
 
 
 def expression_fields(node) -> set[str]:
