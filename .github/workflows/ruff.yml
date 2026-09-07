@@ -15,14 +15,20 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Run Ruff lint checks
+      - name: Install Ruff
         uses: astral-sh/ruff-action@v4.1.0
         with:
           version: "0.16.6"
-          args: "check ."
+          args: "--version"
+
+      - name: Report Ruff environment
+        run: |
+          git rev-parse HEAD
+          ruff --version
+          pwd
+
+      - name: Run Ruff lint checks
+        run: ruff check --config ./ruff.toml .
 
       - name: Run Ruff format checks
-        uses: astral-sh/ruff-action@v4.1.0
-        with:
-          version: "0.16.6"
-          args: "format --check --diff ."
+        run: ruff format --config ./ruff.toml --check --diff .
