@@ -9,12 +9,12 @@ from datetime import datetime
 
 from yt_cache import DEFAULT_MAX_AGE, append_new_entries, connect, load_source, source_status, store_source, update_entries
 from yt_metadata import normalise_entries
-from yt_planner import explain_plan, plan_query
+from yt_planner import acquisition_limit, execution_analysis, explain_plan, plan_query
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 from yt_sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.14.0"
+VERSION = "0.15.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,6 +37,11 @@ def parse_args() -> argparse.Namespace:
         "--explain",
         action="store_true",
         help="Explain the query acquisition plan before execution",
+    )
+    parser.add_argument(
+        "--analyse-execution",
+        action="store_true",
+        help="Explain whether source acquisition can safely stop early",
     )
     parser.add_argument(
         "--list-backends",
@@ -359,6 +364,27 @@ def main() -> int:
         if args.explain:
             print(explain_plan(plan), file=sys.stderr)
 
+        source_limit = acquisition_limit(
+            query,
+            where_expression,
+            str(plan["backend"]) if plan["mode"] == "live" else None,
+        )
+
+        if args.analyse_execution:
+            analysis = execution_analysis(
+                query,
+                where_expression,
+                str(plan["backend"]) if plan["mode"] == "live" else None,
+            )
+            if analysis["acquisition_limit"] is None:
+                print("acquisition: full source required", file=sys.stderr)
+            else:
+                print(
+                    f"acquisition: bounded to {analysis['acquisition_limit']} source entries",
+                    file=sys.stderr,
+                )
+            print(f"proof: {analysis['proof']}", file=sys.stderr)
+
         if args.cache_status:
             if cached_status is None:
                 print("cache: no entry for source", file=sys.stderr)
@@ -387,7 +413,11 @@ def main() -> int:
             )
         elif plan["mode"] == "live":
             if args.refresh or raw_entries is None:
-                raw_entries = enumerate_source(args.source, str(plan["backend"]))
+                raw_entries = enumerate_source(
+                    args.source,
+                    str(plan["backend"]),
+                    limit=source_limit,
+                )
                 if cache_connection is not None:
                     store_source(
                         cache_connection,

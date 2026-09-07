@@ -240,3 +240,15 @@ The refresh observes the source again and looks for the first video ID already p
 If no overlap with the cached source can be confirmed, Discover refuses the incremental update rather than guessing that two independent observations belong to one continuous ordering. Use `--refresh` when a complete replacement is intended.
 
 Cache schema version 3 records the current source head and the number of successful overlap confirmations. Existing version 2 caches are migrated in place.
+
+## LIMIT-aware acquisition
+
+Discover now performs one deliberately narrow proof-based acquisition optimisation. A YT-SQL query with a plain `LIMIT`, no `WHERE` clause and no `ORDER BY` clause can ask the yt-dlp backend to stop after the required number of source entries.
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title limit 25'
+```
+
+Use `--analyse-execution` to see whether the source can be bounded or whether complete enumeration is required.
+
+Filtering and ordering still force complete acquisition because stopping early could change the result. YouTube.js enumeration is also left unbounded for now because this release does not yet have a trustworthy backend-specific pagination proof.

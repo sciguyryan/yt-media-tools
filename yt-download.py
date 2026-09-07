@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
@@ -60,10 +60,33 @@ def rate_limit(value: str) -> str:
     return value
 
 
+def available_profiles() -> list[str]:
+    directory = profile_directory()
+    if not directory.is_dir():
+        return []
+    return sorted(
+        path.name
+        for path in directory.iterdir()
+        if path.is_file() and not path.name.startswith(".")
+    )
+
+
 def load_profile(name: str) -> dict[str, str]:
-    path = pathlib.Path(name)
+    requested = pathlib.Path(name)
+    explicit_path = requested.is_absolute() or requested.parent != pathlib.Path(".")
+    path = requested
+
     if not path.is_file():
         path = profile_directory() / name
+
+    if not path.is_file() and not explicit_path and name != DEFAULT_PROFILE:
+        fallback = profile_directory() / DEFAULT_PROFILE
+        if fallback.is_file():
+            print(
+                f"warning: profile not found: {name}; using {DEFAULT_PROFILE}",
+                file=sys.stderr,
+            )
+            path = fallback
 
     if not path.is_file():
         raise ValueError(f"profile not found: {name}")
@@ -83,6 +106,11 @@ def load_profile(name: str) -> dict[str, str]:
         key = key.strip()
         value = value.strip()
 
+        if not key:
+            raise ValueError(f"{path}:{line_number}: empty profile key")
+        if key in settings:
+            raise ValueError(f"{path}:{line_number}: duplicate profile key: {key}")
+
         if key in path_keys:
             value_path = pathlib.Path(value)
             if not value_path.is_absolute():
@@ -92,7 +120,6 @@ def load_profile(name: str) -> dict[str, str]:
 
     return settings
 
-
 def parse_args() -> argparse.Namespace:
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument(
@@ -101,7 +128,17 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_PROFILE,
         help="Downloader profile to load",
     )
+    pre_parser.add_argument(
+        "--list-profiles",
+        action="store_true",
+        help="List available downloader profiles and exit",
+    )
     pre_args, _ = pre_parser.parse_known_args()
+
+    if pre_args.list_profiles:
+        for name in available_profiles():
+            print(name)
+        raise SystemExit(0)
 
     try:
         profile = load_profile(pre_args.profile)

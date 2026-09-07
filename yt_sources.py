@@ -46,13 +46,15 @@ def backend_status() -> list[tuple[str, bool, str]]:
     ]
 
 
-def enumerate_yt_dlp(source: str) -> list[dict[str, object]]:
+def enumerate_yt_dlp(source: str, limit: int | None = None) -> list[dict[str, object]]:
     command = [
         "yt-dlp",
         "--flat-playlist",
         "--dump-single-json",
-        source,
     ]
+    if limit is not None:
+        command.extend(["--playlist-end", str(limit)])
+    command.append(source)
 
     completed = subprocess.run(
         command,
@@ -162,10 +164,14 @@ def fetch_details(video_ids: list[str], backend: str) -> list[dict[str, object]]
         return fetch_details_youtubejs(video_ids)
     raise RuntimeError(f"unknown source backend: {backend}")
 
-def enumerate_source(source: str, backend: str = "yt-dlp") -> list[dict[str, object]]:
+def enumerate_source(
+    source: str,
+    backend: str = "yt-dlp",
+    limit: int | None = None,
+) -> list[dict[str, object]]:
     """Enumerate a source using the selected backend."""
     if backend == "yt-dlp":
-        return enumerate_yt_dlp(source)
+        return enumerate_yt_dlp(source, limit=limit)
     if backend == "youtubejs":
         return enumerate_youtubejs(source)
     raise RuntimeError(f"unknown source backend: {backend}")

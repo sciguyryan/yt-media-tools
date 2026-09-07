@@ -113,3 +113,15 @@ Run the built-in help for the complete option list:
 ## Licence
 
 These tools are distributed under the GNU Lesser General Public License version 2.1. See `LICENSE` for the licence text.
+
+## Profile discovery and fallback
+
+The downloader can now list the profiles installed beside the script:
+
+```bash
+./yt-download.py --list-profiles
+```
+
+Named profiles are still simple `key=value` files. Duplicate keys and empty keys are now rejected with a file and line number.
+
+If a named built-in profile does not exist, the downloader warns and falls back to `default`. An explicit profile path remains strict and must exist. This is still the older policy-heavy profile model; later releases will narrow profiles to output presentation.

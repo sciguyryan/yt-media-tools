@@ -122,6 +122,31 @@ def plan_query(
     return plans[0]
 
 
+def acquisition_limit(query, where_expression, backend: str | None) -> int | None:
+    """Return a source limit only when early termination is provably safe."""
+    if query is None or backend != "yt-dlp":
+        return None
+    if query.get("limit") is None:
+        return None
+    if where_expression is not None:
+        return None
+    if query.get("order") is not None:
+        return None
+    return int(query["limit"])
+
+
+def execution_analysis(query, where_expression, backend: str | None) -> dict[str, object]:
+    limit = acquisition_limit(query, where_expression, backend)
+    return {
+        "acquisition_limit": limit,
+        "proof": (
+            "plain LIMIT preserves source order"
+            if limit is not None
+            else "full source required"
+        ),
+    }
+
+
 def explain_plan(plan: dict[str, object]) -> str:
     lines = [
         f"mode: {plan['mode']}",

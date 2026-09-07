@@ -93,3 +93,7 @@ YT-SQL evaluation remains independent from acquisition. When a fresh cached sour
 YT-SQL queries can now execute entirely from cached source metadata with `--offline`. Planning distinguishes cache-native execution from live acquisition, but query semantics are unchanged.
 
 Offline mode accepts stale cache entries because it is explicitly prohibited from contacting a live backend.
+
+## LIMIT-aware source execution
+
+A plain `LIMIT` without `WHERE` or `ORDER BY` can now bound yt-dlp source acquisition. Discover applies this optimisation only when it can prove that early termination preserves the query result. Other queries continue to enumerate the complete source.
