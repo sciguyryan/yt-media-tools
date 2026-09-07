@@ -184,3 +184,16 @@ ruff format .
 ```
 
 The repository configuration is now the shared definition for local Ruff checks. GitHub Actions integration is not present yet.
+
+## Ruff in GitHub Actions
+
+GitHub Actions now runs Ruff on pushes and pull requests using the repository `ruff.toml`.
+
+The workflow is deliberately check-only:
+
+```bash
+ruff check .
+ruff format --check .
+```
+
+CI never runs `ruff check --fix` or `ruff format`, so repository changes remain an explicit local development action.
