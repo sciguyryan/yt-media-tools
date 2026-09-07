@@ -14,7 +14,7 @@ from yt_query import evaluate_expression, field_value, parse_expression, parse_q
 from yt_sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.16.1"
+VERSION = "0.16.2"
 
 
 def parse_args() -> argparse.Namespace:
@@ -183,6 +183,8 @@ def parse_params(values: list[str]) -> dict[str, object]:
             except ValueError:
                 try: value = float(text)
                 except ValueError: value = text
+        if name in params:
+            raise ValueError(f"duplicate parameter binding: {name}")
         params[name] = value
     return params
 

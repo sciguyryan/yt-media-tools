@@ -105,3 +105,7 @@ A plain `LIMIT` without `WHERE` or `ORDER BY` can now bound yt-dlp source acquis
 Comparisons involving `NULL` do not evaluate as true, including `NULL != value`. Use `IS NULL` and `IS NOT NULL` for explicit missing-value tests.
 
 Parameters may be used with `CONTAINS` and `MATCHES`.
+
+## 0.16.2 parameter binding
+
+A named parameter may be bound only once. Repeating the same parameter name is an error.

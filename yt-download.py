@@ -8,7 +8,9 @@ import subprocess
 import sys
 
 
-VERSION = "0.9.0"
+VERSION = "1.0.0"
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+PROFILES_DIR = SCRIPT_DIR / "profiles"
 
 DEFAULT_PROFILE = "default"
 PROFILE_KEYS = {"path", "output"}
@@ -30,7 +32,7 @@ def default_local_path(name: str) -> str:
 
 
 def profile_directory() -> pathlib.Path:
-    return script_directory() / "profiles"
+    return PROFILES_DIR
 
 
 def resolution(value: str) -> int:

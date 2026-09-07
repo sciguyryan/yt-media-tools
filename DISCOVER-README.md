@@ -260,3 +260,7 @@ Filtering and ordering still force complete acquisition because stopping early c
 Ordinary comparisons involving missing values now evaluate as false. Use `IS NULL` or `IS NOT NULL` for explicit missing-metadata tests.
 
 Named parameters are also resolved for `CONTAINS` and `MATCHES`.
+
+## 0.16.2 parameter binding correction
+
+Duplicate `--param NAME=VALUE` bindings are now rejected instead of silently allowing a later value to replace the earlier binding. This removes an ambiguity from the new parameter support before the query interface is treated as settled.

@@ -139,3 +139,11 @@ output=%(title)s [%(id)s] [%(uploader)s].%(ext)s
 `@profile` now identifies a downloader profile rather than being merely tolerated text. A profile may define `path`, `output`, or both, and no other keys are accepted.
 
 `path` controls the output location and `output` controls the yt-dlp filename/template layout. Missing named profiles still fall back to `default`. Existing malformed profiles remain configuration errors.
+
+## Downloader 1.0
+
+Version 1.0 marks the point where the Python downloader interface is treated as stable enough for ordinary use.
+
+Profiles are script-relative and use the formal `@profile` format. They control output path and filename layout only. Resolution, rate limiting, cookies, archive handling and other operational policy remain application or CLI concerns.
+
+The established direct-target, `--input-file`, positional batch-file and standard-input modes remain supported. `--examples` provides practical invocations for common input, playlist, profile and dry-run use.
