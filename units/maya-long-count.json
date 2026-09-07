@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "language": "Maya Long Count",
+  "units": {
+    "kin": {"aliases": ["kins"], "value": 1, "unit": "day"},
+    "uinal": {"aliases": ["uinals"], "value": 20, "unit": "kin"},
+    "tun": {"aliases": ["tuns"], "value": 18, "unit": "uinal"},
+    "katun": {"aliases": ["katuns"], "value": 20, "unit": "tun"},
+    "baktun": {"aliases": ["baktuns"], "value": 20, "unit": "katun"}
+  }
+}

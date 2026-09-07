@@ -62,7 +62,7 @@ def test_machine_readable_explain_is_valid_json() -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["kind"] == "yt-discover-explain"
-    assert payload["version"] == "0.20.1"
+    assert payload["version"] == "0.21.0"
     assert payload["acquisition"]["strategy"] == "bounded-date"
     assert payload["limit_aware_termination"]["applicable"] is True
     assert payload["limit_aware_termination"]["implemented"] is True

@@ -8,7 +8,13 @@ from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import Any, Sequence
 
-from .dates import DateContext, parse_date_literal, parse_datetime_literal, timestamp_to_datetime
+from .dates import (
+    DateContext,
+    parse_date_literal,
+    parse_datetime_literal,
+    parse_temporal_infinity,
+    timestamp_to_datetime,
+)
 from .schema import QuerySchema, raw_path_value
 from .units import load_default_unit_registry
 
@@ -143,6 +149,7 @@ class Query:
 _TOKEN_RE = re.compile(
     r"""
     (?P<SPACE>\s+)
+  | (?P<INFINITY>-?INFINITY\(\))
   | (?P<OP><=|>=|!=|<>|=|<|>)
   | (?P<LPAREN>\()
   | (?P<ATIDENT>@[A-Za-z0-9_.-]+)
@@ -685,15 +692,25 @@ def _resolve_literal(literal: Literal, field: Field, source: str, dates: DateCon
         return literal
     text = str(literal.value)
     kind = field.kind or "unknown"
+    if parse_temporal_infinity(text, expected="date") is not None and kind not in {"date", "datetime"}:
+        raise QuerySyntaxError(
+            source,
+            "INFINITY() and -INFINITY() are valid only for date or datetime fields.",
+            literal.position,
+        )
     try:
         if kind == "duration":
             value = _parse_duration_text(text, source, literal.position)
         elif kind == "count":
             value = _parse_count_text(text, source, literal.position)
         elif kind == "date":
-            value = parse_date_literal(text, dates)
+            value = parse_temporal_infinity(text, expected="date")
+            if value is None:
+                value = parse_date_literal(text, dates)
         elif kind == "datetime":
-            value = parse_datetime_literal(text, dates)
+            value = parse_temporal_infinity(text, expected="datetime")
+            if value is None:
+                value = parse_datetime_literal(text, dates)
         elif kind in {"integer"}:
             value = _parse_number_text(text, source, literal.position)
             if not isinstance(value, int):

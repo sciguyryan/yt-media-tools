@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.21.0 - Temporal Horizons
+
+- Add typed `INFINITY()` and `-INFINITY()` bounds for date and timestamp comparisons while preserving SQL-like NULL semantics.
+- Extend the data-driven unit registry with decade, century and millennium units.
+- Add Maya Long Count units from kin through baktun as recursively resolved fixed-day measures.
+- Extend deterministic conformance and query tests for temporal infinity and the new unit definitions.
+
 ## Downloader 1.7.0 - Parameter Profiles
 
 - Add versioned JSON parameter profiles selected with `-p/--parameter-profile` and alternate defaults files selected with `-d/--defaults`.

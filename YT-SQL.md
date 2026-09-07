@@ -46,6 +46,23 @@ The registry validates every canonical name and alias globally. A token may not 
 
 Fixed units may be used for durations and relative temporal arithmetic when the resulting type is meaningful. Calendar units may be used for date/time arithmetic but are rejected as media durations. `TODAY()` requires fixed units to resolve to whole days; `NOW()` may use sub-day fixed units. Existing English units use exactly the same registry mechanism as additional language files.
 
+The shipped English definitions also include `decade`, `century`, and `millennium` as calendar-aware units derived from `year`. A separate Maya Long Count file defines exact fixed-day units `kin`, `uinal`, `tun`, `katun`, and `baktun`. In that system a `tun` is 360 days, a `katun` is 7,200 days, and a `baktun` is 144,000 days. Because these definitions ultimately resolve to fixed days, they can be used in both suitable duration expressions and whole-day temporal arithmetic.
+
+## Temporal infinity
+
+`INFINITY()` and `-INFINITY()` provide typed unbounded values for temporal comparisons. The resolver assigns the infinity to the field's temporal type, so date fields receive date infinity and timestamp fields receive timestamp infinity. They are not generic numeric infinities and are rejected for count, duration and other non-temporal fields.
+
+Normal SQL-like NULL semantics still apply. A NULL date or timestamp does not become comparable merely because the other operand is infinite. Use `IS NULL` or `IS NOT NULL` when NULL membership matters.
+
+Examples:
+
+```sql
+WHERE upload_date BETWEEN -INFINITY() AND INFINITY()
+WHERE release_timestamp < INFINITY()
+WHERE upload_date >= TODAY()-1decade
+WHERE upload_date >= TODAY()-1baktun
+```
+
 ## Intentional dialect behaviour
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, relative calendar expressions, and source forms such as `@handle`.
@@ -68,4 +85,4 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Planned analytical expansion
 
-The next yt-sql language pass is expected to evaluate and, where appropriate, add `SELECT *`, general scalar expressions, arithmetic, `CASE`, `LIKE`/`ILIKE`, aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, expression ordering, explicit NULL ordering, PostgreSQL-inspired `DISTINCT ON`, and a curated set of additional scalar/date functions. These are planned capabilities, not syntax accepted by the current parser.
+Future yt-sql language work is expected to evaluate and, where appropriate, add `SELECT *`, general scalar expressions, arithmetic, `CASE`, `LIKE`/`ILIKE`, aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, expression ordering, explicit NULL ordering, PostgreSQL-inspired `DISTINCT ON`, and a curated set of additional scalar/date functions. These are planned capabilities, not syntax accepted by the current parser.

@@ -2,12 +2,91 @@
   "format": 1,
   "language": "English",
   "units": {
-    "second": {"aliases": ["seconds", "s", "sec", "secs"], "fixed_seconds": 1},
-    "minute": {"aliases": ["minutes", "m", "min", "mins"], "value": 60, "unit": "second"},
-    "hour": {"aliases": ["hours", "h", "hr", "hrs"], "value": 60, "unit": "minute"},
-    "day": {"aliases": ["days", "d"], "value": 24, "unit": "hour"},
-    "week": {"aliases": ["weeks", "w", "wk", "wks"], "value": 7, "unit": "day"},
-    "month": {"aliases": ["months", "mo", "mon"], "calendar_months": 1},
-    "year": {"aliases": ["years", "yr", "yrs"], "value": 12, "unit": "month"}
+    "second": {
+      "aliases": [
+        "seconds",
+        "s",
+        "sec",
+        "secs"
+      ],
+      "fixed_seconds": 1
+    },
+    "minute": {
+      "aliases": [
+        "minutes",
+        "m",
+        "min",
+        "mins"
+      ],
+      "value": 60,
+      "unit": "second"
+    },
+    "hour": {
+      "aliases": [
+        "hours",
+        "h",
+        "hr",
+        "hrs"
+      ],
+      "value": 60,
+      "unit": "minute"
+    },
+    "day": {
+      "aliases": [
+        "days",
+        "d"
+      ],
+      "value": 24,
+      "unit": "hour"
+    },
+    "week": {
+      "aliases": [
+        "weeks",
+        "w",
+        "wk",
+        "wks"
+      ],
+      "value": 7,
+      "unit": "day"
+    },
+    "month": {
+      "aliases": [
+        "months",
+        "mo",
+        "mon"
+      ],
+      "calendar_months": 1
+    },
+    "year": {
+      "aliases": [
+        "years",
+        "yr",
+        "yrs"
+      ],
+      "value": 12,
+      "unit": "month"
+    },
+    "decade": {
+      "aliases": [
+        "decades"
+      ],
+      "value": 10,
+      "unit": "year"
+    },
+    "century": {
+      "aliases": [
+        "centuries"
+      ],
+      "value": 10,
+      "unit": "decade"
+    },
+    "millennium": {
+      "aliases": [
+        "millennia",
+        "millenniums"
+      ],
+      "value": 10,
+      "unit": "century"
+    }
   }
 }

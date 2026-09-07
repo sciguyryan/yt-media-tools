@@ -12,6 +12,7 @@ from .units import load_default_unit_registry
 
 
 DateOrder = Literal["dmy", "mdy", "ymd"]
+TemporalKind = Literal["date", "datetime"]
 
 _MONTHS = {name.casefold(): number for number, name in enumerate(calendar.month_name) if name}
 _MONTHS.update({name.casefold(): number for number, name in enumerate(calendar.month_abbr) if name})
@@ -21,6 +22,61 @@ _TEMPORAL_EXPR_RE = re.compile(
     rf"^(?P<base>TODAY|NOW)\(\)\s*(?:(?P<op>[+-])\s*(?P<count>\d+(?:\.\d+)?)\s*(?P<unit>{_UNIT_TOKEN}))?$",
     re.IGNORECASE,
 )
+
+
+@dataclass(frozen=True)
+class TemporalInfinity:
+    """Typed positive or negative infinity used only for temporal comparisons."""
+
+    sign: int
+    kind: TemporalKind
+
+    def __post_init__(self) -> None:
+        if self.sign not in {-1, 1}:
+            raise ValueError("Temporal infinity sign must be -1 or 1.")
+
+    def _compatible(self, other: object) -> bool:
+        if self.kind == "date":
+            return isinstance(other, date) and not isinstance(other, datetime)
+        return isinstance(other, datetime)
+
+    def __lt__(self, other: object) -> bool:
+        if not self._compatible(other):
+            return NotImplemented
+        return self.sign < 0
+
+    def __le__(self, other: object) -> bool:
+        if not self._compatible(other):
+            return NotImplemented
+        return self.sign < 0
+
+    def __gt__(self, other: object) -> bool:
+        if not self._compatible(other):
+            return NotImplemented
+        return self.sign > 0
+
+    def __ge__(self, other: object) -> bool:
+        if not self._compatible(other):
+            return NotImplemented
+        return self.sign > 0
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, TemporalInfinity):
+            return self.sign == other.sign and self.kind == other.kind
+        return False
+
+    def __str__(self) -> str:
+        return "INFINITY()" if self.sign > 0 else "-INFINITY()"
+
+
+def parse_temporal_infinity(text: str, *, expected: TemporalKind) -> TemporalInfinity | None:
+    """Return a typed temporal infinity sentinel when text names one."""
+    compact = re.sub(r"\s+", "", text).upper()
+    if compact == "INFINITY()":
+        return TemporalInfinity(1, expected)
+    if compact == "-INFINITY()":
+        return TemporalInfinity(-1, expected)
+    return None
 
 
 @dataclass(frozen=True)

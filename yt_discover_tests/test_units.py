@@ -176,3 +176,26 @@ def test_today_accepts_derived_whole_day_units_but_rejects_fractional_day_result
     assert parse_temporal_expression("TODAY()-1wythnos", context, expected="date").isoformat() == "2026-08-31"
     with pytest.raises(ValueError, match="does not support sub-day unit"):
         parse_temporal_expression("TODAY()-0.5dydd", context, expected="date")
+
+
+def test_default_registry_resolves_extended_calendar_units() -> None:
+    registry = load_default_unit_registry()
+    assert registry.resolve("decade") == ResolvedUnit("calendar", 120.0)
+    assert registry.resolve("century") == ResolvedUnit("calendar", 1200.0)
+    assert registry.resolve("millennium") == ResolvedUnit("calendar", 12000.0)
+    assert registry.resolve("millennia") == ResolvedUnit("calendar", 12000.0)
+
+
+def test_default_registry_resolves_maya_long_count_units() -> None:
+    registry = load_default_unit_registry()
+    assert registry.resolve("kin") == ResolvedUnit("fixed", 86400.0)
+    assert registry.resolve("uinal") == ResolvedUnit("fixed", 20 * 86400.0)
+    assert registry.resolve("tun") == ResolvedUnit("fixed", 360 * 86400.0)
+    assert registry.resolve("katun") == ResolvedUnit("fixed", 7200 * 86400.0)
+    assert registry.resolve("baktun") == ResolvedUnit("fixed", 144000 * 86400.0)
+
+
+def test_temporal_expression_accepts_extended_units() -> None:
+    context = DateContext(now=datetime(2026, 9, 7, 12, 0, 0))
+    assert parse_temporal_expression("TODAY()-1decade", context, expected="date").isoformat() == "2016-09-07"
+    assert parse_temporal_expression("TODAY()-1baktun", context, expected="date").isoformat() == "1632-06-04"

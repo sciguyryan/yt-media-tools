@@ -260,3 +260,24 @@ def test_upload_date_then_release_timestamp_provides_chronological_subsort():
         DateContext(),
     )
     assert [item["id"] for item in apply_query(records, query)] == ["same-day-early", "same-day-late", "next-day"]
+
+
+def test_temporal_infinity_bounds_are_typed_and_exclude_nulls() -> None:
+    records = [
+        {"id": "dated", "upload_date": "20240101", "release_timestamp": 1704067200},
+        {"id": "missing", "upload_date": None, "release_timestamp": None},
+    ]
+    positive_date = resolved("WHERE upload_date < INFINITY()", records)
+    negative_date = resolved("WHERE upload_date > -INFINITY()", records)
+    bounded_date = resolved("WHERE upload_date BETWEEN -INFINITY() AND INFINITY()", records)
+    positive_timestamp = resolved("WHERE release_timestamp < INFINITY()", records)
+    assert [row["id"] for row in apply_query(records, positive_date)] == ["dated"]
+    assert [row["id"] for row in apply_query(records, negative_date)] == ["dated"]
+    assert [row["id"] for row in apply_query(records, bounded_date)] == ["dated"]
+    assert [row["id"] for row in apply_query(records, positive_timestamp)] == ["dated"]
+
+
+def test_temporal_infinity_is_rejected_for_non_temporal_fields() -> None:
+    records = [{"view_count": 10}]
+    with pytest.raises(QuerySyntaxError, match="valid only for date or datetime fields"):
+        resolved("WHERE view_count < INFINITY()", records)

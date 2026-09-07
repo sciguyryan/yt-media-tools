@@ -438,6 +438,8 @@ release_timestamp BETWEEN NOW()-1yr AND NOW()
 
 `TODAY()` and `NOW()` are captured once per query run. Date fields require date values, and timestamp fields require timestamp values, avoiding hidden midnight or timezone coercions.
 
+Temporal comparisons also support typed `INFINITY()` and `-INFINITY()` bounds. These are valid only for date and timestamp fields and preserve normal NULL semantics. The external unit registry now includes calendar-aware decades, centuries and millennia plus exact Maya Long Count units through `baktun`.
+
 ## Dynamic and nested metadata
 
 Top-level scalar yt-dlp JSON fields become queryable and selectable dynamically. Known fields receive stronger semantic types, and friendly aliases include:

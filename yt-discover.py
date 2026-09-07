@@ -64,7 +64,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.20.1"
+PROGRAM_VERSION = "0.21.0"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -1115,6 +1115,7 @@ def explain_user_query_json(
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
         cost_class, cost_reason = assess_cost(query, plan)
+
     return {
         "kind": "yt-discover-explain",
         "version": PROGRAM_VERSION,
