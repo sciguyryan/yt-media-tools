@@ -30,6 +30,7 @@ from yt_discover_tests.conformance.generate_dataset import (
 from yt_discover_tests.conformance.oracle import OracleQuery, serialise
 from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
+from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.output import write_records
 from yt_media_tools.query import apply_query, parse_query, resolve_query
 from yt_media_tools.schema import QuerySchema
@@ -81,11 +82,29 @@ def _engine_case_output(records: list[dict[str, object]], case: ConformanceCase)
         production_records.append(record)
     parsed = parse_query(case.query)
     resolved = resolve_query(parsed, QuerySchema(production_records), context)
+    resolved = optimise_query(resolved).query
     selected = apply_query(production_records, resolved)
     stream = io.StringIO()
     with redirect_stdout(stream):
         write_records(selected, resolved, case.output_format, None, explicit_select=bool(parsed.select))
     return stream.getvalue()
+
+
+def _engine_case_queries(records: list[dict[str, object]], case: ConformanceCase):
+    """Resolve one semantic case and return both original and optimised production queries."""
+    date_format = "dmy"
+    for index, arg in enumerate(case.cli_args):
+        if arg == "--date-format" and index + 1 < len(case.cli_args):
+            date_format = case.cli_args[index + 1]
+    context = DateContext(date_order=date_format, now=datetime.fromisoformat(GENERATED_AT))
+    production_records = []
+    for source_index, raw in enumerate(records, start=1):
+        record = normalise_record(dict(raw))
+        record["source_index"] = source_index
+        production_records.append(record)
+    parsed = parse_query(case.query)
+    resolved = resolve_query(parsed, QuerySchema(production_records), context)
+    return production_records, parsed, resolved, optimise_query(resolved).query
 
 
 def _assert_case(dataset: Any, case: ConformanceCase) -> None:
@@ -106,6 +125,37 @@ def _assert_case(dataset: Any, case: ConformanceCase) -> None:
         f"(generator v{dataset.generator_version}, seed {dataset.seed}, size {dataset.size}, "
         f"digest {dataset.digest})"
     )
+
+
+@pytest.mark.parametrize("profile", ("small", "normal"))
+def test_optimizer_preserves_all_routine_semantic_cases(profile: str) -> None:
+    """Every current semantic query must behave identically before and after optimisation."""
+    records = build_records(PROFILE_SIZES[profile])
+    for case in CASES:
+        if case.params or case.execution == "cli":
+            continue
+        production_records, parsed, original, optimised = _engine_case_queries(records, case)
+        assert apply_query(production_records, original) == apply_query(production_records, optimised), case.name
+
+        original_stream = io.StringIO()
+        with redirect_stdout(original_stream):
+            write_records(
+                apply_query(production_records, original),
+                original,
+                case.output_format,
+                None,
+                explicit_select=bool(parsed.select),
+            )
+        optimised_stream = io.StringIO()
+        with redirect_stdout(optimised_stream):
+            write_records(
+                apply_query(production_records, optimised),
+                optimised,
+                case.output_format,
+                None,
+                explicit_select=bool(parsed.select),
+            )
+        assert optimised_stream.getvalue() == original_stream.getvalue(), case.name
 
 
 def test_language_feature_manifest_is_fully_covered() -> None:

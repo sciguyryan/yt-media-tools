@@ -62,11 +62,48 @@ def test_machine_readable_explain_is_valid_json() -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["kind"] == "yt-discover-explain"
-    assert payload["version"] == "0.21.0"
+    assert payload["version"] == "0.22.0"
     assert payload["acquisition"]["strategy"] == "bounded-date"
     assert payload["limit_aware_termination"]["applicable"] is True
     assert payload["limit_aware_termination"]["implemented"] is True
     assert payload["limit_aware_termination"]["eligible"] is True
+
+
+def test_json_explain_reports_predicate_optimizer_rewrites() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain-format",
+        "json",
+        "--explain",
+        "SELECT id FROM @example WHERE view_count >= 10 AND view_count >= 20",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    optimiser = payload["predicate_optimiser"]
+    assert optimiser["status"] == "active"
+    assert optimiser["changed"] is True
+    assert optimiser["rewrites"] == [
+        {
+            "rule": "subsumed-and-predicate",
+            "before": "(view_count >= 10 AND view_count >= 20)",
+            "after": "view_count >= 20",
+        }
+    ]
+    assert optimiser["optimised_query"] == "SELECT id FROM @example WHERE view_count >= 20"
+
+
+def test_text_explain_reports_predicate_optimizer_rewrites() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain",
+        "SELECT id FROM @example WHERE view_count >= 10 AND view_count >= 20",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Predicate optimiser" in result.stdout
+    assert "[subsumed-and-predicate]" in result.stdout
+    assert "Optimised filter: view_count >= 20" in result.stdout
 
 
 def test_explain_analyze_offline_reports_actual_execution_without_rows(tmp_path: Path) -> None:

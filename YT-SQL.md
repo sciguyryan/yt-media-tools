@@ -63,6 +63,22 @@ WHERE upload_date >= TODAY()-1decade
 WHERE upload_date >= TODAY()-1baktun
 ```
 
+## Predicate optimiser
+
+yt-sql resolves a query's schema and typed literals before running a dedicated predicate optimiser. The optimiser is deliberately semantics-preserving: executing the resolved query before optimisation and executing the optimised query must produce identical predicate truth values, selected rows and output. This includes SQL-like three-valued NULL behaviour, so an expression that evaluates to UNKNOWN for a NULL value must not be rewritten into one that evaluates to FALSE merely because both would currently be rejected by `WHERE`.
+
+The initial optimiser performs conservative reductions that make later language growth easier to reason about:
+
+- normalise `NOT` around comparisons and negatable predicates, including double negation;
+- remove duplicate `AND` and `OR` terms while ignoring non-semantic source-position metadata;
+- collapse `BETWEEN x AND x` to equality and its negated form to inequality;
+- remove subsumed lower or upper bounds on the same resolved field;
+- remove a redundant bound when a same-field equality already implies it, or remove the equality from an `OR` when the surviving bound already includes it.
+
+Optimisation runs to a deterministic fixed point and records every rewrite. `--explain` reports the applied rules and resulting filter when all referenced fields can be resolved before acquisition. JSON explain output exposes the same information under `predicate_optimiser`; dynamic metadata fields defer this part of explanation until post-acquisition type resolution. Verbose execution also reports applied rewrites.
+
+The optimiser intentionally does not fold contradictory field predicates to a Boolean constant yet. For example, `field = 5 AND field > 10` still evaluates to UNKNOWN rather than FALSE when `field` is NULL, and that distinction is part of yt-sql semantics even though both values are rejected by a `WHERE` filter. Future optimiser passes must preserve the same invariant.
+
 ## Intentional dialect behaviour
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, relative calendar expressions, and source forms such as `@handle`.
@@ -85,4 +101,4 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Planned analytical expansion
 
-Future yt-sql language work is expected to evaluate and, where appropriate, add `SELECT *`, general scalar expressions, arithmetic, `CASE`, `LIKE`/`ILIKE`, aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, expression ordering, explicit NULL ordering, PostgreSQL-inspired `DISTINCT ON`, and a curated set of additional scalar/date functions. These are planned capabilities, not syntax accepted by the current parser.
+With the generic predicate optimiser now established as a semantics-preserving foundation, the next yt-sql language pass is expected to evaluate and, where appropriate, add `SELECT *`, general scalar expressions, arithmetic, `CASE`, `LIKE`/`ILIKE`, aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, expression ordering, explicit NULL ordering, PostgreSQL-inspired `DISTINCT ON`, and a curated set of additional scalar/date functions. These are planned capabilities, not syntax accepted by the current parser.

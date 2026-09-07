@@ -23,6 +23,7 @@ from yt_media_tools.planner import (
     plan_limit_termination,
     required_query_fields,
 )
+from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.output import append_unique_ids, write_records
 from yt_media_tools.report import RunReport, write_report
 from yt_media_tools.tools import ToolRegistry, ToolStatus, check_tools, format_tool_check
@@ -64,7 +65,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.21.0"
+PROGRAM_VERSION = "0.22.0"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -914,6 +915,8 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         else:
             raise
 
+    optimisation = optimise_query(resolved) if resolved is not None else None
+
     lines.extend(["", "Projection"])
     if resolved is not None:
         for term in resolved.select:
@@ -940,6 +943,17 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         lines.append(f"  {explain_expression(resolved.predicate)}")
     else:
         lines.append(f"  {format_query(Query(predicate=query.predicate))}")
+
+    lines.extend(["", "Predicate optimiser"])
+    if optimisation is None:
+        lines.append("  Deferred until dynamic metadata fields can be resolved.")
+    elif optimisation.changed:
+        lines.append(f"  Applied {len(optimisation.decisions)} semantics-preserving rewrite(s):")
+        for decision in optimisation.decisions:
+            lines.append(f"  [{decision.rule}] {decision.before} -> {decision.after}")
+        lines.append(f"  Optimised filter: {explain_expression(optimisation.query.predicate)}")
+    else:
+        lines.append("  No semantics-preserving predicate rewrite was applicable.")
 
     lines.extend(["", "Ordering"])
     if resolved is not None and resolved.order_by:
@@ -1116,11 +1130,33 @@ def explain_user_query_json(
     else:
         cost_class, cost_reason = assess_cost(query, plan)
 
+    try:
+        resolved_for_optimiser = resolve_query(query, QuerySchema(()), dates)
+        optimiser_result = optimise_query(resolved_for_optimiser)
+        optimiser_payload: dict[str, object] = {
+            "status": "active",
+            "changed": optimiser_result.changed,
+            "rewrites": [
+                {"rule": item.rule, "before": item.before, "after": item.after} for item in optimiser_result.decisions
+            ],
+            "optimised_query": format_query(optimiser_result.query),
+        }
+    except QuerySyntaxError as exc:
+        if not exc.message.startswith("Unknown field "):
+            raise
+        optimiser_payload = {
+            "status": "deferred",
+            "changed": None,
+            "rewrites": [],
+            "reason": "dynamic metadata fields require post-acquisition type resolution",
+        }
+
     return {
         "kind": "yt-discover-explain",
         "version": PROGRAM_VERSION,
         "query": format_query(query),
         "row_shaping": {"distinct": query.distinct, "offset": query.offset, "limit": query.limit},
+        "predicate_optimiser": optimiser_payload,
         "source": {
             "type": source.kind,
             "input": query.from_source,
@@ -2192,6 +2228,13 @@ def main(argv: list[str] | None = None) -> int:
         )
     except QuerySyntaxError as exc:
         parser.error(exc.format())
+
+    optimisation = optimise_query(resolved_query)
+    resolved_query = optimisation.query
+    if optimisation.changed:
+        _verbose(args.verbose, f"Optimiser applied {len(optimisation.decisions)} semantics-preserving rewrite(s).")
+        for decision in optimisation.decisions:
+            _verbose(args.verbose, f"Optimiser [{decision.rule}]: {decision.before} -> {decision.after}")
 
     archive_excluded = 0
     if args.exclude_archive:

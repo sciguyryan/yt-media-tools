@@ -1,5 +1,13 @@
 # Changelog
 
+## Discover 0.22.0 - Optimisation Origins
+
+- Add a dedicated semantics-preserving yt-sql predicate optimiser that runs after typed semantic resolution.
+- Normalise negation, remove duplicate Boolean terms, collapse degenerate `BETWEEN` expressions and eliminate subsumed same-field comparison bounds.
+- Preserve SQL-like three-valued NULL behaviour exactly across optimiser rewrites rather than replacing UNKNOWN-producing contradictions with Boolean constants.
+- Expose deterministic optimiser rewrite decisions through verbose execution and `--explain`, including machine-readable JSON explain output.
+- Add differential optimiser tests that execute resolved queries before and after optimisation and require identical truth values, selected rows and serialised output across the routine conformance corpus.
+
 ## Discover 0.21.0 - Temporal Horizons
 
 - Add typed `INFINITY()` and `-INFINITY()` bounds for date and timestamp comparisons while preserving SQL-like NULL semantics.

@@ -1,0 +1,310 @@
+"""Semantics-preserving optimisation for resolved yt-sql queries."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+from typing import Any
+
+from .query import Between, Binary, InList, IsNull, Query, TextPredicate, Unary, format_expression
+
+MAX_OPTIMISER_PASSES = 32
+_INVERTED_COMPARISON = {
+    "=": "!=",
+    "!=": "=",
+    "<": ">=",
+    "<=": ">",
+    ">": "<=",
+    ">=": "<",
+}
+_LOWER_BOUND_OPERATORS = {">", ">="}
+_UPPER_BOUND_OPERATORS = {"<", "<="}
+
+
+@dataclass(frozen=True)
+class OptimisationDecision:
+    """One deterministic, semantics-preserving optimiser rewrite."""
+
+    rule: str
+    before: str
+    after: str
+
+
+@dataclass(frozen=True)
+class OptimisationResult:
+    """The optimised query and an ordered audit trail of rewrites."""
+
+    query: Query
+    decisions: tuple[OptimisationDecision, ...]
+
+    @property
+    def changed(self) -> bool:
+        return bool(self.decisions)
+
+
+def optimise_query(query: Query) -> OptimisationResult:
+    """Optimise a resolved query without changing its observable semantics.
+
+    The optimiser deliberately works after semantic resolution so comparisons operate
+    on typed literals rather than parser text. Rewrites must preserve yt-sql's SQL-like
+    three-valued logic, including UNKNOWN results caused by NULL values.
+    """
+
+    predicate = query.predicate
+    decisions: list[OptimisationDecision] = []
+    for _ in range(MAX_OPTIMISER_PASSES):
+        optimised, pass_decisions = _optimise_node(predicate)
+        decisions.extend(pass_decisions)
+        if optimised == predicate:
+            break
+        predicate = optimised
+    else:
+        raise RuntimeError("yt-sql optimiser did not converge")
+
+    return OptimisationResult(replace(query, predicate=predicate), tuple(decisions))
+
+
+def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:
+    decisions: list[OptimisationDecision] = []
+    if node is None:
+        return None, decisions
+
+    if isinstance(node, Unary) and node.operator == "NOT":
+        operand, child_decisions = _optimise_node(node.operand)
+        decisions.extend(child_decisions)
+        rewritten = _normalise_not(operand)
+        if rewritten != Unary("NOT", operand):
+            decisions.append(_decision("normalise-not", Unary("NOT", operand), rewritten))
+            return rewritten, decisions
+        return Unary("NOT", operand), decisions
+
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        left, left_decisions = _optimise_node(node.left)
+        right, right_decisions = _optimise_node(node.right)
+        decisions.extend(left_decisions)
+        decisions.extend(right_decisions)
+        operator = node.operator
+        terms = _flatten(operator, Binary(operator, left, right))
+        terms, dedupe_decisions = _deduplicate_terms(operator, terms)
+        decisions.extend(dedupe_decisions)
+        terms, bound_decisions = _simplify_bounds(operator, terms)
+        decisions.extend(bound_decisions)
+        rebuilt = _rebuild(operator, terms)
+        return rebuilt, decisions
+
+    if isinstance(node, Between) and node.lower.value == node.upper.value:
+        rewritten = Binary("!=" if node.negated else "=", node.field, node.lower)
+        decisions.append(_decision("collapse-degenerate-between", node, rewritten))
+        return rewritten, decisions
+
+    return node, decisions
+
+
+def _normalise_not(node: Any) -> Any:
+    if isinstance(node, Unary) and node.operator == "NOT":
+        return node.operand
+    if isinstance(node, Binary) and node.operator in _INVERTED_COMPARISON:
+        return Binary(_INVERTED_COMPARISON[node.operator], node.left, node.right)
+    if isinstance(node, Between):
+        return replace(node, negated=not node.negated)
+    if isinstance(node, InList):
+        return replace(node, negated=not node.negated)
+    if isinstance(node, IsNull):
+        return replace(node, negated=not node.negated)
+    if isinstance(node, TextPredicate):
+        return replace(node, negated=not node.negated)
+    return Unary("NOT", node)
+
+
+def _flatten(operator: str, node: Any) -> list[Any]:
+    if isinstance(node, Binary) and node.operator == operator:
+        return _flatten(operator, node.left) + _flatten(operator, node.right)
+    return [node]
+
+
+def _rebuild(operator: str, terms: list[Any]) -> Any:
+    if not terms:
+        raise AssertionError("Boolean optimiser cannot rebuild an empty term list")
+    node = terms[0]
+    for term in terms[1:]:
+        node = Binary(operator, node, term)
+    return node
+
+
+def _deduplicate_terms(operator: str, terms: list[Any]) -> tuple[list[Any], list[OptimisationDecision]]:
+    unique: list[Any] = []
+    decisions: list[OptimisationDecision] = []
+    for term in terms:
+        if any(_semantic_key(term) == _semantic_key(existing) for existing in unique):
+            decisions.append(_decision(f"deduplicate-{operator.casefold()}", Binary(operator, term, term), term))
+            continue
+        unique.append(term)
+    return unique, decisions
+
+
+def _simplify_bounds(operator: str, terms: list[Any]) -> tuple[list[Any], list[OptimisationDecision]]:
+    terms = list(terms)
+    decisions: list[OptimisationDecision] = []
+    changed = True
+    while changed:
+        changed = False
+        for left_index in range(len(terms)):
+            for right_index in range(left_index + 1, len(terms)):
+                dominant = _dominant_comparison(operator, terms[left_index], terms[right_index])
+                if dominant is None:
+                    continue
+                keep_index, drop_index = dominant
+                before = Binary(operator, terms[left_index], terms[right_index])
+                kept = terms[left_index] if keep_index == 0 else terms[right_index]
+                decisions.append(_decision(f"subsumed-{operator.casefold()}-predicate", before, kept))
+                actual_drop = left_index if drop_index == 0 else right_index
+                del terms[actual_drop]
+                changed = True
+                break
+            if changed:
+                break
+    return terms, decisions
+
+
+def _dominant_comparison(operator: str, left: Any, right: Any) -> tuple[int, int] | None:
+    if not isinstance(left, Binary) or not isinstance(right, Binary):
+        return None
+    if left.operator in {"AND", "OR"} or right.operator in {"AND", "OR"}:
+        return None
+    if not _same_field(left.left, right.left):
+        return None
+
+    left_value = getattr(left.right, "value", None)
+    right_value = getattr(right.right, "value", None)
+    if left_value is None or right_value is None:
+        return None
+
+    if left.operator in _LOWER_BOUND_OPERATORS and right.operator in _LOWER_BOUND_OPERATORS:
+        comparison = _safe_compare(left_value, right_value)
+        if comparison is None:
+            return None
+        if operator == "AND":
+            return _select_lower_bound(left, right, comparison, stronger=True)
+        return _select_lower_bound(left, right, comparison, stronger=False)
+
+    if left.operator in _UPPER_BOUND_OPERATORS and right.operator in _UPPER_BOUND_OPERATORS:
+        comparison = _safe_compare(left_value, right_value)
+        if comparison is None:
+            return None
+        if operator == "AND":
+            return _select_upper_bound(left, right, comparison, stronger=True)
+        return _select_upper_bound(left, right, comparison, stronger=False)
+
+    if left.operator == "=" or right.operator == "=":
+        equality_index = 0 if left.operator == "=" else 1
+        equality = left if equality_index == 0 else right
+        bound = right if equality_index == 0 else left
+        if bound.operator not in _LOWER_BOUND_OPERATORS | _UPPER_BOUND_OPERATORS:
+            return None
+        if not _comparison_is_true(equality.right.value, bound.operator, bound.right.value):
+            return None
+        if operator == "AND":
+            return equality_index, 1 - equality_index
+        return 1 - equality_index, equality_index
+
+    return None
+
+
+def _semantic_key(node: Any) -> Any:
+    """Return an AST identity that excludes source positions and display-only metadata."""
+    if isinstance(node, Unary):
+        return ("unary", node.operator, _semantic_key(node.operand))
+    if isinstance(node, Binary):
+        return ("binary", node.operator, _semantic_key(node.left), _semantic_key(node.right))
+    if isinstance(node, Between):
+        return (
+            "between",
+            _semantic_key(node.field),
+            _semantic_key(node.lower),
+            _semantic_key(node.upper),
+            node.negated,
+        )
+    if isinstance(node, InList):
+        return ("in", _semantic_key(node.field), tuple(_semantic_key(item) for item in node.values), node.negated)
+    if isinstance(node, IsNull):
+        return ("is-null", _semantic_key(node.field), node.negated)
+    if isinstance(node, TextPredicate):
+        return ("text", node.operator, _semantic_key(node.field), _semantic_key(node.value), node.negated)
+    if hasattr(node, "name") and hasattr(node, "kind"):
+        return ("field", node.name.casefold(), node.kind)
+    if hasattr(node, "value") and hasattr(node, "quoted"):
+        return ("literal", _hashable_value(node.value), node.quoted)
+    return node
+
+
+def _hashable_value(value: Any) -> Any:
+    try:
+        hash(value)
+    except TypeError:
+        return repr(value)
+    return value
+
+
+def _same_field(left: Any, right: Any) -> bool:
+    """Compare resolved fields without treating source positions as semantic."""
+    return (
+        hasattr(left, "name")
+        and hasattr(right, "name")
+        and left.name.casefold() == right.name.casefold()
+        and getattr(left, "kind", None) == getattr(right, "kind", None)
+    )
+
+
+def _safe_compare(left: Any, right: Any) -> int | None:
+    try:
+        if left < right:
+            return -1
+        if left > right:
+            return 1
+        if left == right:
+            return 0
+    except TypeError:
+        return None
+    return None
+
+
+def _select_lower_bound(left: Binary, right: Binary, comparison: int, *, stronger: bool) -> tuple[int, int]:
+    if comparison == 0:
+        if left.operator == right.operator:
+            return 0, 1
+        strict_index = 0 if left.operator == ">" else 1
+        keep = strict_index if stronger else 1 - strict_index
+        return keep, 1 - keep
+    higher_index = 0 if comparison > 0 else 1
+    keep = higher_index if stronger else 1 - higher_index
+    return keep, 1 - keep
+
+
+def _select_upper_bound(left: Binary, right: Binary, comparison: int, *, stronger: bool) -> tuple[int, int]:
+    if comparison == 0:
+        if left.operator == right.operator:
+            return 0, 1
+        strict_index = 0 if left.operator == "<" else 1
+        keep = strict_index if stronger else 1 - strict_index
+        return keep, 1 - keep
+    lower_index = 0 if comparison < 0 else 1
+    keep = lower_index if stronger else 1 - lower_index
+    return keep, 1 - keep
+
+
+def _comparison_is_true(left: Any, operator: str, right: Any) -> bool:
+    try:
+        if operator == ">":
+            return left > right
+        if operator == ">=":
+            return left >= right
+        if operator == "<":
+            return left < right
+        if operator == "<=":
+            return left <= right
+    except TypeError:
+        return False
+    return False
+
+
+def _decision(rule: str, before: Any, after: Any) -> OptimisationDecision:
+    return OptimisationDecision(rule, format_expression(before), format_expression(after))

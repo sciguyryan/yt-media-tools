@@ -4,8 +4,8 @@ This file records accepted future work that is not part of the current released 
 
 ## yt-sql language and optimiser
 
-- Design and implement a generic yt-sql syntax optimiser over the resolved query representation rather than accumulating feature-specific shortcuts. Candidate passes include constant folding, Boolean and predicate simplification, redundant-bound elimination, temporal-bound inference, field and capability analysis, source-boundary planning and metadata-acquisition planning.
-- Preserve yt-sql semantics exactly across optimiser rewrites, including SQL-like three-valued NULL logic, typed temporal infinity values, deterministic ordering and parameter semantics. Validate optimisation differentially against unoptimised execution and expose material decisions through explain and diagnostic output.
+- Extend the generic optimiser as the expression language grows. Keep every rewrite semantics-preserving under yt-sql's SQL-like three-valued NULL logic, typed temporal infinity values, deterministic ordering and parameter semantics. Differential tests must execute both the unoptimised and optimised resolved queries against the same deterministic data and require identical results.
+- Add constant folding, Boolean and predicate simplification, redundant-bound elimination, temporal-bound inference, field and capability analysis, source-boundary planning and metadata-acquisition planning where each transformation can be justified conservatively. Expose material optimisation decisions through explain and diagnostic output.
 - Expand scalar expressions and projection syntax, including `SELECT *`, arithmetic, expression-based `ORDER BY`, `CASE`, `LIKE`/`NOT LIKE`, `ILIKE`/`NOT ILIKE`, `GREATEST`, `LEAST`, `NULLIF`, and useful date extraction functions where they fit yt-sql cleanly.
 - Add aggregate query support in a coherent tranche, including `COUNT`, `MIN`, `MAX`, `AVG`, `SUM`, `GROUP BY`, `HAVING` and aggregate `FILTER`, with comprehensive deterministic conformance and negative coverage.
 - Consider `NULLS FIRST`/`NULLS LAST` and `DISTINCT ON` after the general expression and aggregate foundations are stable.

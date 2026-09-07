@@ -108,6 +108,14 @@ yt-discover.py --examples
 
 Both include extensive practical examples covering sources, filtering, dates, projection, nested metadata, output formats, diagnostics, verbose operation, and piping.
 
+## yt-sql predicate optimiser
+
+Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction and conservative same-field comparison-bound subsumption.
+
+The optimiser is tested differentially: the unoptimised and optimised resolved queries are executed against the same deterministic records and must produce identical predicate truth values, selected rows and serialised output. The routine conformance matrix also compares both forms across the complete current semantic case set before the optimised path is checked against the independent oracle.
+
+Use `--explain` to inspect applicable rewrites. JSON explain output records them under `predicate_optimiser`, and `-v` reports rewrites applied during real execution. Optimisation is deliberately conservative where a superficially simpler rewrite could alter NULL semantics.
+
 ## LIMIT-aware execution optimisation
 
 yt-discover implements proof-based LIMIT-aware acquisition termination. When a query has `LIMIT`, preserves source order by omitting `ORDER BY`, and uses only statically known fields, yt-discover acquires detailed metadata in source-order batches and stops once the requested number of authoritative matches has been observed. Later source rows cannot displace those matches from the first N results, so the optimisation is exact rather than heuristic.
