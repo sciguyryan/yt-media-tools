@@ -49,9 +49,11 @@ All supplied filters are combined. For example:
 
 This is becoming cumbersome for complicated searches, but each option can still be useful on its own.
 
-## Experimental filter expressions
+## YT-SQL expressions
 
-As an alternative to stacking many individual filter options, Discover can evaluate a small experimental expression supplied with `--where`.
+The experimental filter expression now has a name: YT-SQL.
+
+YT-SQL is still only a filter language at this stage. It does not yet provide complete query statements, projections, ordering clauses or limits.
 
 For example:
 
@@ -59,18 +61,27 @@ For example:
 ./yt-discover.py CHANNEL_URL --where 'title contains "interview" and duration >= 900'
 ```
 
-The first expression syntax supports:
+Boolean expressions can now use `and`, `or`, `not` and parentheses:
+
+```bash
+./yt-discover.py CHANNEL_URL --where '(title contains "interview" or title contains "discussion") and not live = true'
+```
+
+The current language supports:
 
 - `title contains VALUE`
 - `uploader contains VALUE`
 - `duration =`, `!=`, `<`, `<=`, `>` and `>=`
 - `date =`, `!=`, `<`, `<=`, `>` and `>=`
 - `live = true` and `live = false`
-- `and` between terms
+- `and`
+- `or`
+- `not`
+- parentheses
 
-The syntax is intentionally small. There is no `or`, `not`, grouping or general query statement yet. Quoted values are accepted, but the parser is simple and does not support escaped quotes or the word `and` inside a quoted value.
+Existing command-line filters still work and are combined with YT-SQL expressions.
 
-Existing command-line filters still work and are combined with the expression.
+This first named YT-SQL parser is intentionally small. `and` and `or` currently have the same precedence and are evaluated from left to right, so parentheses should be used when mixing them.
 
 ## Metadata limitations
 

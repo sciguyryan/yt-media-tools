@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -170,56 +170,190 @@ def compare_number(actual: int | None, operator: str, expected: int) -> bool:
     raise ValueError(f"unsupported numeric operator: {operator}")
 
 
-def match_expression_term(entry: dict[str, object], term: str) -> bool:
-    term = term.strip()
+def tokenise_expression(expression: str) -> list[str]:
+    tokens: list[str] = []
+    token = ""
+    quote: str | None = None
+    index = 0
 
-    contains_match = re.fullmatch(
-        r"(title|uploader)\s+contains\s+(.+)",
-        term,
-        flags=re.IGNORECASE,
-    )
-    if contains_match:
-        field = contains_match.group(1).lower()
-        expected = unquote(contains_match.group(2)).lower()
+    while index < len(expression):
+        char = expression[index]
+
+        if quote is not None:
+            token += char
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+
+        if char in {"'", '"'}:
+            token += char
+            quote = char
+            index += 1
+            continue
+
+        if char.isspace():
+            if token:
+                tokens.append(token)
+                token = ""
+            index += 1
+            continue
+
+        if char in "()":
+            if token:
+                tokens.append(token)
+                token = ""
+            tokens.append(char)
+            index += 1
+            continue
+
+        if char in "<>!=":
+            if token:
+                tokens.append(token)
+                token = ""
+            operator = char
+            if index + 1 < len(expression) and expression[index + 1] == "=":
+                operator += "="
+                index += 1
+            tokens.append(operator)
+            index += 1
+            continue
+
+        token += char
+        index += 1
+
+    if quote is not None:
+        raise ValueError("unterminated quoted value")
+    if token:
+        tokens.append(token)
+
+    return tokens
+
+
+class ExpressionParser:
+    def __init__(self, tokens: list[str]):
+        self.tokens = tokens
+        self.index = 0
+
+    def current(self) -> str | None:
+        if self.index >= len(self.tokens):
+            return None
+        return self.tokens[self.index]
+
+    def take(self) -> str:
+        token = self.current()
+        if token is None:
+            raise ValueError("unexpected end of expression")
+        self.index += 1
+        return token
+
+    def parse(self):
+        expression = self.parse_boolean_chain()
+        if self.current() is not None:
+            raise ValueError(f"unexpected token: {self.current()}")
+        return expression
+
+    def parse_boolean_chain(self):
+        # Early YT-SQL keeps AND and OR at the same precedence.
+        node = self.parse_unary()
+        while True:
+            token = self.current()
+            if token is None or token.lower() not in {"and", "or"}:
+                return node
+            operator = self.take().lower()
+            right = self.parse_unary()
+            node = (operator, node, right)
+
+    def parse_unary(self):
+        token = self.current()
+        if token is not None and token.lower() == "not":
+            self.take()
+            return ("not", self.parse_unary())
+
+        if token == "(":
+            self.take()
+            node = self.parse_boolean_chain()
+            if self.take() != ")":
+                raise ValueError("expected closing parenthesis")
+            return node
+
+        return self.parse_term()
+
+    def parse_term(self):
+        field = self.take().lower()
+
+        if field in {"title", "uploader"}:
+            operator = self.take().lower()
+            if operator != "contains":
+                raise ValueError(f"unsupported operator for {field}: {operator}")
+            value = self.take()
+            return ("contains", field, unquote(value))
+
+        if field == "duration":
+            operator = self.take()
+            if operator not in {"=", "!=", "<", "<=", ">", ">="}:
+                raise ValueError(f"unsupported duration operator: {operator}")
+            value = self.take()
+            if not value.isdigit():
+                raise ValueError("duration comparison requires a whole number")
+            return ("duration", operator, int(value))
+
+        if field == "date":
+            operator = self.take()
+            if operator not in {"=", "!=", "<", "<=", ">", ">="}:
+                raise ValueError(f"unsupported date operator: {operator}")
+            value = self.take()
+            try:
+                parsed = datetime.strptime(value, "%Y-%m-%d")
+            except ValueError as exc:
+                raise ValueError("date comparison requires YYYY-MM-DD") from exc
+            return ("date", operator, parsed)
+
+        if field == "live":
+            if self.take() != "=":
+                raise ValueError("live only supports =")
+            value = self.take().lower()
+            if value not in {"true", "false"}:
+                raise ValueError("live comparison requires true or false")
+            return ("live", value == "true")
+
+        raise ValueError(f"unknown field: {field}")
+
+
+def parse_expression(expression: str):
+    tokens = tokenise_expression(expression)
+    if not tokens:
+        raise ValueError("expression cannot be empty")
+    return ExpressionParser(tokens).parse()
+
+
+def evaluate_expression(entry: dict[str, object], node) -> bool:
+    kind = node[0]
+
+    if kind == "and":
+        return evaluate_expression(entry, node[1]) and evaluate_expression(entry, node[2])
+    if kind == "or":
+        return evaluate_expression(entry, node[1]) or evaluate_expression(entry, node[2])
+    if kind == "not":
+        return not evaluate_expression(entry, node[1])
+
+    if kind == "contains":
+        _, field, expected = node
         if field == "title":
             value = entry.get("title")
         else:
             value = entry.get("uploader") or entry.get("channel")
-        return isinstance(value, str) and expected in value.lower()
+        return isinstance(value, str) and expected.lower() in value.lower()
 
-    duration_match = re.fullmatch(
-        r"duration\s*(<=|>=|!=|=|<|>)\s*(\d+)",
-        term,
-        flags=re.IGNORECASE,
-    )
-    if duration_match:
-        return compare_number(
-            duration(entry),
-            duration_match.group(1),
-            int(duration_match.group(2)),
-        )
+    if kind == "duration":
+        _, operator, expected = node
+        return compare_number(duration(entry), operator, expected)
 
-    live_match = re.fullmatch(
-        r"live\s*=\s*(true|false)",
-        term,
-        flags=re.IGNORECASE,
-    )
-    if live_match:
-        actual = is_live(entry)
-        expected = live_match.group(1).lower() == "true"
-        return actual is not None and actual == expected
-
-    date_match = re.fullmatch(
-        r"date\s*(<=|>=|!=|=|<|>)\s*(\d{4}-\d{2}-\d{2})",
-        term,
-        flags=re.IGNORECASE,
-    )
-    if date_match:
+    if kind == "date":
+        _, operator, expected = node
         actual = upload_date(entry)
         if actual is None:
             return False
-        expected = datetime.strptime(date_match.group(2), "%Y-%m-%d")
-        operator = date_match.group(1)
         if operator == "=":
             return actual == expected
         if operator == "!=":
@@ -233,12 +367,12 @@ def match_expression_term(entry: dict[str, object], term: str) -> bool:
         if operator == "<=":
             return actual <= expected
 
-    raise ValueError(f"unsupported filter term: {term}")
+    if kind == "live":
+        actual = is_live(entry)
+        return actual is not None and actual == node[1]
 
+    raise ValueError(f"unknown expression node: {kind}")
 
-def matches_expression(entry: dict[str, object], expression: str) -> bool:
-    terms = re.split(r"\s+and\s+", expression, flags=re.IGNORECASE)
-    return all(match_expression_term(entry, term) for term in terms)
 
 
 def matches(
@@ -247,8 +381,9 @@ def matches(
     after: datetime | None,
     before: datetime | None,
     title_pattern: re.Pattern[str] | None,
+    where_expression,
 ) -> bool:
-    if args.where and not matches_expression(entry, args.where):
+    if where_expression is not None and not evaluate_expression(entry, where_expression):
         return False
 
     title = entry.get("title")
@@ -348,20 +483,22 @@ def main() -> int:
         return 2
 
     try:
+        where_expression = parse_expression(args.where) if args.where else None
+    except ValueError as exc:
+        print(f"invalid YT-SQL expression: {exc}", file=sys.stderr)
+        return 2
+
+    try:
         entries = enumerate_source(args.source)
     except (RuntimeError, json.JSONDecodeError) as exc:
         print(f"could not enumerate source: {exc}", file=sys.stderr)
         return 1
 
-    try:
-        matches_found = [
-            entry
-            for entry in entries
-            if matches(entry, args, after, before, title_pattern)
-        ]
-    except ValueError as exc:
-        print(f"invalid filter expression: {exc}", file=sys.stderr)
-        return 2
+    matches_found = [
+        entry
+        for entry in entries
+        if matches(entry, args, after, before, title_pattern, where_expression)
+    ]
 
     if args.sort != "source":
         matches_found.sort(key=lambda entry: sort_key(entry, args.sort))
