@@ -1,1 +1,1 @@
-"""Automated tests for the downloader command-line tool."""
+"""Tests for yt-download."""

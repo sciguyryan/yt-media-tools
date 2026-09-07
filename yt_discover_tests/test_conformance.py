@@ -81,19 +81,41 @@ def test_profile_sizes_are_ordered_and_centrally_defined() -> None:
 
 
 @pytest.mark.parametrize("profile", ("small", "normal"))
-def test_every_named_profile_has_exact_requested_cardinality(profile: str) -> None:
+def test_routine_profiles_have_exact_requested_cardinality(profile: str) -> None:
     records = build_records(PROFILE_SIZES[profile])
     assert len(records) == PROFILE_SIZES[profile]
     assert len({str(record["id"]) for record in records}) == PROFILE_SIZES[profile]
 
 
-def test_enabled_profiles_are_exact_prefixes() -> None:
-    # Keep routine conformance bounded to the normal profile. Larger profiles remain
-    # available for explicit stress and scalability runs outside the default suite.
+@pytest.mark.scale
+def test_large_profile_has_exact_requested_cardinality() -> None:
+    records = build_records(PROFILE_SIZES["large"])
+    assert len(records) == PROFILE_SIZES["large"]
+    assert len({str(record["id"]) for record in records}) == PROFILE_SIZES["large"]
+
+
+@pytest.mark.stress
+def test_huge_profile_has_exact_requested_cardinality() -> None:
+    records = build_records(PROFILE_SIZES["huge"])
+    assert len(records) == PROFILE_SIZES["huge"]
+    assert len({str(record["id"]) for record in records}) == PROFILE_SIZES["huge"]
+
+
+def test_routine_profiles_are_exact_prefixes() -> None:
     normal = build_records(PROFILE_SIZES["normal"])
-    for profile in ("small", "normal"):
-        size = PROFILE_SIZES[profile]
-        assert build_records(size) == normal[:size], profile
+    assert build_records(PROFILE_SIZES["small"]) == normal[: PROFILE_SIZES["small"]]
+
+
+@pytest.mark.scale
+def test_large_profile_extends_normal_as_exact_prefix() -> None:
+    large = build_records(PROFILE_SIZES["large"])
+    assert build_records(PROFILE_SIZES["normal"]) == large[: PROFILE_SIZES["normal"]]
+
+
+@pytest.mark.stress
+def test_huge_profile_extends_large_as_exact_prefix() -> None:
+    huge = build_records(PROFILE_SIZES["huge"])
+    assert build_records(PROFILE_SIZES["large"]) == huge[: PROFILE_SIZES["large"]]
 
 
 def test_generator_is_deterministic_for_version_seed_and_size() -> None:
@@ -135,7 +157,7 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
     assert any(row["fixture_nullable"] is None for row in rows)
 
 
-@pytest.mark.stress
+@pytest.mark.scale
 def test_large_generated_population_preserves_controlled_distributions() -> None:
     rows = build_records(PROFILE_SIZES["large"])
     assert sum(row["duration"] is None for row in rows) > 50
@@ -260,7 +282,7 @@ def test_normal_profile_matches_independent_oracle(conformance_normal: Any, case
     _assert_case(conformance_normal, case)
 
 
-@pytest.mark.stress
+@pytest.mark.scale
 def test_large_profile_multikey_ordering_matches_oracle(conformance_large: Any) -> None:
     case = next(case for case in CASES if case.name == "chronological_same_day_subsort")
     _assert_case(conformance_large, case)

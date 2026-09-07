@@ -64,7 +64,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.18.0"
+PROGRAM_VERSION = "0.18.1"
 DEFAULT_ARCHIVE_FILE = Path("/mnt/storage/Storage/Scripts/archive.txt")
 FRONTIER_OVERLAP_CONFIRMATIONS = 5
 

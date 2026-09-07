@@ -1,48 +1,67 @@
-# YouTube Media Tools
+# yt-media-tools
 
-This repository contains two related command-line tools:
+`yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
-- `yt-discover.py` discovers and queries YouTube items using filters or YT-SQL.
-- `yt-download.py` downloads direct targets or persistent file-backed queues through yt-dlp.
+- `yt-discover.py` 0.18.1 discovers, caches, queries and reports media metadata using the yt-sql query language.
+- `yt-download.py` 1.5.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
 
-Shared Discover implementation lives in `yt_media_tools/`. Downloader profiles live in `profiles/`.
+The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
+
+```bash
+./yt-discover.py   "SELECT id FROM @SomeChannel WHERE upload_date >= TODAY()-6mo ORDER BY upload_date ASC" | ./yt-download.py -
+```
+
+## Repository layout
+
+```text
+yt-discover.py
+yt-download.py
+yt_media_tools/        Shared/internal Python package
+profiles/              Downloader output profiles
+yt_discover_tests/     Discover test suite
+yt_downloader_tests/   Downloader test suite
+DISCOVER-README.md     Discover documentation
+DOWNLOADER-README.md   Downloader documentation
+YT-SQL.md              yt-sql language reference
+pytest.ini             Combined test discovery configuration
+```
+
+The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained.
 
 ## Requirements
 
-- Python 3.11 or later
-- yt-dlp
-- Node.js when the YouTube.js backend is used
-- Ruff for repository linting and formatting checks
-- pytest for the automated test suite
+Both tools require Python 3. `yt-dlp` is required for live acquisition or downloading. Discover additionally uses Node.js and YouTube.js for acquisition paths that require the YouTube.js adapter.
 
-## Discover
+See `DISCOVER-README.md` and `DOWNLOADER-README.md` for tool-specific requirements and usage.
 
-Run `python yt-discover.py --help` for the complete command-line interface. See `DISCOVER-README.md` for Discover usage and `YT-SQL.md` for the query language.
+## Testing
 
-## Downloader
-
-Run `python yt-download.py --help` for the complete interface and `python yt-download.py --examples` for practical examples. See `DOWNLOADER-README.md` for Downloader usage.
-
-Profiles control only output location and output template. With `--remove-completed-ids`, file-backed queues are reconciled against the archive before execution and updated per completed download through yt-dlp's `after_move` hook.
-
-## Profiles
-
-Profiles use the `@profile` format and support only `path` and `output`.
-
-```text
-@profile
-
-path=/mnt/storage/Downloads/YouTube/
-output=%(title)s [%(id)s] [%(uploader)s].%(ext)s
-```
-
-## Development
+Run the routine suites from the repository root:
 
 ```bash
-python -m pytest -q
-python -m pytest -m stress
-ruff check .
-ruff format --check .
+python -m pytest
 ```
 
-GitHub Actions runs Ruff in check-only mode. Release history and repository-level changes are recorded in `CHANGELOG.md`.
+Routine testing excludes the `scale` and `stress` tiers. Run selected large-dataset tests with:
+
+```bash
+python -m pytest -m scale
+```
+
+Run huge torture/scalability tests with:
+
+```bash
+python -m pytest -m stress
+```
+
+Run both non-routine tiers explicitly with:
+
+```bash
+python -m pytest -m "scale or stress"
+```
+
+Ruff is configured for repository linting and is checked in GitHub Actions.
+
+## Versioning
+
+The two command-line applications retain independent versions because they evolve at different rates. Release history is recorded in `CHANGELOG.md`.

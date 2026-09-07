@@ -1,20 +1,28 @@
-"""Shared pytest fixtures for downloader tests."""
+"""Shared fixtures for the yt-download test suite."""
 
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
 
 
-@pytest.fixture(scope="session")
+ROOT = Path(__file__).resolve().parents[1]
+DOWNLOADER_PATH = ROOT / "yt-download.py"
+
+
+@pytest.fixture()
 def downloader():
-    """Load the downloader entry point as a module once per test session."""
-    path = Path(__file__).resolve().parents[1] / "yt-download.py"
-    spec = importlib.util.spec_from_file_location("yt_download", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"unable to load downloader module from {path}")
+    """Load a fresh yt-download module for a test."""
+    spec = importlib.util.spec_from_file_location("run_downloader_under_test", DOWNLOADER_PATH)
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(spec.name, None)
+        raise
     return module

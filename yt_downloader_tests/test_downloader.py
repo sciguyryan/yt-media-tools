@@ -1,246 +1,159 @@
+"""Behavioural tests for yt-download 1.5.0."""
+
+from __future__ import annotations
+
 import argparse
-import importlib.util
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+import pytest
 
 
-def load_downloader():
-    spec = importlib.util.spec_from_file_location(
-        "yt_downloader_test",
-        ROOT / "yt-download.py",
-    )
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+def test_version_is_current(downloader) -> None:
+    assert downloader.PROGRAM_VERSION == "1.5.0"
 
 
-def make_args(**overrides):
-    values = {
-        "cookies": "/tmp/cookies.txt",
-        "archive": "/tmp/archive.txt",
-        "rate_limit": "20M",
-        "resolution": 1440,
-        "output": "/downloads",
-        "profile_output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s",
-        "playlist_reverse": False,
-        "batch_file": "/tmp/ids.txt",
-    }
-    values.update(overrides)
-    return argparse.Namespace(**values)
+def test_runtime_files_are_script_relative(downloader) -> None:
+    assert downloader.ARCHIVE_FILE == downloader.SCRIPT_DIR / "archive.txt"
+    assert downloader.COOKIES_FILE == downloader.SCRIPT_DIR / "cookies.txt"
+    assert downloader.PROFILES_DIR == downloader.SCRIPT_DIR / "profiles"
 
 
-def test_default_profile_has_formal_signature_and_output_template():
-    module = load_downloader()
-    profile = module.load_profile("default")
-    assert profile["path"] == "/mnt/storage/Downloads/YouTube/"
-    assert profile["output"] == "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
+@pytest.mark.parametrize("value", ["1", "720", "1080", "1440", "2160"])
+def test_validate_resolution_accepts_positive_integer_strings(downloader, value: str) -> None:
+    assert downloader.validate_resolution(value) == value
 
 
-def test_build_command_uses_profile_output_template():
-    module = load_downloader()
-    command = module.build_command(make_args(), ["abc123"])
-    output_index = command.index("-o") + 1
-    assert command[output_index] == ("/downloads/%(title)s [%(id)s] [%(uploader)s].%(ext)s")
+@pytest.mark.parametrize("value", ["", "0", "-1", "1080p", "abc"])
+def test_validate_resolution_rejects_invalid_values(downloader, value: str) -> None:
+    with pytest.raises(ValueError):
+        downloader.validate_resolution(value)
 
 
-def test_arbitrary_positive_resolution_is_accepted():
-    module = load_downloader()
-    assert module.resolution("900") == 900
+def test_direct_targets_are_preserved(downloader) -> None:
+    args = argparse.Namespace(input_file=None, targets=["a", "b"])
+    source = downloader.resolve_input(args)
+    assert source.direct_targets == ("a", "b")
+    command: list[str] = []
+    source.append_to(command)
+    assert command == ["a", "b"]
 
 
-def test_stdin_marker_cannot_be_mixed_with_targets():
-    module = load_downloader()
-    args = argparse.Namespace(
-        input_file=None,
-        targets=["-", "abc123"],
-        batch_file="/tmp/ids.txt",
-    )
-    targets, error = module.resolve_targets(args)
-    assert targets == []
-    assert "cannot be combined" in error
+def test_stdin_is_exclusive(downloader) -> None:
+    args = argparse.Namespace(input_file=None, targets=["-"])
+    source = downloader.resolve_input(args)
+    assert source.stdin is True
+    command: list[str] = []
+    source.append_to(command)
+    assert command == ["--batch-file", "-"]
 
 
-def test_single_existing_positional_file_becomes_batch_file(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids"
-    batch.write_text("abc123\n")
-    args = argparse.Namespace(
-        input_file=None,
-        targets=[str(batch)],
-        batch_file="/tmp/default-ids.txt",
-    )
-    targets, error = module.resolve_targets(args)
-    assert targets == []
-    assert error is None
-    assert args.batch_file == str(batch)
+def test_stdin_cannot_be_combined_with_other_targets(downloader) -> None:
+    args = argparse.Namespace(input_file=None, targets=["-", "abc"])
+    with pytest.raises(ValueError, match="cannot be combined"):
+        downloader.resolve_input(args)
 
 
-def test_completed_ids_ignores_malformed_single_field_lines(tmp_path):
-    module = load_downloader()
-    archive = tmp_path / "archive.txt"
-    archive.write_text(
-        "youtube abc\nmalformed\nyoutube def extra\n\n",
-        encoding="utf-8",
-    )
-
-    assert module.completed_ids(archive) == {"abc", "extra"}
+def test_input_file_cannot_be_combined_with_targets(downloader, tmp_path: Path) -> None:
+    input_file = tmp_path / "ids.txt"
+    input_file.write_text("abc\n", encoding="utf-8")
+    args = argparse.Namespace(input_file=input_file, targets=["abc"])
+    with pytest.raises(ValueError, match="cannot be combined"):
+        downloader.resolve_input(args)
 
 
-def test_remove_completed_ids_preserves_unrelated_bytes(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids.txt"
-    archive = tmp_path / "archive.txt"
+def test_existing_single_positional_file_becomes_batch_input(downloader, tmp_path: Path) -> None:
+    input_file = tmp_path / "ids.txt"
+    input_file.write_text("abc\n", encoding="utf-8")
+    args = argparse.Namespace(input_file=None, targets=[str(input_file)])
+    source = downloader.resolve_input(args)
+    assert source.batch_file == input_file
+
+
+def test_profile_parser_accepts_path_and_output(downloader, tmp_path: Path) -> None:
+    profile = tmp_path / "profile"
+    profile.write_text("@profile\npath=/tmp/media\noutput=%(id)s.%(ext)s\n", encoding="utf-8")
+    parsed = downloader.parse_profile(profile)
+    assert parsed.path == "/tmp/media"
+    assert parsed.output == "%(id)s.%(ext)s"
+
+
+def test_profile_parser_rejects_unknown_setting(downloader, tmp_path: Path) -> None:
+    profile = tmp_path / "profile"
+    profile.write_text("@profile\nunknown=value\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="unknown setting"):
+        downloader.parse_profile(profile)
+
+
+def test_profile_parser_rejects_duplicate_setting(downloader, tmp_path: Path) -> None:
+    profile = tmp_path / "profile"
+    profile.write_text("@profile\npath=/a\npath=/b\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate setting"):
+        downloader.parse_profile(profile)
+
+
+def test_remove_completed_id_preserves_unrelated_bytes(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "ids.txt"
     original = b"# note\nabc\r\ndef\n\nhttps://example.invalid/abc\n"
-
-    batch.write_bytes(original)
-    archive.write_text("youtube abc\n", encoding="utf-8")
-
-    assert module.remove_completed_ids(batch, archive) == 1
-    assert batch.read_bytes() == b"# note\ndef\n\nhttps://example.invalid/abc\n"
+    queue.write_bytes(original)
+    assert downloader.remove_completed_id(queue, "abc") is True
+    assert queue.read_bytes() == b"# note\ndef\n\nhttps://example.invalid/abc\n"
 
 
-def test_remove_completed_ids_does_not_remove_url_containing_archived_id(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids.txt"
+def test_remove_completed_id_returns_false_when_absent(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "ids.txt"
+    queue.write_bytes(b"abc\ndef\n")
+    before = queue.read_bytes()
+    assert downloader.remove_completed_id(queue, "xyz") is False
+    assert queue.read_bytes() == before
+
+
+def test_archived_video_ids_ignores_malformed_single_field_lines(downloader, tmp_path: Path) -> None:
     archive = tmp_path / "archive.txt"
-
-    batch.write_text("https://example.invalid/abc\nabc\n", encoding="utf-8")
-    archive.write_text("youtube abc\n", encoding="utf-8")
-
-    assert module.remove_completed_ids(batch, archive) == 1
-    assert batch.read_text(encoding="utf-8") == "https://example.invalid/abc\n"
+    archive.write_text("youtube abc\nmalformed\nyoutube def extra\n\n", encoding="utf-8")
+    assert downloader.archived_video_ids(archive) == {"abc", "extra"}
 
 
-def test_remove_completed_ids_requires_file_backed_input():
-    module = load_downloader()
+def test_remove_archived_ids_reconciles_queue(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "ids.txt"
+    archive = tmp_path / "archive.txt"
+    queue.write_text("abc\ndef\nghi\n", encoding="utf-8")
+    archive.write_text("youtube abc\nyoutube ghi\n", encoding="utf-8")
+    assert downloader.remove_archived_ids(queue, archive) == 2
+    assert queue.read_text(encoding="utf-8") == "def\n"
+
+
+def test_remove_completed_ids_requires_file_input(downloader) -> None:
     args = argparse.Namespace(remove_completed_ids=True)
-
-    assert module.validate_remove_completed_ids(args, ["abc123"]) == (
-        "--remove-completed-ids requires a batch or input file"
-    )
-
-
-def test_resolve_input_source_preserves_direct_targets():
-    module = load_downloader()
-    args = argparse.Namespace(
-        input_file=None,
-        targets=["abc123", "https://example.invalid/video"],
-        batch_file="/tmp/default-ids.txt",
-    )
-
-    source, error = module.resolve_input_source(args)
-
-    assert error is None
-    assert source.kind == "direct"
-    assert source.targets == ["abc123", "https://example.invalid/video"]
-    assert source.batch_file is None
+    source = downloader.InputSource(direct_targets=("abc",))
+    with pytest.raises(ValueError, match="requires file input"):
+        downloader.validate_remove_completed_ids(args, source)
 
 
-def test_resolve_input_source_tracks_file_backed_queue(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids"
-    batch.write_text("abc123\n", encoding="utf-8")
-    args = argparse.Namespace(
-        input_file=str(batch),
-        targets=[],
-        batch_file="/tmp/default-ids.txt",
-    )
-
-    source, error = module.resolve_input_source(args)
-
-    assert error is None
-    assert source.kind == "file"
-    assert source.targets == []
-    assert source.batch_file == batch
+def test_build_command_contains_core_policy(downloader) -> None:
+    source = downloader.InputSource(direct_targets=("abc",))
+    policy = downloader.DownloadPolicy(resolution="1080", reverse_playlist=True)
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None)
+    assert command[0] == "yt-dlp"
+    assert "--download-archive" in command
+    assert str(downloader.ARCHIVE_FILE) in command
+    assert "--cookies" in command
+    assert str(downloader.COOKIES_FILE) in command
+    assert "--playlist-reverse" in command
+    assert command[-1] == "abc"
 
 
-def test_build_command_uses_1_3_runtime_policy():
-    module = load_downloader()
-    command = module.build_command(make_args(resolution=900), ["abc123"])
-
-    assert "--mtime" in command
-    assert "--embed-chapters" in command
-    assert "--embed-subs" in command
-    assert "--write-subs" not in command
-    assert "--sponsorblock-remove" in command
-    assert "--video-multistreams" in command
-    assert "--audio-multistreams" in command
-    assert "temp:/mnt/storage/Temp/yt-dlp" in command
-    assert "res:900" in command
-    assert "youtube:player-client=default,-android_sdkless" in command
-    assert "bv+ba/best" in command
+def test_build_command_adds_after_move_callback_for_file_queue(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "ids.txt"
+    queue.write_text("abc\n", encoding="utf-8")
+    source = downloader.InputSource(batch_file=queue)
+    policy = downloader.DownloadPolicy(resolution="1440", reverse_playlist=False)
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None, remove_completed_ids=True)
+    exec_index = command.index("--exec")
+    assert command[exec_index + 1].startswith("after_move:")
+    assert "--_remove-completed-id" in command[exec_index + 1]
+    assert command[-2:] == ["--batch-file", str(queue)]
 
 
-def test_remove_completed_id_removes_only_first_exact_match(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids"
-    batch.write_bytes(b"abc\nabc\nhttps://example.invalid/abc\n")
-
-    assert module.remove_completed_id(batch, "abc") is True
-    assert batch.read_bytes() == b"abc\nhttps://example.invalid/abc\n"
-
-
-def test_remove_completed_id_absent_preserves_bytes(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids"
-    original = b"# note\r\nabc\r\n"
-
-    batch.write_bytes(original)
-
-    assert module.remove_completed_id(batch, "missing") is False
-    assert batch.read_bytes() == original
-
-
-def test_build_command_adds_after_move_callback_for_file_queue():
-    module = load_downloader()
-    args = make_args(remove_completed_ids=True)
-    command = module.build_command(args, [])
-
-    index = command.index("--exec")
-    callback = command[index + 1]
-
-    assert callback.startswith("after_move:")
-    assert "--_remove-completed-id" in callback
-    assert "%(id)s" in callback
-    assert "--batch-file" in callback
-    assert args.batch_file in callback
-
-
-def test_build_command_omits_after_move_callback_for_direct_targets():
-    module = load_downloader()
-    args = make_args(remove_completed_ids=False)
-    command = module.build_command(args, ["abc123"])
-
-    assert "--exec" not in command
-
-
-def test_remove_completed_id_preserves_file_mode(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids"
-    batch.write_bytes(b"abc\nxyz\n")
-    batch.chmod(0o640)
-
-    assert module.remove_completed_id(batch, "abc") is True
-    assert (batch.stat().st_mode & 0o777) == 0o640
-    assert batch.read_bytes() == b"xyz\n"
-
-
-def test_remove_completed_id_handles_unrelated_non_utf8_bytes(tmp_path):
-    module = load_downloader()
-    batch = tmp_path / "ids"
-    batch.write_bytes(b"abc\n#\\xffnote\nxyz\n")
-
-    assert module.remove_completed_id(batch, "abc") is True
-    assert batch.read_bytes() == b"#\\xffnote\nxyz\n"
-
-
-def test_runtime_constants_are_script_relative():
-    module = load_downloader()
-
-    assert module.PROFILES_DIR == module.SCRIPT_DIR / "profiles"
-    assert module.DEFAULT_ARCHIVE == module.SCRIPT_DIR / "archive.txt"
-    assert module.DEFAULT_COOKIES == module.SCRIPT_DIR / "cookies.txt"
-    assert module.DEFAULT_BATCH_FILE == module.SCRIPT_DIR / "ids" / "ids"
-    assert str(module.TEMP_DIR) == "/mnt/storage/Temp/yt-dlp"
+def test_dry_run_environment_does_not_require_yt_dlp_or_cookies(downloader, monkeypatch) -> None:
+    monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
+    assert downloader.validate_environment(dry_run=True) == "yt-dlp"

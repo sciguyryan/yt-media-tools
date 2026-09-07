@@ -2,24 +2,23 @@
 
 ### Running the test suite
 
-The repository includes `pytest.ini`, which makes `yt_discover_tests/` the canonical test tree, adds the project root to Python import resolution, and excludes the separate `yt_downloader_tests/` tree and legacy test copies from normal discovery. Run the complete suite from the repository root with:
+The repository includes `pytest.ini`, which makes `yt_discover_tests/` the canonical test tree, adds the project root to Python import resolution, excludes the separate `yt_downloader_tests/` tree and legacy test copies from normal discovery, and keeps expensive scale/stress tests out of routine runs. Run the normal development and pull-request suite from the repository root with:
 
 ```bash
 python -m pytest
 ```
 
-Run only the yt-sql conformance suite with:
+Run only the routine yt-sql conformance suite with:
 
 ```bash
 python -m pytest yt_discover_tests/test_conformance.py
 ```
 
-Dataset generation is automatic and visible during conformance runs. `yt_discover_tests/conformance/README.md` documents profile selection, reproducibility, oracle independence, and manual torture-test generation.
+Large and huge datasets are deliberately opt-in. Run selected large-dataset checks with `python -m pytest -m scale`, huge torture checks with `python -m pytest -m stress`, or both with `python -m pytest -m "scale or stress"`. Dataset generation is automatic and visible. `yt_discover_tests/conformance/README.md` documents the tiering, reproducibility contract, oracle independence, semantic anchors, and manual generation.
 
+## yt-sql oracle and conformance architecture
 
-## v0.18.0 yt-sql oracle and scalable conformance architecture
-
-Version 0.18.0 completes the Phase 5.5A testing architecture before analytical syntax expansion. Normal test runs no longer depend on checked-in generated datasets or pre-curated semantic answers. Instead, pytest lazily generates deterministic ephemeral datasets, seeds real yt-discover SQLite caches, executes independently authored Python oracle pipelines, executes the equivalent yt-sql through the real CLI, compares the complete serialised outputs, and lets pytest clean the temporary data afterwards.
+Version 0.18.1 keeps Phase 5.5 focused on testing architecture before analytical syntax expansion. Routine test runs use only the deterministic `small` and `normal` profiles. `large` is reserved for explicitly marked scale-sensitive tests, and `huge` is reserved for explicitly marked torture/scalability tests, so ordinary local development and push/pull-request CI do not repeatedly pay for 10,000- or 100,000-record corpora.
 
 The generator defines four centrally sized profiles:
 
@@ -30,11 +29,9 @@ large   10,000 records
 huge   100,000 records
 ```
 
-Routine pytest coverage uses only the `small` and `normal` profiles. The `large` and `huge` profiles remain available as tests marked `stress`, which are excluded by default. Run `python -m pytest -m stress` when deliberately exercising the larger conformance datasets. Tests can also request an arbitrary exact size and alternate deterministic seed.
+The generator's reproducibility identity is the generator version, seed, and requested size. For the same version and seed, every smaller dataset is an exact prefix of every larger dataset. Generated payloads include a SHA-256 digest of the logical record sequence.
 
-The generator's reproducibility identity is the generator version, seed, and requested size. For the same version and seed, every smaller dataset is an exact prefix of every larger dataset. This makes scale-dependent failures reproducible without silently changing the earlier records. Generated payloads include a SHA-256 digest of the logical record sequence.
-
-For manual inspection, reproduction, torture tests, or future benchmarking, generate one profile or an exact size explicitly:
+For manual inspection, reproduction, scale testing, torture testing, or future benchmarking, generate one profile or an exact size explicitly:
 
 ```bash
 python yt_discover_tests/conformance/generate_dataset.py \
@@ -51,9 +48,7 @@ Running the generator with neither `--profile` nor `--size` and supplying `--out
 
 The semantic authority is `yt_discover_tests/conformance/oracle.py`, a deliberately simple LINQ-style collection pipeline. Test authors write each yt-sql query and its Python oracle independently. The oracle does not parse yt-sql, consume the production AST, or import the production query parser, planner, evaluator, metadata normaliser, schema, or output implementation. Its operators such as `where`, `select`, `distinct`, `order_by`, `then_by`, `skip`, and `take` describe the intended algorithm directly over generated records.
 
-This means conformance expectations are algorithmic rather than pre-curated snapshots. The same query/oracle pair can run unchanged against small, normal, large, huge, an arbitrary exact size, or a different deterministic seed. Static output-format unit tests remain useful elsewhere, but semantic yt-sql correctness no longer depends on committed expected-result files.
-
-The generated records remain extractor-like rather than relying on YouTube ID shapes. The current end-to-end cache source is necessarily resolved through the existing YouTube source adapter, but the generator and oracle are intentionally structured so later extractor/service agnosticism does not require replacing the semantic testing model.
+There is no checked-in golden query dataset or generated semantic expected-result corpus. The generator provides deterministic inputs, including deliberately designed semantic anchor records, and the independent Python oracle provides expected query semantics. Static immutable fixtures remain appropriate only where a particular historical representation is itself the compatibility contract.
 
 Phase 5.5B must add independently authored oracle cases for every substantive new language construct, including boundary and cross-feature interactions, before that syntax is accepted.
 
@@ -102,7 +97,7 @@ Use `--provenance -` only when normal query rows are redirected elsewhere, so pr
 
 `yt-discover.py` is a media-metadata discovery tool built around yt-dlp, with optional YouTube.js channel enumeration. Its SQL-inspired query language is named yt-sql. It can query channel or playlist metadata, filter and order records locally, project selected fields, and emit shell-friendly or structured output.
 
-The default remains deliberately simple: if `SELECT` is omitted, the query behaves as `SELECT id`, so the output can still be piped directly into `run-downloader.py -`.
+The default remains deliberately simple: if `SELECT` is omitted, the query behaves as `SELECT id`, so the output can still be piped directly into `yt-download.py -`.
 
 Run either command for the detailed reference:
 
@@ -300,7 +295,7 @@ is equivalent to selecting only `id`, so it remains ideal for pipelines:
 
 ```bash
 yt-discover.py "FROM @channel WHERE upload_date BETWEEN 2026-04-01 AND TODAY()" \
-| run-downloader.py -
+| yt-download.py -
 ```
 
 The established source-plus-options interface is retained:
@@ -557,7 +552,7 @@ Use `-v` or `--verbose` for concise runtime progress. Verbose messages are writt
 
 ```bash
 yt-discover.py -v "FROM @channel WHERE upload_date >= TODAY()-30d" \
-| run-downloader.py -
+| yt-download.py -
 ```
 
 Verbose mode reports source resolution, the yt-dlp command, acquisition progress and record count, schema construction, archive exclusions, query selection, ordering and limits, the selected output format, destination, and emitted row count. Normal operation remains quiet and machine-friendly.
@@ -575,7 +570,7 @@ Use `--report` to print a post-run acquisition/query report to standard error. U
 Examples:
 
 ```bash
-yt-discover.py -v "FROM @example WHERE upload_date >= TODAY()-30d" | run-downloader.py -
+yt-discover.py -v "FROM @example WHERE upload_date >= TODAY()-30d" | yt-download.py -
 
 yt-discover.py -vv "FROM @example ORDER BY upload_date ASC"
 

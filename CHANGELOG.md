@@ -1,6 +1,23 @@
 # Changelog
 
-## Repository Aaudit
+## 0.18.1 - Tiered Testing
+
+- Exclude large and huge conformance datasets from routine pytest and pull-request CI by default.
+- Add explicit `scale` and `stress` pytest tiers for selected large-dataset and huge torture tests.
+- Split cardinality and prefix-contract checks so routine tests never construct the large or huge corpora implicitly.
+- Retire the golden query-dataset concept in favour of deterministic generated inputs plus the independent Python semantic oracle.
+- Retain deliberately designed semantic anchor records inside the deterministic generator.
+- Fix the remaining Ruff test-style finding.
+
+## Downloader 1.5.0
+
+- Adopt the mature downloader policy, profile-resolution and input-source architecture from the canonical implementation.
+- Separate output-profile settings from global download policy through explicit `OutputProfile` and `DownloadPolicy` models.
+- Formalise direct, batch-file and standard-input source handling through a single `InputSource` abstraction.
+- Strengthen profile validation, archive reconciliation, completion callbacks and environment validation.
+- Standardise the executable and documentation name on `yt-download.py`.
+
+## Repository - Pre-canonical audit
 
 - Recorded intentional version and executable-name differences from the earlier supplied endpoint.
 - Added a final canonical comparison checklist covering code, documentation, tests, tooling, modes and repository hygiene.
