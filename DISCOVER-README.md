@@ -226,3 +226,17 @@ Run the built-in help for the complete option list:
 ## Licence
 
 This project is distributed under the GNU Lesser General Public License version 2.1. See `LICENSE` for the licence text.
+
+## Incremental source refresh
+
+Discover can now extend an existing newest-first cached source without replacing its known tail:
+
+```bash
+./yt-discover.py CHANNEL_URL --incremental
+```
+
+The refresh observes the source again and looks for the first video ID already present in the cached ordering. Only entries before that confirmed overlap are appended to the cache. Duplicate IDs in the newly observed prefix are ignored.
+
+If no overlap with the cached source can be confirmed, Discover refuses the incremental update rather than guessing that two independent observations belong to one continuous ordering. Use `--refresh` when a complete replacement is intended.
+
+Cache schema version 3 records the current source head and the number of successful overlap confirmations. Existing version 2 caches are migrated in place.

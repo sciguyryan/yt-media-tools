@@ -8,17 +8,15 @@ import subprocess
 import sys
 
 
-VERSION = "0.4.1"
+VERSION = "0.5.0"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
 DEFAULT_BATCH_FILE = "ids.txt"
 DEFAULT_COOKIES = "cookies.txt"
 DEFAULT_ARCHIVE = "archive.txt"
-DEFAULT_RATE_LIMIT = "2M"
+DEFAULT_RATE_LIMIT = "20M"
 DEFAULT_RESOLUTION = 1440
-
-SUPPORTED_RESOLUTIONS = (360, 480, 720, 1080, 1440, 2160)
 
 
 def script_directory() -> pathlib.Path:
@@ -39,11 +37,8 @@ def resolution(value: str) -> int:
     except ValueError as exc:
         raise argparse.ArgumentTypeError("resolution must be a number") from exc
 
-    if parsed not in SUPPORTED_RESOLUTIONS:
-        choices = ", ".join(str(item) for item in SUPPORTED_RESOLUTIONS)
-        raise argparse.ArgumentTypeError(
-            f"unsupported resolution {parsed}; choose one of: {choices}"
-        )
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("resolution must be a positive number")
 
     return parsed
 
@@ -134,6 +129,10 @@ def parse_args() -> argparse.Namespace:
         help=f"Read targets from a batch file (default: {DEFAULT_BATCH_FILE})",
     )
     parser.add_argument(
+        "--input-file",
+        help="Read targets from this file instead of positional targets or the default batch file",
+    )
+    parser.add_argument(
         "-r",
         "--resolution",
         type=resolution,
@@ -164,6 +163,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--playlist-reverse",
+        "--rev",
         action="store_true",
         default=profile.get("playlist_reverse", "").lower() in {"1", "true", "yes"},
         help="Download playlist entries in reverse order",
@@ -207,11 +207,28 @@ def read_stdin_targets() -> list[str]:
 def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
     targets: list[str] = []
 
+    if args.input_file:
+        if args.targets:
+            return [], "--input-file cannot be combined with positional targets"
+        input_path = pathlib.Path(args.input_file)
+        if not input_path.is_file():
+            return [], f"input file not found: {input_path}"
+        args.batch_file = str(input_path)
+        return [], None
+
     for target in args.targets:
         if target == "-":
+            if len(args.targets) != 1:
+                return [], "'-' for standard input cannot be combined with other targets"
             targets.extend(read_stdin_targets())
         else:
             targets.append(target)
+
+    if len(targets) == 1:
+        possible_file = pathlib.Path(targets[0])
+        if possible_file.is_file():
+            args.batch_file = str(possible_file)
+            return [], None
 
     if targets:
         return targets, None

@@ -1,7 +1,7 @@
 # Playlist downloads.
 resolution=1080
 output=/mnt/storage/Downloads/YouTube/Playlists
-rate_limit=2M
+rate_limit=20M
 cookies=../cookies.txt
 archive=../archive.txt
 batch_file=../ids.txt

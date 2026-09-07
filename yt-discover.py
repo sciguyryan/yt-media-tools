@@ -7,14 +7,14 @@ import sqlite3
 import sys
 from datetime import datetime
 
-from yt_cache import DEFAULT_MAX_AGE, connect, load_source, source_status, store_source, update_entries
+from yt_cache import DEFAULT_MAX_AGE, append_new_entries, connect, load_source, source_status, store_source, update_entries
 from yt_metadata import normalise_entries
 from yt_planner import explain_plan, plan_query
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 from yt_sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.13.0"
+VERSION = "0.14.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -64,6 +64,11 @@ def parse_args() -> argparse.Namespace:
         "--refresh",
         action="store_true",
         help="Ignore cached source metadata and refresh it",
+    )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Refresh a cached newest-first source by appending only entries before a confirmed overlap",
     )
     parser.add_argument(
         "--refresh-details",
@@ -247,6 +252,12 @@ def validate_args(args: argparse.Namespace) -> str | None:
         return "--offline cannot be combined with --no-cache"
     if args.offline and args.refresh:
         return "--offline cannot be combined with --refresh"
+    if args.offline and args.incremental:
+        return "--offline cannot be combined with --incremental"
+    if args.refresh and args.incremental:
+        return "--refresh cannot be combined with --incremental"
+    if args.incremental and args.no_cache:
+        return "--incremental requires the metadata cache"
     if args.offline and args.refresh_details:
         return "--offline cannot be combined with --refresh-details"
     if args.min_duration is not None and args.min_duration < 0:
@@ -337,7 +348,11 @@ def main() -> int:
             query=query,
             where_expression=where_expression,
             requested_backend=args.source_backend,
-            cache_status=cached_status if raw_entries is not None else None,
+            cache_status=(
+                cached_status
+                if raw_entries is not None and not args.incremental
+                else None
+            ),
             offline=args.offline,
         )
 
@@ -356,7 +371,21 @@ def main() -> int:
                     file=sys.stderr,
                 )
 
-        if plan["mode"] == "live":
+        if args.incremental:
+            if cache_connection is None:
+                raise RuntimeError("incremental refresh requires the metadata cache")
+            observed_entries = enumerate_source(args.source, str(plan["backend"]))
+            raw_entries, appended = append_new_entries(
+                cache_connection,
+                args.source,
+                observed_entries,
+                backend=str(plan["backend"]),
+            )
+            print(
+                f"incremental refresh: appended {appended} new entr{'y' if appended == 1 else 'ies'}",
+                file=sys.stderr,
+            )
+        elif plan["mode"] == "live":
             if args.refresh or raw_entries is None:
                 raw_entries = enumerate_source(args.source, str(plan["backend"]))
                 if cache_connection is not None:

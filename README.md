@@ -25,6 +25,13 @@ With no targets, the downloader reads IDs from `ids.txt`:
 ./yt-download.py
 ```
 
+A single positional argument that names an existing local file is treated as a batch file. You can also select one explicitly with `--input-file`:
+
+```bash
+./yt-download.py ./more-ids.txt
+./yt-download.py --input-file ./more-ids.txt
+```
+
 Read targets from standard input by using `-` as a target:
 
 ```bash
@@ -88,6 +95,12 @@ When a batch file is being used as a persistent queue, completed IDs can be remo
 ```
 
 The downloader compares the batch file with the configured yt-dlp download archive after a successful download run and rewrites the batch file atomically with completed IDs removed.
+
+## Download policy
+
+The default rate limit is now `20M`, correcting the much lower value carried over from the first Python rewrite. Resolution validation accepts any positive numeric height rather than a fixed built-in list.
+
+`--rev` is available as a shorter alias for `--playlist-reverse`.
 
 ## Other options
 
