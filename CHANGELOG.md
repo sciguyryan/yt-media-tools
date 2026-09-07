@@ -1,5 +1,10 @@
 # Changelog
 
+## Repository - Executable-mode correction
+
+- Restored executable file modes on the two shebang-bearing CLI entry points after the Phase 37 packaging workflow dropped them.
+- No tool version changed.
+
 ## Repository - Conformance architecture
 
 - Expanded the deterministic YT-SQL dataset generator to version 2.
