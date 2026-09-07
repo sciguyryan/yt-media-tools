@@ -115,6 +115,19 @@ Supported selected fields are `id`, `title`, `uploader`, `duration`, `date` and 
 
 The older `--where` expression option remains available for ID-only output. `--where` and `--query` cannot be used together.
 
+## Richer YT-SQL predicates
+
+YT-SQL now supports several predicates that previously required dedicated command-line options or could not be expressed at all:
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title where duration between 600 and 1800'
+./yt-discover.py CHANNEL_URL --query 'select id where title matches "interview|discussion"'
+./yt-discover.py CHANNEL_URL --query 'select id where uploader in ("example", "another")'
+./yt-discover.py CHANNEL_URL --query 'select id where date is not null'
+```
+
+`BETWEEN`, `IN`, `IS NULL`, `IS NOT NULL`, `CONTAINS` and `MATCHES` can be combined with the existing Boolean operators.
+
 ## Metadata limitations
 
 The discovery script relies on metadata available from `yt-dlp --flat-playlist`. Entries with missing metadata cannot satisfy filters that require that field. For example, an entry without an upload date cannot match `--after` or `--before`, and an entry without duration cannot match a duration range.

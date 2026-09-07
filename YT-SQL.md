@@ -2,7 +2,7 @@
 
 YT-SQL is the query language used by `yt-discover.py`.
 
-Version 0.5.0 expands the earlier boolean filter expressions into complete query statements.
+Version 0.7.0 expands the language with richer predicates while keeping the existing statement form.
 
 ## Query form
 
@@ -15,34 +15,6 @@ SELECT fields
 
 Keywords are case-insensitive.
 
-## Examples
-
-Print IDs:
-
-```bash
-./yt-discover.py CHANNEL_URL --query 'select id'
-```
-
-Filter results:
-
-```bash
-./yt-discover.py CHANNEL_URL --query 'select id where title contains "interview" and duration >= 900'
-```
-
-Select several fields:
-
-```bash
-./yt-discover.py CHANNEL_URL --query 'select id, title, duration where duration >= 600'
-```
-
-Order and limit results:
-
-```bash
-./yt-discover.py CHANNEL_URL --query 'select id, title order by date desc limit 20'
-```
-
-When several fields are selected, output is tab-separated.
-
 ## Fields
 
 - `id`
@@ -52,22 +24,9 @@ When several fields are selected, output is tab-separated.
 - `date`
 - `live`
 
-## Boolean expressions
+## Predicates
 
-`where` expressions support:
-
-- `and`
-- `or`
-- `not`
-- parentheses
-
-At this stage, `and` and `or` still have equal precedence and are evaluated from left to right. Use parentheses when mixing them if grouping matters.
-
-## Comparisons
-
-`title` and `uploader` support `contains`.
-
-`duration` and `date` support:
+General comparisons are available with:
 
 - `=`
 - `!=`
@@ -76,18 +35,39 @@ At this stage, `and` and `or` still have equal precedence and are evaluated from
 - `>`
 - `>=`
 
-`live` supports equality with `true` or `false`.
+Additional predicates are:
 
-## Legacy expression mode
+- `BETWEEN value AND value`
+- `IN (value, value, ...)`
+- `IS NULL`
+- `IS NOT NULL`
+- `CONTAINS value`
+- `MATCHES value`
 
-The earlier `--where` option remains available for queries that only need ID output:
+`CONTAINS` and `MATCHES` apply to text fields. `MATCHES` uses a case-insensitive regular expression.
+
+## Boolean expressions
+
+Expressions support:
+
+- `and`
+- `or`
+- `not`
+- parentheses
+
+`and` and `or` still have equal precedence and are evaluated from left to right. Use parentheses when mixing them if grouping matters.
+
+## Examples
 
 ```bash
-./yt-discover.py CHANNEL_URL --where 'duration >= 900'
+./yt-discover.py CHANNEL_URL --query 'select id, title where duration between 600 and 1800'
+./yt-discover.py CHANNEL_URL --query 'select id where title matches "interview|discussion"'
+./yt-discover.py CHANNEL_URL --query 'select id where uploader in ("example", "another")'
+./yt-discover.py CHANNEL_URL --query 'select id where date is not null'
 ```
 
-## Implementation
+## NULL behaviour
 
-YT-SQL parsing and evaluation now live in a separate `yt_query.py` module rather than inside the command-line script.
+Missing metadata can be tested explicitly with `IS NULL` and `IS NOT NULL`.
 
-`ORDER BY` is applied before `LIMIT`, so limited ordered queries select from the correctly ordered result set.
+In this version, ordinary inequality comparisons treat a missing value as unequal to a non-NULL value. This behaviour is retained for compatibility with the first implementation and may be revised as YT-SQL semantics become more formal.

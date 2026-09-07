@@ -139,42 +139,60 @@ class ExpressionParser:
 
     def parse_term(self):
         field = self.take().lower()
+        allowed_fields = {"id", "title", "uploader", "duration", "date", "live"}
+        if field not in allowed_fields:
+            raise ValueError(f"unknown field: {field}")
 
-        if field in {"title", "uploader"}:
-            operator = self.take().lower()
-            if operator != "contains":
-                raise ValueError(f"unsupported operator for {field}: {operator}")
-            return ("contains", field, unquote(self.take()))
+        operator = self.take().lower()
 
-        if field == "duration":
-            operator = self.take()
-            if operator not in {"=", "!=", "<", "<=", ">", ">="}:
-                raise ValueError(f"unsupported duration operator: {operator}")
-            value = self.take()
-            if not value.isdigit():
-                raise ValueError("duration comparison requires a whole number")
-            return ("duration", operator, int(value))
+        if operator == "is":
+            if self.current() is not None and self.current().lower() == "not":
+                self.take()
+                if self.take().lower() != "null":
+                    raise ValueError("expected NULL after IS NOT")
+                return ("is_not_null", field)
+            if self.take().lower() != "null":
+                raise ValueError("expected NULL after IS")
+            return ("is_null", field)
 
-        if field == "date":
-            operator = self.take()
-            if operator not in {"=", "!=", "<", "<=", ">", ">="}:
-                raise ValueError(f"unsupported date operator: {operator}")
-            value = self.take()
-            try:
-                parsed = datetime.strptime(value, "%Y-%m-%d")
-            except ValueError as exc:
-                raise ValueError("date comparison requires YYYY-MM-DD") from exc
-            return ("date", operator, parsed)
+        if operator == "between":
+            lower = self.take()
+            if self.take().lower() != "and":
+                raise ValueError("BETWEEN requires AND")
+            upper = self.take()
+            return ("between", field, lower, upper)
 
-        if field == "live":
-            if self.take() != "=":
-                raise ValueError("live only supports =")
-            value = self.take().lower()
-            if value not in {"true", "false"}:
-                raise ValueError("live comparison requires true or false")
-            return ("live", value == "true")
+        if operator == "in":
+            if self.take() != "(":
+                raise ValueError("IN requires a parenthesised value list")
+            values: list[str] = []
+            while True:
+                token = self.take()
+                if token == ")":
+                    break
+                if token.endswith(","):
+                    values.append(unquote(token[:-1]))
+                elif self.current() == ")":
+                    values.append(unquote(token))
+                else:
+                    values.append(unquote(token.rstrip(",")))
+                if self.current() == ")":
+                    self.take()
+                    break
+            if not values:
+                raise ValueError("IN requires at least one value")
+            return ("in", field, values)
 
-        raise ValueError(f"unknown field: {field}")
+        if operator in {"contains", "matches"}:
+            if field not in {"title", "uploader", "id"}:
+                raise ValueError(f"{operator.upper()} is not supported for {field}")
+            return (operator, field, unquote(self.take()))
+
+        if operator not in {"=", "!=", "<", "<=", ">", ">="}:
+            raise ValueError(f"unsupported operator for {field}: {operator}")
+
+        value = self.take()
+        return ("compare", field, operator, unquote(value))
 
 
 def parse_expression(expression: str):
@@ -256,32 +274,117 @@ def field_value(entry: dict[str, object], field: str) -> object:
     raise ValueError(f"unknown field: {field}")
 
 
+def coerce_value(field: str, value: object) -> object:
+    if value is None:
+        return None
+
+    if field == "duration":
+        if isinstance(value, (int, float)):
+            return int(value)
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+        return None
+
+    if field == "date":
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            for fmt in ("%Y-%m-%d", "%Y%m%d"):
+                try:
+                    return datetime.strptime(value, fmt)
+                except ValueError:
+                    pass
+        return None
+
+    if field == "live":
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            lowered = value.lower()
+            if lowered in {"true", "yes", "1"}:
+                return True
+            if lowered in {"false", "no", "0"}:
+                return False
+        return None
+
+    return str(value)
+
+
+def compare_values(actual: object, operator: str, expected: object) -> bool:
+    if actual is None:
+        # Early YT-SQL treats NULL as unequal to ordinary values.
+        return operator == "!="
+
+    if operator == "=":
+        return actual == expected
+    if operator == "!=":
+        return actual != expected
+    if operator == ">":
+        return actual > expected
+    if operator == ">=":
+        return actual >= expected
+    if operator == "<":
+        return actual < expected
+    if operator == "<=":
+        return actual <= expected
+    raise ValueError(f"unsupported comparison operator: {operator}")
+
+
 def evaluate_expression(entry: dict[str, object], node) -> bool:
     kind = node[0]
+
     if kind == "and":
         return evaluate_expression(entry, node[1]) and evaluate_expression(entry, node[2])
     if kind == "or":
         return evaluate_expression(entry, node[1]) or evaluate_expression(entry, node[2])
     if kind == "not":
         return not evaluate_expression(entry, node[1])
+
+    if kind == "is_null":
+        return field_value(entry, node[1]) is None
+    if kind == "is_not_null":
+        return field_value(entry, node[1]) is not None
+
     if kind == "contains":
         _, field, expected = node
         value = field_value(entry, field)
         return isinstance(value, str) and expected.lower() in value.lower()
-    if kind == "duration":
-        _, operator, expected = node
-        return compare_number(field_value(entry, "duration"), operator, expected)
-    if kind == "date":
-        _, operator, expected = node
-        actual_text = field_value(entry, "date")
-        if not isinstance(actual_text, str):
+
+    if kind == "matches":
+        _, field, expected = node
+        value = field_value(entry, field)
+        if not isinstance(value, str):
             return False
-        actual = datetime.strptime(actual_text, "%Y-%m-%d")
-        return compare_number(int(actual.timestamp()), operator, int(expected.timestamp()))
-    if kind == "live":
-        actual = field_value(entry, "live")
-        return actual is not None and actual == node[1]
+        try:
+            return re.search(expected, value, flags=re.IGNORECASE) is not None
+        except re.error as exc:
+            raise ValueError(f"invalid regular expression: {exc}") from exc
+
+    if kind == "compare":
+        _, field, operator, expected_text = node
+        actual = coerce_value(field, field_value(entry, field))
+        expected = coerce_value(field, expected_text)
+        if expected is None and expected_text is not None:
+            raise ValueError(f"could not coerce value for {field}: {expected_text}")
+        return compare_values(actual, operator, expected)
+
+    if kind == "between":
+        _, field, lower_text, upper_text = node
+        actual = coerce_value(field, field_value(entry, field))
+        lower = coerce_value(field, unquote(lower_text))
+        upper = coerce_value(field, unquote(upper_text))
+        if actual is None or lower is None or upper is None:
+            return False
+        return lower <= actual <= upper
+
+    if kind == "in":
+        _, field, raw_values = node
+        actual = coerce_value(field, field_value(entry, field))
+        expected_values = [coerce_value(field, value) for value in raw_values]
+        return actual in expected_values
+
     raise ValueError(f"unknown expression node: {kind}")
+
 
 
 def query_sort_key(entry: dict[str, object], field: str) -> tuple[bool, object]:

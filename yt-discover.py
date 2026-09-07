@@ -10,7 +10,7 @@ from datetime import datetime
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 
 
-VERSION = "0.6.1"
+VERSION = "0.7.0"
 
 
 def parse_args() -> argparse.Namespace:
