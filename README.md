@@ -147,3 +147,13 @@ Version 1.0 marks the point where the Python downloader interface is treated as 
 Profiles are script-relative and use the formal `@profile` format. They control output path and filename layout only. Resolution, rate limiting, cookies, archive handling and other operational policy remain application or CLI concerns.
 
 The established direct-target, `--input-file`, positional batch-file and standard-input modes remain supported. `--examples` provides practical invocations for common input, playlist, profile and dry-run use.
+
+## Automated tests
+
+The project now has a small pytest suite covering selected Discover query/cache invariants and downloader profile/input behaviour.
+
+```bash
+python -m pytest
+```
+
+This is the beginning of automated regression testing rather than a claim of complete coverage. Manual end-to-end checks remain important, especially for live yt-dlp and YouTube.js acquisition.

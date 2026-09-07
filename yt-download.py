@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 
@@ -377,6 +377,9 @@ def remove_completed_ids(batch_path: pathlib.Path, archive_path: pathlib.Path) -
 
 
 def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
+    output_template = args.profile_output or "%(title)s [%(id)s].%(ext)s"
+    output_path = f"{args.output.rstrip('/')}/{output_template.lstrip('/')}"
+
     command = [
         "yt-dlp",
         "--cookies",
@@ -394,7 +397,7 @@ def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
         "-f",
         f"bv*[height<={args.resolution}]+ba/b[height<={args.resolution}]",
         "-o",
-        f"{args.output}/%(title)s [%(id)s].%(ext)s",
+        output_path,
     ]
 
     if args.playlist_reverse:
