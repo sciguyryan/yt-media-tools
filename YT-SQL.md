@@ -85,3 +85,7 @@ The earlier `--where` option remains available for queries that only need ID out
 ```bash
 ./yt-discover.py CHANNEL_URL --where 'duration >= 900'
 ```
+
+## Implementation
+
+YT-SQL parsing and evaluation now live in a separate `yt_query.py` module rather than inside the command-line script.
