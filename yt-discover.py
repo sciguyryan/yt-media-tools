@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -71,6 +71,10 @@ def parse_args() -> argparse.Namespace:
         "--limit",
         type=int,
         help="Print at most this many matching IDs",
+    )
+    parser.add_argument(
+        "--where",
+        help="Experimental filter expression",
     )
     return parser.parse_args()
 
@@ -140,6 +144,103 @@ def is_live(entry: dict[str, object]) -> bool | None:
     return None
 
 
+
+def unquote(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
+
+def compare_number(actual: int | None, operator: str, expected: int) -> bool:
+    if actual is None:
+        return False
+    if operator == "=":
+        return actual == expected
+    if operator == "!=":
+        return actual != expected
+    if operator == ">":
+        return actual > expected
+    if operator == ">=":
+        return actual >= expected
+    if operator == "<":
+        return actual < expected
+    if operator == "<=":
+        return actual <= expected
+    raise ValueError(f"unsupported numeric operator: {operator}")
+
+
+def match_expression_term(entry: dict[str, object], term: str) -> bool:
+    term = term.strip()
+
+    contains_match = re.fullmatch(
+        r"(title|uploader)\s+contains\s+(.+)",
+        term,
+        flags=re.IGNORECASE,
+    )
+    if contains_match:
+        field = contains_match.group(1).lower()
+        expected = unquote(contains_match.group(2)).lower()
+        if field == "title":
+            value = entry.get("title")
+        else:
+            value = entry.get("uploader") or entry.get("channel")
+        return isinstance(value, str) and expected in value.lower()
+
+    duration_match = re.fullmatch(
+        r"duration\s*(<=|>=|!=|=|<|>)\s*(\d+)",
+        term,
+        flags=re.IGNORECASE,
+    )
+    if duration_match:
+        return compare_number(
+            duration(entry),
+            duration_match.group(1),
+            int(duration_match.group(2)),
+        )
+
+    live_match = re.fullmatch(
+        r"live\s*=\s*(true|false)",
+        term,
+        flags=re.IGNORECASE,
+    )
+    if live_match:
+        actual = is_live(entry)
+        expected = live_match.group(1).lower() == "true"
+        return actual is not None and actual == expected
+
+    date_match = re.fullmatch(
+        r"date\s*(<=|>=|!=|=|<|>)\s*(\d{4}-\d{2}-\d{2})",
+        term,
+        flags=re.IGNORECASE,
+    )
+    if date_match:
+        actual = upload_date(entry)
+        if actual is None:
+            return False
+        expected = datetime.strptime(date_match.group(2), "%Y-%m-%d")
+        operator = date_match.group(1)
+        if operator == "=":
+            return actual == expected
+        if operator == "!=":
+            return actual != expected
+        if operator == ">":
+            return actual > expected
+        if operator == ">=":
+            return actual >= expected
+        if operator == "<":
+            return actual < expected
+        if operator == "<=":
+            return actual <= expected
+
+    raise ValueError(f"unsupported filter term: {term}")
+
+
+def matches_expression(entry: dict[str, object], expression: str) -> bool:
+    terms = re.split(r"\s+and\s+", expression, flags=re.IGNORECASE)
+    return all(match_expression_term(entry, term) for term in terms)
+
+
 def matches(
     entry: dict[str, object],
     args: argparse.Namespace,
@@ -147,6 +248,9 @@ def matches(
     before: datetime | None,
     title_pattern: re.Pattern[str] | None,
 ) -> bool:
+    if args.where and not matches_expression(entry, args.where):
+        return False
+
     title = entry.get("title")
 
     if args.title:
@@ -249,11 +353,15 @@ def main() -> int:
         print(f"could not enumerate source: {exc}", file=sys.stderr)
         return 1
 
-    matches_found = [
-        entry
-        for entry in entries
-        if matches(entry, args, after, before, title_pattern)
-    ]
+    try:
+        matches_found = [
+            entry
+            for entry in entries
+            if matches(entry, args, after, before, title_pattern)
+        ]
+    except ValueError as exc:
+        print(f"invalid filter expression: {exc}", file=sys.stderr)
+        return 2
 
     if args.sort != "source":
         matches_found.sort(key=lambda entry: sort_key(entry, args.sort))

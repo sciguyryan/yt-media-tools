@@ -49,6 +49,29 @@ All supplied filters are combined. For example:
 
 This is becoming cumbersome for complicated searches, but each option can still be useful on its own.
 
+## Experimental filter expressions
+
+As an alternative to stacking many individual filter options, Discover can evaluate a small experimental expression supplied with `--where`.
+
+For example:
+
+```bash
+./yt-discover.py CHANNEL_URL --where 'title contains "interview" and duration >= 900'
+```
+
+The first expression syntax supports:
+
+- `title contains VALUE`
+- `uploader contains VALUE`
+- `duration =`, `!=`, `<`, `<=`, `>` and `>=`
+- `date =`, `!=`, `<`, `<=`, `>` and `>=`
+- `live = true` and `live = false`
+- `and` between terms
+
+The syntax is intentionally small. There is no `or`, `not`, grouping or general query statement yet. Quoted values are accepted, but the parser is simple and does not support escaped quotes or the word `and` inside a quoted value.
+
+Existing command-line filters still work and are combined with the expression.
+
 ## Metadata limitations
 
 The discovery script relies on metadata available from `yt-dlp --flat-playlist`. Entries with missing metadata cannot satisfy filters that require that field. For example, an entry without an upload date cannot match `--after` or `--before`, and an entry without duration cannot match a duration range.
