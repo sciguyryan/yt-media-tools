@@ -77,7 +77,7 @@ Examples:
     yt-discover.py "FROM @example WHERE upload_date BETWEEN 2026-04-01 AND TODAY()"
 
   Omitted SELECT means SELECT id, preserving pipe-friendly video ID output:
-    yt-discover.py "FROM @example WHERE upload_date >= 2026-04-01" | run-downloader.py -
+    yt-discover.py "FROM @example WHERE upload_date >= 2026-04-01" | yt-download.py -
 
   Safely maintain a persistent ID list, appending only IDs not already present:
     yt-discover.py --tab videos "SELECT id FROM @example WHERE duration < 1h ORDER BY upload_date ASC, release_timestamp ASC" --append ./ids/example
@@ -271,8 +271,9 @@ Examples:
   Disable cache reads and writes for a diagnostic or clean acquisition run:
     yt-discover.py --no-cache --tab videos "FROM @example WHERE upload_date >= TODAY()-30d"
 
-  Phase 1 does not yet trust cached source observations as an incremental frontier. The
-  current channel source is still enumerated online so new uploads cannot be missed.
+  Eligible channel-video queries may reuse the trusted persisted source ordering as an
+  incremental frontier. If overlap cannot be confirmed, yt-discover completes source
+  enumeration and rebuilds the trusted ordering before continuing.
 
   Tool checks and acquisition backends
   ------------------------------------
@@ -360,7 +361,7 @@ Examples:
     yt-discover.py "SELECT id, title FROM @example WHERE duration < 45m" --dry-run
 
   Show concise live acquisition progress on stderr while keeping stdout pipe-safe:
-    yt-discover.py -v "FROM @example WHERE upload_date >= TODAY()-30d" | run-downloader.py -
+    yt-discover.py -v "FROM @example WHERE upload_date >= TODAY()-30d" | yt-download.py -
 
   Show every successfully acquired entry as well as skipped/inaccessible entries:
     yt-discover.py -vv "FROM @example WHERE upload_date >= TODAY()-30d"

@@ -60,7 +60,7 @@ Run both non-routine tiers explicitly with:
 python -m pytest -m "scale or stress"
 ```
 
-Ruff is configured for repository linting and is checked in GitHub Actions.
+Ruff is configured for repository linting and formatting. GitHub Actions runs both `ruff check .` and `ruff format --check --diff .`.
 
 ## Versioning
 

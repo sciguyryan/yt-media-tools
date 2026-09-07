@@ -1,5 +1,14 @@
 # Changelog
 
+## Repository - Canonical Reconciliation
+
+- Correct stale `run-downloader.py` references after the executable rename to `yt-download.py`.
+- Align the Downloader README title with the current executable name.
+- Make GitHub Ruff validation enforce both lint and formatting checks.
+- Refresh current Discover documentation so retired cache/frontier states and superseded schema descriptions are not presented as current behaviour.
+- Keep historical release detail in the changelog while retaining current operational guidance in the README.
+- No tool version changed.
+
 ## 0.18.1 - Tiered Testing
 
 - Exclude large and huge conformance datasets from routine pytest and pull-request CI by default.

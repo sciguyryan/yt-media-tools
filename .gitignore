@@ -1,10 +1,66 @@
-# Runtime credentials and downloader state
+# Runtime credentials and private configuration
 /cookies.txt
-/archive.txt
+/cookies*.txt
+/.env
+/.env.*
+!/.env.example
+/private/
+/secrets/
+/credentials/
 
-# Download/discovery ID lists
+# Downloader state and local queues
+/archive.txt
+/archive*.txt
 /ids/
 /ids.txt
+/queues/
+/state/
+
+# Discover caches and locally generated reports
+/*.sqlite
+/*.sqlite3
+/*.sqlite3-shm
+/*.sqlite3-wal
+/*.db
+/query-provenance*.json
+/provenance/
+/reports/
+
+# Media and yt-dlp sidecars produced in the repository root
+/*.3gp
+/*.aac
+/*.flac
+/*.m4a
+/*.m4v
+/*.mkv
+/*.mov
+/*.mp3
+/*.mp4
+/*.ogg
+/*.opus
+/*.wav
+/*.webm
+/*.webp
+/*.jpg
+/*.jpeg
+/*.png
+/*.gif
+/*.avif
+/*.srt
+/*.vtt
+/*.ass
+/*.lrc
+/*.description
+/*.info.json
+/*.live_chat.json
+/*.part
+/*.ytdl
+/*.temp
+
+# Explicit local output directories
+/downloads/
+/output/
+/outputs/
 
 # Python generated files
 __pycache__/
@@ -46,6 +102,5 @@ Thumbs.db
 
 # Temporary and backup files
 *.tmp
-*.temp
 *.bak
 *.orig
