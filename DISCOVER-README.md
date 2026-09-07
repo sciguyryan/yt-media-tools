@@ -270,3 +270,7 @@ Duplicate `--param NAME=VALUE` bindings are now rejected instead of silently all
 Discover now uses timezone-aware UTC datetime values for parsed upload dates and date sorting fallbacks. This is a maintenance correction prompted by local Ruff datetime checks rather than a change to the user-facing date syntax.
 
 Several nested filter conditions have also been simplified without altering their matching semantics, and an unexpected YouTube.js bridge return type is now reported as a `TypeError`.
+
+## Conformance testing
+
+The first deterministic YT-SQL conformance fixture lives under `yt_discover_tests/conformance/`. It deliberately remains small at this stage and covers representative NULL values, duplicate dates and live state. Larger generated profiles, complete exact-output fixtures and an independent oracle are later test infrastructure.
