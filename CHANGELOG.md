@@ -1,5 +1,11 @@
 # Changelog
 
+## Repository Aaudit
+
+- Recorded intentional version and executable-name differences from the earlier supplied endpoint.
+- Added a final canonical comparison checklist covering code, documentation, tests, tooling, modes and repository hygiene.
+- No tool version changed.
+
 ## Repository - Reliability and stress-test policy
 
 - Made large and huge conformance tests opt-in through the `stress` pytest marker.
