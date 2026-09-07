@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
@@ -276,7 +276,12 @@ def remove_completed_ids(batch_path: pathlib.Path, archive_path: pathlib.Path) -
 
         remaining.append(raw_line)
 
-    batch_path.write_text("\n".join(remaining) + "\n")
+    if not removed:
+        return 0
+
+    temporary_path = batch_path.with_name(batch_path.name + ".tmp")
+    temporary_path.write_text("\n".join(remaining) + "\n")
+    temporary_path.replace(batch_path)
     return removed
 
 
@@ -337,7 +342,7 @@ def main() -> int:
 
     completed = subprocess.run(command, check=False)
 
-    if args.remove_completed_ids and not args.targets:
+    if completed.returncode == 0 and args.remove_completed_ids and not args.targets:
         removed = remove_completed_ids(
             pathlib.Path(args.batch_file),
             pathlib.Path(args.archive),

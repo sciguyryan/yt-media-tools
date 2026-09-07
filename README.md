@@ -85,7 +85,7 @@ When a batch file is being used as a persistent queue, completed IDs can be remo
 ./yt-download.py --remove-completed-ids
 ```
 
-The downloader compares the batch file with the configured yt-dlp download archive and rewrites the batch file with completed IDs removed.
+The downloader compares the batch file with the configured yt-dlp download archive after a successful download run and rewrites the batch file atomically with completed IDs removed.
 
 ## Other options
 
