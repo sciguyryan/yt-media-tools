@@ -7,10 +7,10 @@ from datetime import datetime
 
 from yt_metadata import normalise_entries
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
-from yt_sources import enumerate_source
+from yt_sources import backend_status, enumerate_source
 
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,7 +22,18 @@ def parse_args() -> argparse.Namespace:
         action="version",
         version=f"%(prog)s {VERSION}",
     )
-    parser.add_argument("source", help="YouTube channel or playlist URL")
+    parser.add_argument("source", nargs="?", help="YouTube channel or playlist URL")
+    parser.add_argument(
+        "--source-backend",
+        choices=("yt-dlp", "youtubejs"),
+        default="yt-dlp",
+        help="Source enumeration backend",
+    )
+    parser.add_argument(
+        "--list-backends",
+        action="store_true",
+        help="Show available source backends and exit",
+    )
     parser.add_argument(
         "--after",
         help="Only include videos uploaded on or after YYYY-MM-DD",
@@ -204,6 +215,16 @@ def validate_args(args: argparse.Namespace) -> str | None:
 def main() -> int:
     args = parse_args()
 
+    if args.list_backends:
+        for name, available, detail in backend_status():
+            state = "available" if available else "unavailable"
+            print(f"{name}: {state} ({detail})")
+        return 0
+
+    if not args.source:
+        print("source is required unless --list-backends is used", file=sys.stderr)
+        return 2
+
     error = validate_args(args)
     if error:
         print(error, file=sys.stderr)
@@ -242,7 +263,7 @@ def main() -> int:
         return 2
 
     try:
-        raw_entries = enumerate_source(args.source)
+        raw_entries = enumerate_source(args.source, args.source_backend)
         entries = normalise_entries(raw_entries)
     except RuntimeError as exc:
         print(f"could not enumerate source: {exc}", file=sys.stderr)

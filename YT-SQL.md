@@ -75,3 +75,5 @@ In this version, ordinary inequality comparisons treat a missing value as unequa
 ## Metadata model
 
 YT-SQL now evaluates a normalised internal metadata record rather than raw yt-dlp entries. Source acquisition and extractor-specific field handling are kept outside the query module.
+
+YT-SQL remains backend-independent. Both yt-dlp and the experimental YouTube.js path are normalised before query evaluation.

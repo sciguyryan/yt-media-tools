@@ -2,7 +2,7 @@
 
 `yt-discover.py` is a companion to the downloader for finding video IDs from a YouTube channel or playlist.
 
-It uses `yt-dlp` to enumerate the source, applies the requested filters and prints matching video IDs one per line. The output can be redirected to a file or piped into the downloader.
+It uses `yt-dlp` by default to enumerate the source, applies the requested filters and prints matching video IDs one per line. An experimental YouTube.js source backend is also available when Node.js and `youtubei.js` are installed. The output can be redirected to a file or piped into the downloader.
 
 ## Basic use
 
@@ -127,6 +127,30 @@ YT-SQL now supports several predicates that previously required dedicated comman
 ```
 
 `BETWEEN`, `IN`, `IS NULL`, `IS NOT NULL`, `CONTAINS` and `MATCHES` can be combined with the existing Boolean operators.
+
+## Source backends
+
+Discover now has an experimental second source backend.
+
+The normal backend remains `yt-dlp`:
+
+```bash
+./yt-discover.py CHANNEL_URL --source-backend yt-dlp
+```
+
+YouTube.js can be selected explicitly when Node.js and `youtubei.js` are available:
+
+```bash
+./yt-discover.py CHANNEL_URL --source-backend youtubejs
+```
+
+Backend availability can be inspected without enumerating a source:
+
+```bash
+./yt-discover.py --list-backends
+```
+
+The YouTube.js backend is experimental in this version. It assumes a fairly simple response shape from `youtubei.js` and is expected to need compatibility work as more channel and playlist forms are exercised.
 
 ## Acquisition and metadata normalisation
 
