@@ -86,6 +86,7 @@ def test_tool_check_detects_optional_youtubejs(tmp_path: Path) -> None:
     assert "yt-dlp       available  2099.01.01" in result.stdout
     assert "Node.js      available  v24.0.0" in result.stdout
     assert "YouTube.js   available  18.0.0" in result.stdout
+    assert "YouTube.js: resolved from /opt/node_modules/youtubei.js/dist/src/platform/node.js" in result.stdout
     assert "youtubejs  channel continuation enumeration" in result.stdout
 
 

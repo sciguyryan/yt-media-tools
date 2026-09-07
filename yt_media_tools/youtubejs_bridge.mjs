@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 
-const require = createRequire(import.meta.url);
+const projectRequire = createRequire(path.join(process.cwd(), 'package.json'));
+const bridgeRequire = createRequire(import.meta.url);
 
 function textValue(value) {
   if (value === null || value === undefined) return '';
@@ -12,10 +16,43 @@ function textValue(value) {
   return String(value);
 }
 
+function resolveLibraryEntry() {
+  const resolvers = [projectRequire, bridgeRequire];
+  let lastError;
+  for (const resolver of resolvers) {
+    try {
+      return resolver.resolve('youtubei.js');
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+function findPackageInfo(entryPath) {
+  let directory = path.dirname(entryPath);
+  while (true) {
+    const candidate = path.join(directory, 'package.json');
+    if (fs.existsSync(candidate)) {
+      const payload = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+      if (payload?.name === 'youtubei.js') return { path: candidate, payload };
+    }
+    const parent = path.dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  return { path: null, payload: {} };
+}
+
 async function loadLibrary() {
-  const module = await import('youtubei.js');
-  const packageInfo = require('youtubei.js/package.json');
-  return { ...module, version: packageInfo.version };
+  const modulePath = resolveLibraryEntry();
+  const module = await import(pathToFileURL(modulePath).href);
+  const packageInfo = findPackageInfo(modulePath);
+  return {
+    ...module,
+    version: packageInfo.payload.version || 'unknown',
+    modulePath,
+  };
 }
 
 async function resolveChannelId(yt, url) {
@@ -92,7 +129,11 @@ async function main() {
   const [mode, value] = process.argv.slice(2);
   if (mode === '--check') {
     const library = await loadLibrary();
-    process.stdout.write(JSON.stringify({ available: true, version: library.version }) + '\n');
+    process.stdout.write(JSON.stringify({
+      available: true,
+      version: library.version,
+      module_path: library.modulePath,
+    }) + '\n');
     return;
   }
   if (mode === '--enumerate-channel-videos') {

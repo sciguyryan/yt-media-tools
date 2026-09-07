@@ -64,7 +64,10 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.18.1"
+PROGRAM_VERSION = "0.19.0"
+
+DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
+VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
 DEFAULT_ARCHIVE_FILE = Path("/mnt/storage/Storage/Scripts/archive.txt")
 FRONTIER_OVERLAP_CONFIRMATIONS = 5
 
@@ -825,6 +828,45 @@ def _acquisition_progress(level: int):
                 _verbose(level, f"Acquired {stats.available} available entries; {stats.skipped} skipped so far.")
         elif event == "skipped":
             _verbose(level, f"Skipped inaccessible entry: {detail}.")
+
+    return callback
+
+
+def _enumeration_progress(level: int, *, context: str, warn_threshold: int = 0):
+    """Create pipe-safe progress reporting for potentially lengthy source enumeration."""
+    interval = (
+        1
+        if level >= 2
+        else VERBOSE_ENUMERATION_PROGRESS_INTERVAL
+        if level >= 1
+        else DEFAULT_ENUMERATION_PROGRESS_INTERVAL
+    )
+    large_warning_emitted = False
+
+    def callback(event: str, stats: AcquisitionStats, detail: str | None) -> None:
+        nonlocal large_warning_emitted
+        if event != "enumerated":
+            return
+        count = stats.available
+        if warn_threshold and not large_warning_emitted and count >= warn_threshold:
+            print(
+                f"yt-discover: large-source warning: {context} has already observed {count} items and is still enumerating "
+                f"(configured warning threshold: {warn_threshold}).",
+                file=sys.stderr,
+                flush=True,
+            )
+            large_warning_emitted = True
+        if count == 1 and level >= 1:
+            _verbose(level, f"{context}: observed first source item.")
+        elif count and count % interval == 0:
+            if level >= 1:
+                _verbose(level, f"{context}: enumerated {count} source items so far.")
+            else:
+                print(
+                    f"yt-discover: {context}: enumerated {count} source items so far.",
+                    file=sys.stderr,
+                    flush=True,
+                )
 
     return callback
 
@@ -1627,6 +1669,13 @@ def main(argv: list[str] | None = None) -> int:
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
         cost_class, cost_reason = assess_cost(query, plan)
+    if not args.offline and not args.dry_run and args.acquisition != "full" and cost_class == "very-high":
+        print(
+            "yt-discover: warning: this query may require complete source enumeration and substantial metadata acquisition; "
+            "no safe source boundary is available. Add a lower upload_date bound when that matches the intended query.",
+            file=sys.stderr,
+            flush=True,
+        )
     if args.verbose:
         _verbose(True, f"Acquisition cost estimate: {cost_class} ({cost_reason}).")
 
@@ -1769,6 +1818,9 @@ def main(argv: list[str] | None = None) -> int:
                     stop_before=plan.stop_before,
                     confirmation_entries=plan.confirmation_entries,
                     dates=date_context,
+                    progress=_enumeration_progress(
+                        args.verbose, context="Bounded YouTube.js enumeration", warn_threshold=args.warn_source_size
+                    ),
                 )
             else:
                 if args.verbose >= 2:
@@ -1777,7 +1829,9 @@ def main(argv: list[str] | None = None) -> int:
                     flat_command,
                     stop_before=plan.stop_before,
                     confirmation_entries=plan.confirmation_entries,
-                    progress=None,
+                    progress=_enumeration_progress(
+                        args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
+                    ),
                 )
         except YouTubeJsError as exc:
             if args.backend == "youtubejs":
@@ -1794,7 +1848,9 @@ def main(argv: list[str] | None = None) -> int:
                     flat_command,
                     stop_before=plan.stop_before,
                     confirmation_entries=plan.confirmation_entries,
-                    progress=None,
+                    progress=_enumeration_progress(
+                        args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
+                    ),
                 )
             except YtDlpError as fallback_exc:
                 print(f"Error: {fallback_exc}.", file=sys.stderr)
@@ -1890,6 +1946,11 @@ def main(argv: list[str] | None = None) -> int:
                         flat_command,
                         known_ids=set(prior_order),
                         confirmation_entries=FRONTIER_OVERLAP_CONFIRMATIONS,
+                        progress=_enumeration_progress(
+                            args.verbose,
+                            context="Incremental frontier enumeration",
+                            warn_threshold=args.warn_source_size,
+                        ),
                     )
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)
@@ -1900,7 +1961,14 @@ def main(argv: list[str] | None = None) -> int:
                     "No trusted incremental frontier is available; enumerating the complete channel videos source.",
                 )
                 try:
-                    flat_entries, enumeration_stats = enumerate_all_flat(flat_command)
+                    flat_entries, enumeration_stats = enumerate_all_flat(
+                        flat_command,
+                        progress=_enumeration_progress(
+                            args.verbose,
+                            context="Full channel enumeration",
+                            warn_threshold=args.warn_source_size,
+                        ),
+                    )
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)
                     return 1
@@ -2095,7 +2163,7 @@ def main(argv: list[str] | None = None) -> int:
     observed_source_work = (
         enumeration_stats.enumerated if enumeration_stats is not None else acquisition_stats.attempted
     )
-    if args.warn_source_size and observed_source_work >= args.warn_source_size:
+    if enumeration_stats is None and args.warn_source_size and observed_source_work >= args.warn_source_size:
         print(
             f"yt-discover: warning: observed source work reached {observed_source_work} entries "
             f"(configured warning threshold: {args.warn_source_size}).",

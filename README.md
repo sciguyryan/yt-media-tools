@@ -2,8 +2,8 @@
 
 `yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
-- `yt-discover.py` 0.18.1 discovers, caches, queries and reports media metadata using the yt-sql query language.
-- `yt-download.py` 1.5.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
+- `yt-discover.py` 0.19.0 discovers, caches, queries and reports media metadata using the yt-sql query language.
+- `yt-download.py` 1.6.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
 
 The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
 
@@ -30,7 +30,7 @@ The internal package is named `yt_media_tools`. It keeps reusable implementation
 
 ## Requirements
 
-Both tools require Python 3. `yt-dlp` is required for live acquisition or downloading. Discover additionally uses Node.js and YouTube.js for acquisition paths that require the YouTube.js adapter.
+Both tools require Python 3. `yt-dlp` is required for live acquisition or downloading. Discover can additionally use Node.js and YouTube.js for bounded channel acquisition when the optional adapter is installed.
 
 See `DISCOVER-README.md` and `DOWNLOADER-README.md` for tool-specific requirements and usage.
 
@@ -60,7 +60,7 @@ Run both non-routine tiers explicitly with:
 python -m pytest -m "scale or stress"
 ```
 
-Ruff is configured for repository linting and is checked in GitHub Actions.
+Ruff is configured for repository linting and formatting, and both checks run in GitHub Actions.
 
 ## Versioning
 

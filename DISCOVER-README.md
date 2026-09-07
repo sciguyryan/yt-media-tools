@@ -18,7 +18,7 @@ Large and huge datasets are deliberately opt-in. Run selected large-dataset chec
 
 ## yt-sql oracle and conformance architecture
 
-Version 0.18.1 keeps Phase 5.5 focused on testing architecture before analytical syntax expansion. Routine test runs use only the deterministic `small` and `normal` profiles. `large` is reserved for explicitly marked scale-sensitive tests, and `huge` is reserved for explicitly marked torture/scalability tests, so ordinary local development and push/pull-request CI do not repeatedly pay for 10,000- or 100,000-record corpora.
+The current testing architecture keeps routine conformance work focused on deterministic small and normal datasets before analytical syntax expansion. Routine test runs use only the deterministic `small` and `normal` profiles. `large` is reserved for explicitly marked scale-sensitive tests, and `huge` is reserved for explicitly marked torture/scalability tests, so ordinary local development and push/pull-request CI do not repeatedly pay for 10,000- or 100,000-record corpora.
 
 The generator defines four centrally sized profiles:
 
@@ -212,7 +212,7 @@ For example:
 
 The explanation shows why the date range can bound enumeration and prune provably out-of-range candidates, while `duration` still requires authoritative detailed metadata.
 
-## v0.10.0 YouTube.js compatibility fix
+## YouTube.js compatibility
 
 The YouTube.js backend now consumes its parser-backed `feed.videos` collection as an iterable rather than requiring a native JavaScript array. This is important with current YouTube.js releases, where channel video feeds are exposed through `ObservedArray` and may include newer `LockupView` video nodes. If a channel advertises a Videos tab but YouTube.js yields no parseable video entries, `--backend auto` treats that as a backend failure and falls back to yt-dlp instead of silently returning an empty result.
 
@@ -227,7 +227,7 @@ Check the current installation without contacting YouTube:
 ./yt-discover.py --check-tools
 ```
 
-A healthy installation with the optional backend available will report Python-side access to yt-dlp, Node.js, and YouTube.js. If YouTube.js is unavailable, normal `--backend auto` runs can fall back to yt-dlp and will announce that fallback on standard error when the query would otherwise use the optional backend.
+A healthy installation with the optional backend available reports access to yt-dlp, Node.js, and YouTube.js. For YouTube.js, `--check-tools` also reports the module path resolved by Node.js. If YouTube.js is unavailable, normal `--backend auto` runs can fall back to yt-dlp and announce that fallback on standard error when the query would otherwise use the optional backend.
 
 ### Required: yt-dlp
 
@@ -252,15 +252,14 @@ node --version
 npm --version
 ```
 
-Install YouTube.js locally in the extracted yt-discover directory so Node module resolution is deterministic:
+The repository declares YouTube.js as an optional managed Node dependency. From the repository root, install the declared dependency set with:
 
 ```bash
-cd /path/to/yt-discover
-npm install youtubei.js@latest
+npm install
 ./yt-discover.py --check-tools
 ```
 
-The local installation creates `node_modules/` beside `yt-discover.py`. It is deliberately optional and is not bundled in the release archive. YouTube.js currently documents installation through `npm install youtubei.js@latest`; because it talks to YouTube's internal InnerTube interface, it may occasionally require updates when YouTube changes its responses.
+The generated `node_modules/` directory remains local and is ignored by Git. The bridge uses normal Node.js module resolution from the project environment rather than requiring `youtubei.js` to live beside the Python entry point. `package.json` is retained in the repository so the expected dependency is explicit. A generated `package-lock.json`, when present, should also be committed and can then be installed reproducibly with `npm ci`. Because YouTube.js talks to YouTube's internal InnerTube interface, the dependency may occasionally require updates when YouTube changes its responses.
 
 Backend selection is explicit:
 
@@ -581,7 +580,7 @@ yt-discover.py "SELECT id, title FROM @example" --report acquisition-report.txt
 
 ## Query-planned bounded acquisition
 
-Version 0.11.0 can avoid walking an entire large channel in an important class of queries. When `--acquisition auto` is used, the source is a channel `videos` tab, and the `WHERE` expression logically implies a lower `upload_date` bound, yt-discover performs continuation-driven lightweight enumeration first. In `--backend auto`, YouTube.js is preferred when installed; otherwise yt-dlp lazy flat enumeration is used. Both lightweight backends expose approximate or relative publication timing rather than authoritative full-video metadata, so yt-discover keeps a generous safety margin and requires several consecutive entries beyond that margin before stopping pagination. YouTube.js relative dates receive an additional uncertainty allowance before an entry may count as safely old. It then performs full yt-dlp extraction only for the candidate video IDs that were actually enumerated, and evaluates the original query against authoritative metadata. If YouTube.js is unavailable or fails during an `auto` run, yt-discover prints a fallback notice to standard error and retries bounded enumeration with yt-dlp. Explicit `--backend youtubejs` is strict and does not fall back.
+yt-discover can avoid walking an entire large channel in an important class of queries. When `--acquisition auto` is used, the source is a channel `videos` tab, and the `WHERE` expression logically implies a lower `upload_date` bound, yt-discover performs continuation-driven lightweight enumeration first. In `--backend auto`, YouTube.js is preferred when installed; otherwise yt-dlp lazy flat enumeration is used. Both lightweight backends expose approximate or relative publication timing rather than authoritative full-video metadata, so yt-discover keeps a generous safety margin and requires several consecutive entries beyond that margin before stopping pagination. YouTube.js relative dates receive an additional uncertainty allowance before an entry may count as safely old. It then performs full yt-dlp extraction only for the candidate video IDs that were actually enumerated, and evaluates the original query against authoritative metadata. If YouTube.js is unavailable or fails during an `auto` run, yt-discover prints a fallback notice to standard error and retries bounded enumeration with yt-dlp. Explicit `--backend youtubejs` is strict and does not fall back.
 
 For example:
 
@@ -596,9 +595,9 @@ Use `--acquisition full` to force exhaustive acquisition. Use `--backend ytdlp` 
 
 ## Acquisition cost assessment and large-source warnings
 
-Version 0.11.0 assesses the likely acquisition cost before contacting YouTube. The planner distinguishes bounded scans from queries for which no safe early-termination strategy can be proved. With `-v`, the selected cost class and its reason are printed to stderr.
+yt-discover assesses the likely acquisition cost before contacting YouTube. The planner distinguishes bounded scans from queries for which no safe early-termination strategy can be proved. With `-v`, the selected cost class and its reason are printed to stderr.
 
-When a query has no safe source boundary and appears to require detailed metadata, yt-discover prints a non-interactive warning before automatic full acquisition. Explicit `--acquisition full` suppresses that warning because the exhaustive plan was requested deliberately. `--warn-source-size COUNT` reports when observed acquisition work actually reaches the configured threshold; `--warn-source-size 0` disables threshold notices.
+When a query has no safe source boundary and appears to require detailed metadata, yt-discover prints a non-interactive warning before automatic full acquisition. Explicit `--acquisition full` suppresses that warning because the exhaustive plan was requested deliberately. Long-running source enumeration emits coarse progress to stderr even without verbose mode so a query does not appear stalled. `-v` and `-vv` add progressively more detail. `--warn-source-size COUNT` emits a live large-source notice once observed enumeration reaches the configured threshold; `--warn-source-size 0` disables threshold notices.
 
 Bounded scans also perform conservative lightweight candidate rejection. Relative publication dates carry uncertainty intervals, while IDs and titles are exact at supported lightweight stages. An enumerated video is skipped before yt-dlp detail extraction only when the complete `WHERE` expression can be proved false from those capabilities. This supports both lower and upper upload-date pruning and exact ID/title predicates. Ambiguous, unavailable, or otherwise uncertain cases are retained. The authoritative `WHERE` expression is still evaluated against full yt-dlp metadata.
 

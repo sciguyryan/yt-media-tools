@@ -6,7 +6,7 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.5.0"
+    assert downloader.PROGRAM_VERSION == "1.6.0"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
@@ -29,3 +29,29 @@ def test_validate_resolution_rejects_invalid_values(downloader, value: str) -> N
 def test_dry_run_environment_does_not_require_yt_dlp_or_cookies(downloader, monkeypatch) -> None:
     monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
     assert downloader.validate_environment(dry_run=True) == "yt-dlp"
+
+
+def test_resolve_cookies_uses_script_local_file_when_present(downloader, tmp_path, monkeypatch) -> None:
+    cookie_file = tmp_path / "cookies.txt"
+    cookie_file.write_text("cookie-data", encoding="utf-8")
+    monkeypatch.setattr(downloader, "COOKIES_FILE", cookie_file)
+    assert downloader.resolve_cookies(None, disabled=False) == cookie_file
+
+
+def test_resolve_cookies_returns_none_when_automatic_file_is_absent(downloader, tmp_path, monkeypatch) -> None:
+    cookie_file = tmp_path / "cookies.txt"
+    monkeypatch.setattr(downloader, "COOKIES_FILE", cookie_file)
+    assert downloader.resolve_cookies(None, disabled=False) is None
+
+
+def test_resolve_cookies_explicit_missing_file_is_rejected(downloader, tmp_path) -> None:
+    missing = tmp_path / "missing-cookies.txt"
+    with pytest.raises(ValueError, match="cookies file not found"):
+        downloader.resolve_cookies(missing, disabled=False)
+
+
+def test_resolve_cookies_no_cookies_overrides_automatic_file(downloader, tmp_path, monkeypatch) -> None:
+    cookie_file = tmp_path / "cookies.txt"
+    cookie_file.write_text("cookie-data", encoding="utf-8")
+    monkeypatch.setattr(downloader, "COOKIES_FILE", cookie_file)
+    assert downloader.resolve_cookies(None, disabled=True) is None

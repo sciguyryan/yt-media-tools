@@ -1,5 +1,20 @@
 # Changelog
 
+## Discover 0.19.0 - Acquisition Observability
+
+- Resolve optional YouTube.js through the project Node environment and report the resolved module path in `--check-tools`.
+- Add coarse stderr progress for lengthy source enumeration while preserving clean stdout query output.
+- Emit live large-source notices when enumeration reaches `--warn-source-size`.
+- Warn before very-high-cost automatic full-source plans where no safe source boundary is available.
+- Refresh tests and current documentation for acquisition and tool-discovery behaviour.
+
+## Downloader 1.6.0 - Optional Cookies
+
+- Make cookies optional by default while continuing to use script-local `cookies.txt` automatically when present.
+- Add strict `--cookies FILE` and explicit `--no-cookies` controls.
+- Keep missing explicitly requested cookie files as configuration errors.
+- Refresh tests and current documentation for the cookie policy.
+
 ## Repository - Test-suite organisation
 
 - Replace historical Discover phase-based test modules with capability-oriented test modules.

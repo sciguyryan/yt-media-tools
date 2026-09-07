@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .dates import DateContext, parse_date_literal
-from .ytdlp import EnumerationStats, ProgressCallback
+from .ytdlp import AcquisitionStats, EnumerationStats, ProgressCallback
 
 
 class YouTubeJsError(RuntimeError):
@@ -113,6 +113,9 @@ def enumerate_until_date_boundary(
                 continue
             entries.append(entry)
             stats.enumerated += 1
+            if progress is not None:
+                detail = str(entry.get("id") or f"entry {stats.enumerated}")
+                progress("enumerated", AcquisitionStats(available=stats.enumerated), detail)
             published_text = str(entry.get("published_text") or "")
             published = _published_date(published_text, dates)
             if published is None:

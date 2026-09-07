@@ -1,6 +1,6 @@
-# run-downloader
+# yt-download
 
-`yt-download.py` 1.5.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.6.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -14,14 +14,14 @@ It is designed to pair naturally with `yt-discover.py`:
 
 - Python 3.
 - `yt-dlp` available on `PATH`.
-- A `cookies.txt` file beside `yt-download.py` for normal non-dry-run operation.
+- Cookies are optional. A `cookies.txt` file beside `yt-download.py` is used automatically when present.
 - The script directory and configured download paths must be writable where the selected operation requires it.
 
 The current built-in locations are:
 
 ```text
 Download archive: ./archive.txt beside yt-download.py
-Cookies:          ./cookies.txt beside yt-download.py
+Cookies:          ./cookies.txt beside yt-download.py, when present
 Temporary files:  /mnt/storage/Temp/yt-dlp
 ```
 
@@ -92,6 +92,22 @@ Print the resolved `yt-dlp` command without executing it:
 ```
 
 Dry-run mode does not mutate queue files.
+
+## Cookies
+
+Cookies are optional. If `cookies.txt` exists beside `yt-download.py`, it is used automatically. If the file is absent, yt-dlp runs without cookies.
+
+Use an explicit cookie file with:
+
+```bash
+./yt-download.py --cookies /path/to/cookies.txt VIDEO_ID
+```
+
+An explicitly requested cookie file must exist. To disable cookies even when the script-local file exists, use:
+
+```bash
+./yt-download.py --no-cookies VIDEO_ID
+```
 
 ## Output profiles
 

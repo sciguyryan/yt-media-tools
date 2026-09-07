@@ -36,7 +36,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.5.0"
+PROGRAM_VERSION = "1.6.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -97,6 +97,12 @@ EXAMPLES = r"""Examples:
 
   A failed, skipped, interrupted or partially processed video remains in the file.
   The removal callback runs at yt-dlp's after_move stage, after successful post-processing.
+
+  Use an explicit cookies file when authentication is required:
+    %(prog)s --cookies /path/to/cookies.txt VIDEO_ID
+
+  Ignore an automatically discovered script-local cookies.txt:
+    %(prog)s --no-cookies VIDEO_ID
 
   Print the resolved yt-dlp command without executing it:
     %(prog)s --dry-run -p playlist PLAYLIST_URL
@@ -199,6 +205,21 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         metavar="FILE",
         help="Read targets from FILE instead of positional targets or ./ids.txt.",
+    )
+    cookie_group = parser.add_mutually_exclusive_group()
+    cookie_group.add_argument(
+        "--cookies",
+        type=Path,
+        metavar="FILE",
+        help=(
+            "Use cookies from FILE. If omitted, cookies.txt beside this script is used "
+            "when present; otherwise yt-dlp runs without cookies."
+        ),
+    )
+    cookie_group.add_argument(
+        "--no-cookies",
+        action="store_true",
+        help="Do not use cookies, even if cookies.txt exists beside this script.",
     )
     parser.add_argument(
         "--dry-run",
@@ -504,18 +525,32 @@ def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputS
 
 
 def validate_environment(*, dry_run: bool) -> str:
-    """Validate external requirements and return the yt-dlp executable name."""
+    """Validate external executable requirements and return the yt-dlp command name."""
     executable = shutil.which("yt-dlp")
     if executable is None:
         if dry_run:
             executable = "yt-dlp"
         else:
             raise RuntimeError("yt-dlp was not found on PATH")
-
-    if not dry_run and not COOKIES_FILE.is_file():
-        raise RuntimeError(f"cookies file not found: {COOKIES_FILE}")
-
     return executable
+
+
+def resolve_cookies(requested: Path | None, *, disabled: bool) -> Path | None:
+    """Resolve the cookie policy for one invocation.
+
+    Explicitly requested cookie files are validated strictly. Without an explicit
+    request, the script-local cookies.txt is used only when it exists.
+    """
+    if disabled:
+        return None
+    if requested is not None:
+        path = requested.expanduser()
+        if not path.is_file():
+            raise ValueError(f"cookies file not found: {path}")
+        return path
+    if COOKIES_FILE.is_file():
+        return COOKIES_FILE
+    return None
 
 
 def build_yt_dlp_command(
@@ -524,6 +559,7 @@ def build_yt_dlp_command(
     input_source: InputSource,
     profile: OutputProfile | None,
     *,
+    cookies_file: Path | None = None,
     remove_completed_ids: bool = False,
 ) -> list[str]:
     """Build the complete yt-dlp command without invoking a shell."""
@@ -542,11 +578,12 @@ def build_yt_dlp_command(
         "all",
         "--download-archive",
         str(ARCHIVE_FILE),
-        "--cookies",
-        str(COOKIES_FILE),
         "--video-multistreams",
         "--audio-multistreams",
     ]
+
+    if cookies_file is not None:
+        command.extend(("--cookies", str(cookies_file)))
 
     if profile is not None:
         if profile.output is not None:
@@ -621,6 +658,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         input_source = resolve_input(args)
         validate_remove_completed_ids(args, input_source)
         profile = resolve_profile(args.profile)
+        cookies_file = resolve_cookies(args.cookies, disabled=args.no_cookies)
         executable = validate_environment(dry_run=args.dry_run)
     except (ValueError, RuntimeError) as exc:
         parser.error(str(exc))
@@ -647,6 +685,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         policy,
         input_source,
         profile,
+        cookies_file=cookies_file,
         remove_completed_ids=args.remove_completed_ids,
     )
     return run(command, dry_run=args.dry_run)

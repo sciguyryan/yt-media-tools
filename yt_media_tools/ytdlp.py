@@ -385,6 +385,8 @@ def enumerate_until_date_boundary(
 
 def enumerate_all_flat(
     command: list[str],
+    *,
+    progress: ProgressCallback | None = None,
 ) -> tuple[list[dict[str, Any]], EnumerationStats]:
     """Enumerate an entire flat source while preserving lightweight source order."""
     from datetime import datetime, timezone
@@ -396,7 +398,7 @@ def enumerate_all_flat(
         command,
         stop_before=datetime(1970, 1, 1, tzinfo=timezone.utc).date(),
         confirmation_entries=3,
-        progress=None,
+        progress=progress,
     )
 
 
@@ -405,6 +407,7 @@ def enumerate_until_known_overlap(
     *,
     known_ids: set[str],
     confirmation_entries: int,
+    progress: ProgressCallback | None = None,
 ) -> tuple[list[dict[str, Any]], EnumerationStats]:
     """Enumerate newest-first flat entries until a conservative known-ID overlap is confirmed.
 
@@ -461,6 +464,9 @@ def enumerate_until_known_overlap(
                 stats.frontier_overlap_entries += 1
             else:
                 consecutive_known = 0
+            if progress is not None:
+                detail = str(video_id or f"entry {stats.enumerated}")
+                progress("enumerated", AcquisitionStats(available=stats.enumerated), detail)
             if consecutive_known >= confirmation_entries:
                 stats.stopped_early = True
                 stats.stopped_on_frontier = True

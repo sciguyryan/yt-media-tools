@@ -18,6 +18,7 @@ class ToolStatus:
     available: bool
     version: str | None = None
     detail: str = ""
+    location: str | None = None
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,7 @@ def check_tools(project_root: Path) -> ToolRegistry:
     else:
         ok, output, detail = _run_version([node_path, str(bridge), "--check"], cwd=project_root)
         version = None
+        location = None
         if ok and output:
             try:
                 payload = json.loads(output)
@@ -94,11 +96,25 @@ def check_tools(project_root: Path) -> ToolRegistry:
                 detail = f"capability check returned invalid JSON: {output}"
             else:
                 version = str(payload.get("version") or "unknown")
-        if not ok and ("ERR_MODULE_NOT_FOUND" in detail or "Cannot find package 'youtubei.js'" in detail):
-            detail = "youtubei.js is not installed in the yt-discover directory"
+                location = payload.get("module_path")
+                if location is not None:
+                    location = str(location)
+        if not ok and (
+            "ERR_MODULE_NOT_FOUND" in detail
+            or "Cannot find package 'youtubei.js'" in detail
+            or "Cannot find module 'youtubei.js'" in detail
+        ):
+            detail = "youtubei.js could not be resolved by Node.js from the project environment"
         elif not ok and "\n" in detail:
             detail = detail.splitlines()[0]
-        youtubejs = ToolStatus("YouTube.js", False, ok, version=version, detail=detail)
+        youtubejs = ToolStatus(
+            "YouTube.js",
+            False,
+            ok,
+            version=version,
+            detail=detail,
+            location=location,
+        )
 
     return ToolRegistry(ytdlp=ytdlp, node=node, youtubejs=youtubejs)
 
@@ -122,7 +138,9 @@ def format_tool_check(registry: ToolRegistry) -> str:
         line(registry.youtubejs),
     ]
     for tool in (registry.ytdlp, registry.node, registry.youtubejs):
-        if not tool.available and tool.detail:
+        if tool.available and tool.location:
+            lines.append(f"    {tool.name}: resolved from {tool.location}")
+        elif not tool.available and tool.detail:
             lines.append(f"    {tool.name}: {tool.detail}")
 
     lines.extend(["", "Available acquisition backends"])

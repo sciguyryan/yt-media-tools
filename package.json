@@ -1,5 +1,8 @@
 {
+  "name": "yt-media-tools",
+  "private": true,
+  "description": "Optional Node.js dependencies for yt-discover acquisition backends.",
   "dependencies": {
-    "youtubei.js": "^18.0.0"
+    "youtubei.js": "18.0.0"
   }
 }
