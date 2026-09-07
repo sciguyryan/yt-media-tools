@@ -202,48 +202,126 @@ def parse_expression(expression: str):
     return ExpressionParser(tokens).parse()
 
 
+def split_projection_list(text: str) -> list[str]:
+    parts: list[str] = []
+    token = ""
+    depth = 0
+    quote: str | None = None
+    for char in text:
+        if quote is not None:
+            token += char
+            if char == quote:
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            token += char
+            continue
+        if char == "(":
+            depth += 1
+            token += char
+            continue
+        if char == ")":
+            depth -= 1
+            if depth < 0:
+                raise ValueError("unbalanced projection parentheses")
+            token += char
+            continue
+        if char == "," and depth == 0:
+            if not token.strip():
+                raise ValueError("empty SELECT expression")
+            parts.append(token.strip())
+            token = ""
+            continue
+        token += char
+    if quote is not None or depth != 0:
+        raise ValueError("unterminated SELECT expression")
+    if token.strip():
+        parts.append(token.strip())
+    return parts
+
+
+def parse_projection(expression: str):
+    expression = expression.strip()
+    lowered = expression.lower()
+    allowed_fields = {"id", "title", "uploader", "duration", "date", "live"}
+    if lowered in allowed_fields:
+        return ("field", lowered)
+
+    match = re.fullmatch(r"(?P<name>lower|upper|length|coalesce)\((?P<args>.*)\)", expression, re.IGNORECASE)
+    if not match:
+        raise ValueError(f"unknown SELECT expression: {expression}")
+    name = match.group("name").lower()
+    args = [parse_projection(arg) if arg.strip().lower() in allowed_fields or re.match(r"^(lower|upper|length|coalesce)\(", arg.strip(), re.I) else ("literal", unquote(arg.strip())) for arg in split_projection_list(match.group("args"))]
+    if name in {"lower", "upper", "length"} and len(args) != 1:
+        raise ValueError(f"{name.upper()} requires exactly one argument")
+    if name == "coalesce" and not args:
+        raise ValueError("COALESCE requires at least one argument")
+    return ("function", name, args)
+
+
+def projection_label(node) -> str:
+    if node[0] == "field":
+        return node[1]
+    if node[0] == "literal":
+        return str(node[1])
+    return f"{node[1].upper()}({', '.join(projection_label(arg) for arg in node[2])})"
+
+
+def projection_value(entry: dict[str, object], node) -> object:
+    if node[0] == "field":
+        return field_value(entry, node[1])
+    if node[0] == "literal":
+        return node[1]
+    _, name, args = node
+    values = [projection_value(entry, arg) for arg in args]
+    if name == "lower":
+        return None if values[0] is None else str(values[0]).lower()
+    if name == "upper":
+        return None if values[0] is None else str(values[0]).upper()
+    if name == "length":
+        return None if values[0] is None else len(str(values[0]))
+    if name == "coalesce":
+        return next((value for value in values if value is not None), None)
+    raise ValueError(f"unknown scalar function: {name}")
+
+
 def parse_query_statement(query: str) -> dict[str, object]:
     match = re.fullmatch(
-        r"""\s*select\s+(?P<select>.+?)
+        r"""\s*select\s+(?P<distinct>distinct\s+)?(?P<select>.+?)
         (?:\s+where\s+(?P<where>.+?))?
         (?:\s+order\s+by\s+(?P<order>[a-z_]+)(?:\s+(?P<direction>asc|desc))?)?
         (?:\s+limit\s+(?P<limit>\d+))?
+        (?:\s+offset\s+(?P<offset>\d+))?
         \s*""",
         query,
         flags=re.IGNORECASE | re.VERBOSE,
     )
     if not match:
-        raise ValueError("expected SELECT with optional WHERE, ORDER BY and LIMIT")
+        raise ValueError("expected SELECT with optional DISTINCT, WHERE, ORDER BY, LIMIT and OFFSET")
 
-    fields = [field.strip().lower() for field in match.group("select").split(",") if field.strip()]
-    if not fields:
-        raise ValueError("SELECT requires at least one field")
+    projection_text = split_projection_list(match.group("select"))
+    if not projection_text:
+        raise ValueError("SELECT requires at least one expression")
+    fields = [parse_projection(item) for item in projection_text]
 
     allowed_fields = {"id", "title", "uploader", "duration", "date", "live"}
-    unknown = [field for field in fields if field not in allowed_fields]
-    if unknown:
-        raise ValueError(f"unknown SELECT field: {unknown[0]}")
-
     order_field = match.group("order")
     if order_field is not None:
         order_field = order_field.lower()
         if order_field not in allowed_fields:
             raise ValueError(f"unknown ORDER BY field: {order_field}")
 
-    limit_text = match.group("limit")
-    limit = int(limit_text) if limit_text is not None else None
-
     where_text = match.group("where")
-    where_expression = parse_expression(where_text) if where_text else None
-
     return {
         "fields": fields,
-        "where": where_expression,
+        "where": parse_expression(where_text) if where_text else None,
         "order": order_field,
         "direction": (match.group("direction") or "asc").lower(),
-        "limit": limit,
+        "limit": int(match.group("limit")) if match.group("limit") else None,
+        "offset": int(match.group("offset")) if match.group("offset") else 0,
+        "distinct": match.group("distinct") is not None,
     }
-
 
 def field_value(entry: dict[str, object], field: str) -> object:
     if field in {"id", "title", "uploader", "duration", "date", "live"}:
@@ -287,6 +365,15 @@ def coerce_value(field: str, value: object) -> object:
     return str(value)
 
 
+def resolve_parameter(value: object, params: dict[str, object] | None) -> object:
+    if isinstance(value, str) and value.startswith(":"):
+        name = value[1:]
+        if not params or name not in params:
+            raise ValueError(f"missing query parameter: {name}")
+        return params[name]
+    return value
+
+
 def compare_values(actual: object, operator: str, expected: object) -> bool:
     if actual is None:
         # Early YT-SQL treats NULL as unequal to ordinary values.
@@ -307,15 +394,15 @@ def compare_values(actual: object, operator: str, expected: object) -> bool:
     raise ValueError(f"unsupported comparison operator: {operator}")
 
 
-def evaluate_expression(entry: dict[str, object], node) -> bool:
+def evaluate_expression(entry: dict[str, object], node, params: dict[str, object] | None = None) -> bool:
     kind = node[0]
 
     if kind == "and":
-        return evaluate_expression(entry, node[1]) and evaluate_expression(entry, node[2])
+        return evaluate_expression(entry, node[1], params) and evaluate_expression(entry, node[2], params)
     if kind == "or":
-        return evaluate_expression(entry, node[1]) or evaluate_expression(entry, node[2])
+        return evaluate_expression(entry, node[1], params) or evaluate_expression(entry, node[2], params)
     if kind == "not":
-        return not evaluate_expression(entry, node[1])
+        return not evaluate_expression(entry, node[1], params)
 
     if kind == "is_null":
         return field_value(entry, node[1]) is None
@@ -340,16 +427,19 @@ def evaluate_expression(entry: dict[str, object], node) -> bool:
     if kind == "compare":
         _, field, operator, expected_text = node
         actual = coerce_value(field, field_value(entry, field))
-        expected = coerce_value(field, expected_text)
-        if expected is None and expected_text is not None:
-            raise ValueError(f"could not coerce value for {field}: {expected_text}")
+        resolved_expected = resolve_parameter(expected_text, params)
+        expected = coerce_value(field, resolved_expected)
+        if expected is None and resolved_expected is not None:
+            raise ValueError(f"could not coerce value for {field}: {resolved_expected}")
         return compare_values(actual, operator, expected)
 
     if kind == "between":
         _, field, lower_text, upper_text = node
         actual = coerce_value(field, field_value(entry, field))
-        lower = coerce_value(field, unquote(lower_text))
-        upper = coerce_value(field, unquote(upper_text))
+        lower_raw = resolve_parameter(unquote(lower_text), params)
+        upper_raw = resolve_parameter(unquote(upper_text), params)
+        lower = coerce_value(field, lower_raw)
+        upper = coerce_value(field, upper_raw)
         if actual is None or lower is None or upper is None:
             return False
         return lower <= actual <= upper
@@ -357,7 +447,7 @@ def evaluate_expression(entry: dict[str, object], node) -> bool:
     if kind == "in":
         _, field, raw_values = node
         actual = coerce_value(field, field_value(entry, field))
-        expected_values = [coerce_value(field, value) for value in raw_values]
+        expected_values = [coerce_value(field, resolve_parameter(value, params)) for value in raw_values]
         return actual in expected_values
 
     raise ValueError(f"unknown expression node: {kind}")
@@ -371,8 +461,8 @@ def query_sort_key(entry: dict[str, object], field: str) -> tuple[bool, object]:
     return (value is None, value if value is not None else "")
 
 
-def print_row(entry: dict[str, object], fields: list[str]) -> None:
-    values = [field_value(entry, field) for field in fields]
+def print_row(entry: dict[str, object], fields: list[object]) -> None:
+    values = [projection_value(entry, field) for field in fields]
     if len(values) == 1:
         value = values[0]
         print("" if value is None else value)

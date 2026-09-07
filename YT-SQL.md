@@ -97,3 +97,11 @@ Offline mode accepts stale cache entries because it is explicitly prohibited fro
 ## LIMIT-aware source execution
 
 A plain `LIMIT` without `WHERE` or `ORDER BY` can now bound yt-dlp source acquisition. Discover applies this optimisation only when it can prove that early termination preserves the query result. Other queries continue to enumerate the complete source.
+
+## DISTINCT, OFFSET and scalar projection
+
+`SELECT DISTINCT` removes duplicate projected rows before `OFFSET` and `LIMIT`. Scalar projection functions support `LOWER`, `UPPER`, `LENGTH` and `COALESCE`.
+
+`OFFSET N` discards the first `N` result rows. For otherwise safe live yt-dlp queries, acquisition is bounded to `LIMIT + OFFSET` entries.
+
+Named parameters use `:name` and are supplied with repeated `--param NAME=VALUE` options.

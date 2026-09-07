@@ -14,7 +14,7 @@ from yt_query import evaluate_expression, field_value, parse_expression, parse_q
 from yt_sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -149,7 +149,42 @@ def parse_args() -> argparse.Namespace:
         "--query",
         help="Complete YT-SQL query statement",
     )
+    parser.add_argument(
+        "--param",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="Bind a named YT-SQL parameter; may be repeated",
+    )
+    parser.add_argument(
+        "--show-provenance",
+        action="store_true",
+        help="Show whether the result came from cache or live acquisition",
+    )
     return parser.parse_args()
+
+
+def parse_params(values: list[str]) -> dict[str, object]:
+    params: dict[str, object] = {}
+    for item in values:
+        if "=" not in item:
+            raise ValueError(f"invalid parameter binding: {item}")
+        name, raw = item.split("=", 1)
+        name = name.strip()
+        if not name:
+            raise ValueError("parameter name cannot be empty")
+        text = raw.strip()
+        lowered = text.lower()
+        if lowered == "null": value: object = None
+        elif lowered == "true": value = True
+        elif lowered == "false": value = False
+        else:
+            try: value = int(text)
+            except ValueError:
+                try: value = float(text)
+                except ValueError: value = text
+        params[name] = value
+    return params
 
 
 def parse_date(value: str | None) -> datetime | None:
@@ -193,8 +228,9 @@ def matches(
     before: datetime | None,
     title_pattern: re.Pattern[str] | None,
     where_expression,
+    query_params: dict[str, object] | None = None,
 ) -> bool:
-    if where_expression is not None and not evaluate_expression(entry, where_expression):
+    if where_expression is not None and not evaluate_expression(entry, where_expression, query_params):
         return False
 
     title = entry.get("title")
@@ -321,6 +357,7 @@ def main() -> int:
 
     query = None
     try:
+        query_params = parse_params(args.param)
         if args.query:
             query = parse_query_statement(args.query)
             where_expression = query["where"]
@@ -363,6 +400,10 @@ def main() -> int:
 
         if args.explain:
             print(explain_plan(plan), file=sys.stderr)
+
+        if args.show_provenance:
+            backend = plan.get("backend") or "unknown"
+            print(f"provenance: mode={plan['mode']} backend={backend}", file=sys.stderr)
 
         source_limit = acquisition_limit(
             query,
@@ -468,7 +509,9 @@ def main() -> int:
     matches_found = [
         entry
         for entry in entries
-        if matches(entry, args, after, before, title_pattern, where_expression)
+        if matches(
+            entry, args, after, before, title_pattern, where_expression, query_params
+        )
     ]
 
     if query is not None:
@@ -478,6 +521,22 @@ def main() -> int:
                 key=lambda entry: query_sort_key(entry, order_field),
                 reverse=query["direction"] == "desc",
             )
+
+        if query["distinct"]:
+            seen: set[tuple[object, ...]] = set()
+            distinct_entries: list[dict[str, object]] = []
+            from yt_query import projection_value
+            for entry in matches_found:
+                key = tuple(projection_value(entry, field) for field in query["fields"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                distinct_entries.append(entry)
+            matches_found = distinct_entries
+
+        query_offset = query["offset"]
+        if query_offset:
+            matches_found = matches_found[query_offset:]
 
         query_limit = query["limit"]
         if query_limit is not None:

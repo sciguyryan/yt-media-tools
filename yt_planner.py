@@ -132,7 +132,7 @@ def acquisition_limit(query, where_expression, backend: str | None) -> int | Non
         return None
     if query.get("order") is not None:
         return None
-    return int(query["limit"])
+    return int(query["limit"]) + int(query.get("offset") or 0)
 
 
 def execution_analysis(query, where_expression, backend: str | None) -> dict[str, object]:

@@ -8,9 +8,10 @@ import subprocess
 import sys
 
 
-VERSION = "0.6.0"
+VERSION = "0.8.0"
 
 DEFAULT_PROFILE = "default"
+PROFILE_KEYS = {"path", "output"}
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
 DEFAULT_BATCH_FILE = "ids.txt"
 DEFAULT_COOKIES = "cookies.txt"
@@ -93,7 +94,7 @@ def load_profile(name: str) -> dict[str, str]:
 
     path = path.resolve()
     settings: dict[str, str] = {}
-    path_keys = {"batch_file", "cookies", "archive"}
+    path_keys = {"path"}
 
     for line_number, raw_line in enumerate(path.read_text().splitlines(), start=1):
         line = raw_line.strip()
@@ -110,6 +111,8 @@ def load_profile(name: str) -> dict[str, str]:
             raise ValueError(f"{path}:{line_number}: empty profile key")
         if key in settings:
             raise ValueError(f"{path}:{line_number}: duplicate profile key: {key}")
+        if key not in PROFILE_KEYS:
+            raise ValueError(f"{path}:{line_number}: unsupported profile key: {key}")
 
         if key in path_keys:
             value_path = pathlib.Path(value)
@@ -155,6 +158,11 @@ def parse_args() -> argparse.Namespace:
         version=f"%(prog)s {VERSION}",
     )
     parser.add_argument(
+        "--examples",
+        action="store_true",
+        help="Show practical usage examples and exit",
+    )
+    parser.add_argument(
         "targets",
         nargs="*",
         help="Video URLs or IDs to download; use - to read targets from standard input",
@@ -162,7 +170,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-b",
         "--batch-file",
-        default=profile.get("batch_file", default_local_path(DEFAULT_BATCH_FILE)),
+        default=default_local_path(DEFAULT_BATCH_FILE),
         help=f"Read targets from a batch file (default: {DEFAULT_BATCH_FILE})",
     )
     parser.add_argument(
@@ -173,36 +181,36 @@ def parse_args() -> argparse.Namespace:
         "-r",
         "--resolution",
         type=resolution,
-        default=profile.get("resolution", str(DEFAULT_RESOLUTION)),
+        default=str(DEFAULT_RESOLUTION),
         help=f"Preferred maximum video height (default: {DEFAULT_RESOLUTION})",
     )
     parser.add_argument(
         "-o",
         "--output",
-        default=profile.get("output", DEFAULT_OUTPUT),
+        default=profile.get("path", profile.get("output", DEFAULT_OUTPUT)),
         help=f"Output directory (default: {DEFAULT_OUTPUT})",
     )
     parser.add_argument(
         "--cookies",
-        default=profile.get("cookies", default_local_path(DEFAULT_COOKIES)),
+        default=default_local_path(DEFAULT_COOKIES),
         help=f"Cookies file (default: {DEFAULT_COOKIES})",
     )
     parser.add_argument(
         "--archive",
-        default=profile.get("archive", default_local_path(DEFAULT_ARCHIVE)),
+        default=default_local_path(DEFAULT_ARCHIVE),
         help=f"Download archive (default: {DEFAULT_ARCHIVE})",
     )
     parser.add_argument(
         "--rate-limit",
         type=rate_limit,
-        default=profile.get("rate_limit", DEFAULT_RATE_LIMIT),
+        default=DEFAULT_RATE_LIMIT,
         help=f"Download rate limit (default: {DEFAULT_RATE_LIMIT})",
     )
     parser.add_argument(
         "--playlist-reverse",
         "--rev",
         action="store_true",
-        default=profile.get("playlist_reverse", "").lower() in {"1", "true", "yes"},
+        default=False,
         help="Download playlist entries in reverse order",
     )
     parser.add_argument(
@@ -217,6 +225,17 @@ def parse_args() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
+
+    if args.examples:
+        print("""Examples:
+  yt-download.py VIDEO_URL
+  yt-download.py PLAYLIST_URL --rev
+  yt-download.py --input-file ./ids/ids
+  yt-download.py ./ids/ids --resolution 1440
+  yt-download.py --profile playlist PLAYLIST_URL
+  yt-download.py --dry-run VIDEO_URL
+""")
+        raise SystemExit(0)
 
     if isinstance(args.resolution, str):
         try:

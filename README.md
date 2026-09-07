@@ -125,3 +125,9 @@ The downloader can now list the profiles installed beside the script:
 Named profiles are still simple `key=value` files. Duplicate keys and empty keys are now rejected with a file and line number.
 
 If a named built-in profile does not exist, the downloader warns and falls back to `default`. An explicit profile path remains strict and must exist. This is still the older policy-heavy profile model; later releases will narrow profiles to output presentation.
+
+## Downloader profile responsibility
+
+Downloader profiles are now limited to output presentation through `path` and `output`. Resolution, rate limit, cookies, archive, batch selection and playlist policy come from Python defaults and CLI options instead of profiles.
+
+`--examples` prints practical invocations for direct URLs, playlists, batch files, profile selection and dry-run use.

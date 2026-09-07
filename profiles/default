@@ -1,7 +1,2 @@
 # General video downloads.
-resolution=1440
 output=/mnt/storage/Downloads/YouTube
-rate_limit=20M
-cookies=../cookies.txt
-archive=../archive.txt
-batch_file=../ids.txt

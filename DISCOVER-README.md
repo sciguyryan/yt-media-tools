@@ -252,3 +252,19 @@ Discover now performs one deliberately narrow proof-based acquisition optimisati
 Use `--analyse-execution` to see whether the source can be bounded or whether complete enumeration is required.
 
 Filtering and ordering still force complete acquisition because stopping early could change the result. YouTube.js enumeration is also left unbounded for now because this release does not yet have a trustworthy backend-specific pagination proof.
+
+## YT-SQL 0.16 language additions
+
+YT-SQL now supports `SELECT DISTINCT`, `OFFSET`, scalar projection functions and named query parameters.
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select distinct UPPER(uploader), LENGTH(title) limit 25 offset 10'
+```
+
+Available scalar functions are `LOWER`, `UPPER`, `LENGTH` and `COALESCE`. Named parameters use `:name` in YT-SQL and repeated `--param NAME=VALUE` options.
+
+```bash
+./yt-discover.py CHANNEL_URL --query 'select id, title where duration >= :minimum limit 20' --param minimum=600
+```
+
+`--show-provenance` reports whether execution used cached metadata or live acquisition and identifies the selected backend where known.
