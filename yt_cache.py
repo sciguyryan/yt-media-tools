@@ -5,7 +5,6 @@ import pathlib
 import sqlite3
 import time
 
-
 SCHEMA_VERSION = 3
 DEFAULT_MAX_AGE = 24 * 60 * 60
 
@@ -228,7 +227,6 @@ def store_source(
     connection.commit()
 
 
-
 def append_new_entries(
     connection: sqlite3.Connection,
     source: str,
@@ -246,11 +244,7 @@ def append_new_entries(
         store_source(connection, source, observed_entries, backend=backend)
         return observed_entries, len(observed_entries)
 
-    existing_ids = {
-        str(entry.get("id"))
-        for entry in existing
-        if entry.get("id")
-    }
+    existing_ids = {str(entry.get("id")) for entry in existing if entry.get("id")}
     overlap_index = None
     for index, entry in enumerate(observed_entries):
         video_id = entry.get("id")
@@ -301,11 +295,7 @@ def append_new_entries(
             ],
         )
 
-    head_video_id = (
-        str(merged[0].get("id"))
-        if merged and merged[0].get("id")
-        else None
-    )
+    head_video_id = str(merged[0].get("id")) if merged and merged[0].get("id") else None
     connection.execute(
         """
         UPDATE cached_sources

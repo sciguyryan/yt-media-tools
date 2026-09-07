@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 EXACT = "exact"
 APPROXIMATE = "approximate"
 UNAVAILABLE = "unavailable"

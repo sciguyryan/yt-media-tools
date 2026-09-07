@@ -68,21 +68,14 @@ You can also pass a profile file directly:
 ./yt-download.py --profile ./my-profile VIDEO_URL
 ```
 
-Profile files use one `key=value` setting per line. Blank lines and lines beginning with `#` are ignored.
+Profile files begin with `@profile`, followed by `key=value` settings. Blank lines and lines beginning with `#` are ignored.
 
 Supported settings are:
 
-- `resolution`
+- `path`
 - `output`
-- `rate_limit`
-- `cookies`
-- `archive`
-- `batch_file`
-- `playlist_reverse`
 
-Relative paths in a profile are resolved relative to that profile file.
-
-Command-line options override the corresponding profile settings.
+Profiles control presentation only. Resolution, rate limiting, cookies, archive handling, batch input and playlist direction are application or command-line policy.
 
 Before a real download, the downloader checks that the configured cookies file exists. It also rejects an archive path that already exists as something other than a file and an output path that already exists as something other than a directory. Dry-run mode does not require those runtime paths to exist.
 
@@ -94,7 +87,7 @@ When a batch file is being used as a persistent queue, completed IDs can be remo
 ./yt-download.py --remove-completed-ids
 ```
 
-The downloader compares the batch file with the configured yt-dlp download archive after a successful download run and rewrites the batch file atomically with completed IDs removed.
+The downloader reconciles a file-backed queue with the configured yt-dlp archive before starting a download and again after a successful run. Only lines whose complete stripped value exactly matches an archived video ID are removed. Comments, blank lines, URLs and unrelated queue content are preserved.
 
 ## Download policy
 
@@ -157,3 +150,9 @@ python -m pytest
 ```
 
 This is the beginning of automated regression testing rather than a claim of complete coverage. Manual end-to-end checks remain important, especially for live yt-dlp and YouTube.js acquisition.
+
+## Downloader 1.1
+
+Queue maintenance is now deliberately conservative. Archive reconciliation ignores malformed single-field archive records, removes only exact ID lines from file-backed queues, and preserves unrelated queue bytes.
+
+`--remove-completed-ids` is rejected for direct positional targets because there is no persistent queue file to update.

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from yt_capabilities import APPROXIMATE, EXACT, UNAVAILABLE, capability
+from yt_capabilities import APPROXIMATE, EXACT, capability
 from yt_sources import backend_status
 
 
@@ -85,9 +85,7 @@ def plan_query(
 
     availability = available_backends()
     candidates = (
-        [requested_backend]
-        if requested_backend != "auto"
-        else ["youtubejs", "yt-dlp"]
+        [requested_backend] if requested_backend != "auto" else ["youtubejs", "yt-dlp"]
     )
 
     plans: list[dict[str, object]] = []
@@ -111,7 +109,9 @@ def plan_query(
     if not plans:
         if requested_backend == "auto":
             raise RuntimeError("no source backend is available")
-        raise RuntimeError(f"requested source backend is unavailable: {requested_backend}")
+        raise RuntimeError(
+            f"requested source backend is unavailable: {requested_backend}"
+        )
 
     plans.sort(
         key=lambda plan: (
@@ -137,7 +137,9 @@ def acquisition_limit(query, where_expression, backend: str | None) -> int | Non
     return int(query["limit"]) + int(query.get("offset") or 0)
 
 
-def execution_analysis(query, where_expression, backend: str | None) -> dict[str, object]:
+def execution_analysis(
+    query, where_expression, backend: str | None
+) -> dict[str, object]:
     limit = acquisition_limit(query, where_expression, backend)
     return {
         "acquisition_limit": limit,

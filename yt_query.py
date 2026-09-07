@@ -248,11 +248,21 @@ def parse_projection(expression: str):
     if lowered in allowed_fields:
         return ("field", lowered)
 
-    match = re.fullmatch(r"(?P<name>lower|upper|length|coalesce)\((?P<args>.*)\)", expression, re.IGNORECASE)
+    match = re.fullmatch(
+        r"(?P<name>lower|upper|length|coalesce)\((?P<args>.*)\)",
+        expression,
+        re.IGNORECASE,
+    )
     if not match:
         raise ValueError(f"unknown SELECT expression: {expression}")
     name = match.group("name").lower()
-    args = [parse_projection(arg) if arg.strip().lower() in allowed_fields or re.match(r"^(lower|upper|length|coalesce)\(", arg.strip(), re.I) else ("literal", unquote(arg.strip())) for arg in split_projection_list(match.group("args"))]
+    args = [
+        parse_projection(arg)
+        if arg.strip().lower() in allowed_fields
+        or re.match(r"^(lower|upper|length|coalesce)\(", arg.strip(), re.IGNORECASE)
+        else ("literal", unquote(arg.strip()))
+        for arg in split_projection_list(match.group("args"))
+    ]
     if name in {"lower", "upper", "length"} and len(args) != 1:
         raise ValueError(f"{name.upper()} requires exactly one argument")
     if name == "coalesce" and not args:
@@ -298,7 +308,9 @@ def parse_query_statement(query: str) -> dict[str, object]:
         flags=re.IGNORECASE | re.VERBOSE,
     )
     if not match:
-        raise ValueError("expected SELECT with optional DISTINCT, WHERE, ORDER BY, LIMIT and OFFSET")
+        raise ValueError(
+            "expected SELECT with optional DISTINCT, WHERE, ORDER BY, LIMIT and OFFSET"
+        )
 
     projection_text = split_projection_list(match.group("select"))
     if not projection_text:
@@ -322,6 +334,7 @@ def parse_query_statement(query: str) -> dict[str, object]:
         "offset": int(match.group("offset")) if match.group("offset") else 0,
         "distinct": match.group("distinct") is not None,
     }
+
 
 def field_value(entry: dict[str, object], field: str) -> object:
     if field in {"id", "title", "uploader", "duration", "date", "live"}:
@@ -395,13 +408,19 @@ def compare_values(actual: object, operator: str, expected: object) -> bool:
     raise ValueError(f"unsupported comparison operator: {operator}")
 
 
-def evaluate_expression(entry: dict[str, object], node, params: dict[str, object] | None = None) -> bool:
+def evaluate_expression(
+    entry: dict[str, object], node, params: dict[str, object] | None = None
+) -> bool:
     kind = node[0]
 
     if kind == "and":
-        return evaluate_expression(entry, node[1], params) and evaluate_expression(entry, node[2], params)
+        return evaluate_expression(entry, node[1], params) and evaluate_expression(
+            entry, node[2], params
+        )
     if kind == "or":
-        return evaluate_expression(entry, node[1], params) or evaluate_expression(entry, node[2], params)
+        return evaluate_expression(entry, node[1], params) or evaluate_expression(
+            entry, node[2], params
+        )
     if kind == "not":
         return not evaluate_expression(entry, node[1], params)
 
@@ -454,11 +473,13 @@ def evaluate_expression(entry: dict[str, object], node, params: dict[str, object
     if kind == "in":
         _, field, raw_values = node
         actual = coerce_value(field, field_value(entry, field))
-        expected_values = [coerce_value(field, resolve_parameter(value, params)) for value in raw_values]
+        expected_values = [
+            coerce_value(field, resolve_parameter(value, params))
+            for value in raw_values
+        ]
         return actual in expected_values
 
     raise ValueError(f"unknown expression node: {kind}")
-
 
 
 def query_sort_key(entry: dict[str, object], field: str) -> tuple[bool, object]:

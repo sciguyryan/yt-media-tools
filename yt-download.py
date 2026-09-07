@@ -7,8 +7,7 @@ import shutil
 import subprocess
 import sys
 
-
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 
@@ -139,6 +138,7 @@ def load_profile(name: str) -> dict[str, str]:
         raise ValueError(f"{path}: profile must define path, output, or both")
 
     return settings
+
 
 def parse_args() -> argparse.Namespace:
     pre_parser = argparse.ArgumentParser(add_help=False)
@@ -293,7 +293,10 @@ def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
     for target in args.targets:
         if target == "-":
             if len(args.targets) != 1:
-                return [], "'-' for standard input cannot be combined with other targets"
+                return (
+                    [],
+                    "'-' for standard input cannot be combined with other targets",
+                )
             targets.extend(read_stdin_targets())
         else:
             targets.append(target)
@@ -317,6 +320,17 @@ def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
     return [], None
 
 
+def validate_remove_completed_ids(
+    args: argparse.Namespace,
+    targets: list[str],
+) -> str | None:
+    if not args.remove_completed_ids:
+        return None
+    if targets:
+        return "--remove-completed-ids requires a batch or input file"
+    return None
+
+
 def validate_runtime_files(args: argparse.Namespace) -> str | None:
     cookies = pathlib.Path(args.cookies)
     if not cookies.is_file():
@@ -338,9 +352,9 @@ def completed_ids(archive_path: pathlib.Path) -> set[str]:
         return set()
 
     completed: set[str] = set()
-    for raw_line in archive_path.read_text().splitlines():
-        parts = raw_line.split()
-        if parts:
+    for raw_line in archive_path.read_text(encoding="utf-8-sig").splitlines():
+        parts = raw_line.strip().split()
+        if len(parts) >= 2:
             completed.add(parts[-1])
 
     return completed
@@ -351,27 +365,22 @@ def remove_completed_ids(batch_path: pathlib.Path, archive_path: pathlib.Path) -
     if not completed:
         return 0
 
-    remaining: list[str] = []
+    original = batch_path.read_bytes()
+    retained: list[bytes] = []
     removed = 0
 
-    for raw_line in batch_path.read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            remaining.append(raw_line)
-            continue
-
-        candidate = line.split()[0]
-        if candidate in completed:
+    for raw_line in original.splitlines(keepends=True):
+        candidate = raw_line.strip()
+        if candidate and candidate.decode("utf-8") in completed:
             removed += 1
             continue
-
-        remaining.append(raw_line)
+        retained.append(raw_line)
 
     if not removed:
         return 0
 
     temporary_path = batch_path.with_name(batch_path.name + ".tmp")
-    temporary_path.write_text("\n".join(remaining) + "\n")
+    temporary_path.write_bytes(b"".join(retained))
     temporary_path.replace(batch_path)
     return removed
 
@@ -419,6 +428,11 @@ def main() -> int:
         print(error, file=sys.stderr)
         return 2
 
+    error = validate_remove_completed_ids(args, targets)
+    if error:
+        print(error, file=sys.stderr)
+        return 2
+
     command = build_command(args, targets)
 
     if args.dry_run:
@@ -434,9 +448,19 @@ def main() -> int:
         print("yt-dlp was not found in PATH.", file=sys.stderr)
         return 1
 
+    if args.remove_completed_ids:
+        removed = remove_completed_ids(
+            pathlib.Path(args.batch_file),
+            pathlib.Path(args.archive),
+        )
+        if removed:
+            print(
+                f"Removed {removed} archived ID(s) from {args.batch_file} before download."
+            )
+
     completed = subprocess.run(command, check=False)
 
-    if completed.returncode == 0 and args.remove_completed_ids and not args.targets:
+    if completed.returncode == 0 and args.remove_completed_ids:
         removed = remove_completed_ids(
             pathlib.Path(args.batch_file),
             pathlib.Path(args.archive),

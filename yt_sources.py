@@ -5,7 +5,6 @@ import pathlib
 import shutil
 import subprocess
 
-
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 YOUTUBEJS_BRIDGE = SCRIPT_DIR / "youtubejs_bridge.mjs"
 
@@ -104,7 +103,6 @@ def enumerate_youtubejs(source: str) -> list[dict[str, object]]:
     return [entry for entry in data if isinstance(entry, dict)]
 
 
-
 def fetch_details_yt_dlp(video_ids: list[str]) -> list[dict[str, object]]:
     entries: list[dict[str, object]] = []
     for video_id in video_ids:
@@ -163,6 +161,7 @@ def fetch_details(video_ids: list[str], backend: str) -> list[dict[str, object]]
     if backend == "youtubejs":
         return fetch_details_youtubejs(video_ids)
     raise RuntimeError(f"unknown source backend: {backend}")
+
 
 def enumerate_source(
     source: str,

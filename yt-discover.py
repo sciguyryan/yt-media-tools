@@ -7,12 +7,25 @@ import sqlite3
 import sys
 from datetime import datetime
 
-from yt_cache import DEFAULT_MAX_AGE, append_new_entries, connect, load_source, source_status, store_source, update_entries
+from yt_cache import (
+    DEFAULT_MAX_AGE,
+    append_new_entries,
+    connect,
+    load_source,
+    source_status,
+    store_source,
+    update_entries,
+)
 from yt_metadata import normalise_entries
 from yt_planner import acquisition_limit, execution_analysis, explain_plan, plan_query
-from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
+from yt_query import (
+    evaluate_expression,
+    parse_expression,
+    parse_query_statement,
+    print_row,
+    query_sort_key,
+)
 from yt_sources import backend_status, enumerate_source, fetch_details
-
 
 VERSION = "0.16.2"
 
@@ -175,14 +188,20 @@ def parse_params(values: list[str]) -> dict[str, object]:
             raise ValueError("parameter name cannot be empty")
         text = raw.strip()
         lowered = text.lower()
-        if lowered == "null": value: object = None
-        elif lowered == "true": value = True
-        elif lowered == "false": value = False
+        if lowered == "null":
+            value: object = None
+        elif lowered == "true":
+            value = True
+        elif lowered == "false":
+            value = False
         else:
-            try: value = int(text)
+            try:
+                value = int(text)
             except ValueError:
-                try: value = float(text)
-                except ValueError: value = text
+                try:
+                    value = float(text)
+                except ValueError:
+                    value = text
         if name in params:
             raise ValueError(f"duplicate parameter binding: {name}")
         params[name] = value
@@ -197,7 +216,6 @@ def parse_date(value: str | None) -> datetime | None:
         return datetime.strptime(value, "%Y-%m-%d")
     except ValueError as exc:
         raise ValueError(f"invalid date {value!r}; expected YYYY-MM-DD") from exc
-
 
 
 def upload_date(entry: dict[str, object]) -> datetime | None:
@@ -221,8 +239,6 @@ def is_live(entry: dict[str, object]) -> bool | None:
     return value if isinstance(value, bool) else None
 
 
-
-
 def matches(
     entry: dict[str, object],
     args: argparse.Namespace,
@@ -232,7 +248,9 @@ def matches(
     where_expression,
     query_params: dict[str, object] | None = None,
 ) -> bool:
-    if where_expression is not None and not evaluate_expression(entry, where_expression, query_params):
+    if where_expression is not None and not evaluate_expression(
+        entry, where_expression, query_params
+    ):
         return False
 
     title = entry.get("title")
@@ -348,7 +366,9 @@ def main() -> int:
         return 2
 
     try:
-        title_pattern = re.compile(args.title_regex, re.IGNORECASE) if args.title_regex else None
+        title_pattern = (
+            re.compile(args.title_regex, re.IGNORECASE) if args.title_regex else None
+        )
     except re.error as exc:
         print(f"invalid title regular expression: {exc}", file=sys.stderr)
         return 2
@@ -497,8 +517,7 @@ def main() -> int:
                     if detail.get("id"):
                         by_id[str(detail["id"])] = detail
                 raw_entries = [
-                    by_id.get(str(entry.get("id")), entry)
-                    for entry in raw_entries
+                    by_id.get(str(entry.get("id")), entry) for entry in raw_entries
                 ]
                 entries = normalise_entries(raw_entries)
     except (RuntimeError, OSError, sqlite3.Error) as exc:
@@ -528,6 +547,7 @@ def main() -> int:
             seen: set[tuple[object, ...]] = set()
             distinct_entries: list[dict[str, object]] = []
             from yt_query import projection_value
+
             for entry in matches_found:
                 key = tuple(projection_value(entry, field) for field in query["fields"])
                 if key in seen:
