@@ -96,3 +96,7 @@ Run the built-in help for the complete option list:
 ```bash
 ./yt-download.py --help
 ```
+
+## Licence
+
+These tools are distributed under the GNU Lesser General Public License version 2.1. See `LICENSE` for the licence text.

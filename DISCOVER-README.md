@@ -152,6 +152,14 @@ Backend availability can be inspected without enumerating a source:
 
 The YouTube.js backend is experimental in this version. It assumes a fairly simple response shape from `youtubei.js` and is expected to need compatibility work as more channel and playlist forms are exercised.
 
+## Metadata cache
+
+Discover now keeps source enumeration metadata in a local SQLite cache by default. The cache reduces repeated source enumeration while keeping the query and normalisation layers independent from storage.
+
+The default cache file is `discover-cache.sqlite3` beside the script. Use `--cache PATH` to select another database, `--cache-max-age SECONDS` to change freshness, `--refresh` to ignore an existing cached source, or `--no-cache` to disable persistent caching.
+
+The initial cache schema stores raw source entries together with source order and fetch time. Cache schema compatibility is checked explicitly.
+
 ## Query planning
 
 Discover can now choose a source backend according to the fields required by a query.
@@ -202,3 +210,7 @@ Run the built-in help for the complete option list:
 ```bash
 ./yt-discover.py --help
 ```
+
+## Licence
+
+This project is distributed under the GNU Lesser General Public License version 2.1. See `LICENSE` for the licence text.

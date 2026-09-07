@@ -83,3 +83,7 @@ YT-SQL remains backend-independent. Both yt-dlp and the experimental YouTube.js 
 Discover now inspects the fields required by a YT-SQL query before choosing an acquisition backend. `--explain` reports the selected backend and whether required metadata is expected to be exact, approximate or unavailable.
 
 Capability planning is separate from YT-SQL evaluation. Missing metadata can still occur for individual videos even when a backend normally provides a field.
+
+## Cached metadata
+
+YT-SQL evaluation remains independent from acquisition. When a fresh cached source is available, Discover can evaluate the same normalised metadata without repeating source enumeration.

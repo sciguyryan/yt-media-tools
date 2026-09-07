@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 
 import argparse
+import pathlib
 import re
+import sqlite3
 import sys
 from datetime import datetime
 
+from yt_cache import DEFAULT_MAX_AGE, connect, load_source, store_source
 from yt_metadata import normalise_entries
 from yt_planner import explain_plan, plan_query
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
 from yt_sources import backend_status, enumerate_source
 
 
-VERSION = "0.10.1"
+VERSION = "0.11.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,6 +42,28 @@ def parse_args() -> argparse.Namespace:
         "--list-backends",
         action="store_true",
         help="Show available source backends and exit",
+    )
+    parser.add_argument(
+        "--cache",
+        type=pathlib.Path,
+        default=pathlib.Path(__file__).resolve().with_name("discover-cache.sqlite3"),
+        help="SQLite metadata cache path",
+    )
+    parser.add_argument(
+        "--cache-max-age",
+        type=int,
+        default=DEFAULT_MAX_AGE,
+        help="Maximum cache age in seconds",
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable reading and writing the metadata cache",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Ignore cached source metadata and refresh it",
     )
     parser.add_argument(
         "--after",
@@ -281,12 +306,31 @@ def main() -> int:
     if args.explain:
         print(explain_plan(plan), file=sys.stderr)
 
+    cache_connection = None
+    raw_entries = None
+
     try:
-        raw_entries = enumerate_source(args.source, plan["backend"])
+        if not args.no_cache:
+            cache_connection = connect(args.cache)
+            if not args.refresh:
+                raw_entries = load_source(
+                    cache_connection,
+                    args.source,
+                    max_age=args.cache_max_age,
+                )
+
+        if raw_entries is None:
+            raw_entries = enumerate_source(args.source, plan["backend"])
+            if cache_connection is not None:
+                store_source(cache_connection, args.source, raw_entries)
+
         entries = normalise_entries(raw_entries)
-    except RuntimeError as exc:
-        print(f"could not enumerate source: {exc}", file=sys.stderr)
+    except (RuntimeError, OSError, sqlite3.Error) as exc:
+        print(f"could not acquire source metadata: {exc}", file=sys.stderr)
         return 1
+    finally:
+        if cache_connection is not None:
+            cache_connection.close()
 
     matches_found = [
         entry
