@@ -30,7 +30,7 @@ large   10,000 records
 huge   100,000 records
 ```
 
-Routine pytest coverage uses only the `small` and `normal` profiles. The `large` and `huge` profiles remain available for deliberate manual stress, scalability and performance runs, but are disabled in the default automated suite. Tests can also request an arbitrary exact size and alternate deterministic seed.
+Routine pytest coverage uses only the `small` and `normal` profiles. The `large` and `huge` profiles remain available as tests marked `stress`, which are excluded by default. Run `python -m pytest -m stress` when deliberately exercising the larger conformance datasets. Tests can also request an arbitrary exact size and alternate deterministic seed.
 
 The generator's reproducibility identity is the generator version, seed, and requested size. For the same version and seed, every smaller dataset is an exact prefix of every larger dataset. This makes scale-dependent failures reproducible without silently changing the earlier records. Generated payloads include a SHA-256 digest of the logical record sequence.
 

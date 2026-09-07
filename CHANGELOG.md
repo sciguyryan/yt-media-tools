@@ -1,5 +1,13 @@
 # Changelog
 
+## Repository - Reliability and stress-test policy
+
+- Made large and huge conformance tests opt-in through the `stress` pytest marker.
+- Expanded ignore rules for runtime credentials, ID lists, generated caches and local development state.
+- Added downloader test-package scaffolding for cleaner fixture sharing and import isolation.
+- Pinned Ruff GitHub Actions checks and restricted workflow permissions to repository read access.
+- No tool version changed.
+
 ## Discover 0.18.0
 
 - Converged Discover on the mature typed YT-SQL parser, schema and execution model.

@@ -135,7 +135,7 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
     assert any(row["fixture_nullable"] is None for row in rows)
 
 
-@pytest.mark.skip(reason="large conformance datasets are disabled in the default automated suite")
+@pytest.mark.stress
 def test_large_generated_population_preserves_controlled_distributions() -> None:
     rows = build_records(PROFILE_SIZES["large"])
     assert sum(row["duration"] is None for row in rows) > 50
@@ -260,13 +260,13 @@ def test_normal_profile_matches_independent_oracle(conformance_normal: Any, case
     _assert_case(conformance_normal, case)
 
 
-@pytest.mark.skip(reason="large conformance datasets are disabled in the default automated suite")
+@pytest.mark.stress
 def test_large_profile_multikey_ordering_matches_oracle(conformance_large: Any) -> None:
     case = next(case for case in CASES if case.name == "chronological_same_day_subsort")
     _assert_case(conformance_large, case)
 
 
-@pytest.mark.skip(reason="huge conformance datasets are disabled in the default automated suite")
+@pytest.mark.stress
 def test_huge_profile_filter_sort_limit_matches_oracle(conformance_huge: Any) -> None:
     case = next(case for case in CASES if case.name == "offset_limit")
     _assert_case(conformance_huge, case)

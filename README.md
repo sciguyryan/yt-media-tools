@@ -40,6 +40,7 @@ output=%(title)s [%(id)s] [%(uploader)s].%(ext)s
 
 ```bash
 python -m pytest -q
+python -m pytest -m stress
 ruff check .
 ruff format --check .
 ```
