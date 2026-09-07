@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "language": "Cymraeg",
+  "units": {
+    "eiliad": {"aliases": ["eiliadau"], "fixed_seconds": 1},
+    "munud": {"aliases": ["munudau"], "value": 60, "unit": "eiliad"},
+    "awr": {"aliases": ["oriau"], "value": 60, "unit": "munud"},
+    "dydd": {"aliases": ["dyddiau", "diwrnod", "diwrnodau"], "value": 24, "unit": "awr"},
+    "wythnos": {"aliases": ["wythnosau"], "value": 7, "unit": "dydd"},
+    "mis": {"aliases": ["misoedd"], "calendar_months": 1},
+    "blwyddyn": {"aliases": ["blynyddoedd"], "value": 12, "unit": "mis"}
+  }
+}

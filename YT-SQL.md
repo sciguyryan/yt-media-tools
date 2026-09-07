@@ -23,6 +23,29 @@ Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN
 
 Current projection functions are `LOWER`, `UPPER`, `LENGTH`, and `COALESCE`. Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
 
+## Data-driven units
+
+yt-sql unit names are loaded from JSON files in the repository `units/` directory rather than being hard-coded into the parser. All `*.json` files in that directory are loaded into one case-insensitive registry. This allows additional languages and domain-specific units to be added or removed without editing Python code.
+
+Each file declares canonical units and optional aliases. A terminal fixed unit uses `fixed_seconds`; a Gregorian calendar unit uses `calendar_months`; and a derived unit uses a positive `value` plus another `unit`. Derived definitions are resolved recursively until they reach a terminal definition. Unknown references and cycles are errors.
+
+For example:
+
+```json
+{
+  "format": 1,
+  "language": "Cymraeg",
+  "units": {
+    "dydd": {"aliases": ["dyddiau"], "value": 24, "unit": "awr"},
+    "wythnos": {"aliases": ["wythnosau"], "value": 7, "unit": "dydd"}
+  }
+}
+```
+
+The registry validates every canonical name and alias globally. A token may not be reused by another definition, even in another language file. Common short forms can therefore be shared through an already loaded definition rather than redefined. The built-in English file owns `d` as the short form of a day, so both `TODAY()-3d` and Welsh forms such as `TODAY()-8dyddiau` are valid while a second file attempting to redefine `d` is rejected.
+
+Fixed units may be used for durations and relative temporal arithmetic when the resulting type is meaningful. Calendar units may be used for date/time arithmetic but are rejected as media durations. `TODAY()` requires fixed units to resolve to whole days; `NOW()` may use sub-day fixed units. Existing English units use exactly the same registry mechanism as additional language files.
+
 ## Intentional dialect behaviour
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, relative calendar expressions, and source forms such as `@handle`.

@@ -10,6 +10,7 @@ from typing import Any, Sequence
 
 from .dates import DateContext, parse_date_literal, parse_datetime_literal, timestamp_to_datetime
 from .schema import QuerySchema, raw_path_value
+from .units import load_default_unit_registry
 
 
 class QuerySyntaxError(ValueError):
@@ -147,12 +148,12 @@ _TOKEN_RE = re.compile(
   | (?P<ATIDENT>@[A-Za-z0-9_.-]+)
   | (?P<RPAREN>\))
   | (?P<STRING>'(?:''|\\.|[^'\\])*'|\"(?:\"\"|\\.|[^\"\\])*\")
-  | (?P<TEMPORAL>(?:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[A-Za-z]+)?)
+  | (?P<TEMPORAL>(?:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[^\W\d_]+(?:-[^\W\d_]+)*)?)
   | (?P<DATETIME>\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)
   | (?P<DATE>\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})
   | (?P<TIME>\d{1,3}:\d{1,2}(?::\d{1,2})?)
   | (?P<NUMBER>(?:\d{1,3}(?:,\d{3})+|\d[\d_]*)(?:\.\d+)?(?:[kKmMbB])?)
-  | (?P<IDENT>[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)*)
+  | (?P<IDENT>[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*)
   | (?P<COMMA>,)
   | (?P<STAR>\*)
   | (?P<MINUS>-)
@@ -162,7 +163,7 @@ _TOKEN_RE = re.compile(
 )
 
 _DURATION_PART_RE = re.compile(
-    r"(?P<number>\d+(?:\.\d+)?)\s*(?P<unit>hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)",
+    r"(?P<number>\d+(?:\.\d+)?)\s*(?P<unit>[^\W\d_]+(?:-[^\W\d_]+)*)",
     re.IGNORECASE,
 )
 
@@ -620,28 +621,26 @@ def _parse_duration_text(text: str, source: str, position: int) -> int:
     total = 0.0
     cursor = 0
     matched = False
-    multipliers = {
-        "h": 3600,
-        "hr": 3600,
-        "hrs": 3600,
-        "hour": 3600,
-        "hours": 3600,
-        "m": 60,
-        "min": 60,
-        "mins": 60,
-        "minute": 60,
-        "minutes": 60,
-        "s": 1,
-        "sec": 1,
-        "secs": 1,
-        "second": 1,
-        "seconds": 1,
-    }
+    registry = load_default_unit_registry()
     for match in _DURATION_PART_RE.finditer(value):
         if value[cursor : match.start()].strip():
             raise QuerySyntaxError(source, f"Could not understand duration {text!r}.", position + cursor)
+        try:
+            unit = registry.resolve(match.group("unit"))
+        except ValueError as exc:
+            raise QuerySyntaxError(
+                source,
+                f"Unknown duration unit {match.group('unit')!r}.",
+                position + match.start("unit"),
+            ) from exc
+        if unit.kind != "fixed":
+            raise QuerySyntaxError(
+                source,
+                f"Calendar unit {match.group('unit')!r} cannot be used for a duration.",
+                position + match.start("unit"),
+            )
         matched = True
-        total += float(match.group("number")) * multipliers[match.group("unit").lower()]
+        total += float(match.group("number")) * unit.amount
         cursor = match.end()
     if not matched or value[cursor:].strip():
         raise QuerySyntaxError(source, f"Could not understand duration {text!r}.", position + cursor)

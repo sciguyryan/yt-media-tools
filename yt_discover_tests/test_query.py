@@ -183,7 +183,7 @@ def test_today_rejected_for_timestamp_field() -> None:
 
 def test_today_rejects_sub_day_arithmetic() -> None:
     records = [{"upload_date": "20260903"}]
-    with pytest.raises(QuerySyntaxError, match="does not support hours"):
+    with pytest.raises(QuerySyntaxError, match="does not support sub-day unit"):
         resolved("WHERE upload_date >= TODAY()-3h", records)
 
 

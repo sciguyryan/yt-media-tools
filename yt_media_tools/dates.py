@@ -8,50 +8,19 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
+from .units import load_default_unit_registry
+
 
 DateOrder = Literal["dmy", "mdy", "ymd"]
 
 _MONTHS = {name.casefold(): number for number, name in enumerate(calendar.month_name) if name}
 _MONTHS.update({name.casefold(): number for number, name in enumerate(calendar.month_abbr) if name})
 
+_UNIT_TOKEN = r"[^\W\d_]+(?:-[^\W\d_]+)*"
 _TEMPORAL_EXPR_RE = re.compile(
-    r"^(?P<base>TODAY|NOW)\(\)\s*(?:(?P<op>[+-])\s*(?P<count>\d+(?:\.\d+)?)\s*(?P<unit>[A-Za-z]+))?$",
+    rf"^(?P<base>TODAY|NOW)\(\)\s*(?:(?P<op>[+-])\s*(?P<count>\d+(?:\.\d+)?)\s*(?P<unit>{_UNIT_TOKEN}))?$",
     re.IGNORECASE,
 )
-
-_TEMPORAL_UNITS = {
-    "s": "seconds",
-    "sec": "seconds",
-    "secs": "seconds",
-    "second": "seconds",
-    "seconds": "seconds",
-    "m": "minutes",
-    "min": "minutes",
-    "mins": "minutes",
-    "minute": "minutes",
-    "minutes": "minutes",
-    "h": "hours",
-    "hr": "hours",
-    "hrs": "hours",
-    "hour": "hours",
-    "hours": "hours",
-    "d": "days",
-    "day": "days",
-    "days": "days",
-    "w": "weeks",
-    "wk": "weeks",
-    "wks": "weeks",
-    "week": "weeks",
-    "weeks": "weeks",
-    "mo": "months",
-    "mon": "months",
-    "month": "months",
-    "months": "months",
-    "yr": "years",
-    "yrs": "years",
-    "year": "years",
-    "years": "years",
-}
 
 
 @dataclass(frozen=True)
@@ -119,26 +88,29 @@ def parse_temporal_expression(text: str, context: DateContext, *, expected: str)
 
     count_text = match.group("count")
     count = float(count_text)
-    unit_text = match.group("unit").casefold()
-    unit = _TEMPORAL_UNITS.get(unit_text)
-    if unit is None:
-        raise ValueError(f"Unknown temporal unit {match.group('unit')!r}.")
+    unit_text = match.group("unit")
+    try:
+        unit = load_default_unit_registry().resolve(unit_text)
+    except ValueError as exc:
+        raise ValueError(f"Unknown temporal unit {unit_text!r}.") from exc
     sign = -1 if match.group("op") == "-" else 1
 
-    if unit in {"months", "years"}:
-        if not count.is_integer():
-            raise ValueError(f"Calendar unit {unit!r} requires a whole number.")
-        amount = int(count) * sign
-        if unit == "months":
-            return _calendar_shift(value, months=-amount)
-        return _calendar_shift(value, years=-amount)
+    if unit.kind == "calendar":
+        months = unit.amount * count
+        if not months.is_integer():
+            raise ValueError(f"Calendar unit {unit_text!r} requires a whole number of months.")
+        return _calendar_shift(value, months=-(int(months) * sign))
 
-    if expected == "date" and unit in {"seconds", "minutes", "hours"}:
-        raise ValueError(f"TODAY() date arithmetic does not support {unit}. Use days or larger calendar units.")
+    if expected == "date":
+        days = unit.amount * count / 86400
+        if not days.is_integer():
+            raise ValueError(
+                f"TODAY() date arithmetic does not support sub-day unit {unit_text!r}. "
+                "Use a whole-day or calendar unit."
+            )
+        return value + timedelta(days=int(days) * sign)
 
-    seconds_per_unit = {"seconds": 1, "minutes": 60, "hours": 3600, "days": 86400, "weeks": 604800}
-    delta = timedelta(seconds=seconds_per_unit[unit] * count * sign)
-    return value + delta
+    return value + timedelta(seconds=unit.amount * count * sign)
 
 
 def parse_date_literal(text: str, context: DateContext) -> date:
@@ -159,19 +131,27 @@ def parse_date_literal(text: str, context: DateContext) -> date:
         return context.today + timedelta(days=1)
 
     relative = re.fullmatch(
-        r"(?P<count>\d+)\s+(?P<unit>days?|weeks?|months?|years?)\s+ago",
+        rf"(?P<count>\d+)\s+(?P<unit>{_UNIT_TOKEN})\s+ago",
         lowered,
     )
     if relative:
         count = int(relative.group("count"))
-        unit = relative.group("unit")
-        if unit.startswith("day"):
-            return context.today - timedelta(days=count)
-        if unit.startswith("week"):
-            return context.today - timedelta(weeks=count)
-        if unit.startswith("month"):
-            return _calendar_shift_day(context.today, months=count)
-        return _calendar_shift_day(context.today, years=count)
+        unit_text = relative.group("unit")
+        try:
+            unit = load_default_unit_registry().resolve(unit_text)
+        except ValueError as exc:
+            raise ValueError(f"Unknown relative-date unit {unit_text!r}.") from exc
+        if unit.kind == "calendar":
+            months = unit.amount * count
+            if not months.is_integer():
+                raise ValueError(f"Calendar unit {unit_text!r} requires a whole number of months.")
+            return _calendar_shift_day(context.today, months=int(months))
+        days = unit.amount * count / 86400
+        if not days.is_integer():
+            raise ValueError(
+                f"Relative date unit {unit_text!r} must resolve to a whole number of days."
+            )
+        return context.today - timedelta(days=int(days))
 
     compact = re.fullmatch(r"(\d{4})(\d{2})(\d{2})", raw)
     if compact:

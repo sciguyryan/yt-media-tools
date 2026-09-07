@@ -56,7 +56,7 @@ if '--version' in sys.argv:
 mode = sys.argv[2] if len(sys.argv) > 2 else ''
 if mode == '--check':
     if {youtubejs_ok!r}:
-        print(json.dumps({{'available': True, 'version': '18.0.0'}}))
+        print(json.dumps({{'available': True, 'version': '18.0.0', 'module_path': '/opt/node_modules/youtubei.js/dist/src/platform/node.js'}}))
         raise SystemExit(0)
     print("[yt-discover:youtubejs] Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'youtubei.js'", file=sys.stderr)
     raise SystemExit(1)
