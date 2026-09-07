@@ -22,7 +22,7 @@ from yt_media_tools.query import evaluate_expression, parse_expression, parse_qu
 from yt_media_tools.sources import backend_status, enumerate_source, fetch_details
 
 
-VERSION = "0.17.0"
+VERSION = "0.17.1"
 
 
 def parse_args() -> argparse.Namespace:

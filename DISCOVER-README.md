@@ -265,7 +265,7 @@ Named parameters are also resolved for `CONTAINS` and `MATCHES`.
 
 Duplicate `--param NAME=VALUE` bindings are now rejected instead of silently allowing a later value to replace the earlier binding. This removes an ambiguity from the new parameter support before the query interface is treated as settled.
 
-## 0.17.0 - Ruff maintenance
+## 0.17.1 - Ruff maintenance
 
 Discover now uses timezone-aware UTC datetime values for parsed upload dates and date sorting fallbacks. This is a maintenance correction prompted by local Ruff datetime checks rather than a change to the user-facing date syntax.
 

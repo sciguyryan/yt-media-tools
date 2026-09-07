@@ -1,5 +1,11 @@
 # Changelog
 
+## Discover 0.17.1 / Downloader 1.4.2
+
+- Fixed remaining Ruff E701 findings in Discover parameter coercion.
+- Marked both shebang-bearing CLI scripts executable so Ruff EXE001 passes.
+- No user-facing behaviour changed beyond the revision maintenance fixes.
+
 Entries are annotated by tool or repository so the independent version lines remain clear.
 
 ## Repository - Package foundation

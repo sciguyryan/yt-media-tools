@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 
-VERSION = "1.4.1"
+VERSION = "1.4.2"
 PROGRAM_NAME = "yt-download.py"
 PROGRAM_VERSION = VERSION
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
