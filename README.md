@@ -1,5 +1,7 @@
 # YouTube downloader
 
+The repository now also contains the experimental `yt-discover.py` companion. See `DISCOVER-README.md` for its current usage.
+
 `yt-download.py` is a small wrapper around `yt-dlp` for the download settings I use most often.
 
 ## Requirements
