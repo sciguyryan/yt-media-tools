@@ -375,8 +375,9 @@ def resolve_parameter(value: object, params: dict[str, object] | None) -> object
 
 
 def compare_values(actual: object, operator: str, expected: object) -> bool:
-    if actual is None:
-        # Early YT-SQL treats NULL as unequal to ordinary values.
+    if actual is None or expected is None:
+        return False
+
         return operator == "!="
 
     if operator == "=":
@@ -410,17 +411,23 @@ def evaluate_expression(entry: dict[str, object], node, params: dict[str, object
         return field_value(entry, node[1]) is not None
 
     if kind == "contains":
-        _, field, expected = node
+        _, field, expected_text = node
         value = field_value(entry, field)
-        return isinstance(value, str) and expected.lower() in value.lower()
+        expected = resolve_parameter(expected_text, params)
+        return (
+            isinstance(value, str)
+            and expected is not None
+            and str(expected).lower() in value.lower()
+        )
 
     if kind == "matches":
-        _, field, expected = node
+        _, field, expected_text = node
         value = field_value(entry, field)
-        if not isinstance(value, str):
+        expected = resolve_parameter(expected_text, params)
+        if not isinstance(value, str) or expected is None:
             return False
         try:
-            return re.search(expected, value, flags=re.IGNORECASE) is not None
+            return re.search(str(expected), value, flags=re.IGNORECASE) is not None
         except re.error as exc:
             raise ValueError(f"invalid regular expression: {exc}") from exc
 

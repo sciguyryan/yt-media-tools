@@ -132,6 +132,8 @@ def acquisition_limit(query, where_expression, backend: str | None) -> int | Non
         return None
     if query.get("order") is not None:
         return None
+    if query.get("distinct"):
+        return None
     return int(query["limit"]) + int(query.get("offset") or 0)
 
 

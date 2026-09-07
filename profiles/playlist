@@ -1,2 +1,5 @@
-# Playlist downloads.
-output=/mnt/storage/Downloads/YouTube/Playlists
+@profile
+
+# Playlist-oriented output layout.
+path=/mnt/storage/Downloads/YouTube Playlists/
+output=%(playlist)s/%(playlist_autonumber|03d)s - %(title)s [%(id)s] [%(uploader)s].%(ext)s

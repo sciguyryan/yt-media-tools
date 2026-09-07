@@ -8,10 +8,11 @@ import subprocess
 import sys
 
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 
 DEFAULT_PROFILE = "default"
 PROFILE_KEYS = {"path", "output"}
+PROFILE_SIGNATURE = "@profile"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
 DEFAULT_BATCH_FILE = "ids.txt"
 DEFAULT_COOKIES = "cookies.txt"
@@ -75,10 +76,7 @@ def available_profiles() -> list[str]:
 def load_profile(name: str) -> dict[str, str]:
     requested = pathlib.Path(name)
     explicit_path = requested.is_absolute() or requested.parent != pathlib.Path(".")
-    path = requested
-
-    if not path.is_file():
-        path = profile_directory() / name
+    path = requested if explicit_path else profile_directory() / name
 
     if not path.is_file() and not explicit_path and name != DEFAULT_PROFILE:
         fallback = profile_directory() / DEFAULT_PROFILE
@@ -90,16 +88,31 @@ def load_profile(name: str) -> dict[str, str]:
             path = fallback
 
     if not path.is_file():
+        if not explicit_path:
+            print(
+                "warning: no usable output profile found; using yt-dlp output defaults",
+                file=sys.stderr,
+            )
+            return {}
         raise ValueError(f"profile not found: {name}")
 
-    path = path.resolve()
+    lines = path.resolve().read_text(encoding="utf-8").splitlines()
+    signature_seen = False
     settings: dict[str, str] = {}
-    path_keys = {"path"}
 
-    for line_number, raw_line in enumerate(path.read_text().splitlines(), start=1):
+    for line_number, raw_line in enumerate(lines, start=1):
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
+
+        if not signature_seen:
+            if line != PROFILE_SIGNATURE:
+                raise ValueError(
+                    f"{path}:{line_number}: expected {PROFILE_SIGNATURE} profile signature"
+                )
+            signature_seen = True
+            continue
+
         if "=" not in line:
             raise ValueError(f"{path}:{line_number}: expected key=value")
 
@@ -113,13 +126,15 @@ def load_profile(name: str) -> dict[str, str]:
             raise ValueError(f"{path}:{line_number}: duplicate profile key: {key}")
         if key not in PROFILE_KEYS:
             raise ValueError(f"{path}:{line_number}: unsupported profile key: {key}")
-
-        if key in path_keys:
-            value_path = pathlib.Path(value)
-            if not value_path.is_absolute():
-                value = str((path.parent / value_path).resolve())
+        if not value:
+            raise ValueError(f"{path}:{line_number}: empty value for {key}")
 
         settings[key] = value
+
+    if not signature_seen:
+        raise ValueError(f"{path}: missing {PROFILE_SIGNATURE} profile signature")
+    if not settings:
+        raise ValueError(f"{path}: profile must define path, output, or both")
 
     return settings
 
@@ -187,7 +202,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-o",
         "--output",
-        default=profile.get("path", profile.get("output", DEFAULT_OUTPUT)),
+        default=profile.get("path", DEFAULT_OUTPUT),
         help=f"Output directory (default: {DEFAULT_OUTPUT})",
     )
     parser.add_argument(
@@ -225,6 +240,7 @@ def parse_args() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
+    args.profile_output = profile.get("output")
 
     if args.examples:
         print("""Examples:

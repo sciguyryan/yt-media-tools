@@ -1,2 +1,5 @@
-# General video downloads.
-output=/mnt/storage/Downloads/YouTube
+@profile
+
+# Standard single-item output layout.
+path=/mnt/storage/Downloads/YouTube/
+output=%(title)s [%(id)s] [%(uploader)s].%(ext)s

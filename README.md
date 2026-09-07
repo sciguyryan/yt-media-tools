@@ -126,8 +126,16 @@ Named profiles are still simple `key=value` files. Duplicate keys and empty keys
 
 If a named built-in profile does not exist, the downloader warns and falls back to `default`. An explicit profile path remains strict and must exist. This is still the older policy-heavy profile model; later releases will narrow profiles to output presentation.
 
-## Downloader profile responsibility
+## Formal output-profile format
 
-Downloader profiles are now limited to output presentation through `path` and `output`. Resolution, rate limit, cookies, archive, batch selection and playlist policy come from Python defaults and CLI options instead of profiles.
+Output profiles now begin with an explicit format marker:
 
-`--examples` prints practical invocations for direct URLs, playlists, batch files, profile selection and dry-run use.
+```text
+@profile
+path=/mnt/storage/Downloads/YouTube/
+output=%(title)s [%(id)s] [%(uploader)s].%(ext)s
+```
+
+`@profile` now identifies a downloader profile rather than being merely tolerated text. A profile may define `path`, `output`, or both, and no other keys are accepted.
+
+`path` controls the output location and `output` controls the yt-dlp filename/template layout. Missing named profiles still fall back to `default`. Existing malformed profiles remain configuration errors.
