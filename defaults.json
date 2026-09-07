@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "profiles": {
+    "best": {
+      "resolution": "best",
+      "format": "bv+ba/best"
+    },
+    "4k": {
+      "resolution": "2160p",
+      "format": "bv+ba/best"
+    },
+    "1440p": {
+      "resolution": "1440p",
+      "format": "bv+ba/best"
+    },
+    "playlist": {
+      "resolution": "1080p",
+      "format": "bv+ba/best",
+      "playlist": true
+    }
+  }
+}

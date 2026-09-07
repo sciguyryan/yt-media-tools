@@ -1,5 +1,15 @@
 # Changelog
 
+## Downloader 1.7.0 - Parameter Profiles
+
+- Add versioned JSON parameter profiles selected with `-p/--parameter-profile` and alternate defaults files selected with `-d/--defaults`.
+- Ship `best`, `4k`, `1440p` and `playlist` parameter profiles using yt-dlp format selectors directly.
+- Add `--list-parameters`, deterministic profile generation, explicit write support and refusal of accidental profile overwrites.
+- Add `--overwrite-profile` for deliberate replacement and omit a redundant profile-removal command.
+- Preserve command-line precedence over profile settings, including symmetric cookie and playlist overrides.
+- Move output-layout profile selection to `-P/--output-profile` while retaining `--profile` as a legacy long-option alias.
+- Add `-f/--format` so yt-dlp format selectors can be stored in profiles or overridden directly.
+
 ## Discover 0.20.1 - Conformance Corrections
 
 - Fix signed numeric literal resolution so negative values remain numeric after tokenisation, including scalar-function fallbacks such as `COALESCE(view_count, -1)`.

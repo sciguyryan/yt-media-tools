@@ -7,9 +7,11 @@ from pathlib import Path
 
 def test_build_command_contains_core_policy(downloader) -> None:
     source = downloader.InputSource(direct_targets=("abc",))
-    policy = downloader.DownloadPolicy(resolution="1080", reverse_playlist=True)
+    policy = downloader.DownloadPolicy(resolution="1080", format_selector="bv+ba/best", reverse_playlist=True)
     command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None)
     assert command[0] == "yt-dlp"
+    format_index = command.index("-f")
+    assert command[format_index + 1] == "bv+ba/best"
     assert "--download-archive" in command
     assert str(downloader.ARCHIVE_FILE) in command
     assert "--cookies" not in command
@@ -21,7 +23,7 @@ def test_build_command_adds_after_move_callback_for_file_queue(downloader, tmp_p
     queue = tmp_path / "ids.txt"
     queue.write_text("abc\n", encoding="utf-8")
     source = downloader.InputSource(batch_file=queue)
-    policy = downloader.DownloadPolicy(resolution="1440", reverse_playlist=False)
+    policy = downloader.DownloadPolicy(resolution="1440", format_selector="bv+ba/best", reverse_playlist=False)
     command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None, remove_completed_ids=True)
     exec_index = command.index("--exec")
     assert command[exec_index + 1].startswith("after_move:")
@@ -31,7 +33,7 @@ def test_build_command_adds_after_move_callback_for_file_queue(downloader, tmp_p
 
 def test_build_command_adds_explicit_cookies_file(downloader, tmp_path: Path) -> None:
     source = downloader.InputSource(direct_targets=("abc",))
-    policy = downloader.DownloadPolicy(resolution="1080", reverse_playlist=False)
+    policy = downloader.DownloadPolicy(resolution="1080", format_selector="bv+ba/best", reverse_playlist=False)
     cookies = tmp_path / "cookies.txt"
     command = downloader.build_yt_dlp_command(
         "yt-dlp",

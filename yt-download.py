@@ -9,23 +9,21 @@ Targets may be supplied directly on the command line, read from standard input,
 read from an explicitly named batch file, or read from ``./ids.txt`` when no
 input is specified.
 
-Profile resolution is deliberately forgiving:
+Downloader configuration has two deliberately separate profile layers:
 
-* ``-p NAME`` looks for ``profiles/NAME`` beside this script.
-* An explicit profile path is used exactly as supplied.
-* If a requested profile is missing, ``profiles/default`` is tried.
-* If ``profiles/default`` is also missing, yt-dlp's native output defaults are
-  used.
-* A profile that exists but is invalid is treated as a configuration error.
-
-Profile files are UTF-8 text and begin with ``@profile``. They may define
-``path`` and/or ``output``. At least one setting must be present.
+* ``-p NAME`` selects a named parameter profile from ``defaults.json``.
+* ``-P NAME`` selects an output-layout profile from ``profiles/``.
+* Explicit CLI options override values loaded from a parameter profile.
+* Output profiles remain the existing UTF-8 ``@profile`` files containing
+  ``path`` and/or ``output`` settings.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -36,12 +34,23 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.6.0"
+PROGRAM_VERSION = "1.7.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 DEFAULT_PROFILE_NAME = "default"
 PROFILE_SIGNATURE = "@profile"
+DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
+PARAMETER_PROFILE_VERSION = 1
+PARAMETER_PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+PARAMETER_PROFILE_KEYS = (
+    "resolution",
+    "format",
+    "cookies",
+    "no-cookies",
+    "reverse-playlist",
+    "playlist",
+)
 
 DEFAULT_VIDEO_ID_FILE = Path("./ids.txt")
 ARCHIVE_FILE = SCRIPT_DIR / "archive.txt"
@@ -74,22 +83,28 @@ EXAMPLES = r"""Examples:
   Pipe discovery output directly into the downloader:
     yt-discover @SomeChannel --after 2025-01-01 | %(prog)s -
 
-  Select an output profile by name. Bare names are resolved under profiles/:
+  Select a named parameter profile from defaults.json:
+    %(prog)s -p 4k VIDEO_ID
     %(prog)s -p playlist PLAYLIST_URL
-    %(prog)s --profile archive VIDEO_ID
 
-  Select a profile using an explicit path:
-    %(prog)s -p ./my-profiles/special VIDEO_ID
-    %(prog)s -p /srv/youtube/profiles/music VIDEO_ID
+  List available parameter profiles:
+    %(prog)s --list-parameters
+
+  Select an output-layout profile by name or path:
+    %(prog)s -P playlist PLAYLIST_URL
+    %(prog)s --output-profile /srv/youtube/profiles/music VIDEO_ID
 
   Prefer 1080p when yt-dlp sorts available formats:
     %(prog)s -r 1080 VIDEO_ID
 
+  Supply yt-dlp's format selector directly:
+    %(prog)s -f "bv*[height<=1080]+ba/b" VIDEO_ID
+
   Reverse playlist traversal:
     %(prog)s --rev PLAYLIST_URL
 
-  Combine profile selection, resolution and playlist reversal:
-    %(prog)s -p playlist -r 1080 --rev PLAYLIST_URL
+  Combine parameter-profile selection, an explicit override and playlist reversal:
+    %(prog)s -p playlist -r 1440 --rev PLAYLIST_URL
 
   Remove IDs from a batch file immediately after each video is fully processed:
     %(prog)s --remove-completed-ids ids/batch.txt
@@ -107,7 +122,15 @@ EXAMPLES = r"""Examples:
   Print the resolved yt-dlp command without executing it:
     %(prog)s --dry-run -p playlist PLAYLIST_URL
 
-Profile format:
+  Emit a new parameter profile without modifying defaults.json:
+    %(prog)s --resolution 1440p --format "bv+ba/best" --no-cookies --generate-profile offline-1440
+
+  Add that generated profile directly to a defaults file:
+    %(prog)s -d defaults.json --resolution 1440p --no-cookies --generate-profile offline-1440 --write-profile
+
+Parameter profiles are versioned JSON objects in defaults.json. Explicit CLI settings override selected profile values.
+
+Output-profile format:
 
   @profile
   path=/mnt/storage/Downloads/YouTube/
@@ -135,12 +158,25 @@ class DownloadPolicy:
     """Resolved global yt-dlp policy for one invocation."""
 
     resolution: str
+    format_selector: str
     reverse_playlist: bool
+    playlist: bool | None = None
 
     @property
     def sort_selector(self) -> str:
         """Return yt-dlp's format sort expression for the requested resolution."""
+        if self.resolution == "best":
+            return "res,lang,fps,size"
         return f"res:{self.resolution},lang,fps,size"
+
+
+@dataclass(frozen=True)
+class ParameterProfile:
+    """One validated named Downloader parameter profile."""
+
+    name: str
+    settings: dict[str, object]
+    source: Path
 
 
 @dataclass(frozen=True)
@@ -182,23 +218,97 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-p",
+        "--parameter-profile",
+        metavar="NAME",
+        help="Apply named download parameters from the resolved defaults JSON file.",
+    )
+    parser.add_argument(
+        "-d",
+        "--defaults",
+        type=Path,
+        metavar="FILE",
+        help="Use FILE for named parameter profiles instead of script-local defaults.json.",
+    )
+    parser.add_argument(
+        "--list-parameters",
+        action="store_true",
+        help="List named parameter profiles in the resolved defaults JSON file and exit.",
+    )
+    parser.add_argument(
+        "--generate-profile",
+        metavar="NAME",
+        help="Generate a named parameter profile from profile-eligible settings and exit.",
+    )
+    parser.add_argument(
+        "--write-profile",
+        action="store_true",
+        help="Write --generate-profile into the resolved defaults JSON file instead of only printing it.",
+    )
+    parser.add_argument(
+        "--overwrite-profile",
+        action="store_true",
+        help="Allow --write-profile to replace an existing profile of the same name.",
+    )
+    parser.add_argument(
+        "-P",
+        "--output-profile",
         "--profile",
+        dest="output_profile",
         metavar="PROFILE",
-        help=("Output profile name or explicit path. Bare names are looked up under profiles/ beside this script."),
+        help=(
+            "Output-layout profile name or explicit path. --profile is retained as a legacy alias; "
+            "bare names are looked up under profiles/ beside this script."
+        ),
     )
     parser.add_argument(
         "-r",
         "--resolution",
-        default=DEFAULT_RESOLUTION,
+        default=None,
         metavar="RESOLUTION",
-        help=(f"Preferred vertical resolution used for format sorting (default: {DEFAULT_RESOLUTION})."),
+        help=(
+            f"Preferred vertical resolution used for format sorting (built-in default: {DEFAULT_RESOLUTION}). "
+            "Accepts a positive number, an optional 'p' suffix, or 'best'."
+        ),
     )
     parser.add_argument(
+        "-f",
+        "--format",
+        dest="format_selector",
+        default=None,
+        metavar="FORMAT",
+        help=(
+            f"Pass yt-dlp format selector FORMAT directly (built-in default: {FORMAT_SELECTOR}). "
+            "This may also be stored in a parameter profile."
+        ),
+    )
+    reverse_group = parser.add_mutually_exclusive_group()
+    reverse_group.add_argument(
         "--rev",
         "--reverse-playlist",
         dest="reverse_playlist",
         action="store_true",
+        default=None,
         help="Ask yt-dlp to traverse playlists in reverse order.",
+    )
+    reverse_group.add_argument(
+        "--no-reverse-playlist",
+        dest="reverse_playlist",
+        action="store_false",
+        help="Disable reverse playlist traversal, overriding a parameter profile.",
+    )
+    playlist_group = parser.add_mutually_exclusive_group()
+    playlist_group.add_argument(
+        "--playlist",
+        dest="playlist",
+        action="store_true",
+        default=None,
+        help="Explicitly allow playlist traversal for this invocation.",
+    )
+    playlist_group.add_argument(
+        "--no-playlist",
+        dest="playlist",
+        action="store_false",
+        help="Download only the referenced item rather than its containing playlist.",
     )
     parser.add_argument(
         "--input-file",
@@ -219,7 +329,14 @@ def build_parser() -> argparse.ArgumentParser:
     cookie_group.add_argument(
         "--no-cookies",
         action="store_true",
+        default=None,
         help="Do not use cookies, even if cookies.txt exists beside this script.",
+    )
+    cookie_group.add_argument(
+        "--auto-cookies",
+        action="store_true",
+        default=None,
+        help="Restore automatic script-local cookie discovery, overriding a parameter profile.",
     )
     parser.add_argument(
         "--dry-run",
@@ -260,12 +377,18 @@ def show_examples(parser: argparse.ArgumentParser) -> None:
 
 
 def validate_resolution(value: str) -> str:
-    """Validate a resolution value intended for yt-dlp's ``res`` sort field."""
-    value = value.strip()
+    """Validate and normalise a resolution used for yt-dlp format sorting."""
+    value = value.strip().lower()
+    if value == "best":
+        return value
+    if value.endswith("p"):
+        value = value[:-1]
     if not value:
         raise ValueError("resolution must not be empty")
     if not value.isdigit() or int(value) <= 0:
-        raise ValueError(f"invalid resolution {value!r}; expected a positive number such as 1080 or 1440")
+        raise ValueError(
+            f"invalid resolution {value!r}; expected 'best' or a positive number such as 1080, 1440p or 2160p"
+        )
     return value
 
 
@@ -412,6 +535,275 @@ def resolve_profile(requested: str | None) -> OutputProfile | None:
         )
 
     return None
+
+
+def validate_parameter_profile_name(name: str) -> str:
+    """Validate a parameter-profile name used as a JSON object key."""
+    if not PARAMETER_PROFILE_NAME_RE.fullmatch(name):
+        raise ValueError(
+            f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'"
+        )
+    return name
+
+
+def _validate_parameter_setting(key: str, value: object) -> object:
+    """Validate one parameter-profile setting and return its normalised value."""
+    if key == "resolution":
+        if not isinstance(value, str):
+            raise ValueError("parameter setting 'resolution' must be a JSON string")
+        validate_resolution(value)
+        return value
+    if key == "format":
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("parameter setting 'format' must be a non-empty JSON string")
+        return value.strip()
+    if key == "cookies":
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("parameter setting 'cookies' must be a non-empty JSON string")
+        return value
+    if key in {"no-cookies", "reverse-playlist", "playlist"}:
+        if not isinstance(value, bool):
+            raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
+        return value
+    raise ValueError(f"unknown parameter setting {key!r}")
+
+
+def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[str, object]:
+    """Validate a profile settings object without silently coercing JSON types."""
+    if not isinstance(settings, dict):
+        raise ValueError(f"parameter profile {profile_name!r} must be a JSON object")
+
+    validated: dict[str, object] = {}
+    for key, value in settings.items():
+        if not isinstance(key, str):
+            raise ValueError(f"parameter profile {profile_name!r} contains a non-string setting name")
+        if key not in PARAMETER_PROFILE_KEYS:
+            raise ValueError(f"parameter profile {profile_name!r} contains unknown option {key!r}")
+        validated[key] = _validate_parameter_setting(key, value)
+
+    if "cookies" in validated and "no-cookies" in validated:
+        raise ValueError(
+            f"parameter profile {profile_name!r} cannot define both 'cookies' and 'no-cookies'"
+        )
+    return validated
+
+
+def defaults_path(requested: Path | None) -> Path:
+    """Return the explicitly requested defaults file or the script-local default."""
+    return requested.expanduser() if requested is not None else DEFAULTS_FILE
+
+
+def load_parameter_profiles(path: Path, *, allow_missing: bool) -> dict[str, ParameterProfile]:
+    """Load and strictly validate one versioned defaults JSON file."""
+    if not path.is_file():
+        if allow_missing:
+            return {}
+        raise ValueError(f"defaults file not found: {path}")
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid defaults JSON in {path}: {exc.msg} at line {exc.lineno}, column {exc.colno}") from exc
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ValueError(f"unable to read defaults file {path}: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError(f"defaults file {path} must contain a JSON object")
+    unknown_root = set(payload) - {"version", "profiles"}
+    if unknown_root:
+        rendered = ", ".join(repr(key) for key in sorted(unknown_root))
+        raise ValueError(f"defaults file {path} contains unknown top-level key(s): {rendered}")
+    if payload.get("version") != PARAMETER_PROFILE_VERSION:
+        raise ValueError(
+            f"defaults file {path} has unsupported version {payload.get('version')!r}; "
+            f"expected {PARAMETER_PROFILE_VERSION}"
+        )
+    profiles_raw = payload.get("profiles")
+    if not isinstance(profiles_raw, dict):
+        raise ValueError(f"defaults file {path} must define a 'profiles' JSON object")
+
+    profiles: dict[str, ParameterProfile] = {}
+    for name, raw_settings in profiles_raw.items():
+        if not isinstance(name, str):
+            raise ValueError(f"defaults file {path} contains a non-string profile name")
+        validate_parameter_profile_name(name)
+        settings = validate_parameter_settings(raw_settings, profile_name=name)
+        profiles[name] = ParameterProfile(name=name, settings=settings, source=path)
+    return profiles
+
+
+def select_parameter_profile(
+    name: str | None,
+    path: Path,
+    *,
+    explicit_defaults: bool,
+) -> ParameterProfile | None:
+    """Resolve one selected parameter profile, if requested."""
+    if name is None:
+        if explicit_defaults and not path.is_file():
+            raise ValueError(f"defaults file not found: {path}")
+        return None
+    validate_parameter_profile_name(name)
+    profiles = load_parameter_profiles(path, allow_missing=False)
+    try:
+        return profiles[name]
+    except KeyError as exc:
+        raise ValueError(f"parameter profile {name!r} was not found in {path}") from exc
+
+
+def list_parameter_profiles(path: Path, *, explicit_defaults: bool) -> list[str]:
+    """Return sorted parameter-profile names from one defaults file."""
+    if not path.is_file() and not explicit_defaults:
+        return []
+    profiles = load_parameter_profiles(path, allow_missing=False)
+    return sorted(profiles, key=str.casefold)
+
+
+def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
+    """Return only profile-eligible settings explicitly supplied on the CLI."""
+    settings: dict[str, object] = {}
+    if args.resolution is not None:
+        validate_resolution(args.resolution)
+        settings["resolution"] = args.resolution
+    if args.format_selector is not None:
+        settings["format"] = _validate_parameter_setting("format", args.format_selector)
+    if args.reverse_playlist is not None:
+        settings["reverse-playlist"] = args.reverse_playlist
+    if args.playlist is not None:
+        settings["playlist"] = args.playlist
+    if args.cookies is not None:
+        settings["cookies"] = str(args.cookies.expanduser())
+    elif args.no_cookies is True:
+        settings["no-cookies"] = True
+    elif args.auto_cookies is True:
+        settings["no-cookies"] = False
+    return settings
+
+
+def merge_parameter_settings(
+    profile: ParameterProfile | None,
+    cli_settings: dict[str, object],
+) -> dict[str, object]:
+    """Merge a selected profile with explicit CLI settings, with CLI precedence."""
+    merged = dict(profile.settings) if profile is not None else {}
+    if "cookies" in cli_settings:
+        merged.pop("no-cookies", None)
+    if "no-cookies" in cli_settings:
+        merged.pop("cookies", None)
+    merged.update(cli_settings)
+    return merged
+
+
+def generated_profile_settings(
+    source: ParameterProfile | None,
+    cli_settings: dict[str, object],
+) -> dict[str, object]:
+    """Build settings for profile generation without snapshotting built-in defaults."""
+    generated = merge_parameter_settings(source, cli_settings)
+    if not generated:
+        raise ValueError(
+            "--generate-profile has no profile-eligible settings to save; "
+            "supply options such as --resolution or select a source parameter profile"
+        )
+    return generated
+
+
+def profile_document(name: str, settings: dict[str, object]) -> dict[str, object]:
+    """Return a complete standalone defaults document for one generated profile."""
+    validate_parameter_profile_name(name)
+    validate_parameter_settings(settings, profile_name=name)
+    return {
+        "version": PARAMETER_PROFILE_VERSION,
+        "profiles": {name: settings},
+    }
+
+
+def format_profile_document(name: str, settings: dict[str, object]) -> str:
+    """Serialise one generated profile deterministically for stdout or a new file."""
+    return json.dumps(profile_document(name, settings), indent=2, ensure_ascii=False) + "\n"
+
+
+def write_parameter_profile(
+    path: Path,
+    name: str,
+    settings: dict[str, object],
+    *,
+    overwrite: bool,
+) -> None:
+    """Atomically add or explicitly replace one profile in a defaults JSON file."""
+    validate_parameter_profile_name(name)
+    validate_parameter_settings(settings, profile_name=name)
+
+    if path.is_file():
+        profiles = load_parameter_profiles(path, allow_missing=False)
+        if name in profiles and not overwrite:
+            raise ValueError(
+                f"parameter profile {name!r} already exists in {path}; "
+                "use --overwrite-profile to replace it explicitly"
+            )
+        raw_profiles: dict[str, object] = {profile.name: dict(profile.settings) for profile in profiles.values()}
+    else:
+        raw_profiles = {}
+
+    raw_profiles[name] = settings
+    payload = {
+        "version": PARAMETER_PROFILE_VERSION,
+        "profiles": raw_profiles,
+    }
+    rendered = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    try:
+        with temporary.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        try:
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+        except OSError:
+            directory_fd = None
+        if directory_fd is not None:
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    except OSError as exc:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise ValueError(f"unable to write defaults file {path}: {exc}") from exc
+
+
+def resolve_parameter_policy(
+    settings: dict[str, object],
+) -> tuple[DownloadPolicy, Path | None, bool]:
+    """Resolve merged profile settings into Downloader runtime policy."""
+    resolution = validate_resolution(str(settings.get("resolution", DEFAULT_RESOLUTION)))
+    format_selector = str(settings.get("format", FORMAT_SELECTOR))
+    reverse_playlist = bool(settings.get("reverse-playlist", False))
+    playlist_value = settings.get("playlist")
+    playlist = playlist_value if isinstance(playlist_value, bool) else None
+
+    if "cookies" in settings:
+        cookie_path = Path(str(settings["cookies"])).expanduser()
+        cookies_file = resolve_cookies(cookie_path, disabled=False)
+    else:
+        disabled = bool(settings.get("no-cookies", False))
+        cookies_file = resolve_cookies(None, disabled=disabled)
+
+    return (
+        DownloadPolicy(
+            resolution=resolution,
+            format_selector=format_selector,
+            reverse_playlist=reverse_playlist,
+            playlist=playlist,
+        ),
+        cookies_file,
+        bool(settings.get("no-cookies", False)),
+    )
 
 
 def remove_completed_id(path: Path, video_id: str) -> bool:
@@ -566,7 +958,7 @@ def build_yt_dlp_command(
     command = [
         executable,
         "-f",
-        FORMAT_SELECTOR,
+        policy.format_selector,
         "-S",
         policy.sort_selector,
         "-r",
@@ -596,6 +988,11 @@ def build_yt_dlp_command(
 
     if policy.reverse_playlist:
         command.append("--playlist-reverse")
+
+    if policy.playlist is True:
+        command.append("--yes-playlist")
+    elif policy.playlist is False:
+        command.append("--no-playlist")
 
     if remove_completed_ids:
         assert input_source.batch_file is not None
@@ -653,20 +1050,75 @@ def main(argv: Sequence[str] | None = None) -> int:
         show_examples(parser)
         return 0
 
+    resolved_defaults = defaults_path(args.defaults)
+    explicit_defaults = args.defaults is not None
+
+    if args.list_parameters and args.generate_profile is not None:
+        parser.error("--list-parameters cannot be combined with --generate-profile")
+    if args.write_profile and args.generate_profile is None:
+        parser.error("--write-profile requires --generate-profile NAME")
+    if args.overwrite_profile and not args.write_profile:
+        parser.error("--overwrite-profile requires --write-profile")
+
+    if args.list_parameters:
+        try:
+            names = list_parameter_profiles(resolved_defaults, explicit_defaults=explicit_defaults)
+        except ValueError as exc:
+            parser.error(str(exc))
+        if not names:
+            print(f"No parameter profiles are available in {resolved_defaults}.")
+            return 0
+        print(f"Available parameter profiles in {resolved_defaults}:\n")
+        for name in names:
+            print(f"  {name}")
+        return 0
+
     try:
-        resolution = validate_resolution(args.resolution)
+        selection_requires_existing_defaults = explicit_defaults and not (
+            args.generate_profile is not None
+            and args.write_profile
+            and args.parameter_profile is None
+        )
+        selected_parameters = select_parameter_profile(
+            args.parameter_profile,
+            resolved_defaults,
+            explicit_defaults=selection_requires_existing_defaults,
+        )
+        cli_settings = explicit_parameter_settings(args)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    if args.generate_profile is not None:
+        try:
+            generated_name = validate_parameter_profile_name(args.generate_profile)
+            generated_settings = generated_profile_settings(selected_parameters, cli_settings)
+            if args.write_profile:
+                write_parameter_profile(
+                    resolved_defaults,
+                    generated_name,
+                    generated_settings,
+                    overwrite=args.overwrite_profile,
+                )
+                action = "Replaced" if args.overwrite_profile else "Added"
+                print(
+                    f"{action} parameter profile {generated_name!r} in {resolved_defaults}.",
+                    file=sys.stderr,
+                )
+            else:
+                print(format_profile_document(generated_name, generated_settings), end="")
+        except ValueError as exc:
+            parser.error(str(exc))
+        return 0
+
+    try:
+        merged_settings = merge_parameter_settings(selected_parameters, cli_settings)
+        policy, cookies_file, _cookies_disabled = resolve_parameter_policy(merged_settings)
         input_source = resolve_input(args)
         validate_remove_completed_ids(args, input_source)
-        profile = resolve_profile(args.profile)
-        cookies_file = resolve_cookies(args.cookies, disabled=args.no_cookies)
+        output_profile = resolve_profile(args.output_profile)
         executable = validate_environment(dry_run=args.dry_run)
     except (ValueError, RuntimeError) as exc:
         parser.error(str(exc))
-
-    policy = DownloadPolicy(
-        resolution=resolution,
-        reverse_playlist=args.reverse_playlist,
-    )
 
     if args.remove_completed_ids and not args.dry_run:
         assert input_source.batch_file is not None
@@ -684,7 +1136,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         executable,
         policy,
         input_source,
-        profile,
+        output_profile,
         cookies_file=cookies_file,
         remove_completed_ids=args.remove_completed_ids,
     )

@@ -2,8 +2,8 @@
 
 `yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
-- `yt-discover.py` 0.19.0 discovers, caches, queries and reports media metadata using the yt-sql query language.
-- `yt-download.py` 1.6.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
+- `yt-discover.py` 0.20.1 discovers, caches, queries and reports media metadata using the yt-sql query language.
+- `yt-download.py` 1.7.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
 
 The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
 
@@ -17,6 +17,7 @@ The tools remain independently useful, but are deliberately designed to compose 
 yt-discover.py
 yt-download.py
 yt_media_tools/        Shared/internal Python package
+defaults.json          Downloader parameter profiles
 profiles/              Downloader output profiles
 yt_discover_tests/     Discover test suite
 yt_downloader_tests/   Downloader test suite

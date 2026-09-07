@@ -6,21 +6,36 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.6.0"
+    assert downloader.PROGRAM_VERSION == "1.7.0"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
     assert downloader.ARCHIVE_FILE == downloader.SCRIPT_DIR / "archive.txt"
     assert downloader.COOKIES_FILE == downloader.SCRIPT_DIR / "cookies.txt"
     assert downloader.PROFILES_DIR == downloader.SCRIPT_DIR / "profiles"
+    assert downloader.DEFAULTS_FILE == downloader.SCRIPT_DIR / "defaults.json"
 
 
-@pytest.mark.parametrize("value", ["1", "720", "1080", "1440", "2160"])
-def test_validate_resolution_accepts_positive_integer_strings(downloader, value: str) -> None:
-    assert downloader.validate_resolution(value) == value
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("1", "1"),
+        ("720", "720"),
+        ("1080", "1080"),
+        ("1080p", "1080"),
+        ("1440", "1440"),
+        ("1440p", "1440"),
+        ("2160", "2160"),
+        ("2160p", "2160"),
+        ("BEST", "best"),
+        ("best", "best"),
+    ],
+)
+def test_validate_resolution_accepts_supported_forms(downloader, value: str, expected: str) -> None:
+    assert downloader.validate_resolution(value) == expected
 
 
-@pytest.mark.parametrize("value", ["", "0", "-1", "1080p", "abc"])
+@pytest.mark.parametrize("value", ["", "0", "-1", "1080px", "p1080", "abc"])
 def test_validate_resolution_rejects_invalid_values(downloader, value: str) -> None:
     with pytest.raises(ValueError):
         downloader.validate_resolution(value)
