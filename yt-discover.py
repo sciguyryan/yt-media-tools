@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import re
-import subprocess
 import sys
 from datetime import datetime
 
+from yt_metadata import normalise_entries
 from yt_query import evaluate_expression, field_value, parse_expression, parse_query_statement, print_row, query_sort_key
+from yt_sources import enumerate_source
 
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -95,59 +95,26 @@ def parse_date(value: str | None) -> datetime | None:
         raise ValueError(f"invalid date {value!r}; expected YYYY-MM-DD") from exc
 
 
-def enumerate_source(source: str) -> list[dict[str, object]]:
-    command = [
-        "yt-dlp",
-        "--flat-playlist",
-        "--dump-single-json",
-        source,
-    ]
-
-    completed = subprocess.run(
-        command,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
-        message = completed.stderr.strip() or "yt-dlp failed"
-        raise RuntimeError(message)
-
-    data = json.loads(completed.stdout)
-    entries = data.get("entries") or []
-    return [entry for entry in entries if isinstance(entry, dict)]
-
 
 def upload_date(entry: dict[str, object]) -> datetime | None:
-    value = entry.get("upload_date")
+    value = entry.get("date")
     if not isinstance(value, str):
         return None
 
     try:
-        return datetime.strptime(value, "%Y%m%d")
+        return datetime.strptime(value, "%Y-%m-%d")
     except ValueError:
         return None
 
 
 def duration(entry: dict[str, object]) -> int | None:
     value = entry.get("duration")
-    if isinstance(value, (int, float)):
-        return int(value)
-    return None
+    return value if isinstance(value, int) else None
 
 
 def is_live(entry: dict[str, object]) -> bool | None:
-    value = entry.get("live_status")
-    if value in {"is_live", "was_live"}:
-        return True
-    if isinstance(value, str):
-        return False
-
-    value = entry.get("is_live")
-    if isinstance(value, bool):
-        return value
-
-    return None
+    value = entry.get("live")
+    return value if isinstance(value, bool) else None
 
 
 
@@ -275,8 +242,9 @@ def main() -> int:
         return 2
 
     try:
-        entries = enumerate_source(args.source)
-    except (RuntimeError, json.JSONDecodeError) as exc:
+        raw_entries = enumerate_source(args.source)
+        entries = normalise_entries(raw_entries)
+    except RuntimeError as exc:
         print(f"could not enumerate source: {exc}", file=sys.stderr)
         return 1
 

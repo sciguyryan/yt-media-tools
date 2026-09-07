@@ -71,3 +71,7 @@ Expressions support:
 Missing metadata can be tested explicitly with `IS NULL` and `IS NOT NULL`.
 
 In this version, ordinary inequality comparisons treat a missing value as unequal to a non-NULL value. This behaviour is retained for compatibility with the first implementation and may be revised as YT-SQL semantics become more formal.
+
+## Metadata model
+
+YT-SQL now evaluates a normalised internal metadata record rather than raw yt-dlp entries. Source acquisition and extractor-specific field handling are kept outside the query module.

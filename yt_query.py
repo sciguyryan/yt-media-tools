@@ -246,31 +246,8 @@ def parse_query_statement(query: str) -> dict[str, object]:
 
 
 def field_value(entry: dict[str, object], field: str) -> object:
-    if field == "id":
-        return entry.get("id")
-    if field == "title":
-        return entry.get("title")
-    if field == "uploader":
-        return entry.get("uploader") or entry.get("channel")
-    if field == "duration":
-        value = entry.get("duration")
-        return int(value) if isinstance(value, (int, float)) else None
-    if field == "date":
-        value = entry.get("upload_date")
-        if isinstance(value, str):
-            try:
-                return datetime.strptime(value, "%Y%m%d").strftime("%Y-%m-%d")
-            except ValueError:
-                return None
-        return None
-    if field == "live":
-        value = entry.get("live_status")
-        if value in {"is_live", "was_live"}:
-            return True
-        if isinstance(value, str):
-            return False
-        value = entry.get("is_live")
-        return value if isinstance(value, bool) else None
+    if field in {"id", "title", "uploader", "duration", "date", "live"}:
+        return entry.get(field)
     raise ValueError(f"unknown field: {field}")
 
 

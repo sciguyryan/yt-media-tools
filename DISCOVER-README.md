@@ -128,6 +128,14 @@ YT-SQL now supports several predicates that previously required dedicated comman
 
 `BETWEEN`, `IN`, `IS NULL`, `IS NOT NULL`, `CONTAINS` and `MATCHES` can be combined with the existing Boolean operators.
 
+## Acquisition and metadata normalisation
+
+Discover now separates source enumeration from query evaluation.
+
+`yt_sources.py` is responsible for asking yt-dlp to enumerate a source. The resulting extractor metadata is then converted by `yt_metadata.py` into a smaller internal record containing the fields YT-SQL currently understands.
+
+This keeps YT-SQL independent from yt-dlp-specific field names and provides one place to handle missing or inconsistent metadata.
+
 ## Metadata limitations
 
 The discovery script relies on metadata available from `yt-dlp --flat-playlist`. Entries with missing metadata cannot satisfy filters that require that field. For example, an entry without an upload date cannot match `--after` or `--before`, and an entry without duration cannot match a duration range.
