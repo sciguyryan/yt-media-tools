@@ -1,5 +1,12 @@
 # Changelog
 
+## Repository - Conformance architecture
+
+- Expanded the deterministic YT-SQL dataset generator to version 2.
+- Added `small`, `normal`, `large` and `huge` profiles plus exact-size generation.
+- Added an independent expected-result oracle and golden conformance fixtures.
+- No tool version changed.
+
 ## Discover 0.17.1 / Downloader 1.4.2
 
 - Fixed remaining Ruff E701 findings in Discover parameter coercion.

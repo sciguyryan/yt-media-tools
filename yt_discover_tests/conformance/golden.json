@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "name": "uploader_projection",
+      "profile": "small",
+      "query": "SELECT id, title FROM source WHERE uploader = 'Example One' ORDER BY id ASC LIMIT 3",
+      "expected": [
+        {
+          "id": "video00000",
+          "title": "Alpha Launch"
+        },
+        {
+          "id": "video00004",
+          "title": "Epsilon Notes"
+        },
+        {
+          "id": "video00008",
+          "title": "Gamma Archive"
+        }
+      ]
+    },
+    {
+      "name": "null_duration",
+      "profile": "small",
+      "query": "SELECT id FROM source WHERE duration IS NULL ORDER BY id ASC",
+      "expected": [
+        {
+          "id": "video00000"
+        },
+        {
+          "id": "video00011"
+        }
+      ]
+    },
+    {
+      "name": "offset_limit",
+      "profile": "small",
+      "query": "SELECT id FROM source ORDER BY id ASC LIMIT 3 OFFSET 2",
+      "expected": [
+        {
+          "id": "video00002"
+        },
+        {
+          "id": "video00003"
+        },
+        {
+          "id": "video00004"
+        }
+      ]
+    }
+  ]
+}

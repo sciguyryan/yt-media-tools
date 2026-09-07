@@ -273,4 +273,6 @@ Several nested filter conditions have also been simplified without altering thei
 
 ## Conformance testing
 
-The first deterministic YT-SQL conformance fixture lives under `yt_discover_tests/conformance/`. It deliberately remains small at this stage and covers representative NULL values, duplicate dates and live state. Larger generated profiles, complete exact-output fixtures and an independent oracle are later test infrastructure.
+YT-SQL conformance tests use a deterministic synthetic dataset generator with `small`, `normal`, `large` and `huge` profiles plus an exact-size mode. The canonical seed is `31415926` and the current generator format is version 2.
+
+The small profile is used for exact conformance and golden-output checks. Larger profiles are reserved for stress, scalability and performance work. Expected-result helpers live separately from the YT-SQL implementation so conformance tests do not simply reproduce the code under test.
