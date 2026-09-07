@@ -211,3 +211,11 @@ Completed-ID queue maintenance now happens per download through yt-dlp's `after_
 The handler removes only the first exact matching ID line and preserves unrelated queue bytes. Pre-run archive reconciliation remains as a conservative recovery mechanism for IDs already present in the archive before the current run.
 
 Whole-run post-download archive reconciliation is no longer the primary completion mechanism.
+
+## Downloader 1.4.1
+
+This patch hardens the per-item queue update path introduced in 1.4.0. Exact ID removal now operates directly on bytes, preserves the queue file mode and flushes the temporary replacement before the atomic rename.
+
+Runtime paths are centralised as script-relative constants for profiles, the default archive, cookies and ID queue. The temporary download path remains `/mnt/storage/Temp/yt-dlp`.
+
+Dry-run command construction remains suitable for inspecting configuration without requiring a runnable download environment.

@@ -214,3 +214,33 @@ def test_build_command_omits_after_move_callback_for_direct_targets():
     command = module.build_command(args, ["abc123"])
 
     assert "--exec" not in command
+
+
+def test_remove_completed_id_preserves_file_mode(tmp_path):
+    module = load_downloader()
+    batch = tmp_path / "ids"
+    batch.write_bytes(b"abc\nxyz\n")
+    batch.chmod(0o640)
+
+    assert module.remove_completed_id(batch, "abc") is True
+    assert (batch.stat().st_mode & 0o777) == 0o640
+    assert batch.read_bytes() == b"xyz\n"
+
+
+def test_remove_completed_id_handles_unrelated_non_utf8_bytes(tmp_path):
+    module = load_downloader()
+    batch = tmp_path / "ids"
+    batch.write_bytes(b"abc\n#\\xffnote\nxyz\n")
+
+    assert module.remove_completed_id(batch, "abc") is True
+    assert batch.read_bytes() == b"#\\xffnote\nxyz\n"
+
+
+def test_runtime_constants_are_script_relative():
+    module = load_downloader()
+
+    assert module.PROFILES_DIR == module.SCRIPT_DIR / "profiles"
+    assert module.DEFAULT_ARCHIVE == module.SCRIPT_DIR / "archive.txt"
+    assert module.DEFAULT_COOKIES == module.SCRIPT_DIR / "cookies.txt"
+    assert module.DEFAULT_BATCH_FILE == module.SCRIPT_DIR / "ids" / "ids"
+    assert str(module.TEMP_DIR) == "/mnt/storage/Temp/yt-dlp"

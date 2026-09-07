@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 from dataclasses import dataclass
 import pathlib
 import shlex
@@ -9,7 +10,9 @@ import subprocess
 import sys
 
 
-VERSION = "1.4.0"
+VERSION = "1.4.1"
+PROGRAM_NAME = "yt-download.py"
+PROGRAM_VERSION = VERSION
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 
@@ -17,11 +20,12 @@ DEFAULT_PROFILE = "default"
 PROFILE_KEYS = {"path", "output"}
 PROFILE_SIGNATURE = "@profile"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
-DEFAULT_BATCH_FILE = "ids.txt"
-DEFAULT_COOKIES = "cookies.txt"
-DEFAULT_ARCHIVE = "archive.txt"
+DEFAULT_BATCH_FILE = SCRIPT_DIR / "ids" / "ids"
+DEFAULT_COOKIES = SCRIPT_DIR / "cookies.txt"
+DEFAULT_ARCHIVE = SCRIPT_DIR / "archive.txt"
 DEFAULT_RATE_LIMIT = "20M"
 DEFAULT_RESOLUTION = 1440
+TEMP_DIR = pathlib.Path("/mnt/storage/Temp/yt-dlp")
 
 
 @dataclass(frozen=True)
@@ -400,15 +404,16 @@ def remove_completed_ids(batch_path: pathlib.Path, archive_path: pathlib.Path) -
 
 
 def remove_completed_id(batch_path: pathlib.Path, video_id: str) -> bool:
-    """Remove the first exact video ID line without changing unrelated queue bytes."""
+    """Remove the first exact video ID line while preserving unrelated queue bytes."""
 
     original = batch_path.read_bytes()
+    target = video_id.encode("utf-8")
     retained: list[bytes] = []
     removed = False
 
     for raw_line in original.splitlines(keepends=True):
         candidate = raw_line.strip()
-        if not removed and candidate and candidate.decode("utf-8") == video_id:
+        if not removed and candidate == target:
             removed = True
             continue
         retained.append(raw_line)
@@ -416,8 +421,14 @@ def remove_completed_id(batch_path: pathlib.Path, video_id: str) -> bool:
     if not removed:
         return False
 
+    mode = batch_path.stat().st_mode
     temporary_path = batch_path.with_name(batch_path.name + ".tmp")
-    temporary_path.write_bytes(b"".join(retained))
+    with temporary_path.open("wb") as handle:
+        handle.write(b"".join(retained))
+        handle.flush()
+        os.fsync(handle.fileno())
+
+    os.chmod(temporary_path, mode)
     temporary_path.replace(batch_path)
     return True
 
@@ -447,7 +458,7 @@ def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
         "--video-multistreams",
         "--audio-multistreams",
         "--paths",
-        "temp:/mnt/storage/Temp/yt-dlp",
+        f"temp:{TEMP_DIR}",
         "--format-sort",
         f"res:{args.resolution}",
         "--extractor-args",
