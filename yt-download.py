@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
@@ -46,6 +46,23 @@ def resolution(value: str) -> int:
         )
 
     return parsed
+
+
+def rate_limit(value: str) -> str:
+    value = value.strip()
+    if not value:
+        raise argparse.ArgumentTypeError("rate limit cannot be empty")
+
+    number = value[:-1] if value[-1:].upper() in {"K", "M", "G"} else value
+    try:
+        if float(number) <= 0:
+            raise ValueError
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "rate limit must be a positive number, optionally followed by K, M or G"
+        ) from exc
+
+    return value
 
 
 def load_profile(name: str) -> dict[str, str]:
@@ -105,7 +122,11 @@ def parse_args() -> argparse.Namespace:
         action="version",
         version=f"%(prog)s {VERSION}",
     )
-    parser.add_argument("targets", nargs="*", help="Video URLs or IDs to download")
+    parser.add_argument(
+        "targets",
+        nargs="*",
+        help="Video URLs or IDs to download; use - to read targets from standard input",
+    )
     parser.add_argument(
         "-b",
         "--batch-file",
@@ -137,6 +158,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--rate-limit",
+        type=rate_limit,
         default=profile.get("rate_limit", DEFAULT_RATE_LIMIT),
         help=f"Download rate limit (default: {DEFAULT_RATE_LIMIT})",
     )
@@ -160,21 +182,62 @@ def parse_args() -> argparse.Namespace:
         except argparse.ArgumentTypeError as exc:
             parser.error(str(exc))
 
+    if isinstance(args.rate_limit, str):
+        try:
+            args.rate_limit = rate_limit(args.rate_limit)
+        except argparse.ArgumentTypeError as exc:
+            parser.error(str(exc))
+
     return args
 
 
-def validate_args(args: argparse.Namespace) -> str | None:
+def read_stdin_targets() -> list[str]:
+    return [
+        line.strip()
+        for line in sys.stdin
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+
+def resolve_targets(args: argparse.Namespace) -> tuple[list[str], str | None]:
+    targets: list[str] = []
+
+    for target in args.targets:
+        if target == "-":
+            targets.extend(read_stdin_targets())
+        else:
+            targets.append(target)
+
+    if targets:
+        return targets, None
+
     if args.targets:
-        return None
+        return [], "no download targets were supplied on standard input"
 
     batch_file = pathlib.Path(args.batch_file)
     if not batch_file.is_file():
-        return f"batch file not found: {batch_file}"
+        return [], f"batch file not found: {batch_file}"
+
+    return [], None
+
+
+def validate_files(args: argparse.Namespace) -> str | None:
+    cookies = pathlib.Path(args.cookies)
+    if not cookies.is_file():
+        return f"cookies file not found: {cookies}"
+
+    archive = pathlib.Path(args.archive)
+    if archive.exists() and not archive.is_file():
+        return f"archive path is not a file: {archive}"
+
+    output = pathlib.Path(args.output)
+    if output.exists() and not output.is_dir():
+        return f"output path is not a directory: {output}"
 
     return None
 
 
-def build_command(args: argparse.Namespace) -> list[str]:
+def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
     command = [
         "yt-dlp",
         "--cookies",
@@ -198,8 +261,8 @@ def build_command(args: argparse.Namespace) -> list[str]:
     if args.playlist_reverse:
         command.append("--playlist-reverse")
 
-    if args.targets:
-        command.extend(args.targets)
+    if targets:
+        command.extend(targets)
     else:
         command.extend(["--batch-file", args.batch_file])
 
@@ -209,12 +272,17 @@ def build_command(args: argparse.Namespace) -> list[str]:
 def main() -> int:
     args = parse_args()
 
-    error = validate_args(args)
+    targets, error = resolve_targets(args)
     if error:
         print(error, file=sys.stderr)
         return 2
 
-    command = build_command(args)
+    error = validate_files(args)
+    if error:
+        print(error, file=sys.stderr)
+        return 2
+
+    command = build_command(args, targets)
 
     if args.dry_run:
         print(shlex.join(command))

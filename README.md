@@ -23,6 +23,14 @@ With no targets, the downloader reads IDs from `ids.txt`:
 ./yt-download.py
 ```
 
+Read targets from standard input by using `-` as a target:
+
+```bash
+printf '%s\n' VIDEO_ID ANOTHER_VIDEO_ID | ./yt-download.py -
+```
+
+Blank lines and lines beginning with `#` are ignored when reading standard input.
+
 Preview the generated `yt-dlp` command without running it:
 
 ```bash
@@ -66,6 +74,8 @@ Supported settings are:
 Relative paths in a profile are resolved relative to that profile file.
 
 Command-line options override the corresponding profile settings.
+
+The downloader now checks that the configured cookies file exists before invoking `yt-dlp`. It also rejects an archive path that already exists as something other than a file and an output path that already exists as something other than a directory.
 
 ## Other options
 
