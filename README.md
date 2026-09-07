@@ -77,6 +77,16 @@ Command-line options override the corresponding profile settings.
 
 Before a real download, the downloader checks that the configured cookies file exists. It also rejects an archive path that already exists as something other than a file and an output path that already exists as something other than a directory. Dry-run mode does not require those runtime paths to exist.
 
+## Batch-file maintenance
+
+When a batch file is being used as a persistent queue, completed IDs can be removed after a download run:
+
+```bash
+./yt-download.py --remove-completed-ids
+```
+
+The downloader compares the batch file with the configured yt-dlp download archive and rewrites the batch file with completed IDs removed.
+
 ## Other options
 
 Run the built-in help for the complete option list:

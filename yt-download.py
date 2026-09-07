@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 
 DEFAULT_PROFILE = "default"
 DEFAULT_OUTPUT = "/mnt/storage/Downloads/YouTube"
@@ -173,6 +173,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print the yt-dlp command without running it",
     )
+    parser.add_argument(
+        "--remove-completed-ids",
+        action="store_true",
+        help="Remove IDs already present in the download archive from the batch file",
+    )
 
     args = parser.parse_args()
 
@@ -237,6 +242,44 @@ def validate_runtime_files(args: argparse.Namespace) -> str | None:
     return None
 
 
+def completed_ids(archive_path: pathlib.Path) -> set[str]:
+    if not archive_path.is_file():
+        return set()
+
+    completed: set[str] = set()
+    for raw_line in archive_path.read_text().splitlines():
+        parts = raw_line.split()
+        if parts:
+            completed.add(parts[-1])
+
+    return completed
+
+
+def remove_completed_ids(batch_path: pathlib.Path, archive_path: pathlib.Path) -> int:
+    completed = completed_ids(archive_path)
+    if not completed:
+        return 0
+
+    remaining: list[str] = []
+    removed = 0
+
+    for raw_line in batch_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            remaining.append(raw_line)
+            continue
+
+        candidate = line.split()[0]
+        if candidate in completed:
+            removed += 1
+            continue
+
+        remaining.append(raw_line)
+
+    batch_path.write_text("\n".join(remaining) + "\n")
+    return removed
+
+
 def build_command(args: argparse.Namespace, targets: list[str]) -> list[str]:
     command = [
         "yt-dlp",
@@ -293,6 +336,15 @@ def main() -> int:
         return 1
 
     completed = subprocess.run(command, check=False)
+
+    if args.remove_completed_ids and not args.targets:
+        removed = remove_completed_ids(
+            pathlib.Path(args.batch_file),
+            pathlib.Path(args.archive),
+        )
+        if removed:
+            print(f"Removed {removed} completed ID(s) from {args.batch_file}.")
+
     return completed.returncode
 
 
