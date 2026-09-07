@@ -98,7 +98,7 @@ def enumerate_youtubejs(source: str) -> list[dict[str, object]]:
         raise RuntimeError("YouTube.js bridge returned invalid JSON") from exc
 
     if not isinstance(data, list):
-        raise RuntimeError("YouTube.js bridge returned an unexpected result")
+        raise TypeError("YouTube.js bridge returned an unexpected result")
 
     return [entry for entry in data if isinstance(entry, dict)]
 

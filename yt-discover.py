@@ -5,7 +5,7 @@ import pathlib
 import re
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 
 from yt_cache import (
     DEFAULT_MAX_AGE,
@@ -27,7 +27,7 @@ from yt_query import (
 )
 from yt_sources import backend_status, enumerate_source, fetch_details
 
-VERSION = "0.16.2"
+VERSION = "0.17.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -213,7 +213,7 @@ def parse_date(value: str | None) -> datetime | None:
         return None
 
     try:
-        return datetime.strptime(value, "%Y-%m-%d")
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=UTC)
     except ValueError as exc:
         raise ValueError(f"invalid date {value!r}; expected YYYY-MM-DD") from exc
 
@@ -224,7 +224,7 @@ def upload_date(entry: dict[str, object]) -> datetime | None:
         return None
 
     try:
-        return datetime.strptime(value, "%Y-%m-%d")
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=UTC)
     except ValueError:
         return None
 
@@ -255,13 +255,15 @@ def matches(
 
     title = entry.get("title")
 
-    if args.title:
-        if not isinstance(title, str) or args.title.lower() not in title.lower():
-            return False
+    if args.title and (
+        not isinstance(title, str) or args.title.lower() not in title.lower()
+    ):
+        return False
 
-    if title_pattern:
-        if not isinstance(title, str) or not title_pattern.search(title):
-            return False
+    if title_pattern and (
+        not isinstance(title, str) or not title_pattern.search(title)
+    ):
+        return False
 
     if args.uploader:
         uploader = entry.get("uploader") or entry.get("channel")
@@ -281,12 +283,14 @@ def matches(
             return False
 
     entry_duration = duration(entry)
-    if args.min_duration is not None:
-        if entry_duration is None or entry_duration < args.min_duration:
-            return False
-    if args.max_duration is not None:
-        if entry_duration is None or entry_duration > args.max_duration:
-            return False
+    if args.min_duration is not None and (
+        entry_duration is None or entry_duration < args.min_duration
+    ):
+        return False
+    if args.max_duration is not None and (
+        entry_duration is None or entry_duration > args.max_duration
+    ):
+        return False
 
     if args.live is not None:
         entry_live = is_live(entry)
@@ -299,7 +303,7 @@ def matches(
 
 def sort_key(entry: dict[str, object], field: str) -> object:
     if field == "date":
-        return upload_date(entry) or datetime.min
+        return upload_date(entry) or datetime.min.replace(tzinfo=UTC)
     if field == "title":
         title = entry.get("title")
         return title.lower() if isinstance(title, str) else ""

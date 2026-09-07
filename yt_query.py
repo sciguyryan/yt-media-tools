@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 def unquote(value: str) -> str:
@@ -359,7 +359,7 @@ def coerce_value(field: str, value: object) -> object:
         if isinstance(value, str):
             for fmt in ("%Y-%m-%d", "%Y%m%d"):
                 try:
-                    return datetime.strptime(value, fmt)
+                    return datetime.strptime(value, fmt).replace(tzinfo=UTC)
                 except ValueError:
                     pass
         return None

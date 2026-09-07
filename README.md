@@ -156,3 +156,11 @@ This is the beginning of automated regression testing rather than a claim of com
 Queue maintenance is now deliberately conservative. Archive reconciliation ignores malformed single-field archive records, removes only exact ID lines from file-backed queues, and preserves unrelated queue bytes.
 
 `--remove-completed-ids` is rejected for direct positional targets because there is no persistent queue file to update.
+
+## Ruff maintenance release
+
+This release applies the first substantive Ruff-driven cleanup after local Ruff adoption.
+
+Date parsing now produces timezone-aware UTC datetimes where a datetime object is required, filter branches are simplified without changing their conditions, and unexpected YouTube.js bridge result types raise `TypeError`.
+
+The automated test suite remains the primary behavioural regression check. Ruff is still being used locally without a committed repository configuration in this release.

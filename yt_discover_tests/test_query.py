@@ -51,3 +51,11 @@ def test_plain_limit_and_offset_can_bound_yt_dlp():
         )
         == 13
     )
+
+
+def test_parsed_query_date_is_timezone_aware():
+    query = load_module("yt_query_test_timezone", "yt_query.py")
+    value = query.coerce_value("date", "2026-09-07")
+
+    assert getattr(value, "tzinfo", None) is not None
+    assert value.utcoffset().total_seconds() == 0

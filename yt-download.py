@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
 
