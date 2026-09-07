@@ -1,12 +1,11 @@
 # Changelog
 
-## Repository - Canonical Reconciliation
+## Repository - Test-suite organisation
 
-- Correct stale `run-downloader.py` references after the executable rename to `yt-download.py`.
-- Align the Downloader README title with the current executable name.
-- Make GitHub Ruff validation enforce both lint and formatting checks.
-- Refresh current Discover documentation so retired cache/frontier states and superseded schema descriptions are not presented as current behaviour.
-- Keep historical release detail in the changelog while retaining current operational guidance in the README.
+- Replace historical Discover phase-based test modules with capability-oriented test modules.
+- Split Downloader's catch-all behavioural tests into CLI, input-source, output-profile, queue-reconciliation and command-planning modules.
+- Keep routine, scale and stress conformance tiers unchanged while making test ownership clearer for future language work.
+- Expand `.gitignore` coverage for script-relative credentials, queues, caches, provenance, downloaded media and yt-dlp sidecars.
 - No tool version changed.
 
 ## 0.18.1 - Tiered Testing

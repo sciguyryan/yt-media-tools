@@ -1,3 +1,5 @@
+"""LIMIT-aware acquisition planning and early-termination behaviour."""
+
 from __future__ import annotations
 
 import os

@@ -52,9 +52,9 @@ There is no checked-in golden query dataset or generated semantic expected-resul
 
 Phase 5.5B must add independently authored oracle cases for every substantive new language construct, including boundary and cross-feature interactions, before that syntax is accepted.
 
-## Query-language maturity
+## v0.16.0 query-language maturity
 
-`yt-sql` supports `DISTINCT`, `OFFSET`, a small scalar-function library, named query parameters, and machine-readable query provenance. These features compose with the current acquisition, cache, frontier, offline, explain, and output behaviour.
+Version 0.16.0 implements Phase 5: D9 `DISTINCT`, D10 `OFFSET`, D11 a small scalar-function library, D13 query parameters, and D14 machine-readable query provenance. The existing acquisition, cache, frontier, offline, explain, and output behaviour remains compatible.
 
 `SELECT DISTINCT` removes duplicate projected rows. Deduplication is based on the selected scalar values after deterministic ordering, so when several source records produce the same projection the first record in the requested order is retained. `OFFSET` is a non-negative row offset applied after filtering, ordering, and `DISTINCT`, and before `LIMIT`:
 
@@ -93,7 +93,7 @@ yt-discover.py \
 
 Use `--provenance -` only when normal query rows are redirected elsewhere, so provenance JSON cannot silently contaminate a pipeline.
 
-`DISTINCT` and non-zero `OFFSET` conservatively disable LIMIT-aware detailed-acquisition termination for now. Their row-shaping semantics are exact, but the early-termination proof has not yet been extended to them.
+`DISTINCT` and non-zero `OFFSET` conservatively disable Phase 4 LIMIT-aware detailed-acquisition termination for now. Their row-shaping semantics are exact, but the early-termination proof has not yet been extended to them.
 
 `yt-discover.py` is a media-metadata discovery tool built around yt-dlp, with optional YouTube.js channel enumeration. Its SQL-inspired query language is named yt-sql. It can query channel or playlist metadata, filter and order records locally, project selected fields, and emit shell-friendly or structured output.
 
@@ -108,9 +108,9 @@ yt-discover.py --examples
 
 Both include extensive practical examples covering sources, filtering, dates, projection, nested metadata, output formats, diagnostics, verbose operation, and piping.
 
-## LIMIT-aware execution optimisation
+## v0.15.0 LIMIT-aware execution optimisation
 
-LIMIT-aware acquisition termination uses a proof-based execution path. When a query has `LIMIT`, preserves source order by omitting `ORDER BY`, and uses only statically known fields, yt-discover acquires detailed metadata in source-order batches and stops once the requested number of authoritative matches has been observed. Later source rows cannot displace those matches from the first N results, so the optimisation is exact rather than heuristic.
+Version 0.15.0 implements Phase 4 and D5 with a deliberately proof-based first form of LIMIT-aware acquisition termination. When a query has `LIMIT`, preserves source order by omitting `ORDER BY`, and uses only statically known fields, yt-discover acquires detailed metadata in source-order batches and stops once the requested number of authoritative matches has been observed. Later source rows cannot displace those matches from the first N results, so the optimisation is exact rather than heuristic.
 
 ```bash
 ./yt-discover.py --tab videos \
@@ -121,15 +121,15 @@ Queries with an explicit `ORDER BY` remain exhaustive in this release because a 
 
 `--explain` and JSON explain now state whether LIMIT-aware acquisition is eligible and why. `--explain-analyze` and `--report` record whether detailed acquisition actually stopped early, how many source-order batches ran, and how many candidates were examined. When acquisition stops after LIMIT is satisfied, result statistics explicitly mark the observed match count as a lower bound rather than pretending the unexamined tail has been counted.
 
-The batch size is intentionally conservative and implementation-defined. LIMIT therefore bounds detailed acquisition work without promising exactly N metadata requests. Source enumeration and the persisted frontier remain independent: a query may avoid most detailed extraction even when the source itself still requires a complete or frontier-confirming lightweight scan.
+The batch size is intentionally conservative and implementation-defined. LIMIT therefore bounds detailed acquisition work without promising exactly N metadata requests. Source enumeration and the D8 frontier remain independent: a query may avoid most detailed extraction even when the source itself still requires a complete or frontier-confirming lightweight scan.
 
-## Incremental source frontier and safe append
+## v0.14.0 incremental source frontier and safe append
 
-Eligible normal online queries against a channel `videos` tab can now reuse a trusted persisted source ordering as an incremental frontier. yt-discover enumerates the newest-first flat feed until five consecutive previously known IDs confirm overlap, then merges the newly observed prefix with the trusted historical ordering instead of walking the entire channel again. If overlap is not confirmed before the feed ends, yt-discover treats that as uncertainty, completes the enumeration, and rebuilds the trusted ordering from the full observation. Explicit `--acquisition full` continues to force complete enumeration.
+Version 0.14.0 implements Phase 3. Eligible normal online queries against a channel `videos` tab can now reuse a trusted persisted source ordering as an incremental frontier. yt-discover enumerates the newest-first flat feed until five consecutive previously known IDs confirm overlap, then merges the newly observed prefix with the trusted historical ordering instead of walking the entire channel again. If overlap is not confirmed before the feed ends, yt-discover treats that as uncertainty, completes the enumeration, and rebuilds the trusted ordering from the full observation. Explicit `--acquisition full` continues to force complete enumeration.
 
 The frontier is separate from detailed-metadata coverage. An inaccessible or members-only video can therefore remain part of the trusted source ordering without falsely claiming that detailed metadata for it is cached. Trusted source ordering is replaced transactionally after a complete observation so entries that have disappeared do not survive as phantom frontier members. The SQLite schema is now version 3; version 1 and 2 caches migrate automatically where their persisted ordering can be validated conservatively.
 
-Native persistent ID-list output is available through `--append`:
+Phase 3 also adds native persistent ID-list output:
 
 ```bash
 ./yt-discover.py --tab videos \
@@ -139,18 +139,18 @@ Native persistent ID-list output is available through `--append`:
 
 `--append FILE` is intentionally ID-specific. It preserves the existing UTF-8 file, appends only IDs that are not already present, and updates the file atomically using a temporary file and `os.replace()`. Existing duplicates already present in the file are left untouched; new duplicates are not added. Plain shell `>>` remains supported for ordinary append semantics. `-v` reports existing IDs, query results already present, and newly appended IDs.
 
-Frontier overlap uses yt-dlp's lazy flat feed. The optional YouTube.js backend remains available for bounded-date enumeration as before. `--explain`, `--explain-analyze`, JSON explain output, and `--report` now describe frontier eligibility and actual frontier outcomes.
+The first D8 implementation uses yt-dlp's lazy flat feed for frontier overlap. The optional YouTube.js backend remains available for bounded-date enumeration as before. `--explain`, `--explain-analyze`, JSON explain output, and `--report` now describe frontier eligibility and actual frontier outcomes.
 
-## Cache-native querying and execution analysis
+## v0.13.0 cache-native querying and execution analysis
 
-The persistent cache can be queried directly with `--offline`, which guarantees that yt-discover will not contact YouTube or refresh stale metadata. Offline mode uses the detailed records already stored for the resolved source. If the most recent recorded source coverage is incomplete or unknown, yt-discover says so explicitly on standard error rather than pretending the cached subset is the whole current source. Required fields that have exceeded their normal freshness policy are also reported as stale, but their cached values are still used because offline mode forbids refreshes.
+Version 0.13.0 implements Phase 2. The persistent cache can now be queried directly with `--offline`, which guarantees that yt-discover will not contact YouTube or refresh stale metadata. Offline mode uses the detailed records already stored for the resolved source. If the most recent recorded source coverage is incomplete or unknown, yt-discover says so explicitly on standard error rather than pretending the cached subset is the whole current source. Required fields that have exceeded their normal freshness policy are also reported as stale, but their cached values are still used because offline mode forbids refreshes.
 
 ```bash
 ./yt-discover.py --offline --tab videos \
   "SELECT id, title, upload_date FROM @whatdamath WHERE duration < 1h ORDER BY upload_date ASC, release_timestamp ASC"
 ```
 
-A cache-only query fails clearly when there are no cached detailed records for the requested source. Source ordering is persisted separately so offline queries can preserve the most recently trusted source order when no explicit `ORDER BY` is supplied. Online runs continue to establish current source state through the normal acquisition and frontier rules.
+A cache-only query fails clearly when there are no cached detailed records for the requested source. Source order observations are now persisted separately so offline queries can preserve the most recently observed source order when no explicit `ORDER BY` is supplied. This is still not a D8 frontier and does not remove the need for online source enumeration during normal runs.
 
 `--explain` now has a machine-readable form:
 
@@ -169,11 +169,15 @@ B1 `EXPLAIN ANALYZE` is available as `--explain-analyze`. It executes the query 
   "SELECT id FROM @whatdamath WHERE duration < 1h ORDER BY upload_date ASC"
 ```
 
-The SQLite cache schema is version 3. Version 1 and 2 caches are migrated in place through the supported migration path, while unsupported schema versions fail closed. `--report` includes offline/cache coverage and timing information.
+The SQLite schema is now version 2. Existing version 1 Phase 1 caches are migrated in place by creating the new source-order and coverage tables, while unsupported schema versions still fail closed. `--report` has also gained offline/cache coverage and timing information.
 
-## Persistent metadata cache
+## v0.12.1 inaccessible-only detailed refresh fix
 
-yt-discover uses a persistent SQLite metadata cache. Source-scoped detailed metadata is checked before yt-dlp is asked to re-extract a known video. Fresh cache hits are reused; missing or stale records are refreshed and written back transactionally. Eligible channel-video queries may also reuse the separate trusted source frontier described above.
+Version 0.12.1 fixes a Phase 1 cache-refresh edge case where yt-dlp could return status 1 after every requested stale or missing video proved inaccessible, even though yt-discover had already classified those per-video failures correctly. Fully accounted-for per-video YouTube failures are now retained as skips and query execution continues. Unexplained or extractor-wide yt-dlp failures remain fatal.
+
+## v0.12.0 persistent metadata cache
+
+Version 0.12.0 introduces the Phase 1 persistent SQLite metadata cache. Normal channel-video queries still enumerate the current source because the D8 incremental frontier is deliberately not active yet, but yt-discover now checks source-scoped cached detailed metadata before asking yt-dlp to re-extract a known video. Fresh cache hits are reused; missing or stale records are refreshed and written back transactionally.
 
 Freshness is field-aware. Stable identity and publication fields can be reused for much longer than mutable counters or availability state. If any field required by the current query has exceeded its freshness policy, yt-discover refreshes that video's complete authoritative yt-dlp record. Dynamic `raw.*` paths are only treated as cache hits when the path was actually present in the cached record.
 
@@ -187,13 +191,13 @@ The default cache follows the XDG cache convention and normally lives at `~/.cac
   "SELECT id FROM @whatdamath WHERE duration < 1h"
 ```
 
-The cache schema is explicitly versioned. Version 1 and 2 caches migrate through the supported path to schema version 3, while unsupported schema versions fail closed. Detailed-metadata coverage and trusted source ordering remain separate concepts so a cached record does not by itself establish current source completeness.
+The cache schema is explicitly versioned. Version 1 caches migrate automatically to the current schema, while unsupported schema versions fail closed. Source observations are recorded for future D8 work, but v0.12.0 does not treat them as a trusted frontier or completeness guarantee. This means stale cache state can cost extra work, but cannot cause yt-discover to silently skip new uploads.
 
 `--report` now includes cache hits, misses, stale entries, refreshes, and writes. `--explain` documents the cache-first detailed-metadata plan and explicitly states that source completeness is still established online.
 
-## Capability-aware planning and explain output
+## v0.11.0 capability-aware planning and explain output
 
-yt-discover uses an explicit acquisition capability model. yt-discover now distinguishes metadata that is exact, approximate, or unavailable at the YouTube.js, yt-dlp flat, and yt-dlp detailed stages. `--explain` exposes those capabilities together with the planned acquisition strategy, optimisation paths that are active or available, reasons an optimisation cannot be used, and the estimated acquisition cost.
+Version 0.11.0 introduces an explicit acquisition capability model. yt-discover now distinguishes metadata that is exact, approximate, or unavailable at the YouTube.js, yt-dlp flat, and yt-dlp detailed stages. `--explain` exposes those capabilities together with the planned acquisition strategy, optimisation paths that are active or available, reasons an optimisation cannot be used, and the estimated acquisition cost.
 
 Bounded channel scans now use a general conservative lightweight predicate evaluator. It may reject a candidate before detailed yt-dlp extraction when exact lightweight values or conservative upload-date uncertainty intervals prove that the complete `WHERE` expression is false. This includes safe upper-date pruning as well as the existing lower-bound rejection. Unknown or ambiguous values are always retained for authoritative detailed evaluation.
 
@@ -207,6 +211,11 @@ For example:
 ```
 
 The explanation shows why the date range can bound enumeration and prune provably out-of-range candidates, while `duration` still requires authoritative detailed metadata.
+
+## v0.10.0 YouTube.js compatibility fix
+
+The YouTube.js backend now consumes its parser-backed `feed.videos` collection as an iterable rather than requiring a native JavaScript array. This is important with current YouTube.js releases, where channel video feeds are exposed through `ObservedArray` and may include newer `LockupView` video nodes. If a channel advertises a Videos tab but YouTube.js yields no parseable video entries, `--backend auto` treats that as a backend failure and falls back to yt-dlp instead of silently returning an empty result.
+
 
 ## Linux installation and external tools
 
@@ -572,7 +581,7 @@ yt-discover.py "SELECT id, title FROM @example" --report acquisition-report.txt
 
 ## Query-planned bounded acquisition
 
-yt-discover can avoid walking an entire large channel in an important class of queries. When `--acquisition auto` is used, the source is a channel `videos` tab, and the `WHERE` expression logically implies a lower `upload_date` bound, yt-discover performs continuation-driven lightweight enumeration first. In `--backend auto`, YouTube.js is preferred when installed; otherwise yt-dlp lazy flat enumeration is used. Both lightweight backends expose approximate or relative publication timing rather than authoritative full-video metadata, so yt-discover keeps a generous safety margin and requires several consecutive entries beyond that margin before stopping pagination. YouTube.js relative dates receive an additional uncertainty allowance before an entry may count as safely old. It then performs full yt-dlp extraction only for the candidate video IDs that were actually enumerated, and evaluates the original query against authoritative metadata. If YouTube.js is unavailable or fails during an `auto` run, yt-discover prints a fallback notice to standard error and retries bounded enumeration with yt-dlp. Explicit `--backend youtubejs` is strict and does not fall back.
+Version 0.11.0 can avoid walking an entire large channel in an important class of queries. When `--acquisition auto` is used, the source is a channel `videos` tab, and the `WHERE` expression logically implies a lower `upload_date` bound, yt-discover performs continuation-driven lightweight enumeration first. In `--backend auto`, YouTube.js is preferred when installed; otherwise yt-dlp lazy flat enumeration is used. Both lightweight backends expose approximate or relative publication timing rather than authoritative full-video metadata, so yt-discover keeps a generous safety margin and requires several consecutive entries beyond that margin before stopping pagination. YouTube.js relative dates receive an additional uncertainty allowance before an entry may count as safely old. It then performs full yt-dlp extraction only for the candidate video IDs that were actually enumerated, and evaluates the original query against authoritative metadata. If YouTube.js is unavailable or fails during an `auto` run, yt-discover prints a fallback notice to standard error and retries bounded enumeration with yt-dlp. Explicit `--backend youtubejs` is strict and does not fall back.
 
 For example:
 
@@ -587,7 +596,7 @@ Use `--acquisition full` to force exhaustive acquisition. Use `--backend ytdlp` 
 
 ## Acquisition cost assessment and large-source warnings
 
-yt-discover assesses the likely acquisition cost before contacting YouTube. The planner distinguishes bounded scans from queries for which no safe early-termination strategy can be proved. With `-v`, the selected cost class and its reason are printed to stderr.
+Version 0.11.0 assesses the likely acquisition cost before contacting YouTube. The planner distinguishes bounded scans from queries for which no safe early-termination strategy can be proved. With `-v`, the selected cost class and its reason are printed to stderr.
 
 When a query has no safe source boundary and appears to require detailed metadata, yt-discover prints a non-interactive warning before automatic full acquisition. Explicit `--acquisition full` suppresses that warning because the exhaustive plan was requested deliberately. `--warn-source-size COUNT` reports when observed acquisition work actually reaches the configured threshold; `--warn-source-size 0` disables threshold notices.
 

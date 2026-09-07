@@ -16,7 +16,7 @@ DOWNLOADER_PATH = ROOT / "yt-download.py"
 @pytest.fixture()
 def downloader():
     """Load a fresh yt-download module for a test."""
-    spec = importlib.util.spec_from_file_location("run_downloader_under_test", DOWNLOADER_PATH)
+    spec = importlib.util.spec_from_file_location("yt_download_under_test", DOWNLOADER_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

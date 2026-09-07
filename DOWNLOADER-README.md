@@ -1,4 +1,4 @@
-# yt-download
+# run-downloader
 
 `yt-download.py` 1.5.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
