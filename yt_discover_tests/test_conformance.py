@@ -108,7 +108,6 @@ def _assert_case(dataset: Any, case: ConformanceCase) -> None:
     )
 
 
-
 def test_language_feature_manifest_is_fully_covered() -> None:
     covered = {feature for case in CASES for feature in case.features}
     assert covered == LANGUAGE_FEATURES, (
@@ -338,7 +337,6 @@ def test_large_profile_multikey_ordering_matches_oracle(conformance_large: Any) 
 def test_huge_profile_filter_sort_limit_matches_oracle(conformance_huge: Any) -> None:
     case = next(case for case in CASES if case.name == "offset_limit")
     _assert_case(conformance_huge, case)
-
 
 
 @pytest.mark.parametrize(

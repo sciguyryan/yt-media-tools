@@ -540,9 +540,7 @@ def resolve_profile(requested: str | None) -> OutputProfile | None:
 def validate_parameter_profile_name(name: str) -> str:
     """Validate a parameter-profile name used as a JSON object key."""
     if not PARAMETER_PROFILE_NAME_RE.fullmatch(name):
-        raise ValueError(
-            f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'"
-        )
+        raise ValueError(f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'")
     return name
 
 
@@ -582,9 +580,7 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
         validated[key] = _validate_parameter_setting(key, value)
 
     if "cookies" in validated and "no-cookies" in validated:
-        raise ValueError(
-            f"parameter profile {profile_name!r} cannot define both 'cookies' and 'no-cookies'"
-        )
+        raise ValueError(f"parameter profile {profile_name!r} cannot define both 'cookies' and 'no-cookies'")
     return validated
 
 
@@ -603,7 +599,9 @@ def load_parameter_profiles(path: Path, *, allow_missing: bool) -> dict[str, Par
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"invalid defaults JSON in {path}: {exc.msg} at line {exc.lineno}, column {exc.colno}") from exc
+        raise ValueError(
+            f"invalid defaults JSON in {path}: {exc.msg} at line {exc.lineno}, column {exc.colno}"
+        ) from exc
     except (OSError, UnicodeDecodeError) as exc:
         raise ValueError(f"unable to read defaults file {path}: {exc}") from exc
 
@@ -738,8 +736,7 @@ def write_parameter_profile(
         profiles = load_parameter_profiles(path, allow_missing=False)
         if name in profiles and not overwrite:
             raise ValueError(
-                f"parameter profile {name!r} already exists in {path}; "
-                "use --overwrite-profile to replace it explicitly"
+                f"parameter profile {name!r} already exists in {path}; use --overwrite-profile to replace it explicitly"
             )
         raw_profiles: dict[str, object] = {profile.name: dict(profile.settings) for profile in profiles.values()}
     else:
@@ -1075,9 +1072,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         selection_requires_existing_defaults = explicit_defaults and not (
-            args.generate_profile is not None
-            and args.write_profile
-            and args.parameter_profile is None
+            args.generate_profile is not None and args.write_profile and args.parameter_profile is None
         )
         selected_parameters = select_parameter_profile(
             args.parameter_profile,

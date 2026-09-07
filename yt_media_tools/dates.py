@@ -148,9 +148,7 @@ def parse_date_literal(text: str, context: DateContext) -> date:
             return _calendar_shift_day(context.today, months=int(months))
         days = unit.amount * count / 86400
         if not days.is_integer():
-            raise ValueError(
-                f"Relative date unit {unit_text!r} must resolve to a whole number of days."
-            )
+            raise ValueError(f"Relative date unit {unit_text!r} must resolve to a whole number of days.")
         return context.today - timedelta(days=int(days))
 
     compact = re.fullmatch(r"(\d{4})(\d{2})(\d{2})", raw)
