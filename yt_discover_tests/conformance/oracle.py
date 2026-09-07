@@ -120,6 +120,17 @@ def _hashable(value: Any) -> Any:
 
 def serialise(rows: list[Any], output_format: str, columns: tuple[str, ...]) -> str:
     """Independently serialise oracle results using yt-sql's documented text contract."""
+    if output_format == "auto":
+        output_format = "lines" if len(columns) == 1 else "jsonl"
+    if output_format == "ids":
+        output_format = "lines"
+    if output_format == "urls":
+        values = []
+        for row in rows:
+            video_id = row[columns[0]] if isinstance(row, dict) else row
+            if video_id is not None:
+                values.append(f"https://www.youtube.com/watch?v={video_id}\n")
+        return "".join(values)
     if output_format == "lines":
         if len(columns) != 1:
             raise ValueError("lines requires one column")

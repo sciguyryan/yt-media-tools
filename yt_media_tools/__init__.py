@@ -1,3 +1,3 @@
 """Shared implementation package for the yt-media-tools command-line suite."""
 
-__version__ = "0.20.0"
+__version__ = "0.20.1"

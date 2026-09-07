@@ -4,7 +4,7 @@ The yt-sql conformance suite compares the production query engine with an indepe
 
 ## Test lifecycle
 
-Normal pytest execution requires no pre-generated corpus and deliberately excludes scale and stress tests. A routine test requests the smallest useful `small` or `normal` profile through a fixture. The harness reports generation progress, creates the logical records and a real temporary yt-discover SQLite cache, runs the oracle and yt-sql paths independently, compares their complete results, reuses the generated profile for the rest of the pytest session, and leaves cleanup to pytest's temporary-directory lifecycle.
+Normal pytest execution requires no pre-generated corpus and deliberately excludes scale and stress tests. A routine test requests the smallest useful `small` or `normal` profile through a fixture. The harness reports generation progress, creates the logical records and a real temporary yt-discover SQLite cache, evaluates the independent oracle, and executes the same query through the production parser, resolver, evaluator and serializer in-process. A representative subset is also exercised end-to-end through the real offline `yt-discover` CLI, including parameter binding and output-format parity. Generated profiles are reused for the pytest session and cleaned up through pytest's temporary-directory lifecycle.
 
 The standard profiles are defined centrally in `generate_dataset.py`:
 
@@ -72,7 +72,7 @@ Static immutable fixtures remain appropriate only when the representation itself
 
 Oracle code must not import or call production query parsing, planning, evaluation, schema, metadata-normalisation, or output modules. This constraint is itself tested. A production parsing or evaluation defect must therefore disagree with the independently expressed algorithm rather than teaching the oracle to make the same mistake.
 
-When a new yt-sql feature is added, its conformance cases should cover the direct semantics, important boundaries, NULL behaviour where applicable, ordering/tie behaviour, interactions with existing row shaping, and at least one non-trivial composition. Use `large` only where scale can affect correctness, and `huge` only for deliberate torture or scalability testing.
+`cases.py` also carries an explicit language-feature manifest. Every currently supported syntax or semantic surface in that manifest must be exercised by at least one deterministic conformance case, and the test suite fails if a manifest entry loses coverage or an unregistered feature tag appears. When a new yt-sql feature is added, its conformance cases should cover the direct semantics, important boundaries, NULL behaviour where applicable, ordering/tie behaviour, interactions with existing row shaping, and at least one non-trivial composition. Use `large` only where scale can affect correctness, and `huge` only for deliberate torture or scalability testing.
 
 ## Manual generation
 

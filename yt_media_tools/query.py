@@ -657,7 +657,7 @@ def _parse_count_text(text: str, source: str, position: int) -> int:
 
 
 def _parse_number_text(text: str, source: str, position: int) -> int | float:
-    cleaned = text.replace("_", "").replace(",", "").strip()
+    cleaned = re.sub(r"\s+", "", text.replace("_", "").replace(",", ""))
     if re.fullmatch(r"[+-]?\d+", cleaned):
         return int(cleaned)
     if re.fullmatch(r"[+-]?(?:\d+\.\d*|\d*\.\d+)", cleaned):
@@ -730,10 +730,10 @@ def _generic_literal(text: str, quoted: bool) -> Any:
         return True
     if lowered == "false":
         return False
-    cleaned = text.replace("_", "").replace(",", "")
-    if re.fullmatch(r"\d+", cleaned):
+    cleaned = re.sub(r"\s+", "", text.replace("_", "").replace(",", ""))
+    if re.fullmatch(r"[+-]?\d+", cleaned):
         return int(cleaned)
-    if re.fullmatch(r"\d+\.\d+", cleaned):
+    if re.fullmatch(r"[+-]?\d+\.\d+", cleaned):
         return float(cleaned)
     return text
 

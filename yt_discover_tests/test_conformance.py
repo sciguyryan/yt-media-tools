@@ -3,21 +3,24 @@
 from __future__ import annotations
 
 import ast
+import io
 import json
 import os
 import subprocess
 import sys
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from yt_discover_tests.conformance.cases import CASES, ConformanceCase
+from yt_discover_tests.conformance.cases import CASES, LANGUAGE_FEATURES, ConformanceCase
 from yt_discover_tests.conformance.generate_dataset import (
     DATASET_SEED,
     GENERATOR_VERSION,
     PROFILE_SIZES,
+    GENERATED_AT,
     SOURCE_URL,
     build_records,
     dataset_digest,
@@ -25,6 +28,11 @@ from yt_discover_tests.conformance.generate_dataset import (
     payload,
 )
 from yt_discover_tests.conformance.oracle import OracleQuery, serialise
+from yt_media_tools.dates import DateContext
+from yt_media_tools.metadata import normalise_record
+from yt_media_tools.output import write_records
+from yt_media_tools.query import apply_query, parse_query, resolve_query
+from yt_media_tools.schema import QuerySchema
 
 ROOT = Path(__file__).resolve().parents[1]
 CONF = ROOT / "yt_discover_tests" / "conformance"
@@ -47,6 +55,7 @@ def _run_case(cache: Path, case: ConformanceCase) -> subprocess.CompletedProcess
         str(cache),
         "--tab",
         "videos",
+        *case.cli_args,
         case.query,
         "--format",
         case.output_format,
@@ -56,20 +65,57 @@ def _run_case(cache: Path, case: ConformanceCase) -> subprocess.CompletedProcess
     return subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
 
 
+def _engine_case_output(records: list[dict[str, object]], case: ConformanceCase) -> str:
+    """Execute one semantic case through production language components in-process."""
+    if case.params:
+        raise AssertionError("parameter-binding cases must execute through the CLI")
+    date_format = "dmy"
+    for index, arg in enumerate(case.cli_args):
+        if arg == "--date-format" and index + 1 < len(case.cli_args):
+            date_format = case.cli_args[index + 1]
+    context = DateContext(date_order=date_format, now=datetime.fromisoformat(GENERATED_AT))
+    production_records = []
+    for source_index, raw in enumerate(records, start=1):
+        record = normalise_record(dict(raw))
+        record["source_index"] = source_index
+        production_records.append(record)
+    parsed = parse_query(case.query)
+    resolved = resolve_query(parsed, QuerySchema(production_records), context)
+    selected = apply_query(production_records, resolved)
+    stream = io.StringIO()
+    with redirect_stdout(stream):
+        write_records(selected, resolved, case.output_format, None, explicit_select=bool(parsed.select))
+    return stream.getvalue()
+
+
 def _assert_case(dataset: Any, case: ConformanceCase) -> None:
     expected_rows = case.oracle(_oracle_records(dataset.records))
     expected = serialise(expected_rows, case.output_format, case.columns)
-    proc = _run_case(dataset.cache_path, case)
-    assert proc.returncode == 0, (
-        f"yt-sql case {case.name!r} failed on {dataset.name} "
-        f"(generator v{dataset.generator_version}, seed {dataset.seed}, size {dataset.size}, "
-        f"digest {dataset.digest}):\n{proc.stderr}"
-    )
-    assert proc.stdout == expected, (
+    if case.execution == "cli":
+        proc = _run_case(dataset.cache_path, case)
+        assert proc.returncode == 0, (
+            f"yt-sql case {case.name!r} failed on {dataset.name} "
+            f"(generator v{dataset.generator_version}, seed {dataset.seed}, size {dataset.size}, "
+            f"digest {dataset.digest}):\n{proc.stderr}"
+        )
+        actual = proc.stdout
+    else:
+        actual = _engine_case_output(dataset.records, case)
+    assert actual == expected, (
         f"yt-sql/oracle disagreement for {case.name!r} on {dataset.name} "
         f"(generator v{dataset.generator_version}, seed {dataset.seed}, size {dataset.size}, "
         f"digest {dataset.digest})"
     )
+
+
+
+def test_language_feature_manifest_is_fully_covered() -> None:
+    covered = {feature for case in CASES for feature in case.features}
+    assert covered == LANGUAGE_FEATURES, (
+        f"missing features: {sorted(LANGUAGE_FEATURES - covered)}; "
+        f"unregistered features: {sorted(covered - LANGUAGE_FEATURES)}"
+    )
+    assert len({case.name for case in CASES}) == len(CASES)
 
 
 def test_profile_sizes_are_ordered_and_centrally_defined() -> None:
@@ -292,6 +338,27 @@ def test_large_profile_multikey_ordering_matches_oracle(conformance_large: Any) 
 def test_huge_profile_filter_sort_limit_matches_oracle(conformance_huge: Any) -> None:
     case = next(case for case in CASES if case.name == "offset_limit")
     _assert_case(conformance_huge, case)
+
+
+
+@pytest.mark.parametrize(
+    "case_name",
+    (
+        "source_order_limit",
+        "contains_case_insensitive",
+        "scalar_functions_and_alias_order",
+        "raw_dynamic_field",
+        "date_local_mdy",
+        "auto_multiple_output",
+        "legacy_urls_output",
+    ),
+)
+def test_representative_cases_match_oracle_through_real_cli(conformance_small: Any, case_name: str) -> None:
+    case = next(item for item in CASES if item.name == case_name)
+    expected = serialise(case.oracle(_oracle_records(conformance_small.records)), case.output_format, case.columns)
+    proc = _run_case(conformance_small.cache_path, case)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout == expected
 
 
 def test_custom_size_dataset_can_drive_same_oracle(conformance_dataset_factory: Any) -> None:

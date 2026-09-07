@@ -1,5 +1,20 @@
 # Changelog
 
+## Discover 0.20.1 - Conformance Corrections
+
+- Fix signed numeric literal resolution so negative values remain numeric after tokenisation, including scalar-function fallbacks such as `COALESCE(view_count, -1)`.
+- Add comprehensive deterministic yt-sql conformance coverage for the complete current language surface and its viable edge cases.
+- Add malformed-query, semantic-rejection, unit-registry and parameter-binding edge coverage.
+- Keep routine semantic conformance fast through in-process production execution while retaining representative real-CLI parity checks.
+
+## Discover 0.20.0 - Multilingual Measures
+
+- Move duration and temporal unit names into external JSON unit-definition files.
+- Load English and Welsh units through the same case-insensitive registry, including aliases and shared short forms.
+- Resolve derived units recursively to fixed seconds or Gregorian calendar months, with explicit validation for cycles, unresolved references and token collisions.
+- Accept Unicode unit names while preserving strict duration and date/time type rules.
+- Correct the optional YouTube.js tool-check fixture to model the resolved module path reported by the bridge.
+
 ## Discover 0.19.0 - Acquisition Observability
 
 - Resolve optional YouTube.js through the project Node environment and report the resolved module path in `--check-tools`.

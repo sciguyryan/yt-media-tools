@@ -60,11 +60,11 @@ The executable semantics of yt-sql are guarded by the conformance architecture u
 
 Routine development and pull-request CI deliberately use only `small` and `normal`. Selected correctness checks that genuinely depend on higher cardinality are marked `scale` and use `large`; torture and scalability checks are marked `stress` and may use `huge`. The default pytest configuration excludes both markers. Run them explicitly with `python -m pytest -m scale`, `python -m pytest -m stress`, or `python -m pytest -m "scale or stress"`.
 
-The harness generates the requested dataset and real SQLite cache at test time, visibly reports profile generation progress, evaluates the Python oracle, runs the equivalent yt-sql through the real `yt-discover` CLI in offline mode, compares the complete serialised results, and allows pytest to remove the temporary corpus after the session.
+The harness generates the requested dataset and real SQLite cache at test time and visibly reports profile generation progress. Routine semantic cases compare the independent Python oracle with the production parser, resolver, evaluator and serializer in-process so broad language coverage remains fast. A representative subset is also run through the real offline `yt-discover` CLI to verify end-to-end parity, including CLI-only behaviour such as parameter binding. Pytest removes the temporary corpus after the session.
 
 The generated corpus deliberately includes same-day uploads, identical and NULL timestamps, exact duration boundaries, duplicate values, case variants, Unicode, regex metacharacters, large counts, availability and live-state values, dynamic scalar metadata, stable source ordering, repeated categorical values, and multiple synthetic channel identities. These deliberately designed records are semantic anchors inside the deterministic generator, not a separately maintained golden dataset. Expected query semantics come from the independently authored Python oracle rather than generated snapshots or production code.
 
-New yt-sql syntax must add independent oracle coverage, boundary cases, and cross-feature interactions as part of its implementation. Larger profiles should be used only where scale is relevant to the behaviour under test.
+An explicit conformance feature manifest records the current language surface and requires every registered feature to have deterministic semantic coverage. New yt-sql syntax must add independent oracle coverage, boundary cases, malformed-input coverage where relevant, and cross-feature interactions as part of its implementation. Larger profiles should be used only where scale is relevant to the behaviour under test.
 
 ## Planned analytical expansion
 
