@@ -370,6 +370,31 @@ CASE result expressions may contain arithmetic, nested scalar functions, or nest
 
 Because star expansion selects every available scalar field, it may require substantially more metadata acquisition than an explicit narrow projection. Use `--fields` or `--schema` when you want to inspect the available surface before choosing a smaller projection.
 
+## Aggregation
+
+Grouped and ungrouped aggregates use SQL-like NULL elimination. `COUNT(*)` counts rows, `COUNT(expr)` counts non-NULL expression values, and `SUM`, `AVG`, `MIN` and `MAX` ignore NULL inputs. On an empty ungrouped input, `COUNT` returns `0` while the other aggregates return NULL.
+
+```bash
+yt-discover.py "SELECT COUNT(*) AS videos, AVG(duration) AS mean_duration FROM @channel"
+yt-discover.py "SELECT uploader, COUNT(*) AS videos, SUM(view_count) AS views FROM @channel GROUP BY uploader ORDER BY views DESC"
+```
+
+`GROUP BY` accepts ordinary scalar expressions but not aggregate expressions. Text group keys preserve yt-sql's normalisation-sensitive Unicode semantics, so canonically equivalent but differently encoded strings remain distinct groups. Without an explicit `ORDER BY`, groups are emitted deterministically in the order their first source row appears. NULL group keys belong to one group.
+
+`HAVING` is evaluated after grouping and can compare aggregate expressions, grouped expressions, or explicit aggregate SELECT aliases. Boolean `AND`, `OR`, `NOT`, parentheses, and `IS [NOT] NULL` are supported. Non-aggregate SELECT, ORDER BY, and HAVING expressions must correspond to a `GROUP BY` expression so ambiguous row values are rejected.
+
+```bash
+yt-discover.py "SELECT uploader, COUNT(*) AS videos FROM @channel GROUP BY uploader HAVING videos >= 10 ORDER BY videos DESC"
+```
+
+Individual aggregates may use SQL-style `FILTER (WHERE ...)`. The filter is evaluated per input row after the query's ordinary `WHERE` predicate and affects only that aggregate:
+
+```bash
+yt-discover.py "SELECT COUNT(*) AS all_videos, COUNT(*) FILTER (WHERE duration < 10m) AS short_videos FROM @channel"
+```
+
+Aggregate functions cannot be nested. `SELECT *` is intentionally unavailable in aggregate queries because grouped output must state its grouping and aggregate expressions explicitly. Aggregate queries also disable limit-aware early acquisition termination: complete input groups must be known before `HAVING`, aggregate ordering, DISTINCT, OFFSET or LIMIT can be applied safely.
+
 ## FROM sources
 
 `FROM` accepts channel handles, channel IDs, playlist IDs, bare channel names, and quoted URLs:

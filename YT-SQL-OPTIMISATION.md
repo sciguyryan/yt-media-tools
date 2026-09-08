@@ -266,12 +266,30 @@ Field/capability analysis can become more aggressive as the language grows. Pote
 
 These optimisations should remain separate from semantic rewrites so explain output can state whether a change alters the query tree or only the acquisition plan.
 
+## Aggregates, GROUP BY, HAVING and FILTER
+
+### Implemented
+
+Aggregate arguments are resolved and optimised as ordinary scalar expressions, but the aggregate operation itself is not constant-folded away. A literal argument such as `SUM(1 + 2)` may therefore become `SUM(3)` while still retaining row cardinality and NULL/filter semantics. Aggregate FILTER predicates run through the ordinary fixed-point predicate optimiser, and recorded decisions are prefixed with `aggregate-filter-` so explain output retains their context. GROUP BY scalar expressions and scalar expressions embedded in HAVING are also passed through the scalar optimiser.
+
+Acquisition field analysis traverses aggregate arguments, FILTER predicates, grouping expressions and HAVING expressions. Limit-aware early source termination is disabled for aggregate queries because a complete group may change `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, HAVING eligibility, group ordering, DISTINCT output, OFFSET or LIMIT.
+
+### Deliberately excluded
+
+The optimiser does not replace `COUNT(*)`, remove GROUP BY keys, infer functional dependencies, push HAVING predicates into WHERE, combine aggregates, or perform partial/streaming aggregation merely because a transformation appears familiar from database systems. Those rewrites require proofs over yt-sql's source order, NULL semantics, extractor metadata acquisition, Unicode-sensitive values and deterministic output contract.
+
+HAVING-to-WHERE pushdown is especially conservative: a grouped predicate may be equivalent only under conditions that yt-sql does not yet model, and aggregate FILTER must remain scoped to its own aggregate. Text grouping keys must never be normalised or case-folded as an optimisation.
+
+### Future candidates
+
+Potential future work includes recognising HAVING predicates that depend solely on grouping keys, common aggregate-expression reuse, exact single-pass aggregation where no later operation requires retained group rows, and aggregate DISTINCT arguments if that syntax is added. Any such change requires complete optimised-versus-unoptimised differential coverage, including empty groups, NULLs, Unicode group keys, FILTER, aliases and stable ordering.
+
 ## Future language features
 
 Each new syntax feature must add a section to this document when it is implemented. The following strategies are already anticipated:
 
 - `SELECT *` is expanded during semantic resolution into the deterministic scalar schema. The optimiser sees the resulting ordinary projection terms rather than a wildcard. Star expansion itself is not an optimisation and cannot omit fields merely because they appear unused; acquisition planning must account for the complete expanded projection.
-- Aggregates and `GROUP BY`: aggregate-specific constant handling, grouping-key analysis, HAVING simplification and possible early aggregation only where exactness is provable.
+- Aggregates and `GROUP BY` are implemented; future work may add grouping-key analysis, HAVING simplification, common aggregate reuse and exact partial aggregation only where equivalence is proved.
 - CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
 
 ## Differential verification requirements

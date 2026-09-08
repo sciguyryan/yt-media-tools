@@ -624,6 +624,45 @@ def _select_star_projection(rows: Rows) -> list[Any]:
     return OracleQuery(rows).where(lambda r: r["id"] == "vid001").select(project).to_list()
 
 
+def _aggregate_global(rows: Rows) -> list[Any]:
+    values = [int(r["view_count"]) for r in rows if r.get("view_count") is not None]
+    titles = [str(r["title"]) for r in rows if r.get("title") is not None]
+    return [
+        {
+            "rows": len(rows),
+            "known_views": len(values),
+            "total_views": sum(values) if values else None,
+            "mean_views": (sum(values) / len(values)) if values else None,
+            "first_title": min(titles) if titles else None,
+            "last_title": max(titles) if titles else None,
+        }
+    ]
+
+
+def _aggregate_grouped_unicode(rows: Rows) -> list[Any]:
+    grouped: dict[Any, list[dict[str, Any]]] = {}
+    order: list[Any] = []
+    for row in rows:
+        key = row.get("title")
+        if key not in grouped:
+            grouped[key] = []
+            order.append(key)
+        grouped[key].append(row)
+    result = [{"title": key, "n": len(grouped[key])} for key in order if len(grouped[key]) > 1]
+    result.sort(key=lambda item: item["n"], reverse=True)
+    return result
+
+
+def _aggregate_filter(rows: Rows) -> list[Any]:
+    short = [r for r in rows if r.get("duration") is not None and int(r["duration"]) < 600]
+    values = [int(r["view_count"]) for r in short if r.get("view_count") is not None]
+    return [{"short": len(short), "short_views": sum(values) if values else None}]
+
+
+def _aggregate_empty(rows: Rows) -> list[Any]:
+    return [{"n": 0, "total": None}]
+
+
 LANGUAGE_FEATURES = frozenset(
     {
         "boolean.and",
@@ -777,6 +816,16 @@ LANGUAGE_FEATURES = frozenset(
         "unicode.case_mapping",
         "unicode.regex",
         "unicode.ordering",
+        "aggregate.count_star",
+        "aggregate.count_expression",
+        "aggregate.sum",
+        "aggregate.avg",
+        "aggregate.min",
+        "aggregate.max",
+        "aggregate.group_by",
+        "aggregate.having",
+        "aggregate.filter",
+        "aggregate.empty_input",
     }
 )
 
@@ -1762,6 +1811,45 @@ CASES = (
         "SELECT id FROM @yt_sql_fixture WHERE id IN ('vid044','vid045','vid046','vid047','vid048','vid049','vid050','vid051') ORDER BY title ASC",
         _unicode_codepoint_order,
         features=("unicode.ordering",),
+    ),
+    ConformanceCase(
+        "aggregate_global_semantics",
+        "SELECT COUNT(*) AS rows, COUNT(view_count) AS known_views, SUM(view_count) AS total_views, AVG(view_count) AS mean_views, MIN(title) AS first_title, MAX(title) AS last_title FROM @yt_sql_fixture",
+        _aggregate_global,
+        ("rows", "known_views", "total_views", "mean_views", "first_title", "last_title"),
+        "jsonl",
+        features=(
+            "aggregate.count_star",
+            "aggregate.count_expression",
+            "aggregate.sum",
+            "aggregate.avg",
+            "aggregate.min",
+            "aggregate.max",
+        ),
+    ),
+    ConformanceCase(
+        "aggregate_group_by_having_unicode",
+        "SELECT title, COUNT(*) AS n FROM @yt_sql_fixture GROUP BY title HAVING n > 1 ORDER BY n DESC",
+        _aggregate_grouped_unicode,
+        ("title", "n"),
+        "jsonl",
+        features=("aggregate.group_by", "aggregate.having"),
+    ),
+    ConformanceCase(
+        "aggregate_filter_semantics",
+        "SELECT COUNT(*) FILTER (WHERE duration < 10m) AS short, SUM(view_count) FILTER (WHERE duration < 10m) AS short_views FROM @yt_sql_fixture",
+        _aggregate_filter,
+        ("short", "short_views"),
+        "jsonl",
+        features=("aggregate.filter",),
+    ),
+    ConformanceCase(
+        "aggregate_empty_input",
+        "SELECT COUNT(*) AS n, SUM(view_count) AS total FROM @yt_sql_fixture WHERE id = '__missing__'",
+        _aggregate_empty,
+        ("n", "total"),
+        "jsonl",
+        features=("aggregate.empty_input",),
     ),
     ConformanceCase(
         "convoluted_existing_language",

@@ -172,6 +172,16 @@ The generated corpus deliberately includes same-day uploads, identical and NULL 
 
 An explicit conformance feature manifest records the current language surface and requires every registered feature to have deterministic semantic coverage. New yt-sql syntax must add independent oracle coverage, boundary cases, malformed-input coverage where relevant, and cross-feature interactions as part of its implementation. Larger profiles should be used only where scale is relevant to the behaviour under test.
 
+## Aggregate queries
+
+yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`, and `MAX(expr)`. `COUNT(expr)` ignores NULL and returns zero when no non-NULL value exists. `SUM`, `AVG`, `MIN`, and `MAX` ignore NULL and return NULL when no non-NULL input remains. `SUM` and `AVG` require numeric expressions; `MIN` and `MAX` use the ordinary resolved scalar ordering, including exact normalisation-sensitive Unicode ordering for text.
+
+`GROUP BY` accepts non-aggregate scalar expressions. NULL keys group together, text keys are not normalised or case-folded, and groups retain first-source-occurrence order unless an explicit `ORDER BY` is present. Non-aggregate projected or ordered expressions in an aggregate query must match a grouping expression. Nested aggregates and `SELECT *` in aggregate queries are rejected.
+
+`HAVING` provides aggregate-aware comparisons after grouping, including explicit SELECT aggregate aliases, Boolean `AND`/`OR`/`NOT`, parentheses, and `IS NULL`/`IS NOT NULL`. Aggregate `FILTER (WHERE predicate)` uses the ordinary row-predicate language and applies only to its aggregate after the query-level WHERE filter.
+
+The first aggregate release does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arguments. Those may be considered separately if they fit the language cleanly. Aggregate queries require complete input groups, so the source-order early-LIMIT acquisition optimisation is disabled for them.
+
 ## Planned analytical expansion
 
-General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, and decimal/hexadecimal/octal/binary integer literals are now part of the language. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. A deterministic `SELECT *` contract is now implemented. Later expression work is expected to evaluate useful date extraction functions. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, and the first aggregate query architecture are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.

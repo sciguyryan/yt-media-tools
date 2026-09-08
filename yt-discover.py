@@ -41,7 +41,9 @@ from yt_media_tools.query import (
     QuerySyntaxError,
     SelectTerm,
     apply_query,
+    format_expression,
     format_query,
+    format_scalar_expression,
     explain_expression,
     merge_queries,
     parse_query,
@@ -65,7 +67,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.23.8"
+PROGRAM_VERSION = "0.24.0"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -484,7 +486,7 @@ def build_parser() -> argparse.ArgumentParser:
     query_group.add_argument(
         "--query",
         metavar="QUERY",
-        help="yt-sql query with optional SELECT DISTINCT, FROM, WHERE, ORDER BY, LIMIT, and OFFSET clauses",
+        help="yt-sql query with optional SELECT DISTINCT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, and OFFSET clauses",
     )
     parser.add_argument(
         "--param",
@@ -785,14 +787,16 @@ def parse_user_query(args: argparse.Namespace, inline_query: str | None = None) 
 
     for predicate in predicates:
         shortcut = Query(
-            predicate if shortcut.predicate is None else Binary("AND", shortcut.predicate, predicate),
-            shortcut.order_by,
-            shortcut.limit,
-            shortcut.source,
-            shortcut.select,
-            shortcut.from_source,
-            shortcut.distinct,
-            shortcut.offset,
+            predicate=predicate if shortcut.predicate is None else Binary("AND", shortcut.predicate, predicate),
+            order_by=shortcut.order_by,
+            limit=shortcut.limit,
+            source=shortcut.source,
+            select=shortcut.select,
+            from_source=shortcut.from_source,
+            distinct=shortcut.distinct,
+            offset=shortcut.offset,
+            group_by=shortcut.group_by,
+            having=shortcut.having,
         )
 
     if query.order_by and shortcut.order_by:
@@ -947,6 +951,28 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         lines.append(f"  {explain_expression(resolved.predicate)}")
     else:
         lines.append(f"  {format_query(Query(predicate=query.predicate))}")
+
+    lines.extend(["", "Aggregation"])
+    active_aggregate = bool(
+        query.group_by
+        or query.having is not None
+        or any(
+            any(name in term.field.upper() for name in ("COUNT(", "SUM(", "AVG(", "MIN(", "MAX("))
+            for term in query.select + query.order_by
+        )
+    )
+    if active_aggregate:
+        if resolved is not None and resolved.group_by:
+            lines.append("  GROUP BY: " + ", ".join(format_scalar_expression(item) for item in resolved.group_by))
+        elif query.group_by:
+            lines.append("  GROUP BY: " + ", ".join(format_scalar_expression(item) for item in query.group_by))
+        else:
+            lines.append("  GROUP BY: none; one global aggregate group is used.")
+        active_having = resolved.having if resolved is not None else query.having
+        lines.append(f"  HAVING: {format_expression(active_having) if active_having is not None else 'None'}")
+        lines.append("  Early LIMIT acquisition: disabled; complete groups are required.")
+    else:
+        lines.append("  None.")
 
     lines.extend(["", "Predicate optimiser"])
     if optimisation is None:
@@ -1163,6 +1189,18 @@ def explain_user_query_json(
         "version": PROGRAM_VERSION,
         "query": format_query(query),
         "row_shaping": {"distinct": query.distinct, "offset": query.offset, "limit": query.limit},
+        "aggregation": {
+            "group_by": [format_scalar_expression(item) for item in query.group_by],
+            "having": format_expression(query.having) if query.having is not None else None,
+            "complete_groups_required": bool(
+                query.group_by
+                or query.having is not None
+                or any(
+                    any(name in term.field.upper() for name in ("COUNT(", "SUM(", "AVG(", "MIN(", "MAX("))
+                    for term in query.select + query.order_by
+                )
+            ),
+        },
         "predicate_optimiser": optimiser_payload,
         "source": {
             "type": source.kind,
@@ -2264,36 +2302,33 @@ def main(argv: list[str] | None = None) -> int:
 
     before_query = len(records)
     where_only_query = Query(
-        resolved_query.predicate,
-        resolved_query.order_by,
-        None,
-        resolved_query.source,
-        resolved_query.select,
-        resolved_query.from_source,
-        False,
-        0,
+        predicate=resolved_query.predicate,
+        source=resolved_query.source,
+        select=(SelectTerm("id", "id", kind="string"),),
+        from_source=resolved_query.from_source,
     )
     where_matches = apply_query(records, where_only_query)
     distinct_query = Query(
-        resolved_query.predicate,
-        resolved_query.order_by,
-        None,
-        resolved_query.source,
-        resolved_query.select,
-        resolved_query.from_source,
-        resolved_query.distinct,
-        0,
+        predicate=resolved_query.predicate,
+        order_by=resolved_query.order_by,
+        source=resolved_query.source,
+        select=resolved_query.select,
+        from_source=resolved_query.from_source,
+        distinct=resolved_query.distinct,
+        group_by=resolved_query.group_by,
+        having=resolved_query.having,
     )
     distinct_rows = apply_query(records, distinct_query)
     unlimited_query = Query(
-        resolved_query.predicate,
-        resolved_query.order_by,
-        None,
-        resolved_query.source,
-        resolved_query.select,
-        resolved_query.from_source,
-        resolved_query.distinct,
-        resolved_query.offset,
+        predicate=resolved_query.predicate,
+        order_by=resolved_query.order_by,
+        source=resolved_query.source,
+        select=resolved_query.select,
+        from_source=resolved_query.from_source,
+        distinct=resolved_query.distinct,
+        offset=resolved_query.offset,
+        group_by=resolved_query.group_by,
+        having=resolved_query.having,
     )
     matched_before_limit = apply_query(records, unlimited_query)
     selected = matched_before_limit if resolved_query.limit is None else matched_before_limit[: resolved_query.limit]

@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from .query import (
+    AggregateFunction,
     Between,
     Binary,
     CaseWhen,
@@ -15,7 +16,9 @@ from .query import (
     Query,
     ScalarBinary,
     ScalarCase,
+    ScalarComparison,
     ScalarFunction,
+    ScalarIsNull,
     ScalarUnary,
     TextPredicate,
     Unary,
@@ -78,6 +81,15 @@ def optimise_query(query: Query) -> OptimisationResult:
             else term
         )
 
+    group_by = []
+    for expression in query.group_by:
+        optimised, expression_decisions = _optimise_scalar_expression(expression)
+        decisions.extend(expression_decisions)
+        group_by.append(optimised)
+
+    having, having_decisions = _optimise_having(query.having)
+    decisions.extend(having_decisions)
+
     order_terms = []
     for term in query.order_by:
         expression, expression_decisions = _optimise_scalar_expression(term.expression)
@@ -89,9 +101,37 @@ def optimise_query(query: Query) -> OptimisationResult:
         )
 
     return OptimisationResult(
-        replace(query, predicate=predicate, select=tuple(select_terms), order_by=tuple(order_terms)),
+        replace(
+            query,
+            predicate=predicate,
+            select=tuple(select_terms),
+            order_by=tuple(order_terms),
+            group_by=tuple(group_by),
+            having=having,
+        ),
         tuple(decisions),
     )
+
+
+def _optimise_having(node: Any) -> tuple[Any, list[OptimisationDecision]]:
+    """Optimise scalar subexpressions in HAVING without changing its Boolean semantics."""
+    if node is None:
+        return None, []
+    if isinstance(node, Unary):
+        operand, decisions = _optimise_having(node.operand)
+        return replace(node, operand=operand), decisions
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        left, left_decisions = _optimise_having(node.left)
+        right, right_decisions = _optimise_having(node.right)
+        return replace(node, left=left, right=right), left_decisions + right_decisions
+    if isinstance(node, ScalarComparison):
+        left, left_decisions = _optimise_scalar_expression(node.left)
+        right, right_decisions = _optimise_scalar_expression(node.right)
+        return replace(node, left=left, right=right), left_decisions + right_decisions
+    if isinstance(node, ScalarIsNull):
+        expression, decisions = _optimise_scalar_expression(node.expression)
+        return replace(node, expression=expression), decisions
+    return node, []
 
 
 def _optimise_predicate_fixed_point(node: Any) -> tuple[Any, list[OptimisationDecision]]:
@@ -134,6 +174,19 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
             decisions.append(_scalar_decision("fold-constant-arithmetic", optimised, folded))
             return folded, decisions
         return optimised, decisions
+    if isinstance(expression, AggregateFunction):
+        args = []
+        decisions: list[OptimisationDecision] = []
+        for arg in expression.args:
+            optimised, arg_decisions = _optimise_scalar_expression(arg)
+            args.append(optimised)
+            decisions.extend(arg_decisions)
+        filter_predicate, filter_decisions = _optimise_predicate_fixed_point(expression.filter_predicate)
+        decisions.extend(
+            OptimisationDecision(f"aggregate-filter-{decision.rule}", decision.before, decision.after)
+            for decision in filter_decisions
+        )
+        return replace(expression, args=tuple(args), filter_predicate=filter_predicate), decisions
     if isinstance(expression, ScalarFunction):
         args = []
         decisions: list[OptimisationDecision] = []

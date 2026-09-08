@@ -8,6 +8,7 @@ from typing import Any
 
 from .dates import DateContext, parse_date_literal
 from .query import (
+    AggregateFunction,
     Between,
     Binary,
     Field,
@@ -16,7 +17,9 @@ from .query import (
     Query,
     ScalarBinary,
     ScalarCase,
+    ScalarComparison,
     ScalarFunction,
+    ScalarIsNull,
     ScalarUnary,
     Unary,
 )
@@ -64,6 +67,16 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
     """
     if query.limit is None:
         return LimitTerminationPlan(False, "the query has no LIMIT")
+    if (
+        query.group_by
+        or query.having is not None
+        or any(_contains_aggregate_expression(term.expression) for term in query.select + query.order_by)
+    ):
+        return LimitTerminationPlan(
+            False,
+            "aggregation requires complete input groups before LIMIT can be applied",
+            query.limit,
+        )
     if query.order_by:
         return LimitTerminationPlan(
             False, "explicit ORDER BY requires complete result ordering before LIMIT can be applied", query.limit
@@ -196,6 +209,12 @@ def _fields_in_scalar_expression(expression: Any) -> set[str]:
         return _fields_in_scalar_expression(expression.operand)
     if isinstance(expression, ScalarBinary):
         return _fields_in_scalar_expression(expression.left) | _fields_in_scalar_expression(expression.right)
+    if isinstance(expression, AggregateFunction):
+        fields: set[str] = set()
+        for arg in expression.args:
+            fields.update(_fields_in_scalar_expression(arg))
+        fields.update(_fields_in_node(expression.filter_predicate))
+        return fields
     if isinstance(expression, ScalarFunction):
         fields: set[str] = set()
         for arg in expression.args:
@@ -208,6 +227,36 @@ def _fields_in_scalar_expression(expression: Any) -> set[str]:
             fields.update(_fields_in_scalar_expression(branch.result))
         fields.update(_fields_in_scalar_expression(expression.else_result))
         return fields
+    return set()
+
+
+def _contains_aggregate_expression(expression: Any) -> bool:
+    if isinstance(expression, AggregateFunction):
+        return True
+    if isinstance(expression, ScalarUnary):
+        return _contains_aggregate_expression(expression.operand)
+    if isinstance(expression, ScalarBinary):
+        return _contains_aggregate_expression(expression.left) or _contains_aggregate_expression(expression.right)
+    if isinstance(expression, ScalarFunction):
+        return any(_contains_aggregate_expression(arg) for arg in expression.args)
+    if isinstance(expression, ScalarCase):
+        return any(_contains_aggregate_expression(branch.result) for branch in expression.whens) or (
+            expression.else_result is not None and _contains_aggregate_expression(expression.else_result)
+        )
+    return False
+
+
+def _fields_in_having(node: Any) -> set[str]:
+    if node is None:
+        return set()
+    if isinstance(node, Unary):
+        return _fields_in_having(node.operand)
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        return _fields_in_having(node.left) | _fields_in_having(node.right)
+    if isinstance(node, ScalarComparison):
+        return _fields_in_scalar_expression(node.left) | _fields_in_scalar_expression(node.right)
+    if isinstance(node, ScalarIsNull):
+        return _fields_in_scalar_expression(node.expression)
     return set()
 
 
@@ -224,6 +273,9 @@ def required_query_fields(query: Query) -> set[str]:
             fields.update(_fields_in_scalar_expression(term.expression))
         else:
             fields.add(term.field.casefold())
+    for expression in query.group_by:
+        fields.update(_fields_in_scalar_expression(expression))
+    fields.update(_fields_in_having(query.having))
     if not query.select:
         fields.add("id")
     return fields

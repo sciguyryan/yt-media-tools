@@ -114,6 +114,35 @@ class ScalarFunction:
 
 
 @dataclass(frozen=True)
+class AggregateFunction:
+    """One SQL aggregate evaluated over the current group."""
+
+    name: str
+    args: tuple[Any, ...] = ()
+    count_star: bool = False
+    filter_predicate: Any | None = None
+    position: int = 0
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
+class ScalarComparison:
+    """Comparison between scalar expressions, used by aggregate HAVING."""
+
+    operator: str
+    left: Any
+    right: Any
+
+
+@dataclass(frozen=True)
+class ScalarIsNull:
+    """NULL test over a scalar expression, used by aggregate HAVING."""
+
+    expression: Any
+    negated: bool = False
+
+
+@dataclass(frozen=True)
 class ScalarUnary:
     operator: str
     operand: Any
@@ -177,6 +206,8 @@ class Query:
     from_source: str | None = None
     distinct: bool = False
     offset: int = 0
+    group_by: tuple[Any, ...] = ()
+    having: Any | None = None
 
 
 _TOKEN_RE = re.compile(
@@ -287,6 +318,8 @@ class Parser:
         from_source: str | None = None
         distinct = False
         offset = 0
+        group_by: tuple[Any, ...] = ()
+        having = None
 
         if where_only:
             if self.current.kind != "EOF":
@@ -302,6 +335,8 @@ class Parser:
             if self.consume_keyword("WHERE"):
                 if (
                     self.current.kind == "EOF"
+                    or self.keyword("GROUP")
+                    or self.keyword("HAVING")
                     or self.keyword("ORDER")
                     or self.keyword("LIMIT")
                     or self.keyword("OFFSET")
@@ -309,16 +344,31 @@ class Parser:
                     raise QuerySyntaxError(self.source, "WHERE requires an expression.", self.current.position)
                 predicate = self.parse_or()
             elif (
-                not self.keyword("ORDER")
+                not self.keyword("GROUP")
+                and not self.keyword("HAVING")
+                and not self.keyword("ORDER")
                 and not self.keyword("LIMIT")
                 and not self.keyword("OFFSET")
                 and self.current.kind != "EOF"
             ):
                 if select or from_source is not None:
                     raise QuerySyntaxError(
-                        self.source, "Expected WHERE, ORDER BY, LIMIT, OFFSET, or end of query.", self.current.position
+                        self.source,
+                        "Expected WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, OFFSET, or end of query.",
+                        self.current.position,
                     )
                 predicate = self.parse_or()
+
+        if self.consume_keyword("GROUP"):
+            self.expect_keyword("BY", "Expected BY after GROUP.")
+            group_by = self.parse_group_by()
+
+        if self.consume_keyword("HAVING"):
+            if not group_by and not select:
+                raise QuerySyntaxError(
+                    self.source, "HAVING requires an aggregate SELECT or GROUP BY.", self.current.position
+                )
+            having = self.parse_having_or()
 
         if self.consume_keyword("ORDER"):
             self.expect_keyword("BY", "Expected BY after ORDER.")
@@ -344,7 +394,7 @@ class Parser:
 
         if self.current.kind != "EOF":
             raise QuerySyntaxError(self.source, f"Unexpected token {self.current.text!r}.", self.current.position)
-        return Query(predicate, order_by, limit, self.source, select, from_source, distinct, offset)
+        return Query(predicate, order_by, limit, self.source, select, from_source, distinct, offset, group_by, having)
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
         terms: list[SelectTerm] = []
@@ -470,13 +520,40 @@ class Parser:
         self.expect_keyword("END", "Expected END to close CASE expression.")
         return ScalarCase(tuple(whens), else_result, case_token.position)
 
-    def parse_scalar_function(self, name_token: Token) -> ScalarFunction:
+    def parse_scalar_function(self, name_token: Token) -> Any:
         name = name_token.text.upper()
-        if name not in {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR", "NULLIF", "GREATEST", "LEAST"}:
+        aggregate_names = {"COUNT", "SUM", "MIN", "MAX", "AVG"}
+        scalar_names = {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR", "NULLIF", "GREATEST", "LEAST"}
+        if name not in scalar_names | aggregate_names:
             raise QuerySyntaxError(
                 self.source, f"Unsupported scalar function {name_token.text!r}.", name_token.position
             )
         self.expect("LPAREN", "Expected '(' after function name.")
+        if name in aggregate_names:
+            count_star = False
+            args: list[Any] = []
+            if name == "COUNT" and self.current.kind == "STAR":
+                self.advance()
+                count_star = True
+            elif self.current.kind != "RPAREN":
+                args.append(self.parse_scalar_expression())
+                if self.current.kind == "COMMA":
+                    raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", self.current.position)
+            self.expect("RPAREN", "Expected ')' after aggregate arguments.")
+            if name == "COUNT":
+                if not count_star and len(args) != 1:
+                    raise QuerySyntaxError(
+                        self.source, "COUNT requires * or exactly one argument.", name_token.position
+                    )
+            elif len(args) != 1:
+                raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", name_token.position)
+            filter_predicate = None
+            if self.consume_keyword("FILTER"):
+                self.expect("LPAREN", "Expected '(' after FILTER.")
+                self.expect_keyword("WHERE", "Expected WHERE inside aggregate FILTER.")
+                filter_predicate = self.parse_or()
+                self.expect("RPAREN", "Expected ')' after aggregate FILTER predicate.")
+            return AggregateFunction(name, tuple(args), count_star, filter_predicate, name_token.position)
         args: list[Any] = []
         if self.current.kind != "RPAREN":
             while True:
@@ -513,6 +590,66 @@ class Parser:
             "Expected a channel/playlist identifier after FROM. Quote full URLs.",
             token.position,
         )
+
+    def parse_group_by(self) -> tuple[Any, ...]:
+        """Parse the deterministic scalar expressions that define aggregate groups."""
+        terms: list[Any] = []
+        while True:
+            terms.append(self.parse_scalar_expression())
+            if self.current.kind != "COMMA":
+                break
+            self.advance()
+        if not terms:
+            raise QuerySyntaxError(self.source, "GROUP BY requires at least one expression.", self.current.position)
+        return tuple(terms)
+
+    def parse_having_or(self) -> Any:
+        node = self.parse_having_and()
+        while self.consume_keyword("OR"):
+            node = Binary("OR", node, self.parse_having_and())
+        return node
+
+    def parse_having_and(self) -> Any:
+        node = self.parse_having_not()
+        while self.consume_keyword("AND"):
+            node = Binary("AND", node, self.parse_having_not())
+        return node
+
+    def parse_having_not(self) -> Any:
+        if self.consume_keyword("NOT"):
+            return Unary("NOT", self.parse_having_not())
+        if self.current.kind == "LPAREN":
+            # A leading parenthesis can wrap either a scalar expression on the
+            # left of a comparison or a Boolean HAVING subtree. Try the scalar
+            # interpretation first, then restore the parser position and fall
+            # back to Boolean grouping if the comparison form does not parse.
+            start = self.index
+            try:
+                return self.parse_having_predicate()
+            except QuerySyntaxError:
+                self.index = start
+                self.advance()
+                node = self.parse_having_or()
+                self.expect("RPAREN", "Expected ')' to close HAVING expression.")
+                return node
+        return self.parse_having_predicate()
+
+    def parse_having_predicate(self) -> Any:
+        """Parse aggregate-aware HAVING comparisons without changing WHERE grammar."""
+        left = self.parse_scalar_expression()
+        if self.consume_keyword("IS"):
+            negated = bool(self.consume_keyword("NOT"))
+            self.expect_keyword("NULL", "Expected NULL after IS in HAVING.")
+            return ScalarIsNull(left, negated)
+        if self.current.kind != "OP":
+            raise QuerySyntaxError(
+                self.source, "HAVING requires a comparison operator or IS NULL.", self.current.position
+            )
+        operator = self.advance().text
+        if operator == "<>":
+            operator = "!="
+        right = self.parse_scalar_expression()
+        return ScalarComparison(operator, left, right)
 
     def parse_order_by(self) -> tuple[OrderTerm, ...]:
         terms: list[OrderTerm] = []
@@ -993,6 +1130,12 @@ def format_scalar_expression(expression: Any) -> str:
         )
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
+    if isinstance(expression, AggregateFunction):
+        inner = "*" if expression.count_star else ", ".join(format_scalar_expression(arg) for arg in expression.args)
+        text = f"{expression.name}({inner})"
+        if expression.filter_predicate is not None:
+            text += f" FILTER (WHERE {format_expression(expression.filter_predicate)})"
+        return text
     if isinstance(expression, ScalarCase):
         parts = ["CASE"]
         for branch in expression.whens:
@@ -1163,6 +1306,31 @@ def _resolve_scalar_expression(
             results.append(else_result)
         kind = _common_case_kind(results, source, expression.position)
         return ScalarCase(tuple(resolved_whens), else_result, expression.position, kind)
+    if isinstance(expression, AggregateFunction):
+        args = tuple(
+            _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
+            for arg in expression.args
+        )
+        if any(_contains_aggregate(arg) for arg in args):
+            raise QuerySyntaxError(source, "Aggregate functions cannot be nested.", expression.position)
+        filter_predicate = _resolve_predicate(expression.filter_predicate, schema, source, dates)
+        if expression.name == "COUNT":
+            result_kind = "integer"
+        elif expression.name == "AVG":
+            arg_kind = _scalar_kind(args[0])
+            if arg_kind is not None and not _is_numeric_kind(arg_kind):
+                raise QuerySyntaxError(source, "AVG requires a numeric value.", expression.position)
+            result_kind = "number"
+        elif expression.name == "SUM":
+            arg_kind = _scalar_kind(args[0])
+            if arg_kind is not None and not _is_numeric_kind(arg_kind):
+                raise QuerySyntaxError(source, "SUM requires a numeric value.", expression.position)
+            result_kind = "number" if arg_kind == "number" else arg_kind or "number"
+        else:
+            result_kind = _scalar_kind(args[0])
+        return AggregateFunction(
+            expression.name, args, expression.count_star, filter_predicate, expression.position, result_kind
+        )
     if isinstance(expression, ScalarFunction):
         args = tuple(
             _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
@@ -1195,6 +1363,8 @@ def _resolve_scalar_expression(
                 result_kind = first_kind
         elif expression.name in {"GREATEST", "LEAST"}:
             result_kind = _common_scalar_kind(args, source, expression.position, expression.name)
+        elif expression.name == "COALESCE":
+            result_kind = _common_scalar_kind(args, source, expression.position, "COALESCE")
         else:
             non_null_kinds = [kind for arg in args if (kind := _scalar_kind(arg)) is not None]
             result_kind = (
@@ -1223,6 +1393,86 @@ def _is_constant_scalar_expression(expression: Any) -> bool:
         return _is_constant_scalar_expression(expression.left) and _is_constant_scalar_expression(expression.right)
     if isinstance(expression, ScalarFunction):
         return all(_is_constant_scalar_expression(arg) for arg in expression.args)
+    return False
+
+
+def _contains_aggregate(expression: Any) -> bool:
+    """Return whether a scalar expression contains an aggregate function."""
+    if isinstance(expression, AggregateFunction):
+        return True
+    if isinstance(expression, ScalarUnary):
+        return _contains_aggregate(expression.operand)
+    if isinstance(expression, ScalarBinary):
+        return _contains_aggregate(expression.left) or _contains_aggregate(expression.right)
+    if isinstance(expression, ScalarFunction):
+        return any(_contains_aggregate(arg) for arg in expression.args)
+    if isinstance(expression, ScalarCase):
+        return any(_contains_aggregate(branch.result) for branch in expression.whens) or (
+            expression.else_result is not None and _contains_aggregate(expression.else_result)
+        )
+    return False
+
+
+def _fields_outside_aggregates(expression: Any) -> set[str]:
+    """Return field names evaluated once per group rather than inside an aggregate."""
+    if expression is None or isinstance(expression, (Literal, AggregateFunction)):
+        return set()
+    if isinstance(expression, Field):
+        return {expression.name.casefold()}
+    if isinstance(expression, ScalarUnary):
+        return _fields_outside_aggregates(expression.operand)
+    if isinstance(expression, ScalarBinary):
+        return _fields_outside_aggregates(expression.left) | _fields_outside_aggregates(expression.right)
+    if isinstance(expression, ScalarFunction):
+        fields: set[str] = set()
+        for arg in expression.args:
+            fields.update(_fields_outside_aggregates(arg))
+        return fields
+    if isinstance(expression, ScalarCase):
+        fields: set[str] = set()
+        for branch in expression.whens:
+            fields.update(_fields_in_predicate(branch.condition))
+            fields.update(_fields_outside_aggregates(branch.result))
+        fields.update(_fields_outside_aggregates(expression.else_result))
+        return fields
+    return set()
+
+
+def _fields_in_predicate(node: Any) -> set[str]:
+    if node is None:
+        return set()
+    if isinstance(node, Unary):
+        return _fields_in_predicate(node.operand)
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        return _fields_in_predicate(node.left) | _fields_in_predicate(node.right)
+    field = getattr(node, "field", None)
+    if isinstance(field, Field):
+        return {field.name.casefold()}
+    if isinstance(node, Binary) and isinstance(node.left, Field):
+        return {node.left.name.casefold()}
+    return set()
+
+
+def _aggregate_query(query: Query) -> bool:
+    return (
+        bool(query.group_by)
+        or any(_contains_aggregate(term.expression) for term in query.select if term.expression is not None)
+        or any(_contains_aggregate(term.expression) for term in query.order_by if term.expression is not None)
+        or _having_contains_aggregate(query.having)
+    )
+
+
+def _having_contains_aggregate(node: Any) -> bool:
+    if node is None:
+        return False
+    if isinstance(node, Unary):
+        return _having_contains_aggregate(node.operand)
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        return _having_contains_aggregate(node.left) or _having_contains_aggregate(node.right)
+    if isinstance(node, ScalarComparison):
+        return _contains_aggregate(node.left) or _contains_aggregate(node.right)
+    if isinstance(node, ScalarIsNull):
+        return _contains_aggregate(node.expression)
     return False
 
 
@@ -1402,15 +1652,110 @@ def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: Dat
     raise AssertionError(f"Unsupported query node {node!r}")
 
 
+def _resolve_having(
+    node: Any,
+    schema: QuerySchema,
+    source: str,
+    dates: DateContext,
+    aliases: dict[str, SelectTerm],
+) -> Any:
+    if node is None:
+        return None
+    if isinstance(node, Unary):
+        return Unary(node.operator, _resolve_having(node.operand, schema, source, dates, aliases))
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        return Binary(
+            node.operator,
+            _resolve_having(node.left, schema, source, dates, aliases),
+            _resolve_having(node.right, schema, source, dates, aliases),
+        )
+    if isinstance(node, ScalarComparison):
+        left = _resolve_scalar_expression(node.left, schema, source, dates, aliases)
+        right = _resolve_scalar_expression(node.right, schema, source, dates, aliases)
+        left_kind = _scalar_kind(left)
+        right_kind = _scalar_kind(right)
+        if (
+            left_kind is not None
+            and right_kind is not None
+            and left_kind != right_kind
+            and not (_is_numeric_kind(left_kind) and _is_numeric_kind(right_kind))
+            and "mixed" not in {left_kind, right_kind}
+        ):
+            raise QuerySyntaxError(source, "HAVING comparison expressions must have compatible types.", 0)
+        return ScalarComparison(node.operator, left, right)
+    if isinstance(node, ScalarIsNull):
+        return ScalarIsNull(_resolve_scalar_expression(node.expression, schema, source, dates, aliases), node.negated)
+    raise AssertionError(f"Unsupported HAVING node {node!r}")
+
+
+def _validate_group_compatibility(expression: Any, group_by: tuple[Any, ...], source: str, position: int) -> None:
+    """Reject ambiguous row-level expressions in aggregate projection contexts."""
+    if expression is None or not _fields_outside_aggregates(expression):
+        return
+    canonical_groups = {format_scalar_expression(item) for item in group_by}
+    if not _contains_aggregate(expression) and format_scalar_expression(expression) in canonical_groups:
+        return
+    raise QuerySyntaxError(
+        source,
+        "Non-aggregate SELECT/ORDER BY expressions in an aggregate query must match a GROUP BY expression.",
+        position,
+    )
+
+
+def _validate_having_group_compatibility(node: Any, group_by: tuple[Any, ...], source: str) -> None:
+    if node is None:
+        return
+    if isinstance(node, Unary):
+        _validate_having_group_compatibility(node.operand, group_by, source)
+        return
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        _validate_having_group_compatibility(node.left, group_by, source)
+        _validate_having_group_compatibility(node.right, group_by, source)
+        return
+    expressions = []
+    if isinstance(node, ScalarComparison):
+        expressions = [node.left, node.right]
+    elif isinstance(node, ScalarIsNull):
+        expressions = [node.expression]
+    canonical_groups = {format_scalar_expression(item) for item in group_by}
+    for expression in expressions:
+        if not _fields_outside_aggregates(expression):
+            continue
+        if not _contains_aggregate(expression) and format_scalar_expression(expression) in canonical_groups:
+            continue
+        raise QuerySyntaxError(
+            source,
+            "Non-aggregate HAVING expressions must match a GROUP BY expression or selected aggregate alias.",
+            getattr(expression, "position", 0),
+        )
+
+
 def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
     """Resolve fields and typed literals after metadata has established a schema."""
     context = dates or DateContext()
     source = query.source
 
     predicate = _resolve_predicate(query.predicate, schema, source, context)
+    group_by = tuple(_resolve_scalar_expression(item, schema, source, context) for item in query.group_by)
+    for item in group_by:
+        if _contains_aggregate(item):
+            raise QuerySyntaxError(
+                source, "GROUP BY expressions cannot contain aggregate functions.", getattr(item, "position", 0)
+            )
 
     select_terms: list[SelectTerm] = []
     effective_select = query.select or (SelectTerm("id"),)
+    if (
+        len(effective_select) == 1
+        and effective_select[0].field == "*"
+        and effective_select[0].expression is None
+        and (query.group_by or query.having is not None)
+    ):
+        raise QuerySyntaxError(
+            source,
+            "SELECT * is not supported in aggregate queries; select grouped and aggregate expressions explicitly.",
+            effective_select[0].position,
+        )
     if len(effective_select) == 1 and effective_select[0].field == "*" and effective_select[0].expression is None:
         effective_select = tuple(
             SelectTerm(info.name, position=effective_select[0].position) for info in schema.select_star_fields()
@@ -1451,6 +1796,8 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
         if original_term.alias is not None:
             explicit_aliases[original_term.alias.casefold()] = resolved_term
 
+    having = _resolve_having(query.having, schema, source, context, explicit_aliases)
+
     order_terms: list[OrderTerm] = []
     for term in query.order_by:
         if term.expression is not None:
@@ -1474,7 +1821,7 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
             raise QuerySyntaxError(source, f"Cannot ORDER BY structured field {field.name!r}.", term.position)
         order_terms.append(OrderTerm(field.name, term.descending, term.position, field.kind))
 
-    return Query(
+    resolved = Query(
         predicate,
         tuple(order_terms),
         query.limit,
@@ -1483,7 +1830,18 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
         query.from_source,
         query.distinct,
         query.offset,
+        group_by,
+        having,
     )
+    if _aggregate_query(resolved):
+        for term in resolved.select:
+            _validate_group_compatibility(term.expression, group_by, source, term.position)
+        for term in resolved.order_by:
+            _validate_group_compatibility(term.expression, group_by, source, term.position)
+        _validate_having_group_compatibility(having, group_by, source)
+    elif having is not None:
+        raise QuerySyntaxError(source, "HAVING requires GROUP BY or an aggregate expression.", 0)
+    return resolved
 
 
 def canonical_record_value(
@@ -1496,6 +1854,8 @@ def canonical_record_value(
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
     elif isinstance(field, SelectTerm):
+        if record.get("_yt_sql_aggregate_result") is True and field.output_name in record:
+            return record.get(field.output_name)
         if field.expression is not None:
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
@@ -1666,7 +2026,232 @@ def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
     raise AssertionError(f"Unsupported query node {node!r}")
 
 
+def _hashable_group_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return tuple((key, _hashable_group_value(item)) for key, item in value.items())
+    if isinstance(value, list):
+        return tuple(_hashable_group_value(item) for item in value)
+    return value
+
+
+def _apply_scalar_function_values(name: str, values: list[Any]) -> Any:
+    if name == "LOWER":
+        return values[0].lower() if isinstance(values[0], str) else None
+    if name == "UPPER":
+        return values[0].upper() if isinstance(values[0], str) else None
+    if name == "LENGTH":
+        return len(values[0]) if isinstance(values[0], str) else None
+    if name == "COALESCE":
+        return next((value for value in values if value is not None), None)
+    if name == "CHAR":
+        if any(value is None for value in values):
+            return None
+        try:
+            return "".join(chr(_coerce_char_codepoint(value)) for value in values)
+        except (TypeError, ValueError):
+            return None
+    if name == "NULLIF":
+        first, second = values
+        if first is None:
+            return None
+        if second is None:
+            return first
+        return None if first == second else first
+    if name in {"GREATEST", "LEAST"}:
+        if any(value is None for value in values):
+            return None
+        try:
+            return max(values) if name == "GREATEST" else min(values)
+        except (TypeError, ValueError):
+            return None
+    raise AssertionError(f"Unsupported scalar function {name}")
+
+
+def _evaluate_group_expression(expression: Any, group: Sequence[dict[str, Any]]) -> Any:
+    """Evaluate one resolved SELECT/HAVING/ORDER expression over an aggregate group."""
+    if isinstance(expression, AggregateFunction):
+        rows = list(group)
+        if expression.filter_predicate is not None:
+            rows = [row for row in rows if evaluate(expression.filter_predicate, row) is True]
+        if expression.count_star:
+            return len(rows)
+        values = [evaluate_scalar_expression(expression.args[0], row) for row in rows]
+        non_null = [value for value in values if value is not None]
+        if expression.name == "COUNT":
+            return len(non_null)
+        if not non_null:
+            return None
+        if expression.name == "SUM":
+            try:
+                return sum(non_null)
+            except TypeError:
+                return None
+        if expression.name == "AVG":
+            try:
+                return sum(non_null) / len(non_null)
+            except TypeError:
+                return None
+        if expression.name == "MIN":
+            try:
+                return min(non_null)
+            except TypeError:
+                return None
+        if expression.name == "MAX":
+            try:
+                return max(non_null)
+            except TypeError:
+                return None
+        raise AssertionError(f"Unsupported aggregate function {expression.name}")
+    representative = group[0] if group else {}
+    if isinstance(expression, (Field, Literal)):
+        return evaluate_scalar_expression(expression, representative)
+    if isinstance(expression, ScalarUnary):
+        value = _evaluate_group_expression(expression.operand, group)
+        if value is None:
+            return None
+        try:
+            return +value if expression.operator == "+" else -value
+        except TypeError:
+            return None
+    if isinstance(expression, ScalarBinary):
+        left = _evaluate_group_expression(expression.left, group)
+        right = _evaluate_group_expression(expression.right, group)
+        if left is None or right is None:
+            return None
+        try:
+            if expression.operator == "+":
+                return left + right
+            if expression.operator == "-":
+                return left - right
+            if expression.operator == "*":
+                return left * right
+            if expression.operator == "/":
+                return None if right == 0 else left / right
+            if expression.operator == "%":
+                return None if right == 0 else left % right
+        except TypeError:
+            return None
+    if isinstance(expression, ScalarFunction):
+        return _apply_scalar_function_values(
+            expression.name, [_evaluate_group_expression(arg, group) for arg in expression.args]
+        )
+    if isinstance(expression, ScalarCase):
+        for branch in expression.whens:
+            if evaluate(branch.condition, representative) is True:
+                return _evaluate_group_expression(branch.result, group)
+        return _evaluate_group_expression(expression.else_result, group) if expression.else_result is not None else None
+    raise AssertionError(f"Unsupported aggregate scalar expression {expression!r}")
+
+
+def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
+    if node is None:
+        return True
+    if isinstance(node, Unary):
+        value = _evaluate_having(node.operand, group)
+        return None if value is None else not value
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        left = _evaluate_having(node.left, group)
+        right = _evaluate_having(node.right, group)
+        if node.operator == "AND":
+            if left is False or right is False:
+                return False
+            if left is None or right is None:
+                return None
+            return True
+        if left is True or right is True:
+            return True
+        if left is None or right is None:
+            return None
+        return False
+    if isinstance(node, ScalarIsNull):
+        result = _evaluate_group_expression(node.expression, group) is None
+        return not result if node.negated else result
+    if isinstance(node, ScalarComparison):
+        left = _evaluate_group_expression(node.left, group)
+        right = _evaluate_group_expression(node.right, group)
+        if left is None or right is None:
+            return None
+        try:
+            if node.operator == "=":
+                return left == right
+            if node.operator == "!=":
+                return left != right
+            if node.operator == "<":
+                return left < right
+            if node.operator == "<=":
+                return left <= right
+            if node.operator == ">":
+                return left > right
+            if node.operator == ">=":
+                return left >= right
+        except TypeError:
+            return False
+    raise AssertionError(f"Unsupported HAVING node {node!r}")
+
+
+def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+    filtered = [record for record in records if evaluate(query.predicate, record) is True]
+    grouped: list[tuple[tuple[Any, ...], list[dict[str, Any]]]] = []
+    if query.group_by:
+        by_key: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+        order: list[tuple[Any, ...]] = []
+        for record in filtered:
+            values = tuple(evaluate_scalar_expression(expr, record) for expr in query.group_by)
+            key = tuple(_hashable_group_value(value) for value in values)
+            if key not in by_key:
+                by_key[key] = []
+                order.append(key)
+            by_key[key].append(record)
+        grouped = [(key, by_key[key]) for key in order]
+    else:
+        grouped = [((), filtered)]
+
+    surviving = [group for _, group in grouped if _evaluate_having(query.having, group) is True]
+
+    for term in reversed(query.order_by):
+        present = []
+        missing = []
+        for group in surviving:
+            value = _evaluate_group_expression(term.expression, group) if term.expression is not None else None
+            (missing if value is None else present).append((group, value))
+        try:
+            present.sort(key=lambda item: item[1], reverse=term.descending)
+        except TypeError:
+            present.sort(key=lambda item: str(item[1]), reverse=term.descending)
+        surviving = [group for group, _ in present] + [group for group, _ in missing]
+
+    rows: list[dict[str, Any]] = []
+    for group in surviving:
+        row: dict[str, Any] = {"_yt_sql_aggregate_result": True}
+        for term in query.select:
+            if term.expression is not None:
+                row[term.output_name] = _evaluate_group_expression(term.expression, group)
+            elif group:
+                row[term.output_name] = canonical_record_value(group[0], term)
+            else:
+                row[term.output_name] = None
+        rows.append(row)
+
+    if query.distinct:
+        seen: set[tuple[Any, ...]] = set()
+        unique = []
+        for row in rows:
+            key = tuple(_hashable_group_value(row.get(term.output_name)) for term in query.select)
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(row)
+        rows = unique
+    if query.offset:
+        rows = rows[query.offset :]
+    if query.limit is not None:
+        rows = rows[: query.limit]
+    return rows
+
+
 def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+    if _aggregate_query(query):
+        return _apply_aggregate_query(records, query)
     result = [record for record in records if evaluate(query.predicate, record) is True]
 
     # Python's stable sort preserves source order as the final implicit tie-breaker.
@@ -1718,7 +2303,9 @@ def merge_queries(base: Query, extra: Query) -> Query:
     from_source = extra.from_source or base.from_source
     distinct = extra.distinct or base.distinct
     offset = extra.offset if extra.offset else base.offset
-    return Query(predicate, order_by, limit, source, select, from_source, distinct, offset)
+    group_by = extra.group_by or base.group_by
+    having = extra.having if extra.having is not None else base.having
+    return Query(predicate, order_by, limit, source, select, from_source, distinct, offset, group_by, having)
 
 
 def format_expression(node: Any) -> str:
@@ -1750,6 +2337,10 @@ def format_expression(node: Any) -> str:
     if isinstance(node, TextPredicate):
         not_part = " NOT" if node.negated else ""
         return f"{node.field.name}{not_part} {node.operator} {format_expression(node.value)}"
+    if isinstance(node, ScalarComparison):
+        return f"{format_scalar_expression(node.left)} {node.operator} {format_scalar_expression(node.right)}"
+    if isinstance(node, ScalarIsNull):
+        return f"{format_scalar_expression(node.expression)} IS {'NOT ' if node.negated else ''}NULL"
     raise AssertionError(f"Unsupported query node {node!r}")
 
 
@@ -1772,6 +2363,10 @@ def format_query(query: Query) -> str:
             parts.append(f"FROM '{escaped}'")
     if query.predicate is not None:
         parts.append(f"WHERE {format_expression(query.predicate)}")
+    if query.group_by:
+        parts.append("GROUP BY " + ", ".join(format_scalar_expression(item) for item in query.group_by))
+    if query.having is not None:
+        parts.append(f"HAVING {format_expression(query.having)}")
     if query.order_by:
         parts.append(
             "ORDER BY " + ", ".join(f"{term.field} {'DESC' if term.descending else 'ASC'}" for term in query.order_by)

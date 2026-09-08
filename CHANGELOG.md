@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.24.0 - Aggregate Excitement
+
+- Add `COUNT(*)`, `COUNT(expr)`, `SUM`, `AVG`, `MIN` and `MAX` with SQL-like NULL elimination and deterministic empty-input behaviour.
+- Add `GROUP BY` with normalisation-sensitive Unicode grouping and deterministic first-source-occurrence group order when no `ORDER BY` is present.
+- Add aggregate-aware `HAVING` comparisons, Boolean composition, NULL tests and references to explicit SELECT aliases.
+- Add SQL-style aggregate `FILTER (WHERE ...)`, evaluated over rows that survive the ordinary query `WHERE` predicate.
+- Require non-aggregate projected and ordered expressions in aggregate queries to match a `GROUP BY` expression, reject nested aggregates, and keep `SELECT *` out of aggregate queries.
+- Prevent limit-aware early acquisition termination for aggregate queries because complete input groups are required before final row shaping.
+- Extend deterministic conformance, independent oracle coverage, Unicode grouping/extrema checks, optimiser differential verification and negative aggregate validation.
+
 ## Discover 0.23.8 - Schema Star
 
 - Add `SELECT *` with deterministic expansion over canonical built-in scalar fields followed by observed top-level dynamic scalar fields in case-insensitive lexical order.
