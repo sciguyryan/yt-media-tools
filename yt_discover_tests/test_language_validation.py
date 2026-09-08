@@ -46,6 +46,8 @@ def _resolve(text: str) -> None:
         ("SELECT COALESCE(title) FROM @yt_sql_fixture", "COALESCE requires at least two arguments"),
         ("FROM", "Expected a channel/playlist identifier"),
         ("FROM https://example.invalid/x", "Unexpected character"),
+        ("SELECT id FROM @yt_sql_fixture OF", "OF requires a collection/facet name"),
+        ("SELECT id FROM @yt_sql_fixture OF 'videos'", "OF requires a collection/facet name"),
         ("SELECT id FROM @yt_sql_fixture WHERE", "WHERE requires an expression"),
         ("SELECT id FROM @yt_sql_fixture ORDER", "Expected BY after ORDER"),
         (

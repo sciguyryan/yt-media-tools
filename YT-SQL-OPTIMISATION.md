@@ -353,3 +353,7 @@ Plausible future work:
 Discover 0.25.1 optimises each resolved set-operation branch independently and prefixes branch decisions in optimiser diagnostics. Reconciliation itself is not rewritten. The optimiser must preserve branch order for `UNION ALL`, duplicate-elimination boundaries for `UNION`, first-branch output naming, NULL values and exact Unicode values.
 
 Current acquisition planning does not push predicates across UNION boundaries and does not permit source-order early LIMIT termination for a composed result. Future source-boundary planning may optimise branches independently only where equivalence can be proven. Transformations such as replacing `UNION` with `UNION ALL`, reordering branches where observable ordering would change, or coercing incompatible extractor-specific field kinds are unsafe and must not be performed.
+
+## Source facets with OF
+
+`OF` is source-resolution syntax rather than a scalar or predicate rewrite. The optimiser preserves the requested facet exactly and must not substitute a default collection or another advertised facet. Future source-boundary planning may use adapter capabilities to reduce acquisition cost, but only where that planning is semantics-preserving and visible through explain output.

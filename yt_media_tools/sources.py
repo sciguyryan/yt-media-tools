@@ -16,6 +16,7 @@ TAB_SUFFIXES = {
     "live": "streams",
 }
 KNOWN_TAB_SUFFIXES = frozenset({"videos", "shorts", "streams", "featured"})
+YOUTUBE_CHANNEL_FACETS = frozenset({"videos", "shorts", "live"})
 
 _CHANNEL_ID_RE = re.compile(r"UC[A-Za-z0-9_-]{20,}")
 # YouTube uses several playlist families. These prefixes are intentionally limited to
@@ -31,6 +32,41 @@ class SourceSpec:
     original: str
     canonical_url: str
     identifier: str | None = None
+    facet: str | None = None
+
+
+def resolve_source_request(
+    value: str,
+    *,
+    facet: str | None = None,
+    source_type: str = "auto",
+    tab: str = "all",
+) -> SourceSpec:
+    """Resolve one physical source request through the shared facet capability model."""
+    requested = facet.casefold() if facet is not None else None
+    if requested is None:
+        return resolve_source(value, source_type=source_type, tab=tab)
+
+    mapped_tab = "live" if tab == "live" else tab
+    if tab != "all" and requested != mapped_tab:
+        raise ValueError(f"source facet OF {requested} conflicts with compatibility option --tab {tab}")
+
+    # Classify the physical source independently from its requested facet. This
+    # keeps capability validation generic instead of smuggling OF through the
+    # legacy YouTube --tab argument.
+    spec = resolve_source(value, source_type=source_type, tab="all")
+    if spec.kind != "channel":
+        raise ValueError(
+            f"source {value!r} does not advertise facet {requested!r}; "
+            "OF currently supports videos, shorts and live on YouTube channel sources"
+        )
+    if requested not in YOUTUBE_CHANNEL_FACETS:
+        raise ValueError(
+            f"YouTube channel source does not advertise facet {requested!r}; "
+            f"supported facets: {', '.join(sorted(YOUTUBE_CHANNEL_FACETS))}"
+        )
+    resolved = resolve_source(value, source_type=source_type, tab=requested)
+    return SourceSpec(resolved.kind, resolved.original, resolved.canonical_url, resolved.identifier, requested)
 
 
 def resolve_source(value: str, *, source_type: str = "auto", tab: str = "all") -> SourceSpec:

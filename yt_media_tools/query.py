@@ -231,6 +231,7 @@ class Query:
     having: Any | None = None
     ctes: tuple[CommonTableExpression, ...] = ()
     set_operations: tuple[SetOperation, ...] = ()
+    from_facet: str | None = None
 
 
 _TOKEN_RE = re.compile(
@@ -346,6 +347,7 @@ class Parser:
         limit = None
         select: tuple[SelectTerm, ...] = ()
         from_source: str | None = None
+        from_facet: str | None = None
         distinct = False
         offset = 0
         group_by: tuple[Any, ...] = ()
@@ -392,6 +394,12 @@ class Parser:
 
             if self.consume_keyword("FROM"):
                 from_source = self.parse_from_source()
+                if self.consume_keyword("OF"):
+                    facet = self.current
+                    if facet.kind != "IDENT":
+                        raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet.position)
+                    from_facet = facet.text.casefold()
+                    self.advance()
 
             if self.consume_keyword("WHERE"):
                 if (
@@ -457,6 +465,7 @@ class Parser:
                 having,
                 tuple(ctes),
                 (),
+                from_facet,
             )
 
         if not where_only and not set_branch:
@@ -509,6 +518,7 @@ class Parser:
             having,
             tuple(ctes),
             tuple(set_operations),
+            from_facet,
         )
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
@@ -2040,6 +2050,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
         having,
         (),
         (),
+        query.from_facet,
     )
     if _aggregate_query(resolved):
         for term in resolved.select:
@@ -2212,23 +2223,57 @@ def _direct_from_sources(query: Query) -> tuple[str, ...]:
     return tuple(result)
 
 
-def query_physical_sources(query: Query) -> tuple[str, ...]:
-    """Return physical source references in deterministic first-use order."""
+def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None], ...]:
+    """Return physical source/facet requests in deterministic first-use order."""
     cte_names = {cte.name.casefold() for cte in query.ctes}
-    seen: set[str] = set()
-    result: list[str] = []
+    seen: set[tuple[str, str | None]] = set()
+    result: list[tuple[str, str | None]] = []
 
     def visit(candidate: Query) -> None:
-        for source_name in _direct_from_sources(candidate):
-            key = source_name.casefold()
-            if key in cte_names or source_name in seen:
+        direct: list[tuple[str, str | None]] = []
+        if candidate.from_source is not None:
+            direct.append((candidate.from_source, candidate.from_facet))
+        for operation in candidate.set_operations:
+            if operation.query.from_source is not None:
+                direct.append((operation.query.from_source, operation.query.from_facet))
+        for source_name, facet in direct:
+            if source_name.casefold() in cte_names:
+                if facet is not None:
+                    raise QuerySyntaxError(
+                        query.source,
+                        "OF applies only to physical sources, not CTE result relations.",
+                        0,
+                    )
                 continue
-            seen.add(source_name)
-            result.append(source_name)
+            key = (source_name, facet)
+            if key in seen:
+                continue
+            for existing_source, existing_facet in seen:
+                if existing_source == source_name and existing_facet != facet:
+                    raise QuerySyntaxError(
+                        query.source,
+                        f"Physical source {source_name!r} is requested with multiple facets in one query; "
+                        "cross-facet composition is reserved for source/facet hardening.",
+                        0,
+                    )
+            seen.add(key)
+            result.append(key)
 
     for cte in query.ctes:
         visit(cte.query)
     visit(query)
+    return tuple(result)
+
+
+def query_physical_sources(query: Query) -> tuple[str, ...]:
+    """Return physical source references in deterministic first-use order."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for source_name, _facet in query_physical_source_requests(query):
+        if source_name in seen:
+            continue
+        seen.add(source_name)
+        result.append(source_name)
     return tuple(result)
 
 
@@ -2841,6 +2886,7 @@ def merge_queries(base: Query, extra: Query) -> Query:
     source = base.source or extra.source
     select = extra.select or base.select
     from_source = extra.from_source or base.from_source
+    from_facet = extra.from_facet if extra.from_source is not None else base.from_facet
     distinct = extra.distinct or base.distinct
     offset = extra.offset if extra.offset else base.offset
     group_by = extra.group_by or base.group_by
@@ -2858,6 +2904,7 @@ def merge_queries(base: Query, extra: Query) -> Query:
         having,
         extra.ctes or base.ctes,
         extra.set_operations or base.set_operations,
+        from_facet,
     )
 
 
@@ -2917,6 +2964,8 @@ def format_query(query: Query) -> str:
         else:
             escaped = source.replace("'", "''")
             parts.append(f"FROM '{escaped}'")
+        if query.from_facet is not None:
+            parts.append(f"OF {query.from_facet}")
     if query.predicate is not None:
         parts.append(f"WHERE {format_expression(query.predicate)}")
     if query.group_by:

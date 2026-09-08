@@ -726,3 +726,13 @@ Examples:
 ## Documentation linting
 
 GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. The initial CI policy enforces MD001 heading increments and MD012 consecutive blank lines through `.markdownlint-cli2.jsonc`.
+
+## Source facets
+
+yt-sql can request an extractor-agnostic logical facet with `OF`:
+
+```bash
+./yt-discover.py "SELECT id FROM @whatdamath OF videos WHERE duration < 1h"
+```
+
+YouTube channel sources currently advertise `videos`, `shorts` and `live`. Bare `FROM @source` keeps the default collection. `--tab` remains available for compatibility and uses the same source/facet resolution model.

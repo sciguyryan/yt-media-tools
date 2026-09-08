@@ -172,6 +172,20 @@ The generated corpus deliberately includes same-day uploads, identical and NULL 
 
 An explicit conformance feature manifest records the current language surface and requires every registered feature to have deterministic semantic coverage. New yt-sql syntax must add independent oracle coverage, boundary cases, malformed-input coverage where relevant, and cross-feature interactions as part of its implementation. Larger profiles should be used only where scale is relevant to the behaviour under test.
 
+## Source facets with OF
+
+`OF` requests a logical collection or facet from a physical source without encoding an extractor-specific tab model into yt-sql:
+
+```text
+SELECT id FROM @whatdamath OF videos
+SELECT id FROM @whatdamath OF shorts
+SELECT id FROM @whatdamath OF live
+```
+
+Bare `FROM @source` remains valid and requests the source's default collection. In 0.26.0 the YouTube channel adapter advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
+
+The grammar is extractor-agnostic. Other yt-dlp extractors may advertise different logical facets in later adapter work without changing the core `OF` syntax.
+
 ## Aggregate queries
 
 yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`, and `MAX(expr)`. `COUNT(expr)` ignores NULL and returns zero when no non-NULL value exists. `SUM`, `AVG`, `MIN`, and `MAX` ignore NULL and return NULL when no non-NULL input remains. `SUM` and `AVG` require numeric expressions; `MIN` and `MAX` use the ordinary resolved scalar ordering, including exact normalisation-sensitive Unicode ordering for text.

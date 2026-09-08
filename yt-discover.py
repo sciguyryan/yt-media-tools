@@ -51,9 +51,10 @@ from yt_media_tools.query import (
     parse_where,
     resolve_query,
     query_physical_sources,
+    query_physical_source_requests,
 )
 from yt_media_tools.schema import QuerySchema
-from yt_media_tools.sources import TAB_SUFFIXES, SourceSpec, resolve_source
+from yt_media_tools.sources import TAB_SUFFIXES, SourceSpec, resolve_source_request
 from yt_media_tools.ytdlp import (
     AcquisitionStats,
     EnumerationStats,
@@ -69,7 +70,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.25.3"
+PROGRAM_VERSION = "0.26.0"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -907,10 +908,13 @@ def _effective_output_format(output_format: str, selected_count: int, *, explici
 def explain_user_query(query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False) -> str:
     """Explain query semantics, field capabilities, and safe acquisition optimisations."""
     query = parse_query(query_text)
-    source_inputs = query_physical_sources(query)
+    source_requests = query_physical_source_requests(query)
+    source_inputs = tuple(item for item, _facet in source_requests)
     if not source_inputs:
         raise ValueError("--explain requires a complete query containing a physical FROM <source>")
-    explained_sources = [resolve_source(item, source_type=source_type, tab=tab) for item in source_inputs]
+    explained_sources = [
+        resolve_source_request(item, facet=facet, source_type=source_type, tab=tab) for item, facet in source_requests
+    ]
     source_input = source_inputs[0]
     source = explained_sources[0]
     dates = DateContext(date_order=date_format)
@@ -925,13 +929,17 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"  Input: {source_input}",
             f"  Resolved URL: {source.canonical_url}",
         ]
-        if source.kind == "channel":
+        if source.facet is not None:
+            lines.append(f"  Facet: {source.facet}")
+        elif source.kind == "channel":
             lines.append(f"  Tab: {tab}")
     else:
         lines = ["Query explanation", "", "Sources"]
         for item, source_spec in zip(source_inputs, explained_sources, strict=True):
             lines.append(f"  {item}: {source_spec.kind} -> {source_spec.canonical_url}")
-            if source_spec.kind == "channel":
+            if source_spec.facet is not None:
+                lines.append(f"    Facet: {source_spec.facet}")
+            elif source_spec.kind == "channel":
                 lines.append(f"    Tab: {tab}")
 
     lines.extend(["", "Common table expressions"])
@@ -1048,7 +1056,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"yt-dlp-flat={capability.ytdlp_flat}; yt-dlp-detailed={capability.ytdlp_detailed}"
         )
 
-    plan = plan_acquisition(query, source_kind=source.kind, tab=tab, dates=dates)
+    plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
     if len(source_inputs) > 1:
         plan = AcquisitionPlan(
             "full",
@@ -1199,15 +1207,18 @@ def explain_user_query_json(
 ) -> dict[str, object]:
     """Return a machine-readable offline query plan for D16."""
     query = parse_query(query_text)
-    source_inputs = query_physical_sources(query)
+    source_requests = query_physical_source_requests(query)
+    source_inputs = tuple(item for item, _facet in source_requests)
     if not source_inputs:
         raise ValueError("--explain requires a complete query containing a physical FROM <source>")
-    explained_sources = [resolve_source(item, source_type=source_type, tab=tab) for item in source_inputs]
+    explained_sources = [
+        resolve_source_request(item, facet=facet, source_type=source_type, tab=tab) for item, facet in source_requests
+    ]
     source_input = source_inputs[0]
     source = explained_sources[0]
     dates = DateContext(date_order=date_format)
     required = sorted(required_query_fields(query))
-    plan = plan_acquisition(query, source_kind=source.kind, tab=tab, dates=dates)
+    plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
     if offline:
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
@@ -1240,7 +1251,13 @@ def explain_user_query_json(
         "version": PROGRAM_VERSION,
         "query": format_query(query),
         "ctes": [
-            {"name": cte.name, "query": format_query(cte.query), "from": cte.query.from_source} for cte in query.ctes
+            {
+                "name": cte.name,
+                "query": format_query(cte.query),
+                "from": cte.query.from_source,
+                "facet": cte.query.from_facet,
+            }
+            for cte in query.ctes
         ],
         "row_shaping": {"distinct": query.distinct, "offset": query.offset, "limit": query.limit},
         "aggregation": {
@@ -1260,14 +1277,16 @@ def explain_user_query_json(
             "type": source.kind,
             "input": source_input,
             "url": source.canonical_url,
-            "tab": tab if source.kind == "channel" else None,
+            "tab": tab if source.kind == "channel" and source.facet is None else None,
+            "facet": source.facet,
         },
         "sources": [
             {
                 "type": source_spec.kind,
                 "input": item,
                 "url": source_spec.canonical_url,
-                "tab": tab if source_spec.kind == "channel" else None,
+                "tab": tab if source_spec.kind == "channel" and source_spec.facet is None else None,
+                "facet": source_spec.facet,
             }
             for item, source_spec in zip(source_inputs, explained_sources, strict=True)
         ],
@@ -1762,16 +1781,19 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         query = parse_user_query(args, inline_query)
+        physical_requests = query_physical_source_requests(query)
         physical_sources = query_physical_sources(query)
         if physical_sources and positional_source is not None:
             raise ValueError("source is specified both positionally and by FROM")
-        source_values = physical_sources or ((positional_source,) if positional_source is not None else ())
-        if not source_values:
+        source_requests = physical_requests or (((positional_source, None),) if positional_source is not None else ())
+        if not source_requests:
             raise ValueError(
                 "query has no physical source; add FROM <source> in the main query or a CTE, or provide SOURCE_OR_QUERY positionally"
             )
+        source_values = tuple(value for value, _facet in source_requests)
         sources: list[SourceSpec] = [
-            resolve_source(value, source_type=args.source_type, tab=args.tab) for value in source_values
+            resolve_source_request(value, facet=facet, source_type=args.source_type, tab=args.tab)
+            for value, facet in source_requests
         ]
         source: SourceSpec = sources[0]
         multi_source = len(sources) > 1
@@ -1796,12 +1818,17 @@ def main(argv: list[str] | None = None) -> int:
     if multi_source:
         _verbose(args.verbose, f"Resolved {len(sources)} physical sources for UNION composition.")
         for source_value, source_spec in zip(source_values, sources, strict=True):
-            _verbose(args.verbose, f"Source {source_value}: {source_spec.kind} -> {source_spec.canonical_url}")
+            facet_text = f" OF {source_spec.facet}" if source_spec.facet is not None else ""
+            _verbose(
+                args.verbose, f"Source {source_value}{facet_text}: {source_spec.kind} -> {source_spec.canonical_url}"
+            )
     else:
-        _verbose(args.verbose, f"Resolved source as {source.kind}: {source.canonical_url}")
+        facet_text = f" OF {source.facet}" if source.facet is not None else ""
+        _verbose(args.verbose, f"Resolved source{facet_text} as {source.kind}: {source.canonical_url}")
 
     date_context = DateContext(date_order=args.date_format)
-    plan: AcquisitionPlan = plan_acquisition(query, source_kind=source.kind, tab=args.tab, dates=date_context)
+    planning_tab = source.facet or args.tab
+    plan: AcquisitionPlan = plan_acquisition(query, source_kind=source.kind, tab=planning_tab, dates=date_context)
     if multi_source:
         plan = AcquisitionPlan(
             "full",
@@ -1905,9 +1932,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         if multi_source:
             for source_value, source_spec in zip(source_values, sources, strict=True):
-                print(f"source: {source_value} -> {source_spec.kind} -> {source_spec.canonical_url}")
+                facet_text = f" OF {source_spec.facet}" if source_spec.facet is not None else ""
+                print(f"source: {source_value}{facet_text} -> {source_spec.kind} -> {source_spec.canonical_url}")
         else:
-            print(f"source: {source.kind} -> {source.canonical_url}")
+            facet_text = f" OF {source.facet}" if source.facet is not None else ""
+            print(f"source: {source.kind}{facet_text} -> {source.canonical_url}")
         print(f"acquisition: {plan.mode} -> {plan.reason}")
         if args.offline:
             print(f"cache: {args.cache.expanduser()}")
@@ -2594,14 +2623,16 @@ def main(argv: list[str] | None = None) -> int:
             "source": {
                 "type": "union" if multi_source else source.kind,
                 "url": source.canonical_url if not multi_source else None,
-                "tab": args.tab if source.kind == "channel" and not multi_source else None,
+                "tab": args.tab if source.kind == "channel" and not multi_source and source.facet is None else None,
+                "facet": source.facet if not multi_source else None,
             },
             "sources": [
                 {
                     "input": source_value,
                     "type": source_spec.kind,
                     "url": source_spec.canonical_url,
-                    "tab": args.tab if source_spec.kind == "channel" else None,
+                    "tab": args.tab if source_spec.kind == "channel" and source_spec.facet is None else None,
+                    "facet": source_spec.facet,
                     "acquired_records": source_record_counts.get(source_value, 0),
                 }
                 for source_value, source_spec in zip(source_values, sources, strict=True)

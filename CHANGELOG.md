@@ -1,6 +1,18 @@
 # Changelog
 
-## Discover 0.25.3 - Routlette of Randomness
+## 0.26.0 - OF Origins
+
+### Discover
+
+- Add `FROM <source> OF <facet>` as the extractor-agnostic source collection syntax.
+- Route `OF videos`, `OF shorts` and `OF live` through the existing YouTube channel acquisition adapter.
+- Preserve bare `FROM <source>` as the default collection and keep `--tab` as a compatibility surface over the same facet model.
+- Reject unsupported physical-source facets, conflicting `OF`/`--tab` requests and attempts to apply `OF` to CTE result relations.
+- Add deterministic source/facet grammar and capability tests covering CTE and UNION composition.
+- Fail closed when one composed query requests multiple facets of the same physical source until cross-facet cache and schema identity are hardened.
+- Refresh the TODO roadmap and freeze further syntactic sugar until the post-0.26.2 test-completeness review.
+
+## Discover 0.25.3 - Random Rendezvous
 
 - Add `RANDOM()` for volatile per-execution row ordering and projected synthetic values.
 - Add `RANDOM(seed)` with deterministic row-stable values derived from the integer seed and stable logical row identity rather than evaluation order.
