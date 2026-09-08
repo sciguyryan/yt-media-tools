@@ -215,6 +215,16 @@ def _scalar_nested_functions(rows: Rows) -> list[Any]:
     )
 
 
+def _char_projection(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 4)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "chars": "Aβ😀", "decomposed": "e\u0301"})
+        .to_list()
+    )
+
+
 def _scalar_constant_folding(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -634,6 +644,7 @@ LANGUAGE_FEATURES = frozenset(
         "scalar.arithmetic.multiply",
         "scalar.arithmetic.parentheses",
         "scalar.function_nested",
+        "scalar.char",
         "scalar.constant_fold",
         "scalar.case",
         "scalar.case.null_fallthrough",
@@ -1544,6 +1555,14 @@ CASES = (
         "SELECT id FROM @yt_sql_fixture WHERE source_index <= 20 ORDER BY CASE WHEN duration < 10m THEN 1 WHEN duration < 1h THEN 2 ELSE 3 END, source_index",
         _case_ordering,
         features=("scalar.case.order",),
+    ),
+    ConformanceCase(
+        "char_unicode_projection",
+        "SELECT id, CHAR(65,946,128512) AS chars, CHAR(101,769) AS decomposed FROM @yt_sql_fixture WHERE source_index <= 4 ORDER BY source_index",
+        _char_projection,
+        ("id", "chars", "decomposed"),
+        "jsonl",
+        features=("scalar.char",),
     ),
     ConformanceCase(
         "unicode_exact_normalisation_sensitive",

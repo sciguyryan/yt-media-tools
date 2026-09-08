@@ -95,7 +95,7 @@ Use `--provenance -` only when normal query rows are redirected elsewhere, so pr
 
 `DISTINCT` and non-zero `OFFSET` conservatively disable Phase 4 LIMIT-aware detailed-acquisition termination for now. Their row-shaping semantics are exact, but the early-termination proof has not yet been extended to them.
 
-`yt-discover.py` is a media-metadata discovery tool built around yt-dlp, with optional YouTube.js channel enumeration. Its SQL-inspired query language is named yt-sql. It can query channel or playlist metadata, filter and order records locally, project selected fields, and emit shell-friendly or structured output.
+`yt-discover.py` is a media-metadata discovery tool built around yt-dlp, with optional YouTube.js channel enumeration. Its SQL-inspired query language is named yt-sql. Unicode text may be constructed explicitly with `CHAR(codepoint [, ...])`, which accepts Unicode scalar values rather than bytes. It can query channel or playlist metadata, filter and order records locally, project selected fields, and emit shell-friendly or structured output.
 
 The default remains deliberately simple: if `SELECT` is omitted, the query behaves as `SELECT id`, so the output can still be piped directly into `yt-download.py -`.
 

@@ -77,6 +77,25 @@ Literal-only `IN` normalisation, duplicate literal removal and safe singleton `I
 
 A future regex-to-LIKE rewrite may be considered only for a deliberately small whitelist of regular-expression forms whose complete-value anchoring, wildcard cardinality, escaping, newline behaviour and case rules can be proved equivalent. Every accepted form must have differential tests containing counterexamples to neighbouring non-equivalent forms.
 
+## `CHAR()`
+
+### Implemented
+
+- Resolve each argument as an ordinary scalar expression and require numeric-compatible values.
+- Validate fully constant arguments as Unicode scalar values before execution.
+- Fold a fully literal `CHAR()` call to one text literal through the existing scalar constant-folding pass.
+- Preserve NULL propagation exactly.
+- Preserve the constructed code-point sequence without Unicode normalisation.
+
+### Deliberately not implemented
+
+- Do not normalise or canonicalise constructed text. `CHAR(101, 769)` and `CHAR(233)` remain distinct values even when they render identically.
+- Do not assume a dynamic numeric expression always produces a valid code point. Invalid dynamic values evaluate to NULL, so symbolic rewrites must preserve that possibility.
+
+### Future candidates
+
+- Revisit acquisition or expression-planning opportunities only if they can preserve invalid-value and NULL behaviour exactly.
+
 ## Unicode-sensitive text optimisation
 
 ### Implemented

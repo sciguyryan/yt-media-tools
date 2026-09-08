@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.5 - Character Forge
+
+- Add `CHAR()` as a first-class scalar function for constructing Unicode text from one or more code-point expressions.
+- Define `CHAR()` arguments as Unicode scalar values from 0 through U+10FFFF excluding surrogate code points, with NULL propagation and clear diagnostics for invalid constant arguments.
+- Preserve yt-sql's normalisation-sensitive Unicode model so composed and decomposed sequences created with `CHAR()` remain observably distinct.
+- Fold fully literal `CHAR()` calls through the existing scalar constant optimiser and verify optimised and unoptimised execution remain equivalent.
+- Resolve the existing comma-grouped-number ambiguity inside scalar function calls so function commas are parsed as argument separators without changing grouped-number syntax in ordinary value positions.
+- Add Unicode, arity, type, range, surrogate, arithmetic-expression, NULL, nesting and optimiser coverage for `CHAR()`.
+
 ## Discover 0.23.4 - Unicode Gauntlet
 
 - Bump the deterministic yt-sql conformance generator to version 3 and expand the small semantic profile from 36 to 60 records so Unicode edge cases are always present in routine testing.

@@ -192,7 +192,7 @@ _TOKEN_RE = re.compile(
   | (?P<DATETIME>\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)
   | (?P<DATE>\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})
   | (?P<TIME>\d{1,3}:\d{1,2}(?::\d{1,2})?)
-  | (?P<NUMBER>(?:\d{1,3}(?:,\d{3})+|\d[\d_]*)(?:\.\d+)?(?:[kKmMbB])?)
+  | (?P<NUMBER>(?:\d{1,3}(?:,\d{3})+(?!\d)|\d[\d_]*)(?:\.\d+)?(?:[kKmMbB])?)
   | (?P<IDENT>[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*)
   | (?P<COMMA>,)
   | (?P<STAR>\*)
@@ -464,7 +464,7 @@ class Parser:
 
     def parse_scalar_function(self, name_token: Token) -> ScalarFunction:
         name = name_token.text.upper()
-        if name not in {"LOWER", "UPPER", "LENGTH", "COALESCE"}:
+        if name not in {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR"}:
             raise QuerySyntaxError(
                 self.source, f"Unsupported scalar function {name_token.text!r}.", name_token.position
             )
@@ -472,6 +472,7 @@ class Parser:
         args: list[Any] = []
         if self.current.kind != "RPAREN":
             while True:
+                self._split_grouped_number_at_function_boundary()
                 args.append(self.parse_scalar_expression())
                 if self.current.kind != "COMMA":
                     break
@@ -481,7 +482,32 @@ class Parser:
             raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", name_token.position)
         if name == "COALESCE" and len(args) < 2:
             raise QuerySyntaxError(self.source, "COALESCE requires at least two arguments.", name_token.position)
+        if name == "CHAR" and not args:
+            raise QuerySyntaxError(self.source, "CHAR requires at least one argument.", name_token.position)
         return ScalarFunction(name, tuple(args), name_token.position)
+
+    def _split_grouped_number_at_function_boundary(self) -> None:
+        """Treat commas inside a numeric token as function argument separators.
+
+        yt-sql accepts comma-grouped numbers in ordinary value positions, but scalar
+        function calls use commas as argument separators. Inside a call the latter is
+        unambiguous and follows conventional function syntax, so ``CHAR(65,66)`` must
+        parse as two arguments even though the context-free lexer can otherwise see a
+        grouped numeric token.
+        """
+        token = self.current
+        if token.kind != "NUMBER" or "," not in token.text:
+            return
+        parts = token.text.split(",")
+        replacement: list[Token] = []
+        offset = 0
+        for index, part in enumerate(parts):
+            replacement.append(Token("NUMBER", part, token.position + offset, _generic_literal(part, False)))
+            offset += len(part)
+            if index != len(parts) - 1:
+                replacement.append(Token("COMMA", ",", token.position + offset))
+                offset += 1
+        self.tokens[self.index : self.index + 1] = replacement
 
     def parse_from_source(self) -> str:
         token = self.current
@@ -1102,6 +1128,16 @@ def _resolve_scalar_expression(
             if kind not in {"string", "mixed", "unknown", None}:
                 raise QuerySyntaxError(source, "LENGTH requires a text value.", expression.position)
             result_kind = "integer"
+        elif expression.name == "CHAR":
+            for arg in args:
+                kind = _scalar_kind(arg)
+                if kind is not None and not _is_numeric_kind(kind):
+                    raise QuerySyntaxError(source, "CHAR requires integer code-point values.", expression.position)
+                if _is_constant_scalar_expression(arg):
+                    value = evaluate_scalar_expression(arg, {})
+                    if value is not None:
+                        _validate_char_codepoint(value, source, expression.position)
+            result_kind = "string"
         else:
             non_null_kinds = [kind for arg in args if (kind := _scalar_kind(arg)) is not None]
             result_kind = (
@@ -1118,6 +1154,47 @@ def _resolve_scalar_function(
     resolved = _resolve_scalar_expression(function, schema, source, dates)
     assert isinstance(resolved, ScalarFunction)
     return resolved
+
+
+def _is_constant_scalar_expression(expression: Any) -> bool:
+    """Return whether an expression can be evaluated without row metadata."""
+    if isinstance(expression, Literal):
+        return True
+    if isinstance(expression, ScalarUnary):
+        return _is_constant_scalar_expression(expression.operand)
+    if isinstance(expression, ScalarBinary):
+        return _is_constant_scalar_expression(expression.left) and _is_constant_scalar_expression(expression.right)
+    if isinstance(expression, ScalarFunction):
+        return all(_is_constant_scalar_expression(arg) for arg in expression.args)
+    return False
+
+
+def _coerce_char_codepoint(value: Any) -> int:
+    """Convert one runtime CHAR argument into a valid Unicode scalar value."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError("CHAR requires integer code-point values")
+    if isinstance(value, float) and not value.is_integer():
+        raise ValueError("CHAR requires integer code-point values")
+    codepoint = int(value)
+    if codepoint < 0 or codepoint > 0x10FFFF or 0xD800 <= codepoint <= 0xDFFF:
+        raise ValueError("CHAR code point is outside the Unicode scalar-value range")
+    return codepoint
+
+
+def _validate_char_codepoint(value: Any, source: str, position: int) -> int:
+    """Validate a constant CHAR argument and raise a query diagnostic on failure."""
+    try:
+        return _coerce_char_codepoint(value)
+    except TypeError as exc:
+        raise QuerySyntaxError(source, "CHAR requires integer code-point values.", position) from exc
+    except ValueError as exc:
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and float(value).is_integer():
+            raise QuerySyntaxError(
+                source,
+                "CHAR code points must be Unicode scalar values from 0 to 1114111, excluding surrogates.",
+                position,
+            ) from exc
+        raise QuerySyntaxError(source, "CHAR requires integer code-point values.", position) from exc
 
 
 def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
@@ -1170,6 +1247,14 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
             return len(values[0]) if isinstance(values[0], str) else None
         if expression.name == "COALESCE":
             return next((value for value in values if value is not None), None)
+        if expression.name == "CHAR":
+            if any(value is None for value in values):
+                return None
+            try:
+                codepoints = [_coerce_char_codepoint(value) for value in values]
+            except (TypeError, ValueError):
+                return None
+            return "".join(chr(codepoint) for codepoint in codepoints)
         raise AssertionError(f"Unsupported scalar function {expression.name}")
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
