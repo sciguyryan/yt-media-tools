@@ -305,3 +305,26 @@ The optimiser must also be idempotent: optimising an already optimised query mus
 A future design investigation may evaluate a compact compiled yt-sql representation to avoid repeated parsing and semantic-resolution overhead. Candidate forms include a versioned serialised resolved AST, a compact intermediate representation or bytecode, and a canonical cacheable query plan.
 
 This is exploratory rather than committed work. Any design must justify its complexity with measurements and address language/schema versioning, cache invalidation, validation of untrusted compiled input, portability, deterministic behaviour, explainability and compatibility with future language evolution. A compiled form must never become an undocumented second language with semantics that can drift from textual yt-sql.
+
+## Common table expressions
+
+### Implemented strategies
+
+- Optimise each resolved CTE query independently using the existing predicate and scalar-expression optimiser before optimising the outer query.
+- Prefix CTE optimiser decisions with the logical CTE name so explain and diagnostic output can attribute rewrites to the correct relation.
+- Compute physical-source field requirements from CTE bodies that directly read the extractor source rather than treating later logical CTE output names as extractor metadata fields.
+
+### Plausible future strategies
+
+- Push safe predicates through CTE boundaries when projection and NULL semantics prove the rewrite equivalent.
+- Inline single-use non-materialisation-sensitive CTEs when doing so demonstrably reduces planning or execution overhead.
+- Prune unused CTE output columns before acquisition planning.
+
+### Deliberately not implemented
+
+- No predicate pushdown from CTEs into extractor enumeration in 0.25.0. The current planner remains conservative.
+- No CTE inlining or common-subexpression elimination. CTEs are materialised in declaration order.
+- No cross-source CTE planning. Multi-source composition waits for the explicit `UNION` schema-reconciliation architecture.
+
+Any future CTE rewrite must preserve row membership, row order, aliases, NULLs, Unicode values, aggregate semantics and serialised output under the same differential verification requirements as ordinary yt-sql optimisation.
+

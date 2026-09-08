@@ -67,6 +67,12 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
     """
     if query.limit is None:
         return LimitTerminationPlan(False, "the query has no LIMIT")
+    if query.ctes:
+        return LimitTerminationPlan(
+            False,
+            "CTE materialisation may filter, reorder or reshape source rows before LIMIT; early termination is not yet proven safe",
+            query.limit,
+        )
     if (
         query.group_by
         or query.having is not None
@@ -260,8 +266,8 @@ def _fields_in_having(node: Any) -> set[str]:
     return set()
 
 
-def required_query_fields(query: Query) -> set[str]:
-    """Return fields needed to evaluate, order and serialise a query."""
+def _required_body_fields(query: Query) -> set[str]:
+    """Return fields referenced by one query body, excluding nested CTE relations."""
     fields = _fields_in_node(query.predicate)
     for term in query.order_by:
         if term.expression is not None:
@@ -278,6 +284,19 @@ def required_query_fields(query: Query) -> set[str]:
     fields.update(_fields_in_having(query.having))
     if not query.select:
         fields.add("id")
+    return fields
+
+
+def required_query_fields(query: Query) -> set[str]:
+    """Return physical-source fields needed by a query and its CTE pipeline."""
+    cte_names = {cte.name.casefold() for cte in query.ctes}
+    fields: set[str] = set()
+    for cte in query.ctes:
+        source_name = (cte.query.from_source or "").casefold()
+        if source_name not in cte_names:
+            fields.update(_required_body_fields(cte.query))
+    if (query.from_source or "").casefold() not in cte_names:
+        fields.update(_required_body_fields(query))
     return fields
 
 

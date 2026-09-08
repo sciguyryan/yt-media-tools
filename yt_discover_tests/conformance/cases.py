@@ -624,6 +624,14 @@ def _select_star_projection(rows: Rows) -> list[Any]:
     return OracleQuery(rows).where(lambda r: r["id"] == "vid001").select(project).to_list()
 
 
+def _cte_chained_projection(rows: Rows) -> list[Any]:
+    first = [r for r in rows if r.get("duration") is not None and int(r["duration"]) < 3600]
+    projected = [{"id": r["id"], "title": r.get("title"), "minutes": (int(r["duration"]) / 60)} for r in first]
+    second = [r for r in projected if r["title"] is not None and "mars" in str(r["title"]).casefold()]
+    second.sort(key=lambda r: r["minutes"], reverse=True)
+    return [{"id": r["id"], "minutes": r["minutes"]} for r in second[:7]]
+
+
 def _aggregate_global(rows: Rows) -> list[Any]:
     values = [int(r["view_count"]) for r in rows if r.get("view_count") is not None]
     titles = [str(r["title"]) for r in rows if r.get("title") is not None]
@@ -717,6 +725,9 @@ LANGUAGE_FEATURES = frozenset(
         "duration.short_alias",
         "field.alias",
         "from.handle",
+        "cte.non_recursive",
+        "cte.chained",
+        "cte.logical_schema",
         "in",
         "in.not",
         "is.false",
@@ -1850,6 +1861,14 @@ CASES = (
         ("n", "total"),
         "jsonl",
         features=("aggregate.empty_input",),
+    ),
+    ConformanceCase(
+        "cte_chained_logical_schema",
+        "WITH short AS (SELECT id, title, duration / 60 AS minutes FROM @yt_sql_fixture WHERE duration < 1h), mars AS (SELECT id, minutes FROM short WHERE title ILIKE '%mars%') SELECT id, minutes FROM mars ORDER BY minutes DESC LIMIT 7",
+        _cte_chained_projection,
+        ("id", "minutes"),
+        "jsonl",
+        features=("cte.non_recursive", "cte.chained", "cte.logical_schema"),
     ),
     ConformanceCase(
         "convoluted_existing_language",

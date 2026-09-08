@@ -49,6 +49,7 @@ from yt_media_tools.query import (
     parse_query,
     parse_where,
     resolve_query,
+    query_single_physical_source,
 )
 from yt_media_tools.schema import QuerySchema
 from yt_media_tools.sources import TAB_SUFFIXES, SourceSpec, resolve_source
@@ -67,7 +68,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.24.0"
+PROGRAM_VERSION = "0.25.0"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -893,9 +894,10 @@ def _effective_output_format(output_format: str, selected_count: int, *, explici
 def explain_user_query(query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False) -> str:
     """Explain query semantics, field capabilities, and safe acquisition optimisations."""
     query = parse_query(query_text)
-    if query.from_source is None:
-        raise ValueError("--explain requires a complete query containing FROM <source>")
-    source = resolve_source(query.from_source, source_type=source_type, tab=tab)
+    source_input = query_single_physical_source(query)
+    if source_input is None:
+        raise ValueError("--explain requires a complete query containing a physical FROM <source>")
+    source = resolve_source(source_input, source_type=source_type, tab=tab)
     dates = DateContext(date_order=date_format)
     schema = QuerySchema(())
 
@@ -904,11 +906,19 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         "",
         "Source",
         f"  Type: {source.kind}",
-        f"  Input: {query.from_source}",
+        f"  Input: {source_input}",
         f"  Resolved URL: {source.canonical_url}",
     ]
     if source.kind == "channel":
         lines.append(f"  Tab: {tab}")
+
+    lines.extend(["", "Common table expressions"])
+    if query.ctes:
+        for cte in query.ctes:
+            lines.append(f"  {cte.name}: {format_query(cte.query)}")
+        lines.append("  Physical sources: one; multi-source composition is reserved for UNION.")
+    else:
+        lines.append("  None.")
 
     # Resolve using the known schema. Dynamic fields cannot be validated without metadata,
     # so explain their parsed form while making the deferred validation explicit.
@@ -1151,9 +1161,10 @@ def explain_user_query_json(
 ) -> dict[str, object]:
     """Return a machine-readable offline query plan for D16."""
     query = parse_query(query_text)
-    if query.from_source is None:
-        raise ValueError("--explain requires a complete query containing FROM <source>")
-    source = resolve_source(query.from_source, source_type=source_type, tab=tab)
+    source_input = query_single_physical_source(query)
+    if source_input is None:
+        raise ValueError("--explain requires a complete query containing a physical FROM <source>")
+    source = resolve_source(source_input, source_type=source_type, tab=tab)
     dates = DateContext(date_order=date_format)
     required = sorted(required_query_fields(query))
     plan = plan_acquisition(query, source_kind=source.kind, tab=tab, dates=dates)
@@ -1188,6 +1199,9 @@ def explain_user_query_json(
         "kind": "yt-discover-explain",
         "version": PROGRAM_VERSION,
         "query": format_query(query),
+        "ctes": [
+            {"name": cte.name, "query": format_query(cte.query), "from": cte.query.from_source} for cte in query.ctes
+        ],
         "row_shaping": {"distinct": query.distinct, "offset": query.offset, "limit": query.limit},
         "aggregation": {
             "group_by": [format_scalar_expression(item) for item in query.group_by],
@@ -1204,7 +1218,7 @@ def explain_user_query_json(
         "predicate_optimiser": optimiser_payload,
         "source": {
             "type": source.kind,
-            "input": query.from_source,
+            "input": source_input,
             "url": source.canonical_url,
             "tab": tab if source.kind == "channel" else None,
         },
@@ -1699,11 +1713,14 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         query = parse_user_query(args, inline_query)
-        if query.from_source is not None and positional_source is not None:
+        physical_source = query_single_physical_source(query)
+        if physical_source is not None and positional_source is not None:
             raise ValueError("source is specified both positionally and by FROM")
-        source_value = query.from_source or positional_source
+        source_value = physical_source or positional_source
         if source_value is None:
-            raise ValueError("query has no source; add FROM <source> or provide SOURCE_OR_QUERY positionally")
+            raise ValueError(
+                "query has no physical source; add FROM <source> in the main query or a CTE, or provide SOURCE_OR_QUERY positionally"
+            )
         source: SourceSpec = resolve_source(source_value, source_type=args.source_type, tab=args.tab)
     except QuerySyntaxError as exc:
         parser.error(exc.format())

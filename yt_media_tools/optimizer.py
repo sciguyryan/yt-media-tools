@@ -69,7 +69,18 @@ def optimise_query(query: Query) -> OptimisationResult:
     three-valued logic, including UNKNOWN results caused by NULL values.
     """
 
-    predicate, decisions = _optimise_predicate_fixed_point(query.predicate)
+    decisions: list[OptimisationDecision] = []
+    optimised_ctes = []
+    for cte in query.ctes:
+        cte_result = optimise_query(cte.query)
+        optimised_ctes.append(replace(cte, query=cte_result.query))
+        decisions.extend(
+            OptimisationDecision(f"cte-{cte.name}-{item.rule}", item.before, item.after)
+            for item in cte_result.decisions
+        )
+
+    predicate, predicate_decisions = _optimise_predicate_fixed_point(query.predicate)
+    decisions.extend(predicate_decisions)
 
     select_terms = []
     for term in query.select:
@@ -108,6 +119,7 @@ def optimise_query(query: Query) -> OptimisationResult:
             order_by=tuple(order_terms),
             group_by=tuple(group_by),
             having=having,
+            ctes=tuple(optimised_ctes),
         ),
         tuple(decisions),
     )

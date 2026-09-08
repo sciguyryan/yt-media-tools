@@ -108,6 +108,18 @@ yt-discover.py --examples
 
 Both include extensive practical examples covering sources, filtering, dates, projection, nested metadata, output formats, diagnostics, verbose operation, and piping.
 
+## Common table expressions
+
+Discover 0.25.0 adds non-recursive `WITH` common table expressions. A CTE materialises an ordinary yt-sql query result as a logical relation whose projected output names and resolved scalar kinds form the schema visible to later CTEs and the outer query. References are case-insensitive and declaration ordered.
+
+```bash
+yt-discover.py "WITH short AS (SELECT id, title, duration / 60 AS minutes FROM @example WHERE duration < 1h), mars AS (SELECT id, minutes FROM short WHERE title ILIKE '%mars%') SELECT id, minutes FROM mars ORDER BY minutes DESC"
+```
+
+CTEs can contain the existing filtering, projection, aggregation, grouping, HAVING, ordering, DISTINCT, LIMIT and OFFSET features. Recursive CTEs, self-reference, forward references and nested `WITH` clauses are intentionally unsupported. Discover 0.25.0 also limits a CTE pipeline to one physical extractor source. Multi-source composition is reserved for the following `UNION`/`UNION ALL` phase, where result-schema reconciliation can be designed explicitly for heterogeneous yt-dlp extractors.
+
+The acquisition planner follows physical field requirements through CTEs but does not yet push CTE predicates into extractor enumeration boundaries. This is conservative by design.
+
 ## yt-sql optimiser
 
 Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction and conservative same-field comparison-bound subsumption. Discover 0.23.2 also applies these fixed-point predicate rewrites inside searched CASE conditions.

@@ -16,7 +16,7 @@ from .dates import (
     parse_temporal_infinity,
     timestamp_to_datetime,
 )
-from .schema import QuerySchema, raw_path_value
+from .schema import FieldInfo, QuerySchema, raw_path_value
 from .units import load_default_unit_registry
 
 
@@ -197,6 +197,15 @@ class SelectTerm:
 
 
 @dataclass(frozen=True)
+class CommonTableExpression:
+    """One non-recursive common table expression."""
+
+    name: str
+    query: "Query"
+    position: int = 0
+
+
+@dataclass(frozen=True)
 class Query:
     predicate: Any | None = None
     order_by: tuple[OrderTerm, ...] = ()
@@ -208,6 +217,7 @@ class Query:
     offset: int = 0
     group_by: tuple[Any, ...] = ()
     having: Any | None = None
+    ctes: tuple[CommonTableExpression, ...] = ()
 
 
 _TOKEN_RE = re.compile(
@@ -310,7 +320,13 @@ class Parser:
             raise QuerySyntaxError(self.source, message, self.current.position)
         return self.advance()
 
-    def parse_query(self, where_only: bool = False) -> Query:
+    def parse_query(
+        self,
+        where_only: bool = False,
+        *,
+        stop_at_rparen: bool = False,
+        allow_with: bool = True,
+    ) -> Query:
         predicate = None
         order_by: tuple[OrderTerm, ...] = ()
         limit = None
@@ -320,9 +336,41 @@ class Parser:
         offset = 0
         group_by: tuple[Any, ...] = ()
         having = None
+        ctes: list[CommonTableExpression] = []
+
+        def at_end() -> bool:
+            return self.current.kind == "EOF" or (stop_at_rparen and self.current.kind == "RPAREN")
+
+        if not where_only and not allow_with and self.keyword("WITH"):
+            raise QuerySyntaxError(
+                self.source, "Nested WITH clauses are not supported in yt-sql 0.25.0.", self.current.position
+            )
+
+        if not where_only and allow_with and self.consume_keyword("WITH"):
+            if self.consume_keyword("RECURSIVE"):
+                raise QuerySyntaxError(
+                    self.source,
+                    "Recursive CTEs are not supported.",
+                    self.current.position,
+                )
+            seen_names: set[str] = set()
+            while True:
+                name_token = self.expect("IDENT", "Expected a CTE name after WITH.")
+                key = name_token.text.casefold()
+                if key in seen_names:
+                    raise QuerySyntaxError(self.source, f"Duplicate CTE name {name_token.text!r}.", name_token.position)
+                seen_names.add(key)
+                self.expect_keyword("AS", "Expected AS after CTE name.")
+                self.expect("LPAREN", "Expected '(' before CTE query.")
+                subquery = self.parse_query(stop_at_rparen=True, allow_with=False)
+                self.expect("RPAREN", "Expected ')' after CTE query.")
+                ctes.append(CommonTableExpression(name_token.text, subquery, name_token.position))
+                if self.current.kind != "COMMA":
+                    break
+                self.advance()
 
         if where_only:
-            if self.current.kind != "EOF":
+            if not at_end():
                 predicate = self.parse_or()
         else:
             if self.consume_keyword("SELECT"):
@@ -334,7 +382,7 @@ class Parser:
 
             if self.consume_keyword("WHERE"):
                 if (
-                    self.current.kind == "EOF"
+                    at_end()
                     or self.keyword("GROUP")
                     or self.keyword("HAVING")
                     or self.keyword("ORDER")
@@ -349,7 +397,7 @@ class Parser:
                 and not self.keyword("ORDER")
                 and not self.keyword("LIMIT")
                 and not self.keyword("OFFSET")
-                and self.current.kind != "EOF"
+                and not at_end()
             ):
                 if select or from_source is not None:
                     raise QuerySyntaxError(
@@ -392,9 +440,21 @@ class Parser:
             offset = int(token.text.replace("_", ""))
             self.advance()
 
-        if self.current.kind != "EOF":
+        if not at_end():
             raise QuerySyntaxError(self.source, f"Unexpected token {self.current.text!r}.", self.current.position)
-        return Query(predicate, order_by, limit, self.source, select, from_source, distinct, offset, group_by, having)
+        return Query(
+            predicate,
+            order_by,
+            limit,
+            self.source,
+            select,
+            from_source,
+            distinct,
+            offset,
+            group_by,
+            having,
+            tuple(ctes),
+        )
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
         terms: list[SelectTerm] = []
@@ -1730,7 +1790,7 @@ def _validate_having_group_compatibility(node: Any, group_by: tuple[Any, ...], s
         )
 
 
-def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
+def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
     """Resolve fields and typed literals after metadata has established a schema."""
     context = dates or DateContext()
     source = query.source
@@ -1832,6 +1892,7 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
         query.offset,
         group_by,
         having,
+        (),
     )
     if _aggregate_query(resolved):
         for term in resolved.select:
@@ -1842,6 +1903,69 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
     elif having is not None:
         raise QuerySyntaxError(source, "HAVING requires GROUP BY or an aggregate expression.", 0)
     return resolved
+
+
+def _query_result_schema(query: Query) -> QuerySchema:
+    """Build the logical schema exported by a resolved query result."""
+    fields = [FieldInfo(term.output_name, term.kind or "unknown", True, dynamic=True) for term in query.select]
+    return QuerySchema.from_field_infos(fields)
+
+
+def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
+    """Resolve a query and its non-recursive CTEs against logical result schemas."""
+    query_single_physical_source(query)
+    context = dates or DateContext()
+    resolved_ctes: list[CommonTableExpression] = []
+    cte_schemas: dict[str, QuerySchema] = {}
+    cte_names = {cte.name.casefold() for cte in query.ctes}
+
+    for cte in query.ctes:
+        source_name = (cte.query.from_source or "").casefold()
+        if source_name == cte.name.casefold():
+            raise QuerySyntaxError(
+                query.source, f"Recursive reference to CTE {cte.name!r} is not supported.", cte.position
+            )
+        if source_name in cte_names and source_name not in cte_schemas:
+            raise QuerySyntaxError(
+                query.source,
+                f"CTE {cte.name!r} cannot reference later CTE {cte.query.from_source!r}; forward references are not supported.",
+                cte.position,
+            )
+        cte_schema = cte_schemas.get(source_name, schema)
+        resolved_subquery = _resolve_query_body(replace(cte.query, ctes=()), cte_schema, context)
+        resolved_ctes.append(CommonTableExpression(cte.name, resolved_subquery, cte.position))
+        cte_schemas[cte.name.casefold()] = _query_result_schema(resolved_subquery)
+
+    outer_schema = cte_schemas.get((query.from_source or "").casefold(), schema)
+    resolved = _resolve_query_body(replace(query, ctes=()), outer_schema, context)
+    return replace(resolved, ctes=tuple(resolved_ctes))
+
+
+def query_physical_sources(query: Query) -> tuple[str, ...]:
+    """Return physical source references in deterministic first-use order."""
+    cte_names = {cte.name.casefold() for cte in query.ctes}
+    seen: set[str] = set()
+    result: list[str] = []
+    candidates = [cte.query.from_source for cte in query.ctes] + [query.from_source]
+    for source_name in candidates:
+        if source_name is None or source_name.casefold() in cte_names:
+            continue
+        if source_name not in seen:
+            seen.add(source_name)
+            result.append(source_name)
+    return tuple(result)
+
+
+def query_single_physical_source(query: Query) -> str | None:
+    """Return the sole physical source, rejecting unsupported multi-source CTEs."""
+    sources = query_physical_sources(query)
+    if len(sources) > 1:
+        raise QuerySyntaxError(
+            query.source,
+            "CTEs in yt-sql 0.25.0 may reference only one physical source; multi-source composition is reserved for UNION.",
+            0,
+        )
+    return sources[0] if sources else None
 
 
 def canonical_record_value(
@@ -2249,7 +2373,7 @@ def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> l
     return rows
 
 
-def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     if _aggregate_query(query):
         return _apply_aggregate_query(records, query)
     result = [record for record in records if evaluate(query.predicate, record) is True]
@@ -2292,6 +2416,26 @@ def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[st
     return result
 
 
+def _project_cte_rows(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+    if _aggregate_query(query):
+        return [dict(record) for record in records]
+    return [{term.output_name: canonical_record_value(record, term) for term in query.select} for record in records]
+
+
+def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+    """Apply a resolved query, materialising non-recursive CTE relations in declaration order."""
+    if not query.ctes:
+        return _apply_query_body(records, query)
+    relations: dict[str, list[dict[str, Any]]] = {}
+    for cte in query.ctes:
+        source_key = (cte.query.from_source or "").casefold()
+        input_records = relations.get(source_key, list(records))
+        cte_result = _apply_query_body(input_records, cte.query)
+        relations[cte.name.casefold()] = _project_cte_rows(cte_result, cte.query)
+    outer_input = relations.get((query.from_source or "").casefold(), list(records))
+    return _apply_query_body(outer_input, replace(query, ctes=()))
+
+
 def merge_queries(base: Query, extra: Query) -> Query:
     predicate = base.predicate
     if extra.predicate is not None:
@@ -2305,7 +2449,19 @@ def merge_queries(base: Query, extra: Query) -> Query:
     offset = extra.offset if extra.offset else base.offset
     group_by = extra.group_by or base.group_by
     having = extra.having if extra.having is not None else base.having
-    return Query(predicate, order_by, limit, source, select, from_source, distinct, offset, group_by, having)
+    return Query(
+        predicate,
+        order_by,
+        limit,
+        source,
+        select,
+        from_source,
+        distinct,
+        offset,
+        group_by,
+        having,
+        extra.ctes or base.ctes,
+    )
 
 
 def format_expression(node: Any) -> str:
@@ -2346,6 +2502,9 @@ def format_expression(node: Any) -> str:
 
 def format_query(query: Query) -> str:
     parts: list[str] = []
+    if query.ctes:
+        cte_text = ", ".join(f"{cte.name} AS ({format_query(cte.query)})" for cte in query.ctes)
+        parts.append(f"WITH {cte_text}")
     if query.select:
         parts.append(
             ("SELECT DISTINCT " if query.distinct else "SELECT ")

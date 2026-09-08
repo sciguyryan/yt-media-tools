@@ -68,3 +68,7 @@ Ruff is configured for repository linting and formatting, and both checks run in
 ## Versioning
 
 The two command-line applications retain independent versions because they evolve at different rates. Release history is recorded in `CHANGELOG.md`.
+
+## Common table expressions
+
+Discover 0.25.0 supports non-recursive yt-sql `WITH` CTEs over one physical source. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, scoping and logical-schema contract.

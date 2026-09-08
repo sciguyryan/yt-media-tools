@@ -185,3 +185,28 @@ The first aggregate release does not implement `COUNT(DISTINCT expr)` or other D
 ## Planned analytical expansion
 
 General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, and the first aggregate query architecture are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+
+## Common table expressions
+
+Non-recursive common table expressions use SQL-like `WITH name AS (query)` syntax:
+
+```sql
+WITH short AS (
+    SELECT id, title, duration / 60 AS minutes
+    FROM @example
+    WHERE duration < 1h
+),
+mars AS (
+    SELECT id, minutes
+    FROM short
+    WHERE title ILIKE '%mars%'
+)
+SELECT id, minutes
+FROM mars
+ORDER BY minutes DESC
+```
+
+A CTE exports only its projected columns. Their output names, including explicit `AS` aliases, and their resolved scalar kinds define the logical schema available to subsequent CTEs and the outer query. CTE names are case-insensitive. Later CTEs may reference earlier CTEs, but forward references, self-reference, `WITH RECURSIVE` and nested `WITH` clauses are rejected.
+
+Discover 0.25.0 permits only one physical extractor source across the complete CTE pipeline. This restriction keeps CTE execution independent of the still-pending multi-source schema-reconciliation contract. `UNION` and `UNION ALL` will introduce deliberate multi-source composition in the next phase.
+

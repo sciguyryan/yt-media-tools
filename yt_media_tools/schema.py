@@ -61,7 +61,18 @@ class QuerySchema:
     def __init__(self, records: Iterable[dict[str, Any]]) -> None:
         self.records = tuple(records)
         self._fields: dict[str, FieldInfo] = {}
+        self._logical_fields: tuple[FieldInfo, ...] | None = None
         self._build()
+
+    @classmethod
+    def from_field_infos(cls, fields: Iterable[FieldInfo]) -> "QuerySchema":
+        """Construct a logical schema from already resolved query-result columns."""
+        instance = cls.__new__(cls)
+        instance.records = ()
+        logical_fields = tuple(fields)
+        instance._fields = {field.name.casefold(): field for field in logical_fields}
+        instance._logical_fields = logical_fields
+        return instance
 
     def _build(self) -> None:
         for name, kind in KNOWN_FIELD_TYPES.items():
@@ -141,6 +152,8 @@ class QuerySchema:
         order. Aliases and ``raw.*`` paths are excluded so star expansion does not
         duplicate values or unexpectedly expose the entire extractor metadata tree.
         """
+        if self._logical_fields is not None:
+            return list(self._logical_fields)
         builtins = [self._fields[name.casefold()] for name in KNOWN_FIELD_TYPES]
         builtin_keys = {info.name.casefold() for info in builtins}
         dynamic = sorted(

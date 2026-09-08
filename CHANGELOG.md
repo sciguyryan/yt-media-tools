@@ -1,6 +1,15 @@
 # Changelog
 
-## Discover 0.24.0 - Aggregate Excitement
+## Discover 0.25.0 - Common Ground
+
+- Add non-recursive `WITH` common table expressions with declaration-order scoping and case-insensitive CTE references.
+- Materialise each CTE as a logical yt-sql result relation whose exported column names and resolved scalar kinds define the schema visible to later CTEs and the outer query.
+- Allow CTEs to contain ordinary filtering, scalar projection, aggregation, `GROUP BY`, `HAVING`, ordering, DISTINCT, LIMIT and OFFSET using the established query semantics.
+- Reject recursive CTEs, self-reference, forward references, nested `WITH` clauses and multiple physical extractor sources in this foundation release.
+- Resolve the one physical extractor source through CTE chains so outer `FROM cte_name` queries do not mistake a logical relation for an external source.
+- Extend optimiser traversal, physical-field planning, deterministic conformance and independent-oracle differential coverage across chained CTE execution.
+
+## Discover 0.24.0 - Aggregate Ascent
 
 - Add `COUNT(*)`, `COUNT(expr)`, `SUM`, `AVG`, `MIN` and `MAX` with SQL-like NULL elimination and deterministic empty-input behaviour.
 - Add `GROUP BY` with normalisation-sensitive Unicode grouping and deterministic first-source-occurrence group order when no `ORDER BY` is present.
