@@ -68,10 +68,12 @@ def test_of_and_tab_share_one_compatibility_model() -> None:
         resolve_source_request("@whatdamath", facet="shorts", tab="videos")
 
 
-def test_same_physical_source_multiple_facets_fails_closed_for_initial_foundation() -> None:
+def test_same_physical_source_multiple_facets_are_distinct_requests() -> None:
     query = parse_query("SELECT id FROM @whatdamath OF videos UNION ALL SELECT id FROM @whatdamath OF shorts")
-    with pytest.raises(QuerySyntaxError, match="multiple facets"):
-        query_physical_source_requests(query)
+    assert query_physical_source_requests(query) == (
+        ("@whatdamath", "videos"),
+        ("@whatdamath", "shorts"),
+    )
 
 
 def test_repeated_same_source_and_facet_is_one_physical_request() -> None:
@@ -111,3 +113,13 @@ def test_capability_diagnostic_names_adapter_and_advertised_facets() -> None:
 def test_channel_unknown_facet_lists_supported_facets() -> None:
     with pytest.raises(ValueError, match="adapter 'youtube-channel' advertises: videos, shorts, live"):
         resolve_source_request("@whatdamath", facet="archives")
+
+
+def test_resolved_facet_urls_provide_distinct_cache_identities() -> None:
+    videos = resolve_source_request("@whatdamath", facet="videos")
+    shorts = resolve_source_request("@whatdamath", facet="shorts")
+    live = resolve_source_request("@whatdamath", facet="live")
+    assert len({videos.canonical_url, shorts.canonical_url, live.canonical_url}) == 3
+    assert videos.canonical_url.endswith("/videos")
+    assert shorts.canonical_url.endswith("/shorts")
+    assert live.canonical_url.endswith("/streams")

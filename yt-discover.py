@@ -75,7 +75,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.26.1"
+PROGRAM_VERSION = "0.26.2"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -1071,12 +1071,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
     if len(source_inputs) > 1:
         plan = AcquisitionPlan(
             "full",
-            "UNION composition spans multiple physical sources; each source is acquired independently before logical reconciliation",
-        )
-    if len(source_inputs) > 1:
-        plan = AcquisitionPlan(
-            "full",
-            "UNION composition spans multiple physical sources; each source is acquired independently before logical reconciliation",
+            "UNION composition spans multiple physical source/facet requests; each request is acquired independently before logical reconciliation",
         )
     if offline:
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
@@ -1831,7 +1826,7 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(True, f"YouTube.js: {tools.youtubejs.version if tools.youtubejs_available else 'unavailable'}.")
 
     if multi_source:
-        _verbose(args.verbose, f"Resolved {len(sources)} physical sources for UNION composition.")
+        _verbose(args.verbose, f"Resolved {len(sources)} physical source/facet requests for UNION composition.")
         for source_value, source_spec in zip(source_values, sources, strict=True):
             facet_text = f" OF {source_spec.facet}" if source_spec.facet is not None else ""
             _verbose(
@@ -1847,7 +1842,7 @@ def main(argv: list[str] | None = None) -> int:
     if multi_source:
         plan = AcquisitionPlan(
             "full",
-            "UNION composition spans multiple physical sources; each source is acquired independently before logical reconciliation",
+            "UNION composition spans multiple physical source/facet requests; each request is acquired independently before logical reconciliation",
         )
     explicit_prefilters = bool(
         args.items or args.date or args.after or args.before or any(item.strip() for item in args.match_filter)
@@ -1889,7 +1884,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.offline and not args.dry_run and args.acquisition != "full" and cost_class == "very-high":
         if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
             warning = (
-                "yt-discover: warning: UNION composition currently acquires each contributing physical source "
+                "yt-discover: warning: UNION composition currently acquires each contributing physical source/facet request "
                 "conservatively before logical reconciliation; this may require substantial metadata acquisition."
             )
         else:
@@ -1980,7 +1975,8 @@ def main(argv: list[str] | None = None) -> int:
                         date_before=args.before,
                         match_filters=tuple(item for item in args.match_filter if item.strip()),
                     )
-                    print(f"yt-dlp [{source_value}]: {shell_join(source_command)}")
+                    facet_label = f" OF {source_spec.facet}" if source_spec.facet is not None else ""
+                    print(f"yt-dlp [{source_value}{facet_label}]: {shell_join(source_command)}")
             else:
                 print(f"yt-dlp: {shell_join(command)}")
         print(f"query:  {format_query(query)}")
@@ -2015,11 +2011,11 @@ def main(argv: list[str] | None = None) -> int:
     limit_batches = 0
     limit_candidates_examined = 0
     acquisition_started = perf_counter()
-    source_record_counts: dict[str, int] = {}
+    source_record_counts: dict[tuple[str, str | None], int] = {}
     if multi_source:
         raw_records = []
         acquisition_stats = AcquisitionStats()
-        for source_value, source_spec in zip(source_values, sources, strict=True):
+        for (source_value, request_facet), source_spec in zip(source_requests, sources, strict=True):
             if args.offline:
                 assert metadata_cache is not None
                 cached_items = metadata_cache.source_records(source_spec.canonical_url)
@@ -2052,10 +2048,11 @@ def main(argv: list[str] | None = None) -> int:
                     return 1
                 if metadata_cache is not None:
                     metadata_cache.put_many(source_spec.canonical_url, source_records)
-            source_record_counts[source_value] = len(source_records)
+            source_record_counts[(source_value, request_facet)] = len(source_records)
             for item in source_records:
                 tagged = dict(item)
                 tagged["_yt_sql_source"] = source_value
+                tagged["_yt_sql_source_facet"] = request_facet
                 tagged["_yt_sql_source_url"] = source_spec.canonical_url
                 raw_records.append(tagged)
         acquisition_stats = AcquisitionStats(available=len(raw_records))
@@ -2446,7 +2443,7 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     if not multi_source:
-        source_record_counts[source_values[0]] = len(raw_records)
+        source_record_counts[source_requests[0]] = len(raw_records)
 
     observed_source_work = (
         enumeration_stats.enumerated if enumeration_stats is not None else acquisition_stats.attempted
@@ -2465,17 +2462,25 @@ def main(argv: list[str] | None = None) -> int:
         record["source_index"] = source_index
         if "_yt_sql_source" in raw:
             record["_yt_sql_source"] = raw["_yt_sql_source"]
+            record["_yt_sql_source_facet"] = raw.get("_yt_sql_source_facet")
             record["_yt_sql_source_url"] = raw.get("_yt_sql_source_url")
         records.append(record)
 
     schema = QuerySchema(records)
     source_schemas = (
         {
-            source_value: QuerySchema([record for record in records if record.get("_yt_sql_source") == source_value])
-            for source_value in source_values
+            (source_value, request_facet): QuerySchema(
+                [
+                    record
+                    for record in records
+                    if record.get("_yt_sql_source") == source_value
+                    and record.get("_yt_sql_source_facet") == request_facet
+                ]
+            )
+            for source_value, request_facet in source_requests
         }
         if multi_source
-        else {source_values[0]: schema}
+        else {source_requests[0]: schema}
     )
     _verbose(args.verbose, f"Built query schema from {len(records)} normalised records.")
     if args.fields or args.schema:
@@ -2650,7 +2655,7 @@ def main(argv: list[str] | None = None) -> int:
                     "tab": args.tab if request_facet is None and args.tab != "all" else None,
                     "facet": source_spec.facet,
                     "adapter": source_capabilities(source_spec).adapter,
-                    "acquired_records": source_record_counts.get(source_value, 0),
+                    "acquired_records": source_record_counts.get((source_value, request_facet), 0),
                 }
                 for (source_value, request_facet), source_spec in zip(source_requests, sources, strict=True)
             ],

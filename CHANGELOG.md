@@ -1,5 +1,17 @@
 # Changelog
 
+## Discover 0.26.2 - Crossing Streams
+
+- Remove the temporary same-source cross-facet composition restriction now that each physical source/facet request has an independent execution identity.
+- Key per-source query schemas by both physical source and logical facet so heterogeneous metadata cannot leak between branches.
+- Tag acquired records with their logical facet and filter UNION/CTE inputs by the complete source/facet identity.
+- Keep cache, coverage and frontier state isolated through each facet's independently resolved canonical acquisition URL.
+- Include the logical facet in deterministic seeded `RANDOM(seed)` row identity so the same media ID in different facets remains independently reproducible.
+- Preserve per-request acquisition counts and facet provenance when one physical source appears through several facets.
+- Add same-source cross-facet UNION, UNION ALL, CTE, aggregate, Unicode, schema, seeded-randomness and global LIMIT/OFFSET regression coverage.
+- Preserve the split Ruff, pytest and Markdown lint GitHub Actions workflows.
+- Complete the planned 0.26.x source/facet series and freeze further syntax work pending the dedicated test-completeness and parser-torture review.
+
 ## Discover 0.26.1 - One Path
 
 - Separate physical source classification, logical capability discovery and facet-to-acquisition mapping into explicit source-layer stages.

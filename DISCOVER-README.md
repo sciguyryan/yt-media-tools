@@ -736,3 +736,7 @@ yt-sql can request an extractor-agnostic logical facet with `OF`:
 ```
 
 YouTube channel sources currently advertise `videos`, `shorts` and `live`. Bare `FROM @source` keeps the default collection. `--tab` remains available for compatibility and is translated into the same logical facet request as `OF`, so the two interfaces do not maintain separate acquisition behaviour. `--explain` reports the selected source adapter and the facets it advertises.
+
+## Composing source facets
+
+The same physical source may be queried through several logical facets in one composed query. For example, `OF videos` and `OF shorts` are acquired and resolved independently before `UNION` reconciliation. Their schemas, cache/coverage identities and provenance remain separate even when the underlying channel and media IDs overlap.

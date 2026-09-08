@@ -1642,7 +1642,7 @@ def _validate_char_codepoint(value: Any, source: str, position: int) -> int:
 def _stable_random_identity(record: dict[str, Any]) -> str:
     """Return a stable logical identity for deterministic seeded randomness."""
     preferred = []
-    for key in ("_yt_sql_source", "extractor", "extractor_key", "webpage_url", "url", "id"):
+    for key in ("_yt_sql_source", "_yt_sql_source_facet", "extractor", "extractor_key", "webpage_url", "url", "id"):
         value = record.get(key)
         if value is not None:
             preferred.append((key, value))
@@ -2089,16 +2089,17 @@ def _query_result_schema(query: Query) -> QuerySchema:
 
 def _source_schema(
     source_name: str | None,
+    source_facet: str | None,
     physical_schema: QuerySchema,
     cte_schemas: dict[str, QuerySchema],
-    source_schemas: dict[str, QuerySchema],
+    source_schemas: dict[tuple[str, str | None], QuerySchema],
 ) -> QuerySchema:
     if source_name is None:
         return physical_schema
     logical = cte_schemas.get(source_name.casefold())
     if logical is not None:
         return logical
-    return source_schemas.get(source_name, physical_schema)
+    return source_schemas.get((source_name, source_facet), physical_schema)
 
 
 def _resolve_union_order(
@@ -2121,18 +2122,18 @@ def _resolve_composed_query(
     physical_schema: QuerySchema,
     cte_schemas: dict[str, QuerySchema],
     context: DateContext,
-    source_schemas: dict[str, QuerySchema],
+    source_schemas: dict[tuple[str, str | None], QuerySchema],
 ) -> Query:
     """Resolve one query body and its positional set-composition branches."""
     if not query.set_operations:
-        schema = _source_schema(query.from_source, physical_schema, cte_schemas, source_schemas)
+        schema = _source_schema(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas)
         return _resolve_query_body(replace(query, ctes=(), set_operations=()), schema, context)
 
     # ORDER BY/LIMIT/OFFSET belong to the complete set result, not the first branch.
     left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
     left = _resolve_query_body(
         left_body,
-        _source_schema(query.from_source, physical_schema, cte_schemas, source_schemas),
+        _source_schema(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas),
         context,
     )
     common_terms = list(left.select)
@@ -2140,7 +2141,9 @@ def _resolve_composed_query(
     for operation in query.set_operations:
         branch = _resolve_query_body(
             replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0),
-            _source_schema(operation.query.from_source, physical_schema, cte_schemas, source_schemas),
+            _source_schema(
+                operation.query.from_source, operation.query.from_facet, physical_schema, cte_schemas, source_schemas
+            ),
             context,
         )
         if len(branch.select) != len(common_terms):
@@ -2180,7 +2183,7 @@ def resolve_query(
     schema: QuerySchema,
     dates: DateContext | None = None,
     *,
-    source_schemas: dict[str, QuerySchema] | None = None,
+    source_schemas: dict[tuple[str, str | None], QuerySchema] | None = None,
 ) -> Query:
     """Resolve CTEs and positional set composition against logical and per-source schemas."""
     context = dates or DateContext()
@@ -2248,14 +2251,6 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
             key = (source_name, facet)
             if key in seen:
                 continue
-            for existing_source, existing_facet in seen:
-                if existing_source == source_name and existing_facet != facet:
-                    raise QuerySyntaxError(
-                        query.source,
-                        f"Physical source {source_name!r} is requested with multiple facets in one query; "
-                        "cross-facet composition is reserved for source/facet hardening.",
-                        0,
-                    )
             seen.add(key)
             result.append(key)
 
@@ -2773,14 +2768,19 @@ def _project_result_rows(records: Sequence[dict[str, Any]], query: Query) -> lis
 def _records_for_source(
     records: Sequence[dict[str, Any]],
     source_name: str | None,
+    source_facet: str | None,
     relations: dict[str, list[dict[str, Any]]],
-    physical_sources: tuple[str, ...],
+    physical_requests: tuple[tuple[str, str | None], ...],
 ) -> list[dict[str, Any]]:
     if source_name is not None and source_name.casefold() in relations:
         return relations[source_name.casefold()]
-    if source_name is None or len(physical_sources) <= 1:
+    if source_name is None or len(physical_requests) <= 1:
         return list(records)
-    return [record for record in records if record.get("_yt_sql_source") == source_name]
+    return [
+        record
+        for record in records
+        if record.get("_yt_sql_source") == source_name and record.get("_yt_sql_source_facet") == source_facet
+    ]
 
 
 def _union_row_key(row: dict[str, Any], output_names: tuple[str, ...]) -> tuple[Any, ...]:
@@ -2799,20 +2799,20 @@ def _apply_composed_query(
     records: Sequence[dict[str, Any]],
     query: Query,
     relations: dict[str, list[dict[str, Any]]],
-    physical_sources: tuple[str, ...],
+    physical_requests: tuple[tuple[str, str | None], ...],
 ) -> list[dict[str, Any]]:
     if not query.set_operations:
-        input_records = _records_for_source(records, query.from_source, relations, physical_sources)
+        input_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
         return _apply_query_body(input_records, query)
 
     left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
-    left_input = _records_for_source(records, query.from_source, relations, physical_sources)
+    left_input = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
     rows = _project_result_rows(_apply_query_body(left_input, left_body), left_body)
     output_names = tuple(term.output_name for term in query.select)
 
     for operation in query.set_operations:
         branch = operation.query
-        branch_input = _records_for_source(records, branch.from_source, relations, physical_sources)
+        branch_input = _records_for_source(records, branch.from_source, branch.from_facet, relations, physical_requests)
         branch_rows = _project_result_rows(_apply_query_body(branch_input, branch), branch)
         branch_names = tuple(term.output_name for term in branch.select)
         remapped = [
@@ -2857,19 +2857,19 @@ def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[st
     """Apply a resolved query, materialising CTEs and set-composed relations."""
     for record in records:
         record.pop("_yt_sql_random_cache", None)
-    physical_sources = query_physical_sources(query)
+    physical_requests = query_physical_source_requests(query)
     if not query.ctes:
-        result = _apply_composed_query(records, query, {}, physical_sources)
+        result = _apply_composed_query(records, query, {}, physical_requests)
     else:
         relations: dict[str, list[dict[str, Any]]] = {}
         for cte in query.ctes:
-            cte_result = _apply_composed_query(records, cte.query, relations, physical_sources)
+            cte_result = _apply_composed_query(records, cte.query, relations, physical_requests)
             relations[cte.name.casefold()] = (
                 _project_result_rows(cte_result, cte.query)
                 if not cte.query.set_operations
                 else [dict(row) for row in cte_result]
             )
-        result = _apply_composed_query(records, replace(query, ctes=()), relations, physical_sources)
+        result = _apply_composed_query(records, replace(query, ctes=()), relations, physical_requests)
 
     # Result-row markers are an internal execution detail used while materialising
     # CTEs and set operations. They must never escape through the public query API.

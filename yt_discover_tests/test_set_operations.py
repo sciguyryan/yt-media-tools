@@ -20,7 +20,7 @@ def _heterogeneous_records() -> list[dict[str, object]]:
 def _resolve(text: str, records: list[dict[str, object]]):
     query = parse_query(text)
     source_schemas = {
-        source: QuerySchema([record for record in records if record.get("_yt_sql_source") == source])
+        (source, None): QuerySchema([record for record in records if record.get("_yt_sql_source") == source])
         for source in query_physical_sources(query)
     }
     return resolve_query(query, QuerySchema(records), source_schemas=source_schemas)

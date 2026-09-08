@@ -83,7 +83,7 @@ def test_random_survives_cte_and_union_projection() -> None:
         "SELECT id, RANDOM(42) AS r FROM mixed ORDER BY r"
     )
     schema = QuerySchema(records)
-    resolved = resolve_query(parsed, schema, source_schemas={"@one": schema, "@two": schema})
+    resolved = resolve_query(parsed, schema, source_schemas={("@one", None): schema, ("@two", None): schema})
     rows = apply_query(records, resolved)
     assert [row["r"] for row in rows] == sorted(row["r"] for row in rows)
     assert {row["id"] for row in rows} == {"a", "b", "c"}

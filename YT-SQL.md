@@ -245,3 +245,15 @@ All branches must project the same number of columns. The first branch defines t
 Physical sources are acquired independently. In automatic source mode, a quoted non-YouTube URL is preserved as a generic yt-dlp extractor source, while YouTube handles, channel URLs and playlist URLs retain their existing specialised classification. Source identity remains attached internally through normalisation so each branch sees only the records belonging to its declared `FROM` source. A missing value from one extractor is NULL when the field is otherwise part of the logical schema. Dynamic fields are resolved per physical source so incompatible extractor-specific types are detected before composition.
 
 `JOIN` remains intentionally unsupported. yt-sql uses set composition and CTEs rather than relational join semantics.
+
+## Cross-facet composition
+
+Different facets of the same physical source are independent acquisition relations. They may be composed through CTEs, `UNION` and `UNION ALL` just like distinct physical sources:
+
+```text
+SELECT id FROM @whatdamath OF videos
+UNION ALL
+SELECT id FROM @whatdamath OF shorts
+```
+
+Each source/facet request has its own resolved acquisition URL, query schema, record tag, cache/coverage identity and provenance entry. A media identifier appearing in two facets therefore does not cause the branches to share metadata accidentally. Plain `UNION` still deduplicates by the projected logical row, while `UNION ALL` preserves both branch rows.

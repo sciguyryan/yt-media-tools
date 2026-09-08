@@ -4,5 +4,11 @@
   "description": "Optional Node.js dependencies for yt-discover acquisition backends.",
   "dependencies": {
     "youtubei.js": "18.0.0"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.23.2"
+  },
+  "scripts": {
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!node_modules/**\""
   }
 }

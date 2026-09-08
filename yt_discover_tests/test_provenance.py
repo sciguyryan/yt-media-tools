@@ -52,7 +52,7 @@ def test_offline_provenance_sidecar_records_query_and_execution(tmp_path: Path) 
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(provenance.read_text(encoding="utf-8"))
     assert payload["kind"] == "yt-discover-query-provenance"
-    assert payload["version"] == "0.26.1"
+    assert payload["version"] == "0.26.2"
     assert payload["query"]["parameters"] == {"needle": "Alpha"}
     assert payload["execution"]["offline"] is True
     assert payload["execution"]["emitted_rows"] == 1
@@ -132,3 +132,51 @@ def test_of_provenance_records_logical_facet_and_adapter(tmp_path: Path) -> None
     assert payload["source"]["tab"] is None
     assert payload["sources"][0]["facet"] == "shorts"
     assert payload["sources"][0]["adapter"] == "youtube-channel"
+
+
+def test_same_source_cross_facet_provenance_keeps_requests_independent(tmp_path: Path) -> None:
+    import os
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_ytdlp = fake_bin / "yt-dlp"
+    fake_ytdlp.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, sys\n"
+        "url = sys.argv[-1]\n"
+        "facet = 'shorts' if url.endswith('/shorts') else 'videos'\n"
+        "print(json.dumps({'id': 'shared', 'title': facet}))\n",
+        encoding="utf-8",
+    )
+    fake_ytdlp.chmod(0o755)
+
+    provenance = tmp_path / "cross-facet-provenance.json"
+    env = os.environ.copy()
+    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--provenance",
+            str(provenance),
+            (
+                "SELECT id, title FROM @example OF videos UNION ALL "
+                "SELECT id, title FROM @example OF shorts ORDER BY title"
+            ),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert [json.loads(line) for line in proc.stdout.splitlines()] == [
+        {"id": "shared", "title": "shorts"},
+        {"id": "shared", "title": "videos"},
+    ]
+    payload = json.loads(provenance.read_text(encoding="utf-8"))
+    assert [source["facet"] for source in payload["sources"]] == ["videos", "shorts"]
+    assert [source["acquired_records"] for source in payload["sources"]] == [1, 1]
+    assert payload["execution"]["normalised_records"] == 2
+    assert payload["execution"]["emitted_rows"] == 2
