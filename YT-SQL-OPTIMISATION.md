@@ -356,4 +356,4 @@ Current acquisition planning does not push predicates across UNION boundaries an
 
 ## Source facets with OF
 
-`OF` is source-resolution syntax rather than a scalar or predicate rewrite. The optimiser preserves the requested facet exactly and must not substitute a default collection or another advertised facet. Future source-boundary planning may use adapter capabilities to reduce acquisition cost, but only where that planning is semantics-preserving and visible through explain output.
+`OF` is source-resolution syntax rather than a scalar or predicate rewrite. The optimiser preserves the requested facet exactly and must not substitute a default collection or another advertised facet. Future source-boundary planning may use adapter capabilities to reduce acquisition cost, but only where that planning is semantics-preserving and visible through explain output. Since 0.26.1, capability discovery is an explicit deterministic source-layer contract rather than an inference from the selected URL. Optimisation must preserve the requested facet and may not substitute another advertised collection merely because it appears cheaper to acquire.

@@ -186,6 +186,8 @@ Bare `FROM @source` remains valid and requests the source's default collection. 
 
 The grammar is extractor-agnostic. Other yt-dlp extractors may advertise different logical facets in later adapter work without changing the core `OF` syntax.
 
+Source resolution is deliberately layered. A physical source is classified first, an adapter advertises its deterministic logical capabilities, and only then is an explicit facet mapped to an acquisition target. `--tab` is translated into the same logical facet request for backwards compatibility rather than taking a second execution path. `--explain` reports the selected adapter and advertised facets.
+
 ## Aggregate queries
 
 yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`, and `MAX(expr)`. `COUNT(expr)` ignores NULL and returns zero when no non-NULL value exists. `SUM`, `AVG`, `MIN`, and `MAX` ignore NULL and return NULL when no non-NULL input remains. `SUM` and `AVG` require numeric expressions; `MIN` and `MAX` use the ordinary resolved scalar ordering, including exact normalisation-sensitive Unicode ordering for text.

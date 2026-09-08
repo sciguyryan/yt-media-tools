@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.26.1 - One Path
+
+- Separate physical source classification, logical capability discovery and facet-to-acquisition mapping into explicit source-layer stages.
+- Add deterministic `SourceCapabilities` metadata so the query/planner layer can reason about advertised logical facets without knowing extractor URL details.
+- Route legacy `--tab` values through the same canonical facet request used by yt-sql `OF`; matching `OF`/`--tab` requests resolve identically and conflicts continue to fail closed.
+- Report source adapter names and advertised facets through explain output and provenance.
+- Improve unsupported-facet diagnostics by naming the active adapter and the exact facets it advertises.
+- Preserve the user's split GitHub Actions workflow files for Ruff, pytest and Markdown linting.
+- Keep same-source cross-facet composition disabled until the 0.26.2 identity/composition hardening pass.
+
 ## 0.26.0 - OF Origins
 
 ### Discover

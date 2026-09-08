@@ -55,5 +55,5 @@ def test_generic_extractor_url_is_accepted_in_auto_mode() -> None:
 
 
 def test_generic_extractor_url_rejects_youtube_tab_option() -> None:
-    with pytest.raises(ValueError, match="--tab applies only to YouTube channel sources"):
+    with pytest.raises(ValueError, match="does not advertise facet"):
         resolve_source("https://www.twitch.tv/example/videos", tab="videos")

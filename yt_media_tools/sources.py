@@ -1,4 +1,4 @@
-"""Source classification and URL normalisation for yt-dlp acquisition."""
+"""Source classification, capability discovery, and acquisition-target resolution."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ TAB_SUFFIXES = {
     "live": "streams",
 }
 KNOWN_TAB_SUFFIXES = frozenset({"videos", "shorts", "streams", "featured"})
-YOUTUBE_CHANNEL_FACETS = frozenset({"videos", "shorts", "live"})
+YOUTUBE_CHANNEL_FACETS = ("videos", "shorts", "live")
 
 _CHANNEL_ID_RE = re.compile(r"UC[A-Za-z0-9_-]{20,}")
 # YouTube uses several playlist families. These prefixes are intentionally limited to
@@ -26,13 +26,49 @@ _PLAYLIST_ID_RE = re.compile(r"(?:PL|UU|LL|FL|RD|UL|TL|OLAK5uy_)[A-Za-z0-9_-]{8,
 
 @dataclass(frozen=True)
 class SourceSpec:
-    """Resolved input source used by the acquisition layer."""
+    """Resolved physical source and, when selected, its logical facet."""
 
     kind: str
     original: str
     canonical_url: str
     identifier: str | None = None
     facet: str | None = None
+
+
+@dataclass(frozen=True)
+class SourceCapabilities:
+    """Logical collections advertised by one classified physical source.
+
+    ``default_facet`` is ``None`` when the bare source is itself the default
+    collection. ``facets`` contains only explicit names that may appear after
+    yt-sql ``OF``. The core query layer consumes this contract without needing
+    extractor-specific URL or command knowledge.
+    """
+
+    adapter: str
+    facets: tuple[str, ...] = ()
+    default_facet: str | None = None
+
+    def supports(self, facet: str) -> bool:
+        """Return whether this source advertises the requested logical facet."""
+        return facet.casefold() in self.facets
+
+
+def source_capabilities(source: SourceSpec) -> SourceCapabilities:
+    """Return deterministic logical capabilities for a classified source.
+
+    Capability discovery is deliberately conservative. Known YouTube channel
+    sources advertise stable logical channel collections. Playlists and generic
+    yt-dlp extractor URLs currently expose only their default collection until a
+    dedicated adapter can make stronger promises.
+    """
+    if source.kind == "channel":
+        return SourceCapabilities("youtube-channel", YOUTUBE_CHANNEL_FACETS)
+    if source.kind == "playlist":
+        return SourceCapabilities("youtube-playlist")
+    if source.kind == "extractor":
+        return SourceCapabilities("yt-dlp-generic")
+    return SourceCapabilities("unknown")
 
 
 def resolve_source_request(
@@ -42,68 +78,69 @@ def resolve_source_request(
     source_type: str = "auto",
     tab: str = "all",
 ) -> SourceSpec:
-    """Resolve one physical source request through the shared facet capability model."""
-    requested = facet.casefold() if facet is not None else None
+    """Resolve one source request through the shared facet capability model.
+
+    ``--tab`` remains a compatibility input only. It is translated into the
+    same logical facet request used by yt-sql ``OF`` before capability
+    validation. No separate tab-specific acquisition path exists here.
+    """
+    requested = _normalise_requested_facet(facet=facet, tab=tab)
+    classified = _classify_source(value, source_type=source_type)
     if requested is None:
-        return resolve_source(value, source_type=source_type, tab=tab)
+        return classified
 
-    mapped_tab = "live" if tab == "live" else tab
-    if tab != "all" and requested != mapped_tab:
-        raise ValueError(f"source facet OF {requested} conflicts with compatibility option --tab {tab}")
-
-    # Classify the physical source independently from its requested facet. This
-    # keeps capability validation generic instead of smuggling OF through the
-    # legacy YouTube --tab argument.
-    spec = resolve_source(value, source_type=source_type, tab="all")
-    if spec.kind != "channel":
+    capabilities = source_capabilities(classified)
+    if not capabilities.supports(requested):
+        advertised = ", ".join(capabilities.facets) or "none"
+        compatibility = "compatibility option --tab requested this facet; " if facet is None and tab != "all" else ""
         raise ValueError(
-            f"source {value!r} does not advertise facet {requested!r}; "
-            "OF currently supports videos, shorts and live on YouTube channel sources"
+            f"{compatibility}source {value!r} does not advertise facet {requested!r}; "
+            f"adapter {capabilities.adapter!r} advertises: {advertised}"
         )
-    if requested not in YOUTUBE_CHANNEL_FACETS:
-        raise ValueError(
-            f"YouTube channel source does not advertise facet {requested!r}; "
-            f"supported facets: {', '.join(sorted(YOUTUBE_CHANNEL_FACETS))}"
-        )
-    resolved = resolve_source(value, source_type=source_type, tab=requested)
-    return SourceSpec(resolved.kind, resolved.original, resolved.canonical_url, resolved.identifier, requested)
+    return _apply_facet(classified, requested)
 
 
 def resolve_source(value: str, *, source_type: str = "auto", tab: str = "all") -> SourceSpec:
-    """Classify YouTube collections or preserve a generic yt-dlp URL without network guessing."""
+    """Compatibility resolver preserving the established ``--tab`` API."""
+    return resolve_source_request(value, source_type=source_type, tab=tab)
+
+
+def _normalise_requested_facet(*, facet: str | None, tab: str) -> str | None:
+    """Merge yt-sql OF and legacy --tab into one canonical logical request."""
+    if tab not in TAB_SUFFIXES:
+        raise ValueError(f"unknown channel tab: {tab}")
+    requested = facet.casefold() if facet is not None else None
+    compatibility = None if tab == "all" else tab
+    if requested is not None and compatibility is not None and requested != compatibility:
+        raise ValueError(f"source facet OF {requested} conflicts with compatibility option --tab {tab}")
+    return requested or compatibility
+
+
+def _classify_source(value: str, *, source_type: str) -> SourceSpec:
+    """Classify a physical source without applying any collection/facet choice."""
     text = value.strip()
     if not text:
         raise ValueError("SOURCE cannot be empty")
     if source_type not in {"auto", "channel", "playlist"}:
         raise ValueError(f"unknown source type: {source_type}")
-    if tab not in TAB_SUFFIXES:
-        raise ValueError(f"unknown channel tab: {tab}")
 
     if source_type == "playlist":
-        spec = _resolve_as_playlist(text)
-    elif source_type == "channel":
-        spec = _resolve_as_channel(text, tab)
-    else:
-        if text.startswith(("http://", "https://")):
-            spec = _resolve_url(text, tab)
-        elif _CHANNEL_ID_RE.fullmatch(text):
-            spec = _channel_from_id(text, tab)
-        elif _PLAYLIST_ID_RE.fullmatch(text):
-            spec = _playlist_from_id(text)
-        else:
-            spec = _resolve_as_channel(text, tab)
-
-    if spec.kind == "playlist" and tab != "all":
-        raise ValueError("--tab applies only to channel sources")
-    return spec
+        return _resolve_as_playlist(text)
+    if source_type == "channel":
+        return _resolve_as_channel(text)
+    if text.startswith(("http://", "https://")):
+        return _resolve_url(text)
+    if _CHANNEL_ID_RE.fullmatch(text):
+        return _channel_from_id(text)
+    if _PLAYLIST_ID_RE.fullmatch(text):
+        return _playlist_from_id(text)
+    return _resolve_as_channel(text)
 
 
-def _resolve_url(value: str, tab: str) -> SourceSpec:
+def _resolve_url(value: str) -> SourceSpec:
     parts = urlsplit(value)
     host = parts.netloc.lower().split(":", 1)[0]
     if host not in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}:
-        if tab != "all":
-            raise ValueError("--tab applies only to YouTube channel sources")
         return SourceSpec("extractor", value, value, None)
 
     query = parse_qs(parts.query)
@@ -117,7 +154,7 @@ def _resolve_url(value: str, tab: str) -> SourceSpec:
     path_parts = [part for part in parts.path.split("/") if part]
     if host == "youtu.be" or (path_parts and path_parts[0] in {"watch", "shorts", "embed"}):
         raise ValueError("SOURCE must identify a channel or playlist, not an individual video")
-    return _resolve_as_channel(value, tab)
+    return _resolve_as_channel(value)
 
 
 def _resolve_as_playlist(value: str) -> SourceSpec:
@@ -140,15 +177,13 @@ def _playlist_from_id(playlist_id: str, original: str | None = None) -> SourceSp
     return SourceSpec("playlist", original or playlist_id, url, playlist_id)
 
 
-def _resolve_as_channel(value: str, tab: str) -> SourceSpec:
+def _resolve_as_channel(value: str) -> SourceSpec:
     if _CHANNEL_ID_RE.fullmatch(value):
-        return _channel_from_id(value, tab)
+        return _channel_from_id(value)
     if value.startswith("@"):
-        base = f"{YOUTUBE_BASE_URL}/{value}"
-        return SourceSpec("channel", value, _append_tab(base, tab), value)
+        return SourceSpec("channel", value, f"{YOUTUBE_BASE_URL}/{value}", value)
     if re.fullmatch(r"[A-Za-z0-9_.-]+", value):
-        base = f"{YOUTUBE_BASE_URL}/@{value}"
-        return SourceSpec("channel", value, _append_tab(base, tab), value)
+        return SourceSpec("channel", value, f"{YOUTUBE_BASE_URL}/@{value}", value)
     if value.startswith(("http://", "https://")):
         parts = urlsplit(value)
         host = parts.netloc.lower().split(":", 1)[0]
@@ -165,17 +200,25 @@ def _resolve_as_channel(value: str, tab: str) -> SourceSpec:
             raise ValueError("channel URL does not contain a channel")
         base_path = "/" + "/".join(path_parts)
         base = urlunsplit(("https", "www.youtube.com", base_path, "", ""))
-        return SourceSpec("channel", value, _append_tab(base, tab), None)
+        return SourceSpec("channel", value, base, None)
     raise ValueError("SOURCE must be a YouTube channel/playlist URL, @handle, channel ID, playlist ID, or bare handle")
 
 
-def _channel_from_id(channel_id: str, tab: str) -> SourceSpec:
-    base = f"{YOUTUBE_BASE_URL}/channel/{channel_id}"
-    return SourceSpec("channel", channel_id, _append_tab(base, tab), channel_id)
+def _channel_from_id(channel_id: str) -> SourceSpec:
+    return SourceSpec("channel", channel_id, f"{YOUTUBE_BASE_URL}/channel/{channel_id}", channel_id)
 
 
-def _append_tab(base: str, tab: str) -> str:
-    suffix = TAB_SUFFIXES[tab]
+def _apply_facet(source: SourceSpec, facet: str) -> SourceSpec:
+    """Map an advertised logical facet onto the adapter's physical target."""
+    if source.kind != "channel":
+        raise AssertionError(f"no facet mapper exists for source kind {source.kind!r}")
+    suffix = TAB_SUFFIXES[facet]
     if suffix is None:
-        return base.rstrip("/")
-    return f"{base.rstrip('/')}/{suffix}"
+        raise AssertionError("explicit facets must map to a physical suffix")
+    return SourceSpec(
+        source.kind,
+        source.original,
+        f"{source.canonical_url.rstrip('/')}/{suffix}",
+        source.identifier,
+        facet,
+    )

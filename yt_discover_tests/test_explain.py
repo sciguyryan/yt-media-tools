@@ -62,7 +62,7 @@ def test_machine_readable_explain_is_valid_json() -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["kind"] == "yt-discover-explain"
-    assert payload["version"] == "0.26.0"
+    assert payload["version"] == "0.26.1"
     assert payload["acquisition"]["strategy"] == "bounded-date"
     assert payload["limit_aware_termination"]["applicable"] is True
     assert payload["limit_aware_termination"]["implemented"] is True
@@ -206,3 +206,34 @@ def test_text_explain_handles_case_only_optimizer_rewrites_without_filter() -> N
     assert "[case-when-subsumed-and-predicate]" in result.stdout
     assert "Rewrites apply to predicates embedded in scalar expressions." in result.stdout
     assert "Optimised filter:" not in result.stdout
+
+
+def test_explain_reports_of_adapter_and_capabilities() -> None:
+    result = run_cli(
+        "--explain-format",
+        "json",
+        "--explain",
+        "SELECT id FROM @example OF shorts",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["source"]["adapter"] == "youtube-channel"
+    assert payload["source"]["advertised_facets"] == ["videos", "shorts", "live"]
+    assert payload["source"]["facet"] == "shorts"
+    assert payload["source"]["tab"] is None
+
+
+def test_explain_preserves_legacy_tab_origin_while_using_facet_model() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain-format",
+        "json",
+        "--explain",
+        "SELECT id FROM @example",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["source"]["facet"] == "videos"
+    assert payload["source"]["tab"] == "videos"
+    assert payload["source"]["adapter"] == "youtube-channel"

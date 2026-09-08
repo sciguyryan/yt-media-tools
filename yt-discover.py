@@ -54,7 +54,12 @@ from yt_media_tools.query import (
     query_physical_source_requests,
 )
 from yt_media_tools.schema import QuerySchema
-from yt_media_tools.sources import TAB_SUFFIXES, SourceSpec, resolve_source_request
+from yt_media_tools.sources import (
+    TAB_SUFFIXES,
+    SourceSpec,
+    resolve_source_request,
+    source_capabilities,
+)
 from yt_media_tools.ytdlp import (
     AcquisitionStats,
     EnumerationStats,
@@ -70,7 +75,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.26.0"
+PROGRAM_VERSION = "0.26.1"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -929,18 +934,24 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"  Input: {source_input}",
             f"  Resolved URL: {source.canonical_url}",
         ]
+        capabilities = source_capabilities(source)
+        lines.append(f"  Adapter: {capabilities.adapter}")
+        lines.append(f"  Advertised facets: {', '.join(capabilities.facets) if capabilities.facets else 'none'}")
         if source.facet is not None:
             lines.append(f"  Facet: {source.facet}")
-        elif source.kind == "channel":
-            lines.append(f"  Tab: {tab}")
+        if source_requests[0][1] is None and tab != "all":
+            lines.append(f"  Compatibility input: --tab {tab}")
     else:
         lines = ["Query explanation", "", "Sources"]
-        for item, source_spec in zip(source_inputs, explained_sources, strict=True):
+        for (item, request_facet), source_spec in zip(source_requests, explained_sources, strict=True):
             lines.append(f"  {item}: {source_spec.kind} -> {source_spec.canonical_url}")
+            capabilities = source_capabilities(source_spec)
+            lines.append(f"    Adapter: {capabilities.adapter}")
+            lines.append(f"    Advertised facets: {', '.join(capabilities.facets) if capabilities.facets else 'none'}")
             if source_spec.facet is not None:
                 lines.append(f"    Facet: {source_spec.facet}")
-            elif source_spec.kind == "channel":
-                lines.append(f"    Tab: {tab}")
+            if request_facet is None and tab != "all":
+                lines.append(f"    Compatibility input: --tab {tab}")
 
     lines.extend(["", "Common table expressions"])
     if query.ctes:
@@ -1277,18 +1288,22 @@ def explain_user_query_json(
             "type": source.kind,
             "input": source_input,
             "url": source.canonical_url,
-            "tab": tab if source.kind == "channel" and source.facet is None else None,
+            "tab": tab if source_requests[0][1] is None and tab != "all" else None,
             "facet": source.facet,
+            "adapter": source_capabilities(source).adapter,
+            "advertised_facets": list(source_capabilities(source).facets),
         },
         "sources": [
             {
                 "type": source_spec.kind,
                 "input": item,
                 "url": source_spec.canonical_url,
-                "tab": tab if source_spec.kind == "channel" and source_spec.facet is None else None,
+                "tab": tab if request_facet is None and tab != "all" else None,
                 "facet": source_spec.facet,
+                "adapter": source_capabilities(source_spec).adapter,
+                "advertised_facets": list(source_capabilities(source_spec).facets),
             }
-            for item, source_spec in zip(source_inputs, explained_sources, strict=True)
+            for (item, request_facet), source_spec in zip(source_requests, explained_sources, strict=True)
         ],
         "required_fields": [
             {
@@ -2623,19 +2638,21 @@ def main(argv: list[str] | None = None) -> int:
             "source": {
                 "type": "union" if multi_source else source.kind,
                 "url": source.canonical_url if not multi_source else None,
-                "tab": args.tab if source.kind == "channel" and not multi_source and source.facet is None else None,
+                "tab": args.tab if not multi_source and source_requests[0][1] is None and args.tab != "all" else None,
                 "facet": source.facet if not multi_source else None,
+                "adapter": source_capabilities(source).adapter if not multi_source else None,
             },
             "sources": [
                 {
                     "input": source_value,
                     "type": source_spec.kind,
                     "url": source_spec.canonical_url,
-                    "tab": args.tab if source_spec.kind == "channel" and source_spec.facet is None else None,
+                    "tab": args.tab if request_facet is None and args.tab != "all" else None,
                     "facet": source_spec.facet,
+                    "adapter": source_capabilities(source_spec).adapter,
                     "acquired_records": source_record_counts.get(source_value, 0),
                 }
-                for source_value, source_spec in zip(source_values, sources, strict=True)
+                for (source_value, request_facet), source_spec in zip(source_requests, sources, strict=True)
             ],
             "execution": {
                 "offline": args.offline,

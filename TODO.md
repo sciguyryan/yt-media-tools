@@ -16,12 +16,11 @@ This file records accepted future work that is not part of the current released 
 
 ## Source collections and extractor independence
 
-- Complete the extractor-agnostic source/facet series through 0.26.2. `OF` is the selected syntax and the initial grammar/capability foundation belongs to 0.26.0; subsequent work must harden adapter capability discovery, diagnostics, provenance, caching and heterogeneous composition without adding another syntax surface.
-- Keep source selection modelled generically as source -> logical collection/facet -> extractor adapter. The core query model must not encode YouTube's channel-tab implementation even when the YouTube adapter exposes `videos`, `shorts` and `live`.
-- Expand deterministic capability discovery beyond the initial YouTube channel adapter where yt-dlp extractors expose meaningful stable collections. Unsupported facets must continue to fail clearly rather than being silently ignored, substituted or interpreted as a different source.
-- Migrate `--tab` into a pure compatibility mapping over the same internal facet representation. Preserve backwards compatibility during a practical migration period, but do not maintain a second execution path.
-- Extend source/facet provenance and explain output so the requested logical facet and the resolved physical acquisition target remain auditable across CTE and heterogeneous UNION composition.
-- Extend cache/source identity where necessary so two facets of the same physical source cannot contaminate one another's completeness/frontier assumptions.
+- Complete the extractor-agnostic source/facet series with the 0.26.2 composition and identity hardening pass. `OF` is the selected syntax; 0.26.1 separates classification, capability discovery and facet mapping without adding further grammar.
+- Expand deterministic capability discovery beyond the YouTube channel adapter only where yt-dlp extractors expose meaningful stable collections. Unsupported facets must continue to fail clearly rather than being silently ignored, substituted or interpreted as a different source.
+- Extend cache/source identity so two facets of the same physical source cannot contaminate one another's completeness, frontier or detailed-metadata assumptions.
+- Remove the temporary same-source/multiple-facet composition rejection once cache identity, per-facet schemas, source tagging, provenance and UNION reconciliation are all independently safe.
+- Add brutal heterogeneous composition coverage for CTEs and UNION across distinct extractors, same-source different facets, missing metadata, incompatible dynamic kinds, Unicode identities, RANDOM ordering, aggregates and global LIMIT/OFFSET ordering boundaries.
 
 ## Query usability
 
