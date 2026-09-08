@@ -431,15 +431,26 @@ Durations accept forms such as:
 01:30:00
 ```
 
-Counts accept separators and suffixes:
+Counts accept underscore separators and suffixes:
 
 ```text
 1_000
-1,000
 10k
 1.5m
 2b
 ```
+
+Comma grouping is not numeric syntax. Write `1_000_000`, not `1,000,000`, so commas remain unambiguous separators in function calls and other list syntax.
+
+Integer literals also accept hexadecimal, octal and binary notation, with underscores permitted between digits:
+
+```text
+0xFF_FF
+0o755
+0b1010_0101
+```
+
+Different bases may be mixed freely in scalar arithmetic, for example `0x10 + 0o10 + 0b10 + 10`. Non-decimal forms are integer literals; fractional notation and `k`/`m`/`b` suffixes remain decimal-only.
 
 Literal interpretation is type-aware. For example, `5m` means five minutes against `duration` and five million against a count field.
 

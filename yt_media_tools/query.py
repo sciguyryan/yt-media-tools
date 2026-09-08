@@ -192,7 +192,7 @@ _TOKEN_RE = re.compile(
   | (?P<DATETIME>\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)
   | (?P<DATE>\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})
   | (?P<TIME>\d{1,3}:\d{1,2}(?::\d{1,2})?)
-  | (?P<NUMBER>(?:\d{1,3}(?:,\d{3})+(?!\d)|\d[\d_]*)(?:\.\d+)?(?:[kKmMbB])?)
+  | (?P<NUMBER>(?:0[xX][0-9A-Za-z_]*|0[oO][0-9A-Za-z_]*|0[bB][0-9A-Za-z_]*|\d[\d_]*(?:\.\d[\d_]*)?(?:[kKmMbB])?))
   | (?P<IDENT>[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*)
   | (?P<COMMA>,)
   | (?P<STAR>\*)
@@ -418,7 +418,12 @@ class Parser:
             return Literal(token.value, token.text, token.position, True)
         if token.kind == "NUMBER":
             self.advance()
-            return Literal(_generic_literal(token.text, False), token.text, token.position, False)
+            return Literal(
+                _parse_generic_numeric_literal(token.text, self.source, token.position),
+                token.text,
+                token.position,
+                False,
+            )
         raise QuerySyntaxError(
             self.source, "Expected a scalar field, literal, function, or parenthesised expression.", token.position
         )
@@ -472,7 +477,6 @@ class Parser:
         args: list[Any] = []
         if self.current.kind != "RPAREN":
             while True:
-                self._split_grouped_number_at_function_boundary()
                 args.append(self.parse_scalar_expression())
                 if self.current.kind != "COMMA":
                     break
@@ -485,29 +489,6 @@ class Parser:
         if name == "CHAR" and not args:
             raise QuerySyntaxError(self.source, "CHAR requires at least one argument.", name_token.position)
         return ScalarFunction(name, tuple(args), name_token.position)
-
-    def _split_grouped_number_at_function_boundary(self) -> None:
-        """Treat commas inside a numeric token as function argument separators.
-
-        yt-sql accepts comma-grouped numbers in ordinary value positions, but scalar
-        function calls use commas as argument separators. Inside a call the latter is
-        unambiguous and follows conventional function syntax, so ``CHAR(65,66)`` must
-        parse as two arguments even though the context-free lexer can otherwise see a
-        grouped numeric token.
-        """
-        token = self.current
-        if token.kind != "NUMBER" or "," not in token.text:
-            return
-        parts = token.text.split(",")
-        replacement: list[Token] = []
-        offset = 0
-        for index, part in enumerate(parts):
-            replacement.append(Token("NUMBER", part, token.position + offset, _generic_literal(part, False)))
-            offset += len(part)
-            if index != len(parts) - 1:
-                replacement.append(Token("COMMA", ",", token.position + offset))
-                offset += 1
-        self.tokens[self.index : self.index + 1] = replacement
 
     def parse_from_source(self) -> str:
         token = self.current
@@ -839,21 +820,58 @@ def _parse_duration_text(text: str, source: str, position: int) -> int:
     return round(total)
 
 
+_DECIMAL_INTEGER_RE = re.compile(r"[+-]?\d+(?:_\d+)*")
+_DECIMAL_NUMBER_RE = re.compile(r"[+-]?\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*))?")
+_BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Za-z]+(?:_[0-9A-Za-z]+)*)")
+
+
+def _parse_integer_literal_text(text: str, source: str, position: int) -> int:
+    """Parse a decimal, hexadecimal, octal or binary integer literal."""
+    compact = re.sub(r"\s+", "", text)
+    if _DECIMAL_INTEGER_RE.fullmatch(compact):
+        return int(compact.replace("_", ""), 10)
+
+    match = _BASE_INTEGER_RE.fullmatch(compact)
+    if match:
+        prefix = match.group("prefix").casefold()
+        base = {"0x": 16, "0o": 8, "0b": 2}[prefix]
+        digits = match.group("digits").replace("_", "")
+        valid_digits = {
+            16: r"[0-9a-fA-F]+",
+            8: r"[0-7]+",
+            2: r"[01]+",
+        }[base]
+        if not re.fullmatch(valid_digits, digits):
+            raise QuerySyntaxError(source, f"Invalid base-{base} integer literal {text!r}.", position)
+        value = int(digits, base)
+        return -value if match.group("sign") == "-" else value
+
+    if re.match(r"[+-]?0[xXoObB]", compact):
+        raise QuerySyntaxError(source, f"Invalid non-decimal integer literal {text!r}.", position)
+    raise QuerySyntaxError(source, f"Could not understand integer value {text!r}.", position)
+
+
 def _parse_count_text(text: str, source: str, position: int) -> int:
-    cleaned = text.replace("_", "").replace(",", "").strip()
-    match = re.fullmatch(r"(\d+(?:\.\d+)?)([kKmMbB]?)", cleaned)
+    compact = re.sub(r"\s+", "", text)
+    if re.match(r"[+-]?0[xXoObB]", compact):
+        return _parse_integer_literal_text(compact, source, position)
+
+    match = re.fullmatch(r"(\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?)([kKmMbB]?)", compact)
     if not match:
         raise QuerySyntaxError(source, f"Could not understand count {text!r}.", position)
     multiplier = {"": 1, "k": 1_000, "m": 1_000_000, "b": 1_000_000_000}[match.group(2).lower()]
-    return round(float(match.group(1)) * multiplier)
+    number = match.group(1).replace("_", "")
+    return round(float(number) * multiplier)
 
 
 def _parse_number_text(text: str, source: str, position: int) -> int | float:
-    cleaned = re.sub(r"\s+", "", text.replace("_", "").replace(",", ""))
-    if re.fullmatch(r"[+-]?\d+", cleaned):
-        return int(cleaned)
-    if re.fullmatch(r"[+-]?(?:\d+\.\d*|\d*\.\d+)", cleaned):
-        return float(cleaned)
+    compact = re.sub(r"\s+", "", text)
+    if re.match(r"[+-]?0[xXoObB]", compact):
+        return _parse_integer_literal_text(compact, source, position)
+    if _DECIMAL_INTEGER_RE.fullmatch(compact):
+        return int(compact.replace("_", ""), 10)
+    if _DECIMAL_NUMBER_RE.fullmatch(compact) and "." in compact:
+        return float(compact.replace("_", ""))
     raise QuerySyntaxError(source, f"Could not understand numeric value {text!r}.", position)
 
 
@@ -924,6 +942,11 @@ def _resolve_literal(literal: Literal, field: Field, source: str, dates: DateCon
     return replace(literal, value=value)
 
 
+def _parse_generic_numeric_literal(text: str, source: str, position: int) -> int | float:
+    """Parse a numeric token whose field type is not yet known."""
+    return _parse_number_text(text, source, position)
+
+
 def _generic_literal(text: str, quoted: bool) -> Any:
     if quoted:
         return text
@@ -932,11 +955,12 @@ def _generic_literal(text: str, quoted: bool) -> Any:
         return True
     if lowered == "false":
         return False
-    cleaned = re.sub(r"\s+", "", text.replace("_", "").replace(",", ""))
-    if re.fullmatch(r"[+-]?\d+", cleaned):
-        return int(cleaned)
-    if re.fullmatch(r"[+-]?\d+\.\d+", cleaned):
-        return float(cleaned)
+    compact = re.sub(r"\s+", "", text)
+    if re.match(r"[+-]?0[xXoObB]", compact) or re.match(r"[+-]?\d", compact):
+        try:
+            return _parse_number_text(compact, text, 0)
+        except QuerySyntaxError:
+            pass
     return text
 
 

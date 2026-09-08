@@ -114,6 +114,20 @@ No optimiser pass inserts NFC, NFD, NFKC or NFKD normalisation. Canonically equi
 
 An explicit normalisation scalar function may be considered as language syntax. If added, normalisation-aware rewrites could then be considered only within expressions whose normalisation form is explicit. Any future exact/prefix/suffix LIKE fast path or regex-to-LIKE reduction must be differentially tested against the Unicode torture corpus, including combining marks, supplementary-plane characters, ZWJ sequences, variation selectors, bidirectional marks and case-mapping edge cases.
 
+## Numeric literals
+
+### Implemented
+
+Discover 0.23.6 resolves decimal, hexadecimal, octal and binary integer literals to ordinary integer values before optimisation. Underscores are readability separators only and do not survive semantic resolution. Different bases therefore have identical arithmetic semantics once resolved.
+
+Literal base and spelling are not treated as semantic properties. Constant folding may canonicalise a mixed-base expression such as `0x10 + 0o10 + 0b10 + 10` to the decimal literal `36`.
+
+### Deliberately not implemented
+
+No optimiser attempts to preserve or reconstruct the user's original base spelling after a constant expression is folded. Numeric separators likewise carry no semantic information.
+
+Non-decimal fractional literals are not supported, so there is no hexadecimal-floating-point or base-specific rounding behaviour for the optimiser to preserve.
+
 ## Scalar arithmetic: `+`, `-`, `*`, `/` and `%`
 
 ### Implemented

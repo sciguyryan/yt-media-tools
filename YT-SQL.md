@@ -49,6 +49,20 @@ FROM @example
 ORDER BY length_class
 ```
 
+## Numeric literals
+
+Decimal integers may use underscores between digits for readability, such as `1_000_000`. Integer literals also support hexadecimal (`0x`), octal (`0o`), and binary (`0b`) prefixes. Prefix letters are case-insensitive, and underscores may separate digits in every supported base.
+
+```sql
+SELECT 1_000_000
+SELECT 0xFF_FF
+SELECT 0o755
+SELECT 0b1010_0101
+SELECT 0x10 + 0o10 + 0b10 + 10
+```
+
+Underscores must occur between digits. Leading, trailing, or repeated underscores are rejected. Commas are list and argument separators rather than numeric grouping characters, so write `1_000_000` rather than `1,000,000`. Non-decimal forms are integer-only. Decimal fractional values and the existing decimal `k`, `m`, and `b` count suffixes retain their established semantics.
+
 ## Data-driven units
 
 yt-sql unit names are loaded from JSON files in the repository `units/` directory rather than being hard-coded into the parser. All `*.json` files in that directory are loaded into one case-insensitive registry. This allows additional languages and domain-specific units to be added or removed without editing Python code.
@@ -160,4 +174,4 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Planned analytical expansion
 
-General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, and Unicode `CHAR()` construction are now part of the language. The next dot release is reserved for hexadecimal, octal and binary integer literals. Later expression work is expected to evaluate and, where appropriate, add `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, and decimal/hexadecimal/octal/binary integer literals are now part of the language. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work is expected to evaluate and, where appropriate, add `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.

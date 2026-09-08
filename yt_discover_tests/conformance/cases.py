@@ -225,6 +225,10 @@ def _char_projection(rows: Rows) -> list[Any]:
     )
 
 
+def _mixed_base_projection(rows: Rows) -> list[Any]:
+    return OracleQuery(rows).order_by(lambda r: r["source_index"]).take(1).select(lambda r: 36).to_list()
+
+
 def _scalar_constant_folding(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -669,11 +673,14 @@ LANGUAGE_FEATURES = frozenset(
         "text.not_contains",
         "text.not_matches",
         "value.count_b",
-        "value.count_comma",
         "value.count_decimal_suffix",
         "value.count_k",
         "value.count_m",
         "value.count_underscore",
+        "value.integer.hex",
+        "value.integer.octal",
+        "value.integer.binary",
+        "scalar.mixed_base",
         "value.enum_case_insensitive",
         "unicode.normalisation_sensitive",
         "unicode.codepoint_length",
@@ -1126,10 +1133,29 @@ CASES = (
         features=("value.count_underscore",),
     ),
     ConformanceCase(
-        "count_comma",
-        "SELECT id FROM @yt_sql_fixture WHERE view_count >= 1,000,000 ORDER BY source_index ASC LIMIT 8",
+        "hex_integer_count",
+        "SELECT id FROM @yt_sql_fixture WHERE view_count >= 0xF4240 ORDER BY source_index ASC LIMIT 8",
         _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) >= 1_000_000, take=8),
-        features=("value.count_comma",),
+        features=("value.integer.hex",),
+    ),
+    ConformanceCase(
+        "octal_integer_count",
+        "SELECT id FROM @yt_sql_fixture WHERE view_count >= 0o3641100 ORDER BY source_index ASC LIMIT 8",
+        _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) >= 1_000_000, take=8),
+        features=("value.integer.octal",),
+    ),
+    ConformanceCase(
+        "binary_integer_count",
+        "SELECT id FROM @yt_sql_fixture WHERE view_count >= 0b11110100001001000000 ORDER BY source_index ASC LIMIT 8",
+        _ids_where(lambda r: r["view_count"] is not None and int(r["view_count"]) >= 1_000_000, take=8),
+        features=("value.integer.binary",),
+    ),
+    ConformanceCase(
+        "mixed_base_scalar_expression",
+        "SELECT 0x10 + 0o10 + 0b10 + 10 AS value FROM @yt_sql_fixture ORDER BY source_index ASC LIMIT 1",
+        _mixed_base_projection,
+        ("value",),
+        features=("scalar.mixed_base", "scalar.arithmetic.add"),
     ),
     ConformanceCase(
         "count_k_suffix",

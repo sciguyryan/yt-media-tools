@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.6 - Radix Revelry
+
+- Add hexadecimal, octal and binary integer literals throughout yt-sql scalar and typed numeric value positions.
+- Allow mixed-base scalar arithmetic and Unicode `CHAR()` arguments, with all non-decimal forms resolving to ordinary integer values before execution.
+- Standardise readable numeric grouping on underscores and retire comma-grouped numeric literals so commas remain unambiguous list and function-argument separators.
+- Require underscores to occur between digits and reject malformed base prefixes, invalid base digits, repeated separators and trailing separators.
+- Extend scalar constant folding and optimiser differential coverage across mixed-base expressions.
+- Add deterministic conformance and negative parser coverage for decimal, hexadecimal, octal and binary literal forms.
+
 ## Discover 0.23.5 - Character Forge
 
 - Add `CHAR()` as a first-class scalar function for constructing Unicode text from one or more code-point expressions.
