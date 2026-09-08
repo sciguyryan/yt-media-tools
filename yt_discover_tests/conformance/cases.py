@@ -144,6 +144,45 @@ def _functions(rows: Rows) -> list[Any]:
     )
 
 
+def _scalar_arithmetic(rows: Rows) -> list[Any]:
+    def minutes(row: dict[str, Any]) -> float | None:
+        value = row["duration"]
+        return None if value is None else int(value) / 60
+
+    def score(row: dict[str, Any]) -> int | None:
+        value = row["view_count"]
+        return None if value is None else (int(value) + 10) * 2
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 16)
+        .order_by(minutes, descending=True)
+        .then_by(score)
+        .select(lambda r: {"id": r["id"], "minutes": minutes(r), "score": score(r)})
+        .to_list()
+    )
+
+
+def _scalar_nested_functions(rows: Rows) -> list[Any]:
+    def adjusted(row: dict[str, Any]) -> int:
+        value = row["view_count"]
+        return 0 if value is None else int(value) + 1
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: adjusted(r), descending=True)
+        .select(
+            lambda r: {
+                "id": r["id"],
+                "adjusted": adjusted(r),
+                "chars": None if r["title"] is None else len(str(r["title"]).lower()),
+            }
+        )
+        .to_list()
+    )
+
+
 def _bound_parameters(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -365,6 +404,13 @@ LANGUAGE_FEATURES = frozenset(
         "projection.lower",
         "projection.raw",
         "projection.upper",
+        "scalar.arithmetic.add",
+        "scalar.arithmetic.divide",
+        "scalar.arithmetic.multiply",
+        "scalar.arithmetic.parentheses",
+        "scalar.function_nested",
+        "order.expression",
+        "order.expression_alias",
         "string.case_sensitive",
         "text.contain",
         "text.contains",
@@ -453,6 +499,29 @@ CASES = (
         ("id", "folded", "chars", "views"),
         "jsonl",
         features=("projection.lower", "projection.length", "projection.coalesce", "projection.alias", "order.alias"),
+    ),
+    ConformanceCase(
+        "scalar_arithmetic_projection_and_order",
+        "SELECT id, duration / 60 AS minutes, (view_count + 10) * 2 AS score FROM @yt_sql_fixture WHERE source_index <= 16 ORDER BY duration / 60 DESC, score ASC",
+        _scalar_arithmetic,
+        ("id", "minutes", "score"),
+        "jsonl",
+        features=(
+            "scalar.arithmetic.add",
+            "scalar.arithmetic.divide",
+            "scalar.arithmetic.multiply",
+            "scalar.arithmetic.parentheses",
+            "order.expression",
+            "order.expression_alias",
+        ),
+    ),
+    ConformanceCase(
+        "nested_scalar_functions_and_expression_order",
+        "SELECT id, COALESCE(view_count + 1, 0) AS adjusted, LENGTH(LOWER(title)) AS chars FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY adjusted DESC",
+        _scalar_nested_functions,
+        ("id", "adjusted", "chars"),
+        "jsonl",
+        features=("scalar.arithmetic.add", "scalar.function_nested", "order.expression_alias"),
     ),
     ConformanceCase(
         "bound_parameters",

@@ -12,7 +12,7 @@ A complete yt-sql query has the following broad form:
 [SELECT [DISTINCT] <projection> [, ...]]
 [FROM <source>]
 [WHERE <expression>]
-[ORDER BY <field-or-projection-alias> [ASC|DESC] [, ...]]
+[ORDER BY <scalar-expression> [ASC|DESC] [, ...]]
 [LIMIT <positive integer>]
 [OFFSET <non-negative integer>]
 ```
@@ -21,7 +21,25 @@ If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been reque
 
 Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
 
-Current projection functions are `LOWER`, `UPPER`, `LENGTH`, and `COALESCE`. Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
+Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Existing projection functions `LOWER`, `UPPER`, `LENGTH`, and `COALESCE` may be nested and may accept scalar expressions as arguments. Projection aliases may be referenced by later `ORDER BY` expressions.
+
+Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
+
+Examples:
+
+```sql
+SELECT id, duration / 60 AS minutes
+FROM @example
+ORDER BY minutes DESC
+
+SELECT id, (view_count + 10) * 2 AS score
+FROM @example
+ORDER BY score + 1 DESC
+
+SELECT id, LENGTH(LOWER(title)) AS characters
+FROM @example
+ORDER BY characters DESC
+```
 
 ## Data-driven units
 
@@ -101,4 +119,4 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Planned analytical expansion
 
-With the generic predicate optimiser now established as a semantics-preserving foundation, the next yt-sql language pass is expected to evaluate and, where appropriate, add `SELECT *`, general scalar expressions, arithmetic, `CASE`, `LIKE`/`ILIKE`, aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, expression ordering, explicit NULL ordering, PostgreSQL-inspired `DISTINCT ON`, and a curated set of additional scalar/date functions. These are planned capabilities, not syntax accepted by the current parser.
+General scalar expressions, arithmetic, nested scalar functions, and expression-based ordering are now part of the language. The next expression work is expected to evaluate and, where appropriate, add `CASE`, `LIKE`/`NOT LIKE`, `ILIKE`/`NOT ILIKE`, `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.

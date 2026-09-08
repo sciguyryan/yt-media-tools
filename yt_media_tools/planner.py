@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from .dates import DateContext, parse_date_literal
-from .query import Between, Binary, Field, InList, Literal, Query, ScalarFunction, Unary
+from .query import Between, Binary, Field, InList, Literal, Query, ScalarBinary, ScalarFunction, ScalarUnary, Unary
 from .schema import ALIASES, KNOWN_FIELD_TYPES
 
 
@@ -174,10 +174,22 @@ def _fields_in_node(node: Any) -> set[str]:
     return set()
 
 
-def _fields_in_function(function: ScalarFunction | None) -> set[str]:
-    if function is None:
+def _fields_in_scalar_expression(expression: Any) -> set[str]:
+    """Return field names referenced by a scalar expression."""
+    if expression is None:
         return set()
-    return {arg.name.casefold() for arg in function.args if isinstance(arg, Field)}
+    if isinstance(expression, Field):
+        return {expression.name.casefold()}
+    if isinstance(expression, ScalarUnary):
+        return _fields_in_scalar_expression(expression.operand)
+    if isinstance(expression, ScalarBinary):
+        return _fields_in_scalar_expression(expression.left) | _fields_in_scalar_expression(expression.right)
+    if isinstance(expression, ScalarFunction):
+        fields: set[str] = set()
+        for arg in expression.args:
+            fields.update(_fields_in_scalar_expression(arg))
+        return fields
+    return set()
 
 
 def required_query_fields(query: Query) -> set[str]:
@@ -185,12 +197,12 @@ def required_query_fields(query: Query) -> set[str]:
     fields = _fields_in_node(query.predicate)
     for term in query.order_by:
         if term.expression is not None:
-            fields.update(_fields_in_function(term.expression))
+            fields.update(_fields_in_scalar_expression(term.expression))
         else:
             fields.add(term.field.casefold())
     for term in query.select or ():
         if term.expression is not None:
-            fields.update(_fields_in_function(term.expression))
+            fields.update(_fields_in_scalar_expression(term.expression))
         else:
             fields.add(term.field.casefold())
     if not query.select:

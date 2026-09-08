@@ -328,13 +328,29 @@ Output aliases use `AS`:
 yt-discover.py "SELECT title, view_count AS views FROM @channel"
 ```
 
-Explicit aliases may also be referenced by `ORDER BY`:
+Scalar expressions are first-class projection values. Arithmetic supports binary `+`, `-`, `*`, `/`, and `%`, unary `+` and `-`, conventional precedence, and parentheses:
 
 ```bash
-yt-discover.py "SELECT id, raw.extra.score AS score FROM @channel ORDER BY score DESC"
+yt-discover.py "SELECT id, duration / 60 AS minutes FROM @channel ORDER BY minutes DESC"
+yt-discover.py "SELECT id, (view_count + 10) * 2 AS score FROM @channel ORDER BY score DESC"
 ```
 
-`SELECT *` is intentionally unsupported. yt-dlp metadata is dynamic, so an implicit star has no stable, honest meaning. Use `--fields` or `--schema` to inspect available scalar fields, then select the fields you actually need.
+Existing scalar functions may be nested and may accept scalar expressions as arguments:
+
+```bash
+yt-discover.py "SELECT id, LENGTH(LOWER(title)) AS characters FROM @channel ORDER BY characters DESC"
+yt-discover.py "SELECT id, COALESCE(view_count + 1, 0) AS adjusted FROM @channel ORDER BY adjusted DESC"
+```
+
+Arithmetic propagates NULL. Division or modulo by zero produces NULL, allowing the usual missing-value ordering and output behaviour to remain deterministic. Known non-numeric fields are rejected when used with arithmetic operators.
+
+Explicit aliases may be referenced anywhere inside an `ORDER BY` scalar expression:
+
+```bash
+yt-discover.py "SELECT id, raw.extra.score * 2 AS score FROM @channel ORDER BY score + 1 DESC"
+```
+
+`SELECT *` remains intentionally unsupported while its dynamic-schema contract is being designed. Use `--fields` or `--schema` to inspect available scalar fields, then select the fields you actually need.
 
 ## FROM sources
 
@@ -483,13 +499,14 @@ yt-discover.py @channel --items 1 --schema
 
 ## Ordering and limiting
 
-`ORDER BY` supports multiple fields and independent directions:
+`ORDER BY` supports multiple scalar expressions and independent directions:
 
 ```text
 ORDER BY upload_date DESC, views DESC
+ORDER BY duration / 60 DESC, view_count + 1 ASC
 ```
 
-Explicit `SELECT ... AS ...` aliases may be used by `ORDER BY`. Missing ordering values are placed last for both directions. Stable sorting preserves acquisition order as the final implicit tie-breaker.
+Explicit `SELECT ... AS ...` aliases may be used as fields inside `ORDER BY` expressions. Missing ordering values are placed last for both directions. Stable sorting preserves acquisition order as the final implicit tie-breaker.
 
 `source_index` exposes acquisition order explicitly. `playlist_index` remains available for playlist sources.
 

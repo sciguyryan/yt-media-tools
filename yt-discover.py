@@ -65,7 +65,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.22.0"
+PROGRAM_VERSION = "0.23.0"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -101,8 +101,10 @@ Examples:
   Remove duplicate projected rows and page deterministically with OFFSET:
     yt-discover.py "SELECT DISTINCT title FROM @example ORDER BY upload_date DESC LIMIT 25 OFFSET 50"
 
-  Use small scalar projection functions and order by their aliases:
-    yt-discover.py "SELECT id, LOWER(title) AS folded FROM @example ORDER BY folded ASC"
+  Use scalar expressions, nested functions, and computed ordering:
+    yt-discover.py "SELECT id, duration / 60 AS minutes FROM @example ORDER BY minutes DESC"
+    yt-discover.py "SELECT id, (view_count + 10) * 2 AS score FROM @example ORDER BY score + 1 DESC"
+    yt-discover.py "SELECT id, LENGTH(LOWER(title)) AS characters FROM @example ORDER BY characters DESC"
     yt-discover.py "SELECT COALESCE(title, 'Untitled') AS title FROM @example"
 
   Bind reusable typed values without editing the query text:

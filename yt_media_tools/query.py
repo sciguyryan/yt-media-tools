@@ -113,12 +113,29 @@ class ScalarFunction:
 
 
 @dataclass(frozen=True)
+class ScalarUnary:
+    operator: str
+    operand: Any
+    position: int = 0
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
+class ScalarBinary:
+    operator: str
+    left: Any
+    right: Any
+    position: int = 0
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
 class OrderTerm:
     field: str
     descending: bool = False
     position: int = 0
     kind: str | None = None
-    expression: ScalarFunction | None = None
+    expression: Any | None = None
 
 
 @dataclass(frozen=True)
@@ -127,7 +144,7 @@ class SelectTerm:
     alias: str | None = None
     position: int = 0
     kind: str | None = None
-    expression: ScalarFunction | None = None
+    expression: Any | None = None
 
     @property
     def output_name(self) -> str:
@@ -163,7 +180,10 @@ _TOKEN_RE = re.compile(
   | (?P<IDENT>[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*)
   | (?P<COMMA>,)
   | (?P<STAR>\*)
+  | (?P<PLUS>\+)
   | (?P<MINUS>-)
+  | (?P<SLASH>/)
+  | (?P<PERCENT>%)
   | (?P<MISMATCH>.)
     """,
     re.VERBOSE,
@@ -313,31 +333,77 @@ class Parser:
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
         terms: list[SelectTerm] = []
         while True:
-            if self.current.kind != "IDENT":
-                if self.current.kind == "STAR":
-                    raise QuerySyntaxError(
-                        self.source,
-                        "SELECT * is not supported because yt-dlp metadata is dynamic; name the scalar fields you want.",
-                        self.current.position,
-                    )
+            if self.current.kind == "STAR":
                 raise QuerySyntaxError(
-                    self.source, "Expected a scalar field or supported function after SELECT.", self.current.position
+                    self.source,
+                    "SELECT * is not supported because yt-dlp metadata is dynamic; name the scalar fields you want.",
+                    self.current.position,
                 )
-            token = self.advance()
-            expression = None
-            field_text = token.text
-            if self.current.kind == "LPAREN":
-                expression = self.parse_scalar_function(token)
-                field_text = format_scalar_function(expression)
+            position = self.current.position
+            expression = self.parse_scalar_expression()
+            field_text = format_scalar_expression(expression)
             alias = None
             if self.consume_keyword("AS"):
                 alias_token = self.expect("IDENT", "Expected an alias name after AS.")
                 alias = alias_token.text
-            terms.append(SelectTerm(field_text, alias, token.position, expression=expression))
+            terms.append(SelectTerm(field_text, alias, position, expression=expression))
             if self.current.kind != "COMMA":
                 break
             self.advance()
         return tuple(terms)
+
+    def parse_scalar_expression(self) -> Any:
+        """Parse a scalar expression using SQL-like arithmetic precedence."""
+        return self.parse_scalar_additive()
+
+    def parse_scalar_additive(self) -> Any:
+        node = self.parse_scalar_multiplicative()
+        while self.current.kind in {"PLUS", "MINUS"}:
+            token = self.advance()
+            node = ScalarBinary(token.text, node, self.parse_scalar_multiplicative(), token.position)
+        return node
+
+    def parse_scalar_multiplicative(self) -> Any:
+        node = self.parse_scalar_unary()
+        while self.current.kind in {"STAR", "SLASH", "PERCENT"}:
+            token = self.advance()
+            node = ScalarBinary(token.text, node, self.parse_scalar_unary(), token.position)
+        return node
+
+    def parse_scalar_unary(self) -> Any:
+        if self.current.kind in {"PLUS", "MINUS"}:
+            token = self.advance()
+            return ScalarUnary(token.text, self.parse_scalar_unary(), token.position)
+        return self.parse_scalar_atom()
+
+    def parse_scalar_atom(self) -> Any:
+        token = self.current
+        if token.kind == "LPAREN":
+            self.advance()
+            node = self.parse_scalar_expression()
+            self.expect("RPAREN", "Expected ')' to close the scalar expression.")
+            return node
+        if token.kind == "IDENT":
+            self.advance()
+            if self.current.kind == "LPAREN":
+                return self.parse_scalar_function(token)
+            lowered = token.text.casefold()
+            if lowered == "null":
+                return Literal(None, token.text, token.position)
+            if lowered == "true":
+                return Literal(True, token.text, token.position)
+            if lowered == "false":
+                return Literal(False, token.text, token.position)
+            return Field(token.text, token.position)
+        if token.kind == "STRING":
+            self.advance()
+            return Literal(token.value, token.text, token.position, True)
+        if token.kind == "NUMBER":
+            self.advance()
+            return Literal(_generic_literal(token.text, False), token.text, token.position, False)
+        raise QuerySyntaxError(
+            self.source, "Expected a scalar field, literal, function, or parenthesised expression.", token.position
+        )
 
     def parse_scalar_function(self, name_token: Token) -> ScalarFunction:
         name = name_token.text.upper()
@@ -347,15 +413,12 @@ class Parser:
             )
         self.expect("LPAREN", "Expected '(' after function name.")
         args: list[Any] = []
-        while True:
-            if self.current.kind == "IDENT":
-                token = self.advance()
-                args.append(Field(token.text, token.position))
-            else:
-                args.append(self.parse_literal(stop_kinds={"COMMA", "RPAREN"}, stop_keywords=set()))
-            if self.current.kind != "COMMA":
-                break
-            self.advance()
+        if self.current.kind != "RPAREN":
+            while True:
+                args.append(self.parse_scalar_expression())
+                if self.current.kind != "COMMA":
+                    break
+                self.advance()
         self.expect("RPAREN", "Expected ')' after function arguments.")
         if name in {"LOWER", "UPPER", "LENGTH"} and len(args) != 1:
             raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", name_token.position)
@@ -383,13 +446,14 @@ class Parser:
     def parse_order_by(self) -> tuple[OrderTerm, ...]:
         terms: list[OrderTerm] = []
         while True:
-            token = self.expect("IDENT", "Expected a field name after ORDER BY.")
+            position = self.current.position
+            expression = self.parse_scalar_expression()
             descending = False
             if self.consume_keyword("ASC"):
                 descending = False
             elif self.consume_keyword("DESC"):
                 descending = True
-            terms.append(OrderTerm(token.text, descending, token.position))
+            terms.append(OrderTerm(format_scalar_expression(expression), descending, position, expression=expression))
             if self.current.kind != "COMMA":
                 break
             self.advance()
@@ -755,62 +819,198 @@ def _generic_literal(text: str, quoted: bool) -> Any:
     return text
 
 
-def format_scalar_function(function: ScalarFunction) -> str:
-    def render(arg: Any) -> str:
-        if isinstance(arg, Field):
-            return arg.name
-        if isinstance(arg, Literal):
-            return arg.raw
-        return str(arg)
+def format_scalar_expression(expression: Any) -> str:
+    """Render a scalar expression in canonical yt-sql form."""
+    if isinstance(expression, Field):
+        return expression.name
+    if isinstance(expression, Literal):
+        if expression.value is None:
+            return "NULL"
+        if isinstance(expression.value, bool):
+            return "TRUE" if expression.value else "FALSE"
+        return expression.raw
+    if isinstance(expression, ScalarUnary):
+        operand = format_scalar_expression(expression.operand)
+        if isinstance(expression.operand, ScalarBinary):
+            operand = f"({operand})"
+        return f"{expression.operator}{operand}"
+    if isinstance(expression, ScalarBinary):
+        return (
+            f"({format_scalar_expression(expression.left)} {expression.operator} "
+            f"{format_scalar_expression(expression.right)})"
+        )
+    if isinstance(expression, ScalarFunction):
+        return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
+    raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
-    return f"{function.name}({', '.join(render(arg) for arg in function.args)})"
+
+def format_scalar_function(function: ScalarFunction) -> str:
+    """Compatibility wrapper for callers that format a scalar function directly."""
+    return format_scalar_expression(function)
+
+
+def _scalar_kind(expression: Any) -> str | None:
+    return getattr(expression, "kind", None)
+
+
+def _is_numeric_kind(kind: str | None) -> bool:
+    return kind in {"integer", "number", "count", "duration"}
+
+
+def _resolve_scalar_expression(
+    expression: Any,
+    schema: QuerySchema,
+    source: str,
+    dates: DateContext,
+    aliases: dict[str, "SelectTerm"] | None = None,
+    *,
+    select_context: bool = False,
+) -> Any:
+    """Resolve fields, aliases and types for a scalar expression."""
+    if isinstance(expression, Field):
+        if aliases is not None:
+            alias = aliases.get(expression.name.casefold())
+            if alias is not None:
+                return (
+                    alias.expression
+                    if alias.expression is not None
+                    else Field(alias.field, expression.position, alias.kind)
+                )
+        field = _resolve_field(expression, schema, source)
+        if field.kind == "structured":
+            if select_context:
+                message = f"Cannot SELECT structured field {field.name!r}; select a scalar nested path instead."
+            else:
+                message = f"Field {field.name!r} is structured; use a scalar nested path instead."
+            raise QuerySyntaxError(source, message, field.position)
+        return field
+    if isinstance(expression, Literal):
+        if expression.value is None:
+            return expression
+        if isinstance(expression.value, bool):
+            return replace(expression, value=bool(expression.value))
+        if isinstance(expression.value, (int, float)):
+            return expression
+        return replace(expression, value=_generic_literal(str(expression.value), expression.quoted))
+    if isinstance(expression, ScalarUnary):
+        operand = _resolve_scalar_expression(
+            expression.operand, schema, source, dates, aliases, select_context=select_context
+        )
+        kind = _scalar_kind(operand)
+        if not _is_numeric_kind(kind) and not isinstance(operand, Literal):
+            raise QuerySyntaxError(
+                source, f"Unary {expression.operator} requires a numeric value.", expression.position
+            )
+        if isinstance(operand, Literal) and operand.value is not None and not isinstance(operand.value, (int, float)):
+            raise QuerySyntaxError(
+                source, f"Unary {expression.operator} requires a numeric value.", expression.position
+            )
+        return ScalarUnary(expression.operator, operand, expression.position, kind or "number")
+    if isinstance(expression, ScalarBinary):
+        left = _resolve_scalar_expression(
+            expression.left, schema, source, dates, aliases, select_context=select_context
+        )
+        right = _resolve_scalar_expression(
+            expression.right, schema, source, dates, aliases, select_context=select_context
+        )
+        for operand in (left, right):
+            kind = _scalar_kind(operand)
+            if kind is not None and not _is_numeric_kind(kind):
+                raise QuerySyntaxError(
+                    source, f"Arithmetic operator {expression.operator!r} requires numeric values.", expression.position
+                )
+            if (
+                isinstance(operand, Literal)
+                and operand.value is not None
+                and not isinstance(operand.value, (int, float))
+            ):
+                raise QuerySyntaxError(
+                    source, f"Arithmetic operator {expression.operator!r} requires numeric values.", expression.position
+                )
+        return ScalarBinary(expression.operator, left, right, expression.position, "number")
+    if isinstance(expression, ScalarFunction):
+        args = tuple(
+            _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
+            for arg in expression.args
+        )
+        if expression.name in {"LOWER", "UPPER"}:
+            kind = _scalar_kind(args[0])
+            if kind not in {"string", "mixed", "unknown", None}:
+                raise QuerySyntaxError(source, f"{expression.name} requires a text field.", expression.position)
+            result_kind = "string"
+        elif expression.name == "LENGTH":
+            kind = _scalar_kind(args[0])
+            if kind not in {"string", "mixed", "unknown", None}:
+                raise QuerySyntaxError(source, "LENGTH requires a text value.", expression.position)
+            result_kind = "integer"
+        else:
+            non_null_kinds = [kind for arg in args if (kind := _scalar_kind(arg)) is not None]
+            result_kind = (
+                non_null_kinds[0] if non_null_kinds and all(k == non_null_kinds[0] for k in non_null_kinds) else "mixed"
+            )
+        return ScalarFunction(expression.name, args, expression.position, result_kind)
+    raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
 
 def _resolve_scalar_function(
     function: ScalarFunction, schema: QuerySchema, source: str, dates: DateContext
 ) -> ScalarFunction:
-    args: list[Any] = []
-    for arg in function.args:
-        if isinstance(arg, Field):
-            field = _resolve_field(arg, schema, source)
-            if field.kind == "structured":
-                raise QuerySyntaxError(source, f"Function argument {field.name!r} is structured.", field.position)
-            args.append(field)
-        else:
-            if isinstance(arg, Literal):
-                args.append(replace(arg, value=_generic_literal(str(arg.value), arg.quoted)))
-            else:
-                args.append(arg)
-    if function.name in {"LOWER", "UPPER"}:
-        field = args[0]
-        if isinstance(field, Field) and field.kind not in {"string", "mixed", "unknown"}:
-            raise QuerySyntaxError(source, f"{function.name} requires a text field.", function.position)
-        kind = "string"
-    elif function.name == "LENGTH":
-        kind = "integer"
-    else:
-        kind = next((arg.kind for arg in args if isinstance(arg, Field) and arg.kind), "mixed")
-    return ScalarFunction(function.name, tuple(args), function.position, kind)
+    """Compatibility wrapper around general scalar-expression resolution."""
+    resolved = _resolve_scalar_expression(function, schema, source, dates)
+    assert isinstance(resolved, ScalarFunction)
+    return resolved
+
+
+def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
+    """Evaluate a resolved scalar expression against one metadata record."""
+    if isinstance(expression, Field):
+        return canonical_record_value(record, expression)
+    if isinstance(expression, Literal):
+        return expression.value
+    if isinstance(expression, ScalarUnary):
+        value = evaluate_scalar_expression(expression.operand, record)
+        if value is None:
+            return None
+        try:
+            return +value if expression.operator == "+" else -value
+        except TypeError:
+            return None
+    if isinstance(expression, ScalarBinary):
+        left = evaluate_scalar_expression(expression.left, record)
+        right = evaluate_scalar_expression(expression.right, record)
+        if left is None or right is None:
+            return None
+        try:
+            if expression.operator == "+":
+                return left + right
+            if expression.operator == "-":
+                return left - right
+            if expression.operator == "*":
+                return left * right
+            if expression.operator == "/":
+                return None if right == 0 else left / right
+            if expression.operator == "%":
+                return None if right == 0 else left % right
+        except (TypeError, ValueError, OverflowError):
+            return None
+        raise AssertionError(f"Unsupported arithmetic operator {expression.operator}")
+    if isinstance(expression, ScalarFunction):
+        values = [evaluate_scalar_expression(arg, record) for arg in expression.args]
+        if expression.name == "LOWER":
+            return values[0].lower() if isinstance(values[0], str) else None
+        if expression.name == "UPPER":
+            return values[0].upper() if isinstance(values[0], str) else None
+        if expression.name == "LENGTH":
+            return len(values[0]) if isinstance(values[0], str) else None
+        if expression.name == "COALESCE":
+            return next((value for value in values if value is not None), None)
+        raise AssertionError(f"Unsupported scalar function {expression.name}")
+    raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
 
 def evaluate_scalar_function(function: ScalarFunction, record: dict[str, Any]) -> Any:
-    values: list[Any] = []
-    for arg in function.args:
-        if isinstance(arg, Field):
-            values.append(canonical_record_value(record, arg))
-        elif isinstance(arg, Literal):
-            values.append(arg.value)
-        else:
-            values.append(arg)
-    if function.name == "LOWER":
-        return values[0].lower() if isinstance(values[0], str) else None
-    if function.name == "UPPER":
-        return values[0].upper() if isinstance(values[0], str) else None
-    if function.name == "LENGTH":
-        return len(values[0]) if isinstance(values[0], str) else None
-    if function.name == "COALESCE":
-        return next((value for value in values if value is not None), None)
-    raise AssertionError(f"Unsupported scalar function {function.name}")
+    """Compatibility wrapper for scalar function evaluation."""
+    return evaluate_scalar_expression(function, record)
 
 
 def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
@@ -880,11 +1080,16 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
     output_names: set[str] = set()
     explicit_aliases: dict[str, SelectTerm] = {}
     for original_term in effective_select:
-        function = None
         if original_term.expression is not None:
-            function = _resolve_scalar_function(original_term.expression, schema, source, context)
-            field = Field(original_term.field, original_term.position, function.kind)
+            expression = _resolve_scalar_expression(
+                original_term.expression, schema, source, context, select_context=True
+            )
+            field_text = format_scalar_expression(expression)
+            kind = _scalar_kind(expression)
+            if isinstance(expression, Field):
+                field_text = expression.name
         else:
+            expression = None
             field = _resolve_field(Field(original_term.field, original_term.position), schema, source)
             if field.kind == "structured":
                 raise QuerySyntaxError(
@@ -892,6 +1097,8 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
                     f"Cannot SELECT structured field {field.name!r}; select a scalar nested path instead.",
                     original_term.position,
                 )
+            field_text = field.name
+            kind = field.kind
         output_name = original_term.alias or original_term.field
         key = output_name.casefold()
         if key in output_names:
@@ -901,13 +1108,21 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
                 original_term.position,
             )
         output_names.add(key)
-        resolved_term = SelectTerm(field.name, output_name, original_term.position, field.kind, function)
+        resolved_term = SelectTerm(field_text, output_name, original_term.position, kind, expression)
         select_terms.append(resolved_term)
         if original_term.alias is not None:
             explicit_aliases[original_term.alias.casefold()] = resolved_term
 
     order_terms: list[OrderTerm] = []
     for term in query.order_by:
+        if term.expression is not None:
+            expression = _resolve_scalar_expression(term.expression, schema, source, context, explicit_aliases)
+            field_text = format_scalar_expression(expression)
+            kind = _scalar_kind(expression)
+            if isinstance(expression, Field):
+                field_text = expression.name
+            order_terms.append(OrderTerm(field_text, term.descending, term.position, kind, expression))
+            continue
         selected_alias = explicit_aliases.get(term.field.casefold())
         if selected_alias is not None:
             order_terms.append(
@@ -940,11 +1155,11 @@ def canonical_record_value(
         name, field_kind = field.name, field.kind
     elif isinstance(field, OrderTerm):
         if field.expression is not None:
-            return evaluate_scalar_function(field.expression, record)
+            return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
     elif isinstance(field, SelectTerm):
         if field.expression is not None:
-            return evaluate_scalar_function(field.expression, record)
+            return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
     else:
         name, field_kind = field, kind

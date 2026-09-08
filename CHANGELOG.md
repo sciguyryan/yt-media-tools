@@ -1,5 +1,13 @@
 # Changelog
 
+## Discover 0.23.0 - Expression Expanse
+
+- Make scalar expressions first-class in `SELECT` and `ORDER BY` instead of treating projection functions as a special case.
+- Add arithmetic operators `+`, `-`, `*`, `/` and `%`, including unary `+` and `-`, SQL-like precedence and parenthesised scalar expressions.
+- Allow existing scalar functions to nest and accept scalar expressions as arguments while preserving their established NULL behaviour.
+- Allow `ORDER BY` to use scalar expressions directly or reference aliases for computed projections.
+- Extend acquisition field analysis and deterministic conformance coverage so nested scalar expressions request every metadata field they depend on.
+
 ## Discover 0.22.0 - Optimisation Origins
 
 - Add a dedicated semantics-preserving yt-sql predicate optimiser that runs after typed semantic resolution.

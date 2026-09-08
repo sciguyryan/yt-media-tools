@@ -19,4 +19,4 @@ def test_cli_reports_current_version() -> None:
         capture_output=True,
         check=False,
     )
-    assert "0.22.0" in proc.stdout
+    assert "0.23.0" in proc.stdout
