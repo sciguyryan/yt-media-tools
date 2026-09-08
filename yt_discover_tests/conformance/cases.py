@@ -215,6 +215,43 @@ def _scalar_nested_functions(rows: Rows) -> list[Any]:
     )
 
 
+def _nullif_projection(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 6)
+        .order_by(lambda r: r["source_index"])
+        .select(
+            lambda r: {
+                "id": r["id"],
+                "same": None,
+                "distinct": "é",
+                "null_second": r["title"],
+            }
+        )
+        .to_list()
+    )
+
+
+def _greatest_projection(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 6)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "numeric": 32, "unicode": max("é", "e\u0301", "ß")})
+        .to_list()
+    )
+
+
+def _least_projection(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 6)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "numeric": 3, "unicode": min("β", "α", "Ω")})
+        .to_list()
+    )
+
+
 def _char_projection(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -649,6 +686,9 @@ LANGUAGE_FEATURES = frozenset(
         "scalar.arithmetic.parentheses",
         "scalar.function_nested",
         "scalar.char",
+        "scalar.nullif",
+        "scalar.greatest",
+        "scalar.least",
         "scalar.constant_fold",
         "scalar.case",
         "scalar.case.null_fallthrough",
@@ -1581,6 +1621,30 @@ CASES = (
         "SELECT id FROM @yt_sql_fixture WHERE source_index <= 20 ORDER BY CASE WHEN duration < 10m THEN 1 WHEN duration < 1h THEN 2 ELSE 3 END, source_index",
         _case_ordering,
         features=("scalar.case.order",),
+    ),
+    ConformanceCase(
+        "nullif_scalar_semantics",
+        "SELECT id, NULLIF('é','é') AS same, NULLIF('é','é') AS distinct, NULLIF(title,NULL) AS null_second FROM @yt_sql_fixture WHERE source_index <= 6 ORDER BY source_index",
+        _nullif_projection,
+        ("id", "same", "distinct", "null_second"),
+        "jsonl",
+        features=("scalar.nullif",),
+    ),
+    ConformanceCase(
+        "greatest_scalar_semantics",
+        "SELECT id, GREATEST(0x10,0o40,0b11) AS numeric, GREATEST('é','é','ß') AS unicode FROM @yt_sql_fixture WHERE source_index <= 6 ORDER BY source_index",
+        _greatest_projection,
+        ("id", "numeric", "unicode"),
+        "jsonl",
+        features=("scalar.greatest",),
+    ),
+    ConformanceCase(
+        "least_scalar_semantics",
+        "SELECT id, LEAST(10,0x20,0b11) AS numeric, LEAST('β','α','Ω') AS unicode FROM @yt_sql_fixture WHERE source_index <= 6 ORDER BY source_index",
+        _least_projection,
+        ("id", "numeric", "unicode"),
+        "jsonl",
+        features=("scalar.least",),
     ),
     ConformanceCase(
         "char_unicode_projection",

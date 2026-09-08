@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.7 - Scalar Summit
+
+- Add `NULLIF`, `GREATEST` and `LEAST` as first-class scalar functions in projections, ordering expressions and nested scalar expressions.
+- Define `NULLIF(a, b)` to return NULL only when the comparison is TRUE; UNKNOWN comparisons caused by NULL preserve the first argument.
+- Require `GREATEST` and `LEAST` to receive at least two compatible scalar arguments and propagate NULL when any argument is NULL.
+- Preserve exact, normalisation-sensitive Unicode ordering for textual extrema rather than introducing hidden case folding or normalisation.
+- Fold fully literal calls through the existing scalar constant optimiser and verify optimised and unoptimised execution remain observationally equivalent.
+- Extend deterministic conformance, arity, type-compatibility, NULL, Unicode and mixed-base numeric coverage for the new scalar functions.
+
 ## Discover 0.23.6 - Radix Revelry
 
 - Add hexadecimal, octal and binary integer literals throughout yt-sql scalar and typed numeric value positions.

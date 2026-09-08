@@ -469,7 +469,7 @@ class Parser:
 
     def parse_scalar_function(self, name_token: Token) -> ScalarFunction:
         name = name_token.text.upper()
-        if name not in {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR"}:
+        if name not in {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR", "NULLIF", "GREATEST", "LEAST"}:
             raise QuerySyntaxError(
                 self.source, f"Unsupported scalar function {name_token.text!r}.", name_token.position
             )
@@ -488,6 +488,10 @@ class Parser:
             raise QuerySyntaxError(self.source, "COALESCE requires at least two arguments.", name_token.position)
         if name == "CHAR" and not args:
             raise QuerySyntaxError(self.source, "CHAR requires at least one argument.", name_token.position)
+        if name == "NULLIF" and len(args) != 2:
+            raise QuerySyntaxError(self.source, "NULLIF requires exactly two arguments.", name_token.position)
+        if name in {"GREATEST", "LEAST"} and len(args) < 2:
+            raise QuerySyntaxError(self.source, f"{name} requires at least two arguments.", name_token.position)
         return ScalarFunction(name, tuple(args), name_token.position)
 
     def parse_from_source(self) -> str:
@@ -1044,6 +1048,25 @@ def _common_case_kind(expressions: Sequence[Any], source: str, position: int) ->
     )
 
 
+def _common_scalar_kind(expressions: Sequence[Any], source: str, position: int, function_name: str) -> str | None:
+    """Return one compatible scalar kind for multi-argument scalar functions."""
+    kinds = [kind for expression in expressions if (kind := _scalar_kind(expression)) is not None]
+    if not kinds:
+        return None
+    unique = set(kinds)
+    if len(unique) == 1:
+        return kinds[0]
+    if all(_is_numeric_kind(kind) for kind in kinds):
+        return "number"
+    if "mixed" in unique or "unknown" in unique:
+        return "mixed"
+    raise QuerySyntaxError(
+        source,
+        f"{function_name} arguments must have compatible types; got " + ", ".join(sorted(unique)) + ".",
+        position,
+    )
+
+
 def _is_numeric_kind(kind: str | None) -> bool:
     return kind in {"integer", "number", "count", "duration"}
 
@@ -1162,6 +1185,13 @@ def _resolve_scalar_expression(
                     if value is not None:
                         _validate_char_codepoint(value, source, expression.position)
             result_kind = "string"
+        elif expression.name == "NULLIF":
+            result_kind = _common_scalar_kind(args, source, expression.position, "NULLIF")
+            first_kind = _scalar_kind(args[0])
+            if first_kind is not None:
+                result_kind = first_kind
+        elif expression.name in {"GREATEST", "LEAST"}:
+            result_kind = _common_scalar_kind(args, source, expression.position, expression.name)
         else:
             non_null_kinds = [kind for arg in args if (kind := _scalar_kind(arg)) is not None]
             result_kind = (
@@ -1279,6 +1309,23 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
             except (TypeError, ValueError):
                 return None
             return "".join(chr(codepoint) for codepoint in codepoints)
+        if expression.name == "NULLIF":
+            first, second = values
+            if first is None:
+                return None
+            if second is None:
+                return first
+            try:
+                return None if first == second else first
+            except (TypeError, ValueError):
+                return first
+        if expression.name in {"GREATEST", "LEAST"}:
+            if any(value is None for value in values):
+                return None
+            try:
+                return max(values) if expression.name == "GREATEST" else min(values)
+            except (TypeError, ValueError):
+                return None
         raise AssertionError(f"Unsupported scalar function {expression.name}")
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 

@@ -162,7 +162,7 @@ Safe identity elimination may be introduced selectively where the operand's reso
 
 ### Implemented
 
-A deterministic scalar function is folded when all of its arguments have already become literals. This currently applies to `LOWER`, `UPPER`, `LENGTH` and `COALESCE`.
+A deterministic scalar function is folded when all of its arguments have already become literals. This currently applies to `LOWER`, `UPPER`, `LENGTH`, `COALESCE`, `CHAR`, `NULLIF`, `GREATEST`, and `LEAST`.
 
 Nested functions and arithmetic are folded from the leaves upwards. For example, a literal arithmetic argument may fold before the containing function is considered.
 
@@ -173,6 +173,26 @@ Functions with field-dependent arguments remain runtime expressions. No rewrite 
 ### Future candidates
 
 As new deterministic scalar functions are added, their foldability should be declared explicitly. Time-dependent functions such as `TODAY()` require particular care because their value depends on the query date context rather than only on syntactic literals.
+
+### `NULLIF`, `GREATEST`, and `LEAST`
+
+Current strategy:
+
+- Fold a fully literal call through the ordinary scalar constant-folding pass.
+- Preserve `NULLIF` three-valued comparison behaviour: only TRUE equality returns NULL; an UNKNOWN comparison caused by a NULL second argument preserves the first argument.
+- Preserve the explicit NULL-propagating contract for `GREATEST` and `LEAST`.
+- Treat textual extrema as exact, normalisation-sensitive Unicode ordering. No case-folded, locale-aware, or normalisation-aware rewrite is inferred.
+
+Future candidates:
+
+- Remove duplicate literal extrema arguments after type resolution where doing so is demonstrably semantics-preserving.
+- Simplify nested extrema calls only after NULL propagation, type compatibility, evaluation order and future error semantics are all proven equivalent.
+
+Rejected or unsafe without stronger proof:
+
+- Rewriting textual extrema through `LOWER`, `UPPER`, case folding or Unicode normalisation.
+- Dropping a NULL argument from `GREATEST` or `LEAST`; NULL is semantically decisive under yt-sql's contract.
+- Rewriting `NULLIF(a, b)` as a Boolean CASE shortcut unless UNKNOWN comparison behaviour remains identical.
 
 ## Searched `CASE`
 
@@ -250,8 +270,6 @@ These optimisations should remain separate from semantic rewrites so explain out
 
 Each new syntax feature must add a section to this document when it is implemented. The following strategies are already anticipated:
 
-- `LIKE` and `ILIKE`: pattern normalisation, exact-match reduction where a pattern has no wildcards, and safe prefix-bound planning where extractor capabilities genuinely support it.
-- `NULLIF`, `GREATEST` and `LEAST`: literal constant folding and careful NULL-aware simplification.
 - `SELECT *`: schema expansion and acquisition effects, with deterministic field ordering and explicit structured-value rules.
 - Aggregates and `GROUP BY`: aggregate-specific constant handling, grouping-key analysis, HAVING simplification and possible early aggregation only where exactness is provable.
 - CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
