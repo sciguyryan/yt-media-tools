@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.25.3 - Routlette of Randomness
+
+- Add `RANDOM()` for volatile per-execution row ordering and projected synthetic values.
+- Add `RANDOM(seed)` with deterministic row-stable values derived from the integer seed and stable logical row identity rather than evaluation order.
+- Permit RANDOM in scalar projection and ordering contexts, including aliases, CTEs and UNION-derived relations, while rejecting grouping and HAVING placement and retaining existing predicate grammar restrictions.
+- Keep RANDOM calls opaque to constant folding and deterministic scalar rewrites, and preserve complete-result acquisition for explicit random ordering.
+- Materialise projected random aliases so the value displayed to the user is the same value used by `ORDER BY` within that execution.
+- Add a pinned markdownlint-cli2 GitHub Actions job, enforcing the established MD001 heading-increment and MD012 multiple-blank-line rules across project Markdown.
+
 ## Discover 0.25.2 - Composition Crucible
 
 - Harden `UNION` and `UNION ALL` across CTEs, aggregation, global ordering, LIMIT/OFFSET and heterogeneous extractor-shaped logical relations without adding new grammar.

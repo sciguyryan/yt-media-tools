@@ -72,3 +72,7 @@ The two command-line applications retain independent versions because they evolv
 ## Common table expressions
 
 Discover 0.25.1 supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `UNION ALL`, including composition across independently acquired yt-dlp sources. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, schema-reconciliation and scoping contracts.
+
+## Documentation linting
+
+GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. The initial CI policy enforces MD001 heading increments and MD012 consecutive blank lines through `.markdownlint-cli2.jsonc`.

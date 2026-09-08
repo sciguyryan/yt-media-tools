@@ -722,3 +722,7 @@ Examples:
   "FROM @example WHERE raw.some_field = 'value'" \
   --warn-source-size 1000 -v
 ```
+
+## Documentation linting
+
+GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. The initial CI policy enforces MD001 heading increments and MD012 consecutive blank lines through `.markdownlint-cli2.jsonc`.

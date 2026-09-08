@@ -217,6 +217,8 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
             args.append(optimised)
             decisions.extend(arg_decisions)
         optimised = replace(expression, args=tuple(args))
+        if optimised.name == "RANDOM":
+            return optimised, decisions
         if all(isinstance(arg, Literal) for arg in optimised.args):
             folded = _fold_constant_scalar(optimised)
             decisions.append(_scalar_decision("fold-constant-function", optimised, folded))

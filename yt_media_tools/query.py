@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import difflib
+import hashlib
+import json
+import random
 import re
 from functools import lru_cache
 from dataclasses import dataclass, replace
@@ -635,7 +638,7 @@ class Parser:
     def parse_scalar_function(self, name_token: Token) -> Any:
         name = name_token.text.upper()
         aggregate_names = {"COUNT", "SUM", "MIN", "MAX", "AVG"}
-        scalar_names = {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR", "NULLIF", "GREATEST", "LEAST"}
+        scalar_names = {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR", "NULLIF", "GREATEST", "LEAST", "RANDOM"}
         if name not in scalar_names | aggregate_names:
             raise QuerySyntaxError(
                 self.source, f"Unsupported scalar function {name_token.text!r}.", name_token.position
@@ -684,6 +687,8 @@ class Parser:
             raise QuerySyntaxError(self.source, "NULLIF requires exactly two arguments.", name_token.position)
         if name in {"GREATEST", "LEAST"} and len(args) < 2:
             raise QuerySyntaxError(self.source, f"{name} requires at least two arguments.", name_token.position)
+        if name == "RANDOM" and len(args) > 1:
+            raise QuerySyntaxError(self.source, "RANDOM accepts zero or one seed argument.", name_token.position)
         return ScalarFunction(name, tuple(args), name_token.position)
 
     def parse_from_source(self) -> str:
@@ -1477,6 +1482,14 @@ def _resolve_scalar_expression(
             result_kind = _common_scalar_kind(args, source, expression.position, expression.name)
         elif expression.name == "COALESCE":
             result_kind = _common_scalar_kind(args, source, expression.position, "COALESCE")
+        elif expression.name == "RANDOM":
+            if args:
+                seed = args[0]
+                if not isinstance(seed, Literal) or isinstance(seed.value, bool) or not isinstance(seed.value, int):
+                    raise QuerySyntaxError(
+                        source, "RANDOM seed must be a constant integer literal.", expression.position
+                    )
+            result_kind = "number"
         else:
             non_null_kinds = [kind for arg in args if (kind := _scalar_kind(arg)) is not None]
             result_kind = (
@@ -1616,6 +1629,36 @@ def _validate_char_codepoint(value: Any, source: str, position: int) -> int:
         raise QuerySyntaxError(source, "CHAR requires integer code-point values.", position) from exc
 
 
+def _stable_random_identity(record: dict[str, Any]) -> str:
+    """Return a stable logical identity for deterministic seeded randomness."""
+    preferred = []
+    for key in ("_yt_sql_source", "extractor", "extractor_key", "webpage_url", "url", "id"):
+        value = record.get(key)
+        if value is not None:
+            preferred.append((key, value))
+    if preferred:
+        return json.dumps(preferred, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    public = {key: value for key, value in record.items() if not key.startswith("_yt_sql_")}
+    return json.dumps(public, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+
+
+def _evaluate_random(function: ScalarFunction, record: dict[str, Any]) -> float:
+    """Evaluate volatile or reproducibly seeded row randomness."""
+    if function.args:
+        seed = function.args[0]
+        assert isinstance(seed, Literal) and isinstance(seed.value, int) and not isinstance(seed.value, bool)
+        payload = f"{seed.value}\0{_stable_random_identity(record)}".encode("utf-8")
+        digest = hashlib.blake2b(payload, digest_size=8, person=b"yt-sql-rnd").digest()
+        integer = int.from_bytes(digest, "big") >> 11
+        return integer / float(1 << 53)
+
+    cache = record.setdefault("_yt_sql_random_cache", {})
+    key = function.position
+    if key not in cache:
+        cache[key] = random.SystemRandom().random()
+    return float(cache[key])
+
+
 def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
     """Evaluate a resolved scalar expression against one metadata record."""
     if isinstance(expression, Field):
@@ -1691,6 +1734,8 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
                 return max(values) if expression.name == "GREATEST" else min(values)
             except (TypeError, ValueError):
                 return None
+        if expression.name == "RANDOM":
+            return _evaluate_random(expression, record)
         raise AssertionError(f"Unsupported scalar function {expression.name}")
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
@@ -1842,10 +1887,59 @@ def _validate_having_group_compatibility(node: Any, group_by: tuple[Any, ...], s
         )
 
 
+def _contains_random(expression: Any) -> bool:
+    if expression is None:
+        return False
+    if isinstance(expression, ScalarFunction):
+        return expression.name == "RANDOM" or any(_contains_random(arg) for arg in expression.args)
+    if isinstance(expression, AggregateFunction):
+        return any(_contains_random(arg) for arg in expression.args) or _contains_random(expression.filter_predicate)
+    if isinstance(expression, (ScalarUnary, Unary)):
+        return _contains_random(expression.operand)
+    if isinstance(expression, (ScalarBinary, Binary, ScalarComparison)):
+        return _contains_random(expression.left) or _contains_random(expression.right)
+    if isinstance(expression, ScalarIsNull):
+        return _contains_random(expression.expression)
+    if isinstance(expression, ScalarCase):
+        return any(
+            _contains_random(branch.condition) or _contains_random(branch.result) for branch in expression.whens
+        ) or _contains_random(expression.else_result)
+    if isinstance(expression, Between):
+        return (
+            _contains_random(expression.field)
+            or _contains_random(expression.lower)
+            or _contains_random(expression.upper)
+        )
+    if isinstance(expression, InList):
+        return _contains_random(expression.field) or any(_contains_random(value) for value in expression.values)
+    if isinstance(expression, IsNull):
+        return _contains_random(expression.field)
+    if isinstance(expression, TextPredicate):
+        return _contains_random(expression.field) or _contains_random(expression.value)
+    return False
+
+
+def _validate_random_placement(query: Query) -> None:
+    """Keep volatile randomness out of row-selection and grouping semantics."""
+    if _contains_random(query.predicate):
+        raise QuerySyntaxError(query.source, "RANDOM is not allowed in WHERE predicates.", 0)
+    if any(_contains_random(expression) for expression in query.group_by):
+        raise QuerySyntaxError(query.source, "RANDOM is not allowed in GROUP BY expressions.", 0)
+    if _contains_random(query.having):
+        raise QuerySyntaxError(query.source, "RANDOM is not allowed in HAVING predicates.", 0)
+    for term in query.select:
+        expression = term.expression
+        if isinstance(expression, AggregateFunction) and _contains_random(expression.filter_predicate):
+            raise QuerySyntaxError(
+                query.source, "RANDOM is not allowed in aggregate FILTER predicates.", expression.position
+            )
+
+
 def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
     """Resolve fields and typed literals after metadata has established a schema."""
     context = dates or DateContext()
     source = query.source
+    _validate_random_placement(query)
 
     predicate = _resolve_predicate(query.predicate, schema, source, context)
     group_by = tuple(_resolve_scalar_expression(item, schema, source, context) for item in query.group_by)
@@ -2162,7 +2256,8 @@ def canonical_record_value(
     elif isinstance(field, SelectTerm):
         materialised_result = record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
         aggregate_projection = field.expression is not None and _contains_aggregate(field.expression)
-        if field.output_name in record and (materialised_result or aggregate_projection):
+        volatile_projection = field.expression is not None and _contains_random(field.expression)
+        if field.output_name in record and (materialised_result or aggregate_projection or volatile_projection):
             return record.get(field.output_name)
         if field.expression is not None:
             return evaluate_scalar_expression(field.expression, record)
@@ -2440,6 +2535,8 @@ def _evaluate_group_expression(expression: Any, group: Sequence[dict[str, Any]])
         except TypeError:
             return None
     if isinstance(expression, ScalarFunction):
+        if expression.name == "RANDOM":
+            return _evaluate_random(expression, representative)
         return _apply_scalar_function_values(
             expression.name, [_evaluate_group_expression(arg, group) for arg in expression.args]
         )
@@ -2597,6 +2694,16 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
         result = result[query.offset :]
     if query.limit is not None:
         result = result[: query.limit]
+
+    random_terms = [term for term in query.select if term.expression is not None and _contains_random(term.expression)]
+    if random_terms:
+        materialised = []
+        for record in result:
+            row = dict(record)
+            for term in random_terms:
+                row[term.output_name] = canonical_record_value(record, term)
+            materialised.append(row)
+        result = materialised
     return result
 
 
@@ -2703,6 +2810,8 @@ def _apply_composed_query(
 
 def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     """Apply a resolved query, materialising CTEs and set-composed relations."""
+    for record in records:
+        record.pop("_yt_sql_random_cache", None)
     physical_sources = query_physical_sources(query)
     if not query.ctes:
         result = _apply_composed_query(records, query, {}, physical_sources)
@@ -2719,7 +2828,7 @@ def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[st
 
     # Result-row markers are an internal execution detail used while materialising
     # CTEs and set operations. They must never escape through the public query API.
-    execution_only_keys = {"_yt_sql_result_row", "_yt_sql_aggregate_result"}
+    execution_only_keys = {"_yt_sql_result_row", "_yt_sql_aggregate_result", "_yt_sql_random_cache"}
     return [{key: value for key, value in row.items() if key not in execution_only_keys} for row in result]
 
 

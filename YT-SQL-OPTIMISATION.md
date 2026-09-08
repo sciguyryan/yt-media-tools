@@ -328,6 +328,26 @@ This is exploratory rather than committed work. Any design must justify its comp
 
 Any future CTE rewrite must preserve row membership, row order, aliases, NULLs, Unicode values, aggregate semantics and serialised output under the same differential verification requirements as ordinary yt-sql optimisation.
 
+## RANDOM
+
+Implemented strategy:
+
+- Treat both volatile `RANDOM()` and deterministic `RANDOM(seed)` as execution-time expressions.
+- Optimise scalar arguments where applicable, but never constant-fold the RANDOM call itself.
+- Keep seeded results tied to stable logical row identity rather than evaluation order.
+- Require complete result ordering before applying LIMIT when RANDOM appears in `ORDER BY`, through the existing explicit-ordering rule.
+
+Unsafe or rejected transformations:
+
+- Do not replace `RANDOM()` with a literal or reuse one value across different logical rows.
+- Do not treat `RANDOM(seed)` as a query-wide constant merely because its seed is constant.
+- Do not rewrite random ordering into source-order early termination.
+- Do not move RANDOM into predicates, grouping or aggregate filters.
+
+Plausible future work:
+
+- Consider an explicit sampling construct if probabilistic row selection becomes desirable. It should not be introduced implicitly by widening RANDOM placement.
+
 ## UNION and UNION ALL
 
 Discover 0.25.1 optimises each resolved set-operation branch independently and prefixes branch decisions in optimiser diagnostics. Reconciliation itself is not rewritten. The optimiser must preserve branch order for `UNION ALL`, duplicate-elimination boundaries for `UNION`, first-branch output naming, NULL values and exact Unicode values.

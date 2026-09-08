@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from datetime import datetime, timezone
 from dataclasses import dataclass
@@ -646,6 +648,24 @@ def _union_all(rows: Rows) -> list[Any]:
     return values[:12]
 
 
+def _seeded_random(rows: Rows) -> list[Any]:
+    result = []
+    for row in rows[:8]:
+        identity = json.dumps(
+            [["webpage_url", row["webpage_url"]], ["id", row["id"]]],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+        payload = f"12648430\0{identity}".encode("utf-8")
+        digest = hashlib.blake2b(payload, digest_size=8, person=b"yt-sql-rnd").digest()
+        value = (int.from_bytes(digest, "big") >> 11) / float(1 << 53)
+        result.append({"id": row["id"], "shuffle_key": value})
+    result.sort(key=lambda item: item["id"])
+    return result
+
+
 def _aggregate_global(rows: Rows) -> list[Any]:
     values = [int(r["view_count"]) for r in rows if r.get("view_count") is not None]
     titles = [str(r["title"]) for r in rows if r.get("title") is not None]
@@ -696,6 +716,7 @@ LANGUAGE_FEATURES = frozenset(
         "offset.underscore",
         "order.default_asc",
         "projection.coalesce_fallback",
+        "scalar.random_seeded",
         "projection.field",
         "string.double_quote",
         "string.doubled_quote",
@@ -1839,6 +1860,14 @@ CASES = (
         "SELECT id FROM @yt_sql_fixture WHERE id IN ('vid044','vid045','vid046','vid047','vid048','vid049','vid050','vid051') ORDER BY title ASC",
         _unicode_codepoint_order,
         features=("unicode.ordering",),
+    ),
+    ConformanceCase(
+        "seeded_random_projection",
+        "SELECT id, RANDOM(0xC0FFEE) AS shuffle_key FROM @yt_sql_fixture WHERE source_index <= 8 ORDER BY id",
+        _seeded_random,
+        ("id", "shuffle_key"),
+        "jsonl",
+        features=("scalar.random_seeded",),
     ),
     ConformanceCase(
         "aggregate_global_semantics",
