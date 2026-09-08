@@ -23,7 +23,7 @@ The current testing architecture keeps routine conformance work focused on deter
 The generator defines four centrally sized profiles:
 
 ```text
-small       36 records
+small       60 records
 normal   1,000 records
 large   10,000 records
 huge   100,000 records
@@ -415,6 +415,8 @@ WHERE duration IS NOT NULL AND duration < 45m
 ```
 
 `CONTAINS` is case-insensitive. Ordinary string equality is case-sensitive except for known enum-like fields such as `live_status` and `availability`, which compare case-insensitively. `MATCHES` uses the regular expression as written. `LIKE` is case-sensitive and `ILIKE` is case-insensitive; `%` matches zero or more Unicode code points and `_` matches exactly one. A backslash escapes the next LIKE pattern character.
+
+Text is normalisation-sensitive Unicode. Discover does not silently convert between NFC, NFD or other normalisation forms. `LENGTH` counts Unicode code points rather than grapheme clusters, and Unicode case conversion can change string length. `CONTAINS` uses Unicode case folding, while `ILIKE` uses Unicode-aware case-insensitive pattern matching; these are intentionally documented as distinct semantics because they differ for some characters.
 
 ## Human-readable values
 

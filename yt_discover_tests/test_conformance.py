@@ -38,7 +38,7 @@ from yt_media_tools.schema import QuerySchema
 ROOT = Path(__file__).resolve().parents[1]
 CONF = ROOT / "yt_discover_tests" / "conformance"
 GENERATOR = CONF / "generate_dataset.py"
-SPEC = CONF / "dataset-spec-v2.json"
+SPEC = CONF / "dataset-spec-v3.json"
 CLI = ROOT / "yt-discover.py"
 
 
@@ -172,7 +172,7 @@ def test_profile_sizes_are_ordered_and_centrally_defined() -> None:
     sizes = list(PROFILE_SIZES.values())
     assert sizes == sorted(sizes)
     assert len(set(sizes)) == len(sizes)
-    assert sizes[0] >= 36
+    assert sizes[0] >= 60
 
 
 @pytest.mark.parametrize("profile", ("small", "normal"))
@@ -243,8 +243,18 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
     assert any(row["view_count"] is None for row in rows)
     assert {3599, 3600, 3601}.issubset({row["duration"] for row in rows})
     assert len({row["title"] for row in rows}) < len(rows)
-    assert any("café" in str(row["title"]) for row in rows)
-    assert any(".*" in str(row["title"]) for row in rows)
+    titles = [str(row["title"]) for row in rows]
+    assert any("café" in title for title in titles)
+    assert any("Café" in title for title in titles)
+    assert any("😀" in title for title in titles)
+    assert any("👩‍👩‍👧‍👦" in title for title in titles)
+    assert any("Σ σ ς" in title for title in titles)
+    assert any("İ I ı i" in title for title in titles)
+    assert any("Straße" in title for title in titles)
+    assert any("مرحبا" in title for title in titles)
+    assert any("שלום" in title for title in titles)
+    assert any("\u2028" in title for title in titles)
+    assert any(".*" in title for title in titles)
     assert any(row["availability"] == "private" for row in rows)
     assert any(row["live_status"] == "is_live" for row in rows)
     assert any(row["live_status"] == "was_live" for row in rows)

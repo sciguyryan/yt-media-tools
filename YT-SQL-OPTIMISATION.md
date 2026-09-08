@@ -77,6 +77,24 @@ Literal-only `IN` normalisation, duplicate literal removal and safe singleton `I
 
 A future regex-to-LIKE rewrite may be considered only for a deliberately small whitelist of regular-expression forms whose complete-value anchoring, wildcard cardinality, escaping, newline behaviour and case rules can be proved equivalent. Every accepted form must have differential tests containing counterexamples to neighbouring non-equivalent forms.
 
+## Unicode-sensitive text optimisation
+
+### Implemented
+
+Discover 0.23.4 establishes adversarial Unicode data as part of the routine deterministic conformance corpus. Optimised and unoptimised execution are compared across exact comparison, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, `LOWER`, `UPPER`, `LENGTH`, ordering, projection and serialisation. Scalar constant folding of literal text functions is therefore exercised against the same Unicode semantics as runtime evaluation.
+
+No implicit normalisation is performed. Optimisation must preserve the extractor-provided code-point sequence exactly unless the source operation itself defines a transformation. `LENGTH` is code-point length, `LOWER` and `UPPER` use Unicode case mappings, `CONTAINS` uses `casefold()`, and `ILIKE` uses Unicode-aware case-insensitive regular-expression behaviour over the translated LIKE pattern.
+
+### Deliberately not implemented
+
+Text predicates are not rewritten merely because they appear equivalent under ASCII. In particular, `CONTAINS`, `ILIKE`, `LOWER`-based comparisons and regular-expression case-insensitivity are not substituted for one another. Unicode case folding, case conversion and regular-expression ignore-case semantics differ for characters such as sharp s, dotted and dotless I, long s, Kelvin sign and Greek sigma forms.
+
+No optimiser pass inserts NFC, NFD, NFKC or NFKD normalisation. Canonically equivalent strings can remain observably different under exact equality, LIKE, MATCHES, ordering and length.
+
+### Future candidates
+
+An explicit normalisation scalar function may be considered as language syntax. If added, normalisation-aware rewrites could then be considered only within expressions whose normalisation form is explicit. Any future exact/prefix/suffix LIKE fast path or regex-to-LIKE reduction must be differentially tested against the Unicode torture corpus, including combining marks, supplementary-plane characters, ZWJ sequences, variation selectors, bidirectional marks and case-mapping edge cases.
+
 ## Scalar arithmetic: `+`, `-`, `*`, `/` and `%`
 
 ### Implemented

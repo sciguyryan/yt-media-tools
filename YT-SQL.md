@@ -108,6 +108,16 @@ WHERE title LIKE '100\%'
 
 `MATCHES` remains the regular-expression predicate and uses Python regular-expression search semantics. It is not automatically interchangeable with LIKE syntax: anchoring, `.` versus `_`, `.*` versus `%`, newline behaviour, regex flags and case semantics must all be equivalent before any optimiser rewrite could be valid.
 
+## Unicode text semantics
+
+yt-sql treats metadata text as Unicode strings and does not perform implicit Unicode normalisation. Canonically equivalent composed and decomposed strings therefore remain distinct for equality, ordering, LIKE and regular-expression matching unless the operation itself defines case-insensitive behaviour. This preserves the extractor-provided text exactly rather than silently rewriting metadata.
+
+`LENGTH` counts Unicode code points, not user-perceived grapheme clusters. A precomposed `é` contributes one code point, while `e` followed by U+0301 COMBINING ACUTE ACCENT contributes two. Emoji ZWJ sequences, regional-indicator flags and variation-selector sequences likewise contain multiple code points even when displayed as one glyph.
+
+`LOWER` and `UPPER` use Unicode string case mappings and may change string length. `CONTAINS` compares Unicode `casefold()` forms, which deliberately provides stronger caseless matching than simple lowercasing. `ILIKE` uses Unicode-aware case-insensitive regular-expression matching over the LIKE translation. These mechanisms are not identical for every Unicode character, so optimiser rewrites must not substitute one for another without a proven equivalence.
+
+ASCII `%`, `_` and backslash retain their LIKE meanings. Visually similar fullwidth or other Unicode characters are ordinary literals. Ordering compares the unmodified Unicode string values using the runtime's deterministic string ordering. JSON and other Unicode-capable outputs preserve the original text.
+
 ## Query optimiser
 
 yt-sql resolves a query's schema and typed literals before running a dedicated predicate optimiser. The optimiser is deliberately semantics-preserving: executing the resolved query before optimisation and executing the optimised query must produce identical predicate truth values, selected rows and output. This includes SQL-like three-valued NULL behaviour, so an expression that evaluates to UNKNOWN for a NULL value must not be rewritten into one that evaluates to FALSE merely because both would currently be rejected by `WHERE`.
@@ -144,7 +154,7 @@ Routine development and pull-request CI deliberately use only `small` and `norma
 
 The harness generates the requested dataset and real SQLite cache at test time and visibly reports profile generation progress. Routine semantic cases compare the independent Python oracle with the production parser, resolver, evaluator and serializer in-process so broad language coverage remains fast. A representative subset is also run through the real offline `yt-discover` CLI to verify end-to-end parity, including CLI-only behaviour such as parameter binding. Pytest removes the temporary corpus after the session.
 
-The generated corpus deliberately includes same-day uploads, identical and NULL timestamps, exact duration boundaries, duplicate values, case variants, Unicode, regex metacharacters, large counts, availability and live-state values, dynamic scalar metadata, stable source ordering, repeated categorical values, and multiple synthetic channel identities. These deliberately designed records are semantic anchors inside the deterministic generator, not a separately maintained golden dataset. Expected query semantics come from the independently authored Python oracle rather than generated snapshots or production code.
+The generated corpus deliberately includes same-day uploads, identical and NULL timestamps, exact duration boundaries, duplicate values, case variants, adversarial Unicode text, regex metacharacters, large counts, availability and live-state values, dynamic scalar metadata, stable source ordering, repeated categorical values, and multiple synthetic channel identities. Unicode anchors include composed and decomposed text, combining marks, supplementary-plane characters, emoji and ZWJ sequences, case-mapping edge cases, non-Latin scripts, bidirectional marks, unusual whitespace and line separators. These deliberately designed records are semantic anchors inside the deterministic generator, not a separately maintained golden dataset. Expected query semantics come from the independently authored Python oracle rather than generated snapshots or production code.
 
 An explicit conformance feature manifest records the current language surface and requires every registered feature to have deterministic semantic coverage. New yt-sql syntax must add independent oracle coverage, boundary cases, malformed-input coverage where relevant, and cross-feature interactions as part of its implementation. Larger profiles should be used only where scale is relevant to the behaviour under test.
 

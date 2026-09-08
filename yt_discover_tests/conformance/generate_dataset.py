@@ -22,7 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from yt_media_tools.cache import MetadataCache  # noqa: E402
 
-GENERATOR_VERSION = 2
+GENERATOR_VERSION = 3
 DATASET_SEED = 31415926
 SOURCE_HANDLE = "@yt_sql_fixture"
 SOURCE_URL = "https://www.youtube.com/@yt_sql_fixture/videos"
@@ -31,7 +31,7 @@ GENERATED_AT = "2026-09-01T12:00:00+00:00"
 # Keep the deliberately hand-designed anchor corpus small enough for semantic tests,
 # while larger profiles are substantial enough to reveal scaling and performance bugs.
 PROFILE_SIZES: dict[str, int] = {
-    "small": 36,
+    "small": 60,
     "normal": 1_000,
     "large": 10_000,
     "huge": 100_000,
@@ -45,8 +45,9 @@ def _epoch(iso_text: str) -> int:
 def _anchor_records(seed: int) -> list[dict[str, object]]:
     """Return the hand-designed semantic anchor records.
 
-    These records deliberately encode exact boundaries and awkward values. Larger
-    datasets retain this prefix and extend it with deterministic generated records.
+    These records deliberately encode exact boundaries, awkward values and Unicode
+    edge cases. Larger datasets retain this prefix and extend it with deterministic
+    generated records.
     """
     rng = random.Random(seed)
     specs = [
@@ -86,6 +87,30 @@ def _anchor_records(seed: int) -> list[dict[str, object]]:
         ("vid034", "Large count", "20260808", "2026-08-08T12:00:00Z", 8, 9_223_372_036, "public", None),
         ("vid035", "Empty title sentinel", "20260807", "2026-08-07T12:00:00Z", 9, 9, None, None),
         ("vid036", "Final source row", "20260806", "2026-08-06T12:00:00Z", 10, 10, "public", None),
+        ("vid037", "Café composed é", "20260805", "2026-08-05T12:00:00Z", 11, 11, "public", None),
+        ("vid038", "Café decomposed é", "20260804", "2026-08-04T12:00:00Z", 12, 12, "public", None),
+        ("vid039", "Combining only ̧́", "20260803", "2026-08-03T12:00:00Z", 13, 13, "public", None),
+        ("vid040", "Emoji 😀", "20260802", "2026-08-02T12:00:00Z", 14, 14, "public", None),
+        ("vid041", "Emoji family 👩‍👩‍👧‍👦", "20260730", "2026-07-30T12:00:00Z", 15, 15, "public", None),
+        ("vid042", "Flag 🇬🇧", "20260729", "2026-07-29T12:00:00Z", 16, 16, "public", None),
+        ("vid043", "Variation ✈️", "20260728", "2026-07-28T12:00:00Z", 17, 17, "public", None),
+        ("vid044", "Greek Σ σ ς", "20260727", "2026-07-27T12:00:00Z", 18, 18, "public", None),
+        ("vid045", "Turkish İ I ı i", "20260726", "2026-07-26T12:00:00Z", 19, 19, "public", None),
+        ("vid046", "German Straße STRASSE", "20260725", "2026-07-25T12:00:00Z", 20, 20, "public", None),
+        ("vid047", "Kelvin K K k", "20260724", "2026-07-24T12:00:00Z", 21, 21, "public", None),
+        ("vid048", "Long s ſ S", "20260723", "2026-07-23T12:00:00Z", 22, 22, "public", None),
+        ("vid049", "CJK 東京漢字", "20260722", "2026-07-22T12:00:00Z", 23, 23, "public", None),
+        ("vid050", "Arabic مرحبا", "20260721", "2026-07-21T12:00:00Z", 24, 24, "public", None),
+        ("vid051", "Hebrew שלום", "20260720", "2026-07-20T12:00:00Z", 25, 25, "public", None),
+        ("vid052", "NBSP space", "20260719", "2026-07-19T12:00:00Z", 26, 26, "public", None),
+        ("vid053", "Thin space", "20260718", "2026-07-18T12:00:00Z", 27, 27, "public", None),
+        ("vid054", "RTL mark ‏text", "20260717", "2026-07-17T12:00:00Z", 28, 28, "public", None),
+        ("vid055", "Wildcards % _ \\ and fullwidth ％＿", "20260716", "2026-07-16T12:00:00Z", 29, 29, "public", None),
+        ("vid056", "Astral 𐐷 𝄞", "20260715", "2026-07-15T12:00:00Z", 30, 30, "public", None),
+        ("vid057", "Line\nbreak", "20260714", "2026-07-14T12:00:00Z", 31, 31, "public", None),
+        ("vid058", "Line separator \u2028", "20260713", "2026-07-13T12:00:00Z", 32, 32, "public", None),
+        ("vid059", "Zero width joiner A‍B", "20260712", "2026-07-12T12:00:00Z", 33, 33, "public", None),
+        ("vid060", "Zero width non-joiner A‌B", "20260711", "2026-07-11T12:00:00Z", 34, 34, "public", None),
     ]
 
     rows: list[dict[str, object]] = []
@@ -129,7 +154,20 @@ def _generated_record(index: int, rng: random.Random) -> dict[str, object]:
     if index % 97 == 0:
         title = f"Duplicate generated title {index % 7}"
     elif index % 131 == 0:
-        title = f"Unicode café Δ synthetic {index:09d}"
+        unicode_samples = (
+            "Unicode café Δ",
+            "Unicode Café decomposed",
+            "Unicode 😀 emoji",
+            "Unicode 👩‍👩‍👧‍👦 ZWJ",
+            "Unicode Greek Σ σ ς",
+            "Unicode Turkish İ I ı i",
+            "Unicode Straße",
+            "Unicode K ſ",
+            "Unicode 東京 مرحبا שלום",
+            "Unicode NBSP thin space",
+        )
+        sample = unicode_samples[(index // 131) % len(unicode_samples)]
+        title = f"{sample} synthetic {index:09d}"
     elif index % 173 == 0:
         title = f"Regex .* synthetic {index:09d}"
     elif index % 211 == 0:

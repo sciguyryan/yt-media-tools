@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.4 - Unicode Gauntlet
+
+- Bump the deterministic yt-sql conformance generator to version 3 and expand the small semantic profile from 36 to 60 records so Unicode edge cases are always present in routine testing.
+- Add deterministic anchors for composed and decomposed text, combining marks, supplementary-plane characters, emoji and ZWJ sequences, variation selectors, regional indicators, case-mapping edge cases, non-Latin scripts, bidirectional marks, Unicode whitespace and line separators.
+- Add Unicode conformance coverage across exact comparison, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, `LOWER`, `UPPER`, `LENGTH`, ordering, projection, JSONL serialisation and scalar constant folding.
+- Define yt-sql text as normalisation-sensitive Unicode text: no implicit NFC/NFD conversion is performed, and `LENGTH` counts Unicode code points rather than grapheme clusters.
+- Document the deliberate distinction between case-folded `CONTAINS` semantics and Unicode-aware regular-expression case handling used by `ILIKE`.
+- Extend optimiser differential requirements so Unicode-sensitive scalar rewrites and text execution paths must remain observationally equivalent before and after optimisation.
+
 ## Discover 0.23.3 - Like It or Not
 
 - Add SQL-like `LIKE`, `NOT LIKE`, `ILIKE` and `NOT ILIKE` text predicates with `%` and `_` wildcards.

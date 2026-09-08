@@ -439,6 +439,94 @@ def _project_where(
     return oracle
 
 
+def _unicode_exact_normalisation(rows: Rows) -> list[Any]:
+    wanted = {"Café composed é", "Café decomposed é"}
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] in wanted)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "title": r["title"]})
+        .to_list()
+    )
+
+
+def _unicode_lengths(rows: Rows) -> list[Any]:
+    wanted = {"vid037", "vid038", "vid040", "vid041", "vid042", "vid043", "vid056", "vid059", "vid060"}
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["id"] in wanted)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "chars": len(str(r["title"]))})
+        .to_list()
+    )
+
+
+def _unicode_contains_casefold(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] is not None and "strasse" in str(r["title"]).casefold())
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
+def _unicode_like_single_codepoint(rows: Rows) -> list[Any]:
+    pattern = re.compile(r"Emoji [\s\S]")
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] is not None and pattern.fullmatch(str(r["title"])) is not None)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
+def _unicode_ilike_specials(rows: Rows) -> list[Any]:
+    pattern = re.compile(r"[\s\S]*[isk][\s\S]*", re.IGNORECASE)
+    wanted = {"vid045", "vid047", "vid048"}
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["id"] in wanted and pattern.fullmatch(str(r["title"])) is not None)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
+def _unicode_case_functions(rows: Rows) -> list[Any]:
+    wanted = {"vid044", "vid045", "vid046", "vid047", "vid048"}
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["id"] in wanted)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "lowered": str(r["title"]).lower(), "uppered": str(r["title"]).upper()})
+        .to_list()
+    )
+
+
+def _unicode_regex_scripts(rows: Rows) -> list[Any]:
+    pattern = re.compile(r"東京|مرحبا|שלום")
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] is not None and pattern.search(str(r["title"])) is not None)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
+def _unicode_codepoint_order(rows: Rows) -> list[Any]:
+    wanted = {"vid044", "vid045", "vid046", "vid047", "vid048", "vid049", "vid050", "vid051"}
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["id"] in wanted)
+        .order_by(lambda r: r["title"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
 LANGUAGE_FEATURES = frozenset(
     {
         "boolean.and",
@@ -576,6 +664,14 @@ LANGUAGE_FEATURES = frozenset(
         "value.count_m",
         "value.count_underscore",
         "value.enum_case_insensitive",
+        "unicode.normalisation_sensitive",
+        "unicode.codepoint_length",
+        "unicode.casefold_contains",
+        "unicode.ilike_case",
+        "unicode.like_codepoint",
+        "unicode.case_mapping",
+        "unicode.regex",
+        "unicode.ordering",
     }
 )
 
@@ -1448,6 +1544,60 @@ CASES = (
         "SELECT id FROM @yt_sql_fixture WHERE source_index <= 20 ORDER BY CASE WHEN duration < 10m THEN 1 WHEN duration < 1h THEN 2 ELSE 3 END, source_index",
         _case_ordering,
         features=("scalar.case.order",),
+    ),
+    ConformanceCase(
+        "unicode_exact_normalisation_sensitive",
+        "SELECT id, title FROM @yt_sql_fixture WHERE title IN ('Café composed é', 'Café decomposed é') ORDER BY source_index",
+        _unicode_exact_normalisation,
+        ("id", "title"),
+        "jsonl",
+        features=("unicode.normalisation_sensitive",),
+    ),
+    ConformanceCase(
+        "unicode_codepoint_length",
+        "SELECT id, LENGTH(title) AS chars FROM @yt_sql_fixture WHERE id IN ('vid037','vid038','vid040','vid041','vid042','vid043','vid056','vid059','vid060') ORDER BY source_index",
+        _unicode_lengths,
+        ("id", "chars"),
+        "jsonl",
+        features=("unicode.codepoint_length",),
+    ),
+    ConformanceCase(
+        "unicode_contains_casefold",
+        "SELECT id FROM @yt_sql_fixture WHERE title CONTAINS 'strasse' ORDER BY source_index",
+        _unicode_contains_casefold,
+        features=("unicode.casefold_contains",),
+    ),
+    ConformanceCase(
+        "unicode_like_one_codepoint",
+        "SELECT id FROM @yt_sql_fixture WHERE title LIKE 'Emoji _' ORDER BY source_index",
+        _unicode_like_single_codepoint,
+        features=("unicode.like_codepoint",),
+    ),
+    ConformanceCase(
+        "unicode_ilike_special_case_equivalence",
+        "SELECT id FROM @yt_sql_fixture WHERE id IN ('vid045','vid047','vid048') AND (title ILIKE '%i%' OR title ILIKE '%s%' OR title ILIKE '%k%') ORDER BY source_index",
+        _unicode_ilike_specials,
+        features=("unicode.ilike_case",),
+    ),
+    ConformanceCase(
+        "unicode_lower_upper",
+        "SELECT id, LOWER(title) AS lowered, UPPER(title) AS uppered FROM @yt_sql_fixture WHERE id IN ('vid044','vid045','vid046','vid047','vid048') ORDER BY source_index",
+        _unicode_case_functions,
+        ("id", "lowered", "uppered"),
+        "jsonl",
+        features=("unicode.case_mapping",),
+    ),
+    ConformanceCase(
+        "unicode_regex_scripts",
+        "SELECT id FROM @yt_sql_fixture WHERE title MATCHES '東京|مرحبا|שלום' ORDER BY source_index",
+        _unicode_regex_scripts,
+        features=("unicode.regex",),
+    ),
+    ConformanceCase(
+        "unicode_codepoint_ordering",
+        "SELECT id FROM @yt_sql_fixture WHERE id IN ('vid044','vid045','vid046','vid047','vid048','vid049','vid050','vid051') ORDER BY title ASC",
+        _unicode_codepoint_order,
+        features=("unicode.ordering",),
     ),
     ConformanceCase(
         "convoluted_existing_language",
