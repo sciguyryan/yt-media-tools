@@ -90,7 +90,7 @@ def test_explain_marks_dynamic_fields_as_deferred() -> None:
 def test_explain_requires_from_clause() -> None:
     result = run_cli("--explain", "SELECT id WHERE views >= 10k")
     assert result.returncode != 0
-    assert "requires a complete query containing FROM" in result.stderr
+    assert "requires a complete query containing a physical FROM <source>" in result.stderr
 
 
 def test_verbose_goes_to_stderr_and_keeps_stdout_machine_clean(tmp_path: Path) -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 import pytest
@@ -118,7 +119,7 @@ def test_multiple_physical_sources_are_deferred_to_union_phase() -> None:
     ),
 )
 def test_invalid_cte_forms_are_rejected(source: str, message: str) -> None:
-    with pytest.raises(QuerySyntaxError, match=message):
+    with pytest.raises(QuerySyntaxError, match=re.escape(message)):
         resolve_query(parse_query(source), QuerySchema(records()), CONTEXT)
 
 
