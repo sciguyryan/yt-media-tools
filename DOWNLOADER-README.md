@@ -93,7 +93,6 @@ Print the resolved `yt-dlp` command without executing it:
 
 Dry-run mode does not mutate queue files.
 
-
 ## Parameter profiles
 
 Named parameter profiles provide reusable Downloader CLI defaults without replacing explicit command-line control. The script-local `defaults.json` is used by default, or another file may be selected with `-d/--defaults`.
