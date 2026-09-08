@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.3 - Like It or Not
+
+- Add SQL-like `LIKE`, `NOT LIKE`, `ILIKE` and `NOT ILIKE` text predicates with `%` and `_` wildcards.
+- Define backslash escaping for literal wildcard and backslash characters, and reject incomplete trailing escapes.
+- Preserve SQL-like NULL/UNKNOWN behaviour and support the new predicates in lightweight acquisition rejection where exact metadata is available.
+- Compile literal LIKE patterns during semantic resolution and cache compiled forms for repeated row evaluation.
+- Extend deterministic conformance, malformed-input and differential optimiser coverage across case sensitivity, negation, escaping, Unicode, newlines and wildcard cardinality.
+- Document conservative regex-to-LIKE optimisation candidates while declining rewrites whose anchoring, wildcard cardinality, newline or case semantics are not provably equivalent.
+
 ## Discover 0.23.2 - Known Quantities
 
 - Add conservative post-resolution scalar constant folding for fully literal arithmetic, unary expressions and deterministic scalar functions.

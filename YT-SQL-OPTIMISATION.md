@@ -63,9 +63,19 @@ Temporal-bound inference may be expanded where the planner can use a proven univ
 
 These predicates participate in negation normalisation and duplicate-term removal. Degenerate `BETWEEN` additionally collapses to equality or inequality.
 
+Literal `LIKE` and `ILIKE` patterns are translated and compiled during semantic resolution, then retained through a bounded compilation cache for repeated row evaluation. This is an execution optimisation rather than an AST rewrite. It removes per-row pattern translation and compilation without changing the resolved predicate. Lightweight acquisition rejection can evaluate LIKE predicates when the required text value is already authoritative.
+
+### Deliberately not implemented
+
+`MATCHES` regular expressions are not currently rewritten into `LIKE` or `ILIKE`. Apparent textual similarity is not sufficient proof of equivalence. yt-sql `MATCHES` uses regular-expression search semantics while LIKE matches the complete value. Regex `.` does not ordinarily match a newline, `_` always matches exactly one Unicode code point, `.+` requires at least one character while `%` permits zero, and regular-expression flags can alter case, anchoring and character semantics.
+
+For example, `title MATCHES 'The .+?'` is not equivalent to `title LIKE 'The %'`: the regex may match in the middle of a title and requires a character after `The `, while the LIKE pattern is anchored to the whole value and allows an empty suffix. Such a rewrite is therefore forbidden.
+
 ### Future candidates
 
-Literal-only `IN` normalisation, duplicate literal removal and safe singleton `IN` reduction may be considered. Pattern-specific optimisation for future `LIKE` and `ILIKE` syntax should be documented when those operators are added.
+Literal-only `IN` normalisation, duplicate literal removal and safe singleton `IN` reduction may be considered. LIKE patterns can also be classified into exact, prefix, suffix and contains-only forms so execution can use direct string operations instead of a regular-expression engine where Unicode and case semantics remain identical.
+
+A future regex-to-LIKE rewrite may be considered only for a deliberately small whitelist of regular-expression forms whose complete-value anchoring, wildcard cardinality, escaping, newline behaviour and case rules can be proved equivalent. Every accepted form must have differential tests containing counterexamples to neighbouring non-equivalent forms.
 
 ## Scalar arithmetic: `+`, `-`, `*`, `/` and `%`
 

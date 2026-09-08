@@ -65,7 +65,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.23.2"
+PROGRAM_VERSION = "0.23.3"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -413,6 +413,8 @@ Query language summary:
     IS TRUE / IS FALSE
     CONTAINS / NOT CONTAINS
     MATCHES / NOT MATCHES
+    LIKE / NOT LIKE
+    ILIKE / NOT ILIKE
     AND / OR / NOT
     parentheses
 

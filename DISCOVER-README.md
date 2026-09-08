@@ -393,6 +393,10 @@ CONTAINS
 NOT CONTAINS
 MATCHES
 NOT MATCHES
+LIKE
+NOT LIKE
+ILIKE
+NOT ILIKE
 AND
 OR
 NOT
@@ -404,11 +408,13 @@ Examples:
 ```text
 WHERE duration BETWEEN 10m AND 2h
 WHERE views >= 100k AND NOT title CONTAINS 'trailer'
+WHERE title ILIKE '%quantum%'
+WHERE title NOT LIKE 'Live %'
 WHERE live_status IN ('not_live', 'was_live')
 WHERE duration IS NOT NULL AND duration < 45m
 ```
 
-`CONTAINS` is case-insensitive. Ordinary string equality is case-sensitive except for known enum-like fields such as `live_status` and `availability`, which compare case-insensitively. `MATCHES` uses the regular expression as written.
+`CONTAINS` is case-insensitive. Ordinary string equality is case-sensitive except for known enum-like fields such as `live_status` and `availability`, which compare case-insensitively. `MATCHES` uses the regular expression as written. `LIKE` is case-sensitive and `ILIKE` is case-insensitive; `%` matches zero or more Unicode code points and `_` matches exactly one. A backslash escapes the next LIKE pattern character.
 
 ## Human-readable values
 

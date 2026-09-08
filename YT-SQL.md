@@ -1,6 +1,6 @@
 # yt-sql language reference
 
-yt-sql is the SQL-inspired metadata query language used by `yt-discover`. It is deliberately not a claim of SQL-standard or PostgreSQL compatibility. The language borrows relational query concepts where they map naturally to media discovery and analysis, while retaining domain-specific conveniences such as duration literals, relative dates, `CONTAINS`, and `MATCHES`.
+yt-sql is the SQL-inspired metadata query language used by `yt-discover`. It is deliberately not a claim of SQL-standard or PostgreSQL compatibility. The language borrows relational query concepts where they map naturally to media discovery and analysis, while retaining domain-specific conveniences such as duration literals, relative dates, `CONTAINS`, `MATCHES`, `LIKE`, and `ILIKE`.
 
 The preferred filename extension for saved query text is `.yt-sql`.
 
@@ -19,7 +19,7 @@ A complete yt-sql query has the following broad form:
 
 If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested.
 
-Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
+Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
 
 Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Existing projection functions `LOWER`, `UPPER`, `LENGTH`, and `COALESCE` may be nested and may accept scalar expressions as arguments. Projection aliases may be referenced by later `ORDER BY` expressions. Searched `CASE WHEN <predicate> THEN <scalar-expression> ... [ELSE <scalar-expression>] END` is also supported wherever scalar expressions are accepted. CASE conditions use the ordinary yt-sql Boolean predicate language; only TRUE selects a branch, while FALSE and UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL.
 
@@ -89,6 +89,25 @@ WHERE upload_date >= TODAY()-1decade
 WHERE upload_date >= TODAY()-1baktun
 ```
 
+### Pattern matching
+
+`LIKE` and `ILIKE` provide SQL-like wildcard matching over text fields. `LIKE` is case-sensitive and `ILIKE` is case-insensitive. `%` matches zero or more Unicode code points and `_` matches exactly one Unicode code point. Both wildcards can span newline characters.
+
+A backslash quotes the following pattern character, so `\%`, `\_` and `\\` match literal percent, underscore and backslash characters respectively. A trailing unmatched backslash is rejected as invalid syntax rather than silently reinterpreted.
+
+`NOT LIKE` and `NOT ILIKE` negate the corresponding match result. NULL input remains UNKNOWN before negation, preserving ordinary yt-sql three-valued logic. Patterns are quoted text literals.
+
+Examples:
+
+```sql
+WHERE title LIKE 'Mars%'
+WHERE title ILIKE '%quantum%'
+WHERE title NOT LIKE '%live_'
+WHERE title LIKE '100\%'
+```
+
+`MATCHES` remains the regular-expression predicate and uses Python regular-expression search semantics. It is not automatically interchangeable with LIKE syntax: anchoring, `.` versus `_`, `.*` versus `%`, newline behaviour, regex flags and case semantics must all be equivalent before any optimiser rewrite could be valid.
+
 ## Query optimiser
 
 yt-sql resolves a query's schema and typed literals before running a dedicated predicate optimiser. The optimiser is deliberately semantics-preserving: executing the resolved query before optimisation and executing the optimised query must produce identical predicate truth values, selected rows and output. This includes SQL-like three-valued NULL behaviour, so an expression that evaluates to UNKNOWN for a NULL value must not be rewritten into one that evaluates to FALSE merely because both would currently be rejected by `WHERE`.
@@ -111,7 +130,7 @@ The optimiser intentionally does not fold contradictory field predicates to a Bo
 
 ## Intentional dialect behaviour
 
-yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, relative calendar expressions, and source forms such as `@handle`.
+yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, relative calendar expressions, and source forms such as `@handle`.
 
 `JOIN` is out of scope by design. yt-discover queries media-source metadata rather than exposing its internal persistence tables as a relational database. If multi-source composition is added later, it should use a domain-appropriate abstraction rather than forcing users to join implementation tables.
 
@@ -131,4 +150,4 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Planned analytical expansion
 
-General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, and searched `CASE` are now part of the language. The next expression work is expected to evaluate and, where appropriate, add `LIKE`/`NOT LIKE`, `ILIKE`/`NOT ILIKE`, `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, and searched `CASE` are now part of the language. The next expression work is expected to evaluate and, where appropriate, add `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.

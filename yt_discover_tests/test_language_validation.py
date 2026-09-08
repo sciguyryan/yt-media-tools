@@ -61,7 +61,7 @@ def _resolve(text: str) -> None:
         ("SELECT id FROM @yt_sql_fixture WHERE availability IN ('public'", "Expected ')' after IN values"),
         ("SELECT id FROM @yt_sql_fixture WHERE is_live IS MAYBE", "Expected NULL, TRUE, or FALSE after IS"),
         ("SELECT id FROM @yt_sql_fixture WHERE title DOES CONTAIN 'Mars'", "Expected NOT after DOES"),
-        ("SELECT id FROM @yt_sql_fixture WHERE title DOES NOT EQUAL 'Mars'", "Expected CONTAIN or MATCH"),
+        ("SELECT id FROM @yt_sql_fixture WHERE title DOES NOT EQUAL 'Mars'", "Expected CONTAIN, MATCH, LIKE, or ILIKE"),
         ("SELECT id FROM @yt_sql_fixture WHERE title NOT = 'Mars'", "NOT must be followed"),
         ("SELECT id FROM @yt_sql_fixture WHERE title MATCHES '[unterminated'", "Invalid regular expression"),
         ("SELECT id FROM @yt_sql_fixture WHERE title = 'unterminated", "Unexpected character"),

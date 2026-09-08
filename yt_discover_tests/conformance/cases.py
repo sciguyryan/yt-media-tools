@@ -115,6 +115,38 @@ def _matches(rows: Rows) -> list[Any]:
     )
 
 
+def _like_prefix(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] is not None and str(r["title"]).startswith("Mars"))
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "title": r["title"]})
+        .to_list()
+    )
+
+
+def _ilike_contains(rows: Rows) -> list[Any]:
+    pattern = re.compile(r"[\s\S]*mars[\s\S]*", re.IGNORECASE)
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] is not None and pattern.fullmatch(str(r["title"])) is not None)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
+def _like_single(rows: Rows) -> list[Any]:
+    pattern = re.compile(r"Mars[\s\S]mission")
+    return (
+        OracleQuery(rows)
+        .where(lambda r: r["title"] is not None and pattern.fullmatch(str(r["title"])) is not None)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
 def _null_boolean(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -529,6 +561,12 @@ LANGUAGE_FEATURES = frozenset(
         "text.does_not_match",
         "text.match",
         "text.matches",
+        "text.like",
+        "text.ilike",
+        "text.not_like",
+        "text.not_ilike",
+        "text.like.escape",
+        "text.like.single",
         "text.not_contains",
         "text.not_matches",
         "value.count_b",
@@ -596,6 +634,50 @@ CASES = (
         ("id", "title"),
         "jsonl",
         features=("text.matches",),
+    ),
+    ConformanceCase(
+        "like_prefix",
+        "SELECT id, title FROM @yt_sql_fixture WHERE title LIKE 'Mars%' ORDER BY source_index ASC",
+        _like_prefix,
+        ("id", "title"),
+        "jsonl",
+        features=("text.like",),
+    ),
+    ConformanceCase(
+        "ilike_contains",
+        "SELECT id FROM @yt_sql_fixture WHERE title ILIKE '%mars%' ORDER BY source_index ASC",
+        _ilike_contains,
+        features=("text.ilike",),
+    ),
+    ConformanceCase(
+        "not_like",
+        "SELECT id FROM @yt_sql_fixture WHERE title NOT LIKE 'Mars%' AND title IS NOT NULL ORDER BY source_index ASC",
+        _ids_where(
+            lambda r: r["title"] is not None and not str(r["title"]).startswith("Mars"),
+            order=(("source_index", False),),
+        ),
+        features=("text.not_like",),
+    ),
+    ConformanceCase(
+        "not_ilike",
+        "SELECT id FROM @yt_sql_fixture WHERE title NOT ILIKE '%mars%' AND title IS NOT NULL ORDER BY source_index ASC",
+        _ids_where(
+            lambda r: r["title"] is not None and "mars" not in str(r["title"]).casefold(),
+            order=(("source_index", False),),
+        ),
+        features=("text.not_ilike",),
+    ),
+    ConformanceCase(
+        "like_single_wildcard",
+        "SELECT id FROM @yt_sql_fixture WHERE title LIKE 'Mars_mission' ORDER BY source_index ASC",
+        _like_single,
+        features=("text.like.single",),
+    ),
+    ConformanceCase(
+        "like_escaped_percent",
+        "SELECT id FROM @yt_sql_fixture WHERE title LIKE '100\\%' ORDER BY source_index ASC",
+        _ids_where(lambda r: r["title"] == "100%", order=(("source_index", False),)),
+        features=("text.like.escape",),
     ),
     ConformanceCase(
         "null_and_boolean_logic",

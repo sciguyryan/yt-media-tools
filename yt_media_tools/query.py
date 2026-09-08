@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import difflib
 import re
+from functools import lru_cache
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import Any, Sequence
@@ -589,19 +590,29 @@ class Parser:
                 return TextPredicate("CONTAINS", field, self.parse_text_literal(), True)
             if self.consume_keyword("MATCH") or self.consume_keyword("MATCHES"):
                 return TextPredicate("MATCHES", field, self.parse_regex_literal(), True)
-            raise QuerySyntaxError(self.source, "Expected CONTAIN or MATCH after DOES NOT.", self.current.position)
+            if self.consume_keyword("ILIKE"):
+                return TextPredicate("ILIKE", field, self.parse_like_literal(), True)
+            if self.consume_keyword("LIKE"):
+                return TextPredicate("LIKE", field, self.parse_like_literal(), True)
+            raise QuerySyntaxError(
+                self.source, "Expected CONTAIN, MATCH, LIKE, or ILIKE after DOES NOT.", self.current.position
+            )
 
         if self.consume_keyword("CONTAINS") or self.consume_keyword("CONTAIN"):
             return TextPredicate("CONTAINS", field, self.parse_text_literal(), negated)
         if self.consume_keyword("MATCHES") or self.consume_keyword("MATCH"):
             return TextPredicate("MATCHES", field, self.parse_regex_literal(), negated)
+        if self.consume_keyword("ILIKE"):
+            return TextPredicate("ILIKE", field, self.parse_like_literal(), negated)
+        if self.consume_keyword("LIKE"):
+            return TextPredicate("LIKE", field, self.parse_like_literal(), negated)
 
         if negated:
             if self._at_expression_boundary():
                 return Unary("NOT", Binary("=", field, Literal(True, "TRUE", field.position)))
             raise QuerySyntaxError(
                 self.source,
-                "NOT must be followed by BETWEEN, IN, CONTAINS, MATCHES, IS, or used with a Boolean field.",
+                "NOT must be followed by BETWEEN, IN, CONTAINS, MATCHES, LIKE, ILIKE, IS, or used with a Boolean field.",
                 self.current.position,
             )
 
@@ -620,7 +631,7 @@ class Parser:
 
         raise QuerySyntaxError(
             self.source,
-            "Expected a comparison operator, BETWEEN, IN, IS NULL, CONTAINS, or MATCHES.",
+            "Expected a comparison operator, BETWEEN, IN, IS NULL, CONTAINS, MATCHES, LIKE, or ILIKE.",
             self.current.position,
         )
 
@@ -655,6 +666,24 @@ class Parser:
             self.advance()
             return Literal(token.text, token.text, token.position, False)
         raise QuerySyntaxError(self.source, "Expected a text value.", token.position)
+
+    def parse_like_literal(self) -> Literal:
+        """Parse a quoted SQL-like pattern without consuming LIKE escapes.
+
+        Ordinary string literals interpret a small set of backslash escapes at
+        tokenisation time. LIKE needs the backslashes themselves because they
+        are part of the pattern language, so reconstruct the pattern from the
+        token text and only collapse doubled SQL quote characters here.
+        """
+        token = self.current
+        if token.kind != "STRING":
+            raise QuerySyntaxError(self.source, "LIKE requires a quoted text pattern.", token.position)
+        self.advance()
+        quote = token.text[0]
+        value = token.text[1:-1].replace(quote * 2, quote)
+        literal = Literal(value, token.text, token.position, True)
+        _validate_like_pattern(value, self.source, token.position)
+        return literal
 
     def parse_regex_literal(self) -> Literal:
         literal = self.parse_text_literal()
@@ -1205,6 +1234,11 @@ def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: Dat
             )
         if field.kind not in {"string", "mixed", "unknown"}:
             raise QuerySyntaxError(source, f"{node.operator} requires a text field, not {field.kind}.", field.position)
+        if node.operator in {"LIKE", "ILIKE"}:
+            _validate_like_pattern(str(node.value.value), source, node.value.position)
+            # Populate the pattern cache during resolution so row evaluation does not
+            # pay the translation/compilation cost for a literal query pattern.
+            _compile_like_pattern(str(node.value.value), node.operator == "ILIKE")
         return TextPredicate(node.operator, field, node.value, node.negated)
     raise AssertionError(f"Unsupported query node {node!r}")
 
@@ -1327,6 +1361,55 @@ def canonical_record_value(
     return value
 
 
+def like_matches(value: str, pattern: str, *, case_insensitive: bool = False) -> bool:
+    """Return whether one string satisfies an yt-sql LIKE pattern."""
+    return _compile_like_pattern(pattern, case_insensitive).fullmatch(value) is not None
+
+
+def _validate_like_pattern(pattern: str, source: str, position: int) -> None:
+    """Validate yt-sql LIKE escaping.
+
+    Percent and underscore are wildcards. A backslash quotes the following
+    character, including percent, underscore, and backslash itself. A trailing
+    escape is rejected so patterns are never silently reinterpreted.
+    """
+    escaped = False
+    for character in pattern:
+        if escaped:
+            escaped = False
+        elif character == "\\":
+            escaped = True
+    if escaped:
+        raise QuerySyntaxError(source, "LIKE pattern ends with an incomplete backslash escape.", position)
+
+
+@lru_cache(maxsize=512)
+def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[str]:
+    """Compile one yt-sql LIKE pattern to an anchored regular expression.
+
+    ``%`` matches zero or more Unicode code points, including newlines, and
+    ``_`` matches exactly one Unicode code point. Backslash quotes the next
+    pattern character. The cache means a resolved literal pattern is compiled
+    only once for repeated row evaluation.
+    """
+    pieces: list[str] = []
+    escaped = False
+    for character in pattern:
+        if escaped:
+            pieces.append(re.escape(character))
+            escaped = False
+        elif character == "\\":
+            escaped = True
+        elif character == "%":
+            pieces.append("[\\s\\S]*")
+        elif character == "_":
+            pieces.append("[\\s\\S]")
+        else:
+            pieces.append(re.escape(character))
+    flags = re.IGNORECASE if case_insensitive else 0
+    return re.compile("".join(pieces), flags)
+
+
 _CASE_INSENSITIVE_ENUM_FIELDS = {"live_status", "availability"}
 
 
@@ -1412,6 +1495,8 @@ def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
             result = needle.casefold() in value.casefold()
         elif node.operator == "MATCHES":
             result = re.search(needle, value) is not None
+        elif node.operator in {"LIKE", "ILIKE"}:
+            result = like_matches(value, needle, case_insensitive=node.operator == "ILIKE")
         else:
             raise AssertionError(f"Unsupported text operator {node.operator}")
         return not result if node.negated else result

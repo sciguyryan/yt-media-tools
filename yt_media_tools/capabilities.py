@@ -7,7 +7,7 @@ from datetime import date
 from typing import Any
 
 from .dates import DateContext, parse_date_literal
-from .query import Between, Binary, Field, InList, IsNull, Literal, TextPredicate, Unary
+from .query import Between, Binary, Field, InList, IsNull, Literal, TextPredicate, Unary, like_matches
 
 
 EXACT = "exact"
@@ -210,6 +210,8 @@ def lightweight_truth(node: Any, record: dict[str, Any], dates: DateContext) -> 
         needle = str(node.value.value)
         if node.operator == "CONTAINS":
             result = needle.casefold() in value.casefold()
+        elif node.operator in {"LIKE", "ILIKE"}:
+            result = like_matches(value, needle, case_insensitive=node.operator == "ILIKE")
         else:
             # Regex matching is deliberately deferred rather than duplicating query-engine
             # semantics in the acquisition planner.
