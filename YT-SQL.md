@@ -21,7 +21,7 @@ If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been reque
 
 Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
 
-Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Existing projection functions `LOWER`, `UPPER`, `LENGTH`, and `COALESCE` may be nested and may accept scalar expressions as arguments. Projection aliases may be referenced by later `ORDER BY` expressions.
+Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Existing projection functions `LOWER`, `UPPER`, `LENGTH`, and `COALESCE` may be nested and may accept scalar expressions as arguments. Projection aliases may be referenced by later `ORDER BY` expressions. Searched `CASE WHEN <predicate> THEN <scalar-expression> ... [ELSE <scalar-expression>] END` is also supported wherever scalar expressions are accepted. CASE conditions use the ordinary yt-sql Boolean predicate language; only TRUE selects a branch, while FALSE and UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL.
 
 Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
 
@@ -39,6 +39,14 @@ ORDER BY score + 1 DESC
 SELECT id, LENGTH(LOWER(title)) AS characters
 FROM @example
 ORDER BY characters DESC
+
+SELECT id, CASE
+    WHEN duration < 10m THEN 'short'
+    WHEN duration < 1h THEN 'medium'
+    ELSE 'long'
+END AS length_class
+FROM @example
+ORDER BY length_class
 ```
 
 ## Data-driven units
@@ -85,7 +93,7 @@ WHERE upload_date >= TODAY()-1baktun
 
 yt-sql resolves a query's schema and typed literals before running a dedicated predicate optimiser. The optimiser is deliberately semantics-preserving: executing the resolved query before optimisation and executing the optimised query must produce identical predicate truth values, selected rows and output. This includes SQL-like three-valued NULL behaviour, so an expression that evaluates to UNKNOWN for a NULL value must not be rewritten into one that evaluates to FALSE merely because both would currently be rejected by `WHERE`.
 
-The initial optimiser performs conservative reductions that make later language growth easier to reason about:
+The optimiser performs conservative reductions that make later language growth easier to reason about. Predicate subtrees embedded in searched CASE conditions are optimised with the same fixed-point rules as top-level WHERE predicates:
 
 - normalise `NOT` around comparisons and negatable predicates, including double negation;
 - remove duplicate `AND` and `OR` terms while ignoring non-semantic source-position metadata;
@@ -119,4 +127,4 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Planned analytical expansion
 
-General scalar expressions, arithmetic, nested scalar functions, and expression-based ordering are now part of the language. The next expression work is expected to evaluate and, where appropriate, add `CASE`, `LIKE`/`NOT LIKE`, `ILIKE`/`NOT ILIKE`, `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, and searched `CASE` are now part of the language. The next expression work is expected to evaluate and, where appropriate, add `LIKE`/`NOT LIKE`, `ILIKE`/`NOT ILIKE`, `GREATEST`, `LEAST`, `NULLIF`, useful date extraction functions, and a deliberately defined `SELECT *` contract. Aggregates, `GROUP BY`, `HAVING`, aggregate `FILTER`, explicit NULL ordering, and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.

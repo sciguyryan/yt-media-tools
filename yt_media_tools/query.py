@@ -130,6 +130,21 @@ class ScalarBinary:
 
 
 @dataclass(frozen=True)
+class CaseWhen:
+    condition: Any
+    result: Any
+    position: int = 0
+
+
+@dataclass(frozen=True)
+class ScalarCase:
+    whens: tuple[CaseWhen, ...]
+    else_result: Any | None = None
+    position: int = 0
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
 class OrderTerm:
     field: str
     descending: bool = False
@@ -378,6 +393,8 @@ class Parser:
 
     def parse_scalar_atom(self) -> Any:
         token = self.current
+        if self.keyword("CASE"):
+            return self.parse_scalar_case()
         if token.kind == "LPAREN":
             self.advance()
             node = self.parse_scalar_expression()
@@ -404,6 +421,45 @@ class Parser:
         raise QuerySyntaxError(
             self.source, "Expected a scalar field, literal, function, or parenthesised expression.", token.position
         )
+
+    def parse_scalar_case(self) -> ScalarCase:
+        """Parse a searched CASE expression. Simple CASE is intentionally unsupported."""
+        case_token = self.expect_keyword("CASE")
+        if not self.keyword("WHEN"):
+            if self.current.kind == "EOF":
+                raise QuerySyntaxError(self.source, "CASE requires at least one WHEN clause.", case_token.position)
+            raise QuerySyntaxError(
+                self.source,
+                "Only searched CASE is supported; write CASE WHEN <condition> THEN <value> ... END.",
+                self.current.position,
+            )
+
+        whens: list[CaseWhen] = []
+        while self.consume_keyword("WHEN"):
+            when_position = self.tokens[self.index - 1].position
+            if self.keyword("THEN") or self.keyword("WHEN") or self.keyword("ELSE") or self.keyword("END"):
+                raise QuerySyntaxError(
+                    self.source, "CASE WHEN requires a condition before THEN.", self.current.position
+                )
+            condition = self.parse_or()
+            self.expect_keyword("THEN", "Expected THEN after CASE WHEN condition.")
+            if self.keyword("WHEN") or self.keyword("ELSE") or self.keyword("END") or self.current.kind == "EOF":
+                raise QuerySyntaxError(
+                    self.source, "CASE THEN requires a scalar result expression.", self.current.position
+                )
+            result = self.parse_scalar_expression()
+            whens.append(CaseWhen(condition, result, when_position))
+
+        else_result = None
+        if self.consume_keyword("ELSE"):
+            if self.keyword("END") or self.current.kind == "EOF":
+                raise QuerySyntaxError(
+                    self.source, "CASE ELSE requires a scalar result expression.", self.current.position
+                )
+            else_result = self.parse_scalar_expression()
+
+        self.expect_keyword("END", "Expected END to close CASE expression.")
+        return ScalarCase(tuple(whens), else_result, case_token.position)
 
     def parse_scalar_function(self, name_token: Token) -> ScalarFunction:
         name = name_token.text.upper()
@@ -496,7 +552,9 @@ class Parser:
                 "AND",
                 "Expected AND after the lower bound of BETWEEN.",
             )
-            upper = self.parse_literal(stop_keywords={"AND", "OR", "ORDER", "LIMIT", "OFFSET"})
+            upper = self.parse_literal(
+                stop_keywords={"AND", "OR", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
+            )
             return Between(field, lower, upper, negated)
 
         if self.consume_keyword("IN"):
@@ -616,7 +674,11 @@ class Parser:
         stop_keywords: set[str] | None = None,
         stop_kinds: set[str] | None = None,
     ) -> Literal:
-        stop_keywords = {"AND", "OR", "ORDER", "LIMIT", "OFFSET"} if stop_keywords is None else stop_keywords
+        stop_keywords = (
+            {"AND", "OR", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
+            if stop_keywords is None
+            else stop_keywords
+        )
         stop_kinds = {"RPAREN", "COMMA", "EOF"} if stop_kinds is None else stop_kinds | {"EOF"}
         token = self.current
         if token.kind == "STRING":
@@ -653,6 +715,10 @@ class Parser:
             or self.keyword("ORDER")
             or self.keyword("LIMIT")
             or self.keyword("OFFSET")
+            or self.keyword("THEN")
+            or self.keyword("WHEN")
+            or self.keyword("ELSE")
+            or self.keyword("END")
         )
 
 
@@ -841,6 +907,14 @@ def format_scalar_expression(expression: Any) -> str:
         )
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
+    if isinstance(expression, ScalarCase):
+        parts = ["CASE"]
+        for branch in expression.whens:
+            parts.append(f"WHEN {format_expression(branch.condition)} THEN {format_scalar_expression(branch.result)}")
+        if expression.else_result is not None:
+            parts.append(f"ELSE {format_scalar_expression(expression.else_result)}")
+        parts.append("END")
+        return " ".join(parts)
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
 
@@ -850,7 +924,45 @@ def format_scalar_function(function: ScalarFunction) -> str:
 
 
 def _scalar_kind(expression: Any) -> str | None:
-    return getattr(expression, "kind", None)
+    kind = getattr(expression, "kind", None)
+    if kind is not None:
+        return kind
+    if isinstance(expression, Literal):
+        value = expression.value
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return "boolean"
+        if isinstance(value, int):
+            return "integer"
+        if isinstance(value, float):
+            return "number"
+        if isinstance(value, datetime):
+            return "datetime"
+        if isinstance(value, date):
+            return "date"
+        if isinstance(value, str):
+            return "string"
+    return None
+
+
+def _common_case_kind(expressions: Sequence[Any], source: str, position: int) -> str | None:
+    """Return the compatible CASE result kind, ignoring NULL-only branches."""
+    kinds = [kind for expression in expressions if (kind := _scalar_kind(expression)) is not None]
+    if not kinds:
+        return None
+    unique = set(kinds)
+    if len(unique) == 1:
+        return kinds[0]
+    if all(_is_numeric_kind(kind) for kind in kinds):
+        return "number"
+    if "mixed" in unique or "unknown" in unique:
+        return "mixed"
+    raise QuerySyntaxError(
+        source,
+        "CASE result expressions must have compatible types; got " + ", ".join(sorted(unique)) + ".",
+        position,
+    )
 
 
 def _is_numeric_kind(kind: str | None) -> bool:
@@ -928,6 +1040,24 @@ def _resolve_scalar_expression(
                     source, f"Arithmetic operator {expression.operator!r} requires numeric values.", expression.position
                 )
         return ScalarBinary(expression.operator, left, right, expression.position, "number")
+    if isinstance(expression, ScalarCase):
+        resolved_whens: list[CaseWhen] = []
+        results: list[Any] = []
+        for branch in expression.whens:
+            condition = _resolve_predicate(branch.condition, schema, source, dates)
+            result = _resolve_scalar_expression(
+                branch.result, schema, source, dates, aliases, select_context=select_context
+            )
+            resolved_whens.append(CaseWhen(condition, result, branch.position))
+            results.append(result)
+        else_result = None
+        if expression.else_result is not None:
+            else_result = _resolve_scalar_expression(
+                expression.else_result, schema, source, dates, aliases, select_context=select_context
+            )
+            results.append(else_result)
+        kind = _common_case_kind(results, source, expression.position)
+        return ScalarCase(tuple(resolved_whens), else_result, expression.position, kind)
     if isinstance(expression, ScalarFunction):
         args = tuple(
             _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
@@ -994,6 +1124,13 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
         except (TypeError, ValueError, OverflowError):
             return None
         raise AssertionError(f"Unsupported arithmetic operator {expression.operator}")
+    if isinstance(expression, ScalarCase):
+        for branch in expression.whens:
+            if evaluate(branch.condition, record) is True:
+                return evaluate_scalar_expression(branch.result, record)
+        if expression.else_result is not None:
+            return evaluate_scalar_expression(expression.else_result, record)
+        return None
     if isinstance(expression, ScalarFunction):
         values = [evaluate_scalar_expression(arg, record) for arg in expression.args]
         if expression.name == "LOWER":
@@ -1013,67 +1150,71 @@ def evaluate_scalar_function(function: ScalarFunction, record: dict[str, Any]) -
     return evaluate_scalar_expression(function, record)
 
 
+def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: DateContext) -> Any:
+    """Resolve one Boolean predicate tree against the established query schema."""
+    if node is None:
+        return None
+    if isinstance(node, Unary):
+        return Unary(node.operator, _resolve_predicate(node.operand, schema, source, context))
+    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        return Binary(
+            node.operator,
+            _resolve_predicate(node.left, schema, source, context),
+            _resolve_predicate(node.right, schema, source, context),
+        )
+    if isinstance(node, Binary):
+        field = _resolve_field(node.left, schema, source)
+        if field.kind == "structured":
+            raise QuerySyntaxError(
+                source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
+            )
+        literal = _resolve_literal(node.right, field, source, context)
+        if literal.value is None:
+            raise QuerySyntaxError(source, "Use IS NULL or IS NOT NULL for NULL tests.", literal.position)
+        return Binary(node.operator, field, literal)
+    if isinstance(node, Between):
+        field = _resolve_field(node.field, schema, source)
+        if field.kind == "structured":
+            raise QuerySyntaxError(
+                source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
+            )
+        return Between(
+            field,
+            _resolve_literal(node.lower, field, source, context),
+            _resolve_literal(node.upper, field, source, context),
+            node.negated,
+        )
+    if isinstance(node, InList):
+        field = _resolve_field(node.field, schema, source)
+        if field.kind == "structured":
+            raise QuerySyntaxError(
+                source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
+            )
+        return InList(
+            field,
+            tuple(_resolve_literal(item, field, source, context) for item in node.values),
+            node.negated,
+        )
+    if isinstance(node, IsNull):
+        return IsNull(_resolve_field(node.field, schema, source), node.negated)
+    if isinstance(node, TextPredicate):
+        field = _resolve_field(node.field, schema, source)
+        if field.kind == "structured":
+            raise QuerySyntaxError(
+                source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
+            )
+        if field.kind not in {"string", "mixed", "unknown"}:
+            raise QuerySyntaxError(source, f"{node.operator} requires a text field, not {field.kind}.", field.position)
+        return TextPredicate(node.operator, field, node.value, node.negated)
+    raise AssertionError(f"Unsupported query node {node!r}")
+
+
 def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
     """Resolve fields and typed literals after metadata has established a schema."""
     context = dates or DateContext()
     source = query.source
 
-    def resolve_node(node: Any) -> Any:
-        if node is None:
-            return None
-        if isinstance(node, Unary):
-            return Unary(node.operator, resolve_node(node.operand))
-        if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-            return Binary(node.operator, resolve_node(node.left), resolve_node(node.right))
-        if isinstance(node, Binary):
-            field = _resolve_field(node.left, schema, source)
-            if field.kind == "structured":
-                raise QuerySyntaxError(
-                    source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
-                )
-            literal = _resolve_literal(node.right, field, source, context)
-            if literal.value is None:
-                raise QuerySyntaxError(source, "Use IS NULL or IS NOT NULL for NULL tests.", literal.position)
-            return Binary(node.operator, field, literal)
-        if isinstance(node, Between):
-            field = _resolve_field(node.field, schema, source)
-            if field.kind == "structured":
-                raise QuerySyntaxError(
-                    source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
-                )
-            return Between(
-                field,
-                _resolve_literal(node.lower, field, source, context),
-                _resolve_literal(node.upper, field, source, context),
-                node.negated,
-            )
-        if isinstance(node, InList):
-            field = _resolve_field(node.field, schema, source)
-            if field.kind == "structured":
-                raise QuerySyntaxError(
-                    source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
-                )
-            return InList(
-                field,
-                tuple(_resolve_literal(item, field, source, context) for item in node.values),
-                node.negated,
-            )
-        if isinstance(node, IsNull):
-            return IsNull(_resolve_field(node.field, schema, source), node.negated)
-        if isinstance(node, TextPredicate):
-            field = _resolve_field(node.field, schema, source)
-            if field.kind == "structured":
-                raise QuerySyntaxError(
-                    source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
-                )
-            if field.kind not in {"string", "mixed", "unknown"}:
-                raise QuerySyntaxError(
-                    source, f"{node.operator} requires a text field, not {field.kind}.", field.position
-                )
-            return TextPredicate(node.operator, field, node.value, node.negated)
-        raise AssertionError(f"Unsupported query node {node!r}")
-
-    predicate = resolve_node(query.predicate)
+    predicate = _resolve_predicate(query.predicate, schema, source, context)
 
     select_terms: list[SelectTerm] = []
     effective_select = query.select or (SelectTerm("id"),)

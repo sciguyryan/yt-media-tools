@@ -5,7 +5,22 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Any
 
-from .query import Between, Binary, InList, IsNull, Query, TextPredicate, Unary, format_expression
+from .query import (
+    Between,
+    Binary,
+    CaseWhen,
+    InList,
+    IsNull,
+    Query,
+    ScalarBinary,
+    ScalarCase,
+    ScalarFunction,
+    ScalarUnary,
+    TextPredicate,
+    Unary,
+    format_expression,
+    format_scalar_expression,
+)
 
 MAX_OPTIMISER_PASSES = 32
 _INVERTED_COMPARISON = {
@@ -49,18 +64,87 @@ def optimise_query(query: Query) -> OptimisationResult:
     three-valued logic, including UNKNOWN results caused by NULL values.
     """
 
-    predicate = query.predicate
+    predicate, decisions = _optimise_predicate_fixed_point(query.predicate)
+
+    select_terms = []
+    for term in query.select:
+        expression, expression_decisions = _optimise_scalar_expression(term.expression)
+        decisions.extend(expression_decisions)
+        select_terms.append(
+            replace(term, field=format_scalar_expression(expression), expression=expression)
+            if term.expression is not None
+            else term
+        )
+
+    order_terms = []
+    for term in query.order_by:
+        expression, expression_decisions = _optimise_scalar_expression(term.expression)
+        decisions.extend(expression_decisions)
+        order_terms.append(
+            replace(term, field=format_scalar_expression(expression), expression=expression)
+            if term.expression is not None
+            else term
+        )
+
+    return OptimisationResult(
+        replace(query, predicate=predicate, select=tuple(select_terms), order_by=tuple(order_terms)),
+        tuple(decisions),
+    )
+
+
+def _optimise_predicate_fixed_point(node: Any) -> tuple[Any, list[OptimisationDecision]]:
+    """Optimise one predicate tree to convergence with the ordinary pass limit."""
+    predicate = node
     decisions: list[OptimisationDecision] = []
     for _ in range(MAX_OPTIMISER_PASSES):
         optimised, pass_decisions = _optimise_node(predicate)
         decisions.extend(pass_decisions)
         if optimised == predicate:
-            break
+            return predicate, decisions
         predicate = optimised
-    else:
-        raise RuntimeError("yt-sql optimiser did not converge")
+    raise RuntimeError("yt-sql optimiser did not converge")
 
-    return OptimisationResult(replace(query, predicate=predicate), tuple(decisions))
+
+def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[OptimisationDecision]]:
+    """Optimise predicate subtrees embedded in scalar expressions conservatively."""
+    if expression is None:
+        return None, []
+    if isinstance(expression, ScalarUnary):
+        operand, decisions = _optimise_scalar_expression(expression.operand)
+        return replace(expression, operand=operand), decisions
+    if isinstance(expression, ScalarBinary):
+        left, left_decisions = _optimise_scalar_expression(expression.left)
+        right, right_decisions = _optimise_scalar_expression(expression.right)
+        return replace(expression, left=left, right=right), left_decisions + right_decisions
+    if isinstance(expression, ScalarFunction):
+        args = []
+        decisions: list[OptimisationDecision] = []
+        for arg in expression.args:
+            optimised, arg_decisions = _optimise_scalar_expression(arg)
+            args.append(optimised)
+            decisions.extend(arg_decisions)
+        return replace(expression, args=tuple(args)), decisions
+    if isinstance(expression, ScalarCase):
+        branches = []
+        decisions: list[OptimisationDecision] = []
+        for branch in expression.whens:
+            condition, condition_decisions = _optimise_predicate_fixed_point(branch.condition)
+            for decision in condition_decisions:
+                decisions.append(
+                    OptimisationDecision(
+                        f"case-when-{decision.rule}",
+                        decision.before,
+                        decision.after,
+                    )
+                )
+            result, result_decisions = _optimise_scalar_expression(branch.result)
+            decisions.extend(result_decisions)
+            branches.append(CaseWhen(condition, result, branch.position))
+        else_result, else_decisions = _optimise_scalar_expression(expression.else_result)
+        decisions.extend(else_decisions)
+        optimised = replace(expression, whens=tuple(branches), else_result=else_result)
+        return optimised, decisions
+    return expression, []
 
 
 def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:

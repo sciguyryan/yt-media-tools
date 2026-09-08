@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.1 - Conditional Currents
+
+- Add searched `CASE WHEN ... THEN ... [ELSE ...] END` as a first-class scalar expression in `SELECT` and `ORDER BY`.
+- Preserve SQL-like three-valued condition semantics: only TRUE selects a branch, FALSE and UNKNOWN fall through, and omitted `ELSE` returns NULL.
+- Validate CASE result compatibility while allowing NULL-only branches and compatible numeric result types.
+- Extend acquisition field analysis through CASE conditions and result expressions.
+- Optimise predicates nested inside CASE branches to the same deterministic fixed point as top-level filters, with differential conformance coverage for identical rows and serialised output.
+- Add malformed syntax, type, nesting, ordering, NULL, planner and optimiser regression coverage for conditional expressions.
+
 ## Discover 0.23.0 - Expression Expanse
 
 - Make scalar expressions first-class in `SELECT` and `ORDER BY` instead of treating projection functions as a special case.

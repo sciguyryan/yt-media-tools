@@ -110,7 +110,7 @@ Both include extensive practical examples covering sources, filtering, dates, pr
 
 ## yt-sql predicate optimiser
 
-Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction and conservative same-field comparison-bound subsumption.
+Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction and conservative same-field comparison-bound subsumption. Discover 0.23.1 also applies these fixed-point predicate rewrites inside searched CASE conditions.
 
 The optimiser is tested differentially: the unoptimised and optimised resolved queries are executed against the same deterministic records and must produce identical predicate truth values, selected rows and serialised output. The routine conformance matrix also compares both forms across the complete current semantic case set before the optimised path is checked against the independent oracle.
 
@@ -349,6 +349,15 @@ Explicit aliases may be referenced anywhere inside an `ORDER BY` scalar expressi
 ```bash
 yt-discover.py "SELECT id, raw.extra.score * 2 AS score FROM @channel ORDER BY score + 1 DESC"
 ```
+
+Searched `CASE` expressions provide conditional scalar values in both projection and ordering. Conditions use the ordinary yt-sql predicate language. Branches are tested in order; only TRUE selects a branch, while FALSE and SQL-like UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL:
+
+```bash
+yt-discover.py "SELECT id, CASE WHEN duration < 10m THEN 'short' WHEN duration < 1h THEN 'medium' ELSE 'long' END AS length_class FROM @channel ORDER BY length_class"
+yt-discover.py "SELECT id FROM @channel ORDER BY CASE WHEN is_live THEN 0 ELSE 1 END, upload_date DESC"
+```
+
+CASE result expressions may contain arithmetic, nested scalar functions, or nested CASE expressions. Known incompatible result types are rejected during semantic resolution; NULL branches do not force an otherwise consistent expression to mixed type.
 
 `SELECT *` remains intentionally unsupported while its dynamic-schema contract is being designed. Use `--fields` or `--schema` to inspect available scalar fields, then select the fields you actually need.
 

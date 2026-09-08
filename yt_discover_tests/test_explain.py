@@ -62,7 +62,7 @@ def test_machine_readable_explain_is_valid_json() -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["kind"] == "yt-discover-explain"
-    assert payload["version"] == "0.23.0"
+    assert payload["version"] == "0.23.1"
     assert payload["acquisition"]["strategy"] == "bounded-date"
     assert payload["limit_aware_termination"]["applicable"] is True
     assert payload["limit_aware_termination"]["implemented"] is True
@@ -170,3 +170,39 @@ def test_json_explain_includes_row_shaping() -> None:
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(proc.stdout)
     assert payload["row_shaping"] == {"distinct": True, "limit": 2, "offset": 1}
+
+
+def test_json_explain_reports_case_predicate_optimizer_rewrites() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain-format",
+        "json",
+        "--explain",
+        "SELECT CASE WHEN duration > 1m AND duration > 2m THEN 1 ELSE 0 END AS bucket FROM @example",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    optimiser = payload["predicate_optimiser"]
+    assert optimiser["changed"] is True
+    assert optimiser["rewrites"] == [
+        {
+            "rule": "case-when-subsumed-and-predicate",
+            "before": "(duration > 1m AND duration > 2m)",
+            "after": "duration > 2m",
+        }
+    ]
+    assert optimiser["optimised_query"] == "SELECT CASE WHEN duration > 2m THEN 1 ELSE 0 END AS bucket FROM @example"
+
+
+def test_text_explain_handles_case_only_optimizer_rewrites_without_filter() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain",
+        "SELECT CASE WHEN duration > 1m AND duration > 2m THEN 1 ELSE 0 END AS bucket FROM @example",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "[case-when-subsumed-and-predicate]" in result.stdout
+    assert "Rewrites apply to predicates embedded in scalar expressions." in result.stdout
+    assert "Optimised filter:" not in result.stdout

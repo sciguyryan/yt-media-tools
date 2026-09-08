@@ -7,7 +7,19 @@ from datetime import date, timedelta
 from typing import Any
 
 from .dates import DateContext, parse_date_literal
-from .query import Between, Binary, Field, InList, Literal, Query, ScalarBinary, ScalarFunction, ScalarUnary, Unary
+from .query import (
+    Between,
+    Binary,
+    Field,
+    InList,
+    Literal,
+    Query,
+    ScalarBinary,
+    ScalarCase,
+    ScalarFunction,
+    ScalarUnary,
+    Unary,
+)
 from .schema import ALIASES, KNOWN_FIELD_TYPES
 
 
@@ -188,6 +200,13 @@ def _fields_in_scalar_expression(expression: Any) -> set[str]:
         fields: set[str] = set()
         for arg in expression.args:
             fields.update(_fields_in_scalar_expression(arg))
+        return fields
+    if isinstance(expression, ScalarCase):
+        fields: set[str] = set()
+        for branch in expression.whens:
+            fields.update(_fields_in_node(branch.condition))
+            fields.update(_fields_in_scalar_expression(branch.result))
+        fields.update(_fields_in_scalar_expression(expression.else_result))
         return fields
     return set()
 

@@ -65,7 +65,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.23.0"
+PROGRAM_VERSION = "0.23.1"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -953,7 +953,10 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         lines.append(f"  Applied {len(optimisation.decisions)} semantics-preserving rewrite(s):")
         for decision in optimisation.decisions:
             lines.append(f"  [{decision.rule}] {decision.before} -> {decision.after}")
-        lines.append(f"  Optimised filter: {explain_expression(optimisation.query.predicate)}")
+        if optimisation.query.predicate is not None:
+            lines.append(f"  Optimised filter: {explain_expression(optimisation.query.predicate)}")
+        else:
+            lines.append("  Rewrites apply to predicates embedded in scalar expressions.")
     else:
         lines.append("  No semantics-preserving predicate rewrite was applicable.")
 

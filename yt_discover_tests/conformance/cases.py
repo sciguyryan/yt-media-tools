@@ -183,6 +183,92 @@ def _scalar_nested_functions(rows: Rows) -> list[Any]:
     )
 
 
+def _case_bucket(rows: Rows) -> list[Any]:
+    def bucket(row: dict[str, Any]) -> str:
+        duration = row["duration"]
+        if duration is not None and int(duration) < 600:
+            return "short"
+        if duration is not None and int(duration) < 3600:
+            return "medium"
+        return "long"
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 20)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "bucket": bucket(r)})
+        .to_list()
+    )
+
+
+def _case_null_fallthrough(rows: Rows) -> list[Any]:
+    def state(row: dict[str, Any]) -> str:
+        value = row["view_count"]
+        if value is None:
+            return "missing"
+        if int(value) >= 1_000_000:
+            return "popular"
+        return "ordinary"
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 24)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "state": state(r)})
+        .to_list()
+    )
+
+
+def _case_without_else(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 16)
+        .order_by(lambda r: r["source_index"])
+        .select(
+            lambda r: {
+                "id": r["id"],
+                "flag": 1 if r["duration"] is not None and int(r["duration"]) < 600 else None,
+            }
+        )
+        .to_list()
+    )
+
+
+def _case_nested_result(rows: Rows) -> list[Any]:
+    def score(row: dict[str, Any]) -> int | None:
+        if row["view_count"] is None:
+            title = row["title"]
+            return None if title is None else len(str(title).lower())
+        return (int(row["view_count"]) + 2) * 3
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 16)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "score": score(r)})
+        .to_list()
+    )
+
+
+def _case_ordering(rows: Rows) -> list[Any]:
+    def bucket(row: dict[str, Any]) -> int:
+        duration = row["duration"]
+        if duration is not None and int(duration) < 600:
+            return 1
+        if duration is not None and int(duration) < 3600:
+            return 2
+        return 3
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 20)
+        .order_by(bucket)
+        .then_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .to_list()
+    )
+
+
 def _bound_parameters(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -409,6 +495,11 @@ LANGUAGE_FEATURES = frozenset(
         "scalar.arithmetic.multiply",
         "scalar.arithmetic.parentheses",
         "scalar.function_nested",
+        "scalar.case",
+        "scalar.case.null_fallthrough",
+        "scalar.case.no_else",
+        "scalar.case.nested_result",
+        "scalar.case.order",
         "order.expression",
         "order.expression_alias",
         "string.case_sensitive",
@@ -1209,6 +1300,44 @@ CASES = (
             order=(("release_timestamp", False),),
         ),
         features=("temporal.now_fixed",),
+    ),
+    ConformanceCase(
+        "case_bucket_projection",
+        "SELECT id, CASE WHEN duration < 10m THEN 'short' WHEN duration < 1h THEN 'medium' ELSE 'long' END AS bucket FROM @yt_sql_fixture WHERE source_index <= 20 ORDER BY source_index",
+        _case_bucket,
+        ("id", "bucket"),
+        "jsonl",
+        features=("scalar.case",),
+    ),
+    ConformanceCase(
+        "case_null_and_ordered_fallthrough",
+        "SELECT id, CASE WHEN view_count IS NULL THEN 'missing' WHEN view_count >= 1m THEN 'popular' ELSE 'ordinary' END AS state FROM @yt_sql_fixture WHERE source_index <= 24 ORDER BY source_index",
+        _case_null_fallthrough,
+        ("id", "state"),
+        "jsonl",
+        features=("scalar.case.null_fallthrough",),
+    ),
+    ConformanceCase(
+        "case_without_else_returns_null",
+        "SELECT id, CASE WHEN duration < 10m THEN 1 END AS flag FROM @yt_sql_fixture WHERE source_index <= 16 ORDER BY source_index",
+        _case_without_else,
+        ("id", "flag"),
+        "jsonl",
+        features=("scalar.case.no_else",),
+    ),
+    ConformanceCase(
+        "case_nested_scalar_results",
+        "SELECT id, CASE WHEN view_count IS NULL THEN LENGTH(LOWER(title)) ELSE (view_count + 2) * 3 END AS score FROM @yt_sql_fixture WHERE source_index <= 16 ORDER BY source_index",
+        _case_nested_result,
+        ("id", "score"),
+        "jsonl",
+        features=("scalar.case.nested_result",),
+    ),
+    ConformanceCase(
+        "case_direct_ordering",
+        "SELECT id FROM @yt_sql_fixture WHERE source_index <= 20 ORDER BY CASE WHEN duration < 10m THEN 1 WHEN duration < 1h THEN 2 ELSE 3 END, source_index",
+        _case_ordering,
+        features=("scalar.case.order",),
     ),
     ConformanceCase(
         "convoluted_existing_language",
