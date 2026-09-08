@@ -9,11 +9,7 @@ permissions:
 
 jobs:
   pytest:
-    name: Pytest
-    runs-on: ubuntu-latest
-
-  pytest:
-    name: Routine pytest suite
+    name: Run pytest suite
     runs-on: ubuntu-latest
 
     steps:

@@ -9,10 +9,6 @@ permissions:
 
 jobs:
   markdownlint:
-    name: Markdown Lint
-    runs-on: ubuntu-latest
-
-  markdownlint:
     name: Markdown lint
     runs-on: ubuntu-latest
 
