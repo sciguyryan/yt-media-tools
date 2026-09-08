@@ -578,6 +578,52 @@ def _unicode_codepoint_order(rows: Rows) -> list[Any]:
     )
 
 
+SELECT_STAR_COLUMNS = (
+    "id",
+    "title",
+    "upload_date",
+    "duration",
+    "view_count",
+    "like_count",
+    "comment_count",
+    "channel_follower_count",
+    "playlist_index",
+    "source_index",
+    "uploader",
+    "uploader_id",
+    "channel",
+    "channel_id",
+    "live_status",
+    "availability",
+    "is_live",
+    "was_live",
+    "webpage_url",
+    "playlist_id",
+    "playlist_title",
+    "timestamp",
+    "release_timestamp",
+    "modified_timestamp",
+    "fixture_group",
+    "fixture_nullable",
+)
+
+
+def _select_star_projection(rows: Rows) -> list[Any]:
+    """Express the documented SELECT * contract independently of production schema code."""
+
+    def project(row: dict[str, Any]) -> dict[str, Any]:
+        result = {column: row.get(column) for column in SELECT_STAR_COLUMNS}
+        upload_date = result["upload_date"]
+        if upload_date is not None:
+            text = str(upload_date)
+            result["upload_date"] = f"{text[:4]}-{text[4:6]}-{text[6:8]}"
+        for column in ("timestamp", "release_timestamp", "modified_timestamp"):
+            result[column] = _timestamp_text(result[column])
+        return result
+
+    return OracleQuery(rows).where(lambda r: r["id"] == "vid001").select(project).to_list()
+
+
 LANGUAGE_FEATURES = frozenset(
     {
         "boolean.and",
@@ -679,6 +725,7 @@ LANGUAGE_FEATURES = frozenset(
         "projection.length",
         "projection.lower",
         "projection.raw",
+        "projection.star",
         "projection.upper",
         "scalar.arithmetic.add",
         "scalar.arithmetic.divide",
@@ -1467,6 +1514,14 @@ CASES = (
         "SELECT id FROM @yt_sql_fixture WHERE source_index <= 8 ORDER BY source_index OFFSET 0_3",
         _ids_where(lambda r: int(r["source_index"]) <= 8, skip=3),
         features=("offset.underscore",),
+    ),
+    ConformanceCase(
+        "select_star_contract",
+        "SELECT * FROM @yt_sql_fixture WHERE id = 'vid001'",
+        _select_star_projection,
+        SELECT_STAR_COLUMNS,
+        "jsonl",
+        features=("projection.star",),
     ),
     ConformanceCase(
         "ordinary_field_projection",

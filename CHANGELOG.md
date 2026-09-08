@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.23.8 - Schema Star
+
+- Add `SELECT *` with deterministic expansion over canonical built-in scalar fields followed by observed top-level dynamic scalar fields in case-insensitive lexical order.
+- Exclude aliases and `raw.*` paths from star expansion so values are not duplicated and extractor-internal metadata is not unexpectedly projected.
+- Require `SELECT *` to stand alone rather than mixing it with explicit expressions or aliases.
+- Make star expansion participate in ordinary acquisition-cost analysis, `DISTINCT`, output serialisation, provenance and optimiser differential checks after semantic resolution.
+
 ## Discover 0.23.7 - Scalar Summit
 
 - Add `NULLIF`, `GREATEST` and `LEAST` as first-class scalar functions in projections, ordering expressions and nested scalar expressions.

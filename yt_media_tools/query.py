@@ -350,11 +350,14 @@ class Parser:
         terms: list[SelectTerm] = []
         while True:
             if self.current.kind == "STAR":
-                raise QuerySyntaxError(
-                    self.source,
-                    "SELECT * is not supported because yt-dlp metadata is dynamic; name the scalar fields you want.",
-                    self.current.position,
-                )
+                star = self.advance()
+                if terms or self.current.kind == "COMMA":
+                    raise QuerySyntaxError(
+                        self.source,
+                        "SELECT * must be used by itself; it cannot be mixed with explicit projections.",
+                        star.position,
+                    )
+                return (SelectTerm("*", position=star.position),)
             position = self.current.position
             expression = self.parse_scalar_expression()
             field_text = format_scalar_expression(expression)
@@ -1408,6 +1411,10 @@ def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None =
 
     select_terms: list[SelectTerm] = []
     effective_select = query.select or (SelectTerm("id"),)
+    if len(effective_select) == 1 and effective_select[0].field == "*" and effective_select[0].expression is None:
+        effective_select = tuple(
+            SelectTerm(info.name, position=effective_select[0].position) for info in schema.select_star_fields()
+        )
     output_names: set[str] = set()
     explicit_aliases: dict[str, SelectTerm] = {}
     for original_term in effective_select:

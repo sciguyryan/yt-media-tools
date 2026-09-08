@@ -270,7 +270,7 @@ These optimisations should remain separate from semantic rewrites so explain out
 
 Each new syntax feature must add a section to this document when it is implemented. The following strategies are already anticipated:
 
-- `SELECT *`: schema expansion and acquisition effects, with deterministic field ordering and explicit structured-value rules.
+- `SELECT *` is expanded during semantic resolution into the deterministic scalar schema. The optimiser sees the resulting ordinary projection terms rather than a wildcard. Star expansion itself is not an optimisation and cannot omit fields merely because they appear unused; acquisition planning must account for the complete expanded projection.
 - Aggregates and `GROUP BY`: aggregate-specific constant handling, grouping-key analysis, HAVING simplification and possible early aggregation only where exactness is provable.
 - CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
 

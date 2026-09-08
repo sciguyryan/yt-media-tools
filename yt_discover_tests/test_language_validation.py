@@ -36,7 +36,6 @@ def _resolve(text: str) -> None:
     (
         ("SELECT", "Expected a scalar field"),
         ("SELECT id, FROM @yt_sql_fixture", "Expected WHERE, ORDER BY, LIMIT, OFFSET, or end of query"),
-        ("SELECT * FROM @yt_sql_fixture", "SELECT * is not supported"),
         ("SELECT MAGIC(title) FROM @yt_sql_fixture", "Unsupported scalar function"),
         ("SELECT LOWER(title, id) FROM @yt_sql_fixture", "LOWER requires exactly one argument"),
         ("SELECT UPPER() FROM @yt_sql_fixture", "UPPER requires exactly one argument"),

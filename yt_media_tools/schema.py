@@ -133,6 +133,26 @@ class QuerySchema:
             unique[(info.name.casefold(), info.alias_of)] = info
         return sorted(unique.values(), key=lambda item: (item.alias_of is not None, item.name.casefold()))
 
+    def select_star_fields(self) -> list[FieldInfo]:
+        """Return the deterministic scalar field set expanded by ``SELECT *``.
+
+        Canonical built-in fields retain ``KNOWN_FIELD_TYPES`` declaration order.
+        Observed top-level dynamic scalar fields follow in case-insensitive lexical
+        order. Aliases and ``raw.*`` paths are excluded so star expansion does not
+        duplicate values or unexpectedly expose the entire extractor metadata tree.
+        """
+        builtins = [self._fields[name.casefold()] for name in KNOWN_FIELD_TYPES]
+        builtin_keys = {info.name.casefold() for info in builtins}
+        dynamic = sorted(
+            (
+                info
+                for info in self._fields.values()
+                if info.dynamic and info.alias_of is None and info.name.casefold() not in builtin_keys
+            ),
+            key=lambda item: item.name.casefold(),
+        )
+        return builtins + dynamic
+
     def raw_scalar_paths(self, max_depth: int = 6) -> list[FieldInfo]:
         """Catalogue scalar raw JSON paths without descending through arrays."""
         paths: dict[str, list[Any]] = {}

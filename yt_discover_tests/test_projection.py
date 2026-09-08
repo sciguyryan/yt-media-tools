@@ -67,9 +67,23 @@ def test_select_structured_value_rejected() -> None:
         resolve("SELECT raw.formats FROM @channel", records)
 
 
-def test_select_star_has_targeted_diagnostic() -> None:
-    with pytest.raises(QuerySyntaxError, match=r"SELECT \*"):
-        parse_query("SELECT * FROM @channel")
+def test_select_star_expands_deterministically() -> None:
+    records = [{"id": "a", "title": "First", "zeta": 9, "alpha": "A", "_raw": {"secret": "raw"}}]
+    query = resolve("SELECT * FROM @channel", records)
+    names = [term.output_name for term in query.select]
+    assert names[:3] == ["id", "title", "upload_date"]
+    assert names[-2:] == ["alpha", "zeta"]
+    assert "views" not in names
+    assert "raw.secret" not in names
+    projected = capture(records, query)
+    assert '"id": "a"' in projected and '"alpha": "A"' in projected and '"zeta": 9' in projected
+
+
+def test_select_star_must_stand_alone() -> None:
+    with pytest.raises(QuerySyntaxError, match=r"SELECT \* must be used by itself"):
+        parse_query("SELECT *, id FROM @channel")
+    with pytest.raises(QuerySyntaxError, match=r"SELECT \* must be used by itself"):
+        parse_query("SELECT id, * FROM @channel")
 
 
 def test_quoted_url_source() -> None:

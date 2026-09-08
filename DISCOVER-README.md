@@ -366,7 +366,9 @@ yt-discover.py "SELECT id FROM @channel ORDER BY CASE WHEN is_live THEN 0 ELSE 1
 
 CASE result expressions may contain arithmetic, nested scalar functions, or nested CASE expressions. Known incompatible result types are rejected during semantic resolution; NULL branches do not force an otherwise consistent expression to mixed type.
 
-`SELECT *` remains intentionally unsupported while its dynamic-schema contract is being designed. Use `--fields` or `--schema` to inspect available scalar fields, then select the fields you actually need.
+`SELECT *` expands to a deterministic scalar projection after the source schema has been resolved. Canonical built-in fields appear first in the documented schema order, followed by observed top-level dynamic scalar fields in case-insensitive lexical order. Aliases are not repeated and `raw.*` paths are excluded, so star expansion does not unexpectedly expose the extractor metadata tree. `SELECT *` must stand alone and cannot be mixed with explicit projection expressions or aliases.
+
+Because star expansion selects every available scalar field, it may require substantially more metadata acquisition than an explicit narrow projection. Use `--fields` or `--schema` when you want to inspect the available surface before choosing a smaller projection.
 
 ## FROM sources
 
