@@ -183,6 +183,25 @@ def _scalar_nested_functions(rows: Rows) -> list[Any]:
     )
 
 
+def _scalar_constant_folding(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 5)
+        .order_by(lambda r: r["source_index"])
+        .select(
+            lambda r: {
+                "id": r["id"],
+                "zero": 0,
+                "precedence": 7,
+                "lowered": "abc",
+                "fallback": 17,
+                "division_by_zero": None,
+            }
+        )
+        .to_list()
+    )
+
+
 def _case_bucket(rows: Rows) -> list[Any]:
     def bucket(row: dict[str, Any]) -> str:
         duration = row["duration"]
@@ -495,6 +514,7 @@ LANGUAGE_FEATURES = frozenset(
         "scalar.arithmetic.multiply",
         "scalar.arithmetic.parentheses",
         "scalar.function_nested",
+        "scalar.constant_fold",
         "scalar.case",
         "scalar.case.null_fallthrough",
         "scalar.case.no_else",
@@ -613,6 +633,14 @@ CASES = (
         ("id", "adjusted", "chars"),
         "jsonl",
         features=("scalar.arithmetic.add", "scalar.function_nested", "order.expression_alias"),
+    ),
+    ConformanceCase(
+        "scalar_constant_folding_semantics",
+        "SELECT id, 19 * 2 * 100 * 0 AS zero, 1 + 2 * 3 AS precedence, LOWER('ABC') AS lowered, COALESCE(NULL, 17) AS fallback, 1 / 0 AS division_by_zero FROM @yt_sql_fixture WHERE source_index <= 5 ORDER BY source_index ASC",
+        _scalar_constant_folding,
+        ("id", "zero", "precedence", "lowered", "fallback", "division_by_zero"),
+        "jsonl",
+        features=("scalar.constant_fold",),
     ),
     ConformanceCase(
         "bound_parameters",

@@ -1,0 +1,210 @@
+# yt-sql optimisation strategy
+
+This document records the optimisation strategy for yt-sql. It is a living design document and should be updated whenever syntax, semantic resolution, acquisition planning or execution optimisation changes.
+
+The governing rule is semantic equivalence. An optimisation is acceptable only when the optimised resolved query is observationally equivalent to the unoptimised resolved query for every supported input. Differential tests therefore execute both forms against the same deterministic records and compare predicate truth values where applicable, selected rows, row order, projected values and serialised output.
+
+Optimisation happens after semantic resolution unless a section explicitly says otherwise. Resolved field kinds, typed temporal literals, typed infinity sentinels and SQL-like three-valued NULL behaviour are part of the language semantics and must be preserved.
+
+## Optimisation classes
+
+yt-sql currently distinguishes several related optimisation layers:
+
+- **Predicate optimisation** simplifies resolved Boolean predicate trees without changing TRUE, FALSE or UNKNOWN results.
+- **Scalar-expression optimisation** simplifies resolved scalar expressions used by projection, ordering and CASE results.
+- **Acquisition optimisation** reduces remote metadata work only where the planner can prove that doing so cannot change the final query result.
+- **Metadata planning** determines which fields and capabilities a query requires. It is not currently a rewrite pass, but future work may use expression analysis to avoid unnecessary acquisition.
+
+The optimiser records material rewrites deterministically. Applicable rewrites are exposed through verbose execution and explain output. The JSON explain field remains named `predicate_optimiser` for compatibility even though its rewrite list now also includes scalar-expression decisions; a future versioned explain schema may adopt a more general name.
+
+## Boolean operators: `AND`, `OR` and `NOT`
+
+### Implemented
+
+`NOT` is normalised around operators that have an exact inverse. Double negation is removed. Comparison operators are inverted directly, and `BETWEEN`, `IN`, `IS NULL` and text predicates toggle their existing negated form.
+
+Repeated terms in the same flattened `AND` or `OR` chain are removed using semantic AST identity rather than source positions.
+
+The predicate optimiser runs to a deterministic fixed point with a bounded pass count. CASE `WHEN` predicates use the same fixed-point optimiser as top-level `WHERE` predicates.
+
+### Deliberately not implemented
+
+General Boolean constant propagation and contradiction folding are not implemented. A rewrite such as `field = 5 AND field > 10 -> FALSE` would be incorrect for a NULL field because the original expression evaluates to UNKNOWN. Any future Boolean constant representation must preserve three-valued logic exactly.
+
+### Future candidates
+
+Safe De Morgan normalisation, common-subexpression extraction and canonical Boolean ordering may be considered if they produce measurable planning or execution benefits. Each would require differential coverage for NULL-heavy inputs and nested negation.
+
+## Comparisons and bounds
+
+### Implemented
+
+Same-field lower and upper bounds are simplified conservatively. For `AND`, the stronger compatible bound survives. For `OR`, the weaker compatible bound survives. Strict and inclusive boundaries are handled explicitly.
+
+A same-field equality removes a bound in `AND` when the equality necessarily satisfies that bound. In the corresponding `OR` case, the equality is removed when the surviving bound already includes it.
+
+Degenerate `BETWEEN x AND x` is rewritten to equality. `NOT BETWEEN x AND x` is rewritten to inequality.
+
+Typed temporal values and the `INFINITY()` and `-INFINITY()` sentinels participate in bound comparison only after semantic resolution.
+
+### Deliberately not implemented
+
+Contradictory comparison sets are not collapsed to Boolean constants because NULL inputs can make the original expression UNKNOWN rather than FALSE.
+
+Cross-field algebra, transitive inference between unrelated metadata fields and reordering based on assumed evaluation cost are not performed.
+
+### Future candidates
+
+Temporal-bound inference may be expanded where the planner can use a proven universal bound for acquisition. More complete interval reasoning may also be useful, provided UNKNOWN semantics remain identical.
+
+## `BETWEEN`, `IN`, `IS NULL` and text predicates
+
+### Implemented
+
+These predicates participate in negation normalisation and duplicate-term removal. Degenerate `BETWEEN` additionally collapses to equality or inequality.
+
+### Future candidates
+
+Literal-only `IN` normalisation, duplicate literal removal and safe singleton `IN` reduction may be considered. Pattern-specific optimisation for future `LIKE` and `ILIKE` syntax should be documented when those operators are added.
+
+## Scalar arithmetic: `+`, `-`, `*`, `/` and `%`
+
+### Implemented
+
+Discover 0.23.2 folds scalar subtrees whose operands are entirely literal after semantic resolution. Folding is recursive, so:
+
+```sql
+19 * 2 * 100 * 0
+```
+
+is reduced through deterministic constant folds to the literal `0` before row evaluation.
+
+Unary `+` and `-` over literal operands are also folded. Division or modulo by literal zero folds to NULL because that is the existing yt-sql evaluation result. NULL propagation is therefore preserved rather than replaced with ordinary arithmetic identities.
+
+### Deliberately not implemented
+
+Symbolic algebra involving fields is not performed. In particular:
+
+```sql
+view_count * 0
+```
+
+is not rewritten to `0`, because a NULL `view_count` produces NULL in the original expression. Similar identities such as `x + 0`, `x * 1` or cancellation rules are deferred until their type, NULL and exceptional-value semantics can be proven for every supported scalar kind.
+
+Floating-point reassociation is not performed. Reordering arithmetic could change rounding, overflow or future numeric semantics even when the mathematical expression appears equivalent.
+
+### Future candidates
+
+Safe identity elimination may be introduced selectively where the operand's resolved type and NULL behaviour prove equivalence. Constant-expression canonicalisation may also be useful for query caching or a future compiled representation.
+
+## Scalar functions
+
+### Implemented
+
+A deterministic scalar function is folded when all of its arguments have already become literals. This currently applies to `LOWER`, `UPPER`, `LENGTH` and `COALESCE`.
+
+Nested functions and arithmetic are folded from the leaves upwards. For example, a literal arithmetic argument may fold before the containing function is considered.
+
+### Deliberately not implemented
+
+Functions with field-dependent arguments remain runtime expressions. No rewrite assumes properties such as case idempotence unless the full argument is already constant.
+
+### Future candidates
+
+As new deterministic scalar functions are added, their foldability should be declared explicitly. Time-dependent functions such as `TODAY()` require particular care because their value depends on the query date context rather than only on syntactic literals.
+
+## Searched `CASE`
+
+### Implemented
+
+Every `WHEN` predicate is optimised independently with the ordinary fixed-point predicate optimiser. Scalar expressions inside every `THEN` result and the optional `ELSE` result are recursively scalar-optimised, including constant folding.
+
+Branch order is never changed.
+
+### Deliberately not implemented
+
+CASE branches are not currently removed or reordered, even when a condition appears statically decisive. The predicate language does not yet expose a general three-valued Boolean literal representation suitable for proving every such rewrite safely.
+
+### Future candidates
+
+Constant-condition branch pruning may be considered if the condition can be proven TRUE, FALSE or UNKNOWN without record data and the removed branches cannot affect diagnostics or semantics. Common branch-result folding may also be considered.
+
+## Projection and aliases
+
+### Implemented
+
+Projection expressions are optimised after alias and field resolution. A fully constant projected expression becomes a literal and is evaluated once by the optimiser rather than once per output row.
+
+Alias names remain unchanged. Optimisation rewrites the canonical expression text attached to the resolved projection while preserving the selected output name.
+
+### Future candidates
+
+Unused-expression elimination may become useful after aggregate, CTE or more advanced projection syntax exists. It is not currently needed for the simple projection model.
+
+## `ORDER BY`
+
+### Implemented
+
+Direct scalar ordering expressions and alias-resolved ordering expressions use the same scalar optimiser as projection. Constant subexpressions can therefore fold inside ordering keys.
+
+Ordering terms themselves are not reordered or removed merely because an expression becomes constant.
+
+### Future candidates
+
+A completely constant ordering term could potentially be removed because it cannot distinguish rows, provided stable tie ordering is proven identical. This has not yet been implemented because deterministic ordering is an explicit yt-sql contract.
+
+Future `NULLS FIRST` and `NULLS LAST` syntax will require its own optimisation notes.
+
+## `DISTINCT`, `LIMIT` and `OFFSET`
+
+### Implemented
+
+No local AST rewrites currently change `DISTINCT`, `LIMIT` or `OFFSET`.
+
+Discover does implement a separate proof-based acquisition optimisation for eligible `LIMIT` queries. When source order is preserved, no explicit ordering can allow later rows to displace earlier matches, required fields are statically known and other safety conditions hold, acquisition may stop once enough authoritative matches have been observed.
+
+### Deliberately not implemented
+
+`LIMIT` is not pushed through arbitrary ordering, dynamic raw fields or archive exclusion. These cases can change which rows survive.
+
+### Future candidates
+
+Additional safe limit propagation may become possible after source capabilities and collection semantics are richer, but it must remain proof-based rather than heuristic.
+
+## Source and acquisition planning
+
+### Implemented
+
+The planner analyses required metadata fields recursively through scalar expressions, CASE conditions, CASE results, predicates and ordering. This allows acquisition to request the fields needed by a derived expression rather than treating the expression as opaque.
+
+Capability-aware planning distinguishes available acquisition stages and can select bounded acquisition only when its preconditions are proven.
+
+### Future candidates
+
+Field/capability analysis can become more aggressive as the language grows. Potential work includes eliminating acquisition of fields made unnecessary by constant folding, source-boundary planning from inferred temporal predicates, and metadata-acquisition planning based on expression dependency sets.
+
+These optimisations should remain separate from semantic rewrites so explain output can state whether a change alters the query tree or only the acquisition plan.
+
+## Future language features
+
+Each new syntax feature must add a section to this document when it is implemented. The following strategies are already anticipated:
+
+- `LIKE` and `ILIKE`: pattern normalisation, exact-match reduction where a pattern has no wildcards, and safe prefix-bound planning where extractor capabilities genuinely support it.
+- `NULLIF`, `GREATEST` and `LEAST`: literal constant folding and careful NULL-aware simplification.
+- `SELECT *`: schema expansion and acquisition effects, with deterministic field ordering and explicit structured-value rules.
+- Aggregates and `GROUP BY`: aggregate-specific constant handling, grouping-key analysis, HAVING simplification and possible early aggregation only where exactness is provable.
+- CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
+
+## Differential verification requirements
+
+Every optimiser feature must have direct unit coverage for the rewrite itself and differential execution coverage against the unoptimised resolved query. Tests should cover normal values, NULL values, boundary values, mixed nesting and any type-specific exceptional values relevant to the rule.
+
+The routine deterministic conformance corpus is executed in both unoptimised and optimised forms. Selected rows and serialised output must match exactly. Predicate-focused tests additionally compare TRUE, FALSE and UNKNOWN results directly so an optimisation cannot hide a three-valued-logic regression behind `WHERE` filtering.
+
+The optimiser must also be idempotent: optimising an already optimised query must produce the same query with no new decisions.
+
+## Compiled-query investigation
+
+A future design investigation may evaluate a compact compiled yt-sql representation to avoid repeated parsing and semantic-resolution overhead. Candidate forms include a versioned serialised resolved AST, a compact intermediate representation or bytecode, and a canonical cacheable query plan.
+
+This is exploratory rather than committed work. Any design must justify its complexity with measurements and address language/schema versioning, cache invalidation, validation of untrusted compiled input, portability, deterministic behaviour, explainability and compatibility with future language evolution. A compiled form must never become an undocumented second language with semantics that can drift from textual yt-sql.

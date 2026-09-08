@@ -11,6 +11,7 @@ from .query import (
     CaseWhen,
     InList,
     IsNull,
+    Literal,
     Query,
     ScalarBinary,
     ScalarCase,
@@ -18,6 +19,7 @@ from .query import (
     ScalarUnary,
     TextPredicate,
     Unary,
+    evaluate_scalar_expression,
     format_expression,
     format_scalar_expression,
 )
@@ -106,16 +108,32 @@ def _optimise_predicate_fixed_point(node: Any) -> tuple[Any, list[OptimisationDe
 
 
 def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[OptimisationDecision]]:
-    """Optimise predicate subtrees embedded in scalar expressions conservatively."""
+    """Optimise a resolved scalar expression without changing observable semantics.
+
+    Constant folding is deliberately limited to subtrees whose inputs are all
+    literals. Symbolic algebra such as ``field * 0 -> 0`` is not performed because
+    field values can be NULL and future scalar kinds may have additional semantics.
+    """
     if expression is None:
         return None, []
     if isinstance(expression, ScalarUnary):
         operand, decisions = _optimise_scalar_expression(expression.operand)
-        return replace(expression, operand=operand), decisions
+        optimised = replace(expression, operand=operand)
+        if isinstance(operand, Literal):
+            folded = _fold_constant_scalar(optimised)
+            decisions.append(_scalar_decision("fold-constant-unary", optimised, folded))
+            return folded, decisions
+        return optimised, decisions
     if isinstance(expression, ScalarBinary):
         left, left_decisions = _optimise_scalar_expression(expression.left)
         right, right_decisions = _optimise_scalar_expression(expression.right)
-        return replace(expression, left=left, right=right), left_decisions + right_decisions
+        decisions = left_decisions + right_decisions
+        optimised = replace(expression, left=left, right=right)
+        if isinstance(left, Literal) and isinstance(right, Literal):
+            folded = _fold_constant_scalar(optimised)
+            decisions.append(_scalar_decision("fold-constant-arithmetic", optimised, folded))
+            return folded, decisions
+        return optimised, decisions
     if isinstance(expression, ScalarFunction):
         args = []
         decisions: list[OptimisationDecision] = []
@@ -123,7 +141,12 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
             optimised, arg_decisions = _optimise_scalar_expression(arg)
             args.append(optimised)
             decisions.extend(arg_decisions)
-        return replace(expression, args=tuple(args)), decisions
+        optimised = replace(expression, args=tuple(args))
+        if all(isinstance(arg, Literal) for arg in optimised.args):
+            folded = _fold_constant_scalar(optimised)
+            decisions.append(_scalar_decision("fold-constant-function", optimised, folded))
+            return folded, decisions
+        return optimised, decisions
     if isinstance(expression, ScalarCase):
         branches = []
         decisions: list[OptimisationDecision] = []
@@ -145,6 +168,28 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
         optimised = replace(expression, whens=tuple(branches), else_result=else_result)
         return optimised, decisions
     return expression, []
+
+
+def _fold_constant_scalar(expression: Any) -> Literal:
+    """Evaluate a fully literal scalar subtree once and retain it as a literal."""
+    value = evaluate_scalar_expression(expression, {})
+    position = getattr(expression, "position", 0)
+    return Literal(value, _literal_raw(value), position, isinstance(value, str))
+
+
+def _literal_raw(value: Any) -> str:
+    """Return canonical yt-sql source text for a folded literal value."""
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    return repr(value)
+
+
+def _scalar_decision(rule: str, before: Any, after: Any) -> OptimisationDecision:
+    return OptimisationDecision(rule, format_scalar_expression(before), format_scalar_expression(after))
 
 
 def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:

@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.23.2 - Known Quantities
+
+- Add conservative post-resolution scalar constant folding for fully literal arithmetic, unary expressions and deterministic scalar functions.
+- Fold nested constant subexpressions recursively while preserving yt-sql NULL behaviour, including NULL results for division and modulo by zero.
+- Keep symbolic field algebra deliberately disabled where equivalence has not been proved, including `field * 0`, and extend differential optimiser coverage around those boundaries.
+- Add `YT-SQL-OPTIMISATION.md` as the living per-feature optimisation strategy, documenting current rewrites, deliberately excluded transformations, future candidates and differential verification requirements.
+- Record the exploratory compiled-query design direction without committing to an implementation.
+- Add `El Psy Kongroo.` as a zero-argument Discover easter egg while retaining the existing required-source error and exit status.
+
 ## Discover 0.23.1 - Conditional Currents
 
 - Add searched `CASE WHEN ... THEN ... [ELSE ...] END` as a first-class scalar expression in `SELECT` and `ORDER BY`.

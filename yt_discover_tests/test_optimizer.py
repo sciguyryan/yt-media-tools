@@ -8,7 +8,16 @@ import pytest
 
 from yt_media_tools.dates import DateContext
 from yt_media_tools.optimizer import optimise_query
-from yt_media_tools.query import apply_query, evaluate, format_query, parse_query, resolve_query
+from yt_media_tools.query import (
+    Literal,
+    apply_query,
+    evaluate,
+    evaluate_scalar_expression,
+    format_query,
+    format_scalar_expression,
+    parse_query,
+    resolve_query,
+)
 from yt_media_tools.schema import QuerySchema
 
 NOW = datetime(2026, 9, 7, 12, 0, tzinfo=timezone.utc)
@@ -162,3 +171,76 @@ def test_decision_log_is_deterministic_and_human_readable() -> None:
     assert [(item.rule, item.before, item.after) for item in result.decisions] == [
         ("subsumed-and-predicate", "(view_count >= 10 AND view_count >= 20)", "view_count >= 20")
     ]
+
+
+def test_constant_arithmetic_is_fully_folded() -> None:
+    records = [{"id": "a"}]
+    query = _resolved("SELECT 19 * 2 * 100 * 0 AS answer FROM @example", records)
+    result = optimise_query(query)
+    expression = result.query.select[0].expression
+    assert isinstance(expression, Literal)
+    assert expression.value == 0
+    assert format_scalar_expression(expression) == "0"
+    assert [item.rule for item in result.decisions] == [
+        "fold-constant-arithmetic",
+        "fold-constant-arithmetic",
+        "fold-constant-arithmetic",
+    ]
+    assert apply_query(records, query) == apply_query(records, result.query)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "SELECT -(-5) AS value FROM @example",
+        "SELECT 1 + 2 * 3 AS value FROM @example",
+        "SELECT (1 + 2) * 3 AS value FROM @example",
+        "SELECT 7 / 2 AS value FROM @example",
+        "SELECT 7 % 3 AS value FROM @example",
+        "SELECT 1 / 0 AS value FROM @example",
+        "SELECT 1 % 0 AS value FROM @example",
+        "SELECT NULL * 0 AS value FROM @example",
+        "SELECT LOWER('ABC') AS value FROM @example",
+        "SELECT UPPER('abc') AS value FROM @example",
+        "SELECT LENGTH('abc') AS value FROM @example",
+        "SELECT COALESCE(NULL, NULL, 17) AS value FROM @example",
+        "SELECT COALESCE(NULL, 'it''s fine') AS value FROM @example",
+        "SELECT (2 + 3) * (4 - 1) / 5 AS value FROM @example",
+    ],
+)
+def test_constant_folding_preserves_scalar_results(source: str) -> None:
+    records = [{"id": "a"}, {"id": "b"}]
+    original = _resolved(source, records)
+    optimised = optimise_query(original).query
+    for record in records:
+        before = evaluate_scalar_expression(original.select[0].expression, record)
+        after = evaluate_scalar_expression(optimised.select[0].expression, record)
+        assert after == before
+    assert apply_query(records, optimised) == apply_query(records, original)
+
+
+def test_constant_folding_is_recursive_inside_case_results() -> None:
+    records = [{"id": "a", "view_count": 20}, {"id": "b", "view_count": 2}]
+    source = "SELECT CASE WHEN view_count >= 10 THEN 2 * 3 ELSE 9 - 4 END AS bucket FROM @example"
+    original = _resolved(source, records)
+    result = optimise_query(original)
+    assert "THEN 6" in result.query.select[0].field
+    assert "ELSE 5" in result.query.select[0].field
+    assert apply_query(records, result.query) == apply_query(records, original)
+
+
+def test_symbolic_zero_multiplication_is_not_folded() -> None:
+    records = [{"id": "missing", "view_count": None}, {"id": "known", "view_count": 9}]
+    query = _resolved("SELECT view_count * 0 AS value FROM @example", records)
+    result = optimise_query(query)
+    assert result.query.select[0].expression == query.select[0].expression
+    assert result.decisions == ()
+    assert apply_query(records, result.query) == apply_query(records, query)
+
+
+def test_scalar_constant_folding_is_idempotent() -> None:
+    records = [{"id": "a"}]
+    first = optimise_query(_resolved("SELECT (1 + 2) * 3, LOWER('ABC') FROM @example", records))
+    second = optimise_query(first.query)
+    assert second.query == first.query
+    assert second.decisions == ()

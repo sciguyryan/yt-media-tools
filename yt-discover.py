@@ -65,7 +65,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.23.1"
+PROGRAM_VERSION = "0.23.2"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -958,7 +958,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         else:
             lines.append("  Rewrites apply to predicates embedded in scalar expressions.")
     else:
-        lines.append("  No semantics-preserving predicate rewrite was applicable.")
+        lines.append("  No semantics-preserving query rewrite was applicable.")
 
     lines.extend(["", "Ordering"])
     if resolved is not None and resolved.order_by:
@@ -1620,6 +1620,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.provenance == "-" and not explain_analyze and args.output is None and args.append is None:
         parser.error(
             "--provenance - would mix JSON provenance with query rows on stdout; use a file or redirect query output with -o/--append"
+        )
+
+    effective_argv = sys.argv[1:] if argv is None else argv
+    if not effective_argv:
+        print("El Psy Kongroo.", file=sys.stderr)
+        parser.error(
+            "SOURCE_OR_QUERY is required unless --examples, --check-query, --explain, --explain-analyze, --check-tools, or --version is used"
         )
 
     total_started = perf_counter()
