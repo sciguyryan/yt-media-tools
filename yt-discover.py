@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+from dataclasses import replace
 from datetime import datetime, timezone
 from time import perf_counter
 from pathlib import Path
@@ -49,7 +50,7 @@ from yt_media_tools.query import (
     parse_query,
     parse_where,
     resolve_query,
-    query_single_physical_source,
+    query_physical_sources,
 )
 from yt_media_tools.schema import QuerySchema
 from yt_media_tools.sources import TAB_SUFFIXES, SourceSpec, resolve_source
@@ -68,7 +69,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.25.0"
+PROGRAM_VERSION = "0.25.1"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -80,7 +81,8 @@ Examples:
 
   Complete yt-sql queries
   -----------------------------
-  The canonical form can contain SELECT, DISTINCT, FROM, WHERE, ORDER BY, LIMIT, and OFFSET:
+  The canonical form can contain WITH, SELECT, DISTINCT, FROM, WHERE, GROUP BY,
+  HAVING, UNION/UNION ALL, ORDER BY, LIMIT, and OFFSET:
     yt-discover.py "FROM @example WHERE upload_date BETWEEN 2026-04-01 AND TODAY()"
 
   Omitted SELECT means SELECT id, preserving pipe-friendly video ID output:
@@ -122,8 +124,19 @@ Examples:
   Quote full URLs in FROM:
     yt-discover.py "SELECT id, title FROM 'https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxxxxxxxx'"
 
-  SELECT * is deliberately unsupported because yt-dlp metadata is dynamic. Use
-  --fields or --schema to discover scalar fields, then name the fields you need.
+  SELECT * expands deterministically to the scalar fields available in the resolved
+  schema. Use --fields or --schema when you need to inspect the available metadata.
+
+  Compose reusable logical relations with non-recursive CTEs:
+    yt-discover.py "WITH short AS (SELECT id, title FROM @example WHERE duration < 1h) SELECT id FROM short WHERE title ILIKE '%mars%'"
+
+  Combine compatible result sets. UNION removes duplicate logical rows; UNION ALL
+  preserves them:
+    yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM @channel_b ORDER BY title"
+
+  yt-dlp-supported non-YouTube collection URLs can participate in set composition
+  when source classification is automatic:
+    yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM 'https://www.twitch.tv/example/videos'"
 
   Source shorthand and compatibility
   ----------------------------------
@@ -894,29 +907,38 @@ def _effective_output_format(output_format: str, selected_count: int, *, explici
 def explain_user_query(query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False) -> str:
     """Explain query semantics, field capabilities, and safe acquisition optimisations."""
     query = parse_query(query_text)
-    source_input = query_single_physical_source(query)
-    if source_input is None:
+    source_inputs = query_physical_sources(query)
+    if not source_inputs:
         raise ValueError("--explain requires a complete query containing a physical FROM <source>")
-    source = resolve_source(source_input, source_type=source_type, tab=tab)
+    explained_sources = [resolve_source(item, source_type=source_type, tab=tab) for item in source_inputs]
+    source_input = source_inputs[0]
+    source = explained_sources[0]
     dates = DateContext(date_order=date_format)
     schema = QuerySchema(())
 
-    lines = [
-        "Query explanation",
-        "",
-        "Source",
-        f"  Type: {source.kind}",
-        f"  Input: {source_input}",
-        f"  Resolved URL: {source.canonical_url}",
-    ]
-    if source.kind == "channel":
-        lines.append(f"  Tab: {tab}")
+    if len(source_inputs) == 1:
+        lines = [
+            "Query explanation",
+            "",
+            "Source",
+            f"  Type: {source.kind}",
+            f"  Input: {source_input}",
+            f"  Resolved URL: {source.canonical_url}",
+        ]
+        if source.kind == "channel":
+            lines.append(f"  Tab: {tab}")
+    else:
+        lines = ["Query explanation", "", "Sources"]
+        for item, source_spec in zip(source_inputs, explained_sources, strict=True):
+            lines.append(f"  {item}: {source_spec.kind} -> {source_spec.canonical_url}")
+            if source_spec.kind == "channel":
+                lines.append(f"    Tab: {tab}")
 
     lines.extend(["", "Common table expressions"])
     if query.ctes:
         for cte in query.ctes:
             lines.append(f"  {cte.name}: {format_query(cte.query)}")
-        lines.append("  Physical sources: one; multi-source composition is reserved for UNION.")
+        lines.append(f"  Physical sources: {len(source_inputs)}.")
     else:
         lines.append("  None.")
 
@@ -1027,6 +1049,16 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         )
 
     plan = plan_acquisition(query, source_kind=source.kind, tab=tab, dates=dates)
+    if len(source_inputs) > 1:
+        plan = AcquisitionPlan(
+            "full",
+            "UNION composition spans multiple physical sources; each source is acquired independently before logical reconciliation",
+        )
+    if len(source_inputs) > 1:
+        plan = AcquisitionPlan(
+            "full",
+            "UNION composition spans multiple physical sources; each source is acquired independently before logical reconciliation",
+        )
     if offline:
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
@@ -1080,6 +1112,12 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             ]
         )
     limit_plan = plan_limit_termination(query)
+    if len(source_inputs) > 1 and limit_plan.eligible:
+        limit_plan = type(limit_plan)(
+            False,
+            "multi-source UNION requires complete branch acquisition before global LIMIT",
+            limit_plan.limit,
+        )
     if query.limit is None:
         lines.append("  [not applicable] LIMIT-aware acquisition termination: query has no LIMIT.")
     elif offline:
@@ -1161,10 +1199,12 @@ def explain_user_query_json(
 ) -> dict[str, object]:
     """Return a machine-readable offline query plan for D16."""
     query = parse_query(query_text)
-    source_input = query_single_physical_source(query)
-    if source_input is None:
+    source_inputs = query_physical_sources(query)
+    if not source_inputs:
         raise ValueError("--explain requires a complete query containing a physical FROM <source>")
-    source = resolve_source(source_input, source_type=source_type, tab=tab)
+    explained_sources = [resolve_source(item, source_type=source_type, tab=tab) for item in source_inputs]
+    source_input = source_inputs[0]
+    source = explained_sources[0]
     dates = DateContext(date_order=date_format)
     required = sorted(required_query_fields(query))
     plan = plan_acquisition(query, source_kind=source.kind, tab=tab, dates=dates)
@@ -1222,6 +1262,15 @@ def explain_user_query_json(
             "url": source.canonical_url,
             "tab": tab if source.kind == "channel" else None,
         },
+        "sources": [
+            {
+                "type": source_spec.kind,
+                "input": item,
+                "url": source_spec.canonical_url,
+                "tab": tab if source_spec.kind == "channel" else None,
+            }
+            for item, source_spec in zip(source_inputs, explained_sources, strict=True)
+        ],
         "required_fields": [
             {
                 "field": capability.field,
@@ -1713,15 +1762,19 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         query = parse_user_query(args, inline_query)
-        physical_source = query_single_physical_source(query)
-        if physical_source is not None and positional_source is not None:
+        physical_sources = query_physical_sources(query)
+        if physical_sources and positional_source is not None:
             raise ValueError("source is specified both positionally and by FROM")
-        source_value = physical_source or positional_source
-        if source_value is None:
+        source_values = physical_sources or ((positional_source,) if positional_source is not None else ())
+        if not source_values:
             raise ValueError(
                 "query has no physical source; add FROM <source> in the main query or a CTE, or provide SOURCE_OR_QUERY positionally"
             )
-        source: SourceSpec = resolve_source(source_value, source_type=args.source_type, tab=args.tab)
+        sources: list[SourceSpec] = [
+            resolve_source(value, source_type=args.source_type, tab=args.tab) for value in source_values
+        ]
+        source: SourceSpec = sources[0]
+        multi_source = len(sources) > 1
     except QuerySyntaxError as exc:
         parser.error(exc.format())
     except ValueError as exc:
@@ -1740,10 +1793,20 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(True, f"Node.js: {tools.node.version if tools.node.available else 'unavailable'}.")
         _verbose(True, f"YouTube.js: {tools.youtubejs.version if tools.youtubejs_available else 'unavailable'}.")
 
-    _verbose(args.verbose, f"Resolved source as {source.kind}: {source.canonical_url}")
+    if multi_source:
+        _verbose(args.verbose, f"Resolved {len(sources)} physical sources for UNION composition.")
+        for source_value, source_spec in zip(source_values, sources, strict=True):
+            _verbose(args.verbose, f"Source {source_value}: {source_spec.kind} -> {source_spec.canonical_url}")
+    else:
+        _verbose(args.verbose, f"Resolved source as {source.kind}: {source.canonical_url}")
 
     date_context = DateContext(date_order=args.date_format)
     plan: AcquisitionPlan = plan_acquisition(query, source_kind=source.kind, tab=args.tab, dates=date_context)
+    if multi_source:
+        plan = AcquisitionPlan(
+            "full",
+            "UNION composition spans multiple physical sources; each source is acquired independently before logical reconciliation",
+        )
     explicit_prefilters = bool(
         args.items or args.date or args.after or args.before or any(item.strip() for item in args.match_filter)
     )
@@ -1758,6 +1821,12 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     limit_plan = plan_limit_termination(query)
+    if multi_source and limit_plan.eligible:
+        limit_plan = type(limit_plan)(
+            False,
+            "multi-source UNION requires complete branch acquisition before global LIMIT",
+            limit_plan.limit,
+        )
     if args.exclude_archive and limit_plan.eligible:
         limit_plan = type(limit_plan)(
             False,
@@ -1776,12 +1845,17 @@ def main(argv: list[str] | None = None) -> int:
     else:
         cost_class, cost_reason = assess_cost(query, plan)
     if not args.offline and not args.dry_run and args.acquisition != "full" and cost_class == "very-high":
-        print(
-            "yt-discover: warning: this query may require complete source enumeration and substantial metadata acquisition; "
-            "no safe source boundary is available. Add a lower upload_date bound when that matches the intended query.",
-            file=sys.stderr,
-            flush=True,
-        )
+        if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
+            warning = (
+                "yt-discover: warning: UNION composition currently acquires each contributing physical source "
+                "conservatively before logical reconciliation; this may require substantial metadata acquisition."
+            )
+        else:
+            warning = (
+                "yt-discover: warning: this query may require complete source enumeration and substantial metadata acquisition; "
+                "no safe source boundary is available. Add a lower upload_date bound when that matches the intended query."
+            )
+        print(warning, file=sys.stderr, flush=True)
     if args.verbose:
         _verbose(True, f"Acquisition cost estimate: {cost_class} ({cost_reason}).")
 
@@ -1829,7 +1903,11 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(True, f"Parsed query: {format_query(query)}")
 
     if args.dry_run:
-        print(f"source: {source.kind} -> {source.canonical_url}")
+        if multi_source:
+            for source_value, source_spec in zip(source_values, sources, strict=True):
+                print(f"source: {source_value} -> {source_spec.kind} -> {source_spec.canonical_url}")
+        else:
+            print(f"source: {source.kind} -> {source.canonical_url}")
         print(f"acquisition: {plan.mode} -> {plan.reason}")
         if args.offline:
             print(f"cache: {args.cache.expanduser()}")
@@ -1848,7 +1926,19 @@ def main(argv: list[str] | None = None) -> int:
             )
             print("detail extraction: candidate video IDs from the bounded enumeration pass")
         elif not args.offline:
-            print(f"yt-dlp: {shell_join(command)}")
+            if multi_source:
+                for source_value, source_spec in zip(source_values, sources, strict=True):
+                    source_command = build_metadata_command(
+                        source_spec.canonical_url,
+                        playlist_items=args.items,
+                        date=args.date,
+                        date_after=args.after,
+                        date_before=args.before,
+                        match_filters=tuple(item for item in args.match_filter if item.strip()),
+                    )
+                    print(f"yt-dlp [{source_value}]: {shell_join(source_command)}")
+            else:
+                print(f"yt-dlp: {shell_join(command)}")
         print(f"query:  {format_query(query)}")
         print("note: dynamic fields and typed literals are resolved after metadata acquisition")
         return 0
@@ -1881,298 +1971,341 @@ def main(argv: list[str] | None = None) -> int:
     limit_batches = 0
     limit_candidates_examined = 0
     acquisition_started = perf_counter()
-    if args.offline:
-        assert metadata_cache is not None
-        cached_items = metadata_cache.source_records(source.canonical_url)
-        if not cached_items:
-            print(
-                f"Error: offline cache has no detailed metadata for {source.canonical_url}.",
-                file=sys.stderr,
-            )
-            metadata_cache.close()
-            return 1
-        required_fields = {field for field in required_query_fields(query) if field.casefold() != "source_index"}
-        fresh = sum(1 for item in cached_items if metadata_cache.is_fresh(item, required_fields))
-        stale = len(cached_items) - fresh
-        raw_records = [item.record for item in cached_items]
-        cache_stats = CacheStats(examined=len(cached_items), hits=fresh, stale=stale)
+    if multi_source:
+        raw_records = []
         acquisition_stats = AcquisitionStats()
-        detailed_candidates = len(cached_items)
-        offline_coverage = metadata_cache.source_coverage(source.canonical_url)
-        coverage_message = _format_coverage_warning(offline_coverage, len(cached_items))
-        if offline_coverage is None or not offline_coverage.complete:
-            print(f"yt-discover: offline warning: {coverage_message}.", file=sys.stderr)
-        else:
-            _verbose(args.verbose, f"Offline coverage: {coverage_message}.")
-        if stale:
-            print(
-                f"yt-discover: offline warning: {stale} cached record(s) are stale for one or more fields required by this query; stale values will be used without refresh.",
-                file=sys.stderr,
-            )
-        _verbose(
-            args.verbose,
-            f"Offline query loaded {len(cached_items)} cached detailed records and made no YouTube requests.",
-        )
-    elif plan.targeted:
-        flat_command = build_lazy_flat_command(source.canonical_url)
-        _verbose(args.verbose, f"Enumerating lightweight channel metadata lazily with {selected_backend}...")
-        try:
-            if selected_backend == "youtubejs":
-                flat_entries, enumeration_stats = enumerate_youtubejs_until_date_boundary(
-                    project_root,
-                    source.canonical_url,
-                    stop_before=plan.stop_before,
-                    confirmation_entries=plan.confirmation_entries,
-                    dates=date_context,
-                    progress=_enumeration_progress(
-                        args.verbose, context="Bounded YouTube.js enumeration", warn_threshold=args.warn_source_size
-                    ),
-                )
+        for source_value, source_spec in zip(source_values, sources, strict=True):
+            if args.offline:
+                assert metadata_cache is not None
+                cached_items = metadata_cache.source_records(source_spec.canonical_url)
+                if not cached_items:
+                    print(
+                        f"Error: offline cache has no detailed metadata for {source_spec.canonical_url}.",
+                        file=sys.stderr,
+                    )
+                    metadata_cache.close()
+                    return 1
+                source_records = [dict(item.record) for item in cached_items]
+                source_stats = AcquisitionStats()
             else:
-                if args.verbose >= 2:
-                    _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
-                flat_entries, enumeration_stats = enumerate_until_date_boundary(
-                    flat_command,
-                    stop_before=plan.stop_before,
-                    confirmation_entries=plan.confirmation_entries,
-                    progress=_enumeration_progress(
-                        args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
-                    ),
+                source_command = build_metadata_command(
+                    source_spec.canonical_url,
+                    playlist_items=args.items,
+                    date=args.date,
+                    date_after=args.after,
+                    date_before=args.before,
+                    match_filters=tuple(item for item in args.match_filter if item.strip()),
                 )
-        except YouTubeJsError as exc:
-            if args.backend == "youtubejs":
-                print(f"Error: YouTube.js enumeration failed: {exc}.", file=sys.stderr)
-                return 1
-            fallback_reason = f"YouTube.js enumeration failed: {exc}"
-            selected_backend = "ytdlp"
-            print(
-                f"yt-discover: YouTube.js enumeration failed; falling back to yt-dlp bounded enumeration ({exc}).",
-                file=sys.stderr,
-            )
-            try:
-                flat_entries, enumeration_stats = enumerate_until_date_boundary(
-                    flat_command,
-                    stop_before=plan.stop_before,
-                    confirmation_entries=plan.confirmation_entries,
-                    progress=_enumeration_progress(
-                        args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
-                    ),
+                _verbose(args.verbose, f"Acquiring UNION source {source_value} with yt-dlp...")
+                try:
+                    source_records, source_stats = load_metadata(
+                        source_command,
+                        progress=_acquisition_progress(args.verbose) if args.verbose else None,
+                    )
+                except YtDlpError as exc:
+                    print(f"Error: {exc}.", file=sys.stderr)
+                    return 1
+                if metadata_cache is not None:
+                    metadata_cache.put_many(source_spec.canonical_url, source_records)
+            for item in source_records:
+                tagged = dict(item)
+                tagged["_yt_sql_source"] = source_value
+                tagged["_yt_sql_source_url"] = source_spec.canonical_url
+                raw_records.append(tagged)
+        acquisition_stats = AcquisitionStats(available=len(raw_records))
+        detailed_candidates = len(raw_records)
+    else:
+        if args.offline:
+            assert metadata_cache is not None
+            cached_items = metadata_cache.source_records(source.canonical_url)
+            if not cached_items:
+                print(
+                    f"Error: offline cache has no detailed metadata for {source.canonical_url}.",
+                    file=sys.stderr,
                 )
-            except YtDlpError as fallback_exc:
-                print(f"Error: {fallback_exc}.", file=sys.stderr)
+                metadata_cache.close()
                 return 1
-        except YtDlpError as exc:
-            print(f"Error: {exc}.", file=sys.stderr)
-            return 1
-        candidate_ids = []
-        seen_ids = set()
-        lightweight_rejected = 0
-        for entry in flat_entries:
-            video_id = entry.get("id")
-            if not (isinstance(video_id, str) and video_id and video_id not in seen_ids):
-                continue
-            seen_ids.add(video_id)
-            observed_ids_for_cache.append(video_id)
-            # Lightweight evaluation is deliberately one-sided: a candidate is discarded
-            # only when exact values or conservative uncertainty intervals prove that the
-            # complete WHERE predicate is false. Unknown or approximate cases are retained.
-            if safely_reject_lightweight(query.predicate, entry, date_context):
-                lightweight_rejected += 1
-                continue
-            candidate_ids.append(video_id)
-        detailed_candidates = len(candidate_ids)
-        _verbose(
-            args.verbose,
-            f"Lightweight enumeration observed {enumeration_stats.enumerated} entries "
-            f"({enumeration_stats.dated} dated, {enumeration_stats.undated} undated); "
-            f"{len(candidate_ids)} detailed candidates; {lightweight_rejected} safely rejected before full extraction.",
-        )
-        if enumeration_stats.stopped_early:
-            _verbose(args.verbose, "Stopped channel pagination after the conservative date boundary was confirmed.")
-        else:
+            required_fields = {field for field in required_query_fields(query) if field.casefold() != "source_index"}
+            fresh = sum(1 for item in cached_items if metadata_cache.is_fresh(item, required_fields))
+            stale = len(cached_items) - fresh
+            raw_records = [item.record for item in cached_items]
+            cache_stats = CacheStats(examined=len(cached_items), hits=fresh, stale=stale)
+            acquisition_stats = AcquisitionStats()
+            detailed_candidates = len(cached_items)
+            offline_coverage = metadata_cache.source_coverage(source.canonical_url)
+            coverage_message = _format_coverage_warning(offline_coverage, len(cached_items))
+            if offline_coverage is None or not offline_coverage.complete:
+                print(f"yt-discover: offline warning: {coverage_message}.", file=sys.stderr)
+            else:
+                _verbose(args.verbose, f"Offline coverage: {coverage_message}.")
+            if stale:
+                print(
+                    f"yt-discover: offline warning: {stale} cached record(s) are stale for one or more fields required by this query; stale values will be used without refresh.",
+                    file=sys.stderr,
+                )
             _verbose(
                 args.verbose,
-                "Channel enumeration reached its natural end before the conservative date boundary was confirmed.",
+                f"Offline query loaded {len(cached_items)} cached detailed records and made no YouTube requests.",
             )
-        if candidate_ids:
+        elif plan.targeted:
+            flat_command = build_lazy_flat_command(source.canonical_url)
+            _verbose(args.verbose, f"Enumerating lightweight channel metadata lazily with {selected_backend}...")
             try:
-                if limit_plan.eligible:
-                    (
-                        raw_records,
-                        acquisition_stats,
-                        cache_stats,
-                        limit_terminated,
-                        limit_batches,
-                        limit_candidates_examined,
-                    ) = _limit_aware_cached_acquire(
-                        cache=metadata_cache,
-                        source_url=source.canonical_url,
-                        video_ids=candidate_ids,
-                        query=query,
+                if selected_backend == "youtubejs":
+                    flat_entries, enumeration_stats = enumerate_youtubejs_until_date_boundary(
+                        project_root,
+                        source.canonical_url,
+                        stop_before=plan.stop_before,
+                        confirmation_entries=plan.confirmation_entries,
                         dates=date_context,
-                        required_fields=required_query_fields(query),
-                        verbose=args.verbose,
+                        progress=_enumeration_progress(
+                            args.verbose, context="Bounded YouTube.js enumeration", warn_threshold=args.warn_source_size
+                        ),
                     )
                 else:
-                    raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
-                        cache=metadata_cache,
-                        source_url=source.canonical_url,
-                        video_ids=candidate_ids,
-                        required_fields=required_query_fields(query),
-                        verbose=args.verbose,
+                    if args.verbose >= 2:
+                        _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
+                    flat_entries, enumeration_stats = enumerate_until_date_boundary(
+                        flat_command,
+                        stop_before=plan.stop_before,
+                        confirmation_entries=plan.confirmation_entries,
+                        progress=_enumeration_progress(
+                            args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
+                        ),
                     )
+            except YouTubeJsError as exc:
+                if args.backend == "youtubejs":
+                    print(f"Error: YouTube.js enumeration failed: {exc}.", file=sys.stderr)
+                    return 1
+                fallback_reason = f"YouTube.js enumeration failed: {exc}"
+                selected_backend = "ytdlp"
+                print(
+                    f"yt-discover: YouTube.js enumeration failed; falling back to yt-dlp bounded enumeration ({exc}).",
+                    file=sys.stderr,
+                )
+                try:
+                    flat_entries, enumeration_stats = enumerate_until_date_boundary(
+                        flat_command,
+                        stop_before=plan.stop_before,
+                        confirmation_entries=plan.confirmation_entries,
+                        progress=_enumeration_progress(
+                            args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
+                        ),
+                    )
+                except YtDlpError as fallback_exc:
+                    print(f"Error: {fallback_exc}.", file=sys.stderr)
+                    return 1
             except YtDlpError as exc:
                 print(f"Error: {exc}.", file=sys.stderr)
                 return 1
-        else:
-            raw_records, acquisition_stats = [], AcquisitionStats()
-    else:
-        cache_first_full = (
-            metadata_cache is not None
-            and source.kind == "channel"
-            and args.tab == "videos"
-            and args.items is None
-            and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
-        )
-        if cache_first_full:
-            flat_command = build_lazy_flat_command(source.canonical_url)
-            if args.verbose >= 2:
-                _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
-            prior_order = metadata_cache.source_entry_ids(source.canonical_url)
-            frontier = metadata_cache.source_frontier(source.canonical_url) if args.acquisition != "full" else None
-            if frontier is not None and prior_order:
-                frontier_attempted = True
-                _verbose(
-                    args.verbose,
-                    f"Using incremental source frontier with {len(prior_order)} known entries; "
-                    f"requiring {FRONTIER_OVERLAP_CONFIRMATIONS} consecutive known IDs before stopping.",
-                )
-                try:
-                    flat_entries, enumeration_stats = enumerate_until_known_overlap(
-                        flat_command,
-                        known_ids=set(prior_order),
-                        confirmation_entries=FRONTIER_OVERLAP_CONFIRMATIONS,
-                        progress=_enumeration_progress(
-                            args.verbose,
-                            context="Incremental frontier enumeration",
-                            warn_threshold=args.warn_source_size,
-                        ),
-                    )
-                except YtDlpError as exc:
-                    print(f"Error: {exc}.", file=sys.stderr)
-                    return 1
-            else:
-                _verbose(
-                    args.verbose,
-                    "No trusted incremental frontier is available; enumerating the complete channel videos source.",
-                )
-                try:
-                    flat_entries, enumeration_stats = enumerate_all_flat(
-                        flat_command,
-                        progress=_enumeration_progress(
-                            args.verbose,
-                            context="Full channel enumeration",
-                            warn_threshold=args.warn_source_size,
-                        ),
-                    )
-                except YtDlpError as exc:
-                    print(f"Error: {exc}.", file=sys.stderr)
-                    return 1
-
-            current_ids: list[str] = []
-            entry_by_id: dict[str, dict] = {}
-            seen_ids: set[str] = set()
+            candidate_ids = []
+            seen_ids = set()
+            lightweight_rejected = 0
             for entry in flat_entries:
                 video_id = entry.get("id")
                 if not (isinstance(video_id, str) and video_id and video_id not in seen_ids):
                     continue
                 seen_ids.add(video_id)
-                current_ids.append(video_id)
-                entry_by_id[video_id] = entry
-
-            if frontier_attempted and enumeration_stats.stopped_on_frontier:
-                frontier_confirmed = True
-                current_set = set(current_ids)
-                frontier_new_entries = sum(1 for video_id in current_ids if video_id not in set(prior_order))
-                observed_ids_for_cache = current_ids + [
-                    video_id for video_id in prior_order if video_id not in current_set
-                ]
-                _verbose(
-                    args.verbose,
-                    f"Incremental frontier confirmed after {enumeration_stats.enumerated} observed entries; "
-                    f"{frontier_new_entries} new source entr{'y' if frontier_new_entries == 1 else 'ies'} discovered.",
-                )
-            else:
-                observed_ids_for_cache = current_ids
-                if frontier_attempted:
-                    _verbose(
-                        args.verbose,
-                        "Stored frontier overlap was not confirmed before source end; rebuilt the source ordering from a complete enumeration.",
-                    )
-
-            candidate_ids = []
-            for video_id in observed_ids_for_cache:
-                entry = entry_by_id.get(video_id)
-                if entry is not None and safely_reject_lightweight(query.predicate, entry, date_context):
+                observed_ids_for_cache.append(video_id)
+                # Lightweight evaluation is deliberately one-sided: a candidate is discarded
+                # only when exact values or conservative uncertainty intervals prove that the
+                # complete WHERE predicate is false. Unknown or approximate cases are retained.
+                if safely_reject_lightweight(query.predicate, entry, date_context):
                     lightweight_rejected += 1
                     continue
                 candidate_ids.append(video_id)
             detailed_candidates = len(candidate_ids)
-            try:
-                if limit_plan.eligible:
-                    (
-                        raw_records,
-                        acquisition_stats,
-                        cache_stats,
-                        limit_terminated,
-                        limit_batches,
-                        limit_candidates_examined,
-                    ) = _limit_aware_cached_acquire(
-                        cache=metadata_cache,
-                        source_url=source.canonical_url,
-                        video_ids=candidate_ids,
-                        query=query,
-                        dates=date_context,
-                        required_fields=required_query_fields(query),
-                        verbose=args.verbose,
-                    )
-                else:
-                    raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
-                        cache=metadata_cache,
-                        source_url=source.canonical_url,
-                        video_ids=candidate_ids,
-                        required_fields=required_query_fields(query),
-                        verbose=args.verbose,
-                    )
-            except YtDlpError as exc:
-                print(f"Error: {exc}.", file=sys.stderr)
-                return 1
-        else:
-            if cost_class == "very-high" and args.acquisition != "full":
-                print(
-                    "yt-discover: warning: no safe acquisition optimisation was identified for this query; detailed metadata may be required for most or all source entries.",
-                    file=sys.stderr,
-                )
-            _verbose(args.verbose, "Acquiring full video metadata with yt-dlp...")
-            if args.verbose:
+            _verbose(
+                args.verbose,
+                f"Lightweight enumeration observed {enumeration_stats.enumerated} entries "
+                f"({enumeration_stats.dated} dated, {enumeration_stats.undated} undated); "
+                f"{len(candidate_ids)} detailed candidates; {lightweight_rejected} safely rejected before full extraction.",
+            )
+            if enumeration_stats.stopped_early:
+                _verbose(args.verbose, "Stopped channel pagination after the conservative date boundary was confirmed.")
+            else:
                 _verbose(
                     args.verbose,
-                    "Queries requiring ORDER BY/LIMIT are evaluated after acquisition; result output may remain quiet until this phase completes.",
+                    "Channel enumeration reached its natural end before the conservative date boundary was confirmed.",
                 )
-            try:
-                raw_records, acquisition_stats = load_metadata(
-                    command,
-                    progress=_acquisition_progress(args.verbose) if args.verbose else None,
-                )
-            except YtDlpError as exc:
-                print(f"Error: {exc}.", file=sys.stderr)
-                return 1
-            observed_ids_for_cache = [
-                record.get("id") for record in raw_records if isinstance(record.get("id"), str) and record.get("id")
-            ]
-            if metadata_cache is not None:
-                cache_stats = CacheStats(written=metadata_cache.put_many(source.canonical_url, raw_records))
+            if candidate_ids:
+                try:
+                    if limit_plan.eligible:
+                        (
+                            raw_records,
+                            acquisition_stats,
+                            cache_stats,
+                            limit_terminated,
+                            limit_batches,
+                            limit_candidates_examined,
+                        ) = _limit_aware_cached_acquire(
+                            cache=metadata_cache,
+                            source_url=source.canonical_url,
+                            video_ids=candidate_ids,
+                            query=query,
+                            dates=date_context,
+                            required_fields=required_query_fields(query),
+                            verbose=args.verbose,
+                        )
+                    else:
+                        raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
+                            cache=metadata_cache,
+                            source_url=source.canonical_url,
+                            video_ids=candidate_ids,
+                            required_fields=required_query_fields(query),
+                            verbose=args.verbose,
+                        )
+                except YtDlpError as exc:
+                    print(f"Error: {exc}.", file=sys.stderr)
+                    return 1
+            else:
+                raw_records, acquisition_stats = [], AcquisitionStats()
+        else:
+            cache_first_full = (
+                metadata_cache is not None
+                and source.kind == "channel"
+                and args.tab == "videos"
+                and args.items is None
+                and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
+            )
+            if cache_first_full:
+                flat_command = build_lazy_flat_command(source.canonical_url)
+                if args.verbose >= 2:
+                    _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
+                prior_order = metadata_cache.source_entry_ids(source.canonical_url)
+                frontier = metadata_cache.source_frontier(source.canonical_url) if args.acquisition != "full" else None
+                if frontier is not None and prior_order:
+                    frontier_attempted = True
+                    _verbose(
+                        args.verbose,
+                        f"Using incremental source frontier with {len(prior_order)} known entries; "
+                        f"requiring {FRONTIER_OVERLAP_CONFIRMATIONS} consecutive known IDs before stopping.",
+                    )
+                    try:
+                        flat_entries, enumeration_stats = enumerate_until_known_overlap(
+                            flat_command,
+                            known_ids=set(prior_order),
+                            confirmation_entries=FRONTIER_OVERLAP_CONFIRMATIONS,
+                            progress=_enumeration_progress(
+                                args.verbose,
+                                context="Incremental frontier enumeration",
+                                warn_threshold=args.warn_source_size,
+                            ),
+                        )
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
+                else:
+                    _verbose(
+                        args.verbose,
+                        "No trusted incremental frontier is available; enumerating the complete channel videos source.",
+                    )
+                    try:
+                        flat_entries, enumeration_stats = enumerate_all_flat(
+                            flat_command,
+                            progress=_enumeration_progress(
+                                args.verbose,
+                                context="Full channel enumeration",
+                                warn_threshold=args.warn_source_size,
+                            ),
+                        )
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
 
+                current_ids: list[str] = []
+                entry_by_id: dict[str, dict] = {}
+                seen_ids: set[str] = set()
+                for entry in flat_entries:
+                    video_id = entry.get("id")
+                    if not (isinstance(video_id, str) and video_id and video_id not in seen_ids):
+                        continue
+                    seen_ids.add(video_id)
+                    current_ids.append(video_id)
+                    entry_by_id[video_id] = entry
+
+                if frontier_attempted and enumeration_stats.stopped_on_frontier:
+                    frontier_confirmed = True
+                    current_set = set(current_ids)
+                    frontier_new_entries = sum(1 for video_id in current_ids if video_id not in set(prior_order))
+                    observed_ids_for_cache = current_ids + [
+                        video_id for video_id in prior_order if video_id not in current_set
+                    ]
+                    _verbose(
+                        args.verbose,
+                        f"Incremental frontier confirmed after {enumeration_stats.enumerated} observed entries; "
+                        f"{frontier_new_entries} new source entr{'y' if frontier_new_entries == 1 else 'ies'} discovered.",
+                    )
+                else:
+                    observed_ids_for_cache = current_ids
+                    if frontier_attempted:
+                        _verbose(
+                            args.verbose,
+                            "Stored frontier overlap was not confirmed before source end; rebuilt the source ordering from a complete enumeration.",
+                        )
+
+                candidate_ids = []
+                for video_id in observed_ids_for_cache:
+                    entry = entry_by_id.get(video_id)
+                    if entry is not None and safely_reject_lightweight(query.predicate, entry, date_context):
+                        lightweight_rejected += 1
+                        continue
+                    candidate_ids.append(video_id)
+                detailed_candidates = len(candidate_ids)
+                try:
+                    if limit_plan.eligible:
+                        (
+                            raw_records,
+                            acquisition_stats,
+                            cache_stats,
+                            limit_terminated,
+                            limit_batches,
+                            limit_candidates_examined,
+                        ) = _limit_aware_cached_acquire(
+                            cache=metadata_cache,
+                            source_url=source.canonical_url,
+                            video_ids=candidate_ids,
+                            query=query,
+                            dates=date_context,
+                            required_fields=required_query_fields(query),
+                            verbose=args.verbose,
+                        )
+                    else:
+                        raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
+                            cache=metadata_cache,
+                            source_url=source.canonical_url,
+                            video_ids=candidate_ids,
+                            required_fields=required_query_fields(query),
+                            verbose=args.verbose,
+                        )
+                except YtDlpError as exc:
+                    print(f"Error: {exc}.", file=sys.stderr)
+                    return 1
+            else:
+                if cost_class == "very-high" and args.acquisition != "full":
+                    print(
+                        "yt-discover: warning: no safe acquisition optimisation was identified for this query; detailed metadata may be required for most or all source entries.",
+                        file=sys.stderr,
+                    )
+                _verbose(args.verbose, "Acquiring full video metadata with yt-dlp...")
+                if args.verbose:
+                    _verbose(
+                        args.verbose,
+                        "Queries requiring ORDER BY/LIMIT are evaluated after acquisition; result output may remain quiet until this phase completes.",
+                    )
+                try:
+                    raw_records, acquisition_stats = load_metadata(
+                        command,
+                        progress=_acquisition_progress(args.verbose) if args.verbose else None,
+                    )
+                except YtDlpError as exc:
+                    print(f"Error: {exc}.", file=sys.stderr)
+                    return 1
+                observed_ids_for_cache = [
+                    record.get("id") for record in raw_records if isinstance(record.get("id"), str) and record.get("id")
+                ]
+                if metadata_cache is not None:
+                    cache_stats = CacheStats(written=metadata_cache.put_many(source.canonical_url, raw_records))
     acquisition_elapsed = perf_counter() - acquisition_started
 
     if args.offline:
@@ -2198,7 +2331,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.verbose,
                 f"LIMIT-aware detailed acquisition examined all {limit_candidates_examined} candidate(s); fewer than {query.limit} authoritative matches were available.",
             )
-    if metadata_cache is not None:
+    if metadata_cache is not None and not multi_source:
         _verbose(
             args.verbose,
             f"Cache outcome: {cache_stats.hits} fresh hits, {cache_stats.stale} stale, "
@@ -2281,9 +2414,20 @@ def main(argv: list[str] | None = None) -> int:
     for source_index, raw in enumerate(raw_records, start=1):
         record = normalise_record(raw)
         record["source_index"] = source_index
+        if "_yt_sql_source" in raw:
+            record["_yt_sql_source"] = raw["_yt_sql_source"]
+            record["_yt_sql_source_url"] = raw.get("_yt_sql_source_url")
         records.append(record)
 
     schema = QuerySchema(records)
+    source_schemas = (
+        {
+            source_value: QuerySchema([record for record in records if record.get("_yt_sql_source") == source_value])
+            for source_value in source_values
+        }
+        if multi_source
+        else {source_values[0]: schema}
+    )
     _verbose(args.verbose, f"Built query schema from {len(records)} normalised records.")
     if args.fields or args.schema:
         print_schema(schema, include_raw=args.schema)
@@ -2294,6 +2438,7 @@ def main(argv: list[str] | None = None) -> int:
             query,
             schema,
             date_context,
+            source_schemas=source_schemas,
         )
     except QuerySyntaxError as exc:
         parser.error(exc.format())
@@ -2318,37 +2463,46 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(args.verbose, f"Archive exclusion removed {archive_excluded} entries; {len(records)} remain.")
 
     before_query = len(records)
-    where_only_query = Query(
-        predicate=resolved_query.predicate,
-        source=resolved_query.source,
-        select=(SelectTerm("id", "id", kind="string"),),
-        from_source=resolved_query.from_source,
-    )
-    where_matches = apply_query(records, where_only_query)
-    distinct_query = Query(
-        predicate=resolved_query.predicate,
-        order_by=resolved_query.order_by,
-        source=resolved_query.source,
-        select=resolved_query.select,
-        from_source=resolved_query.from_source,
-        distinct=resolved_query.distinct,
-        group_by=resolved_query.group_by,
-        having=resolved_query.having,
-    )
-    distinct_rows = apply_query(records, distinct_query)
-    unlimited_query = Query(
-        predicate=resolved_query.predicate,
-        order_by=resolved_query.order_by,
-        source=resolved_query.source,
-        select=resolved_query.select,
-        from_source=resolved_query.from_source,
-        distinct=resolved_query.distinct,
-        offset=resolved_query.offset,
-        group_by=resolved_query.group_by,
-        having=resolved_query.having,
-    )
-    matched_before_limit = apply_query(records, unlimited_query)
-    selected = matched_before_limit if resolved_query.limit is None else matched_before_limit[: resolved_query.limit]
+    if resolved_query.ctes or resolved_query.set_operations:
+        unlimited_query = replace(resolved_query, limit=None)
+        matched_before_limit = apply_query(records, unlimited_query)
+        selected = apply_query(records, resolved_query)
+        where_matches = matched_before_limit
+        distinct_rows = matched_before_limit
+    else:
+        where_only_query = Query(
+            predicate=resolved_query.predicate,
+            source=resolved_query.source,
+            select=(SelectTerm("id", "id", kind="string"),),
+            from_source=resolved_query.from_source,
+        )
+        where_matches = apply_query(records, where_only_query)
+        distinct_query = Query(
+            predicate=resolved_query.predicate,
+            order_by=resolved_query.order_by,
+            source=resolved_query.source,
+            select=resolved_query.select,
+            from_source=resolved_query.from_source,
+            distinct=resolved_query.distinct,
+            group_by=resolved_query.group_by,
+            having=resolved_query.having,
+        )
+        distinct_rows = apply_query(records, distinct_query)
+        unlimited_query = Query(
+            predicate=resolved_query.predicate,
+            order_by=resolved_query.order_by,
+            source=resolved_query.source,
+            select=resolved_query.select,
+            from_source=resolved_query.from_source,
+            distinct=resolved_query.distinct,
+            offset=resolved_query.offset,
+            group_by=resolved_query.group_by,
+            having=resolved_query.having,
+        )
+        matched_before_limit = apply_query(records, unlimited_query)
+        selected = (
+            matched_before_limit if resolved_query.limit is None else matched_before_limit[: resolved_query.limit]
+        )
     query_elapsed = perf_counter() - query_started
     _verbose(args.verbose, f"WHERE matched {len(where_matches)} of {before_query} entries.")
     if resolved_query.distinct:
@@ -2416,7 +2570,7 @@ def main(argv: list[str] | None = None) -> int:
 
     total_elapsed = perf_counter() - total_started
     current_coverage = offline_coverage
-    if metadata_cache is not None and current_coverage is None:
+    if metadata_cache is not None and current_coverage is None and not multi_source:
         current_coverage = metadata_cache.source_coverage(source.canonical_url)
 
     if args.provenance is not None:
@@ -2433,10 +2587,19 @@ def main(argv: list[str] | None = None) -> int:
                 "limit": resolved_query.limit,
             },
             "source": {
-                "type": source.kind,
-                "url": source.canonical_url,
-                "tab": args.tab if source.kind == "channel" else None,
+                "type": "union" if multi_source else source.kind,
+                "url": source.canonical_url if not multi_source else None,
+                "tab": args.tab if source.kind == "channel" and not multi_source else None,
             },
+            "sources": [
+                {
+                    "input": source_value,
+                    "type": source_spec.kind,
+                    "url": source_spec.canonical_url,
+                    "tab": args.tab if source_spec.kind == "channel" else None,
+                }
+                for source_value, source_spec in zip(source_values, sources, strict=True)
+            ],
             "execution": {
                 "offline": args.offline,
                 "acquisition_plan": plan.mode,
@@ -2484,8 +2647,8 @@ def main(argv: list[str] | None = None) -> int:
             else "stdout"
         )
         report = RunReport(
-            source_kind=source.kind,
-            source_url=source.canonical_url,
+            source_kind="union" if multi_source else source.kind,
+            source_url=" | ".join(spec.canonical_url for spec in sources) if multi_source else source.canonical_url,
             query=format_query(query),
             acquisition=acquisition_stats,
             normalised=len(raw_records),

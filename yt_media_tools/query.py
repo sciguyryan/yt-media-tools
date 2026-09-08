@@ -206,6 +206,15 @@ class CommonTableExpression:
 
 
 @dataclass(frozen=True)
+class SetOperation:
+    """One positional UNION or UNION ALL branch."""
+
+    query: "Query"
+    all: bool = False
+    position: int = 0
+
+
+@dataclass(frozen=True)
 class Query:
     predicate: Any | None = None
     order_by: tuple[OrderTerm, ...] = ()
@@ -218,6 +227,7 @@ class Query:
     group_by: tuple[Any, ...] = ()
     having: Any | None = None
     ctes: tuple[CommonTableExpression, ...] = ()
+    set_operations: tuple[SetOperation, ...] = ()
 
 
 _TOKEN_RE = re.compile(
@@ -326,6 +336,7 @@ class Parser:
         *,
         stop_at_rparen: bool = False,
         allow_with: bool = True,
+        set_branch: bool = False,
     ) -> Query:
         predicate = None
         order_by: tuple[OrderTerm, ...] = ()
@@ -337,14 +348,13 @@ class Parser:
         group_by: tuple[Any, ...] = ()
         having = None
         ctes: list[CommonTableExpression] = []
+        set_operations: list[SetOperation] = []
 
         def at_end() -> bool:
             return self.current.kind == "EOF" or (stop_at_rparen and self.current.kind == "RPAREN")
 
         if not where_only and not allow_with and self.keyword("WITH"):
-            raise QuerySyntaxError(
-                self.source, "Nested WITH clauses are not supported in yt-sql 0.25.0.", self.current.position
-            )
+            raise QuerySyntaxError(self.source, "Nested WITH clauses are not supported.", self.current.position)
 
         if not where_only and allow_with and self.consume_keyword("WITH"):
             if self.consume_keyword("RECURSIVE"):
@@ -385,6 +395,7 @@ class Parser:
                     at_end()
                     or self.keyword("GROUP")
                     or self.keyword("HAVING")
+                    or self.keyword("UNION")
                     or self.keyword("ORDER")
                     or self.keyword("LIMIT")
                     or self.keyword("OFFSET")
@@ -394,6 +405,7 @@ class Parser:
             elif (
                 not self.keyword("GROUP")
                 and not self.keyword("HAVING")
+                and not self.keyword("UNION")
                 and not self.keyword("ORDER")
                 and not self.keyword("LIMIT")
                 and not self.keyword("OFFSET")
@@ -417,6 +429,45 @@ class Parser:
                     self.source, "HAVING requires an aggregate SELECT or GROUP BY.", self.current.position
                 )
             having = self.parse_having_or()
+
+        if (
+            not where_only
+            and set_branch
+            and (
+                at_end()
+                or self.keyword("UNION")
+                or self.keyword("ORDER")
+                or self.keyword("LIMIT")
+                or self.keyword("OFFSET")
+            )
+        ):
+            return Query(
+                predicate,
+                order_by,
+                limit,
+                self.source,
+                select,
+                from_source,
+                distinct,
+                offset,
+                group_by,
+                having,
+                tuple(ctes),
+                (),
+            )
+
+        if not where_only and not set_branch:
+            while self.consume_keyword("UNION"):
+                union_position = self.tokens[self.index - 1].position
+                union_all = bool(self.consume_keyword("ALL"))
+                branch = self.parse_query(
+                    stop_at_rparen=stop_at_rparen,
+                    allow_with=False,
+                    set_branch=True,
+                )
+                if not branch.select:
+                    raise QuerySyntaxError(self.source, "UNION requires a SELECT query on both sides.", union_position)
+                set_operations.append(SetOperation(branch, union_all, union_position))
 
         if self.consume_keyword("ORDER"):
             self.expect_keyword("BY", "Expected BY after ORDER.")
@@ -454,6 +505,7 @@ class Parser:
             group_by,
             having,
             tuple(ctes),
+            tuple(set_operations),
         )
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
@@ -765,7 +817,7 @@ class Parser:
                 "Expected AND after the lower bound of BETWEEN.",
             )
             upper = self.parse_literal(
-                stop_keywords={"AND", "OR", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
+                stop_keywords={"AND", "OR", "UNION", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
             )
             return Between(field, lower, upper, negated)
 
@@ -915,7 +967,7 @@ class Parser:
         stop_kinds: set[str] | None = None,
     ) -> Literal:
         stop_keywords = (
-            {"AND", "OR", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
+            {"AND", "OR", "UNION", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
             if stop_keywords is None
             else stop_keywords
         )
@@ -1893,6 +1945,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
         group_by,
         having,
         (),
+        (),
     )
     if _aggregate_query(resolved):
         for term in resolved.select:
@@ -1905,40 +1958,164 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
     return resolved
 
 
+def _union_common_kind(left: str | None, right: str | None) -> str:
+    """Return the logical kind exported by two positional UNION columns."""
+    left_kind = left or "unknown"
+    right_kind = right or "unknown"
+    if left_kind == right_kind:
+        return left_kind
+    if left_kind == "unknown":
+        return right_kind
+    if right_kind == "unknown":
+        return left_kind
+    numeric = {"integer", "number", "count", "duration"}
+    if left_kind in numeric and right_kind in numeric:
+        if left_kind == right_kind:
+            return left_kind
+        return "number"
+    raise ValueError(f"incompatible UNION kinds {left_kind!r} and {right_kind!r}")
+
+
 def _query_result_schema(query: Query) -> QuerySchema:
     """Build the logical schema exported by a resolved query result."""
     fields = [FieldInfo(term.output_name, term.kind or "unknown", True, dynamic=True) for term in query.select]
     return QuerySchema.from_field_infos(fields)
 
 
-def resolve_query(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
-    """Resolve a query and its non-recursive CTEs against logical result schemas."""
-    query_single_physical_source(query)
+def _source_schema(
+    source_name: str | None,
+    physical_schema: QuerySchema,
+    cte_schemas: dict[str, QuerySchema],
+    source_schemas: dict[str, QuerySchema],
+) -> QuerySchema:
+    if source_name is None:
+        return physical_schema
+    logical = cte_schemas.get(source_name.casefold())
+    if logical is not None:
+        return logical
+    return source_schemas.get(source_name, physical_schema)
+
+
+def _resolve_union_order(
+    order_by: tuple[OrderTerm, ...], schema: QuerySchema, source: str, context: DateContext
+) -> tuple[OrderTerm, ...]:
+    """Resolve global UNION ordering against the reconciled result relation."""
+    terms: list[OrderTerm] = []
+    for term in order_by:
+        expression = _resolve_scalar_expression(term.expression, schema, source, context)
+        field_text = format_scalar_expression(expression)
+        kind = _scalar_kind(expression)
+        if isinstance(expression, Field):
+            field_text = expression.name
+        terms.append(OrderTerm(field_text, term.descending, term.position, kind, expression))
+    return tuple(terms)
+
+
+def _resolve_composed_query(
+    query: Query,
+    physical_schema: QuerySchema,
+    cte_schemas: dict[str, QuerySchema],
+    context: DateContext,
+    source_schemas: dict[str, QuerySchema],
+) -> Query:
+    """Resolve one query body and its positional set-composition branches."""
+    if not query.set_operations:
+        schema = _source_schema(query.from_source, physical_schema, cte_schemas, source_schemas)
+        return _resolve_query_body(replace(query, ctes=(), set_operations=()), schema, context)
+
+    # ORDER BY/LIMIT/OFFSET belong to the complete set result, not the first branch.
+    left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+    left = _resolve_query_body(
+        left_body,
+        _source_schema(query.from_source, physical_schema, cte_schemas, source_schemas),
+        context,
+    )
+    common_terms = list(left.select)
+    resolved_ops: list[SetOperation] = []
+    for operation in query.set_operations:
+        branch = _resolve_query_body(
+            replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0),
+            _source_schema(operation.query.from_source, physical_schema, cte_schemas, source_schemas),
+            context,
+        )
+        if len(branch.select) != len(common_terms):
+            raise QuerySyntaxError(
+                query.source,
+                f"UNION branches must project the same number of columns; expected {len(common_terms)}, got {len(branch.select)}.",
+                operation.position,
+            )
+        reconciled: list[SelectTerm] = []
+        for index, (left_term, right_term) in enumerate(zip(common_terms, branch.select, strict=True), start=1):
+            try:
+                kind = _union_common_kind(left_term.kind, right_term.kind)
+            except ValueError:
+                raise QuerySyntaxError(
+                    query.source,
+                    f"UNION column {index} has incompatible kinds {left_term.kind or 'unknown'} and {right_term.kind or 'unknown'}.",
+                    operation.position,
+                ) from None
+            reconciled.append(replace(left_term, kind=kind))
+        common_terms = reconciled
+        resolved_ops.append(SetOperation(branch, operation.all, operation.position))
+
+    left = replace(left, select=tuple(common_terms))
+    result_schema = _query_result_schema(left)
+    order_by = _resolve_union_order(query.order_by, result_schema, query.source, context)
+    return replace(
+        left,
+        order_by=order_by,
+        limit=query.limit,
+        offset=query.offset,
+        set_operations=tuple(resolved_ops),
+    )
+
+
+def resolve_query(
+    query: Query,
+    schema: QuerySchema,
+    dates: DateContext | None = None,
+    *,
+    source_schemas: dict[str, QuerySchema] | None = None,
+) -> Query:
+    """Resolve CTEs and positional set composition against logical and per-source schemas."""
     context = dates or DateContext()
+    physical_source_schemas = source_schemas or {}
     resolved_ctes: list[CommonTableExpression] = []
     cte_schemas: dict[str, QuerySchema] = {}
     cte_names = {cte.name.casefold() for cte in query.ctes}
 
     for cte in query.ctes:
-        source_name = (cte.query.from_source or "").casefold()
-        if source_name == cte.name.casefold():
+        referenced = [name.casefold() for name in _direct_from_sources(cte.query)]
+        if cte.name.casefold() in referenced:
             raise QuerySyntaxError(
                 query.source, f"Recursive reference to CTE {cte.name!r} is not supported.", cte.position
             )
-        if source_name in cte_names and source_name not in cte_schemas:
+        later = [name for name in referenced if name in cte_names and name not in cte_schemas]
+        if later:
             raise QuerySyntaxError(
                 query.source,
-                f"CTE {cte.name!r} cannot reference later CTE {cte.query.from_source!r}; forward references are not supported.",
+                f"CTE {cte.name!r} cannot reference later CTE {later[0]!r}; forward references are not supported.",
                 cte.position,
             )
-        cte_schema = cte_schemas.get(source_name, schema)
-        resolved_subquery = _resolve_query_body(replace(cte.query, ctes=()), cte_schema, context)
+        resolved_subquery = _resolve_composed_query(
+            replace(cte.query, ctes=()), schema, cte_schemas, context, physical_source_schemas
+        )
         resolved_ctes.append(CommonTableExpression(cte.name, resolved_subquery, cte.position))
         cte_schemas[cte.name.casefold()] = _query_result_schema(resolved_subquery)
 
-    outer_schema = cte_schemas.get((query.from_source or "").casefold(), schema)
-    resolved = _resolve_query_body(replace(query, ctes=()), outer_schema, context)
+    resolved = _resolve_composed_query(replace(query, ctes=()), schema, cte_schemas, context, physical_source_schemas)
     return replace(resolved, ctes=tuple(resolved_ctes))
+
+
+def _direct_from_sources(query: Query) -> tuple[str, ...]:
+    """Return FROM references directly used by one composed query, excluding nested CTE declarations."""
+    result: list[str] = []
+    if query.from_source is not None:
+        result.append(query.from_source)
+    for operation in query.set_operations:
+        if operation.query.from_source is not None:
+            result.append(operation.query.from_source)
+    return tuple(result)
 
 
 def query_physical_sources(query: Query) -> tuple[str, ...]:
@@ -1946,23 +2123,28 @@ def query_physical_sources(query: Query) -> tuple[str, ...]:
     cte_names = {cte.name.casefold() for cte in query.ctes}
     seen: set[str] = set()
     result: list[str] = []
-    candidates = [cte.query.from_source for cte in query.ctes] + [query.from_source]
-    for source_name in candidates:
-        if source_name is None or source_name.casefold() in cte_names:
-            continue
-        if source_name not in seen:
+
+    def visit(candidate: Query) -> None:
+        for source_name in _direct_from_sources(candidate):
+            key = source_name.casefold()
+            if key in cte_names or source_name in seen:
+                continue
             seen.add(source_name)
             result.append(source_name)
+
+    for cte in query.ctes:
+        visit(cte.query)
+    visit(query)
     return tuple(result)
 
 
 def query_single_physical_source(query: Query) -> str | None:
-    """Return the sole physical source, rejecting unsupported multi-source CTEs."""
+    """Return the sole physical source, rejecting genuinely multi-source composition."""
     sources = query_physical_sources(query)
     if len(sources) > 1:
         raise QuerySyntaxError(
             query.source,
-            "CTEs in yt-sql 0.25.0 may reference only one physical source; multi-source composition is reserved for UNION.",
+            "This operation requires a single physical source; the query contains UNION composition across multiple sources.",
             0,
         )
     return sources[0] if sources else None
@@ -1978,7 +2160,9 @@ def canonical_record_value(
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
     elif isinstance(field, SelectTerm):
-        if record.get("_yt_sql_aggregate_result") is True and field.output_name in record:
+        if (
+            record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
+        ) and field.output_name in record:
             return record.get(field.output_name)
         if field.expression is not None:
             return evaluate_scalar_expression(field.expression, record)
@@ -2416,24 +2600,112 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
     return result
 
 
-def _project_cte_rows(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+def _project_result_rows(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     if _aggregate_query(query):
-        return [dict(record) for record in records]
-    return [{term.output_name: canonical_record_value(record, term) for term in query.select} for record in records]
+        return [dict(record, _yt_sql_result_row=True) for record in records]
+    return [
+        {
+            **{term.output_name: canonical_record_value(record, term) for term in query.select},
+            "_yt_sql_result_row": True,
+        }
+        for record in records
+    ]
+
+
+def _records_for_source(
+    records: Sequence[dict[str, Any]],
+    source_name: str | None,
+    relations: dict[str, list[dict[str, Any]]],
+    physical_sources: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    if source_name is not None and source_name.casefold() in relations:
+        return relations[source_name.casefold()]
+    if source_name is None or len(physical_sources) <= 1:
+        return list(records)
+    return [record for record in records if record.get("_yt_sql_source") == source_name]
+
+
+def _union_row_key(row: dict[str, Any], output_names: tuple[str, ...]) -> tuple[Any, ...]:
+    values = []
+    for name in output_names:
+        value = row.get(name)
+        try:
+            hash(value)
+            values.append(value)
+        except TypeError:
+            values.append(repr(value))
+    return tuple(values)
+
+
+def _apply_composed_query(
+    records: Sequence[dict[str, Any]],
+    query: Query,
+    relations: dict[str, list[dict[str, Any]]],
+    physical_sources: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    if not query.set_operations:
+        input_records = _records_for_source(records, query.from_source, relations, physical_sources)
+        return _apply_query_body(input_records, query)
+
+    left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+    left_input = _records_for_source(records, query.from_source, relations, physical_sources)
+    rows = _project_result_rows(_apply_query_body(left_input, left_body), left_body)
+    output_names = tuple(term.output_name for term in query.select)
+
+    for operation in query.set_operations:
+        branch = operation.query
+        branch_input = _records_for_source(records, branch.from_source, relations, physical_sources)
+        branch_rows = _project_result_rows(_apply_query_body(branch_input, branch), branch)
+        branch_names = tuple(term.output_name for term in branch.select)
+        remapped = [
+            {
+                **{target: row.get(source) for target, source in zip(output_names, branch_names, strict=True)},
+                "_yt_sql_result_row": True,
+            }
+            for row in branch_rows
+        ]
+        rows.extend(remapped)
+        if not operation.all:
+            seen: set[tuple[Any, ...]] = set()
+            unique: list[dict[str, Any]] = []
+            for row in rows:
+                key = _union_row_key(row, output_names)
+                if key in seen:
+                    continue
+                seen.add(key)
+                unique.append(row)
+            rows = unique
+
+    # Global ORDER BY, OFFSET and LIMIT apply after the complete set expression.
+    outer = Query(
+        order_by=query.order_by,
+        limit=query.limit,
+        source=query.source,
+        select=query.select,
+        offset=query.offset,
+    )
+    return _apply_query_body(rows, outer)
 
 
 def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
-    """Apply a resolved query, materialising non-recursive CTE relations in declaration order."""
+    """Apply a resolved query, materialising CTEs and set-composed relations."""
+    physical_sources = query_physical_sources(query)
     if not query.ctes:
-        return _apply_query_body(records, query)
-    relations: dict[str, list[dict[str, Any]]] = {}
-    for cte in query.ctes:
-        source_key = (cte.query.from_source or "").casefold()
-        input_records = relations.get(source_key, list(records))
-        cte_result = _apply_query_body(input_records, cte.query)
-        relations[cte.name.casefold()] = _project_cte_rows(cte_result, cte.query)
-    outer_input = relations.get((query.from_source or "").casefold(), list(records))
-    return _apply_query_body(outer_input, replace(query, ctes=()))
+        result = _apply_composed_query(records, query, {}, physical_sources)
+    else:
+        relations: dict[str, list[dict[str, Any]]] = {}
+        for cte in query.ctes:
+            cte_result = _apply_composed_query(records, cte.query, relations, physical_sources)
+            relations[cte.name.casefold()] = (
+                _project_result_rows(cte_result, cte.query)
+                if not cte.query.set_operations
+                else [dict(row) for row in cte_result]
+            )
+        result = _apply_composed_query(records, replace(query, ctes=()), relations, physical_sources)
+
+    # Result-row markers are an internal execution detail used while materialising
+    # CTEs and set operations. They must never escape through the public query API.
+    return [{key: value for key, value in row.items() if key != "_yt_sql_result_row"} for row in result]
 
 
 def merge_queries(base: Query, extra: Query) -> Query:
@@ -2461,6 +2733,7 @@ def merge_queries(base: Query, extra: Query) -> Query:
         group_by,
         having,
         extra.ctes or base.ctes,
+        extra.set_operations or base.set_operations,
     )
 
 
@@ -2526,6 +2799,8 @@ def format_query(query: Query) -> str:
         parts.append("GROUP BY " + ", ".join(format_scalar_expression(item) for item in query.group_by))
     if query.having is not None:
         parts.append(f"HAVING {format_expression(query.having)}")
+    for operation in query.set_operations:
+        parts.append(("UNION ALL " if operation.all else "UNION ") + format_query(operation.query))
     if query.order_by:
         parts.append(
             "ORDER BY " + ", ".join(f"{term.field} {'DESC' if term.descending else 'ASC'}" for term in query.order_by)

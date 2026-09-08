@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.25.1 - Union Uprising
+
+- Add positional `UNION` and `UNION ALL` composition across ordinary queries and non-recursive CTEs.
+- Reconcile branch schemas by column position, retain output names from the first branch, promote compatible numeric kinds, and reject incompatible projected types.
+- Allow a composed query to acquire multiple physical yt-dlp sources independently before logical reconciliation, preserving source identity internally through normalisation.
+- Add per-source schema resolution so heterogeneous extractor metadata is type-checked before set composition rather than collapsed into one mixed acquisition schema.
+- Apply global `ORDER BY`, `OFFSET` and `LIMIT` after the complete set expression and disable source-order early LIMIT termination for UNION queries.
+- Extend optimiser traversal, physical-field planning, explain output and deterministic heterogeneous-source tests across channel-like, playlist-like and Twitch-like source shapes.
+- Run the routine pytest suite automatically in GitHub Actions alongside Ruff while retaining `scale` and `stress` exclusions from normal CI.
+
 ## Discover 0.25.0 - Common Ground
 
 - Add non-recursive `WITH` common table expressions with declaration-order scoping and case-insensitive CTE references.

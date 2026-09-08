@@ -79,6 +79,15 @@ def optimise_query(query: Query) -> OptimisationResult:
             for item in cte_result.decisions
         )
 
+    optimised_set_operations = []
+    for index, operation in enumerate(query.set_operations, start=1):
+        branch_result = optimise_query(operation.query)
+        optimised_set_operations.append(replace(operation, query=branch_result.query))
+        decisions.extend(
+            OptimisationDecision(f"union-{index}-{item.rule}", item.before, item.after)
+            for item in branch_result.decisions
+        )
+
     predicate, predicate_decisions = _optimise_predicate_fixed_point(query.predicate)
     decisions.extend(predicate_decisions)
 
@@ -120,6 +129,7 @@ def optimise_query(query: Query) -> OptimisationResult:
             group_by=tuple(group_by),
             having=having,
             ctes=tuple(optimised_ctes),
+            set_operations=tuple(optimised_set_operations),
         ),
         tuple(decisions),
     )

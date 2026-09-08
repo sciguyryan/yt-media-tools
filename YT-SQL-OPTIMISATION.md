@@ -328,3 +328,8 @@ This is exploratory rather than committed work. Any design must justify its comp
 
 Any future CTE rewrite must preserve row membership, row order, aliases, NULLs, Unicode values, aggregate semantics and serialised output under the same differential verification requirements as ordinary yt-sql optimisation.
 
+## UNION and UNION ALL
+
+Discover 0.25.1 optimises each resolved set-operation branch independently and prefixes branch decisions in optimiser diagnostics. Reconciliation itself is not rewritten. The optimiser must preserve branch order for `UNION ALL`, duplicate-elimination boundaries for `UNION`, first-branch output naming, NULL values and exact Unicode values.
+
+Current acquisition planning does not push predicates across UNION boundaries and does not permit source-order early LIMIT termination for a composed result. Future source-boundary planning may optimise branches independently only where equivalence can be proven. Transformations such as replacing `UNION` with `UNION ALL`, reordering branches where observable ordering would change, or coercing incompatible extractor-specific field kinds are unsafe and must not be performed.

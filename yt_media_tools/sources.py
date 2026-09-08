@@ -1,4 +1,4 @@
-"""YouTube source classification and URL normalisation."""
+"""Source classification and URL normalisation for yt-dlp acquisition."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ class SourceSpec:
 
 
 def resolve_source(value: str, *, source_type: str = "auto", tab: str = "all") -> SourceSpec:
-    """Classify a channel or playlist source without network-driven guessing."""
+    """Classify YouTube collections or preserve a generic yt-dlp URL without network guessing."""
     text = value.strip()
     if not text:
         raise ValueError("SOURCE cannot be empty")
@@ -66,7 +66,9 @@ def _resolve_url(value: str, tab: str) -> SourceSpec:
     parts = urlsplit(value)
     host = parts.netloc.lower().split(":", 1)[0]
     if host not in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}:
-        raise ValueError("SOURCE URL must be a YouTube URL")
+        if tab != "all":
+            raise ValueError("--tab applies only to YouTube channel sources")
+        return SourceSpec("extractor", value, value, None)
 
     query = parse_qs(parts.query)
     playlist_ids = query.get("list", [])

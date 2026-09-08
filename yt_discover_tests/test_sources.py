@@ -46,3 +46,14 @@ def test_playlist_rejects_tab() -> None:
 def test_forced_playlist_accepts_unusual_id() -> None:
     spec = resolve_source("abcdefghijk", source_type="playlist")
     assert spec.kind == "playlist"
+
+
+def test_generic_extractor_url_is_accepted_in_auto_mode() -> None:
+    spec = resolve_source("https://www.twitch.tv/example/videos")
+    assert spec.kind == "extractor"
+    assert spec.canonical_url == "https://www.twitch.tv/example/videos"
+
+
+def test_generic_extractor_url_rejects_youtube_tab_option() -> None:
+    with pytest.raises(ValueError, match="--tab applies only to YouTube channel sources"):
+        resolve_source("https://www.twitch.tv/example/videos", tab="videos")

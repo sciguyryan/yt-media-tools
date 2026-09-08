@@ -156,7 +156,7 @@ The optimiser intentionally does not fold contradictory field predicates to a Bo
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, relative calendar expressions, and source forms such as `@handle`.
 
-`JOIN` is out of scope by design. yt-discover queries media-source metadata rather than exposing its internal persistence tables as a relational database. If multi-source composition is added later, it should use a domain-appropriate abstraction rather than forcing users to join implementation tables.
+`JOIN` is out of scope by design. yt-discover queries media-source metadata rather than exposing its internal persistence tables as a relational database. Multi-source composition uses CTEs plus positional `UNION`/`UNION ALL`; it does not expose implementation tables or relational join semantics.
 
 Database mutation and administration statements such as `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, transactions, indexes, triggers, stored procedures, and database permissions are also outside the purpose of yt-sql.
 
@@ -208,5 +208,25 @@ ORDER BY minutes DESC
 
 A CTE exports only its projected columns. Their output names, including explicit `AS` aliases, and their resolved scalar kinds define the logical schema available to subsequent CTEs and the outer query. CTE names are case-insensitive. Later CTEs may reference earlier CTEs, but forward references, self-reference, `WITH RECURSIVE` and nested `WITH` clauses are rejected.
 
-Discover 0.25.0 permits only one physical extractor source across the complete CTE pipeline. This restriction keeps CTE execution independent of the still-pending multi-source schema-reconciliation contract. `UNION` and `UNION ALL` will introduce deliberate multi-source composition in the next phase.
+Discover 0.25.1 permits CTEs to contain positional `UNION` and `UNION ALL` expressions, including branches backed by different physical extractor sources. Each branch is resolved against its own physical-source schema before result-column reconciliation.
 
+
+## Set composition
+
+`UNION` and `UNION ALL` combine query results by column position:
+
+```sql
+SELECT id, title FROM @channel_a
+UNION ALL
+SELECT id, title FROM @playlist_b
+ORDER BY title
+LIMIT 50
+```
+
+All branches must project the same number of columns. The first branch defines the exported column names. Later aliases do not rename the set result. Compatible numeric kinds may reconcile to a common numeric kind; incompatible kinds are rejected. Plain `UNION` removes duplicate projected rows using exact yt-sql scalar values, including normalisation-sensitive Unicode strings. `UNION ALL` retains duplicates and branch order.
+
+`ORDER BY`, `OFFSET` and `LIMIT` written after the final branch apply to the complete composed result. Branch-local ordering and limiting are not a separate grammar surface in this release. Set composition disables source-order early LIMIT acquisition because every contributing branch can affect the final result.
+
+Physical sources are acquired independently. In automatic source mode, a quoted non-YouTube URL is preserved as a generic yt-dlp extractor source, while YouTube handles, channel URLs and playlist URLs retain their existing specialised classification. Source identity remains attached internally through normalisation so each branch sees only the records belonging to its declared `FROM` source. A missing value from one extractor is NULL when the field is otherwise part of the logical schema. Dynamic fields are resolved per physical source so incompatible extractor-specific types are detected before composition.
+
+`JOIN` remains intentionally unsupported. yt-sql uses set composition and CTEs rather than relational join semantics.

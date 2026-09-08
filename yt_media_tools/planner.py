@@ -73,6 +73,12 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
             "CTE materialisation may filter, reorder or reshape source rows before LIMIT; early termination is not yet proven safe",
             query.limit,
         )
+    if query.set_operations:
+        return LimitTerminationPlan(
+            False,
+            "UNION composition requires complete branch results before global LIMIT can be applied",
+            query.limit,
+        )
     if (
         query.group_by
         or query.having is not None
@@ -172,6 +178,8 @@ def _lower_bound(node: Any, context: DateContext) -> date | None:
 
 def plan_acquisition(query: Query, *, source_kind: str, tab: str, dates: DateContext) -> AcquisitionPlan:
     """Choose a bounded lazy scan only where source order and the predicate make it safe."""
+    if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
+        return AcquisitionPlan("full", "UNION composition is acquired conservatively per physical source")
     if source_kind != "channel":
         return AcquisitionPlan("full", "playlists are not assumed to be ordered by upload date")
     if tab != "videos":
@@ -288,15 +296,19 @@ def _required_body_fields(query: Query) -> set[str]:
 
 
 def required_query_fields(query: Query) -> set[str]:
-    """Return physical-source fields needed by a query and its CTE pipeline."""
+    """Return physical-source fields needed by a query, CTEs, and UNION branches."""
     cte_names = {cte.name.casefold() for cte in query.ctes}
     fields: set[str] = set()
+
+    def visit(candidate: Query) -> None:
+        if (candidate.from_source or "").casefold() not in cte_names:
+            fields.update(_required_body_fields(candidate))
+        for operation in candidate.set_operations:
+            visit(operation.query)
+
     for cte in query.ctes:
-        source_name = (cte.query.from_source or "").casefold()
-        if source_name not in cte_names:
-            fields.update(_required_body_fields(cte.query))
-    if (query.from_source or "").casefold() not in cte_names:
-        fields.update(_required_body_fields(query))
+        visit(cte.query)
+    visit(query)
     return fields
 
 

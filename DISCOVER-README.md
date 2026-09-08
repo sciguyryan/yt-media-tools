@@ -116,9 +116,21 @@ Discover 0.25.0 adds non-recursive `WITH` common table expressions. A CTE materi
 yt-discover.py "WITH short AS (SELECT id, title, duration / 60 AS minutes FROM @example WHERE duration < 1h), mars AS (SELECT id, minutes FROM short WHERE title ILIKE '%mars%') SELECT id, minutes FROM mars ORDER BY minutes DESC"
 ```
 
-CTEs can contain the existing filtering, projection, aggregation, grouping, HAVING, ordering, DISTINCT, LIMIT and OFFSET features. Recursive CTEs, self-reference, forward references and nested `WITH` clauses are intentionally unsupported. Discover 0.25.0 also limits a CTE pipeline to one physical extractor source. Multi-source composition is reserved for the following `UNION`/`UNION ALL` phase, where result-schema reconciliation can be designed explicitly for heterogeneous yt-dlp extractors.
+CTEs can contain the existing filtering, projection, aggregation, grouping, HAVING, ordering, DISTINCT, LIMIT and OFFSET features. Recursive CTEs, self-reference, forward references and nested `WITH` clauses are intentionally unsupported. Discover 0.25.1 allows CTEs to contain `UNION` and `UNION ALL`, including branches backed by different physical yt-dlp sources.
 
 The acquisition planner follows physical field requirements through CTEs but does not yet push CTE predicates into extractor enumeration boundaries. This is conservative by design.
+
+## UNION and UNION ALL
+
+Discover 0.25.1 adds positional set composition. Every branch must project the same number of columns. Result column names come from the first branch, while compatible numeric kinds are reconciled to a common numeric kind. Incompatible projected kinds are rejected rather than silently coerced.
+
+```bash
+yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM @playlist_b ORDER BY title"
+```
+
+Plain `UNION` removes duplicate logical rows; `UNION ALL` preserves them. Global `ORDER BY`, `OFFSET` and `LIMIT` apply after the complete set expression. A query may reference several physical sources. Discover resolves and acquires those sources independently through yt-dlp, preserves their source identity internally, and only then evaluates each branch and reconciles its projected rows. This allows extractor families with different metadata availability to compose naturally: unavailable fields remain NULL where the logical field exists, while genuinely incompatible dynamic field types fail schema reconciliation.
+
+`UNION` remains deliberately positional and does not introduce relational joins. `JOIN` is not part of yt-sql. Source/facet selection such as the planned `OF` syntax remains a later phase.
 
 ## yt-sql optimiser
 

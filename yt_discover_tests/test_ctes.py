@@ -99,10 +99,10 @@ def test_query_single_physical_source_resolves_through_cte_chain() -> None:
     assert query_single_physical_source(query) == "@fixture"
 
 
-def test_multiple_physical_sources_are_deferred_to_union_phase() -> None:
+def test_multiple_physical_sources_can_back_independent_ctes() -> None:
     query = parse_query("WITH a AS (SELECT id FROM @one), b AS (SELECT id FROM @two) SELECT id FROM a")
-    with pytest.raises(QuerySyntaxError, match="only one physical source"):
-        resolve_query(query, QuerySchema(records()), CONTEXT)
+    resolved = resolve_query(query, QuerySchema(records()), CONTEXT)
+    assert len(resolved.ctes) == 2
 
 
 @pytest.mark.parametrize(

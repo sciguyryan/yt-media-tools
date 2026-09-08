@@ -71,4 +71,4 @@ The two command-line applications retain independent versions because they evolv
 
 ## Common table expressions
 
-Discover 0.25.0 supports non-recursive yt-sql `WITH` CTEs over one physical source. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, scoping and logical-schema contract.
+Discover 0.25.1 supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `UNION ALL`, including composition across independently acquired yt-dlp sources. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, schema-reconciliation and scoping contracts.

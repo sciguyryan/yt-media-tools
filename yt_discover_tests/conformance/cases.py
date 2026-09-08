@@ -632,6 +632,20 @@ def _cte_chained_projection(rows: Rows) -> list[Any]:
     return [{"id": r["id"], "minutes": r["minutes"]} for r in second[:7]]
 
 
+def _union_distinct(rows: Rows) -> list[Any]:
+    left = [str(r["id"]) for r in rows if int(r.get("fixture_group", -1)) in {1, 2}]
+    right = [str(r["id"]) for r in rows if int(r.get("fixture_group", -1)) in {2, 3}]
+    values = sorted(set(left + right))
+    return values[:12]
+
+
+def _union_all(rows: Rows) -> list[Any]:
+    left = [str(r["id"]) for r in rows if int(r.get("fixture_group", -1)) == 1]
+    right = [str(r["id"]) for r in rows if int(r.get("fixture_group", -1)) == 1]
+    values = sorted(left + right)
+    return values[:12]
+
+
 def _aggregate_global(rows: Rows) -> list[Any]:
     values = [int(r["view_count"]) for r in rows if r.get("view_count") is not None]
     titles = [str(r["title"]) for r in rows if r.get("title") is not None]
@@ -728,6 +742,9 @@ LANGUAGE_FEATURES = frozenset(
         "cte.non_recursive",
         "cte.chained",
         "cte.logical_schema",
+        "set.union",
+        "set.union_all",
+        "set.global_order_limit",
         "in",
         "in.not",
         "is.false",
@@ -1869,6 +1886,18 @@ CASES = (
         ("id", "minutes"),
         "jsonl",
         features=("cte.non_recursive", "cte.chained", "cte.logical_schema"),
+    ),
+    ConformanceCase(
+        "union_distinct_same_source",
+        "SELECT id FROM @yt_sql_fixture WHERE fixture_group IN (1, 2) UNION SELECT id FROM @yt_sql_fixture WHERE fixture_group IN (2, 3) ORDER BY id LIMIT 12",
+        _union_distinct,
+        features=("set.union", "set.global_order_limit"),
+    ),
+    ConformanceCase(
+        "union_all_duplicate_preservation",
+        "SELECT id FROM @yt_sql_fixture WHERE fixture_group = 1 UNION ALL SELECT id FROM @yt_sql_fixture WHERE fixture_group = 1 ORDER BY id LIMIT 12",
+        _union_all,
+        features=("set.union_all",),
     ),
     ConformanceCase(
         "convoluted_existing_language",
