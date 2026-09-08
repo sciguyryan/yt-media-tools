@@ -131,12 +131,6 @@ class QuerySchema:
             return FieldInfo(name, kind, present < len(self.records) or any(v is None for v in values), dynamic=True)
         return self._fields.get(lowered)
 
-    def canonical_name(self, name: str) -> str | None:
-        info = self.resolve(name)
-        if info is None:
-            return None
-        return info.alias_of or info.name
-
     def available_fields(self) -> list[FieldInfo]:
         """Return non-raw fields in deterministic display order."""
         unique: dict[tuple[str, str | None], FieldInfo] = {}

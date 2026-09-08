@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.26.3 - Quiet Sweep
+
+- Begin the post-0.26.2 hardening programme without adding or changing yt-sql syntax.
+- Remove unused scalar compatibility wrappers, an unused metadata-output helper, an unused schema helper and an unused unit-registry constructor.
+- Remove the stale package-level `__version__` value so `PROGRAM_VERSION` remains the single application version authority.
+- Remove the unused legacy source-resolver import from the Discover CLI while preserving the intentional compatibility resolver API and `--tab` behaviour.
+- Add the project-local pinned `markdownlint-cli2` development dependency and npm lint script, with `node_modules/**` excluded by the shared Markdown lint configuration.
+- Audit production definitions, imports, module-level constants and explicit TODO/FIXME/HACK markers for dead or stale implementation artefacts.
+- Preserve behaviour, grammar, source/facet semantics and the split GitHub Actions workflow organisation unchanged.
+
 ## Discover 0.26.2 - Crossing Streams
 
 - Remove the temporary same-source cross-facet composition restriction now that each physical source/facet request has an independent execution identity.

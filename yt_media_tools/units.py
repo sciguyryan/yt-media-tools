@@ -82,10 +82,6 @@ class UnitRegistry:
             registry.resolve(name)
         return registry
 
-    @classmethod
-    def from_directory(cls, directory: Path) -> "UnitRegistry":
-        return cls.from_files(directory.glob("*.json"))
-
     def resolve(self, token: str) -> ResolvedUnit:
         """Resolve a unit name or alias through derived definitions to a terminal unit."""
         normalised = token.casefold()

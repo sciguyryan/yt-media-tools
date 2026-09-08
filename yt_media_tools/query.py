@@ -1274,11 +1274,6 @@ def format_scalar_expression(expression: Any) -> str:
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
 
-def format_scalar_function(function: ScalarFunction) -> str:
-    """Compatibility wrapper for callers that format a scalar function directly."""
-    return format_scalar_expression(function)
-
-
 def _scalar_kind(expression: Any) -> str | None:
     kind = getattr(expression, "kind", None)
     if kind is not None:
@@ -1507,15 +1502,6 @@ def _resolve_scalar_expression(
             )
         return ScalarFunction(expression.name, args, expression.position, result_kind)
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
-
-
-def _resolve_scalar_function(
-    function: ScalarFunction, schema: QuerySchema, source: str, dates: DateContext
-) -> ScalarFunction:
-    """Compatibility wrapper around general scalar-expression resolution."""
-    resolved = _resolve_scalar_expression(function, schema, source, dates)
-    assert isinstance(resolved, ScalarFunction)
-    return resolved
 
 
 def _is_constant_scalar_expression(expression: Any) -> bool:
@@ -1748,11 +1734,6 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
             return _evaluate_random(expression, record)
         raise AssertionError(f"Unsupported scalar function {expression.name}")
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
-
-
-def evaluate_scalar_function(function: ScalarFunction, record: dict[str, Any]) -> Any:
-    """Compatibility wrapper for scalar function evaluation."""
-    return evaluate_scalar_expression(function, record)
 
 
 def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: DateContext) -> Any:

@@ -75,4 +75,4 @@ Discover 0.25.1 supports non-recursive yt-sql `WITH` CTEs plus positional `UNION
 
 ## Documentation linting
 
-GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. The initial CI policy enforces MD001 heading increments and MD012 consecutive blank lines through `.markdownlint-cli2.jsonc`.
+GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. The initial CI policy enforces MD001 heading increments and MD012 consecutive blank lines through `.markdownlint-cli2.jsonc`. For a project-local installation, run `npm install` once and then `npm run lint:markdown`; the shared configuration excludes `node_modules/**`.
