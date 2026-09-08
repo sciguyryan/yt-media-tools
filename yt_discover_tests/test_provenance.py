@@ -52,7 +52,45 @@ def test_offline_provenance_sidecar_records_query_and_execution(tmp_path: Path) 
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(provenance.read_text(encoding="utf-8"))
     assert payload["kind"] == "yt-discover-query-provenance"
-    assert payload["version"] == "0.25.1"
+    assert payload["version"] == "0.25.2"
     assert payload["query"]["parameters"] == {"needle": "Alpha"}
     assert payload["execution"]["offline"] is True
     assert payload["execution"]["emitted_rows"] == 1
+
+
+def test_composed_provenance_records_per_source_acquisition_counts(tmp_path: Path) -> None:
+    import os
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_ytdlp = fake_bin / "yt-dlp"
+    fake_ytdlp.write_text(
+        "#!/usr/bin/env python3\nimport json\nprint(json.dumps({'id': 'one', 'title': 'One'}))\n",
+        encoding="utf-8",
+    )
+    fake_ytdlp.chmod(0o755)
+
+    provenance = tmp_path / "composed-provenance.json"
+    env = os.environ.copy()
+    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--provenance",
+            str(provenance),
+            "SELECT id FROM @example UNION ALL SELECT id FROM 'https://www.twitch.tv/example/videos'",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(provenance.read_text(encoding="utf-8"))
+    assert payload["source"]["type"] == "union"
+    assert len(payload["sources"]) == 2
+    assert [source["acquired_records"] for source in payload["sources"]] == [1, 1]
+    assert payload["execution"]["normalised_records"] == 2
+    assert payload["execution"]["emitted_rows"] == 2

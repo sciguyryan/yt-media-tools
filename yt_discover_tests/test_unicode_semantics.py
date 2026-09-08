@@ -54,7 +54,7 @@ def test_contains_uses_unicode_casefold_without_normalising() -> None:
     ("pattern", "expected"),
     (
         ("Emoji _", ["vid040"]),
-        ("Flag __", ["vid042"]),
+        ("Flag _______", ["vid042"]),
         ("Variation __", ["vid043"]),
         ("Astral _ _", ["vid056"]),
         ("Zero width joiner A_B", ["vid059"]),

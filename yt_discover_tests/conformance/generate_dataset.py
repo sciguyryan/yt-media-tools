@@ -92,7 +92,7 @@ def _anchor_records(seed: int) -> list[dict[str, object]]:
         ("vid039", "Combining only ̧́", "20260803", "2026-08-03T12:00:00Z", 13, 13, "public", None),
         ("vid040", "Emoji 😀", "20260802", "2026-08-02T12:00:00Z", 14, 14, "public", None),
         ("vid041", "Emoji family 👩‍👩‍👧‍👦", "20260730", "2026-07-30T12:00:00Z", 15, 15, "public", None),
-        ("vid042", "Flag 🇬🇧", "20260729", "2026-07-29T12:00:00Z", 16, 16, "public", None),
+        ("vid042", "Flag 🏴󠁧󠁢󠁷󠁬󠁳󠁿", "20260729", "2026-07-29T12:00:00Z", 16, 16, "public", None),
         ("vid043", "Variation ✈️", "20260728", "2026-07-28T12:00:00Z", 17, 17, "public", None),
         ("vid044", "Greek Σ σ ς", "20260727", "2026-07-27T12:00:00Z", 18, 18, "public", None),
         ("vid045", "Turkish İ I ı i", "20260726", "2026-07-26T12:00:00Z", 19, 19, "public", None),

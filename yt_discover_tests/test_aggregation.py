@@ -33,7 +33,7 @@ def rows() -> list[dict]:
 def test_ungrouped_count_star_and_count_expression() -> None:
     records = rows()
     query = resolve("SELECT COUNT(*) AS total, COUNT(view_count) AS known FROM @fixture", records)
-    assert apply_query(records, query) == [{"_yt_sql_aggregate_result": True, "total": 5, "known": 4}]
+    assert apply_query(records, query) == [{"total": 5, "known": 4}]
 
 
 def test_empty_ungrouped_aggregate_retains_single_row() -> None:
@@ -45,7 +45,6 @@ def test_empty_ungrouped_aggregate_retains_single_row() -> None:
     )
     assert apply_query(records, query) == [
         {
-            "_yt_sql_aggregate_result": True,
             "n": 0,
             "total": None,
             "mean": None,
@@ -94,7 +93,6 @@ def test_filter_where_is_applied_per_aggregate_after_where() -> None:
         records,
     )
     assert apply_query(records, query)[0] == {
-        "_yt_sql_aggregate_result": True,
         "all_rows": 3,
         "short": 1,
         "long_views": 30,

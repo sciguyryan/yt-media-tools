@@ -69,7 +69,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.25.1"
+PROGRAM_VERSION = "0.25.2"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -1971,6 +1971,7 @@ def main(argv: list[str] | None = None) -> int:
     limit_batches = 0
     limit_candidates_examined = 0
     acquisition_started = perf_counter()
+    source_record_counts: dict[str, int] = {}
     if multi_source:
         raw_records = []
         acquisition_stats = AcquisitionStats()
@@ -2007,6 +2008,7 @@ def main(argv: list[str] | None = None) -> int:
                     return 1
                 if metadata_cache is not None:
                     metadata_cache.put_many(source_spec.canonical_url, source_records)
+            source_record_counts[source_value] = len(source_records)
             for item in source_records:
                 tagged = dict(item)
                 tagged["_yt_sql_source"] = source_value
@@ -2399,6 +2401,9 @@ def main(argv: list[str] | None = None) -> int:
                 ),
             )
 
+    if not multi_source:
+        source_record_counts[source_values[0]] = len(raw_records)
+
     observed_source_work = (
         enumeration_stats.enumerated if enumeration_stats is not None else acquisition_stats.attempted
     )
@@ -2597,6 +2602,7 @@ def main(argv: list[str] | None = None) -> int:
                     "type": source_spec.kind,
                     "url": source_spec.canonical_url,
                     "tab": args.tab if source_spec.kind == "channel" else None,
+                    "acquired_records": source_record_counts.get(source_value, 0),
                 }
                 for source_value, source_spec in zip(source_values, sources, strict=True)
             ],

@@ -1,6 +1,6 @@
 # yt-discover
 
-### Running the test suite
+## Running the test suite
 
 The repository includes `pytest.ini`, which makes `yt_discover_tests/` the canonical test tree, adds the project root to Python import resolution, excludes the separate `yt_downloader_tests/` tree and legacy test copies from normal discovery, and keeps expensive scale/stress tests out of routine runs. Run the normal development and pull-request suite from the repository root with:
 
@@ -243,7 +243,6 @@ The explanation shows why the date range can bound enumeration and prune provabl
 ## YouTube.js compatibility
 
 The YouTube.js backend now consumes its parser-backed `feed.videos` collection as an iterable rather than requiring a native JavaScript array. This is important with current YouTube.js releases, where channel video feeds are exposed through `ObservedArray` and may include newer `LockupView` video nodes. If a channel advertises a Videos tab but YouTube.js yields no parseable video entries, `--backend auto` treats that as a backend failure and falls back to yt-dlp instead of silently returning an empty result.
-
 
 ## Linux installation and external tools
 
@@ -700,7 +699,6 @@ For example:
 ```
 
 Use `--acquisition full` to force exhaustive acquisition. Use `--backend ytdlp` to disable the optional YouTube.js enumerator while retaining bounded planning where eligible. Automatic bounded acquisition intentionally falls back to full acquisition for playlists, `--tab all`, shorts/live tabs, predicates whose OR/NOT structure cannot prove a universal lower date bound, and runs that already contain explicit yt-dlp acquisition prefilters. This keeps the optimisation separate from query correctness.
-
 
 ## Acquisition cost assessment and large-source warnings
 

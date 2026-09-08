@@ -2160,9 +2160,9 @@ def canonical_record_value(
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
     elif isinstance(field, SelectTerm):
-        if (
-            record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
-        ) and field.output_name in record:
+        materialised_result = record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
+        aggregate_projection = field.expression is not None and _contains_aggregate(field.expression)
+        if field.output_name in record and (materialised_result or aggregate_projection):
             return record.get(field.output_name)
         if field.expression is not None:
             return evaluate_scalar_expression(field.expression, record)
@@ -2602,7 +2602,13 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
 
 def _project_result_rows(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     if _aggregate_query(query):
-        return [dict(record, _yt_sql_result_row=True) for record in records]
+        return [
+            {
+                **{term.output_name: record.get(term.output_name) for term in query.select},
+                "_yt_sql_result_row": True,
+            }
+            for record in records
+        ]
     return [
         {
             **{term.output_name: canonical_record_value(record, term) for term in query.select},
@@ -2676,15 +2682,23 @@ def _apply_composed_query(
                 unique.append(row)
             rows = unique
 
-    # Global ORDER BY, OFFSET and LIMIT apply after the complete set expression.
-    outer = Query(
-        order_by=query.order_by,
-        limit=query.limit,
-        source=query.source,
-        select=query.select,
-        offset=query.offset,
-    )
-    return _apply_query_body(rows, outer)
+    # Global ORDER BY, OFFSET and LIMIT apply to the already materialised logical
+    # result relation. Do not feed the first branch's aggregate SELECT terms back
+    # through _apply_query_body(), because that would aggregate the UNION result a
+    # second time rather than merely ordering/slicing it.
+    for term in reversed(query.order_by):
+        present = [row for row in rows if canonical_record_value(row, term) is not None]
+        missing = [row for row in rows if canonical_record_value(row, term) is None]
+        try:
+            present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
+        except TypeError:
+            present.sort(key=lambda row: str(canonical_record_value(row, term)), reverse=term.descending)
+        rows = present + missing
+    if query.offset:
+        rows = rows[query.offset :]
+    if query.limit is not None:
+        rows = rows[: query.limit]
+    return rows
 
 
 def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
@@ -2705,7 +2719,8 @@ def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[st
 
     # Result-row markers are an internal execution detail used while materialising
     # CTEs and set operations. They must never escape through the public query API.
-    return [{key: value for key, value in row.items() if key != "_yt_sql_result_row"} for row in result]
+    execution_only_keys = {"_yt_sql_result_row", "_yt_sql_aggregate_result"}
+    return [{key: value for key, value in row.items() if key not in execution_only_keys} for row in result]
 
 
 def merge_queries(base: Query, extra: Query) -> Query:

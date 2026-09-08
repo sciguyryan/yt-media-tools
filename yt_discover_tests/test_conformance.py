@@ -248,6 +248,7 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
     assert any("Café" in title for title in titles)
     assert any("😀" in title for title in titles)
     assert any("👩‍👩‍👧‍👦" in title for title in titles)
+    assert any("🏴󠁧󠁢󠁷󠁬󠁳󠁿" in title for title in titles)
     assert any("Σ σ ς" in title for title in titles)
     assert any("İ I ı i" in title for title in titles)
     assert any("Straße" in title for title in titles)

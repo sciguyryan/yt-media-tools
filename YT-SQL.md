@@ -210,7 +210,6 @@ A CTE exports only its projected columns. Their output names, including explicit
 
 Discover 0.25.1 permits CTEs to contain positional `UNION` and `UNION ALL` expressions, including branches backed by different physical extractor sources. Each branch is resolved against its own physical-source schema before result-column reconciliation.
 
-
 ## Set composition
 
 `UNION` and `UNION ALL` combine query results by column position:

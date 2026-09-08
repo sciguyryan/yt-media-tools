@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.25.2 - Composition Crucible
+
+- Harden `UNION` and `UNION ALL` across CTEs, aggregation, global ordering, LIMIT/OFFSET and heterogeneous extractor-shaped logical relations without adding new grammar.
+- Add a reusable deterministic multi-source fixture covering channel-like, playlist-like and Twitch-like records, including missing metadata, duplicate logical rows, Unicode normalisation distinctions and deliberately incompatible dynamic field kinds.
+- Preserve already-materialised aggregate rows across set-operation boundaries so aggregate UNION branches are not accidentally evaluated a second time.
+- Keep execution-only CTE and aggregate row markers internal to the query engine and prevent them from leaking into public query results.
+- Record per-source acquired-row counts in provenance for composed acquisitions while retaining the existing single-source provenance fields.
+- Strengthen Unicode torture coverage by using the Welsh flag tag sequence and verifying LIKE `_` continues to count Unicode code points rather than displayed grapheme clusters.
+
 ## Discover 0.25.1 - Union Uprising
 
 - Add positional `UNION` and `UNION ALL` composition across ordinary queries and non-recursive CTEs.
