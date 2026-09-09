@@ -156,9 +156,11 @@ The source-only and conversion-enabled branches, fallback behaviour, profile val
 
 ## Phase 8 - playlist and range controls
 
-Expand playlist policy with typed controls for indices, ranges, slicing and traversal. Preserve predictable interactions with archive handling and file-backed queues.
+Playlist selection is represented as typed Downloader policy for individual 1-based indices, inclusive ranges and explicit slices. CLI selections preserve their supplied order and compile into one canonical yt-dlp `-I/--playlist-items` expression. Parameter profiles use the same ordered canonical representation.
 
-Consider deterministic randomisation only if there is a real use case and its interaction with queue persistence is clear. Avoid duplicating yt-dlp options that provide no meaningful Downloader-level policy benefit.
+Forward and reverse traversal remain explicit policy, with `--playlist-forward` available to override a reverse-traversal profile. Playlist selection cannot coexist with explicit `--no-playlist`. The normal yt-dlp download archive continues to filter selected child entries. Durable `--remove-completed-ids` queue mutation fails closed when playlist-item selection is active because completion of selected child items does not establish completion of the playlist container target stored in a text queue.
+
+Random playlist traversal remains unexposed. There is no current Downloader-level use case strong enough to justify making selection order, reproducibility and queue reasoning less predictable.
 
 ## Phase 9 - live-media workflows
 

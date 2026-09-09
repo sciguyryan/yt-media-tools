@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.14.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.15.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -76,6 +76,23 @@ Reverse playlist traversal:
 ```bash
 ./yt-download.py --rev PLAYLIST_URL
 ```
+
+Select one or more playlist entries with typed index, inclusive-range and slice controls:
+
+```bash
+./yt-download.py --playlist-index 3 PLAYLIST_URL
+./yt-download.py --playlist-range 5 12 PLAYLIST_URL
+./yt-download.py --playlist-slice 1:20:2 PLAYLIST_URL
+./yt-download.py --playlist-index 1 --playlist-range 5 8 --playlist-slice=-5: PLAYLIST_URL
+```
+
+Playlist indices are 1-based. Negative indices count from the end. `--playlist-range START STOP` includes both endpoints. `--playlist-slice` uses yt-dlp's `[START]:[STOP][:STEP]` selection semantics, with non-zero supplied bounds and a non-zero step. Repeat and mix the three options as needed; Downloader preserves their command-line order and compiles the resolved selection into one `-I/--playlist-items` expression.
+
+`--playlist-forward` explicitly restores normal traversal when a parameter profile enables reverse traversal. `--playlist-reverse`/`--rev` remains the reverse traversal control. Playlist item selection cannot be combined with `--no-playlist`.
+
+The configured download archive continues to apply to the selected entries through yt-dlp, so already archived media remain excluded normally. Playlist item selection is not accepted with `--remove-completed-ids`: the durable text queue tracks exact input targets, while successful playlist child entries do not establish that a playlist container target itself is complete. This fails closed rather than removing or classifying the container line incorrectly.
+
+Playlist randomisation is not exposed as Downloader policy. Its ordering semantics do not currently provide enough value to justify making queue and reproducibility behaviour less predictable.
 
 Remove exact completed IDs from a file-backed queue after successful processing, while also reconciling IDs already present in the yt-dlp archive before the run:
 
@@ -224,7 +241,7 @@ built-in defaults -> selected parameter profile -> explicit CLI settings
 
 `--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
 
-Operational policy can also be stored in parameter profiles. Supported settings include `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+Operational policy can also be stored in parameter profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
 
 For example:
 

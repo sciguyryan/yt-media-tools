@@ -255,3 +255,123 @@ def test_main_resolves_explicit_audio_conversion(downloader, monkeypatch) -> Non
     assert captured[captured.index("-f") + 1] == "ba"
     assert captured[captured.index("--audio-format") + 1] == "mp3"
     assert captured[captured.index("--audio-quality") + 1] == "192K"
+
+
+@pytest.mark.parametrize("audio_format", sorted({"best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"}))
+def test_every_supported_audio_conversion_format_reaches_the_command(downloader, audio_format: str) -> None:
+    policy = _policy(downloader, {"audio-format": audio_format})
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        policy,
+        downloader.InputSource(direct_targets=("abc",)),
+        None,
+    )
+    assert command[command.index("--audio-format") + 1] == audio_format
+    assert command[command.index("-f") + 1] == "ba"
+
+
+@pytest.mark.parametrize("audio_format", ["aac", "flac", "mp3", "opus", "wav"])
+def test_audio_conversion_can_require_an_exact_source_without_fallback(downloader, audio_format: str) -> None:
+    policy = _policy(
+        downloader,
+        {
+            "audio-format": audio_format,
+            "audio-source-codec": "opus",
+            "audio-source-container": "webm",
+            "audio-source-fallback": False,
+        },
+    )
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        policy,
+        downloader.InputSource(direct_targets=("abc",)),
+        None,
+    )
+    assert command[command.index("-f") + 1] == "ba[acodec=opus][ext=webm]"
+    assert command[command.index("--audio-format") + 1] == audio_format
+
+
+def test_audio_conversion_source_constraints_retain_default_fallback(downloader) -> None:
+    policy = _policy(
+        downloader,
+        {
+            "audio-format": "flac",
+            "audio-source-codec": "opus",
+            "audio-source-container": "webm",
+        },
+    )
+    assert policy.effective_format_selector == "ba[acodec=opus][ext=webm]/ba"
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        {"audio-format": "flac", "format": "251/140"},
+        {"audio-format": "flac", "max-resolution": 1080},
+        {"audio-format": "flac", "preferred-video-codec": "av01"},
+        {"audio-format": "flac", "embed-subs": True},
+    ],
+)
+def test_conversion_workflow_enforces_the_same_audio_policy_boundaries(
+    downloader,
+    settings: dict[str, object],
+) -> None:
+    with pytest.raises(ValueError):
+        _policy(downloader, settings)
+
+
+def test_audio_profile_boolean_fallback_can_be_overridden_explicitly(downloader) -> None:
+    profile = downloader.ParameterProfile(
+        name="strict-audio",
+        source=downloader.DEFAULTS_FILE,
+        settings={
+            "audio-only": True,
+            "audio-source-codec": "opus",
+            "audio-source-fallback": False,
+        },
+    )
+    resolved = downloader.merge_parameter_settings(
+        profile,
+        {"audio-source-fallback": True},
+    )
+    assert resolved["audio-only"] is True
+    assert resolved["audio-source-codec"] == "opus"
+    assert resolved["audio-source-fallback"] is True
+
+
+def test_audio_source_tokens_reject_format_expression_syntax(downloader) -> None:
+    with pytest.raises(ValueError, match="audio-source-codec"):
+        downloader._validate_parameter_setting("audio-source-codec", "opus/ba")
+    with pytest.raises(ValueError, match="audio-source-container"):
+        downloader._validate_parameter_setting("audio-source-container", "webm]/ba")
+
+
+def test_audio_explain_reports_conversion_and_source_requirements(downloader, tmp_path) -> None:
+    resolved = downloader.ResolvedParameterSettings(
+        settings={
+            "audio-format": "flac",
+            "audio-quality": "0",
+            "audio-source-codec": "opus",
+            "audio-source-container": "webm",
+            "audio-source-fallback": False,
+            "no-cookies": True,
+        },
+        sources={"audio-format": "explicit CLI", "audio-quality": "explicit CLI"},
+    )
+    plan = downloader.create_download_plan(
+        executable="yt-dlp",
+        resolved_parameters=resolved,
+        input_source=downloader.InputSource(direct_targets=("abc",)),
+        output_profile=None,
+        defaults_file=tmp_path / "defaults.json",
+        parameter_profile=None,
+        remove_completed_ids=False,
+    )
+    payload = downloader.explain_plan_payload(plan)
+    assert payload["policy"]["audio_conversion"] is True
+    assert payload["policy"]["audio_format"] == "flac"
+    assert payload["policy"]["audio_quality"] == "0"
+    assert payload["policy"]["audio_source_codec"] == "opus"
+    assert payload["policy"]["audio_source_container"] == "webm"
+    assert payload["policy"]["audio_source_fallback"] is False
+    assert payload["policy"]["format"] == "ba[acodec=opus][ext=webm]"

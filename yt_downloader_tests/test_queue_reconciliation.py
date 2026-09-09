@@ -101,7 +101,7 @@ def test_write_queue_report_is_deterministic_json(downloader, tmp_path: Path) ->
     report = {"kind": "yt-download-queue-report", "version": downloader.PROGRAM_VERSION}
     downloader.write_queue_report(output, report)
     assert output.read_text(encoding="utf-8") == (
-        '{\n  "kind": "yt-download-queue-report",\n  "version": "1.14.0"\n}\n'
+        '{\n  "kind": "yt-download-queue-report",\n  "version": "1.15.0"\n}\n'
     )
 
 

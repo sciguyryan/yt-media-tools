@@ -37,7 +37,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.14.0"
+PROGRAM_VERSION = "1.15.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -59,6 +59,7 @@ PARAMETER_PROFILE_KEYS = (
     "no-cookies",
     "reverse-playlist",
     "playlist",
+    "playlist-items",
     "limit-rate",
     "throttled-rate",
     "concurrent-fragments",
@@ -204,6 +205,12 @@ EXAMPLES = r"""Examples:
   Reverse playlist traversal:
     %(prog)s --rev PLAYLIST_URL
 
+  Select playlist entries by index, inclusive range or slice:
+    %(prog)s --playlist-index 3 PLAYLIST_URL
+    %(prog)s --playlist-range 5 12 PLAYLIST_URL
+    %(prog)s --playlist-slice 1:20:2 PLAYLIST_URL
+    %(prog)s --playlist-index 1 --playlist-range 5 8 --playlist-slice=-5: PLAYLIST_URL
+
   Combine parameter-profile selection, an explicit override and playlist reversal:
     %(prog)s -p playlist -r 1440 --rev PLAYLIST_URL
 
@@ -281,6 +288,7 @@ class DownloadPolicy:
     format_selector: str
     reverse_playlist: bool
     playlist: bool | None = None
+    playlist_items: tuple[str, ...] = ()
     limit_rate: str = DEFAULT_DOWNLOAD_RATE
     throttled_rate: str | None = None
     concurrent_fragments: int | None = None
@@ -321,6 +329,11 @@ class DownloadPolicy:
     sponsorblock: bool = True
     sponsorblock_mark: str | None = None
     sponsorblock_remove: str | None = DEFAULT_SPONSORBLOCK_REMOVE
+
+    @property
+    def playlist_item_spec(self) -> str | None:
+        """Return the canonical yt-dlp playlist item specification, if constrained."""
+        return ",".join(self.playlist_items) if self.playlist_items else None
 
     @property
     def effective_format_selector(self) -> str:
@@ -446,6 +459,48 @@ class DownloadPlan:
             remove_completed_ids=self.remove_completed_ids,
             output_event_file=output_event_file,
         )
+
+
+def _append_playlist_cli_item(namespace: argparse.Namespace, expression: str) -> None:
+    """Append one canonical playlist selector while preserving CLI option order."""
+    current = list(getattr(namespace, "playlist_items", None) or ())
+    current.append(expression)
+    namespace.playlist_items = current
+
+
+class PlaylistIndexAction(argparse.Action):
+    """Argparse action for one validated playlist index."""
+
+    def __call__(self, parser, namespace, values, option_string=None) -> None:
+        try:
+            value = _validate_playlist_index(values)
+        except ValueError as exc:
+            raise argparse.ArgumentError(self, str(exc)) from exc
+        _append_playlist_cli_item(namespace, str(value))
+
+
+class PlaylistRangeAction(argparse.Action):
+    """Argparse action for one inclusive playlist range."""
+
+    def __call__(self, parser, namespace, values, option_string=None) -> None:
+        start, stop = values
+        try:
+            start = _validate_playlist_index(start, label="playlist range START")
+            stop = _validate_playlist_index(stop, label="playlist range STOP")
+        except ValueError as exc:
+            raise argparse.ArgumentError(self, str(exc)) from exc
+        _append_playlist_cli_item(namespace, f"{start}:{stop}")
+
+
+class PlaylistSliceAction(argparse.Action):
+    """Argparse action for one validated playlist slice."""
+
+    def __call__(self, parser, namespace, values, option_string=None) -> None:
+        try:
+            expression = _normalise_playlist_slice(values)
+        except ValueError as exc:
+            raise argparse.ArgumentError(self, str(exc)) from exc
+        _append_playlist_cli_item(namespace, expression)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -833,6 +888,32 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="IE_KEY:ARGS",
         help="Add one yt-dlp extractor-argument string. Repeat to configure multiple extractors.",
     )
+    parser.add_argument(
+        "--playlist-index",
+        dest="playlist_items",
+        action=PlaylistIndexAction,
+        type=int,
+        metavar="INDEX",
+        help=(
+            "Select one 1-based playlist INDEX. Repeat to select several entries; negative indices count from the end."
+        ),
+    )
+    parser.add_argument(
+        "--playlist-range",
+        dest="playlist_items",
+        action=PlaylistRangeAction,
+        nargs=2,
+        type=int,
+        metavar=("START", "STOP"),
+        help="Select an inclusive playlist range START..STOP. Repeat to add further ranges.",
+    )
+    parser.add_argument(
+        "--playlist-slice",
+        dest="playlist_items",
+        action=PlaylistSliceAction,
+        metavar="[START]:[STOP][:STEP]",
+        help="Select a playlist slice using 1-based yt-dlp slice bounds. STEP must not be zero.",
+    )
     reverse_group = parser.add_mutually_exclusive_group()
     reverse_group.add_argument(
         "--rev",
@@ -843,6 +924,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Ask yt-dlp to traverse playlists in reverse order.",
     )
     reverse_group.add_argument(
+        "--playlist-forward",
         "--no-reverse-playlist",
         dest="reverse_playlist",
         action="store_false",
@@ -1264,6 +1346,71 @@ def _validate_sponsorblock_categories(key: str, value: object) -> str:
     return ",".join(categories)
 
 
+def _validate_playlist_index(value: object, *, label: str = "playlist index") -> int:
+    """Validate one 1-based playlist index, allowing negative offsets from the end."""
+    if isinstance(value, bool) or not isinstance(value, int) or value == 0:
+        raise ValueError(f"{label} must be a non-zero integer")
+    return value
+
+
+def _normalise_playlist_slice(value: object) -> str:
+    """Validate and canonicalise one yt-dlp playlist slice expression."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("playlist slice must be a non-empty string")
+    text = value.strip()
+    parts = text.split(":")
+    if len(parts) not in {2, 3}:
+        raise ValueError("playlist slice must use [START]:[STOP][:STEP] syntax")
+    normalised: list[str] = []
+    for position, part in enumerate(parts):
+        if part == "":
+            normalised.append("")
+            continue
+        try:
+            number = int(part, 10)
+        except ValueError as exc:
+            raise ValueError("playlist slice bounds and step must be integers") from exc
+        if position < 2 and number == 0:
+            raise ValueError("playlist slice START and STOP must be non-zero when supplied")
+        if position == 2 and number == 0:
+            raise ValueError("playlist slice STEP must not be zero")
+        normalised.append(str(number))
+    if not normalised[0] and not normalised[1] and (len(normalised) == 2 or not normalised[2]):
+        raise ValueError("playlist slice must constrain a bound or provide a non-default step")
+    return ":".join(normalised)
+
+
+def _validate_playlist_items_setting(value: object) -> list[str]:
+    """Validate canonical playlist index/range/slice expressions from a parameter profile."""
+    if not isinstance(value, list) or not value:
+        raise ValueError("parameter setting 'playlist-items' must be a non-empty JSON array")
+    result: list[str] = []
+    for item in value:
+        if isinstance(item, bool):
+            raise ValueError("parameter setting 'playlist-items' entries must be integers or slice strings")
+        if isinstance(item, int):
+            result.append(str(_validate_playlist_index(item, label="playlist-items index")))
+            continue
+        if isinstance(item, str):
+            text = item.strip()
+            if re.fullmatch(r"[+-]?[0-9]+", text):
+                result.append(str(_validate_playlist_index(int(text, 10), label="playlist-items index")))
+            else:
+                try:
+                    result.append(_normalise_playlist_slice(text))
+                except ValueError as exc:
+                    raise ValueError(f"invalid playlist-items entry {item!r}: {exc}") from exc
+            continue
+        raise ValueError("parameter setting 'playlist-items' entries must be integers or slice strings")
+    return result
+
+
+def _cli_playlist_items(args: argparse.Namespace) -> list[str] | None:
+    """Return canonical typed playlist selectors supplied on the CLI."""
+    values = getattr(args, "playlist_items", None)
+    return list(values) if values else None
+
+
 def _validate_parameter_setting(key: str, value: object) -> object:
     """Validate one parameter-profile setting and return its normalised value."""
     if key == "resolution":
@@ -1322,6 +1469,8 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         return _validate_retry_setting(key, value)
     if key in {"retry-sleep", "extractor-args"}:
         return _validate_string_list_setting(key, value)
+    if key == "playlist-items":
+        return _validate_playlist_items_setting(value)
     if key in {"sub-langs", "sub-format"}:
         return _validate_nonempty_string_setting(key, value)
     if key in {"sponsorblock-mark", "sponsorblock-remove"}:
@@ -1375,6 +1524,8 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
         raise ValueError(f"parameter profile {profile_name!r} has min-fps above max-fps")
     if "audio-quality" in validated and "audio-format" not in validated:
         raise ValueError(f"parameter profile {profile_name!r} cannot set audio-quality without audio-format")
+    if validated.get("playlist") is False and "playlist-items" in validated:
+        raise ValueError(f"parameter profile {profile_name!r} cannot combine playlist-items with playlist=false")
     return validated
 
 
@@ -1509,6 +1660,9 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
     ):
         if value is not None:
             settings[key] = value
+    playlist_items = _cli_playlist_items(args)
+    if playlist_items is not None:
+        settings["playlist-items"] = playlist_items
     if args.reverse_playlist is not None:
         settings["reverse-playlist"] = args.reverse_playlist
     if args.playlist is not None:
@@ -1690,6 +1844,9 @@ def resolve_parameter_policy(
     reverse_playlist = bool(settings.get("reverse-playlist", False))
     playlist_value = settings.get("playlist")
     playlist = playlist_value if isinstance(playlist_value, bool) else None
+    playlist_items = tuple(settings.get("playlist-items", ()))
+    if playlist_items and playlist is False:
+        raise ValueError("playlist item selection cannot be combined with --no-playlist")
 
     cookies_from_browser = None
     if "cookies" in settings:
@@ -1708,6 +1865,7 @@ def resolve_parameter_policy(
             format_selector=format_selector,
             reverse_playlist=reverse_playlist,
             playlist=playlist,
+            playlist_items=playlist_items,
             limit_rate=str(settings.get("limit-rate", DEFAULT_DOWNLOAD_RATE)),
             throttled_rate=(str(settings["throttled-rate"]) if "throttled-rate" in settings else None),
             concurrent_fragments=(
@@ -2212,6 +2370,11 @@ def create_download_plan(
 ) -> DownloadPlan:
     """Resolve one complete download plan without mutating queues or launching yt-dlp."""
     policy, cookies_file, cookies_from_browser = resolve_parameter_policy(resolved_parameters.settings)
+    if remove_completed_ids and policy.playlist_items:
+        raise ValueError(
+            "playlist item selection cannot be combined with --remove-completed-ids; "
+            "queue removal tracks completed target IDs, not completion of a playlist container target"
+        )
     return DownloadPlan(
         executable=executable,
         policy=policy,
@@ -2340,6 +2503,8 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "sponsorblock_remove": plan.policy.sponsorblock_remove,
             "reverse_playlist": plan.policy.reverse_playlist,
             "playlist": plan.policy.playlist,
+            "playlist_items": list(plan.policy.playlist_items),
+            "playlist_item_spec": plan.policy.playlist_item_spec,
             "limit_rate": plan.policy.limit_rate,
             "throttled_rate": plan.policy.throttled_rate,
             "concurrent_fragments": plan.policy.concurrent_fragments,
@@ -2439,6 +2604,7 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"SponsorBlock mark: {policy['sponsorblock_mark'] or 'none'}",
         f"SponsorBlock cut:  {policy['sponsorblock_remove'] or 'none'}",
         f"Playlist:          {policy['playlist'] if policy['playlist'] is not None else 'yt-dlp default'}",
+        f"Playlist items:    {policy['playlist_item_spec'] or 'all'}",
         f"Reverse playlist:  {policy['reverse_playlist']}",
         f"Cookies:           {authentication['source']}"
         + (f" ({authentication['cookies_file']})" if authentication["cookies_file"] else "")
@@ -2554,6 +2720,9 @@ def build_yt_dlp_command(
     command.extend(("--paths", f"temp:{policy.temp_path}"))
     for extractor_arg in policy.extractor_args:
         command.extend(("--extractor-args", extractor_arg))
+
+    if policy.playlist_item_spec is not None:
+        command.extend(("-I", policy.playlist_item_spec))
 
     if policy.reverse_playlist:
         command.append("--playlist-reverse")

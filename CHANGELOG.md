@@ -1,5 +1,15 @@
 # Changelog
 
+## Downloader 1.15.0 - Selected Range
+
+- Add typed playlist selection by individual 1-based indices, inclusive ranges and explicit slices.
+- Preserve mixed CLI selection order and compile the complete selection into one canonical yt-dlp playlist-items expression.
+- Add `--playlist-forward` as an explicit override for reverse traversal inherited from parameter profiles.
+- Support ordered `playlist-items` policy in parameter profiles with strict index and slice validation.
+- Reject playlist item selection with explicit no-playlist policy or durable completed-ID queue mutation.
+- Preserve normal yt-dlp archive filtering for selected playlist child entries and keep random traversal outside Downloader policy.
+- Add deterministic coverage for parsing, validation, profile precedence, command construction, explanation and queue boundaries.
+
 ## Downloader 1.14.0 - Source First
 
 - Add first-class `--audio-only` source selection that does not enable audio conversion.
