@@ -8,7 +8,7 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.13.0"
+    assert downloader.PROGRAM_VERSION == "1.14.0"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
@@ -99,3 +99,5 @@ def test_examples_are_available_without_external_environment(downloader, capsys)
     assert "--remove-completed-ids" in output
     assert "--explain" in output
     assert "--write-subs" in output
+    assert "--audio-only" in output
+    assert "--audio-format" in output

@@ -190,7 +190,7 @@ def test_main_writes_hashed_manifest_from_simulated_after_move_event(downloader,
 
     assert result == 0
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["downloader"]["version"] == "1.13.0"
+    assert manifest["downloader"]["version"] == "1.14.0"
     assert manifest["yt_dlp"] == {"version": "2026.09.01", "exit_status": 0}
     assert manifest["run"] == {
         "started_at": "2026-09-09T10:00:00Z",

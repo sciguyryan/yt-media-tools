@@ -37,7 +37,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.13.0"
+PROGRAM_VERSION = "1.14.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -80,6 +80,12 @@ PARAMETER_PROFILE_KEYS = (
     "preferred-hdr",
     "preferred-audio-channels",
     "merge-container",
+    "audio-only",
+    "audio-source-codec",
+    "audio-source-container",
+    "audio-source-fallback",
+    "audio-format",
+    "audio-quality",
     "write-subs",
     "write-auto-subs",
     "sub-langs",
@@ -105,6 +111,7 @@ DEFAULT_DOWNLOAD_RATE = "20M"
 FORMAT_SELECTOR = "bv+ba/best"
 DEFAULT_EXTRACTOR_ARGS = ("youtube:player-client=default,-android_sdkless",)
 SUPPORTED_MERGE_CONTAINERS = frozenset({"avi", "flv", "mkv", "mov", "mp4", "webm"})
+SUPPORTED_AUDIO_FORMATS = frozenset({"best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"})
 SPONSORBLOCK_MARK_CATEGORIES = frozenset(
     {
         "sponsor",
@@ -174,6 +181,14 @@ EXAMPLES = r"""Examples:
   Apply typed format constraints and preferences:
     %(prog)s --min-resolution 1080 --max-resolution 2160 --preferred-video-codec av01 VIDEO_ID
     %(prog)s --max-fps 60 --preferred-fps 60 --preferred-hdr hdr --merge-container mkv VIDEO_ID
+
+  Select an existing audio-only source without transcoding:
+    %(prog)s --audio-only VIDEO_ID
+    %(prog)s --audio-only --audio-source-codec opus --audio-source-container webm VIDEO_ID
+
+  Explicitly allow audio conversion when a converted output is wanted:
+    %(prog)s --audio-format flac VIDEO_ID
+    %(prog)s --audio-format mp3 --audio-quality 192K VIDEO_ID
 
   Select and embed subtitles while retaining a sidecar copy:
     %(prog)s --write-subs --sub-langs "en.*,cy" --sub-format "srt/best" --embed-subs VIDEO_ID
@@ -287,6 +302,12 @@ class DownloadPolicy:
     preferred_hdr: str | None = None
     preferred_audio_channels: int | None = None
     merge_container: str | None = None
+    audio_only: bool = False
+    audio_source_codec: str | None = None
+    audio_source_container: str | None = None
+    audio_source_fallback: bool = True
+    audio_format: str | None = None
+    audio_quality: str | None = None
     write_subtitles: bool = False
     write_auto_subtitles: bool = False
     subtitle_languages: str | None = None
@@ -304,6 +325,17 @@ class DownloadPolicy:
     @property
     def effective_format_selector(self) -> str:
         """Return the raw or generated yt-dlp selector for this policy."""
+        if self.audio_only or self.audio_format is not None:
+            filters: list[str] = []
+            if self.audio_source_codec is not None:
+                filters.append(f"[acodec={self.audio_source_codec}]")
+            if self.audio_source_container is not None:
+                filters.append(f"[ext={self.audio_source_container}]")
+            selector = f"ba{''.join(filters)}"
+            if filters and self.audio_source_fallback:
+                selector += "/ba"
+            return selector
+
         filters: list[str] = []
         if self.min_resolution is not None:
             filters.append(f"[height>={self.min_resolution}]")
@@ -322,6 +354,14 @@ class DownloadPolicy:
     def sort_selector(self) -> str:
         """Return yt-dlp's format sort expression for resolved preferences."""
         fields: list[str] = []
+        if self.audio_only or self.audio_format is not None:
+            if self.preferred_audio_codec is not None:
+                fields.append(f"acodec:{self.preferred_audio_codec}")
+            if self.preferred_audio_channels is not None:
+                fields.append(f"channels:{self.preferred_audio_channels}")
+            fields.extend(("lang", "br", "size"))
+            return ",".join(fields)
+
         if self.preferred_video_codec is not None:
             fields.append(f"vcodec:{self.preferred_video_codec}")
         if self.preferred_audio_codec is not None:
@@ -535,6 +575,55 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Choose the container used when yt-dlp must merge separate streams; does not force remuxing or transcoding."
         ),
+    )
+    audio_only_group = parser.add_mutually_exclusive_group()
+    audio_only_group.add_argument(
+        "--audio-only",
+        dest="audio_only",
+        action="store_true",
+        default=None,
+        help="Select an existing audio-only source stream without enabling audio conversion.",
+    )
+    audio_only_group.add_argument(
+        "--no-audio-only",
+        dest="audio_only",
+        action="store_false",
+        help="Disable audio-only source selection inherited from a parameter profile.",
+    )
+    parser.add_argument(
+        "--audio-source-codec",
+        metavar="CODEC",
+        help="Require source audio codec CODEC before any explicitly requested conversion.",
+    )
+    parser.add_argument(
+        "--audio-source-container",
+        metavar="EXT",
+        help="Require source audio container/extension EXT before any explicitly requested conversion.",
+    )
+    audio_fallback_group = parser.add_mutually_exclusive_group()
+    audio_fallback_group.add_argument(
+        "--audio-source-fallback",
+        dest="audio_source_fallback",
+        action="store_true",
+        default=None,
+        help="Allow fallback to another existing audio source when source codec/container constraints miss.",
+    )
+    audio_fallback_group.add_argument(
+        "--no-audio-source-fallback",
+        dest="audio_source_fallback",
+        action="store_false",
+        help="Require the requested source codec/container exactly instead of falling back.",
+    )
+    parser.add_argument(
+        "--audio-format",
+        choices=tuple(sorted(SUPPORTED_AUDIO_FORMATS)),
+        metavar="FORMAT",
+        help="Explicitly allow yt-dlp/FFmpeg audio extraction/conversion to FORMAT.",
+    )
+    parser.add_argument(
+        "--audio-quality",
+        metavar="QUALITY",
+        help="Audio conversion quality: integer 0..10 for VBR or a bitrate such as 128K.",
     )
     subtitle_write_group = parser.add_mutually_exclusive_group()
     subtitle_write_group.add_argument(
@@ -1125,6 +1214,38 @@ def _validate_nonempty_string_setting(key: str, value: object) -> str:
     return value.strip()
 
 
+def _validate_audio_source_container_setting(key: str, value: object) -> str:
+    """Validate an exact source extension/container token."""
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", value.strip()):
+        raise ValueError(f"parameter setting {key!r} must be a simple container/extension name")
+    return value.strip().lower()
+
+
+def _validate_audio_format_setting(value: object) -> str:
+    """Validate a yt-dlp audio conversion format."""
+    if not isinstance(value, str) or value.lower() not in SUPPORTED_AUDIO_FORMATS:
+        supported = ", ".join(sorted(SUPPORTED_AUDIO_FORMATS))
+        raise ValueError(f"parameter setting 'audio-format' must be one of: {supported}")
+    return value.lower()
+
+
+def _validate_audio_quality_setting(value: object) -> str:
+    """Validate yt-dlp's documented VBR or bitrate audio-quality syntax."""
+    if isinstance(value, bool):
+        raise ValueError("parameter setting 'audio-quality' must be 0..10 or a bitrate such as '128K'")
+    if isinstance(value, int):
+        if 0 <= value <= 10:
+            return str(value)
+        raise ValueError("parameter setting 'audio-quality' integer must be between 0 and 10")
+    if isinstance(value, str):
+        text = value.strip()
+        if re.fullmatch(r"(?:10|[0-9])", text):
+            return text
+        if re.fullmatch(r"[1-9][0-9]*(?:\.[0-9]+)?[KkMm]", text):
+            return text.upper()
+    raise ValueError("parameter setting 'audio-quality' must be 0..10 or a bitrate such as '128K'")
+
+
 def _validate_sponsorblock_categories(key: str, value: object) -> str:
     """Validate SponsorBlock category expressions while preserving exclusion order."""
     text = _validate_nonempty_string_setting(key, value)
@@ -1174,8 +1295,14 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         return _validate_resolution_bound_setting(key, value)
     if key in {"min-fps", "max-fps", "preferred-fps", "preferred-audio-channels"}:
         return _validate_positive_integer_setting(key, value)
-    if key in {"preferred-video-codec", "preferred-audio-codec"}:
+    if key in {"preferred-video-codec", "preferred-audio-codec", "audio-source-codec"}:
         return _validate_codec_setting(key, value)
+    if key == "audio-source-container":
+        return _validate_audio_source_container_setting(key, value)
+    if key == "audio-format":
+        return _validate_audio_format_setting(value)
+    if key == "audio-quality":
+        return _validate_audio_quality_setting(value)
     if key == "preferred-hdr":
         if not isinstance(value, str) or value.lower() not in {"sdr", "hdr", "dv"}:
             raise ValueError("parameter setting 'preferred-hdr' must be one of: sdr, hdr, dv")
@@ -1212,6 +1339,8 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         "embed-metadata",
         "embed-chapters",
         "sponsorblock",
+        "audio-only",
+        "audio-source-fallback",
     }:
         if not isinstance(value, bool):
             raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
@@ -1244,6 +1373,8 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
         raise ValueError(f"parameter profile {profile_name!r} has min-resolution above max-resolution")
     if "min-fps" in validated and "max-fps" in validated and int(validated["min-fps"]) > int(validated["max-fps"]):
         raise ValueError(f"parameter profile {profile_name!r} has min-fps above max-fps")
+    if "audio-quality" in validated and "audio-format" not in validated:
+        raise ValueError(f"parameter profile {profile_name!r} cannot set audio-quality without audio-format")
     return validated
 
 
@@ -1343,6 +1474,10 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         "preferred-hdr": args.preferred_hdr,
         "preferred-audio-channels": args.preferred_audio_channels,
         "merge-container": args.merge_container,
+        "audio-source-codec": args.audio_source_codec,
+        "audio-source-container": args.audio_source_container,
+        "audio-format": args.audio_format,
+        "audio-quality": args.audio_quality,
         "sub-langs": args.sub_langs,
         "sub-format": args.sub_format,
         "sponsorblock-mark": args.sponsorblock_mark,
@@ -1369,6 +1504,8 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         ("embed-metadata", args.embed_metadata),
         ("embed-chapters", args.embed_chapters),
         ("sponsorblock", args.sponsorblock),
+        ("audio-only", args.audio_only),
+        ("audio-source-fallback", args.audio_source_fallback),
     ):
         if value is not None:
             settings[key] = value
@@ -1521,6 +1658,33 @@ def resolve_parameter_policy(
             "remove --format or the min/max resolution/FPS constraint"
         )
 
+    audio_requested = bool(settings.get("audio-only", False)) or "audio-format" in settings
+    audio_source_requested = any(key in settings for key in {"audio-source-codec", "audio-source-container"})
+    if audio_source_requested and not audio_requested:
+        raise ValueError("audio source codec/container constraints require --audio-only or --audio-format")
+    if "audio-source-fallback" in settings and not audio_requested:
+        raise ValueError("audio-source-fallback requires --audio-only or --audio-format")
+    if "audio-quality" in settings and "audio-format" not in settings:
+        raise ValueError("audio-quality requires audio-format because source-only audio does not transcode")
+    if audio_requested and "format" in settings:
+        raise ValueError("audio workflow options cannot be combined with a raw --format selector")
+    video_only_keys = {
+        "min-resolution",
+        "max-resolution",
+        "min-fps",
+        "max-fps",
+        "preferred-fps",
+        "preferred-video-codec",
+        "preferred-hdr",
+        "merge-container",
+    }
+    conflicting_video_keys = sorted(video_only_keys & set(settings)) if audio_requested else []
+    if conflicting_video_keys:
+        rendered = ", ".join(conflicting_video_keys)
+        raise ValueError(f"audio workflows cannot combine video-only settings: {rendered}")
+    if audio_requested and bool(settings.get("embed-subs", False)):
+        raise ValueError("audio workflows cannot embed subtitles into an audio-only primary output")
+
     resolution = validate_resolution(str(settings.get("resolution", DEFAULT_RESOLUTION)))
     format_selector = str(settings.get("format", FORMAT_SELECTOR))
     reverse_playlist = bool(settings.get("reverse-playlist", False))
@@ -1573,6 +1737,14 @@ def resolve_parameter_policy(
                 int(settings["preferred-audio-channels"]) if "preferred-audio-channels" in settings else None
             ),
             merge_container=(str(settings["merge-container"]) if "merge-container" in settings else None),
+            audio_only=bool(settings.get("audio-only", False)),
+            audio_source_codec=(str(settings["audio-source-codec"]) if "audio-source-codec" in settings else None),
+            audio_source_container=(
+                str(settings["audio-source-container"]) if "audio-source-container" in settings else None
+            ),
+            audio_source_fallback=bool(settings.get("audio-source-fallback", True)),
+            audio_format=(str(settings["audio-format"]) if "audio-format" in settings else None),
+            audio_quality=(str(settings["audio-quality"]) if "audio-quality" in settings else None),
             write_subtitles=bool(settings.get("write-subs", False)),
             write_auto_subtitles=bool(settings.get("write-auto-subs", False)),
             subtitle_languages=(str(settings["sub-langs"]) if "sub-langs" in settings else None),
@@ -2146,6 +2318,13 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "preferred_hdr": plan.policy.preferred_hdr,
             "preferred_audio_channels": plan.policy.preferred_audio_channels,
             "merge_container": plan.policy.merge_container,
+            "audio_only": plan.policy.audio_only,
+            "audio_source_codec": plan.policy.audio_source_codec,
+            "audio_source_container": plan.policy.audio_source_container,
+            "audio_source_fallback": plan.policy.audio_source_fallback,
+            "audio_format": plan.policy.audio_format,
+            "audio_quality": plan.policy.audio_quality,
+            "audio_conversion": plan.policy.audio_format is not None,
             "write_subtitles": plan.policy.write_subtitles,
             "write_auto_subtitles": plan.policy.write_auto_subtitles,
             "subtitle_languages": plan.policy.subtitle_languages,
@@ -2240,6 +2419,12 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"HDR preference:    {policy['preferred_hdr'] or 'yt-dlp default'}",
         f"Audio channels:    {policy['preferred_audio_channels'] or 'yt-dlp default'}",
         f"Merge container:   {policy['merge_container'] or 'yt-dlp default'}",
+        f"Audio only:        {policy['audio_only'] or policy['audio_conversion']}",
+        f"Audio source codec:{' ' if policy['audio_source_codec'] else '  '}{policy['audio_source_codec'] or 'any'}",
+        f"Audio source ext:  {policy['audio_source_container'] or 'any'}",
+        f"Audio fallback:    {policy['audio_source_fallback']}",
+        f"Audio conversion:  {policy['audio_format'] or 'disabled'}",
+        f"Audio quality:     {policy['audio_quality'] or 'yt-dlp default'}",
         f"Manual subtitles:  {policy['write_subtitles']}",
         f"Auto subtitles:    {policy['write_auto_subtitles']}",
         f"Subtitle langs:    {policy['subtitle_languages'] or 'yt-dlp default'}",
@@ -2302,9 +2487,15 @@ def build_yt_dlp_command(
         "--mtime",
         "--download-archive",
         str(policy.archive_file),
-        "--video-multistreams",
-        "--audio-multistreams",
     ]
+    if not (policy.audio_only or policy.audio_format is not None):
+        command.append("--video-multistreams")
+    command.append("--audio-multistreams")
+
+    if policy.audio_format is not None:
+        command.extend(("--extract-audio", "--audio-format", policy.audio_format))
+        if policy.audio_quality is not None:
+            command.extend(("--audio-quality", policy.audio_quality))
 
     if policy.write_subtitles:
         command.append("--write-subs")

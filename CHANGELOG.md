@@ -1,5 +1,15 @@
 # Changelog
 
+## Downloader 1.14.0 - Source First
+
+- Add first-class `--audio-only` source selection that does not enable audio conversion.
+- Add exact source codec/container constraints with explicit fallback control.
+- Add `--audio-format` and `--audio-quality` as the explicit boundary that permits yt-dlp/FFmpeg audio conversion.
+- Keep existing preferred audio codec/channel settings as fallback-friendly source sorting policy in audio workflows.
+- Reject raw format selectors, video-only format policy and subtitle embedding when they conflict with first-class audio mode.
+- Expose source-only versus conversion-enabled audio policy through explain output and parameter profiles.
+- Add deterministic coverage for source selectors, fallback semantics, conversion commands, validation and cross-policy conflicts.
+
 ## Downloader 1.13.0 - Receipt
 
 - Add `--run-manifest FILE` for redacted machine-readable records of actual Downloader runs.
@@ -16,7 +26,7 @@
 - Add orchestration-level regression tests for post-processing failure, completion-callback failure and atomic queue-rewrite failure.
 - Require deterministic Downloader behaviour to be covered by automated tests whenever controlled fixtures or simulated process outcomes can represent it faithfully.
 - Reserve manual verification for genuinely external or environment-dependent behaviour that cannot be reproduced faithfully in the automated suite.
-- Reconcile the Downloader roadmap with the implemented Phase 4 and Phase 5 behaviour.
+- Reconcile the Downloader roadmap with the implemented queue and associated-artefact behaviour.
 
 ## Downloader 1.12.0 - Queue State
 

@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.13.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.14.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -292,6 +292,39 @@ The corresponding parameter-profile keys are `min-resolution`, `max-resolution`,
 Raw `-f/--format` remains the expert selector authority. Downloader rejects a raw selector combined with hard min/max resolution or FPS constraints instead of silently editing the raw expression. Sorting preferences and merge-container policy may still accompany a raw selector because they do not rewrite it.
 
 Use `--explain` or `--explain-json` to inspect the exact generated selector and sort order before downloading.
+
+## First-class audio workflows
+
+Audio-only source selection and audio conversion are separate policies. `--audio-only` selects an already available audio stream and does not enable FFmpeg conversion:
+
+```bash
+./yt-download.py --audio-only VIDEO_ID
+./yt-download.py --audio-only --preferred-audio-codec opus VIDEO_ID
+```
+
+Exact source codec and container requirements may be stated independently of conversion:
+
+```bash
+./yt-download.py --audio-only --audio-source-codec opus --audio-source-container webm VIDEO_ID
+./yt-download.py --audio-only --audio-source-codec opus --no-audio-source-fallback VIDEO_ID
+```
+
+When an exact source requirement is given, Downloader falls back to another existing audio stream by default. `--no-audio-source-fallback` makes the source codec/container requirement strict. This fallback remains source selection: it does not transcode.
+
+Conversion is an explicit opt-in through `--audio-format`. Supplying it enables yt-dlp's audio extraction post-processor and therefore permits FFmpeg conversion:
+
+```bash
+./yt-download.py --audio-format flac VIDEO_ID
+./yt-download.py --audio-format mp3 --audio-quality 192K VIDEO_ID
+```
+
+Supported conversion formats are `best`, `aac`, `alac`, `flac`, `m4a`, `mp3`, `opus`, `vorbis` and `wav`, following the current yt-dlp audio extraction surface. `--audio-quality` accepts VBR values from `0` (best) through `10` (worst), or an explicit bitrate such as `128K`, and is invalid unless conversion is enabled.
+
+Audio workflows reject video-only resolution, frame-rate, video-codec, HDR and merge-container policy rather than silently ignoring it. Raw `-f/--format` is also mutually exclusive with first-class audio mode, keeping expert raw selection and typed audio policy as separate authorities. Subtitle sidecars remain available, but subtitle embedding is rejected for an audio-only primary output.
+
+The corresponding parameter-profile keys are `audio-only`, `audio-source-codec`, `audio-source-container`, `audio-source-fallback`, `audio-format` and `audio-quality`. Existing `preferred-audio-codec` and `preferred-audio-channels` remain fallback-friendly source sorting preferences in audio mode.
+
+Use `--explain` or `--explain-json` to see whether the resolved run is source-only or conversion-enabled before execution.
 
 ## Associated artefacts and metadata
 

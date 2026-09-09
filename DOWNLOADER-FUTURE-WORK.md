@@ -146,14 +146,13 @@ Actual sidecar-path tracking remains a possible refinement only if it can be bas
 
 ## Phase 7 - first-class audio workflows
 
-Make audio-only operation a deliberate mode rather than requiring users to construct raw format expressions.
+Audio-only operation is represented as deliberate typed policy rather than requiring raw format expressions. Source selection and conversion remain distinct because they have different quality, time and computational consequences.
 
-The design must distinguish two different operations:
+`audio-only` selects an existing audio stream without enabling conversion. Optional source codec/container requirements compile to exact yt-dlp audio-format filters, with explicit fallback control. Existing preferred audio codec/channel settings remain fallback-friendly sorting preferences rather than hard requirements.
 
-1. select an already available source stream in the requested codec/container;
-2. download another representation and transcode it.
+`audio-format` is the explicit conversion boundary. When present, Downloader enables yt-dlp's audio extraction post-processor and may apply `audio-quality`; without it, `audio-quality` is invalid. Video-only policy and raw format selectors are rejected when they conflict with first-class audio mode rather than being silently ignored.
 
-Downloader must never blur these together because they have different quality, time and computational consequences. Profiles should be able to state whether transcoding is allowed and what fallback behaviour is acceptable.
+The source-only and conversion-enabled branches, fallback behaviour, profile validation, command construction and incompatible-policy boundaries are deterministic and covered by automated tests.
 
 ## Phase 8 - playlist and range controls
 
