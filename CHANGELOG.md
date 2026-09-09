@@ -1,5 +1,12 @@
 # Changelog
 
+## Downloader 1.19.0 - Machine Check
+
+- Add runtime parameter-profile validation through `--validate-config`.
+- Add human-readable and versioned JSON environment capability reporting.
+- Version the non-executing `--explain-json` plan contract independently from Downloader releases.
+- Reconcile Downloader TODO and future-work documentation around genuinely outstanding work.
+
 ## Downloader 1.18.0 - Common Tongue
 
 - Add `--schema-json` for a versioned, language-neutral Downloader machine contract.

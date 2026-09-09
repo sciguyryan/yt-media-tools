@@ -74,3 +74,19 @@ def test_machine_contract_serialisation_is_deterministic(downloader) -> None:
     first = json.dumps(downloader.machine_contract(), indent=2, sort_keys=True)
     second = json.dumps(downloader.machine_contract(), indent=2, sort_keys=True)
     assert first == second
+
+
+def test_explain_json_contract_has_independent_schema_version(downloader, tmp_path) -> None:
+    plan = downloader.create_download_plan(
+        executable="yt-dlp",
+        resolved_parameters=downloader.resolve_parameter_settings(None, {}),
+        input_source=downloader.InputSource(direct_targets=("abc123",)),
+        output_profile=None,
+        defaults_file=tmp_path / "defaults.json",
+        parameter_profile=None,
+        remove_completed_ids=False,
+    )
+    payload = downloader.explain_plan_payload(plan)
+    assert payload["kind"] == "yt-download-plan"
+    assert payload["schema_version"] == downloader.PLAN_SCHEMA_VERSION == 1
+    assert downloader.machine_contract()["machine_interfaces"]["explain"]["schema_version"] == 1

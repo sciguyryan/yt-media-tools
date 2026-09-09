@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.18.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.19.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -522,3 +522,14 @@ The bundle includes `profiles/default` and `profiles/playlist`.
 ## Relationship to yt-discover
 
 `yt-discover.py` is responsible for discovery, metadata acquisition and yt-sql querying. `yt-download.py` is responsible for downloading the resulting IDs or URLs. Keeping discovery output on stdout and diagnostics on stderr allows the tools to compose safely in shell pipelines.
+
+
+## Machine validation and capabilities
+
+Use `--validate-config [FILE]` to validate a complete parameter-profile file with the same runtime validation used for normal Downloader configuration. When FILE is omitted, Downloader validates the resolved defaults file. Successful validation emits a small JSON result suitable for scripts.
+
+Use `--capabilities` for a concise human-readable environment report or `--capabilities-json` for the versioned machine-readable form. Capability reporting identifies the installed Downloader version and the availability and reported versions of yt-dlp, ffmpeg and ffprobe. Availability does not imply that every extractor or media workflow is supported.
+
+`--explain-json` is the versioned non-executing plan representation. It reports the resolved policy and command plan without acquiring media. The machine contract advertises its schema version separately from the Downloader release version.
+
+The machine interface does not yet define an execution-request schema. A future version should add a versioned language-neutral request format that compiles through the same typed policy and planning model as the CLI rather than accepting arbitrary command strings.

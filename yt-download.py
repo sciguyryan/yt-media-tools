@@ -37,7 +37,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.18.0"
+PROGRAM_VERSION = "1.19.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -47,6 +47,9 @@ DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
 PARAMETER_PROFILE_VERSION = 1
 RUN_MANIFEST_SCHEMA_VERSION = 1
 MACHINE_CONTRACT_VERSION = 1
+PLAN_SCHEMA_VERSION = 1
+CAPABILITIES_SCHEMA_VERSION = 1
+CONFIG_VALIDATION_SCHEMA_VERSION = 1
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 PARAMETER_PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SUPPORTED_COOKIE_BROWSERS = frozenset(
@@ -326,6 +329,15 @@ EXAMPLES = r"""Examples:
 
   Emit the versioned machine contract and parameter-profile schema:
     %(prog)s --schema-json
+
+  Validate the resolved defaults file without downloading:
+    %(prog)s --validate-config
+
+  Report machine-readable local capabilities:
+    %(prog)s --capabilities-json
+
+  Emit the versioned resolved plan without executing it:
+    %(prog)s --explain-json -p playlist PLAYLIST_URL
 
   Print the resolved yt-dlp command without executing it:
     %(prog)s --dry-run -p playlist PLAYLIST_URL
@@ -647,6 +659,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--schema-json",
         action="store_true",
         help="Emit the versioned Downloader machine contract and parameter-profile JSON Schema, then exit.",
+    )
+    parser.add_argument(
+        "--validate-config",
+        nargs="?",
+        const="",
+        metavar="FILE",
+        help="Validate FILE, or the resolved defaults JSON when FILE is omitted, then exit.",
+    )
+    parser.add_argument(
+        "--capabilities",
+        action="store_true",
+        help="Report Downloader and external-tool capabilities, then exit.",
+    )
+    parser.add_argument(
+        "--capabilities-json",
+        action="store_true",
+        help="Report Downloader and external-tool capabilities as versioned JSON, then exit.",
     )
     parser.add_argument(
         "--generate-profile",
@@ -2081,8 +2110,28 @@ def machine_contract() -> dict[str, object]:
         },
         "machine_interfaces": {
             "schema": {"cli": "--schema-json", "stability": "versioned"},
-            "explain": {"cli": "--explain-json", "stability": "operational"},
+            "config_validation": {
+                "cli": "--validate-config [FILE]",
+                "schema_version": CONFIG_VALIDATION_SCHEMA_VERSION,
+                "stability": "versioned",
+            },
+            "capabilities": {
+                "cli": ["--capabilities", "--capabilities-json"],
+                "schema_version": CAPABILITIES_SCHEMA_VERSION,
+                "stability": "versioned",
+            },
+            "explain": {
+                "cli": "--explain-json",
+                "schema_version": PLAN_SCHEMA_VERSION,
+                "stability": "versioned",
+            },
             "run_manifest": {"schema_version": RUN_MANIFEST_SCHEMA_VERSION, "stability": "versioned"},
+        },
+        "future_machine_interfaces": {
+            "execution_request_schema": "planned",
+            "structured_per_target_outcomes": "investigate",
+            "manifest_retry": "depends-on-structured-outcomes",
+            "discover_interchange": "planned",
         },
     }
 
@@ -2090,6 +2139,89 @@ def machine_contract() -> dict[str, object]:
 def emit_machine_contract() -> None:
     """Write the machine contract as deterministic UTF-8 JSON."""
     print(json.dumps(machine_contract(), indent=2, sort_keys=True))
+
+
+def validate_config_file(path: Path) -> dict[str, object]:
+    """Validate a complete parameter-profile file using Downloader's runtime rules."""
+    profiles = load_parameter_profiles(path, allow_missing=False)
+    return {
+        "kind": "yt-download-config-validation",
+        "schema_version": CONFIG_VALIDATION_SCHEMA_VERSION,
+        "contract_version": MACHINE_CONTRACT_VERSION,
+        "downloader_version": PROGRAM_VERSION,
+        "path": str(path.expanduser().resolve()),
+        "valid": True,
+        "profile_count": len(profiles),
+        "profiles": sorted(profiles),
+    }
+
+
+def _external_tool_capability(name: str) -> dict[str, object]:
+    """Return conservative availability/version information for one external tool."""
+    executable = shutil.which(name)
+    if executable is None:
+        return {"available": False, "executable": None, "version": None}
+    version = None
+    try:
+        completed = subprocess.run(
+            [executable, "--version"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        first_line = (completed.stdout or completed.stderr).splitlines()
+        if first_line:
+            version = first_line[0].strip() or None
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return {"available": True, "executable": executable, "version": version}
+
+
+def capabilities_payload() -> dict[str, object]:
+    """Return versioned environment capabilities without implying extractor support."""
+    return {
+        "kind": "yt-download-capabilities",
+        "schema_version": CAPABILITIES_SCHEMA_VERSION,
+        "contract_version": MACHINE_CONTRACT_VERSION,
+        "downloader": {"name": PROGRAM_NAME, "version": PROGRAM_VERSION},
+        "external_tools": {
+            "yt-dlp": _external_tool_capability("yt-dlp"),
+            "ffmpeg": _external_tool_capability("ffmpeg"),
+            "ffprobe": _external_tool_capability("ffprobe"),
+        },
+        "interfaces": {
+            "schema_json": True,
+            "config_validation": True,
+            "capabilities_json": True,
+            "explain_json": True,
+            "run_manifest": True,
+            "execution_request_schema": False,
+            "structured_per_target_outcomes": False,
+            "manifest_retry": False,
+            "discover_interchange": False,
+        },
+        "notes": [
+            "External-tool availability does not imply that every extractor or media workflow is supported.",
+            "Extractor-specific capabilities remain yt-dlp and service dependent.",
+        ],
+    }
+
+
+def format_capabilities(payload: dict[str, object]) -> str:
+    """Return a concise human-readable capability report."""
+    lines = [f"{PROGRAM_NAME} {PROGRAM_VERSION} capabilities"]
+    tools = payload["external_tools"]
+    assert isinstance(tools, dict)
+    for name in ("yt-dlp", "ffmpeg", "ffprobe"):
+        info = tools[name]
+        assert isinstance(info, dict)
+        if info["available"]:
+            version = f" - {info['version']}" if info["version"] else ""
+            lines.append(f"  {name}: available{version}")
+        else:
+            lines.append(f"  {name}: unavailable")
+    return "\n".join(lines)
 
 
 def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[str, object]:
@@ -3105,6 +3237,7 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
         }
     return {
         "kind": "yt-download-plan",
+        "schema_version": PLAN_SCHEMA_VERSION,
         "version": PROGRAM_VERSION,
         "parameter_profile": {
             "name": plan.parameter_profile.name if plan.parameter_profile is not None else None,
@@ -3497,7 +3630,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         emit_machine_contract()
         return 0
 
+    if args.capabilities or args.capabilities_json:
+        raw_args = list(sys.argv[1:] if argv is None else argv)
+        expected = ["--capabilities-json"] if args.capabilities_json else ["--capabilities"]
+        if args.capabilities and args.capabilities_json:
+            parser.error("--capabilities and --capabilities-json cannot be combined")
+        if raw_args != expected:
+            parser.error(f"{expected[0]} must be used on its own")
+        payload = capabilities_payload()
+        if args.capabilities_json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(format_capabilities(payload))
+        return 0
+
     resolved_defaults = defaults_path(args.defaults)
+
+    if args.validate_config is not None:
+        raw_path = args.validate_config
+        path = resolved_defaults if raw_path == "" else Path(raw_path)
+        try:
+            result = validate_config_file(path)
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
     explicit_defaults = args.defaults is not None
 
     if args.list_parameters and args.generate_profile is not None:
