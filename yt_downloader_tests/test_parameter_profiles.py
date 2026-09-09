@@ -15,12 +15,11 @@ def write_defaults(path: Path, profiles: dict[str, dict[str, object]]) -> None:
 def test_shipped_defaults_include_expected_profiles(downloader) -> None:
     profiles = downloader.load_parameter_profiles(downloader.DEFAULTS_FILE, allow_missing=False)
     assert set(profiles) == {"best", "4k", "1440p", "playlist"}
-    assert profiles["best"].settings == {"resolution": "best", "format": "bv+ba/best"}
-    assert profiles["4k"].settings == {"resolution": "2160p", "format": "bv+ba/best"}
-    assert profiles["1440p"].settings == {"resolution": "1440p", "format": "bv+ba/best"}
+    assert profiles["best"].settings == {"resolution": "best"}
+    assert profiles["4k"].settings == {"resolution": "2160p"}
+    assert profiles["1440p"].settings == {"resolution": "1440p"}
     assert profiles["playlist"].settings == {
         "resolution": "1080p",
-        "format": "bv+ba/best",
         "playlist": True,
     }
 

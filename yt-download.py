@@ -34,7 +34,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.9.0"
+PROGRAM_VERSION = "1.10.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -66,6 +66,16 @@ PARAMETER_PROFILE_KEYS = (
     "archive",
     "temp-path",
     "extractor-args",
+    "min-resolution",
+    "max-resolution",
+    "min-fps",
+    "max-fps",
+    "preferred-fps",
+    "preferred-video-codec",
+    "preferred-audio-codec",
+    "preferred-hdr",
+    "preferred-audio-channels",
+    "merge-container",
 )
 
 DEFAULT_VIDEO_ID_FILE = Path("./ids.txt")
@@ -77,6 +87,15 @@ DEFAULT_RESOLUTION = "1440"
 DEFAULT_DOWNLOAD_RATE = "20M"
 FORMAT_SELECTOR = "bv+ba/best"
 DEFAULT_EXTRACTOR_ARGS = ("youtube:player-client=default,-android_sdkless",)
+SUPPORTED_MERGE_CONTAINERS = frozenset({"avi", "flv", "mkv", "mov", "mp4", "webm"})
+HARD_FORMAT_CONSTRAINT_KEYS = frozenset(
+    {
+        "min-resolution",
+        "max-resolution",
+        "min-fps",
+        "max-fps",
+    }
+)
 
 EXAMPLES = r"""Examples:
 
@@ -115,6 +134,10 @@ EXAMPLES = r"""Examples:
 
   Supply yt-dlp's format selector directly:
     %(prog)s -f "bv*[height<=1080]+ba/b" VIDEO_ID
+
+  Apply typed format constraints and preferences:
+    %(prog)s --min-resolution 1080 --max-resolution 2160 --preferred-video-codec av01 VIDEO_ID
+    %(prog)s --max-fps 60 --preferred-fps 60 --preferred-hdr hdr --merge-container mkv VIDEO_ID
 
   Reverse playlist traversal:
     %(prog)s --rev PLAYLIST_URL
@@ -201,13 +224,57 @@ class DownloadPolicy:
     archive_file: Path = ARCHIVE_FILE
     temp_path: Path = TEMP_DIR
     extractor_args: tuple[str, ...] = DEFAULT_EXTRACTOR_ARGS
+    min_resolution: int | None = None
+    max_resolution: int | None = None
+    min_fps: int | None = None
+    max_fps: int | None = None
+    preferred_fps: int | None = None
+    preferred_video_codec: str | None = None
+    preferred_audio_codec: str | None = None
+    preferred_hdr: str | None = None
+    preferred_audio_channels: int | None = None
+    merge_container: str | None = None
+
+    @property
+    def effective_format_selector(self) -> str:
+        """Return the raw or generated yt-dlp selector for this policy."""
+        filters: list[str] = []
+        if self.min_resolution is not None:
+            filters.append(f"[height>={self.min_resolution}]")
+        if self.max_resolution is not None:
+            filters.append(f"[height<={self.max_resolution}]")
+        if self.min_fps is not None:
+            filters.append(f"[fps>={self.min_fps}]")
+        if self.max_fps is not None:
+            filters.append(f"[fps<={self.max_fps}]")
+        if not filters:
+            return self.format_selector
+        suffix = "".join(filters)
+        return f"bv{suffix}+ba/b{suffix}"
 
     @property
     def sort_selector(self) -> str:
-        """Return yt-dlp's format sort expression for the requested resolution."""
+        """Return yt-dlp's format sort expression for resolved preferences."""
+        fields: list[str] = []
+        if self.preferred_video_codec is not None:
+            fields.append(f"vcodec:{self.preferred_video_codec}")
+        if self.preferred_audio_codec is not None:
+            fields.append(f"acodec:{self.preferred_audio_codec}")
+        if self.preferred_audio_channels is not None:
+            fields.append(f"channels:{self.preferred_audio_channels}")
+        if self.preferred_fps is not None:
+            fields.append(f"fps:{self.preferred_fps}")
+        if self.preferred_hdr == "sdr":
+            fields.append("+hdr")
+        elif self.preferred_hdr == "hdr":
+            fields.append("hdr:12")
+        elif self.preferred_hdr == "dv":
+            fields.append("hdr")
         if self.resolution == "best":
-            return "res,lang,fps,size"
-        return f"res:{self.resolution},lang,fps,size"
+            fields.extend(("res", "lang", "fps", "size"))
+        else:
+            fields.extend((f"res:{self.resolution}", "lang", "fps", "size"))
+        return ",".join(fields)
 
 
 @dataclass(frozen=True)
@@ -356,6 +423,50 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             f"Pass yt-dlp format selector FORMAT directly (built-in default: {FORMAT_SELECTOR}). "
             "This may also be stored in a parameter profile."
+        ),
+    )
+    parser.add_argument(
+        "--min-resolution",
+        metavar="RESOLUTION",
+        help="Require video height of at least RESOLUTION pixels.",
+    )
+    parser.add_argument(
+        "--max-resolution",
+        metavar="RESOLUTION",
+        help="Require video height of at most RESOLUTION pixels.",
+    )
+    parser.add_argument("--min-fps", type=int, metavar="FPS", help="Require a frame rate of at least FPS.")
+    parser.add_argument("--max-fps", type=int, metavar="FPS", help="Require a frame rate of at most FPS.")
+    parser.add_argument(
+        "--preferred-fps", type=int, metavar="FPS", help="Prefer formats near FPS without making it a hard requirement."
+    )
+    parser.add_argument(
+        "--preferred-video-codec",
+        metavar="CODEC",
+        help="Prefer yt-dlp video codec CODEC while allowing fallback formats.",
+    )
+    parser.add_argument(
+        "--preferred-audio-codec",
+        metavar="CODEC",
+        help="Prefer yt-dlp audio codec CODEC while allowing fallback formats.",
+    )
+    parser.add_argument(
+        "--preferred-hdr",
+        choices=("sdr", "hdr", "dv"),
+        help="Prefer SDR, HDR up to 12-bit, or Dolby Vision without requiring it.",
+    )
+    parser.add_argument(
+        "--preferred-audio-channels",
+        type=int,
+        metavar="CHANNELS",
+        help="Prefer formats near CHANNELS audio channels without requiring an exact match.",
+    )
+    parser.add_argument(
+        "--merge-container",
+        choices=tuple(sorted(SUPPORTED_MERGE_CONTAINERS)),
+        metavar="CONTAINER",
+        help=(
+            "Choose the container used when yt-dlp must merge separate streams; does not force remuxing or transcoding."
         ),
     )
     parser.add_argument(
@@ -736,6 +847,32 @@ def _validate_string_list_setting(key: str, value: object) -> list[str]:
     return result
 
 
+def _validate_positive_integer_setting(key: str, value: object) -> int:
+    """Validate a strictly positive JSON integer setting."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"parameter setting {key!r} must be a positive JSON integer")
+    return value
+
+
+def _validate_resolution_bound_setting(key: str, value: object) -> int:
+    """Validate a hard vertical-resolution bound."""
+    if isinstance(value, bool):
+        raise ValueError(f"parameter setting {key!r} must be a positive integer or numeric string")
+    text = str(value).strip().lower()
+    if text.endswith("p"):
+        text = text[:-1]
+    if not text.isdigit() or int(text) < 1:
+        raise ValueError(f"parameter setting {key!r} must be a positive integer or numeric string")
+    return int(text)
+
+
+def _validate_codec_setting(key: str, value: object) -> str:
+    """Validate a codec preference without accepting format-expression syntax."""
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", value.strip()):
+        raise ValueError(f"parameter setting {key!r} must be a codec name such as 'av01', 'vp9' or 'opus'")
+    return value.strip().lower()
+
+
 def _validate_parameter_setting(key: str, value: object) -> object:
     """Validate one parameter-profile setting and return its normalised value."""
     if key == "resolution":
@@ -763,6 +900,21 @@ def _validate_parameter_setting(key: str, value: object) -> object:
                 f"expected one of: {supported}"
             )
         return normalised
+    if key in {"min-resolution", "max-resolution"}:
+        return _validate_resolution_bound_setting(key, value)
+    if key in {"min-fps", "max-fps", "preferred-fps", "preferred-audio-channels"}:
+        return _validate_positive_integer_setting(key, value)
+    if key in {"preferred-video-codec", "preferred-audio-codec"}:
+        return _validate_codec_setting(key, value)
+    if key == "preferred-hdr":
+        if not isinstance(value, str) or value.lower() not in {"sdr", "hdr", "dv"}:
+            raise ValueError("parameter setting 'preferred-hdr' must be one of: sdr, hdr, dv")
+        return value.lower()
+    if key == "merge-container":
+        if not isinstance(value, str) or value.lower() not in SUPPORTED_MERGE_CONTAINERS:
+            supported = ", ".join(sorted(SUPPORTED_MERGE_CONTAINERS))
+            raise ValueError(f"parameter setting 'merge-container' must be one of: {supported}")
+        return value.lower()
     if key in {"limit-rate", "throttled-rate"}:
         return _validate_rate_setting(key, value)
     if key == "concurrent-fragments":
@@ -797,6 +949,14 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
     if len(cookie_keys) > 1:
         rendered = ", ".join(repr(key) for key in sorted(cookie_keys))
         raise ValueError(f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}")
+    if (
+        "min-resolution" in validated
+        and "max-resolution" in validated
+        and int(validated["min-resolution"]) > int(validated["max-resolution"])
+    ):
+        raise ValueError(f"parameter profile {profile_name!r} has min-resolution above max-resolution")
+    if "min-fps" in validated and "max-fps" in validated and int(validated["min-fps"]) > int(validated["max-fps"]):
+        raise ValueError(f"parameter profile {profile_name!r} has min-fps above max-fps")
     return validated
 
 
@@ -886,6 +1046,16 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         "fragment-retries": args.fragment_retries,
         "file-access-retries": args.file_access_retries,
         "extractor-retries": args.extractor_retries,
+        "min-resolution": args.min_resolution,
+        "max-resolution": args.max_resolution,
+        "min-fps": args.min_fps,
+        "max-fps": args.max_fps,
+        "preferred-fps": args.preferred_fps,
+        "preferred-video-codec": args.preferred_video_codec,
+        "preferred-audio-codec": args.preferred_audio_codec,
+        "preferred-hdr": args.preferred_hdr,
+        "preferred-audio-channels": args.preferred_audio_channels,
+        "merge-container": args.merge_container,
     }
     for key, value in scalar_settings.items():
         if value is not None:
@@ -1027,6 +1197,20 @@ def resolve_parameter_policy(
     settings: dict[str, object],
 ) -> tuple[DownloadPolicy, Path | None, str | None]:
     """Resolve merged profile settings into Downloader runtime policy."""
+    min_resolution = int(settings["min-resolution"]) if "min-resolution" in settings else None
+    max_resolution = int(settings["max-resolution"]) if "max-resolution" in settings else None
+    min_fps = int(settings["min-fps"]) if "min-fps" in settings else None
+    max_fps = int(settings["max-fps"]) if "max-fps" in settings else None
+    if min_resolution is not None and max_resolution is not None and min_resolution > max_resolution:
+        raise ValueError("min-resolution cannot be greater than max-resolution")
+    if min_fps is not None and max_fps is not None and min_fps > max_fps:
+        raise ValueError("min-fps cannot be greater than max-fps")
+    if "format" in settings and any(key in settings for key in HARD_FORMAT_CONSTRAINT_KEYS):
+        raise ValueError(
+            "raw format selection cannot be combined with hard declarative format constraints; "
+            "remove --format or the min/max resolution/FPS constraint"
+        )
+
     resolution = validate_resolution(str(settings.get("resolution", DEFAULT_RESOLUTION)))
     format_selector = str(settings.get("format", FORMAT_SELECTOR))
     reverse_playlist = bool(settings.get("reverse-playlist", False))
@@ -1063,6 +1247,22 @@ def resolve_parameter_policy(
             archive_file=Path(str(settings.get("archive", ARCHIVE_FILE))).expanduser(),
             temp_path=Path(str(settings.get("temp-path", TEMP_DIR))).expanduser(),
             extractor_args=tuple(settings.get("extractor-args", DEFAULT_EXTRACTOR_ARGS)),
+            min_resolution=min_resolution,
+            max_resolution=max_resolution,
+            min_fps=min_fps,
+            max_fps=max_fps,
+            preferred_fps=(int(settings["preferred-fps"]) if "preferred-fps" in settings else None),
+            preferred_video_codec=(
+                str(settings["preferred-video-codec"]) if "preferred-video-codec" in settings else None
+            ),
+            preferred_audio_codec=(
+                str(settings["preferred-audio-codec"]) if "preferred-audio-codec" in settings else None
+            ),
+            preferred_hdr=(str(settings["preferred-hdr"]) if "preferred-hdr" in settings else None),
+            preferred_audio_channels=(
+                int(settings["preferred-audio-channels"]) if "preferred-audio-channels" in settings else None
+            ),
+            merge_container=(str(settings["merge-container"]) if "merge-container" in settings else None),
         ),
         cookies_file,
         cookies_from_browser,
@@ -1326,8 +1526,19 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
         "parameter_sources": dict(sorted(plan.parameter_sources.items())),
         "policy": {
             "resolution": plan.policy.resolution,
-            "format": plan.policy.format_selector,
+            "format": plan.policy.effective_format_selector,
+            "raw_format": plan.policy.format_selector,
             "format_sort": plan.policy.sort_selector,
+            "min_resolution": plan.policy.min_resolution,
+            "max_resolution": plan.policy.max_resolution,
+            "min_fps": plan.policy.min_fps,
+            "max_fps": plan.policy.max_fps,
+            "preferred_fps": plan.policy.preferred_fps,
+            "preferred_video_codec": plan.policy.preferred_video_codec,
+            "preferred_audio_codec": plan.policy.preferred_audio_codec,
+            "preferred_hdr": plan.policy.preferred_hdr,
+            "preferred_audio_channels": plan.policy.preferred_audio_channels,
+            "merge_container": plan.policy.merge_container,
             "reverse_playlist": plan.policy.reverse_playlist,
             "playlist": plan.policy.playlist,
             "limit_rate": plan.policy.limit_rate,
@@ -1401,6 +1612,14 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"Resolution:        {policy['resolution']}",
         f"Format selector:   {policy['format']}",
         f"Format sort:       {policy['format_sort']}",
+        f"Resolution bounds: {policy['min_resolution'] or 'none'}..{policy['max_resolution'] or 'none'}",
+        f"FPS bounds:        {policy['min_fps'] or 'none'}..{policy['max_fps'] or 'none'}",
+        f"Preferred FPS:     {policy['preferred_fps'] or 'yt-dlp default'}",
+        f"Video codec:       {policy['preferred_video_codec'] or 'yt-dlp default'}",
+        f"Audio codec:       {policy['preferred_audio_codec'] or 'yt-dlp default'}",
+        f"HDR preference:    {policy['preferred_hdr'] or 'yt-dlp default'}",
+        f"Audio channels:    {policy['preferred_audio_channels'] or 'yt-dlp default'}",
+        f"Merge container:   {policy['merge_container'] or 'yt-dlp default'}",
         f"Playlist:          {policy['playlist'] if policy['playlist'] is not None else 'yt-dlp default'}",
         f"Reverse playlist:  {policy['reverse_playlist']}",
         f"Cookies:           {authentication['source']}"
@@ -1441,7 +1660,7 @@ def build_yt_dlp_command(
     command = [
         executable,
         "-f",
-        policy.format_selector,
+        policy.effective_format_selector,
         "-S",
         policy.sort_selector,
         "-r",
@@ -1457,6 +1676,8 @@ def build_yt_dlp_command(
         "--audio-multistreams",
     ]
 
+    if policy.merge_container is not None:
+        command.extend(("--merge-output-format", policy.merge_container))
     if policy.throttled_rate is not None:
         command.extend(("--throttled-rate", policy.throttled_rate))
     if policy.concurrent_fragments is not None:

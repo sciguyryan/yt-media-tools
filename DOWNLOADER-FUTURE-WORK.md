@@ -64,6 +64,8 @@ The architecture should remain flexible enough to pass current yt-dlp extractor 
 
 ## Phase 3 - declarative format policy
 
+The candidate implements the core selection contract: hard resolution/FPS bounds, fallback-friendly codec/FPS/HDR/audio-channel preferences, merge-container choice, deterministic compilation and raw-selector authority. Language preference and filesize policy remain deliberately deferred until extractor consistency and exact-versus-approximate size semantics can be specified conservatively. Audio-only and stream-mode policy remains assigned to Phase 7 rather than being duplicated here.
+
 Build a first-class format policy above yt-dlp's native selector language. Candidate dimensions include:
 
 - maximum and minimum resolution;

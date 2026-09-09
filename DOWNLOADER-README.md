@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.9.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.10.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -123,7 +123,7 @@ Explicit CLI options override selected profile values:
 ./yt-download.py -p 4k --resolution 1080p VIDEO_ID
 ```
 
-The shipped `defaults.json` contains `best`, `4k`, `1440p` and `playlist`. Format selectors use yt-dlp syntax directly. The built-in format remains `bv+ba/best`.
+The shipped `defaults.json` contains `best`, `4k`, `1440p` and `playlist`. These profiles inherit the built-in `bv+ba/best` selector unless a profile or explicit CLI setting deliberately supplies raw `format` policy.
 
 ```json
 {
@@ -182,7 +182,7 @@ built-in defaults -> selected parameter profile -> explicit CLI settings
 
 `--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
 
-Operational policy can also be stored in parameter profiles. Supported settings include `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+Operational policy can also be stored in parameter profiles. Supported settings include `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
 
 For example:
 
@@ -216,6 +216,40 @@ The most common network and retry controls have first-class Downloader options:
 Downloader keeps its existing `20M` rate limit, script-local archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a parameter profile or explicit CLI setting chooses them.
 
 `--explain` and `--explain-json` include these resolved operational values and their configured archive/temporary paths. Sensitive extractor-argument values such as tokens, keys and credentials are redacted from explanation output. `--dry-run` remains an exact command preview and therefore may contain explicitly configured sensitive values; treat its output accordingly.
+
+## Declarative format policy
+
+Downloader can express common format requirements without requiring a raw yt-dlp selector. Hard requirements and preferences are deliberately different. Hard requirements remove unacceptable candidates; preferences alter ordering but allow yt-dlp to fall back when the preferred representation is unavailable.
+
+Resolution and frame-rate bounds are hard requirements:
+
+```bash
+./yt-download.py --min-resolution 1080 --max-resolution 2160 VIDEO_ID
+./yt-download.py --min-fps 30 --max-fps 60 VIDEO_ID
+```
+
+Codec, frame-rate, HDR and audio-channel preferences are fallback-friendly:
+
+```bash
+./yt-download.py --preferred-video-codec av01 --preferred-audio-codec opus VIDEO_ID
+./yt-download.py --preferred-fps 60 --preferred-hdr hdr --preferred-audio-channels 6 VIDEO_ID
+```
+
+`--preferred-hdr` accepts `sdr`, `hdr` and `dv`. `hdr` follows yt-dlp's compatibility-oriented HDR sorting through `hdr:12`; `dv` allows Dolby Vision to rank highest, while `sdr` reverses HDR preference. These are preferences rather than requirements.
+
+When separate streams must be merged, `--merge-container` may choose one of yt-dlp's supported merge containers:
+
+```bash
+./yt-download.py --merge-container mkv VIDEO_ID
+```
+
+This controls the container used for a merge only. It does not force remuxing or transcoding when no merge is required. Those operations remain separate future policy decisions.
+
+The corresponding parameter-profile keys are `min-resolution`, `max-resolution`, `min-fps`, `max-fps`, `preferred-fps`, `preferred-video-codec`, `preferred-audio-codec`, `preferred-hdr`, `preferred-audio-channels` and `merge-container`.
+
+Raw `-f/--format` remains the expert selector authority. Downloader rejects a raw selector combined with hard min/max resolution or FPS constraints instead of silently editing the raw expression. Sorting preferences and merge-container policy may still accompany a raw selector because they do not rewrite it.
+
+Use `--explain` or `--explain-json` to inspect the exact generated selector and sort order before downloading.
 
 ## Cookies
 

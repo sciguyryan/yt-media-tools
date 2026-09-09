@@ -1,5 +1,15 @@
 # Changelog
 
+## Downloader 1.10.0 - Selection Rules
+
+- Add declarative hard bounds for minimum/maximum resolution and frame rate, compiled into yt-dlp format filters.
+- Add fallback-friendly preferences for video codec, audio codec, frame rate, HDR class and audio channel count using yt-dlp format sorting.
+- Add merge-container policy using `--merge-output-format` without silently remuxing or transcoding media.
+- Keep raw `-f/--format` selectors authoritative by rejecting combinations with hard declarative format constraints instead of rewriting expert expressions.
+- Expose the resolved generated selector, sort order, format bounds, preferences and merge container through human and JSON explanation.
+- Remove redundant raw format selectors from the shipped parameter profiles so their effective behaviour continues to inherit Downloader's built-in selector.
+- Add deterministic format-policy tests for validation, precedence, selector compilation, sorting, raw-selector authority and explanation output.
+
 ## Downloader 1.9.0 - Known Limits
 
 - Expand typed parameter-profile and CLI policy for rate limiting, throttling, fragment concurrency and retry behaviour.
