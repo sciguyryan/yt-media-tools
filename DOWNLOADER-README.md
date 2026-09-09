@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.15.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.16.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -91,6 +91,47 @@ Playlist indices are 1-based. Negative indices count from the end. `--playlist-r
 `--playlist-forward` explicitly restores normal traversal when a parameter profile enables reverse traversal. `--playlist-reverse`/`--rev` remains the reverse traversal control. Playlist item selection cannot be combined with `--no-playlist`.
 
 The configured download archive continues to apply to the selected entries through yt-dlp, so already archived media remain excluded normally. Playlist item selection is not accepted with `--remove-completed-ids`: the durable text queue tracks exact input targets, while successful playlist child entries do not establish that a playlist container target itself is complete. This fails closed rather than removing or classifying the container line incorrectly.
+
+## Live-media workflows
+
+Live acquisition is an explicit Downloader mode rather than an accidental combination of ordinary retry options. Use `--live` for a live target at the current edge:
+
+```bash
+./yt-download.py --live LIVE_URL
+```
+
+For extractors supported by yt-dlp's live-from-start implementation, request acquisition from the beginning with:
+
+```bash
+./yt-download.py --live --live-from-start LIVE_URL
+```
+
+Wait for a scheduled stream with a fixed or bounded retry interval in seconds:
+
+```bash
+./yt-download.py --live --wait-for-video 60-300 SCHEDULED_URL
+```
+
+`--live-edge` overrides `--live-from-start` inherited from a parameter profile. `--no-wait-for-video` similarly removes inherited scheduled-stream waiting. Downloader emits explicit yt-dlp live-edge and no-wait options when live mode is enabled without those behaviours, so a user's external yt-dlp configuration cannot silently change the resolved live policy.
+
+Live work can use the existing retry controls without acquiring hidden retry defaults:
+
+```bash
+./yt-download.py --live --retries infinite --fragment-retries 20 \
+  --retry-sleep fragment:exp=1:20 LIVE_URL
+```
+
+Downloader does not assume that every live stream should retry forever. Long-running retry policy remains explicit because interruption, extractor failure, a stream ending and a scheduled stream not yet being available are different conditions. yt-dlp remains responsible for its supported fragment/resume behaviour. Downloader does not invent a second post-live download when a live target becomes VOD; a later invocation is a separate acquisition subject to the normal archive policy.
+
+Request live chat as an associated sidecar when the extractor exposes `live_chat` as a subtitle stream:
+
+```bash
+./yt-download.py --live --write-live-chat LIVE_URL
+```
+
+`--write-live-chat` adds `live_chat` to any explicit subtitle-language selection rather than replacing it. An explicit `-live_chat` exclusion conflicts with that request and is rejected. Availability and completeness remain extractor/service properties, so requesting live chat does not guarantee that a service exposes or successfully delivers it. Actual sidecar paths are not inferred for run manifests.
+
+Live-specific options require explicit live mode, including when stored in parameter profiles. `--no-live` disables inherited live-from-start, scheduled-wait and live-chat policy together. Existing queue completion and run-manifest boundaries remain unchanged: durable queue removal occurs only after successful primary-output completion, while interrupted or failed live work remains unresolved.
 
 Playlist randomisation is not exposed as Downloader policy. Its ordering semantics do not currently provide enough value to justify making queue and reproducibility behaviour less predictable.
 
@@ -241,7 +282,7 @@ built-in defaults -> selected parameter profile -> explicit CLI settings
 
 `--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
 
-Operational policy can also be stored in parameter profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+Operational policy can also be stored in parameter profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `live`, `live-from-start`, `wait-for-video`, `write-live-chat`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
 
 For example:
 

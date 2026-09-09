@@ -49,7 +49,10 @@ def test_invalid_output_record_is_rejected(downloader, tmp_path: Path) -> None:
 def test_sha256_file_matches_known_digest(downloader, tmp_path: Path) -> None:
     output = tmp_path / "output.bin"
     output.write_bytes(b"abc")
-    assert downloader.sha256_file(output) == ("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    assert downloader.sha256_file(output) == (
+        "ba7816bf8f01cfea414140de5dae2223"
+        "b00361a396177a9cb410ff61f20015ad"
+    )
 
 
 def test_output_manifest_entries_distinguish_present_and_missing_files(downloader, tmp_path: Path) -> None:
@@ -152,7 +155,9 @@ def test_instrumented_command_records_outputs_before_queue_callback(downloader, 
     assert "--_remove-completed-id" in callbacks[1]
 
 
-def test_main_writes_hashed_manifest_from_simulated_after_move_event(downloader, tmp_path: Path, monkeypatch) -> None:
+def test_main_writes_hashed_manifest_from_simulated_after_move_event(
+    downloader, tmp_path: Path, monkeypatch
+) -> None:
     manifest_path = tmp_path / "run.json"
     output = tmp_path / "media output.mkv"
     output.write_bytes(b"completed media")
@@ -176,21 +181,19 @@ def test_main_writes_hashed_manifest_from_simulated_after_move_event(downloader,
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(downloader.subprocess, "run", simulated_process)
-    result = downloader.main(
-        [
-            "--no-cookies",
-            "--extractor-args",
-            "youtube:po_token=web.gvs+TOPSECRET",
-            "--run-manifest",
-            str(manifest_path),
-            "--hash-outputs",
-            "abc",
-        ]
-    )
+    result = downloader.main([
+        "--no-cookies",
+        "--extractor-args",
+        "youtube:po_token=web.gvs+TOPSECRET",
+        "--run-manifest",
+        str(manifest_path),
+        "--hash-outputs",
+        "abc",
+    ])
 
     assert result == 0
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["downloader"]["version"] == "1.15.0"
+    assert manifest["downloader"]["version"] == "1.16.0"
     assert manifest["yt_dlp"] == {"version": "2026.09.01", "exit_status": 0}
     assert manifest["run"] == {
         "started_at": "2026-09-09T10:00:00Z",
@@ -198,15 +201,13 @@ def test_main_writes_hashed_manifest_from_simulated_after_move_event(downloader,
         "interrupted": False,
     }
     assert manifest["input"] == {"targets": ["abc"], "targets_known": True}
-    assert manifest["outputs"]["primary"] == [
-        {
-            "id": "abc",
-            "path": str(output.resolve()),
-            "exists": True,
-            "size_bytes": len(b"completed media"),
-            "sha256": downloader.sha256_file(output),
-        }
-    ]
+    assert manifest["outputs"]["primary"] == [{
+        "id": "abc",
+        "path": str(output.resolve()),
+        "exists": True,
+        "size_bytes": len(b"completed media"),
+        "sha256": downloader.sha256_file(output),
+    }]
     rendered = manifest_path.read_text(encoding="utf-8")
     assert "TOPSECRET" not in rendered
     assert event_ledgers and all(not path.exists() for path in event_ledgers)

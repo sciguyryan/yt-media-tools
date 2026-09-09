@@ -18,7 +18,8 @@ def test_hard_format_constraints_compile_into_video_and_combined_fallbacks(downl
         max_fps=60,
     )
     assert policy.effective_format_selector == (
-        "bv[height>=1080][height<=2160][fps>=30][fps<=60]+ba/b[height>=1080][height<=2160][fps>=30][fps<=60]"
+        "bv[height>=1080][height<=2160][fps>=30][fps<=60]+ba/"
+        "b[height>=1080][height<=2160][fps>=30][fps<=60]"
     )
 
 

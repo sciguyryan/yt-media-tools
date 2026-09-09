@@ -8,7 +8,7 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.15.0"
+    assert downloader.PROGRAM_VERSION == "1.16.0"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
@@ -82,14 +82,12 @@ def test_normal_environment_requires_yt_dlp(downloader, monkeypatch) -> None:
 
 def test_dry_run_rejects_queue_report_output(downloader, tmp_path: Path) -> None:
     with pytest.raises(SystemExit) as exc_info:
-        downloader.main(
-            [
-                "--dry-run",
-                "--queue-report",
-                str(tmp_path / "report.json"),
-                "abc",
-            ]
-        )
+        downloader.main([
+            "--dry-run",
+            "--queue-report",
+            str(tmp_path / "report.json"),
+            "abc",
+        ])
     assert exc_info.value.code == 2
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## Downloader 1.16.0 - Live Line
+
+- Add explicit live-media policy with live-edge and supported live-from-start acquisition.
+- Add validated scheduled-stream waiting with CLI controls for overriding inherited wait policy.
+- Add requested live-chat sidecars without replacing existing subtitle-language selection.
+- Keep long-running retry choices explicit and preserve existing interruption, queue, archive and run-manifest completion boundaries.
+- Prevent external yt-dlp configuration from silently changing live-from-start or scheduled-wait policy during explicit live mode.
+- Add deterministic coverage for live policy validation, profile precedence, command construction, retry composition, live-chat selection and explain output.
+
 ## Downloader 1.15.0 - Selected Range
 
 - Add typed playlist selection by individual 1-based indices, inclusive ranges and explicit slices.

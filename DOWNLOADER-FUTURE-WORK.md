@@ -164,16 +164,15 @@ Random playlist traversal remains unexposed. There is no current Downloader-leve
 
 ## Phase 9 - live-media workflows
 
-Treat live acquisition as a distinct behavioural mode. Investigate and document:
+Live acquisition is represented as explicit policy rather than inferred from retry settings or target shape. `live` is the enabling boundary. Live-from-start, scheduled-stream waiting and live-chat sidecar requests require that boundary in both CLI and parameter-profile configuration.
 
-- waiting for scheduled streams;
-- live-from-start behaviour;
-- interruption and restart handling;
-- transition from live to post-live/VOD state;
-- retries appropriate to long-running live work;
-- live chat or related sidecars where requested.
+Downloader emits explicit live-edge and no-wait yt-dlp options for unconstrained live mode so external yt-dlp configuration cannot silently alter those timing semantics. CLI controls can disable inherited live-from-start, waiting, live-chat or the complete live mode. Existing retry controls compose with live policy, but Downloader does not silently replace them with infinite or long-running defaults.
 
-Live-specific timing and failure semantics should not be hidden inside ordinary parameter profiles without explanation.
+Interruption and restart remain governed by yt-dlp's supported download/fragment behaviour. Downloader's queue and manifest boundaries continue to classify only successful primary-output completion as complete. A live-to-VOD transition does not trigger an invented second acquisition; a later invocation remains subject to normal archive policy.
+
+Requested live chat is represented through yt-dlp's `live_chat` subtitle stream without replacing other requested subtitle languages. Availability and completeness remain extractor/service properties, and Downloader does not infer sidecar paths that it has not observed authoritatively.
+
+The live policy, profile precedence, command translation, sidecar composition and failure boundaries are deterministic and covered by automated tests.
 
 ## Phase 10 - partial media and sections
 

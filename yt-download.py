@@ -37,7 +37,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.15.0"
+PROGRAM_VERSION = "1.16.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -60,6 +60,10 @@ PARAMETER_PROFILE_KEYS = (
     "reverse-playlist",
     "playlist",
     "playlist-items",
+    "live",
+    "live-from-start",
+    "wait-for-video",
+    "write-live-chat",
     "limit-rate",
     "throttled-rate",
     "concurrent-fragments",
@@ -114,21 +118,7 @@ DEFAULT_EXTRACTOR_ARGS = ("youtube:player-client=default,-android_sdkless",)
 SUPPORTED_MERGE_CONTAINERS = frozenset({"avi", "flv", "mkv", "mov", "mp4", "webm"})
 SUPPORTED_AUDIO_FORMATS = frozenset({"best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"})
 SPONSORBLOCK_MARK_CATEGORIES = frozenset(
-    {
-        "sponsor",
-        "intro",
-        "outro",
-        "selfpromo",
-        "preview",
-        "filler",
-        "interaction",
-        "music_offtopic",
-        "hook",
-        "poi_highlight",
-        "chapter",
-        "all",
-        "default",
-    }
+    {"sponsor", "intro", "outro", "selfpromo", "preview", "filler", "interaction", "music_offtopic", "hook", "poi_highlight", "chapter", "all", "default"}
 )
 SPONSORBLOCK_REMOVE_CATEGORIES = SPONSORBLOCK_MARK_CATEGORIES - {"poi_highlight", "chapter"}
 DEFAULT_SPONSORBLOCK_REMOVE = "all"
@@ -214,6 +204,14 @@ EXAMPLES = r"""Examples:
   Combine parameter-profile selection, an explicit override and playlist reversal:
     %(prog)s -p playlist -r 1440 --rev PLAYLIST_URL
 
+  Acquire an active live stream from the current edge or, where supported, from its beginning:
+    %(prog)s --live LIVE_URL
+    %(prog)s --live --live-from-start LIVE_URL
+
+  Wait for a scheduled stream and optionally request its live-chat sidecar:
+    %(prog)s --live --wait-for-video 60-300 SCHEDULED_URL
+    %(prog)s --live --write-live-chat LIVE_URL
+
   Remove IDs from a batch file immediately after each video is fully processed:
     %(prog)s --remove-completed-ids ids/batch.txt
     %(prog)s --remove-completed-ids --input-file ids/batch.txt
@@ -289,6 +287,10 @@ class DownloadPolicy:
     reverse_playlist: bool
     playlist: bool | None = None
     playlist_items: tuple[str, ...] = ()
+    live: bool = False
+    live_from_start: bool = False
+    wait_for_video: str | None = None
+    write_live_chat: bool = False
     limit_rate: str = DEFAULT_DOWNLOAD_RATE
     throttled_rate: str | None = None
     concurrent_fragments: int | None = None
@@ -628,7 +630,8 @@ def build_parser() -> argparse.ArgumentParser:
         choices=tuple(sorted(SUPPORTED_MERGE_CONTAINERS)),
         metavar="CONTAINER",
         help=(
-            "Choose the container used when yt-dlp must merge separate streams; does not force remuxing or transcoding."
+            "Choose the container used when yt-dlp must merge separate streams; "
+            "does not force remuxing or transcoding."
         ),
     )
     audio_only_group = parser.add_mutually_exclusive_group()
@@ -826,6 +829,60 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="CATS",
         help="Remove validated SponsorBlock categories (built-in default: all).",
     )
+    live_group = parser.add_mutually_exclusive_group()
+    live_group.add_argument(
+        "--live",
+        dest="live",
+        action="store_true",
+        default=None,
+        help="Enable explicit live-media acquisition policy for this invocation.",
+    )
+    live_group.add_argument(
+        "--no-live",
+        dest="live",
+        action="store_false",
+        help="Disable live-media policy inherited from a parameter profile.",
+    )
+    live_start_group = parser.add_mutually_exclusive_group()
+    live_start_group.add_argument(
+        "--live-from-start",
+        dest="live_from_start",
+        action="store_true",
+        default=None,
+        help="For supported live extractors, ask yt-dlp to acquire the stream from its beginning.",
+    )
+    live_start_group.add_argument(
+        "--live-edge",
+        "--no-live-from-start",
+        dest="live_from_start",
+        action="store_false",
+        help="Acquire from the current live edge, overriding a live-from-start parameter profile.",
+    )
+    parser.add_argument(
+        "--wait-for-video",
+        metavar="MIN[-MAX]",
+        help="Wait for a scheduled live target using a validated yt-dlp retry interval in seconds.",
+    )
+    parser.add_argument(
+        "--no-wait-for-video",
+        dest="no_wait_for_video",
+        action="store_true",
+        help="Disable scheduled-stream waiting inherited from a parameter profile.",
+    )
+    live_chat_group = parser.add_mutually_exclusive_group()
+    live_chat_group.add_argument(
+        "--write-live-chat",
+        dest="write_live_chat",
+        action="store_true",
+        default=None,
+        help="Request the live_chat subtitle stream as a sidecar when the extractor provides it.",
+    )
+    live_chat_group.add_argument(
+        "--no-write-live-chat",
+        dest="write_live_chat",
+        action="store_false",
+        help="Disable live-chat sidecar acquisition inherited from a parameter profile.",
+    )
     parser.add_argument(
         "--limit-rate",
         metavar="RATE",
@@ -895,7 +952,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         metavar="INDEX",
         help=(
-            "Select one 1-based playlist INDEX. Repeat to select several entries; negative indices count from the end."
+            "Select one 1-based playlist INDEX. Repeat to select several entries; "
+            "negative indices count from the end."
         ),
     )
     parser.add_argument(
@@ -1006,7 +1064,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--queue-report",
         type=Path,
         metavar="FILE",
-        help=("Write a JSON queue outcome report to FILE. Requires --remove-completed-ids and file-backed input."),
+        help=(
+            "Write a JSON queue outcome report to FILE. Requires --remove-completed-ids "
+            "and file-backed input."
+        ),
     )
     parser.add_argument(
         "--failed-targets",
@@ -1222,7 +1283,9 @@ def resolve_profile(requested: str | None) -> OutputProfile | None:
 def validate_parameter_profile_name(name: str) -> str:
     """Validate a parameter-profile name used as a JSON object key."""
     if not PARAMETER_PROFILE_NAME_RE.fullmatch(name):
-        raise ValueError(f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'")
+        raise ValueError(
+            f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'"
+        )
     return name
 
 
@@ -1344,6 +1407,21 @@ def _validate_sponsorblock_categories(key: str, value: object) -> str:
                 f"expected one of: {supported}"
             )
     return ",".join(categories)
+
+
+def _validate_wait_for_video_setting(value: object) -> str:
+    """Validate yt-dlp's scheduled-stream wait interval without accepting option text."""
+    if isinstance(value, bool):
+        raise ValueError("parameter setting 'wait-for-video' must be MIN or MIN-MAX seconds")
+    text = str(value).strip()
+    match = re.fullmatch(r"([0-9]+)(?:-([0-9]+))?", text)
+    if match is None:
+        raise ValueError("parameter setting 'wait-for-video' must be MIN or MIN-MAX seconds")
+    minimum = int(match.group(1))
+    maximum = int(match.group(2)) if match.group(2) is not None else None
+    if minimum < 1 or (maximum is not None and maximum < minimum):
+        raise ValueError("parameter setting 'wait-for-video' requires MIN >= 1 and MAX >= MIN")
+    return str(minimum) if maximum is None else f"{minimum}-{maximum}"
 
 
 def _validate_playlist_index(value: object, *, label: str = "playlist index") -> int:
@@ -1471,6 +1549,8 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         return _validate_string_list_setting(key, value)
     if key == "playlist-items":
         return _validate_playlist_items_setting(value)
+    if key == "wait-for-video":
+        return _validate_wait_for_video_setting(value)
     if key in {"sub-langs", "sub-format"}:
         return _validate_nonempty_string_setting(key, value)
     if key in {"sponsorblock-mark", "sponsorblock-remove"}:
@@ -1490,6 +1570,9 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         "sponsorblock",
         "audio-only",
         "audio-source-fallback",
+        "live",
+        "live-from-start",
+        "write-live-chat",
     }:
         if not isinstance(value, bool):
             raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
@@ -1513,7 +1596,9 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
     cookie_keys = {"cookies", "cookies-from-browser", "no-cookies"} & set(validated)
     if len(cookie_keys) > 1:
         rendered = ", ".join(repr(key) for key in sorted(cookie_keys))
-        raise ValueError(f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}")
+        raise ValueError(
+            f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}"
+        )
     if (
         "min-resolution" in validated
         and "max-resolution" in validated
@@ -1526,6 +1611,12 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
         raise ValueError(f"parameter profile {profile_name!r} cannot set audio-quality without audio-format")
     if validated.get("playlist") is False and "playlist-items" in validated:
         raise ValueError(f"parameter profile {profile_name!r} cannot combine playlist-items with playlist=false")
+    live_options = {key for key in ("live-from-start", "write-live-chat") if validated.get(key) is True}
+    if "wait-for-video" in validated:
+        live_options.add("wait-for-video")
+    if live_options and validated.get("live") is not True:
+        rendered = ", ".join(sorted(live_options))
+        raise ValueError(f"parameter profile {profile_name!r} requires live=true for: {rendered}")
     return validated
 
 
@@ -1545,7 +1636,8 @@ def load_parameter_profiles(path: Path, *, allow_missing: bool) -> dict[str, Par
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
         raise ValueError(
-            f"invalid defaults JSON in {path}: {exc.msg} at line {exc.lineno}, column {exc.colno}"
+            f"invalid defaults JSON in {path}: {exc.msg} "
+            f"at line {exc.lineno}, column {exc.colno}"
         ) from exc
     except (OSError, UnicodeDecodeError) as exc:
         raise ValueError(f"unable to read defaults file {path}: {exc}") from exc
@@ -1633,12 +1725,15 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         "sub-format": args.sub_format,
         "sponsorblock-mark": args.sponsorblock_mark,
         "sponsorblock-remove": args.sponsorblock_remove,
+        "wait-for-video": None if args.no_wait_for_video else args.wait_for_video,
     }
     for key, value in scalar_settings.items():
         if value is not None:
             settings[key] = _validate_parameter_setting(key, value)
     if args.retry_sleep is not None:
         settings["retry-sleep"] = _validate_parameter_setting("retry-sleep", args.retry_sleep)
+    if args.no_wait_for_video:
+        settings["wait-for-video"] = None
     if args.archive is not None:
         settings["archive"] = str(args.archive.expanduser())
     if args.temp_path is not None:
@@ -1657,6 +1752,9 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         ("sponsorblock", args.sponsorblock),
         ("audio-only", args.audio_only),
         ("audio-source-fallback", args.audio_source_fallback),
+        ("live", args.live),
+        ("live-from-start", args.live_from_start),
+        ("write-live-chat", args.write_live_chat),
     ):
         if value is not None:
             settings[key] = value
@@ -1695,7 +1793,12 @@ def merge_parameter_settings(
     if cli_settings.get("sponsorblock") is False:
         merged.pop("sponsorblock-mark", None)
         merged.pop("sponsorblock-remove", None)
+    if cli_settings.get("live") is False:
+        for key in ("live-from-start", "wait-for-video", "write-live-chat"):
+            merged.pop(key, None)
     merged.update(cli_settings)
+    if merged.get("wait-for-video") is None:
+        merged.pop("wait-for-video", None)
     return merged
 
 
@@ -1708,7 +1811,8 @@ def resolve_parameter_settings(
     sources: dict[str, str] = {}
     if profile is not None:
         sources.update({key: f"parameter profile {profile.name!r}" for key in profile.settings})
-    sources.update({key: "explicit CLI" for key in cli_settings})
+    sources.update({key: "explicit CLI" for key in cli_settings if key in settings})
+    sources = {key: source for key, source in sources.items() if key in settings}
     return ResolvedParameterSettings(settings=settings, sources=sources)
 
 
@@ -1756,7 +1860,8 @@ def write_parameter_profile(
         profiles = load_parameter_profiles(path, allow_missing=False)
         if name in profiles and not overwrite:
             raise ValueError(
-                f"parameter profile {name!r} already exists in {path}; use --overwrite-profile to replace it explicitly"
+                f"parameter profile {name!r} already exists in {path}; "
+                "use --overwrite-profile to replace it explicitly"
             )
         raw_profiles: dict[str, object] = {profile.name: dict(profile.settings) for profile in profiles.values()}
     else:
@@ -1848,6 +1953,13 @@ def resolve_parameter_policy(
     if playlist_items and playlist is False:
         raise ValueError("playlist item selection cannot be combined with --no-playlist")
 
+    live = bool(settings.get("live", False))
+    live_from_start = bool(settings.get("live-from-start", False))
+    wait_for_video = str(settings["wait-for-video"]) if "wait-for-video" in settings else None
+    write_live_chat = bool(settings.get("write-live-chat", False))
+    if (live_from_start or wait_for_video is not None or write_live_chat) and not live:
+        raise ValueError("live-from-start, wait-for-video and write-live-chat require explicit live mode")
+
     cookies_from_browser = None
     if "cookies" in settings:
         cookie_path = Path(str(settings["cookies"])).expanduser()
@@ -1866,15 +1978,25 @@ def resolve_parameter_policy(
             reverse_playlist=reverse_playlist,
             playlist=playlist,
             playlist_items=playlist_items,
+            live=live,
+            live_from_start=live_from_start,
+            wait_for_video=wait_for_video,
+            write_live_chat=write_live_chat,
             limit_rate=str(settings.get("limit-rate", DEFAULT_DOWNLOAD_RATE)),
             throttled_rate=(str(settings["throttled-rate"]) if "throttled-rate" in settings else None),
             concurrent_fragments=(
                 int(settings["concurrent-fragments"]) if "concurrent-fragments" in settings else None
             ),
             retries=(str(settings["retries"]) if "retries" in settings else None),
-            fragment_retries=(str(settings["fragment-retries"]) if "fragment-retries" in settings else None),
-            file_access_retries=(str(settings["file-access-retries"]) if "file-access-retries" in settings else None),
-            extractor_retries=(str(settings["extractor-retries"]) if "extractor-retries" in settings else None),
+            fragment_retries=(
+                str(settings["fragment-retries"]) if "fragment-retries" in settings else None
+            ),
+            file_access_retries=(
+                str(settings["file-access-retries"]) if "file-access-retries" in settings else None
+            ),
+            extractor_retries=(
+                str(settings["extractor-retries"]) if "extractor-retries" in settings else None
+            ),
             retry_sleep=tuple(settings.get("retry-sleep", ())),
             archive_file=Path(str(settings.get("archive", ARCHIVE_FILE))).expanduser(),
             temp_path=Path(str(settings.get("temp-path", TEMP_DIR))).expanduser(),
@@ -2055,9 +2177,7 @@ def append_output_record(event_file: Path, media_id: str, output_path: str) -> N
 
 def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputSource) -> None:
     """Validate queue mutation and reporting options as one coherent mode."""
-    queue_outputs_requested = (
-        getattr(args, "queue_report", None) is not None or getattr(args, "failed_targets", None) is not None
-    )
+    queue_outputs_requested = getattr(args, "queue_report", None) is not None or getattr(args, "failed_targets", None) is not None
     if queue_outputs_requested and not args.remove_completed_ids:
         raise ValueError("--queue-report and --failed-targets require --remove-completed-ids")
     if not args.remove_completed_ids:
@@ -2128,7 +2248,11 @@ def queue_run_report(
     requested_set = set(requested)
     remaining_set = set(remaining)
     already_archived = [target for target in requested if target in archived_before]
-    completed = [target for target in requested if target not in archived_before and target not in remaining_set]
+    completed = [
+        target
+        for target in requested
+        if target not in archived_before and target not in remaining_set
+    ]
     unresolved = [target for target in requested if target in remaining_set]
     return {
         "kind": "yt-download-queue-report",
@@ -2212,7 +2336,9 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def output_manifest_entries(records: Sequence[dict[str, str]], *, hash_outputs: bool) -> list[dict[str, object]]:
+def output_manifest_entries(
+    records: Sequence[dict[str, str]], *, hash_outputs: bool
+) -> list[dict[str, object]]:
     """Describe completed primary outputs and optionally calculate SHA-256 hashes."""
     entries: list[dict[str, object]] = []
     for record in records:
@@ -2505,6 +2631,10 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "playlist": plan.policy.playlist,
             "playlist_items": list(plan.policy.playlist_items),
             "playlist_item_spec": plan.policy.playlist_item_spec,
+            "live": plan.policy.live,
+            "live_from_start": plan.policy.live_from_start,
+            "wait_for_video": plan.policy.wait_for_video,
+            "write_live_chat": plan.policy.write_live_chat,
             "limit_rate": plan.policy.limit_rate,
             "throttled_rate": plan.policy.throttled_rate,
             "concurrent_fragments": plan.policy.concurrent_fragments,
@@ -2608,7 +2738,11 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"Reverse playlist:  {policy['reverse_playlist']}",
         f"Cookies:           {authentication['source']}"
         + (f" ({authentication['cookies_file']})" if authentication["cookies_file"] else "")
-        + (f" ({authentication['cookies_from_browser']})" if authentication["cookies_from_browser"] else ""),
+        + (
+            f" ({authentication['cookies_from_browser']})"
+            if authentication["cookies_from_browser"]
+            else ""
+        ),
         f"Limit rate:        {policy['limit_rate']}",
         f"Throttled rate:    {policy['throttled_rate'] or 'yt-dlp default'}",
         f"Concurrent frags:  {policy['concurrent_fragments'] or 'yt-dlp default'}",
@@ -2663,12 +2797,22 @@ def build_yt_dlp_command(
         if policy.audio_quality is not None:
             command.extend(("--audio-quality", policy.audio_quality))
 
-    if policy.write_subtitles:
+    if policy.write_subtitles or policy.write_live_chat:
         command.append("--write-subs")
     if policy.write_auto_subtitles:
         command.append("--write-auto-subs")
-    if policy.subtitle_languages is not None:
-        command.extend(("--sub-langs", policy.subtitle_languages))
+    subtitle_languages = policy.subtitle_languages
+    if policy.write_live_chat:
+        if subtitle_languages is None:
+            subtitle_languages = "live_chat"
+        else:
+            requested = [item.strip() for item in subtitle_languages.split(",")]
+            if "-live_chat" in requested:
+                raise ValueError("write-live-chat cannot be combined with a sub-langs exclusion for live_chat")
+            if "live_chat" not in requested:
+                subtitle_languages = f"{subtitle_languages},live_chat"
+    if subtitle_languages is not None:
+        command.extend(("--sub-langs", subtitle_languages))
     if policy.subtitle_format is not None:
         command.extend(("--sub-format", policy.subtitle_format))
     if policy.embed_subtitles:
@@ -2720,6 +2864,15 @@ def build_yt_dlp_command(
     command.extend(("--paths", f"temp:{policy.temp_path}"))
     for extractor_arg in policy.extractor_args:
         command.extend(("--extractor-args", extractor_arg))
+
+    if policy.live_from_start:
+        command.append("--live-from-start")
+    elif policy.live:
+        command.append("--no-live-from-start")
+    if policy.wait_for_video is not None:
+        command.extend(("--wait-for-video", policy.wait_for_video))
+    elif policy.live:
+        command.append("--no-wait-for-video")
 
     if policy.playlist_item_spec is not None:
         command.extend(("-I", policy.playlist_item_spec))
@@ -2835,7 +2988,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         selection_requires_existing_defaults = explicit_defaults and not (
-            args.generate_profile is not None and args.write_profile and args.parameter_profile is None
+            args.generate_profile is not None
+            and args.write_profile
+            and args.parameter_profile is None
         )
         selected_parameters = select_parameter_profile(
             args.parameter_profile,
