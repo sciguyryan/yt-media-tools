@@ -1,5 +1,13 @@
 # Changelog
 
+## Downloader 1.18.0 - Common Tongue
+
+- Add `--schema-json` for a versioned, language-neutral Downloader machine contract.
+- Publish complete JSON Schema descriptions for parameter-profile files and settings with unknown-key rejection and structural cross-field constraints.
+- Expose canonical finite values, configuration precedence and runtime semantic-validation boundaries for machine consumers.
+- Keep machine-contract, parameter-profile and run-manifest schema versions independent.
+- Add deterministic coverage for contract versioning, runtime-key/schema synchronisation, canonical values, structural constraints and environment-independent schema output.
+
 ## Downloader 1.17.0 - Section Slice
 
 - Add first-class derivative acquisition by chapter regular expression and validated time range.

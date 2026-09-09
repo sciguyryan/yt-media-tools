@@ -37,7 +37,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.17.0"
+PROGRAM_VERSION = "1.18.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -46,6 +46,8 @@ PROFILE_SIGNATURE = "@profile"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
 PARAMETER_PROFILE_VERSION = 1
 RUN_MANIFEST_SCHEMA_VERSION = 1
+MACHINE_CONTRACT_VERSION = 1
+JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 PARAMETER_PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SUPPORTED_COOKIE_BROWSERS = frozenset(
     {"brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale"}
@@ -138,6 +140,66 @@ SPONSORBLOCK_MARK_CATEGORIES = frozenset(
 )
 SPONSORBLOCK_REMOVE_CATEGORIES = SPONSORBLOCK_MARK_CATEGORIES - {"poi_highlight", "chapter"}
 DEFAULT_SPONSORBLOCK_REMOVE = "all"
+
+
+# Machine-facing schema metadata is kept explicit rather than inferred from argparse.
+# The CLI and profile format have related but intentionally different contracts.
+PARAMETER_SETTING_DESCRIPTIONS = {
+    "resolution": "Preferred vertical resolution used for format sorting.",
+    "format": "Expert yt-dlp format selector. This is passed through unchanged.",
+    "cookies": "Path to a Netscape-format cookie file.",
+    "cookies-from-browser": "yt-dlp browser-cookie specification.",
+    "no-cookies": "Disable both explicit and automatic cookie discovery.",
+    "reverse-playlist": "Traverse a playlist in reverse order.",
+    "playlist": "Allow or suppress playlist traversal.",
+    "playlist-items": "Ordered yt-dlp playlist item selections after Downloader validation.",
+    "live": "Enable explicit live-media workflow semantics.",
+    "live-from-start": "Request supported acquisition from the beginning of a live stream.",
+    "wait-for-video": "Wait interval for a scheduled live stream, as MIN or MIN-MAX seconds.",
+    "write-live-chat": "Request live chat as an associated subtitle sidecar when available.",
+    "chapter-sections": "Regular expressions selecting chapter-derived partial-media outputs.",
+    "time-ranges": "Partial-media time ranges, each represented as START-STOP or [START, STOP].",
+    "limit-rate": "Maximum download rate accepted by yt-dlp.",
+    "throttled-rate": "Rate below which yt-dlp may consider the download throttled.",
+    "concurrent-fragments": "Number of fragments downloaded concurrently per stream.",
+    "retries": "Whole-download retry count or the literal infinite.",
+    "fragment-retries": "Fragment retry count or the literal infinite.",
+    "file-access-retries": "File-access retry count or the literal infinite.",
+    "extractor-retries": "Extractor retry count or the literal infinite.",
+    "retry-sleep": "Ordered yt-dlp retry-sleep expressions.",
+    "archive": "Path to the yt-dlp download archive used for whole-item completion.",
+    "temp-path": "Temporary path used for yt-dlp intermediate output.",
+    "extractor-args": "Ordered, explicitly supplied yt-dlp extractor-argument expressions.",
+    "min-resolution": "Minimum required video height in pixels.",
+    "max-resolution": "Maximum required video height in pixels.",
+    "min-fps": "Minimum required frame rate.",
+    "max-fps": "Maximum required frame rate.",
+    "preferred-fps": "Preferred frame rate used for format sorting.",
+    "preferred-video-codec": "Preferred video codec used for fallback-friendly format sorting.",
+    "preferred-audio-codec": "Preferred audio codec used for fallback-friendly format sorting.",
+    "preferred-hdr": "Preferred dynamic-range class used for format sorting.",
+    "preferred-audio-channels": "Preferred audio channel count used for format sorting.",
+    "merge-container": "Container requested when yt-dlp merges separate streams.",
+    "audio-only": "Select an existing audio-only source stream without enabling conversion.",
+    "audio-source-codec": "Require this source audio codec before optional conversion.",
+    "audio-source-container": "Require this source audio container/extension before optional conversion.",
+    "audio-source-fallback": "Allow fallback to another audio source when exact source constraints do not match.",
+    "audio-format": "Explicitly enable audio extraction/conversion to this format.",
+    "audio-quality": "Audio conversion quality accepted by yt-dlp/FFmpeg.",
+    "write-subs": "Write manually supplied subtitles when available.",
+    "write-auto-subs": "Write automatically generated subtitles when available.",
+    "sub-langs": "yt-dlp subtitle-language selection expression.",
+    "sub-format": "yt-dlp subtitle-format preference expression.",
+    "embed-subs": "Embed requested subtitles into the primary output when supported.",
+    "write-thumbnail": "Write an associated thumbnail when available.",
+    "embed-thumbnail": "Embed a requested thumbnail when supported.",
+    "write-info-json": "Write yt-dlp information JSON as an associated artefact.",
+    "embed-metadata": "Embed media metadata into the primary output when supported.",
+    "embed-chapters": "Embed chapter metadata into the primary output when supported.",
+    "sponsorblock": "Enable Downloader SponsorBlock policy.",
+    "sponsorblock-mark": "SponsorBlock categories to mark as chapters.",
+    "sponsorblock-remove": "SponsorBlock categories to remove from the media.",
+}
 HARD_FORMAT_CONSTRAINT_KEYS = frozenset(
     {
         "min-resolution",
@@ -261,6 +323,9 @@ EXAMPLES = r"""Examples:
 
   Explain the resolved download plan without executing it:
     %(prog)s --explain -p playlist PLAYLIST_URL
+
+  Emit the versioned machine contract and parameter-profile schema:
+    %(prog)s --schema-json
 
   Print the resolved yt-dlp command without executing it:
     %(prog)s --dry-run -p playlist PLAYLIST_URL
@@ -577,6 +642,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--list-parameters",
         action="store_true",
         help="List named parameter profiles in the resolved defaults JSON file and exit.",
+    )
+    parser.add_argument(
+        "--schema-json",
+        action="store_true",
+        help="Emit the versioned Downloader machine contract and parameter-profile JSON Schema, then exit.",
     )
     parser.add_argument(
         "--generate-profile",
@@ -1708,6 +1778,318 @@ def _validate_parameter_setting(key: str, value: object) -> object:
             raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
         return value
     raise ValueError(f"unknown parameter setting {key!r}")
+
+
+def _json_schema_string(*, description: str, pattern: str | None = None) -> dict[str, object]:
+    """Build one non-empty string-valued JSON Schema property."""
+    result: dict[str, object] = {
+        "type": "string",
+        "minLength": 1,
+        "pattern": pattern or r"\S",
+        "description": description,
+    }
+    return result
+
+
+def _json_schema_boolean(*, description: str) -> dict[str, object]:
+    """Build one Boolean JSON Schema property."""
+    return {"type": "boolean", "description": description}
+
+
+def _json_schema_positive_integer(*, description: str) -> dict[str, object]:
+    """Build one positive-integer JSON Schema property."""
+    return {"type": "integer", "minimum": 1, "description": description}
+
+
+def parameter_profile_setting_schema() -> dict[str, object]:
+    """Return JSON Schema for one parameter-profile settings object.
+
+    JSON Schema describes structural constraints. Cross-field comparisons and
+    yt-dlp expression validation that cannot be represented faithfully remain
+    runtime semantic checks and are listed in the surrounding machine contract.
+    """
+    descriptions = PARAMETER_SETTING_DESCRIPTIONS
+    boolean_keys = {
+        "no-cookies",
+        "reverse-playlist",
+        "playlist",
+        "live",
+        "live-from-start",
+        "write-live-chat",
+        "audio-only",
+        "audio-source-fallback",
+        "write-subs",
+        "write-auto-subs",
+        "embed-subs",
+        "write-thumbnail",
+        "embed-thumbnail",
+        "write-info-json",
+        "embed-metadata",
+        "embed-chapters",
+        "sponsorblock",
+    }
+    positive_integer_keys = {
+        "concurrent-fragments",
+        "min-fps",
+        "max-fps",
+        "preferred-fps",
+        "preferred-audio-channels",
+    }
+    properties: dict[str, object] = {}
+    for key in boolean_keys:
+        properties[key] = _json_schema_boolean(description=descriptions[key])
+    for key in positive_integer_keys:
+        properties[key] = _json_schema_positive_integer(description=descriptions[key])
+
+    properties.update(
+        {
+            "resolution": _json_schema_string(
+                description=descriptions["resolution"],
+                pattern=r"^(?:[bB][eE][sS][tT]|[1-9][0-9]*[pP]?)$",
+            ),
+            "format": _json_schema_string(description=descriptions["format"]),
+            "cookies": _json_schema_string(description=descriptions["cookies"]),
+            "cookies-from-browser": _json_schema_string(description=descriptions["cookies-from-browser"]),
+            "playlist-items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "oneOf": [
+                        {"type": "integer", "not": {"const": 0}},
+                        {"type": "string", "minLength": 1},
+                    ]
+                },
+                "description": descriptions["playlist-items"],
+            },
+            "wait-for-video": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 1},
+                    {"type": "string", "pattern": r"^[0-9]+(?:-[0-9]+)?$"},
+                ],
+                "description": descriptions["wait-for-video"],
+            },
+            "chapter-sections": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "description": descriptions["chapter-sections"],
+            },
+            "time-ranges": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "oneOf": [
+                        {"type": "string", "minLength": 1},
+                        {
+                            "type": "array",
+                            "prefixItems": [{"type": "string"}, {"type": "string"}],
+                            "minItems": 2,
+                            "maxItems": 2,
+                        },
+                    ]
+                },
+                "description": descriptions["time-ranges"],
+            },
+            "limit-rate": _json_schema_string(description=descriptions["limit-rate"]),
+            "throttled-rate": _json_schema_string(description=descriptions["throttled-rate"]),
+            "retries": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 0},
+                    {"type": "string", "pattern": r"^(?:infinite|[0-9]+)$"},
+                ],
+                "description": descriptions["retries"],
+            },
+            "fragment-retries": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 0},
+                    {"type": "string", "pattern": r"^(?:infinite|[0-9]+)$"},
+                ],
+                "description": descriptions["fragment-retries"],
+            },
+            "file-access-retries": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 0},
+                    {"type": "string", "pattern": r"^(?:infinite|[0-9]+)$"},
+                ],
+                "description": descriptions["file-access-retries"],
+            },
+            "extractor-retries": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 0},
+                    {"type": "string", "pattern": r"^(?:infinite|[0-9]+)$"},
+                ],
+                "description": descriptions["extractor-retries"],
+            },
+            "retry-sleep": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "description": descriptions["retry-sleep"],
+            },
+            "archive": _json_schema_string(description=descriptions["archive"]),
+            "temp-path": _json_schema_string(description=descriptions["temp-path"]),
+            "extractor-args": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "description": descriptions["extractor-args"],
+            },
+            "min-resolution": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 1},
+                    {"type": "string", "pattern": r"^[1-9][0-9]*[pP]?$"},
+                ],
+                "description": descriptions["min-resolution"],
+            },
+            "max-resolution": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 1},
+                    {"type": "string", "pattern": r"^[1-9][0-9]*[pP]?$"},
+                ],
+                "description": descriptions["max-resolution"],
+            },
+            "preferred-video-codec": _json_schema_string(description=descriptions["preferred-video-codec"]),
+            "preferred-audio-codec": _json_schema_string(description=descriptions["preferred-audio-codec"]),
+            "preferred-hdr": {
+                **_json_schema_string(
+                    description=descriptions["preferred-hdr"],
+                    pattern=r"^(?:[sS][dD][rR]|[hH][dD][rR]|[dD][vV])$",
+                ),
+                "x-downloader-canonical-values": ["sdr", "hdr", "dv"],
+            },
+            "merge-container": {
+                **_json_schema_string(
+                    description=descriptions["merge-container"],
+                    pattern=r"^(?:[aA][vV][iI]|[fF][lL][vV]|[mM][kK][vV]|[mM][oO][vV]|[mM][pP]4|[wW][eE][bB][mM])$",
+                ),
+                "x-downloader-canonical-values": sorted(SUPPORTED_MERGE_CONTAINERS),
+            },
+            "audio-source-codec": _json_schema_string(description=descriptions["audio-source-codec"]),
+            "audio-source-container": _json_schema_string(description=descriptions["audio-source-container"]),
+            "audio-format": {
+                **_json_schema_string(
+                    description=descriptions["audio-format"],
+                    pattern=r"^(?:[bB][eE][sS][tT]|[aA][aA][cC]|[aA][lL][aA][cC]|[fF][lL][aA][cC]|[mM]4[aA]|[mM][pP]3|[oO][pP][uU][sS]|[vV][oO][rR][bB][iI][sS]|[wW][aA][vV])$",
+                ),
+                "x-downloader-canonical-values": sorted(SUPPORTED_AUDIO_FORMATS),
+            },
+            "audio-quality": {
+                "oneOf": [
+                    {"type": "integer", "minimum": 0, "maximum": 10},
+                    {"type": "string", "pattern": r"^(?:10|[0-9]|[1-9][0-9]*(?:\.[0-9]+)?[KkMm])$"},
+                ],
+                "description": descriptions["audio-quality"],
+            },
+            "sub-langs": _json_schema_string(description=descriptions["sub-langs"]),
+            "sub-format": _json_schema_string(description=descriptions["sub-format"]),
+            "sponsorblock-mark": _json_schema_string(description=descriptions["sponsorblock-mark"]),
+            "sponsorblock-remove": _json_schema_string(description=descriptions["sponsorblock-remove"]),
+        }
+    )
+
+    missing = set(PARAMETER_PROFILE_KEYS) - set(properties)
+    extra = set(properties) - set(PARAMETER_PROFILE_KEYS)
+    if missing or extra:
+        raise RuntimeError(
+            "parameter-profile schema metadata is out of sync with runtime keys: "
+            f"missing={sorted(missing)!r}, extra={sorted(extra)!r}"
+        )
+
+    return {
+        "$schema": JSON_SCHEMA_DIALECT,
+        "$id": "urn:yt-media-tools:downloader:parameter-settings:1",
+        "title": "yt-downloader parameter-profile settings",
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {key: properties[key] for key in PARAMETER_PROFILE_KEYS},
+        "allOf": [
+            {
+                "not": {
+                    "anyOf": [
+                        {"required": ["cookies", "cookies-from-browser"]},
+                        {"required": ["cookies", "no-cookies"]},
+                        {"required": ["cookies-from-browser", "no-cookies"]},
+                    ]
+                }
+            },
+            {
+                "if": {"required": ["audio-quality"]},
+                "then": {"required": ["audio-format"]},
+            },
+            {
+                "if": {"properties": {"playlist": {"const": False}}, "required": ["playlist"]},
+                "then": {"not": {"required": ["playlist-items"]}},
+            },
+            *[
+                {
+                    "if": {"properties": {key: {"const": True}}, "required": [key]},
+                    "then": {"properties": {"live": {"const": True}}, "required": ["live"]},
+                }
+                for key in ("live-from-start", "write-live-chat")
+            ],
+            {
+                "if": {"required": ["wait-for-video"]},
+                "then": {"properties": {"live": {"const": True}}, "required": ["live"]},
+            },
+        ],
+    }
+
+
+def parameter_profile_file_schema() -> dict[str, object]:
+    """Return JSON Schema for the complete versioned defaults/profile file."""
+    settings_schema = parameter_profile_setting_schema()
+    embedded_settings = {key: value for key, value in settings_schema.items() if key not in {"$schema", "$id"}}
+    return {
+        "$schema": JSON_SCHEMA_DIALECT,
+        "$id": "urn:yt-media-tools:downloader:parameter-profiles:1",
+        "title": "yt-downloader parameter profiles",
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["version", "profiles"],
+        "$defs": {"settings": embedded_settings},
+        "properties": {
+            "version": {"const": PARAMETER_PROFILE_VERSION},
+            "profiles": {
+                "type": "object",
+                "propertyNames": {"pattern": PARAMETER_PROFILE_NAME_RE.pattern},
+                "additionalProperties": {"$ref": "#/$defs/settings"},
+            },
+        },
+    }
+
+
+def machine_contract() -> dict[str, object]:
+    """Return the versioned language-neutral machine contract descriptor."""
+    return {
+        "contract_version": MACHINE_CONTRACT_VERSION,
+        "downloader": {"name": PROGRAM_NAME, "version": PROGRAM_VERSION},
+        "json_schema_dialect": JSON_SCHEMA_DIALECT,
+        "parameter_profiles": {
+            "format_version": PARAMETER_PROFILE_VERSION,
+            "file_schema": parameter_profile_file_schema(),
+            "settings_schema": parameter_profile_setting_schema(),
+            "precedence": ["explicit-cli", "parameter-profile", "built-in-defaults"],
+            "unknown_settings": "error",
+            "semantic_validation": [
+                "minimum resolution must not exceed maximum resolution",
+                "minimum FPS must not exceed maximum FPS",
+                "yt-dlp expression-valued settings are validated by Downloader where a stable grammar is owned",
+                "partial-media timestamps and chapter regular expressions receive additional runtime validation",
+                "the schema describes canonical machine-facing values while runtime validation may normalise equivalent text forms",
+                "cross-policy conflicts that depend on resolved CLI state are validated after precedence resolution",
+            ],
+        },
+        "machine_interfaces": {
+            "schema": {"cli": "--schema-json", "stability": "versioned"},
+            "explain": {"cli": "--explain-json", "stability": "operational"},
+            "run_manifest": {"schema_version": RUN_MANIFEST_SCHEMA_VERSION, "stability": "versioned"},
+        },
+    }
+
+
+def emit_machine_contract() -> None:
+    """Write the machine contract as deterministic UTF-8 JSON."""
+    print(json.dumps(machine_contract(), indent=2, sort_keys=True))
 
 
 def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[str, object]:
@@ -3106,6 +3488,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.examples:
         show_examples(parser)
+        return 0
+
+    if args.schema_json:
+        raw_args = list(sys.argv[1:] if argv is None else argv)
+        if raw_args != ["--schema-json"]:
+            parser.error("--schema-json must be used on its own")
+        emit_machine_contract()
         return 0
 
     resolved_defaults = defaults_path(args.defaults)

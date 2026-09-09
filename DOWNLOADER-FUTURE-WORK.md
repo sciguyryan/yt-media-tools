@@ -184,6 +184,23 @@ A completed derivative does not establish whole-item completion. Downloader disa
 
 Parameter profiles may store chapter and time-range policy, and `--whole-item` clears those inherited settings explicitly. Parsing, profile precedence, command translation, output naming, archive/queue boundaries and explain output are deterministic and covered by automated tests.
 
+## Machine-interface expansion pass
+
+Before the final hardening and reconciliation phase, build a small versioned machine interface around the same typed policy model used by the human CLI. Keep the interface language-neutral and avoid requiring another program to scrape help output or construct arbitrary command strings.
+
+The versioned machine contract and parameter-profile JSON Schema now identify their own contract version independently from Downloader, the parameter-profile format and the run-manifest schema. They expose canonical values, structural constraints, configuration precedence and runtime semantic-validation boundaries without claiming that JSON Schema can express every resolved-policy invariant.
+
+Continue the pass in this order:
+
+1. add configuration/profile validation and environment/capability reporting with human-readable and machine-readable forms where appropriate;
+2. formalise structured planning around the existing explain JSON without executing acquisition;
+3. add structured per-target outcomes only if yt-dlp exposes a sufficiently stable authoritative interface;
+4. support manifest-driven retry of unresolved or failed targets once outcome semantics are reliable;
+5. define a simple versioned Discover-to-Downloader interchange format that keeps both tools independently usable and does not require shared-language libraries or direct internal calls;
+6. only then evaluate optional external-tool integrations that add genuine utility behind existing typed policy boundaries.
+
+Do not introduce a generic plugin framework, scheduler, GUI, media-library database, arbitrary shell hooks, custom extractors or bespoke RPC where stdin/stdout JSON provides a sufficient boundary.
+
 ## Phase 11 - hardening and final reconciliation
 
 Stop feature work and perform a dedicated hardening programme:

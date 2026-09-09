@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.17.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.18.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -184,6 +184,20 @@ Explain the fully resolved download plan without executing yt-dlp:
 ```
 
 The explanation shows the selected parameter and output profiles, effective format and playlist policy, authentication source, input source, archive and temporary paths, queue behaviour, the final yt-dlp command, and where explicitly configured parameter values came from. Use `--explain-json` for a machine-readable form suitable for scripts and regression checks. Explain mode does not require yt-dlp to be installed and does not mutate queue files.
+
+## Machine contract and parameter-profile schema
+
+Emit Downloader's versioned machine contract without requiring yt-dlp or a configured download target:
+
+```bash
+./yt-download.py --schema-json
+```
+
+The contract is language-neutral JSON. It identifies the machine-contract version, Downloader version, parameter-profile format version, JSON Schema dialect, complete parameter-profile file/settings schemas, configuration precedence, semantic-validation boundaries and the machine-readable interfaces that currently exist. The schema rejects unknown profile settings and describes structural cross-field constraints such as cookie-source exclusivity, live-policy requirements, audio-quality conversion requirements and playlist-selection conflicts.
+
+Finite case-insensitive values expose canonical lower-case choices through `x-downloader-canonical-values` so editors, scripts and AI/plugin tooling can generate stable configuration without scraping human help text. Validation that depends on comparisons, regular-expression compilation, yt-dlp expression semantics or the fully resolved policy remains an explicit Downloader runtime check and is listed in the surrounding contract rather than being overstated as pure JSON Schema validation.
+
+The machine-contract version is independent of the parameter-profile format version and run-manifest schema version. A consumer should inspect the relevant version instead of assuming that a Downloader release number is itself an API contract. The current contract defines configuration/schema discovery only; a formal machine execution-request schema is not yet part of the contract.
 
 Print only the resolved `yt-dlp` command without executing it:
 
