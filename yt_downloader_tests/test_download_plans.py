@@ -76,7 +76,7 @@ def test_explain_payload_is_stable_and_machine_readable(downloader, tmp_path: Pa
     )
     payload = downloader.explain_plan_payload(plan)
     assert payload["kind"] == "yt-download-plan"
-    assert payload["version"] == "1.16.0"
+    assert payload["version"] == "1.17.0"
     assert payload["parameter_profile"]["name"] == "best"
     assert payload["policy"]["resolution"] == "best"
     assert payload["policy"]["playlist"] is True
@@ -186,6 +186,7 @@ def test_explain_payload_reports_operational_policy(downloader, tmp_path: Path, 
     assert payload["authentication"]["cookies_from_browser"] == "chromium+kwallet6:Default"
     assert payload["paths"] == {
         "archive": str(tmp_path / "archive.txt"),
+        "archive_enabled": True,
         "temporary": str(tmp_path / "temp"),
     }
 

@@ -176,9 +176,13 @@ The live policy, profile precedence, command translation, sidecar composition an
 
 ## Phase 10 - partial media and sections
 
-Add deliberate support for downloading only part of an item, such as time ranges or chapter-based sections, where yt-dlp provides a reliable underlying mechanism.
+Partial-media acquisition is represented as explicit derivative policy for chapter regular expressions and timestamp ranges. Both forms compile to yt-dlp's section-download mechanism and may produce more than one primary output.
 
-This is intentionally late because it changes the meaning of a target from "retrieve this media item" to "produce this selected derivative portion". Output naming, archive behaviour, queue completion and run-manifest semantics must account for that distinction.
+Derivative runs use section-aware output naming so repeated ranges or multi-chapter matches do not silently reuse a whole-item filename. An output profile's home path is retained, while its normal filename template is replaced for the partial run.
+
+A completed derivative does not establish whole-item completion. Downloader disables the download archive for partial-media invocations and rejects durable completed-ID queue mutation. Run manifests expose the resolved derivative policy and continue to record actual primary output paths through observed after-move events. Partial-media policy does not compose with explicit live mode because a stable source-relative section boundary is not established there.
+
+Parameter profiles may store chapter and time-range policy, and `--whole-item` clears those inherited settings explicitly. Parsing, profile precedence, command translation, output naming, archive/queue boundaries and explain output are deterministic and covered by automated tests.
 
 ## Phase 11 - hardening and final reconciliation
 

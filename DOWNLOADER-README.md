@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.16.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.17.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -132,6 +132,24 @@ Request live chat as an associated sidecar when the extractor exposes `live_chat
 `--write-live-chat` adds `live_chat` to any explicit subtitle-language selection rather than replacing it. An explicit `-live_chat` exclusion conflicts with that request and is rejected. Availability and completeness remain extractor/service properties, so requesting live chat does not guarantee that a service exposes or successfully delivers it. Actual sidecar paths are not inferred for run manifests.
 
 Live-specific options require explicit live mode, including when stored in parameter profiles. `--no-live` disables inherited live-from-start, scheduled-wait and live-chat policy together. Existing queue completion and run-manifest boundaries remain unchanged: durable queue removal occurs only after successful primary-output completion, while interrupted or failed live work remains unresolved.
+
+## Partial media and sections
+
+Partial-media acquisition is explicit derivative policy. Select chapters by regular expression or request one or more time ranges:
+
+```bash
+./yt-download.py --chapter-section "^Introduction$" VIDEO_ID
+./yt-download.py --time-range 1:30 3:00 VIDEO_ID
+./yt-download.py --time-range -60 inf VIDEO_ID
+```
+
+`--chapter-section REGEX` maps to yt-dlp chapter matching. `--time-range START STOP` accepts seconds or colon-separated clock values; negative timestamps are measured from the end by yt-dlp and `inf` is accepted as the stop value. Both options may be repeated. yt-dlp requires ffmpeg for section downloading.
+
+A partial-media run produces derivative outputs rather than establishing that the source item itself has been retrieved in full. Downloader therefore disables the download archive for that invocation and rejects `--remove-completed-ids`. This prevents a successful excerpt from marking the source target complete or removing it from a durable whole-item queue. Partial-media selection is also rejected in explicit live mode because live timing does not provide the same stable derivative boundary.
+
+Partial acquisition uses a section-aware filename template containing `section_number` and `section_title` so multiple matched chapters or time ranges cannot silently collide with one another. An output profile's home path is preserved, but its filename template is replaced for the derivative run. Whole-item downloads continue to use the profile's normal filename template unchanged.
+
+Run manifests record the partial-media policy and identify the input as derivative partial media. Completed output paths still come from yt-dlp's `after_move` events rather than filename inference. `--whole-item` removes chapter/time-range policy inherited from a parameter profile.
 
 Playlist randomisation is not exposed as Downloader policy. Its ordering semantics do not currently provide enough value to justify making queue and reproducibility behaviour less predictable.
 
@@ -282,7 +300,7 @@ built-in defaults -> selected parameter profile -> explicit CLI settings
 
 `--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
 
-Operational policy can also be stored in parameter profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `live`, `live-from-start`, `wait-for-video`, `write-live-chat`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+Operational policy can also be stored in parameter profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `live`, `live-from-start`, `wait-for-video`, `write-live-chat`, `chapter-sections`, `time-ranges`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. `chapter-sections` is an ordered array of regular-expression strings. `time-ranges` is an ordered array of canonical `START-STOP` strings or two-item `START`, `STOP` arrays. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
 
 For example:
 

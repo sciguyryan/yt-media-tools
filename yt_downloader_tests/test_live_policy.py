@@ -30,18 +30,14 @@ def test_live_options_require_explicit_live_mode(downloader) -> None:
 
 def test_profile_rejects_live_options_without_live_mode(downloader) -> None:
     with pytest.raises(ValueError, match="requires live=true"):
-        downloader.validate_parameter_settings(
-            {"wait-for-video": "60-300"}, profile_name="broken"
-        )
+        downloader.validate_parameter_settings({"wait-for-video": "60-300"}, profile_name="broken")
 
 
 def test_live_policy_builds_explicit_yt_dlp_boundaries(downloader) -> None:
     policy, _, _ = downloader.resolve_parameter_policy(
         {"live": True, "live-from-start": True, "wait-for-video": "60-300"}
     )
-    command = downloader.build_yt_dlp_command(
-        "yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None
-    )
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
     assert "--live-from-start" in command
     assert command[command.index("--wait-for-video") + 1] == "60-300"
     assert "--no-wait-for-video" not in command
@@ -49,9 +45,7 @@ def test_live_policy_builds_explicit_yt_dlp_boundaries(downloader) -> None:
 
 def test_plain_live_mode_makes_edge_and_no_wait_explicit(downloader) -> None:
     policy, _, _ = downloader.resolve_parameter_policy({"live": True})
-    command = downloader.build_yt_dlp_command(
-        "yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None
-    )
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
     assert "--no-live-from-start" in command
     assert "--no-wait-for-video" in command
 
@@ -60,9 +54,7 @@ def test_live_chat_is_requested_as_sidecar_without_overwriting_subtitle_policy(d
     policy, _, _ = downloader.resolve_parameter_policy(
         {"live": True, "write-live-chat": True, "write-subs": True, "sub-langs": "en.*"}
     )
-    command = downloader.build_yt_dlp_command(
-        "yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None
-    )
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
     assert command.count("--write-subs") == 1
     assert command[command.index("--sub-langs") + 1] == "en.*,live_chat"
 
@@ -72,9 +64,7 @@ def test_live_chat_rejects_explicit_exclusion(downloader) -> None:
         {"live": True, "write-live-chat": True, "sub-langs": "all,-live_chat"}
     )
     with pytest.raises(ValueError, match="sub-langs exclusion"):
-        downloader.build_yt_dlp_command(
-            "yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None
-        )
+        downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
 
 
 def test_no_live_clears_inherited_live_policy(downloader, tmp_path) -> None:

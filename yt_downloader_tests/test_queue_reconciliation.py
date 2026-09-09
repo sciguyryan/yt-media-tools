@@ -101,7 +101,7 @@ def test_write_queue_report_is_deterministic_json(downloader, tmp_path: Path) ->
     report = {"kind": "yt-download-queue-report", "version": downloader.PROGRAM_VERSION}
     downloader.write_queue_report(output, report)
     assert output.read_text(encoding="utf-8") == (
-        '{\n  "kind": "yt-download-queue-report",\n  "version": "1.16.0"\n}\n'
+        '{\n  "kind": "yt-download-queue-report",\n  "version": "1.17.0"\n}\n'
     )
 
 
@@ -134,7 +134,6 @@ def test_run_reports_keyboard_interruption_without_raising(downloader, monkeypat
     assert downloader.run(["yt-dlp", "abc"], dry_run=False) == 130
 
 
-
 def test_main_generates_queue_report_and_retry_file_from_simulated_partial_run(
     downloader, tmp_path: Path, monkeypatch
 ) -> None:
@@ -157,17 +156,19 @@ def test_main_generates_queue_report_and_retry_file_from_simulated_partial_run(
 
     monkeypatch.setattr(downloader.subprocess, "run", simulated_yt_dlp)
 
-    result = downloader.main([
-        "--no-cookies",
-        "--archive",
-        str(archive),
-        "--remove-completed-ids",
-        "--queue-report",
-        str(report_path),
-        "--failed-targets",
-        str(failed_path),
-        str(queue),
-    ])
+    result = downloader.main(
+        [
+            "--no-cookies",
+            "--archive",
+            str(archive),
+            "--remove-completed-ids",
+            "--queue-report",
+            str(report_path),
+            "--failed-targets",
+            str(failed_path),
+            str(queue),
+        ]
+    )
 
     assert result == 1
     assert queue.read_text(encoding="utf-8") == "failed\n"
@@ -209,17 +210,19 @@ def test_main_generates_interrupted_queue_report_from_simulated_keyboard_interru
 
     monkeypatch.setattr(downloader.subprocess, "run", simulated_interrupt)
 
-    result = downloader.main([
-        "--no-cookies",
-        "--archive",
-        str(archive),
-        "--remove-completed-ids",
-        "--queue-report",
-        str(report_path),
-        "--failed-targets",
-        str(failed_path),
-        str(queue),
-    ])
+    result = downloader.main(
+        [
+            "--no-cookies",
+            "--archive",
+            str(archive),
+            "--remove-completed-ids",
+            "--queue-report",
+            str(report_path),
+            "--failed-targets",
+            str(failed_path),
+            str(queue),
+        ]
+    )
 
     assert result == 130
     assert queue.read_text(encoding="utf-8") == "remaining\n"
@@ -247,17 +250,19 @@ def test_main_keeps_target_unresolved_after_simulated_postprocessing_failure(
         lambda command, check=False: SimpleNamespace(returncode=1),
     )
 
-    result = downloader.main([
-        "--no-cookies",
-        "--archive",
-        str(archive),
-        "--remove-completed-ids",
-        "--queue-report",
-        str(report_path),
-        "--failed-targets",
-        str(failed_path),
-        str(queue),
-    ])
+    result = downloader.main(
+        [
+            "--no-cookies",
+            "--archive",
+            str(archive),
+            "--remove-completed-ids",
+            "--queue-report",
+            str(report_path),
+            "--failed-targets",
+            str(failed_path),
+            str(queue),
+        ]
+    )
 
     assert result == 1
     assert queue.read_text(encoding="utf-8") == "postprocess-failed\n"
@@ -286,17 +291,19 @@ def test_main_keeps_current_run_unresolved_when_completion_callback_does_not_rew
 
     monkeypatch.setattr(downloader.subprocess, "run", simulated_callback_failure)
 
-    result = downloader.main([
-        "--no-cookies",
-        "--archive",
-        str(archive),
-        "--remove-completed-ids",
-        "--queue-report",
-        str(report_path),
-        "--failed-targets",
-        str(failed_path),
-        str(queue),
-    ])
+    result = downloader.main(
+        [
+            "--no-cookies",
+            "--archive",
+            str(archive),
+            "--remove-completed-ids",
+            "--queue-report",
+            str(report_path),
+            "--failed-targets",
+            str(failed_path),
+            str(queue),
+        ]
+    )
 
     assert result == 1
     assert queue.read_text(encoding="utf-8") == "callback-failed\n"

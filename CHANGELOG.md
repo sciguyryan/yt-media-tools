@@ -1,5 +1,14 @@
 # Changelog
 
+## Downloader 1.17.0 - Section Slice
+
+- Add first-class derivative acquisition by chapter regular expression and validated time range.
+- Use section-aware output naming while preserving the selected output profile's home path.
+- Disable whole-item archive completion for partial-media runs and reject completed-ID queue mutation.
+- Record derivative section policy and archive state in explain output and run manifests.
+- Add explicit whole-item override for partial-media settings inherited from parameter profiles.
+- Add deterministic parsing, precedence, command, naming, archive, queue and explanation coverage.
+
 ## Downloader 1.16.0 - Live Line
 
 - Add explicit live-media policy with live-edge and supported live-from-start acquisition.

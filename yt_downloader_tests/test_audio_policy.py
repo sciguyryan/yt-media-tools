@@ -213,14 +213,19 @@ def test_main_resolves_source_only_audio_without_conversion(downloader, monkeypa
         return 0
 
     monkeypatch.setattr(downloader, "run", capture_run)
-    assert downloader.main([
-        "--no-cookies",
-        "--audio-only",
-        "--audio-source-codec",
-        "opus",
-        "--no-audio-source-fallback",
-        "abc",
-    ]) == 0
+    assert (
+        downloader.main(
+            [
+                "--no-cookies",
+                "--audio-only",
+                "--audio-source-codec",
+                "opus",
+                "--no-audio-source-fallback",
+                "abc",
+            ]
+        )
+        == 0
+    )
     assert captured[captured.index("-f") + 1] == "ba[acodec=opus]"
     assert "--extract-audio" not in captured
 
@@ -234,14 +239,19 @@ def test_main_resolves_explicit_audio_conversion(downloader, monkeypatch) -> Non
         return 0
 
     monkeypatch.setattr(downloader, "run", capture_run)
-    assert downloader.main([
-        "--no-cookies",
-        "--audio-format",
-        "mp3",
-        "--audio-quality",
-        "192K",
-        "abc",
-    ]) == 0
+    assert (
+        downloader.main(
+            [
+                "--no-cookies",
+                "--audio-format",
+                "mp3",
+                "--audio-quality",
+                "192K",
+                "abc",
+            ]
+        )
+        == 0
+    )
     assert captured[captured.index("-f") + 1] == "ba"
     assert captured[captured.index("--audio-format") + 1] == "mp3"
     assert captured[captured.index("--audio-quality") + 1] == "192K"

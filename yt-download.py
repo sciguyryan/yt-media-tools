@@ -37,7 +37,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.16.0"
+PROGRAM_VERSION = "1.17.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -64,6 +64,8 @@ PARAMETER_PROFILE_KEYS = (
     "live-from-start",
     "wait-for-video",
     "write-live-chat",
+    "chapter-sections",
+    "time-ranges",
     "limit-rate",
     "throttled-rate",
     "concurrent-fragments",
@@ -118,7 +120,21 @@ DEFAULT_EXTRACTOR_ARGS = ("youtube:player-client=default,-android_sdkless",)
 SUPPORTED_MERGE_CONTAINERS = frozenset({"avi", "flv", "mkv", "mov", "mp4", "webm"})
 SUPPORTED_AUDIO_FORMATS = frozenset({"best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"})
 SPONSORBLOCK_MARK_CATEGORIES = frozenset(
-    {"sponsor", "intro", "outro", "selfpromo", "preview", "filler", "interaction", "music_offtopic", "hook", "poi_highlight", "chapter", "all", "default"}
+    {
+        "sponsor",
+        "intro",
+        "outro",
+        "selfpromo",
+        "preview",
+        "filler",
+        "interaction",
+        "music_offtopic",
+        "hook",
+        "poi_highlight",
+        "chapter",
+        "all",
+        "default",
+    }
 )
 SPONSORBLOCK_REMOVE_CATEGORIES = SPONSORBLOCK_MARK_CATEGORIES - {"poi_highlight", "chapter"}
 DEFAULT_SPONSORBLOCK_REMOVE = "all"
@@ -212,6 +228,14 @@ EXAMPLES = r"""Examples:
     %(prog)s --live --wait-for-video 60-300 SCHEDULED_URL
     %(prog)s --live --write-live-chat LIVE_URL
 
+  Download derivative portions by chapter match or time range:
+    %(prog)s --chapter-section "^Introduction$" VIDEO_ID
+    %(prog)s --time-range 1:30 3:00 VIDEO_ID
+    %(prog)s --time-range -60 inf VIDEO_ID
+
+  Restore whole-item acquisition when a profile selects partial media:
+    %(prog)s -p excerpt --whole-item VIDEO_ID
+
   Remove IDs from a batch file immediately after each video is fully processed:
     %(prog)s --remove-completed-ids ids/batch.txt
     %(prog)s --remove-completed-ids --input-file ids/batch.txt
@@ -291,6 +315,8 @@ class DownloadPolicy:
     live_from_start: bool = False
     wait_for_video: str | None = None
     write_live_chat: bool = False
+    chapter_sections: tuple[str, ...] = ()
+    time_ranges: tuple[str, ...] = ()
     limit_rate: str = DEFAULT_DOWNLOAD_RATE
     throttled_rate: str | None = None
     concurrent_fragments: int | None = None
@@ -336,6 +362,16 @@ class DownloadPolicy:
     def playlist_item_spec(self) -> str | None:
         """Return the canonical yt-dlp playlist item specification, if constrained."""
         return ",".join(self.playlist_items) if self.playlist_items else None
+
+    @property
+    def partial_media(self) -> bool:
+        """Return whether this invocation produces derivative partial-media outputs."""
+        return bool(self.chapter_sections or self.time_ranges)
+
+    @property
+    def download_sections(self) -> tuple[str, ...]:
+        """Return canonical yt-dlp download-section expressions in policy order."""
+        return self.chapter_sections + tuple(f"*{value}" for value in self.time_ranges)
 
     @property
     def effective_format_selector(self) -> str:
@@ -630,8 +666,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=tuple(sorted(SUPPORTED_MERGE_CONTAINERS)),
         metavar="CONTAINER",
         help=(
-            "Choose the container used when yt-dlp must merge separate streams; "
-            "does not force remuxing or transcoding."
+            "Choose the container used when yt-dlp must merge separate streams; does not force remuxing or transcoding."
         ),
     )
     audio_only_group = parser.add_mutually_exclusive_group()
@@ -884,6 +919,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable live-chat sidecar acquisition inherited from a parameter profile.",
     )
     parser.add_argument(
+        "--chapter-section",
+        dest="chapter_sections",
+        action="append",
+        metavar="REGEX",
+        help=(
+            "Download chapters matching REGEX as derivative section outputs. Repeat to add further chapter expressions."
+        ),
+    )
+    parser.add_argument(
+        "--time-range",
+        dest="time_ranges",
+        action="append",
+        nargs=2,
+        metavar=("START", "STOP"),
+        help=(
+            "Download derivative media from START to STOP. Timestamps accept seconds or "
+            "colon-separated clock values; STOP may be 'inf'. Repeat for further ranges."
+        ),
+    )
+    parser.add_argument(
+        "--whole-item",
+        action="store_true",
+        help="Disable chapter/time-range selection inherited from a parameter profile.",
+    )
+    parser.add_argument(
         "--limit-rate",
         metavar="RATE",
         help=f"Limit download rate using yt-dlp RATE syntax (built-in default: {DEFAULT_DOWNLOAD_RATE}).",
@@ -952,8 +1012,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         metavar="INDEX",
         help=(
-            "Select one 1-based playlist INDEX. Repeat to select several entries; "
-            "negative indices count from the end."
+            "Select one 1-based playlist INDEX. Repeat to select several entries; negative indices count from the end."
         ),
     )
     parser.add_argument(
@@ -1064,10 +1123,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--queue-report",
         type=Path,
         metavar="FILE",
-        help=(
-            "Write a JSON queue outcome report to FILE. Requires --remove-completed-ids "
-            "and file-backed input."
-        ),
+        help=("Write a JSON queue outcome report to FILE. Requires --remove-completed-ids and file-backed input."),
     )
     parser.add_argument(
         "--failed-targets",
@@ -1283,9 +1339,7 @@ def resolve_profile(requested: str | None) -> OutputProfile | None:
 def validate_parameter_profile_name(name: str) -> str:
     """Validate a parameter-profile name used as a JSON object key."""
     if not PARAMETER_PROFILE_NAME_RE.fullmatch(name):
-        raise ValueError(
-            f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'"
-        )
+        raise ValueError(f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'")
     return name
 
 
@@ -1489,6 +1543,78 @@ def _cli_playlist_items(args: argparse.Namespace) -> list[str] | None:
     return list(values) if values else None
 
 
+def _normalise_section_timestamp(value: object, *, allow_inf: bool) -> str:
+    """Validate one partial-media timestamp without silently changing its meaning."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("section timestamp must be a non-empty string")
+    text = value.strip().lower()
+    if allow_inf and text == "inf":
+        return text
+    if not re.fullmatch(r"-?(?:\d+(?:\.\d+)?|\d+:[0-5]?\d(?:\.\d+)?|\d+:[0-5]?\d:[0-5]?\d(?:\.\d+)?)", text):
+        raise ValueError(f"invalid section timestamp {value!r}")
+    body = text[1:] if text.startswith("-") else text
+    parts = body.split(":")
+    if len(parts) >= 2:
+        if int(parts[-2]) >= 60:
+            raise ValueError(f"invalid section timestamp {value!r}: minutes must be below 60")
+        if float(parts[-1]) >= 60:
+            raise ValueError(f"invalid section timestamp {value!r}: seconds must be below 60")
+    return text
+
+
+def _normalise_time_range(value: object) -> str:
+    """Validate one START/STOP pair and return yt-dlp's canonical range syntax."""
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise ValueError("time range must contain exactly START and STOP")
+    start = _normalise_section_timestamp(value[0], allow_inf=False)
+    stop = _normalise_section_timestamp(value[1], allow_inf=True)
+    if stop != "inf" and not start.startswith("-") and not stop.startswith("-"):
+
+        def seconds(text: str) -> float:
+            result = 0.0
+            for part in text.split(":"):
+                result = result * 60 + float(part)
+            return result
+
+        if seconds(stop) <= seconds(start):
+            raise ValueError("time range STOP must be later than START")
+    return f"{start}-{stop}"
+
+
+def _validate_chapter_sections_setting(value: object) -> list[str]:
+    """Validate chapter regexes from a parameter profile."""
+    if not isinstance(value, list) or not value:
+        raise ValueError("parameter setting 'chapter-sections' must be a non-empty JSON array")
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError("parameter setting 'chapter-sections' entries must be non-empty strings")
+        try:
+            re.compile(item)
+        except re.error as exc:
+            raise ValueError(f"invalid chapter section regular expression {item!r}: {exc}") from exc
+        result.append(item)
+    return result
+
+
+def _validate_time_ranges_setting(value: object) -> list[str]:
+    """Validate time ranges from a parameter profile."""
+    if not isinstance(value, list) or not value:
+        raise ValueError("parameter setting 'time-ranges' must be a non-empty JSON array")
+    result: list[str] = []
+    for item in value:
+        if isinstance(item, str):
+            match = re.fullmatch(r"(-?[^-]+)-(-?.+)", item.strip(), re.IGNORECASE)
+            if match is None:
+                raise ValueError(f"invalid time-ranges entry {item!r}")
+            result.append(_normalise_time_range((match.group(1), match.group(2))))
+        elif isinstance(item, list) and len(item) == 2:
+            result.append(_normalise_time_range(item))
+        else:
+            raise ValueError("parameter setting 'time-ranges' entries must be strings or two-item arrays")
+    return result
+
+
 def _validate_parameter_setting(key: str, value: object) -> object:
     """Validate one parameter-profile setting and return its normalised value."""
     if key == "resolution":
@@ -1551,6 +1677,10 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         return _validate_playlist_items_setting(value)
     if key == "wait-for-video":
         return _validate_wait_for_video_setting(value)
+    if key == "chapter-sections":
+        return _validate_chapter_sections_setting(value)
+    if key == "time-ranges":
+        return _validate_time_ranges_setting(value)
     if key in {"sub-langs", "sub-format"}:
         return _validate_nonempty_string_setting(key, value)
     if key in {"sponsorblock-mark", "sponsorblock-remove"}:
@@ -1596,9 +1726,7 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
     cookie_keys = {"cookies", "cookies-from-browser", "no-cookies"} & set(validated)
     if len(cookie_keys) > 1:
         rendered = ", ".join(repr(key) for key in sorted(cookie_keys))
-        raise ValueError(
-            f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}"
-        )
+        raise ValueError(f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}")
     if (
         "min-resolution" in validated
         and "max-resolution" in validated
@@ -1636,8 +1764,7 @@ def load_parameter_profiles(path: Path, *, allow_missing: bool) -> dict[str, Par
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
         raise ValueError(
-            f"invalid defaults JSON in {path}: {exc.msg} "
-            f"at line {exc.lineno}, column {exc.colno}"
+            f"invalid defaults JSON in {path}: {exc.msg} at line {exc.lineno}, column {exc.colno}"
         ) from exc
     except (OSError, UnicodeDecodeError) as exc:
         raise ValueError(f"unable to read defaults file {path}: {exc}") from exc
@@ -1732,6 +1859,12 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
             settings[key] = _validate_parameter_setting(key, value)
     if args.retry_sleep is not None:
         settings["retry-sleep"] = _validate_parameter_setting("retry-sleep", args.retry_sleep)
+    if args.chapter_sections is not None:
+        settings["chapter-sections"] = _validate_parameter_setting("chapter-sections", args.chapter_sections)
+    if args.time_ranges is not None:
+        settings["time-ranges"] = [_normalise_time_range(value) for value in args.time_ranges]
+    if args.whole_item:
+        settings["_whole-item"] = True
     if args.no_wait_for_video:
         settings["wait-for-video"] = None
     if args.archive is not None:
@@ -1796,7 +1929,10 @@ def merge_parameter_settings(
     if cli_settings.get("live") is False:
         for key in ("live-from-start", "wait-for-video", "write-live-chat"):
             merged.pop(key, None)
-    merged.update(cli_settings)
+    if cli_settings.get("_whole-item") is True:
+        merged.pop("chapter-sections", None)
+        merged.pop("time-ranges", None)
+    merged.update({key: value for key, value in cli_settings.items() if key != "_whole-item"})
     if merged.get("wait-for-video") is None:
         merged.pop("wait-for-video", None)
     return merged
@@ -1860,8 +1996,7 @@ def write_parameter_profile(
         profiles = load_parameter_profiles(path, allow_missing=False)
         if name in profiles and not overwrite:
             raise ValueError(
-                f"parameter profile {name!r} already exists in {path}; "
-                "use --overwrite-profile to replace it explicitly"
+                f"parameter profile {name!r} already exists in {path}; use --overwrite-profile to replace it explicitly"
             )
         raw_profiles: dict[str, object] = {profile.name: dict(profile.settings) for profile in profiles.values()}
     else:
@@ -1957,6 +2092,11 @@ def resolve_parameter_policy(
     live_from_start = bool(settings.get("live-from-start", False))
     wait_for_video = str(settings["wait-for-video"]) if "wait-for-video" in settings else None
     write_live_chat = bool(settings.get("write-live-chat", False))
+    chapter_sections = tuple(settings.get("chapter-sections", ()))
+    time_ranges = tuple(settings.get("time-ranges", ()))
+    partial_media = bool(chapter_sections or time_ranges)
+    if partial_media and live:
+        raise ValueError("partial-media selection cannot be combined with live mode")
     if (live_from_start or wait_for_video is not None or write_live_chat) and not live:
         raise ValueError("live-from-start, wait-for-video and write-live-chat require explicit live mode")
 
@@ -1982,21 +2122,17 @@ def resolve_parameter_policy(
             live_from_start=live_from_start,
             wait_for_video=wait_for_video,
             write_live_chat=write_live_chat,
+            chapter_sections=chapter_sections,
+            time_ranges=time_ranges,
             limit_rate=str(settings.get("limit-rate", DEFAULT_DOWNLOAD_RATE)),
             throttled_rate=(str(settings["throttled-rate"]) if "throttled-rate" in settings else None),
             concurrent_fragments=(
                 int(settings["concurrent-fragments"]) if "concurrent-fragments" in settings else None
             ),
             retries=(str(settings["retries"]) if "retries" in settings else None),
-            fragment_retries=(
-                str(settings["fragment-retries"]) if "fragment-retries" in settings else None
-            ),
-            file_access_retries=(
-                str(settings["file-access-retries"]) if "file-access-retries" in settings else None
-            ),
-            extractor_retries=(
-                str(settings["extractor-retries"]) if "extractor-retries" in settings else None
-            ),
+            fragment_retries=(str(settings["fragment-retries"]) if "fragment-retries" in settings else None),
+            file_access_retries=(str(settings["file-access-retries"]) if "file-access-retries" in settings else None),
+            extractor_retries=(str(settings["extractor-retries"]) if "extractor-retries" in settings else None),
             retry_sleep=tuple(settings.get("retry-sleep", ())),
             archive_file=Path(str(settings.get("archive", ARCHIVE_FILE))).expanduser(),
             temp_path=Path(str(settings.get("temp-path", TEMP_DIR))).expanduser(),
@@ -2177,7 +2313,9 @@ def append_output_record(event_file: Path, media_id: str, output_path: str) -> N
 
 def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputSource) -> None:
     """Validate queue mutation and reporting options as one coherent mode."""
-    queue_outputs_requested = getattr(args, "queue_report", None) is not None or getattr(args, "failed_targets", None) is not None
+    queue_outputs_requested = (
+        getattr(args, "queue_report", None) is not None or getattr(args, "failed_targets", None) is not None
+    )
     if queue_outputs_requested and not args.remove_completed_ids:
         raise ValueError("--queue-report and --failed-targets require --remove-completed-ids")
     if not args.remove_completed_ids:
@@ -2248,11 +2386,7 @@ def queue_run_report(
     requested_set = set(requested)
     remaining_set = set(remaining)
     already_archived = [target for target in requested if target in archived_before]
-    completed = [
-        target
-        for target in requested
-        if target not in archived_before and target not in remaining_set
-    ]
+    completed = [target for target in requested if target not in archived_before and target not in remaining_set]
     unresolved = [target for target in requested if target in remaining_set]
     return {
         "kind": "yt-download-queue-report",
@@ -2336,9 +2470,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def output_manifest_entries(
-    records: Sequence[dict[str, str]], *, hash_outputs: bool
-) -> list[dict[str, object]]:
+def output_manifest_entries(records: Sequence[dict[str, str]], *, hash_outputs: bool) -> list[dict[str, object]]:
     """Describe completed primary outputs and optionally calculate SHA-256 hashes."""
     entries: list[dict[str, object]] = []
     for record in records:
@@ -2413,6 +2545,7 @@ def run_manifest_payload(
         "input": {
             "targets": targets,
             "targets_known": targets is not None,
+            "derivative_partial_media": plan.policy.partial_media,
         },
         "resolved_plan": explain_plan_payload(plan),
         "queue": queue_report,
@@ -2500,6 +2633,11 @@ def create_download_plan(
         raise ValueError(
             "playlist item selection cannot be combined with --remove-completed-ids; "
             "queue removal tracks completed target IDs, not completion of a playlist container target"
+        )
+    if remove_completed_ids and policy.partial_media:
+        raise ValueError(
+            "partial-media selection cannot be combined with --remove-completed-ids; "
+            "a derivative section does not establish completion of the source target"
         )
     return DownloadPlan(
         executable=executable,
@@ -2635,6 +2773,10 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "live_from_start": plan.policy.live_from_start,
             "wait_for_video": plan.policy.wait_for_video,
             "write_live_chat": plan.policy.write_live_chat,
+            "partial_media": plan.policy.partial_media,
+            "chapter_sections": list(plan.policy.chapter_sections),
+            "time_ranges": list(plan.policy.time_ranges),
+            "download_sections": list(plan.policy.download_sections),
             "limit_rate": plan.policy.limit_rate,
             "throttled_rate": plan.policy.throttled_rate,
             "concurrent_fragments": plan.policy.concurrent_fragments,
@@ -2654,6 +2796,7 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
         "output_profile": output_profile,
         "paths": {
             "archive": str(plan.policy.archive_file),
+            "archive_enabled": not plan.policy.partial_media,
             "temporary": str(plan.policy.temp_path),
         },
         "queue": {
@@ -2736,13 +2879,12 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"Playlist:          {policy['playlist'] if policy['playlist'] is not None else 'yt-dlp default'}",
         f"Playlist items:    {policy['playlist_item_spec'] or 'all'}",
         f"Reverse playlist:  {policy['reverse_playlist']}",
+        f"Partial media:     {policy['partial_media']}",
+        f"Chapter sections:  {', '.join(policy['chapter_sections']) if policy['chapter_sections'] else 'none'}",
+        f"Time ranges:       {', '.join(policy['time_ranges']) if policy['time_ranges'] else 'none'}",
         f"Cookies:           {authentication['source']}"
         + (f" ({authentication['cookies_file']})" if authentication["cookies_file"] else "")
-        + (
-            f" ({authentication['cookies_from_browser']})"
-            if authentication["cookies_from_browser"]
-            else ""
-        ),
+        + (f" ({authentication['cookies_from_browser']})" if authentication["cookies_from_browser"] else ""),
         f"Limit rate:        {policy['limit_rate']}",
         f"Throttled rate:    {policy['throttled_rate'] or 'yt-dlp default'}",
         f"Concurrent frags:  {policy['concurrent_fragments'] or 'yt-dlp default'}",
@@ -2785,9 +2927,11 @@ def build_yt_dlp_command(
         "-r",
         policy.limit_rate,
         "--mtime",
-        "--download-archive",
-        str(policy.archive_file),
     ]
+    if policy.partial_media:
+        command.append("--no-download-archive")
+    else:
+        command.extend(("--download-archive", str(policy.archive_file)))
     if not (policy.audio_only or policy.audio_format is not None):
         command.append("--video-multistreams")
     command.append("--audio-multistreams")
@@ -2856,10 +3000,18 @@ def build_yt_dlp_command(
         command.extend(("--cookies-from-browser", cookies_from_browser))
 
     if profile is not None:
-        if profile.output is not None:
+        if profile.output is not None and not policy.partial_media:
             command.extend(("--output", profile.output))
         if profile.path is not None:
             command.extend(("--paths", f"home:{profile.path}"))
+
+    if policy.partial_media:
+        command.extend(
+            (
+                "--output",
+                "%(title)s [%(id)s] [section %(section_number)03d - %(section_title)s].%(ext)s",
+            )
+        )
 
     command.extend(("--paths", f"temp:{policy.temp_path}"))
     for extractor_arg in policy.extractor_args:
@@ -2873,6 +3025,9 @@ def build_yt_dlp_command(
         command.extend(("--wait-for-video", policy.wait_for_video))
     elif policy.live:
         command.append("--no-wait-for-video")
+
+    for expression in policy.download_sections:
+        command.extend(("--download-sections", expression))
 
     if policy.playlist_item_spec is not None:
         command.extend(("-I", policy.playlist_item_spec))
@@ -2988,9 +3143,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         selection_requires_existing_defaults = explicit_defaults and not (
-            args.generate_profile is not None
-            and args.write_profile
-            and args.parameter_profile is None
+            args.generate_profile is not None and args.write_profile and args.parameter_profile is None
         )
         selected_parameters = select_parameter_profile(
             args.parameter_profile,
