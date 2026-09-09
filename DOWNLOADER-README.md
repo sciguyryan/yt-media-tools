@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.10.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.11.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -130,20 +130,16 @@ The shipped `defaults.json` contains `best`, `4k`, `1440p` and `playlist`. These
   "version": 1,
   "profiles": {
     "best": {
-      "resolution": "best",
-      "format": "bv+ba/best"
+      "resolution": "best"
     },
     "4k": {
-      "resolution": "2160p",
-      "format": "bv+ba/best"
+      "resolution": "2160p"
     },
     "1440p": {
-      "resolution": "1440p",
-      "format": "bv+ba/best"
+      "resolution": "1440p"
     },
     "playlist": {
       "resolution": "1080p",
-      "format": "bv+ba/best",
       "playlist": true
     }
   }
@@ -250,6 +246,53 @@ The corresponding parameter-profile keys are `min-resolution`, `max-resolution`,
 Raw `-f/--format` remains the expert selector authority. Downloader rejects a raw selector combined with hard min/max resolution or FPS constraints instead of silently editing the raw expression. Sorting preferences and merge-container policy may still accompany a raw selector because they do not rewrite it.
 
 Use `--explain` or `--explain-json` to inspect the exact generated selector and sort order before downloading.
+
+## Associated artefacts and metadata
+
+Downloader treats the downloaded media as the primary requested output. Subtitle files, thumbnails and info JSON are optional associated artefacts unless explicitly requested. The historical embedded metadata, embedded chapter and SponsorBlock-removal defaults are preserved, but they are now visible typed policy rather than hard-coded command fragments.
+
+Manual and automatic subtitles can be selected independently. Language and format selectors are passed through to yt-dlp's dedicated subtitle options:
+
+```bash
+./yt-download.py --write-subs --sub-langs 'en.*,cy' --sub-format 'srt/best' VIDEO_ID
+./yt-download.py --write-auto-subs --sub-langs 'en.*' VIDEO_ID
+```
+
+Embedding is a separate choice, so a sidecar can be retained while subtitles are also embedded when the output container supports it:
+
+```bash
+./yt-download.py --write-subs --sub-langs en --embed-subs VIDEO_ID
+```
+
+Thumbnail and information-JSON sidecars are opt-in:
+
+```bash
+./yt-download.py --write-thumbnail --write-info-json VIDEO_ID
+```
+
+Thumbnail embedding is also independent:
+
+```bash
+./yt-download.py --embed-thumbnail VIDEO_ID
+```
+
+Metadata and chapters remain embedded by default for compatibility with earlier Downloader releases. Either can be disabled explicitly or from a parameter profile:
+
+```bash
+./yt-download.py --no-embed-metadata --no-embed-chapters VIDEO_ID
+```
+
+SponsorBlock processing remains enabled by default with removal category `all`, preserving the established Downloader command. Marking and removal categories can be selected independently:
+
+```bash
+./yt-download.py --sponsorblock-mark sponsor,intro --sponsorblock-remove selfpromo VIDEO_ID
+```
+
+`--no-sponsorblock` disables both marking and removal. Category expressions are validated against the categories supported by yt-dlp; `poi_highlight` and `chapter` are accepted for marking but rejected for removal because yt-dlp does not permit them there.
+
+The corresponding parameter-profile keys are `write-subs`, `write-auto-subs`, `sub-langs`, `sub-format`, `embed-subs`, `write-thumbnail`, `embed-thumbnail`, `write-info-json`, `embed-metadata`, `embed-chapters`, `sponsorblock`, `sponsorblock-mark` and `sponsorblock-remove`. Boolean settings have matching positive and negative CLI forms so explicit CLI choices can override a selected profile in either direction.
+
+`--explain` and `--explain-json` report all of these resolved choices. Later integrity and manifest work can therefore distinguish the primary media output from explicitly requested associated artefacts without inferring policy from the final command.
 
 ## Cookies
 

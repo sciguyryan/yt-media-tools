@@ -34,7 +34,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.10.0"
+PROGRAM_VERSION = "1.11.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -76,6 +76,19 @@ PARAMETER_PROFILE_KEYS = (
     "preferred-hdr",
     "preferred-audio-channels",
     "merge-container",
+    "write-subs",
+    "write-auto-subs",
+    "sub-langs",
+    "sub-format",
+    "embed-subs",
+    "write-thumbnail",
+    "embed-thumbnail",
+    "write-info-json",
+    "embed-metadata",
+    "embed-chapters",
+    "sponsorblock",
+    "sponsorblock-mark",
+    "sponsorblock-remove",
 )
 
 DEFAULT_VIDEO_ID_FILE = Path("./ids.txt")
@@ -88,6 +101,25 @@ DEFAULT_DOWNLOAD_RATE = "20M"
 FORMAT_SELECTOR = "bv+ba/best"
 DEFAULT_EXTRACTOR_ARGS = ("youtube:player-client=default,-android_sdkless",)
 SUPPORTED_MERGE_CONTAINERS = frozenset({"avi", "flv", "mkv", "mov", "mp4", "webm"})
+SPONSORBLOCK_MARK_CATEGORIES = frozenset(
+    {
+        "sponsor",
+        "intro",
+        "outro",
+        "selfpromo",
+        "preview",
+        "filler",
+        "interaction",
+        "music_offtopic",
+        "hook",
+        "poi_highlight",
+        "chapter",
+        "all",
+        "default",
+    }
+)
+SPONSORBLOCK_REMOVE_CATEGORIES = SPONSORBLOCK_MARK_CATEGORIES - {"poi_highlight", "chapter"}
+DEFAULT_SPONSORBLOCK_REMOVE = "all"
 HARD_FORMAT_CONSTRAINT_KEYS = frozenset(
     {
         "min-resolution",
@@ -138,6 +170,17 @@ EXAMPLES = r"""Examples:
   Apply typed format constraints and preferences:
     %(prog)s --min-resolution 1080 --max-resolution 2160 --preferred-video-codec av01 VIDEO_ID
     %(prog)s --max-fps 60 --preferred-fps 60 --preferred-hdr hdr --merge-container mkv VIDEO_ID
+
+  Select and embed subtitles while retaining a sidecar copy:
+    %(prog)s --write-subs --sub-langs "en.*,cy" --sub-format "srt/best" --embed-subs VIDEO_ID
+
+  Write metadata sidecars and control embedded metadata/chapters:
+    %(prog)s --write-info-json --write-thumbnail VIDEO_ID
+    %(prog)s --no-embed-metadata --no-embed-chapters VIDEO_ID
+
+  Mark or remove specific SponsorBlock categories, or disable SponsorBlock entirely:
+    %(prog)s --sponsorblock-mark sponsor,intro --sponsorblock-remove selfpromo VIDEO_ID
+    %(prog)s --no-sponsorblock VIDEO_ID
 
   Reverse playlist traversal:
     %(prog)s --rev PLAYLIST_URL
@@ -234,6 +277,19 @@ class DownloadPolicy:
     preferred_hdr: str | None = None
     preferred_audio_channels: int | None = None
     merge_container: str | None = None
+    write_subtitles: bool = False
+    write_auto_subtitles: bool = False
+    subtitle_languages: str | None = None
+    subtitle_format: str | None = None
+    embed_subtitles: bool = False
+    write_thumbnail: bool = False
+    embed_thumbnail: bool = False
+    write_info_json: bool = False
+    embed_metadata: bool = True
+    embed_chapters: bool = True
+    sponsorblock: bool = True
+    sponsorblock_mark: str | None = None
+    sponsorblock_remove: str | None = DEFAULT_SPONSORBLOCK_REMOVE
 
     @property
     def effective_format_selector(self) -> str:
@@ -468,6 +524,152 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Choose the container used when yt-dlp must merge separate streams; does not force remuxing or transcoding."
         ),
+    )
+    subtitle_write_group = parser.add_mutually_exclusive_group()
+    subtitle_write_group.add_argument(
+        "--write-subs",
+        dest="write_subs",
+        action="store_true",
+        default=None,
+        help="Write manually provided subtitles as sidecar files.",
+    )
+    subtitle_write_group.add_argument(
+        "--no-write-subs",
+        dest="write_subs",
+        action="store_false",
+        help="Do not write manually provided subtitle sidecars.",
+    )
+    auto_subtitle_group = parser.add_mutually_exclusive_group()
+    auto_subtitle_group.add_argument(
+        "--write-auto-subs",
+        dest="write_auto_subs",
+        action="store_true",
+        default=None,
+        help="Write automatically generated subtitles when available.",
+    )
+    auto_subtitle_group.add_argument(
+        "--no-write-auto-subs",
+        dest="write_auto_subs",
+        action="store_false",
+        help="Do not write automatically generated subtitles.",
+    )
+    parser.add_argument(
+        "--sub-langs",
+        metavar="LANGS",
+        help="Select subtitle languages using yt-dlp's comma-separated language/regex syntax.",
+    )
+    parser.add_argument(
+        "--sub-format",
+        metavar="FORMAT",
+        help="Select subtitle formats using yt-dlp's preference syntax, such as 'srt/best'.",
+    )
+    embed_subtitle_group = parser.add_mutually_exclusive_group()
+    embed_subtitle_group.add_argument(
+        "--embed-subs",
+        dest="embed_subs",
+        action="store_true",
+        default=None,
+        help="Embed selected subtitles into supported output containers.",
+    )
+    embed_subtitle_group.add_argument(
+        "--no-embed-subs",
+        dest="embed_subs",
+        action="store_false",
+        help="Do not embed subtitles into the media file.",
+    )
+    thumbnail_write_group = parser.add_mutually_exclusive_group()
+    thumbnail_write_group.add_argument(
+        "--write-thumbnail",
+        dest="write_thumbnail",
+        action="store_true",
+        default=None,
+        help="Write the selected thumbnail as a sidecar file.",
+    )
+    thumbnail_write_group.add_argument(
+        "--no-write-thumbnail",
+        dest="write_thumbnail",
+        action="store_false",
+        help="Do not write a thumbnail sidecar.",
+    )
+    thumbnail_embed_group = parser.add_mutually_exclusive_group()
+    thumbnail_embed_group.add_argument(
+        "--embed-thumbnail",
+        dest="embed_thumbnail",
+        action="store_true",
+        default=None,
+        help="Embed the thumbnail as cover art when supported.",
+    )
+    thumbnail_embed_group.add_argument(
+        "--no-embed-thumbnail",
+        dest="embed_thumbnail",
+        action="store_false",
+        help="Do not embed a thumbnail.",
+    )
+    info_json_group = parser.add_mutually_exclusive_group()
+    info_json_group.add_argument(
+        "--write-info-json",
+        dest="write_info_json",
+        action="store_true",
+        default=None,
+        help="Write yt-dlp's media information JSON as a sidecar file.",
+    )
+    info_json_group.add_argument(
+        "--no-write-info-json",
+        dest="write_info_json",
+        action="store_false",
+        help="Do not write an information JSON sidecar.",
+    )
+    metadata_group = parser.add_mutually_exclusive_group()
+    metadata_group.add_argument(
+        "--embed-metadata",
+        dest="embed_metadata",
+        action="store_true",
+        default=None,
+        help="Embed metadata into the output media file (built-in default: enabled).",
+    )
+    metadata_group.add_argument(
+        "--no-embed-metadata",
+        dest="embed_metadata",
+        action="store_false",
+        help="Disable Downloader's built-in metadata embedding.",
+    )
+    chapter_group = parser.add_mutually_exclusive_group()
+    chapter_group.add_argument(
+        "--embed-chapters",
+        dest="embed_chapters",
+        action="store_true",
+        default=None,
+        help="Embed chapter markers into the output media file (built-in default: enabled).",
+    )
+    chapter_group.add_argument(
+        "--no-embed-chapters",
+        dest="embed_chapters",
+        action="store_false",
+        help="Disable Downloader's built-in chapter embedding.",
+    )
+    sponsorblock_group = parser.add_mutually_exclusive_group()
+    sponsorblock_group.add_argument(
+        "--sponsorblock",
+        dest="sponsorblock",
+        action="store_true",
+        default=None,
+        help="Enable SponsorBlock processing (built-in default: enabled with remove=all).",
+    )
+    sponsorblock_group.add_argument(
+        "--no-sponsorblock",
+        dest="sponsorblock",
+        action="store_false",
+        help="Disable SponsorBlock marking and removal.",
+    )
+    parser.add_argument(
+        "--sponsorblock-mark",
+        metavar="CATS",
+        help="Create chapters for validated SponsorBlock categories.",
+    )
+    parser.add_argument(
+        "--sponsorblock-remove",
+        metavar="CATS",
+        help="Remove validated SponsorBlock categories (built-in default: all).",
     )
     parser.add_argument(
         "--limit-rate",
@@ -873,6 +1075,31 @@ def _validate_codec_setting(key: str, value: object) -> str:
     return value.strip().lower()
 
 
+def _validate_nonempty_string_setting(key: str, value: object) -> str:
+    """Validate an intentionally opaque non-empty yt-dlp string setting."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"parameter setting {key!r} must be a non-empty JSON string")
+    return value.strip()
+
+
+def _validate_sponsorblock_categories(key: str, value: object) -> str:
+    """Validate SponsorBlock category expressions while preserving exclusion order."""
+    text = _validate_nonempty_string_setting(key, value)
+    allowed = SPONSORBLOCK_MARK_CATEGORIES if key == "sponsorblock-mark" else SPONSORBLOCK_REMOVE_CATEGORIES
+    categories = [item.strip() for item in text.split(",")]
+    if any(not item for item in categories):
+        raise ValueError(f"parameter setting {key!r} contains an empty SponsorBlock category")
+    for item in categories:
+        category = item[1:] if item.startswith("-") else item
+        if category not in allowed:
+            supported = ", ".join(sorted(allowed))
+            raise ValueError(
+                f"parameter setting {key!r} contains unsupported SponsorBlock category {category!r}; "
+                f"expected one of: {supported}"
+            )
+    return ",".join(categories)
+
+
 def _validate_parameter_setting(key: str, value: object) -> object:
     """Validate one parameter-profile setting and return its normalised value."""
     if key == "resolution":
@@ -925,7 +1152,24 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         return _validate_retry_setting(key, value)
     if key in {"retry-sleep", "extractor-args"}:
         return _validate_string_list_setting(key, value)
-    if key in {"no-cookies", "reverse-playlist", "playlist"}:
+    if key in {"sub-langs", "sub-format"}:
+        return _validate_nonempty_string_setting(key, value)
+    if key in {"sponsorblock-mark", "sponsorblock-remove"}:
+        return _validate_sponsorblock_categories(key, value)
+    if key in {
+        "no-cookies",
+        "reverse-playlist",
+        "playlist",
+        "write-subs",
+        "write-auto-subs",
+        "embed-subs",
+        "write-thumbnail",
+        "embed-thumbnail",
+        "write-info-json",
+        "embed-metadata",
+        "embed-chapters",
+        "sponsorblock",
+    }:
         if not isinstance(value, bool):
             raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
         return value
@@ -1056,6 +1300,10 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         "preferred-hdr": args.preferred_hdr,
         "preferred-audio-channels": args.preferred_audio_channels,
         "merge-container": args.merge_container,
+        "sub-langs": args.sub_langs,
+        "sub-format": args.sub_format,
+        "sponsorblock-mark": args.sponsorblock_mark,
+        "sponsorblock-remove": args.sponsorblock_remove,
     }
     for key, value in scalar_settings.items():
         if value is not None:
@@ -1068,6 +1316,19 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
         settings["temp-path"] = str(args.temp_path.expanduser())
     if args.extractor_args is not None:
         settings["extractor-args"] = _validate_parameter_setting("extractor-args", args.extractor_args)
+    for key, value in (
+        ("write-subs", args.write_subs),
+        ("write-auto-subs", args.write_auto_subs),
+        ("embed-subs", args.embed_subs),
+        ("write-thumbnail", args.write_thumbnail),
+        ("embed-thumbnail", args.embed_thumbnail),
+        ("write-info-json", args.write_info_json),
+        ("embed-metadata", args.embed_metadata),
+        ("embed-chapters", args.embed_chapters),
+        ("sponsorblock", args.sponsorblock),
+    ):
+        if value is not None:
+            settings[key] = value
     if args.reverse_playlist is not None:
         settings["reverse-playlist"] = args.reverse_playlist
     if args.playlist is not None:
@@ -1094,6 +1355,12 @@ def merge_parameter_settings(
     if cookie_keys := ({"cookies", "cookies-from-browser", "no-cookies"} & set(cli_settings)):
         for key in {"cookies", "cookies-from-browser", "no-cookies"} - cookie_keys:
             merged.pop(key, None)
+    sponsor_category_keys = {"sponsorblock-mark", "sponsorblock-remove"} & set(cli_settings)
+    if sponsor_category_keys and "sponsorblock" not in cli_settings:
+        merged.pop("sponsorblock", None)
+    if cli_settings.get("sponsorblock") is False:
+        merged.pop("sponsorblock-mark", None)
+        merged.pop("sponsorblock-remove", None)
     merged.update(cli_settings)
     return merged
 
@@ -1263,6 +1530,23 @@ def resolve_parameter_policy(
                 int(settings["preferred-audio-channels"]) if "preferred-audio-channels" in settings else None
             ),
             merge_container=(str(settings["merge-container"]) if "merge-container" in settings else None),
+            write_subtitles=bool(settings.get("write-subs", False)),
+            write_auto_subtitles=bool(settings.get("write-auto-subs", False)),
+            subtitle_languages=(str(settings["sub-langs"]) if "sub-langs" in settings else None),
+            subtitle_format=(str(settings["sub-format"]) if "sub-format" in settings else None),
+            embed_subtitles=bool(settings.get("embed-subs", False)),
+            write_thumbnail=bool(settings.get("write-thumbnail", False)),
+            embed_thumbnail=bool(settings.get("embed-thumbnail", False)),
+            write_info_json=bool(settings.get("write-info-json", False)),
+            embed_metadata=bool(settings.get("embed-metadata", True)),
+            embed_chapters=bool(settings.get("embed-chapters", True)),
+            sponsorblock=bool(settings.get("sponsorblock", True)),
+            sponsorblock_mark=(str(settings["sponsorblock-mark"]) if "sponsorblock-mark" in settings else None),
+            sponsorblock_remove=(
+                str(settings["sponsorblock-remove"])
+                if "sponsorblock-remove" in settings
+                else DEFAULT_SPONSORBLOCK_REMOVE
+            ),
         ),
         cookies_file,
         cookies_from_browser,
@@ -1539,6 +1823,19 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "preferred_hdr": plan.policy.preferred_hdr,
             "preferred_audio_channels": plan.policy.preferred_audio_channels,
             "merge_container": plan.policy.merge_container,
+            "write_subtitles": plan.policy.write_subtitles,
+            "write_auto_subtitles": plan.policy.write_auto_subtitles,
+            "subtitle_languages": plan.policy.subtitle_languages,
+            "subtitle_format": plan.policy.subtitle_format,
+            "embed_subtitles": plan.policy.embed_subtitles,
+            "write_thumbnail": plan.policy.write_thumbnail,
+            "embed_thumbnail": plan.policy.embed_thumbnail,
+            "write_info_json": plan.policy.write_info_json,
+            "embed_metadata": plan.policy.embed_metadata,
+            "embed_chapters": plan.policy.embed_chapters,
+            "sponsorblock": plan.policy.sponsorblock,
+            "sponsorblock_mark": plan.policy.sponsorblock_mark,
+            "sponsorblock_remove": plan.policy.sponsorblock_remove,
             "reverse_playlist": plan.policy.reverse_playlist,
             "playlist": plan.policy.playlist,
             "limit_rate": plan.policy.limit_rate,
@@ -1620,6 +1917,19 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"HDR preference:    {policy['preferred_hdr'] or 'yt-dlp default'}",
         f"Audio channels:    {policy['preferred_audio_channels'] or 'yt-dlp default'}",
         f"Merge container:   {policy['merge_container'] or 'yt-dlp default'}",
+        f"Manual subtitles:  {policy['write_subtitles']}",
+        f"Auto subtitles:    {policy['write_auto_subtitles']}",
+        f"Subtitle langs:    {policy['subtitle_languages'] or 'yt-dlp default'}",
+        f"Subtitle format:   {policy['subtitle_format'] or 'yt-dlp default'}",
+        f"Embed subtitles:   {policy['embed_subtitles']}",
+        f"Write thumbnail:   {policy['write_thumbnail']}",
+        f"Embed thumbnail:   {policy['embed_thumbnail']}",
+        f"Write info JSON:   {policy['write_info_json']}",
+        f"Embed metadata:    {policy['embed_metadata']}",
+        f"Embed chapters:    {policy['embed_chapters']}",
+        f"SponsorBlock:      {policy['sponsorblock']}",
+        f"SponsorBlock mark: {policy['sponsorblock_mark'] or 'none'}",
+        f"SponsorBlock cut:  {policy['sponsorblock_remove'] or 'none'}",
         f"Playlist:          {policy['playlist'] if policy['playlist'] is not None else 'yt-dlp default'}",
         f"Reverse playlist:  {policy['reverse_playlist']}",
         f"Cookies:           {authentication['source']}"
@@ -1666,15 +1976,37 @@ def build_yt_dlp_command(
         "-r",
         policy.limit_rate,
         "--mtime",
-        "--embed-chapters",
-        "--embed-metadata",
-        "--sponsorblock-remove",
-        "all",
         "--download-archive",
         str(policy.archive_file),
         "--video-multistreams",
         "--audio-multistreams",
     ]
+
+    if policy.write_subtitles:
+        command.append("--write-subs")
+    if policy.write_auto_subtitles:
+        command.append("--write-auto-subs")
+    if policy.subtitle_languages is not None:
+        command.extend(("--sub-langs", policy.subtitle_languages))
+    if policy.subtitle_format is not None:
+        command.extend(("--sub-format", policy.subtitle_format))
+    if policy.embed_subtitles:
+        command.append("--embed-subs")
+    if policy.write_thumbnail:
+        command.append("--write-thumbnail")
+    if policy.embed_thumbnail:
+        command.append("--embed-thumbnail")
+    if policy.write_info_json:
+        command.append("--write-info-json")
+    command.append("--embed-metadata" if policy.embed_metadata else "--no-embed-metadata")
+    command.append("--embed-chapters" if policy.embed_chapters else "--no-embed-chapters")
+    if policy.sponsorblock:
+        if policy.sponsorblock_mark is not None:
+            command.extend(("--sponsorblock-mark", policy.sponsorblock_mark))
+        if policy.sponsorblock_remove is not None:
+            command.extend(("--sponsorblock-remove", policy.sponsorblock_remove))
+    else:
+        command.append("--no-sponsorblock")
 
     if policy.merge_container is not None:
         command.extend(("--merge-output-format", policy.merge_container))

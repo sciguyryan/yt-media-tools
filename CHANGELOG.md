@@ -1,5 +1,15 @@
 # Changelog
 
+## Downloader 1.11.0 - Alongside
+
+- Add typed manual/automatic subtitle policy, language and format selection, and independent subtitle embedding.
+- Add opt-in thumbnail and info-JSON sidecars plus independent thumbnail embedding.
+- Make metadata and chapter embedding explicit typed policy while preserving the established enabled-by-default behaviour.
+- Make SponsorBlock policy explicit, preserving remove-all as the built-in default while supporting validated mark/remove categories and complete disabling.
+- Expose associated-artefact, metadata, chapter and SponsorBlock decisions through human and JSON explanation.
+- Add deterministic tests for historical defaults, explicit disablement, profile precedence, SponsorBlock validation and command compilation.
+- Reconcile the shipped parameter-profile example with the 1.10.0 defaults file so it no longer shows removed redundant raw format selectors.
+
 ## Downloader 1.10.0 - Selection Rules
 
 - Add declarative hard bounds for minimum/maximum resolution and frame rate, compiled into yt-dlp format filters.
