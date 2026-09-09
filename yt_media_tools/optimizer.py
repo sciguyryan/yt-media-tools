@@ -141,11 +141,20 @@ def _optimise_having(node: Any) -> tuple[Any, list[OptimisationDecision]]:
         return None, []
     if isinstance(node, Unary):
         operand, decisions = _optimise_having(node.operand)
-        return replace(node, operand=operand), decisions
+        optimised = replace(node, operand=operand)
+        if isinstance(operand, Unary):
+            decisions.append(_decision("having-double-negation", optimised, operand.operand))
+            return operand.operand, decisions
+        return optimised, decisions
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
         left, left_decisions = _optimise_having(node.left)
         right, right_decisions = _optimise_having(node.right)
-        return replace(node, left=left, right=right), left_decisions + right_decisions
+        decisions = left_decisions + right_decisions
+        optimised = replace(node, left=left, right=right)
+        if _semantic_key(left) == _semantic_key(right):
+            decisions.append(_decision(f"having-duplicate-{node.operator.lower()}", optimised, left))
+            return left, decisions
+        return optimised, decisions
     if isinstance(node, ScalarComparison):
         left, left_decisions = _optimise_scalar_expression(node.left)
         right, right_decisions = _optimise_scalar_expression(node.right)
@@ -495,6 +504,37 @@ def _dominant_comparison(operator: str, left: Any, right: Any) -> tuple[int, int
 
 def _semantic_key(node: Any) -> Any:
     """Return an AST identity that excludes source positions and display-only metadata."""
+    if isinstance(node, ScalarUnary):
+        return ("scalar-unary", node.operator, _semantic_key(node.operand))
+    if isinstance(node, ScalarBinary):
+        return ("scalar-binary", node.operator, _semantic_key(node.left), _semantic_key(node.right))
+    if isinstance(node, ScalarComparison):
+        return ("scalar-comparison", node.operator, _semantic_key(node.left), _semantic_key(node.right))
+    if isinstance(node, ScalarIsNull):
+        return ("scalar-is-null", _semantic_key(node.expression), node.negated)
+    if isinstance(node, ScalarFunction):
+        return (
+            "scalar-function",
+            node.name,
+            tuple(_semantic_key(arg) for arg in node.args),
+            getattr(node, "kind", None),
+        )
+    if isinstance(node, AggregateFunction):
+        return (
+            "aggregate",
+            node.name,
+            tuple(_semantic_key(arg) for arg in node.args),
+            node.count_star,
+            _semantic_key(node.filter_predicate),
+            getattr(node, "kind", None),
+        )
+    if isinstance(node, ScalarCase):
+        return (
+            "scalar-case",
+            tuple((_semantic_key(branch.condition), _semantic_key(branch.result)) for branch in node.whens),
+            _semantic_key(node.else_result),
+            getattr(node, "kind", None),
+        )
     if isinstance(node, Unary):
         return ("unary", node.operator, _semantic_key(node.operand))
     if isinstance(node, Binary):

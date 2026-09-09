@@ -146,7 +146,7 @@ The optimiser performs conservative reductions that make later language growth e
 
 Optimisation runs to a deterministic fixed point and records every rewrite. `--explain` reports the applied rules and resulting filter when all referenced fields can be resolved before acquisition. JSON explain output exposes the same information under `predicate_optimiser`; dynamic metadata fields defer this part of explanation until post-acquisition type resolution. Verbose execution also reports applied rewrites.
 
-Discover 0.23.2 also performs conservative scalar constant folding after type resolution. Fully literal arithmetic, unary expressions and deterministic scalar-function calls are evaluated once and replaced with a literal. Symbolic field algebra is deliberately excluded, so `19 * 2 * 100 * 0` folds to `0` while `view_count * 0` remains unchanged because a NULL field must still produce NULL.
+yt-sql also performs conservative scalar constant folding after type resolution. Fully literal arithmetic, unary expressions and deterministic scalar-function calls are evaluated once and replaced with a literal. Symbolic field algebra is deliberately excluded, so `19 * 2 * 100 * 0` folds to `0` while `view_count * 0` remains unchanged because a NULL field must still produce NULL.
 
 The optimiser intentionally does not fold contradictory field predicates to a Boolean constant yet. For example, `field = 5 AND field > 10` still evaluates to UNKNOWN rather than FALSE when `field` is NULL, and that distinction is part of yt-sql semantics even though both values are rejected by a `WHERE` filter. Future optimiser passes must preserve the same invariant.
 
@@ -182,7 +182,7 @@ SELECT id FROM @whatdamath OF shorts
 SELECT id FROM @whatdamath OF live
 ```
 
-Bare `FROM @source` remains valid and requests the source's default collection. In 0.26.0 the YouTube channel adapter advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
+Bare `FROM @source` remains valid and requests the source's default collection. The YouTube channel adapter advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
 
 The grammar is extractor-agnostic. Other yt-dlp extractors may advertise different logical facets in later adapter work without changing the core `OF` syntax.
 
@@ -196,7 +196,7 @@ yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`
 
 `HAVING` provides aggregate-aware comparisons after grouping, including explicit SELECT aggregate aliases, Boolean `AND`/`OR`/`NOT`, parentheses, and `IS NULL`/`IS NOT NULL`. Aggregate `FILTER (WHERE predicate)` uses the ordinary row-predicate language and applies only to its aggregate after the query-level WHERE filter.
 
-The first aggregate release does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arguments. Those may be considered separately if they fit the language cleanly. Aggregate queries require complete input groups, so the source-order early-LIMIT acquisition optimisation is disabled for them.
+yt-sql does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arguments. Those may be considered separately if they fit the language cleanly. Aggregate queries require complete input groups, so the source-order early-LIMIT acquisition optimisation is disabled for them.
 
 ## Planned analytical expansion
 
@@ -224,7 +224,7 @@ ORDER BY minutes DESC
 
 A CTE exports only its projected columns. Their output names, including explicit `AS` aliases, and their resolved scalar kinds define the logical schema available to subsequent CTEs and the outer query. CTE names are case-insensitive. Later CTEs may reference earlier CTEs, but forward references, self-reference, `WITH RECURSIVE` and nested `WITH` clauses are rejected.
 
-Discover 0.25.1 permits CTEs to contain positional `UNION` and `UNION ALL` expressions, including branches backed by different physical extractor sources. Each branch is resolved against its own physical-source schema before result-column reconciliation.
+CTEs may contain positional `UNION` and `UNION ALL` expressions, including branches backed by different physical extractor sources. Each branch is resolved against its own physical-source schema before result-column reconciliation.
 
 ## Set composition
 
@@ -240,7 +240,7 @@ LIMIT 50
 
 All branches must project the same number of columns. The first branch defines the exported column names. Later aliases do not rename the set result. Compatible numeric kinds may reconcile to a common numeric kind; incompatible kinds are rejected. Plain `UNION` removes duplicate projected rows using exact yt-sql scalar values, including normalisation-sensitive Unicode strings. `UNION ALL` retains duplicates and branch order.
 
-`ORDER BY`, `OFFSET` and `LIMIT` written after the final branch apply to the complete composed result. Branch-local ordering and limiting are not a separate grammar surface in this release. Set composition disables source-order early LIMIT acquisition because every contributing branch can affect the final result.
+`ORDER BY`, `OFFSET` and `LIMIT` written after the final branch apply to the complete composed result. Branch-local ordering and limiting are not a separate grammar surface. Set composition disables source-order early LIMIT acquisition because every contributing branch can affect the final result.
 
 Physical sources are acquired independently. In automatic source mode, a quoted non-YouTube URL is preserved as a generic yt-dlp extractor source, while YouTube handles, channel URLs and playlist URLs retain their existing specialised classification. Source identity remains attached internally through normalisation so each branch sees only the records belonging to its declared `FROM` source. A missing value from one extractor is NULL when the field is otherwise part of the logical schema. Dynamic fields are resolved per physical source so incompatible extractor-specific types are detected before composition.
 

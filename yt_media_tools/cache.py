@@ -231,10 +231,10 @@ class MetadataCache:
                 """
             )
             if version in {1, 2}:
-                # Phase 2 only persisted source_entries from complete, unfiltered source
-                # observations. Seed a frontier only where the stored ordering cardinality
-                # agrees with the corresponding observation, so migration cannot turn a
-                # partial historical scan into a trusted incremental boundary.
+                # Legacy schemas persisted source_entries only from complete, unfiltered
+                # source observations. Seed a frontier only where the stored ordering
+                # cardinality agrees with the corresponding observation, so migration cannot
+                # turn a partial historical scan into a trusted incremental boundary.
                 rows = db.execute(
                     """
                     SELECT o.source_url, o.source_kind, o.last_observed_at, o.observed_entries,

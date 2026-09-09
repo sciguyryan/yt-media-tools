@@ -281,3 +281,36 @@ def test_scalar_constant_folding_is_idempotent() -> None:
     second = optimise_query(first.query)
     assert second.query == first.query
     assert second.decisions == ()
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_rule"),
+    [
+        (
+            "SELECT uploader, COUNT(*) AS n FROM @example GROUP BY uploader HAVING COUNT(*) >= 1 AND COUNT(*) >= 1",
+            "having-duplicate-and",
+        ),
+        (
+            "SELECT uploader, COUNT(*) AS n FROM @example GROUP BY uploader HAVING COUNT(*) >= 2 OR COUNT(*) >= 2",
+            "having-duplicate-or",
+        ),
+        (
+            "SELECT uploader, COUNT(*) AS n FROM @example GROUP BY uploader HAVING NOT NOT COUNT(*) >= 1",
+            "having-double-negation",
+        ),
+    ],
+)
+def test_having_boolean_normalisation_is_safe_and_idempotent(source: str, expected_rule: str) -> None:
+    records = [
+        {"id": "a", "uploader": "one"},
+        {"id": "b", "uploader": "one"},
+        {"id": "c", "uploader": "two"},
+        {"id": "d", "uploader": None},
+    ]
+    original = _resolved(source, records)
+    first = optimise_query(original)
+    second = optimise_query(first.query)
+    assert apply_query(records, first.query) == apply_query(records, original)
+    assert expected_rule in {decision.rule for decision in first.decisions}
+    assert second.query == first.query
+    assert second.decisions == ()

@@ -100,7 +100,7 @@ A future regex-to-LIKE rewrite may be considered only for a deliberately small w
 
 ### Implemented
 
-Discover 0.23.4 establishes adversarial Unicode data as part of the routine deterministic conformance corpus. Optimised and unoptimised execution are compared across exact comparison, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, `LOWER`, `UPPER`, `LENGTH`, ordering, projection and serialisation. Scalar constant folding of literal text functions is therefore exercised against the same Unicode semantics as runtime evaluation.
+Adversarial Unicode data is part of the routine deterministic conformance corpus. Optimised and unoptimised execution are compared across exact comparison, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, `LOWER`, `UPPER`, `LENGTH`, ordering, projection and serialisation. Scalar constant folding of literal text functions is therefore exercised against the same Unicode semantics as runtime evaluation.
 
 No implicit normalisation is performed. Optimisation must preserve the extractor-provided code-point sequence exactly unless the source operation itself defines a transformation. `LENGTH` is code-point length, `LOWER` and `UPPER` use Unicode case mappings, `CONTAINS` uses `casefold()`, and `ILIKE` uses Unicode-aware case-insensitive regular-expression behaviour over the translated LIKE pattern.
 
@@ -118,7 +118,7 @@ An explicit normalisation scalar function may be considered as language syntax. 
 
 ### Implemented
 
-Discover 0.23.6 resolves decimal, hexadecimal, octal and binary integer literals to ordinary integer values before optimisation. Underscores are readability separators only and do not survive semantic resolution. Different bases therefore have identical arithmetic semantics once resolved.
+Decimal, hexadecimal, octal and binary integer literals resolve to ordinary integer values before optimisation. Underscores are readability separators only and do not survive semantic resolution. Different bases therefore have identical arithmetic semantics once resolved.
 
 Literal base and spelling are not treated as semantic properties. Constant folding may canonicalise a mixed-base expression such as `0x10 + 0o10 + 0b10 + 10` to the decimal literal `36`.
 
@@ -132,7 +132,7 @@ Non-decimal fractional literals are not supported, so there is no hexadecimal-fl
 
 ### Implemented
 
-Discover 0.23.2 folds scalar subtrees whose operands are entirely literal after semantic resolution. Folding is recursive, so:
+The optimiser folds scalar subtrees whose operands are entirely literal after semantic resolution. Folding is recursive, so:
 
 ```sql
 19 * 2 * 100 * 0
@@ -270,7 +270,7 @@ These optimisations should remain separate from semantic rewrites so explain out
 
 ### Implemented
 
-Aggregate arguments are resolved and optimised as ordinary scalar expressions, but the aggregate operation itself is not constant-folded away. A literal argument such as `SUM(1 + 2)` may therefore become `SUM(3)` while still retaining row cardinality and NULL/filter semantics. Aggregate FILTER predicates run through the ordinary fixed-point predicate optimiser, and recorded decisions are prefixed with `aggregate-filter-` so explain output retains their context. GROUP BY scalar expressions and scalar expressions embedded in HAVING are also passed through the scalar optimiser.
+Aggregate arguments are resolved and optimised as ordinary scalar expressions, but the aggregate operation itself is not constant-folded away. A literal argument such as `SUM(1 + 2)` may therefore become `SUM(3)` while still retaining row cardinality and NULL/filter semantics. Aggregate FILTER predicates run through the ordinary fixed-point predicate optimiser, and recorded decisions are prefixed with `aggregate-filter-` so explain output retains their context. GROUP BY scalar expressions and scalar expressions embedded in HAVING are also passed through the scalar optimiser. HAVING additionally removes exact duplicate `AND`/`OR` terms and double negation using semantic AST identity that ignores source positions; these identities preserve TRUE, FALSE and UNKNOWN exactly.
 
 Acquisition field analysis traverses aggregate arguments, FILTER predicates, grouping expressions and HAVING expressions. Limit-aware early source termination is disabled for aggregate queries because a complete group may change `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, HAVING eligibility, group ordering, DISTINCT output, OFFSET or LIMIT.
 
@@ -289,12 +289,12 @@ Potential future work includes recognising HAVING predicates that depend solely 
 Each new syntax feature must add a section to this document when it is implemented. The following strategies are already anticipated:
 
 - `SELECT *` is expanded during semantic resolution into the deterministic scalar schema. The optimiser sees the resulting ordinary projection terms rather than a wildcard. Star expansion itself is not an optimisation and cannot omit fields merely because they appear unused; acquisition planning must account for the complete expanded projection.
-- Aggregates and `GROUP BY` are implemented; future work may add grouping-key analysis, HAVING simplification, common aggregate reuse and exact partial aggregation only where equivalence is proved.
+- Aggregates and `GROUP BY` are implemented; future work may add grouping-key analysis, stronger HAVING simplification, common aggregate reuse and exact partial aggregation only where equivalence is proved.
 - CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
 
 ## Audit conclusions for symbolic scalar rewrites
 
-The 0.26.4 optimiser audit deliberately rejects familiar algebraic identities unless they preserve every observable yt-sql value. In particular, transformations such as `x + 0 -> x` are not assumed safe merely because they hold over ordinary real-number algebra: IEEE-754 signed zero can make the original and rewritten serialised values observably different. `x * 0 -> 0` is also invalid for NULL input, and division identities can change integer-versus-floating-point results. Constant-only arithmetic remains folded because the actual yt-sql evaluator computes the complete literal subtree and retains its concrete result.
+The optimiser deliberately rejects familiar algebraic identities unless they preserve every observable yt-sql value. In particular, transformations such as `x + 0 -> x` are not assumed safe merely because they hold over ordinary real-number algebra: IEEE-754 signed zero can make the original and rewritten serialised values observably different. `x * 0 -> 0` is also invalid for NULL input, and division identities can change integer-versus-floating-point results. Constant-only arithmetic remains folded because the actual yt-sql evaluator computes the complete literal subtree and retains its concrete result.
 
 The same standard applies elsewhere: contradiction folding must preserve UNKNOWN, RANDOM remains volatile or row-dependent, Unicode-sensitive operators are not substituted for superficially similar case operations, and source/facet identities are never merged solely for convenience.
 
@@ -328,7 +328,7 @@ This is exploratory rather than committed work. Any design must justify its comp
 
 ### Deliberately not implemented
 
-- No predicate pushdown from CTEs into extractor enumeration in 0.25.0. The current planner remains conservative.
+- No predicate pushdown from CTEs into extractor enumeration. The current planner remains conservative.
 - No CTE inlining or common-subexpression elimination. CTEs are materialised in declaration order.
 - No cross-source CTE planning. Multi-source composition waits for the explicit `UNION` schema-reconciliation architecture.
 
@@ -356,13 +356,13 @@ Plausible future work:
 
 ## UNION and UNION ALL
 
-Discover 0.25.1 optimises each resolved set-operation branch independently and prefixes branch decisions in optimiser diagnostics. Reconciliation itself is not rewritten. The optimiser must preserve branch order for `UNION ALL`, duplicate-elimination boundaries for `UNION`, first-branch output naming, NULL values and exact Unicode values.
+Each resolved set-operation branch is optimised independently and branch decisions are prefixed in optimiser diagnostics. Reconciliation itself is not rewritten. The optimiser must preserve branch order for `UNION ALL`, duplicate-elimination boundaries for `UNION`, first-branch output naming, NULL values and exact Unicode values.
 
 Current acquisition planning does not push predicates across UNION boundaries and does not permit source-order early LIMIT termination for a composed result. Future source-boundary planning may optimise branches independently only where equivalence can be proven. Transformations such as replacing `UNION` with `UNION ALL`, reordering branches where observable ordering would change, or coercing incompatible extractor-specific field kinds are unsafe and must not be performed.
 
 ## Source facets with OF
 
-`OF` is source-resolution syntax rather than a scalar or predicate rewrite. The optimiser preserves the requested facet exactly and must not substitute a default collection or another advertised facet. Future source-boundary planning may use adapter capabilities to reduce acquisition cost, but only where that planning is semantics-preserving and visible through explain output. Since 0.26.1, capability discovery is an explicit deterministic source-layer contract rather than an inference from the selected URL. Optimisation must preserve the requested facet and may not substitute another advertised collection merely because it appears cheaper to acquire.
+`OF` is source-resolution syntax rather than a scalar or predicate rewrite. The optimiser preserves the requested facet exactly and must not substitute a default collection or another advertised facet. Future source-boundary planning may use adapter capabilities to reduce acquisition cost, but only where that planning is semantics-preserving and visible through explain output. Capability discovery is an explicit deterministic source-layer contract rather than an inference from the selected URL. Optimisation must preserve the requested facet and may not substitute another advertised collection merely because it appears cheaper to acquire.
 
 ## Cross-facet source identity
 

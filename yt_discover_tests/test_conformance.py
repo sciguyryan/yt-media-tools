@@ -32,7 +32,7 @@ from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.output import write_records
-from yt_media_tools.query import apply_query, parse_query, resolve_query
+from yt_media_tools.query import apply_query, format_query, parse_query, resolve_query
 from yt_media_tools.schema import QuerySchema
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -156,6 +156,30 @@ def test_optimizer_preserves_all_routine_semantic_cases(profile: str) -> None:
                 explicit_select=bool(parsed.select),
             )
         assert optimised_stream.getvalue() == original_stream.getvalue(), case.name
+
+
+def test_all_direct_conformance_queries_have_stable_canonical_formatting() -> None:
+    """Canonical formatting must be stable across the complete directly parsed corpus."""
+    for case in CASES:
+        if case.params:
+            # Parameter substitution is a CLI-boundary contract and has dedicated tests.
+            continue
+        first = format_query(parse_query(case.query))
+        second = format_query(parse_query(first))
+        assert second == first, case.name
+
+
+def test_optimizer_is_idempotent_for_all_routine_semantic_cases() -> None:
+    """A second optimiser pass must not change any routine resolved semantic query."""
+    records = build_records(PROFILE_SIZES["small"])
+    for case in CASES:
+        if case.params or case.execution == "cli":
+            continue
+        _, _, original, _ = _engine_case_queries(records, case)
+        first = optimise_query(original)
+        second = optimise_query(first.query)
+        assert second.query == first.query, case.name
+        assert second.decisions == (), case.name
 
 
 def test_language_feature_manifest_is_fully_covered() -> None:

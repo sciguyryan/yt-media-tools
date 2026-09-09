@@ -2,7 +2,7 @@
 
 `yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
-- `yt-discover.py` 0.23.4 discovers, caches, queries and reports media metadata using the yt-sql query language.
+- `yt-discover.py` discovers, caches, queries and reports media metadata using the yt-sql query language.
 - `yt-download.py` 1.7.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
 
 The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
@@ -71,7 +71,7 @@ The two command-line applications retain independent versions because they evolv
 
 ## Common table expressions
 
-Discover 0.25.1 supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `UNION ALL`, including composition across independently acquired yt-dlp sources. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, schema-reconciliation and scoping contracts.
+Discover supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `UNION ALL`, including composition across independently acquired yt-dlp sources. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, schema-reconciliation and scoping contracts.
 
 ## Documentation linting
 

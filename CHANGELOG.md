@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.26.6 - No Loose Ends
+
+- Complete the cleanup, optimiser and test-completeness reconciliation without adding yt-sql syntax.
+- Remove stale release-phase narration and duplicated version claims from current reference documentation, keeping historical sequencing in the changelog.
+- Add corpus-wide canonical parse-format-parse stability checks for every directly parsed conformance query.
+- Add corpus-wide optimiser idempotence checks for every routine directly resolved semantic case.
+- Extend the optimiser with exact duplicate-term and double-negation simplification inside HAVING, preserving three-valued logic and aggregate semantics.
+- Extend semantic AST identity to scalar, aggregate and CASE expressions so position metadata cannot prevent safe equivalence checks.
+- Reconcile the durable coverage and optimisation references with the implemented source/facet, aggregate and optimiser contracts.
+- Give the split GitHub Actions workflows distinct display names while preserving their independent files and jobs.
+
 ## Discover 0.26.5 - Pressure Test
 
 - Continue the post-0.26.2 hardening programme without adding or changing yt-sql syntax.

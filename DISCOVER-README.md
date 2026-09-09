@@ -110,13 +110,13 @@ yt-sql supports non-recursive `WITH` common table expressions. A CTE materialise
 yt-discover.py "WITH short AS (SELECT id, title, duration / 60 AS minutes FROM @example WHERE duration < 1h), mars AS (SELECT id, minutes FROM short WHERE title ILIKE '%mars%') SELECT id, minutes FROM mars ORDER BY minutes DESC"
 ```
 
-CTEs can contain the existing filtering, projection, aggregation, grouping, HAVING, ordering, DISTINCT, LIMIT and OFFSET features. Recursive CTEs, self-reference, forward references and nested `WITH` clauses are intentionally unsupported. Discover 0.25.1 allows CTEs to contain `UNION` and `UNION ALL`, including branches backed by different physical yt-dlp sources.
+CTEs can contain filtering, projection, aggregation, grouping, HAVING, ordering, DISTINCT, LIMIT and OFFSET. Recursive CTEs, self-reference, forward references and nested `WITH` clauses are intentionally unsupported. CTEs can also contain `UNION` and `UNION ALL`, including branches backed by different physical yt-dlp sources.
 
 The acquisition planner follows physical field requirements through CTEs but does not yet push CTE predicates into extractor enumeration boundaries. This is conservative by design.
 
 ## UNION and UNION ALL
 
-Discover 0.25.1 adds positional set composition. Every branch must project the same number of columns. Result column names come from the first branch, while compatible numeric kinds are reconciled to a common numeric kind. Incompatible projected kinds are rejected rather than silently coerced.
+yt-sql supports positional set composition. Every branch must project the same number of columns. Result column names come from the first branch, while compatible numeric kinds are reconciled to a common numeric kind. Incompatible projected kinds are rejected rather than silently coerced.
 
 ```bash
 yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM @playlist_b ORDER BY title"
@@ -124,11 +124,11 @@ yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM
 
 Plain `UNION` removes duplicate logical rows; `UNION ALL` preserves them. Global `ORDER BY`, `OFFSET` and `LIMIT` apply after the complete set expression. A query may reference several physical sources. Discover resolves and acquires those sources independently through yt-dlp, preserves their source identity internally, and only then evaluates each branch and reconciles its projected rows. This allows extractor families with different metadata availability to compose naturally: unavailable fields remain NULL where the logical field exists, while genuinely incompatible dynamic field types fail schema reconciliation.
 
-`UNION` remains deliberately positional and does not introduce relational joins. `JOIN` is not part of yt-sql. Source/facet selection such as the planned `OF` syntax remains a later phase.
+`UNION` remains deliberately positional and does not introduce relational joins. `JOIN` is not part of yt-sql. Source/facet selection uses the extractor-agnostic `OF` model described below.
 
 ## yt-sql optimiser
 
-Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction, conservative same-field comparison-bound subsumption, literal `IN` deduplication, singleton membership reduction and safe same-field membership subsumption. Discover 0.23.2 also applies these fixed-point predicate rewrites inside searched CASE conditions.
+yt-sql uses a dedicated post-resolution optimiser. It reduces equivalent query structures before local evaluation while preserving the exact semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction, conservative same-field comparison-bound subsumption, literal `IN` deduplication, singleton membership reduction and safe same-field membership subsumption. Fixed-point predicate rewrites also apply inside searched CASE conditions.
 
 The optimiser is tested differentially: the unoptimised and optimised resolved queries are executed against the same deterministic records and must produce identical predicate truth values, selected rows and serialised output. The routine conformance matrix also compares both forms across the complete current semantic case set before the optimised path is checked against the independent oracle.
 
@@ -143,7 +143,7 @@ yt-discover implements proof-based LIMIT-aware acquisition termination. When a q
   "SELECT id FROM @whatdamath WHERE duration < 1h LIMIT 25" -v
 ```
 
-Queries with an explicit `ORDER BY` remain exhaustive in this release because a later row may still outrank an earlier match. `DISTINCT`, aggregation, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields are excluded from early termination because their types are resolved only after detailed metadata exists. Archive exclusion disables the optimisation because archived rows are removed after acquisition and could otherwise cause an unsafe early stop. Offline queries do not need the optimisation because they perform no network metadata acquisition.
+Queries with an explicit `ORDER BY` remain exhaustive because a later row may still outrank an earlier match. `DISTINCT`, aggregation, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields are excluded from early termination because their types are resolved only after detailed metadata exists. Archive exclusion disables the optimisation because archived rows are removed after acquisition and could otherwise cause an unsafe early stop. Offline queries do not need the optimisation because they perform no network metadata acquisition.
 
 `--explain` and JSON explain now state whether LIMIT-aware acquisition is eligible and why. `--explain-analyze` and `--report` record whether detailed acquisition actually stopped early, how many source-order batches ran, and how many candidates were examined. When acquisition stops after LIMIT is satisfied, result statistics explicitly mark the observed match count as a lower bound rather than pretending the unexamined tail has been counted.
 

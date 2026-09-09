@@ -1,12 +1,12 @@
 # yt-sql test coverage
 
-This document is the coverage inventory for the post-0.26.2 hardening programme. It records the major language and execution surfaces that must remain covered before further syntax work is considered.
+This document records the major yt-sql language and execution surfaces that must remain covered. It is the durable test-completeness inventory used when reviewing regressions and future language changes.
 
 ## Coverage standard
 
 A language feature is not considered thoroughly covered merely because its happy path parses. Where applicable, coverage should include parsing, semantic resolution, execution, formatting round-trips, malformed input, NULL behaviour, Unicode behaviour, optimiser differential equivalence, composition through CTEs and set operations, and observable CLI behaviour.
 
-Optimiser tests must compare the complete observable result of optimised and unoptimised execution. Re-running the optimiser over an already optimised query must also be idempotent where the optimiser contract applies.
+Optimiser tests must compare the complete observable result of optimised and unoptimised execution. The routine conformance corpus also enforces optimiser idempotence across every directly resolved semantic case and canonical parse-format-parse stability across every directly parsed case. Parameter binding remains a CLI-boundary contract with dedicated tests before parsing.
 
 ## Grammar and scalar expressions
 
@@ -28,7 +28,7 @@ Torture coverage keeps temporal and numeric values embedded inside larger Boolea
 
 ## Aggregation
 
-Current coverage includes COUNT(*), COUNT(expr), SUM, AVG, MIN, MAX, GROUP BY, HAVING, aggregate FILTER, NULL elimination, grouping of NULL keys, aggregate aliases, invalid nesting, type checking and aggregate UNION branches.
+Current coverage includes COUNT(*), COUNT(expr), SUM, AVG, MIN, MAX, GROUP BY, HAVING, aggregate FILTER, NULL elimination, grouping of NULL keys, aggregate aliases, invalid nesting, type checking and aggregate UNION branches. HAVING optimiser coverage includes semantic duplicate-term removal, double-negation elimination, differential execution and idempotence.
 
 Torture coverage chains filtered CTE materialisation into grouping, HAVING and outer ordering, and also aggregates a cross-facet UNION-derived relation containing scalar CASE expressions and seeded RANDOM projection.
 
