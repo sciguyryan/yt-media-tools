@@ -377,6 +377,8 @@ class Parser:
                 seen_names.add(key)
                 self.expect_keyword("AS", "Expected AS after CTE name.")
                 self.expect("LPAREN", "Expected '(' before CTE query.")
+                if self.current.kind == "RPAREN":
+                    raise QuerySyntaxError(self.source, "CTE query cannot be empty.", self.current.position)
                 subquery = self.parse_query(stop_at_rparen=True, allow_with=False)
                 self.expect("RPAREN", "Expected ')' after CTE query.")
                 ctes.append(CommonTableExpression(name_token.text, subquery, name_token.position))

@@ -1,5 +1,18 @@
 # Changelog
 
+## Discover 0.26.5 - Pressure Test
+
+- Continue the post-0.26.2 hardening programme without adding or changing yt-sql syntax.
+- Add a living yt-sql coverage inventory spanning grammar, semantics, optimiser equivalence, composition, source/facet identity, Unicode, aggregation, malformed input and observable execution behaviour.
+- Add deliberate hostile-whitespace and deeply parenthesised parse/format round-trip coverage.
+- Add dense scalar/Boolean optimiser differential and idempotence coverage over the deterministic Unicode fixture.
+- Add chained CTE, aggregate and HAVING torture coverage.
+- Add the first executable Sadness Query combining cross-facet UNION ALL, chained CTEs, Unicode-sensitive predicates, CASE, mixed-base arithmetic, seeded RANDOM and outer aggregation.
+- Expand deterministic malformed-input torture coverage across clause boundaries, CTEs, UNION, CASE, aggregate FILTER, RANDOM, CHAR and LIKE escaping.
+- Reject empty CTE bodies explicitly instead of allowing them to fall through into an implicit relation during resolution.
+- Keep grammar and feature expansion frozen pending final hardening reconciliation.
+- Remove stale phase and acceptance narration from long-lived documentation and express current behavioural contracts in present tense.
+
 ## Discover 0.26.4 - Measured Cuts
 
 - Complete the dedicated optimiser-audit phase without adding or changing yt-sql syntax.

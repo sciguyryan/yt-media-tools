@@ -50,11 +50,9 @@ The semantic authority is `yt_discover_tests/conformance/oracle.py`, a deliberat
 
 There is no checked-in golden query dataset or generated semantic expected-result corpus. The generator provides deterministic inputs, including deliberately designed semantic anchor records, and the independent Python oracle provides expected query semantics. Static immutable fixtures remain appropriate only where a particular historical representation is itself the compatibility contract.
 
-Phase 5.5B must add independently authored oracle cases for every substantive new language construct, including boundary and cross-feature interactions, before that syntax is accepted.
+Every substantive new language construct must add independently authored oracle cases, including boundary and cross-feature interactions, before that syntax is accepted.
 
-## v0.16.0 query-language maturity
-
-Version 0.16.0 implements Phase 5: D9 `DISTINCT`, D10 `OFFSET`, D11 a small scalar-function library, D13 query parameters, and D14 machine-readable query provenance. The existing acquisition, cache, frontier, offline, explain, and output behaviour remains compatible.
+## Projection, parameters and provenance
 
 `SELECT DISTINCT` removes duplicate projected rows. Deduplication is based on the selected scalar values after deterministic ordering, so when several source records produce the same projection the first record in the requested order is retained. `OFFSET` is a non-negative row offset applied after filtering, ordering, and `DISTINCT`, and before `LIMIT`:
 
@@ -68,8 +66,6 @@ The first scalar-function library is intentionally small. `LOWER(field)`, `UPPER
 yt-discover.py "SELECT id, LOWER(title) AS folded FROM @example ORDER BY folded ASC"
 yt-discover.py "SELECT COALESCE(title, 'Untitled') AS title FROM @example"
 ```
-
-Functions are currently projection expressions rather than a general arithmetic/expression language. Function predicates and nested function expressions are deliberately deferred rather than being implemented with ambiguous coercion rules.
 
 Repeatable `--param NAME=VALUE` bindings replace `:NAME` placeholders outside quoted strings. Values are safely quoted first and then interpreted by the existing field-aware literal resolver, so dates, durations, counts, Booleans, timestamps, and strings retain the same query typing rules:
 
@@ -93,8 +89,6 @@ yt-discover.py \
 
 Use `--provenance -` only when normal query rows are redirected elsewhere, so provenance JSON cannot silently contaminate a pipeline.
 
-`DISTINCT` and non-zero `OFFSET` conservatively disable Phase 4 LIMIT-aware detailed-acquisition termination for now. Their row-shaping semantics are exact, but the early-termination proof has not yet been extended to them.
-
 `yt-discover.py` is a media-metadata discovery tool built around yt-dlp, with optional YouTube.js channel enumeration. Its SQL-inspired query language is named yt-sql. Unicode text may be constructed explicitly with `CHAR(codepoint [, ...])`, which accepts Unicode scalar values rather than bytes. It can query channel or playlist metadata, filter and order records locally, project selected fields, and emit shell-friendly or structured output.
 
 The default remains deliberately simple: if `SELECT` is omitted, the query behaves as `SELECT id`, so the output can still be piped directly into `yt-download.py -`.
@@ -110,7 +104,7 @@ Both include extensive practical examples covering sources, filtering, dates, pr
 
 ## Common table expressions
 
-Discover 0.25.0 adds non-recursive `WITH` common table expressions. A CTE materialises an ordinary yt-sql query result as a logical relation whose projected output names and resolved scalar kinds form the schema visible to later CTEs and the outer query. References are case-insensitive and declaration ordered.
+yt-sql supports non-recursive `WITH` common table expressions. A CTE materialises an ordinary yt-sql query result as a logical relation whose projected output names and resolved scalar kinds form the schema visible to later CTEs and the outer query. References are case-insensitive and declaration ordered.
 
 ```bash
 yt-discover.py "WITH short AS (SELECT id, title, duration / 60 AS minutes FROM @example WHERE duration < 1h), mars AS (SELECT id, minutes FROM short WHERE title ILIKE '%mars%') SELECT id, minutes FROM mars ORDER BY minutes DESC"
@@ -161,7 +155,7 @@ Eligible normal online queries against a channel `videos` tab can reuse a truste
 
 The frontier is separate from detailed-metadata coverage. An inaccessible or members-only video can therefore remain part of the trusted source ordering without falsely claiming that detailed metadata for it is cached. Trusted source ordering is replaced transactionally after a complete observation so entries that have disappeared do not survive as phantom frontier members. The SQLite schema is now version 3; version 1 and 2 caches migrate automatically where their persisted ordering can be validated conservatively.
 
-Phase 3 also adds native persistent ID-list output:
+yt-discover also provides native persistent ID-list output:
 
 ```bash
 ./yt-discover.py --tab videos \
@@ -171,7 +165,7 @@ Phase 3 also adds native persistent ID-list output:
 
 `--append FILE` is intentionally ID-specific. It preserves the existing UTF-8 file, appends only IDs that are not already present, and updates the file atomically using a temporary file and `os.replace()`. Existing duplicates already present in the file are left untouched; new duplicates are not added. Plain shell `>>` remains supported for ordinary append semantics. `-v` reports existing IDs, query results already present, and newly appended IDs.
 
-The first D8 implementation uses yt-dlp's lazy flat feed for frontier overlap. The optional YouTube.js backend remains available for bounded-date enumeration as before. `--explain`, `--explain-analyze`, JSON explain output, and `--report` now describe frontier eligibility and actual frontier outcomes.
+The frontier implementation uses yt-dlp's lazy flat feed for frontier overlap. The optional YouTube.js backend remains available for bounded-date enumeration as before. `--explain`, `--explain-analyze`, JSON explain output, and `--report` now describe frontier eligibility and actual frontier outcomes.
 
 ## Cache-native querying and execution analysis
 
