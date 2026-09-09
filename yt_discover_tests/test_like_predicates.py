@@ -5,7 +5,16 @@ from __future__ import annotations
 import pytest
 
 from yt_media_tools.optimizer import optimise_query
-from yt_media_tools.query import QuerySyntaxError, apply_query, evaluate, format_query, parse_query, resolve_query
+import yt_media_tools.query as query_module
+from yt_media_tools.query import (
+    QuerySyntaxError,
+    apply_query,
+    evaluate,
+    format_query,
+    like_matches,
+    parse_query,
+    resolve_query,
+)
 from yt_media_tools.schema import QuerySchema
 
 
@@ -97,3 +106,27 @@ def test_like_formatting_is_stable() -> None:
     records = [{"id": "a", "title": "Mars"}]
     query = _resolved("WHERE title NOT ILIKE 'mars%'", records)
     assert format_query(query) == "SELECT id WHERE title NOT ILIKE 'mars%'"
+
+
+def test_exact_case_sensitive_like_bypasses_regex_compilation(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_compile(*_args, **_kwargs):
+        raise AssertionError("exact LIKE should not invoke the regex compiler")
+
+    monkeypatch.setattr(query_module, "_compile_like_pattern", fail_compile)
+    assert like_matches("Cymru 🏴󠁧󠁢󠁷󠁬󠁳󠁿", "Cymru 🏴󠁧󠁢󠁷󠁬󠁳󠁿")
+    assert like_matches("100%", r"100\%")
+    assert not like_matches("1000", r"100\%")
+
+
+def test_ilike_and_wildcard_like_keep_regex_semantics(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = []
+    real = query_module._compile_like_pattern
+
+    def recording_compile(pattern: str, case_insensitive: bool):
+        calls.append((pattern, case_insensitive))
+        return real(pattern, case_insensitive)
+
+    monkeypatch.setattr(query_module, "_compile_like_pattern", recording_compile)
+    assert like_matches("Mars mission", "Mars%")
+    assert like_matches("MARS", "mars", case_insensitive=True)
+    assert calls == [("Mars%", False), ("mars", True)]

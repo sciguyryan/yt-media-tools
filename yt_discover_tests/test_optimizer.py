@@ -93,6 +93,39 @@ def test_bound_subsumption(source: str, expected: str) -> None:
     _assert_equivalent(source, records)
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("WHERE view_count IN (10, 10, 20)", "WHERE view_count IN (10, 20)"),
+        ("WHERE view_count IN (10)", "WHERE view_count = 10"),
+        ("WHERE view_count NOT IN (10)", "WHERE view_count != 10"),
+        ("WHERE view_count IN (10, 20) AND view_count IN (10, 20, 30)", "WHERE view_count IN (10, 20)"),
+        ("WHERE view_count IN (10, 20) OR view_count IN (10, 20, 30)", "WHERE view_count IN (10, 20, 30)"),
+        ("WHERE view_count = 20 AND view_count IN (10, 20, 30)", "WHERE view_count = 20"),
+        ("WHERE view_count = 20 OR view_count IN (10, 20, 30)", "WHERE view_count IN (10, 20, 30)"),
+    ],
+)
+def test_membership_normalisation_and_subsumption(source: str, expected: str) -> None:
+    records = [
+        {"id": "null", "view_count": None},
+        {"id": "ten", "view_count": 10},
+        {"id": "twenty", "view_count": 20},
+        {"id": "thirty", "view_count": 30},
+        {"id": "other", "view_count": 99},
+    ]
+    result = optimise_query(_resolved(source, records))
+    assert format_query(result.query) == f"SELECT id {expected}"
+    _assert_equivalent(source, records)
+
+
+def test_membership_subsumption_is_conservative_for_negated_lists() -> None:
+    records = [{"id": "null", "view_count": None}, {"id": "ten", "view_count": 10}]
+    query = _resolved("WHERE view_count NOT IN (10, 20) AND view_count NOT IN (10, 20, 30)", records)
+    result = optimise_query(query)
+    assert result.query.predicate == query.predicate
+    assert apply_query(records, result.query) == apply_query(records, query)
+
+
 def test_incompatible_equality_and_bound_are_not_folded_to_false() -> None:
     records = [{"id": "null", "view_count": None}, {"id": "five", "view_count": 5}]
     query = _resolved("WHERE view_count = 5 AND view_count > 10", records)

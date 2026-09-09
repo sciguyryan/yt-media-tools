@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.26.4 - Measured Cuts
+
+- Complete the dedicated optimiser-audit phase without adding or changing yt-sql syntax.
+- Deduplicate literal `IN` members, collapse singleton `IN` and `NOT IN`, and remove provably subsumed same-field membership predicates while preserving NULL/UNKNOWN behaviour.
+- Add a direct exact-match execution path for case-sensitive `LIKE` patterns that contain no unescaped wildcard, preserving exact Unicode and escaping semantics without invoking the regular-expression engine.
+- Extend proof-based LIMIT-aware acquisition termination to source-order `OFFSET` queries by stopping only after `OFFSET + LIMIT` authoritative matches have been observed.
+- Add direct differential and idempotence coverage for membership rewrites, exact-LIKE fast paths and LIMIT-plus-OFFSET planning.
+- Audit tempting but unsafe rewrites, including contradiction folding, volatile RANDOM simplification, Unicode case substitutions and symbolic arithmetic identities with observable floating-point edge cases.
+- Keep new syntax frozen pending the exhaustive completeness and torture-test phase.
+
 ## Discover 0.26.3 - Quiet Sweep
 
 - Begin the post-0.26.2 hardening programme without adding or changing yt-sql syntax.

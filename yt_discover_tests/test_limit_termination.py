@@ -124,3 +124,23 @@ def test_json_explain_reports_limit_eligibility() -> None:
     payload = json.loads(result.stdout)
     assert payload["limit_aware_termination"]["implemented"] is True
     assert payload["limit_aware_termination"]["eligible"] is True
+
+
+def test_cli_limit_with_offset_stops_after_offset_plus_limit_matches(tmp_path: Path) -> None:
+    env, log = fake_limit_env(tmp_path, count=80)
+    result = run_cli(
+        "--cache",
+        str(tmp_path / "cache.sqlite3"),
+        "--backend",
+        "ytdlp",
+        "--tab",
+        "videos",
+        "-v",
+        "SELECT id FROM @example WHERE duration < 1h LIMIT 2 OFFSET 30",
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["v030", "v031"]
+    detailed = log.read_text(encoding="utf-8").splitlines()
+    assert len(detailed) == 50
+    assert "32 authoritative match(es) were sufficient for OFFSET + LIMIT" in result.stderr

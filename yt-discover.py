@@ -75,7 +75,7 @@ from yt_media_tools.ytdlp import (
 )
 
 
-PROGRAM_VERSION = "0.26.3"
+PROGRAM_VERSION = "0.26.4"
 
 DEFAULT_ENUMERATION_PROGRESS_INTERVAL = 100
 VERBOSE_ENUMERATION_PROGRESS_INTERVAL = 25
@@ -1634,6 +1634,7 @@ def _limit_aware_cached_acquire(
     acquisition = AcquisitionStats()
     cache_stats = CacheStats()
     matched = 0
+    required_matches = query.offset + query.limit
     batches = 0
     examined_candidates = 0
 
@@ -1663,7 +1664,7 @@ def _limit_aware_cached_acquire(
             continue
         predicate_only = Query(predicate=resolved.predicate)
         matched += len(apply_query(batch_records, predicate_only))
-        if matched >= query.limit:
+        if matched >= required_matches:
             return raw_records, acquisition, cache_stats, True, batches, examined_candidates
 
     return raw_records, acquisition, cache_stats, False, batches, examined_candidates
@@ -2367,12 +2368,12 @@ def main(argv: list[str] | None = None) -> int:
         if limit_terminated:
             _verbose(
                 args.verbose,
-                f"LIMIT-aware detailed acquisition stopped after {limit_candidates_examined} candidate(s) in {limit_batches} batch(es); {query.limit} authoritative match(es) were sufficient in source order.",
+                f"LIMIT-aware detailed acquisition stopped after {limit_candidates_examined} candidate(s) in {limit_batches} batch(es); {query.offset + query.limit} authoritative match(es) were sufficient for OFFSET + LIMIT in source order.",
             )
         elif limit_batches:
             _verbose(
                 args.verbose,
-                f"LIMIT-aware detailed acquisition examined all {limit_candidates_examined} candidate(s); fewer than {query.limit} authoritative matches were available.",
+                f"LIMIT-aware detailed acquisition examined all {limit_candidates_examined} candidate(s); fewer than {query.offset + query.limit} authoritative matches were available for OFFSET + LIMIT.",
             )
     if metadata_cache is not None and not multi_source:
         _verbose(

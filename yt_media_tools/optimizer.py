@@ -292,6 +292,8 @@ def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:
         terms = _flatten(operator, Binary(operator, left, right))
         terms, dedupe_decisions = _deduplicate_terms(operator, terms)
         decisions.extend(dedupe_decisions)
+        terms, membership_decisions = _simplify_memberships(operator, terms)
+        decisions.extend(membership_decisions)
         terms, bound_decisions = _simplify_bounds(operator, terms)
         decisions.extend(bound_decisions)
         rebuilt = _rebuild(operator, terms)
@@ -301,6 +303,24 @@ def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:
         rewritten = Binary("!=" if node.negated else "=", node.field, node.lower)
         decisions.append(_decision("collapse-degenerate-between", node, rewritten))
         return rewritten, decisions
+
+    if isinstance(node, InList):
+        values: list[Any] = []
+        seen: set[Any] = set()
+        for value in node.values:
+            key = _semantic_key(value)
+            if key in seen:
+                continue
+            seen.add(key)
+            values.append(value)
+        normalised = replace(node, values=tuple(values))
+        if normalised != node:
+            decisions.append(_decision("deduplicate-in-values", node, normalised))
+        if len(normalised.values) == 1:
+            rewritten = Binary("!=" if normalised.negated else "=", normalised.field, normalised.values[0])
+            decisions.append(_decision("collapse-singleton-in", normalised, rewritten))
+            return rewritten, decisions
+        return normalised, decisions
 
     return node, decisions
 
@@ -345,6 +365,64 @@ def _deduplicate_terms(operator: str, terms: list[Any]) -> tuple[list[Any], list
             continue
         unique.append(term)
     return unique, decisions
+
+
+def _simplify_memberships(operator: str, terms: list[Any]) -> tuple[list[Any], list[OptimisationDecision]]:
+    """Remove same-field membership predicates that are provably subsumed.
+
+    The rule is deliberately limited to non-negated IN predicates and exact resolved
+    literal identities. It therefore preserves NULL/UNKNOWN behaviour and avoids
+    assuming any field-specific case-folding semantics.
+    """
+    terms = list(terms)
+    decisions: list[OptimisationDecision] = []
+    changed = True
+    while changed:
+        changed = False
+        for left_index in range(len(terms)):
+            for right_index in range(left_index + 1, len(terms)):
+                left = terms[left_index]
+                right = terms[right_index]
+                keep: int | None = None
+
+                if isinstance(left, InList) and isinstance(right, InList):
+                    if left.negated or right.negated or not _same_field(left.field, right.field):
+                        continue
+                    left_values = {_semantic_key(value) for value in left.values}
+                    right_values = {_semantic_key(value) for value in right.values}
+                    if left_values <= right_values:
+                        keep = left_index if operator == "AND" else right_index
+                    elif right_values <= left_values:
+                        keep = right_index if operator == "AND" else left_index
+
+                elif isinstance(left, InList) or isinstance(right, InList):
+                    membership_index = left_index if isinstance(left, InList) else right_index
+                    comparison_index = right_index if membership_index == left_index else left_index
+                    membership = terms[membership_index]
+                    comparison = terms[comparison_index]
+                    if (
+                        membership.negated
+                        or not isinstance(comparison, Binary)
+                        or comparison.operator != "="
+                        or not _same_field(membership.field, comparison.left)
+                    ):
+                        continue
+                    values = {_semantic_key(value) for value in membership.values}
+                    if _semantic_key(comparison.right) in values:
+                        keep = comparison_index if operator == "AND" else membership_index
+
+                if keep is None:
+                    continue
+                drop = right_index if keep == left_index else left_index
+                before = Binary(operator, left, right)
+                kept = terms[keep]
+                decisions.append(_decision(f"subsumed-{operator.casefold()}-membership", before, kept))
+                del terms[drop]
+                changed = True
+                break
+            if changed:
+                break
+    return terms, decisions
 
 
 def _simplify_bounds(operator: str, terms: list[Any]) -> tuple[list[Any], list[OptimisationDecision]]:

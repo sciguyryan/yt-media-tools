@@ -60,10 +60,11 @@ class LimitTerminationPlan:
 def plan_limit_termination(query: Query) -> LimitTerminationPlan:
     """Return whether source-order streaming may stop after LIMIT matching rows.
 
-    This first implementation is intentionally narrow. With no explicit ORDER BY,
-    yt-discover preserves source order, so once N authoritative matches have been
-    observed no later row can enter the first N results. Dynamic fields are deferred
-    because their types cannot be proven before detailed metadata is observed.
+    This implementation is intentionally narrow. With no explicit ORDER BY,
+    yt-discover preserves source order, so once OFFSET + LIMIT authoritative matches
+    have been observed no later row can enter the requested result slice. Dynamic
+    fields are deferred because their types cannot be proven before detailed metadata
+    is observed.
     """
     if query.limit is None:
         return LimitTerminationPlan(False, "the query has no LIMIT")
@@ -99,12 +100,6 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
             "DISTINCT may discard earlier duplicate projections, so complete duplicate resolution is required",
             query.limit,
         )
-    if query.offset:
-        return LimitTerminationPlan(
-            False,
-            "OFFSET requires skipping matching rows before LIMIT and is not yet part of the early-termination proof",
-            query.limit,
-        )
     fields = required_query_fields(query)
     dynamic = sorted(
         field for field in fields if field.casefold() not in KNOWN_FIELD_TYPES and field.casefold() not in ALIASES
@@ -115,9 +110,13 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
             "dynamic fields require post-acquisition schema resolution: " + ", ".join(dynamic),
             query.limit,
         )
+    required_matches = query.offset + query.limit
     return LimitTerminationPlan(
         True,
-        "source order is the final result order, so acquisition may stop after the requested number of authoritative matches",
+        (
+            "source order is the final result order, so acquisition may stop after "
+            f"{required_matches} authoritative match(es) satisfy OFFSET + LIMIT"
+        ),
         query.limit,
     )
 

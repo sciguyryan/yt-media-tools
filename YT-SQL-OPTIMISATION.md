@@ -61,9 +61,9 @@ Temporal-bound inference may be expanded where the planner can use a proven univ
 
 ### Implemented
 
-These predicates participate in negation normalisation and duplicate-term removal. Degenerate `BETWEEN` additionally collapses to equality or inequality.
+These predicates participate in negation normalisation and duplicate-term removal. Degenerate `BETWEEN` additionally collapses to equality or inequality. Literal `IN` lists are deduplicated by resolved literal identity, singleton `IN` and `NOT IN` reduce to equality and inequality, and non-negated same-field membership predicates are removed when one literal set provably subsumes another. Equality is likewise allowed to subsume an `IN` predicate, or be subsumed by it, when the equality literal is exactly present in the resolved list. Negated-list set algebra remains deliberately conservative.
 
-Literal `LIKE` and `ILIKE` patterns are translated and compiled during semantic resolution, then retained through a bounded compilation cache for repeated row evaluation. This is an execution optimisation rather than an AST rewrite. It removes per-row pattern translation and compilation without changing the resolved predicate. Lightweight acquisition rejection can evaluate LIKE predicates when the required text value is already authoritative.
+Literal `LIKE` and `ILIKE` patterns are translated and compiled during semantic resolution, then retained through a bounded compilation cache for repeated row evaluation. Case-sensitive LIKE patterns with no unescaped `%` or `_` wildcard additionally use direct string equality at execution time, including exact decoding of escaped percent, underscore and backslash characters. This preserves code-point-exact Unicode semantics while avoiding regular-expression dispatch for literal patterns. ILIKE deliberately retains the regular-expression path because Unicode regex case-insensitivity is not interchangeable with ordinary equality or case folding. Lightweight acquisition rejection uses the same LIKE evaluator when the required text value is already authoritative.
 
 ### Deliberately not implemented
 
@@ -73,7 +73,7 @@ For example, `title MATCHES 'The .+?'` is not equivalent to `title LIKE 'The %'`
 
 ### Future candidates
 
-Literal-only `IN` normalisation, duplicate literal removal and safe singleton `IN` reduction may be considered. LIKE patterns can also be classified into exact, prefix, suffix and contains-only forms so execution can use direct string operations instead of a regular-expression engine where Unicode and case semantics remain identical.
+Further same-field membership reasoning may be considered for intersections or unions that are not expressible merely by removing a subsumed term. Empty intersections must not be collapsed to FALSE without retaining UNKNOWN for NULL input. LIKE patterns may later gain proven prefix, suffix and contains-only execution paths where wildcard cardinality, escaping, newline behaviour and exact Unicode semantics remain identical.
 
 A future regex-to-LIKE rewrite may be considered only for a deliberately small whitelist of regular-expression forms whose complete-value anchoring, wildcard cardinality, escaping, newline behaviour and case rules can be proved equivalent. Every accepted form must have differential tests containing counterexamples to neighbouring non-equivalent forms.
 
@@ -242,11 +242,11 @@ Future `NULLS FIRST` and `NULLS LAST` syntax will require its own optimisation n
 
 No local AST rewrites currently change `DISTINCT`, `LIMIT` or `OFFSET`.
 
-Discover does implement a separate proof-based acquisition optimisation for eligible `LIMIT` queries. When source order is preserved, no explicit ordering can allow later rows to displace earlier matches, required fields are statically known and other safety conditions hold, acquisition may stop once enough authoritative matches have been observed.
+Discover does implement a separate proof-based acquisition optimisation for eligible `LIMIT` queries. When source order is preserved, no explicit ordering can allow later rows to displace earlier matches, required fields are statically known and other safety conditions hold, acquisition may stop once enough authoritative matches have been observed. A query without OFFSET requires `LIMIT` matches; a query with OFFSET requires exactly `OFFSET + LIMIT` matches before acquisition can stop, so the skipped prefix and requested result slice are both complete.
 
 ### Deliberately not implemented
 
-`LIMIT` is not pushed through arbitrary ordering, dynamic raw fields or archive exclusion. These cases can change which rows survive.
+`LIMIT` is not pushed through arbitrary ordering, DISTINCT, aggregation, CTE materialisation, UNION composition, dynamic raw fields or archive exclusion. These cases can change which rows survive or how they are ordered.
 
 ### Future candidates
 
@@ -291,6 +291,12 @@ Each new syntax feature must add a section to this document when it is implement
 - `SELECT *` is expanded during semantic resolution into the deterministic scalar schema. The optimiser sees the resulting ordinary projection terms rather than a wildcard. Star expansion itself is not an optimisation and cannot omit fields merely because they appear unused; acquisition planning must account for the complete expanded projection.
 - Aggregates and `GROUP BY` are implemented; future work may add grouping-key analysis, HAVING simplification, common aggregate reuse and exact partial aggregation only where equivalence is proved.
 - CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
+
+## Audit conclusions for symbolic scalar rewrites
+
+The 0.26.4 optimiser audit deliberately rejects familiar algebraic identities unless they preserve every observable yt-sql value. In particular, transformations such as `x + 0 -> x` are not assumed safe merely because they hold over ordinary real-number algebra: IEEE-754 signed zero can make the original and rewritten serialised values observably different. `x * 0 -> 0` is also invalid for NULL input, and division identities can change integer-versus-floating-point results. Constant-only arithmetic remains folded because the actual yt-sql evaluator computes the complete literal subtree and retains its concrete result.
+
+The same standard applies elsewhere: contradiction folding must preserve UNKNOWN, RANDOM remains volatile or row-dependent, Unicode-sensitive operators are not substituted for superficially similar case operations, and source/facet identities are never merged solely for convenience.
 
 ## Differential verification requirements
 

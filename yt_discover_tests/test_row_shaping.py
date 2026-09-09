@@ -58,6 +58,8 @@ def test_scalar_function_required_fields_are_underlying_fields() -> None:
     assert required_query_fields(query) == {"title", "description"}
 
 
-def test_limit_termination_disabled_by_distinct_and_offset() -> None:
+def test_limit_termination_disabled_by_distinct_but_allows_offset() -> None:
     assert not plan_limit_termination(parse_query("SELECT DISTINCT id FROM @x LIMIT 2")).eligible
-    assert not plan_limit_termination(parse_query("SELECT id FROM @x LIMIT 2 OFFSET 1")).eligible
+    offset = plan_limit_termination(parse_query("SELECT id FROM @x LIMIT 2 OFFSET 1"))
+    assert offset.eligible
+    assert "3 authoritative match(es)" in offset.reason

@@ -134,7 +134,7 @@ Plain `UNION` removes duplicate logical rows; `UNION ALL` preserves them. Global
 
 ## yt-sql optimiser
 
-Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction and conservative same-field comparison-bound subsumption. Discover 0.23.2 also applies these fixed-point predicate rewrites inside searched CASE conditions.
+Discover 0.22.0 introduces a dedicated post-resolution predicate optimiser. It reduces equivalent query structures before local evaluation while preserving the exact yt-sql semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction, conservative same-field comparison-bound subsumption, literal `IN` deduplication, singleton membership reduction and safe same-field membership subsumption. Discover 0.23.2 also applies these fixed-point predicate rewrites inside searched CASE conditions.
 
 The optimiser is tested differentially: the unoptimised and optimised resolved queries are executed against the same deterministic records and must produce identical predicate truth values, selected rows and serialised output. The routine conformance matrix also compares both forms across the complete current semantic case set before the optimised path is checked against the independent oracle.
 
@@ -142,14 +142,14 @@ Use `--explain` to inspect applicable rewrites. JSON explain output records them
 
 ## LIMIT-aware execution optimisation
 
-yt-discover implements proof-based LIMIT-aware acquisition termination. When a query has `LIMIT`, preserves source order by omitting `ORDER BY`, and uses only statically known fields, yt-discover acquires detailed metadata in source-order batches and stops once the requested number of authoritative matches has been observed. Later source rows cannot displace those matches from the first N results, so the optimisation is exact rather than heuristic.
+yt-discover implements proof-based LIMIT-aware acquisition termination. When a query has `LIMIT`, preserves source order by omitting `ORDER BY`, and uses only statically known fields, yt-discover acquires detailed metadata in source-order batches and stops once enough authoritative matches have been observed. With no `OFFSET` this is `LIMIT` matches; with `OFFSET`, it is `OFFSET + LIMIT` matches so the skipped prefix and requested output are both proven complete. Later source rows cannot displace those matches from the final source-order slice, so the optimisation is exact rather than heuristic.
 
 ```bash
 ./yt-discover.py --tab videos \
   "SELECT id FROM @whatdamath WHERE duration < 1h LIMIT 25" -v
 ```
 
-Queries with an explicit `ORDER BY` remain exhaustive in this release because a later row may still outrank an earlier match. Dynamic `raw.*` fields are also excluded from early termination because their types are resolved only after detailed metadata exists. Archive exclusion disables the optimisation because archived rows are removed after acquisition and could otherwise cause an unsafe early stop. Offline queries do not need the optimisation because they perform no network metadata acquisition.
+Queries with an explicit `ORDER BY` remain exhaustive in this release because a later row may still outrank an earlier match. `DISTINCT`, aggregation, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields are excluded from early termination because their types are resolved only after detailed metadata exists. Archive exclusion disables the optimisation because archived rows are removed after acquisition and could otherwise cause an unsafe early stop. Offline queries do not need the optimisation because they perform no network metadata acquisition.
 
 `--explain` and JSON explain now state whether LIMIT-aware acquisition is eligible and why. `--explain-analyze` and `--report` record whether detailed acquisition actually stopped early, how many source-order batches ran, and how many candidates were examined. When acquisition stops after LIMIT is satisfied, result statistics explicitly mark the observed match count as a lower bound rather than pretending the unexamined tail has been counted.
 

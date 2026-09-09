@@ -2309,8 +2309,37 @@ def canonical_record_value(
 
 
 def like_matches(value: str, pattern: str, *, case_insensitive: bool = False) -> bool:
-    """Return whether one string satisfies an yt-sql LIKE pattern."""
+    """Return whether one string satisfies an yt-sql LIKE pattern.
+
+    Case-sensitive patterns containing no unescaped wildcard use direct string equality.
+    This preserves yt-sql's exact Unicode/code-point semantics while avoiding regular-
+    expression dispatch for the common literal-pattern case.
+    """
+    if not case_insensitive:
+        exact, literal = _exact_like_literal(pattern)
+        if exact:
+            return value == literal
     return _compile_like_pattern(pattern, case_insensitive).fullmatch(value) is not None
+
+
+@lru_cache(maxsize=512)
+def _exact_like_literal(pattern: str) -> tuple[bool, str]:
+    """Classify a LIKE pattern and decode it when it represents one exact string."""
+    pieces: list[str] = []
+    escaped = False
+    for character in pattern:
+        if escaped:
+            pieces.append(character)
+            escaped = False
+        elif character == "\\":
+            escaped = True
+        elif character in {"%", "_"}:
+            return False, ""
+        else:
+            pieces.append(character)
+    if escaped:
+        return False, ""
+    return True, "".join(pieces)
 
 
 def _validate_like_pattern(pattern: str, source: str, position: int) -> None:
