@@ -76,11 +76,15 @@ def test_explain_payload_is_stable_and_machine_readable(downloader, tmp_path: Pa
     )
     payload = downloader.explain_plan_payload(plan)
     assert payload["kind"] == "yt-download-plan"
-    assert payload["version"] == "1.8.0"
+    assert payload["version"] == "1.9.0"
     assert payload["parameter_profile"]["name"] == "best"
     assert payload["policy"]["resolution"] == "best"
     assert payload["policy"]["playlist"] is True
-    assert payload["authentication"] == {"source": "none available", "cookies_file": None}
+    assert payload["authentication"] == {
+        "source": "none available",
+        "cookies_file": None,
+        "cookies_from_browser": None,
+    }
     assert payload["input"] == {"kind": "direct", "targets": ["abc", "def"]}
     assert json.loads(json.dumps(payload)) == payload
 
@@ -110,3 +114,110 @@ def test_human_explanation_includes_value_sources(downloader, tmp_path: Path, mo
     assert "Cookies:           disabled" in rendered
     assert "resolution: explicit CLI" in rendered
     assert "format: parameter profile 'archive'" in rendered
+
+
+def test_operational_policy_compiles_to_yt_dlp_command(downloader, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
+    resolved = downloader.ResolvedParameterSettings(
+        settings={
+            "limit-rate": "12M",
+            "throttled-rate": "500K",
+            "concurrent-fragments": 4,
+            "retries": "infinite",
+            "fragment-retries": "7",
+            "file-access-retries": "2",
+            "extractor-retries": "5",
+            "retry-sleep": ["linear=1:5", "fragment:exp=1:20"],
+            "archive": str(tmp_path / "archive.txt"),
+            "temp-path": str(tmp_path / "temp"),
+            "extractor-args": ["youtube:player-client=tv", "twitter:api=syndication"],
+            "cookies-from-browser": "firefox",
+        },
+        sources={},
+    )
+    plan = downloader.create_download_plan(
+        executable="yt-dlp",
+        resolved_parameters=resolved,
+        input_source=downloader.InputSource(direct_targets=("abc",)),
+        output_profile=None,
+        defaults_file=tmp_path / "defaults.json",
+        parameter_profile=None,
+        remove_completed_ids=False,
+    )
+    command = plan.command()
+    assert command[command.index("-r") + 1] == "12M"
+    assert command[command.index("--throttled-rate") + 1] == "500K"
+    assert command[command.index("--concurrent-fragments") + 1] == "4"
+    assert command[command.index("--retries") + 1] == "infinite"
+    assert command[command.index("--fragment-retries") + 1] == "7"
+    assert command[command.index("--file-access-retries") + 1] == "2"
+    assert command[command.index("--extractor-retries") + 1] == "5"
+    assert command.count("--retry-sleep") == 2
+    assert command[command.index("--cookies-from-browser") + 1] == "firefox"
+    assert str(tmp_path / "archive.txt") in command
+    assert f"temp:{tmp_path / 'temp'}" in command
+    assert command.count("--extractor-args") == 2
+
+
+def test_explain_payload_reports_operational_policy(downloader, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
+    resolved = downloader.ResolvedParameterSettings(
+        settings={
+            "limit-rate": "9M",
+            "concurrent-fragments": 3,
+            "archive": str(tmp_path / "archive.txt"),
+            "temp-path": str(tmp_path / "temp"),
+            "cookies-from-browser": "chromium+kwallet6:Default",
+        },
+        sources={"limit-rate": "explicit CLI"},
+    )
+    plan = downloader.create_download_plan(
+        executable="yt-dlp",
+        resolved_parameters=resolved,
+        input_source=downloader.InputSource(direct_targets=("abc",)),
+        output_profile=None,
+        defaults_file=tmp_path / "defaults.json",
+        parameter_profile=None,
+        remove_completed_ids=False,
+    )
+    payload = downloader.explain_plan_payload(plan)
+    assert payload["policy"]["limit_rate"] == "9M"
+    assert payload["policy"]["concurrent_fragments"] == 3
+    assert payload["authentication"]["cookies_from_browser"] == "chromium+kwallet6:Default"
+    assert payload["paths"] == {
+        "archive": str(tmp_path / "archive.txt"),
+        "temporary": str(tmp_path / "temp"),
+    }
+
+
+def test_explain_redacts_sensitive_extractor_argument_values(downloader, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
+    resolved = downloader.ResolvedParameterSettings(
+        settings={
+            "extractor-args": [
+                "youtube:player-client=tv;po_token=web.gvs+TOPSECRET;innertube_key=APISECRET",
+                "twitter:api=syndication",
+            ]
+        },
+        sources={"extractor-args": "explicit CLI"},
+    )
+    plan = downloader.create_download_plan(
+        executable="yt-dlp",
+        resolved_parameters=resolved,
+        input_source=downloader.InputSource(direct_targets=("abc",)),
+        output_profile=None,
+        defaults_file=tmp_path / "defaults.json",
+        parameter_profile=None,
+        remove_completed_ids=False,
+    )
+    payload = downloader.explain_plan_payload(plan)
+    rendered = json.dumps(payload)
+    assert "TOPSECRET" not in rendered
+    assert "APISECRET" not in rendered
+    assert "po_token=<redacted>" in rendered
+    assert "innertube_key=<redacted>" in rendered
+    assert "player-client=tv" in rendered
+    assert "twitter:api=syndication" in rendered
+    exact = downloader.format_command(plan.command())
+    assert "TOPSECRET" in exact
+    assert "APISECRET" in exact

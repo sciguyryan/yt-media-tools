@@ -51,7 +51,7 @@ def test_parameter_profile_requires_native_json_boolean(downloader, tmp_path: Pa
 def test_parameter_profile_rejects_cookie_conflict(downloader, tmp_path: Path) -> None:
     path = tmp_path / "defaults.json"
     write_defaults(path, {"broken": {"cookies": "/tmp/cookies.txt", "no-cookies": True}})
-    with pytest.raises(ValueError, match="cannot define both"):
+    with pytest.raises(ValueError, match="cannot combine cookie settings"):
         downloader.load_parameter_profiles(path, allow_missing=False)
 
 
@@ -143,7 +143,7 @@ def test_list_parameter_profiles_is_sorted_case_insensitively(downloader, tmp_pa
 
 def test_resolve_parameter_policy_uses_profile_format(downloader, monkeypatch) -> None:
     monkeypatch.setattr(downloader, "COOKIES_FILE", Path("/definitely/missing/cookies.txt"))
-    policy, cookies, disabled = downloader.resolve_parameter_policy(
+    policy, cookies, browser_cookies = downloader.resolve_parameter_policy(
         {
             "resolution": "1080p",
             "format": "bv*[height<=1080]+ba/b",
@@ -155,4 +155,96 @@ def test_resolve_parameter_policy_uses_profile_format(downloader, monkeypatch) -
     assert policy.format_selector == "bv*[height<=1080]+ba/b"
     assert policy.playlist is True
     assert cookies is None
-    assert disabled is True
+    assert browser_cookies is None
+
+
+def test_operational_profile_settings_are_strictly_typed(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(
+        path,
+        {
+            "network": {
+                "limit-rate": "12M",
+                "throttled-rate": "500K",
+                "concurrent-fragments": 4,
+                "retries": "infinite",
+                "fragment-retries": 7,
+                "file-access-retries": 2,
+                "extractor-retries": 5,
+                "retry-sleep": ["linear=1:5", "fragment:exp=1:20"],
+                "archive": "~/archive.txt",
+                "temp-path": "~/tmp",
+                "extractor-args": ["youtube:player-client=tv", "twitter:api=syndication"],
+                "cookies-from-browser": "firefox",
+            }
+        },
+    )
+    profile = downloader.select_parameter_profile("network", path, explicit_defaults=True)
+    assert profile is not None
+    assert profile.settings["limit-rate"] == "12M"
+    assert profile.settings["concurrent-fragments"] == 4
+    assert profile.settings["retries"] == "infinite"
+    assert profile.settings["fragment-retries"] == "7"
+    assert profile.settings["retry-sleep"] == ["linear=1:5", "fragment:exp=1:20"]
+
+
+def test_operational_profile_rejects_invalid_values(downloader, tmp_path: Path) -> None:
+    invalid_settings = (
+        ({"limit-rate": "fast"}, "byte rate"),
+        ({"concurrent-fragments": 0}, "positive JSON integer"),
+        ({"retries": -1}, "must not be negative"),
+        ({"retry-sleep": "linear=1:5"}, "JSON array"),
+        ({"extractor-args": []}, "non-empty JSON array"),
+    )
+    for index, (settings, message) in enumerate(invalid_settings):
+        path = tmp_path / f"defaults-{index}.json"
+        write_defaults(path, {"broken": settings})
+        with pytest.raises(ValueError, match=message):
+            downloader.load_parameter_profiles(path, allow_missing=False)
+
+
+def test_browser_cookie_setting_conflicts_with_file_cookie_policy(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(
+        path,
+        {"broken": {"cookies": "/tmp/cookies.txt", "cookies-from-browser": "firefox"}},
+    )
+    with pytest.raises(ValueError, match="cannot combine cookie settings"):
+        downloader.load_parameter_profiles(path, allow_missing=False)
+
+
+def test_cli_operational_settings_override_profile_values(downloader, tmp_path: Path) -> None:
+    profile = downloader.ParameterProfile(
+        name="network",
+        source=tmp_path / "defaults.json",
+        settings={
+            "limit-rate": "20M",
+            "concurrent-fragments": 2,
+            "retries": "10",
+            "extractor-args": ["youtube:player-client=default"],
+            "cookies-from-browser": "firefox",
+        },
+    )
+    resolved = downloader.resolve_parameter_settings(
+        profile,
+        {
+            "limit-rate": "8M",
+            "concurrent-fragments": 6,
+            "retries": "infinite",
+            "extractor-args": ["youtube:player-client=tv"],
+            "no-cookies": True,
+        },
+    )
+    assert resolved.settings["limit-rate"] == "8M"
+    assert resolved.settings["concurrent-fragments"] == 6
+    assert resolved.settings["retries"] == "infinite"
+    assert resolved.settings["extractor-args"] == ["youtube:player-client=tv"]
+    assert resolved.settings["no-cookies"] is True
+    assert "cookies-from-browser" not in resolved.settings
+
+
+def test_browser_cookie_setting_rejects_unknown_browser(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"broken": {"cookies-from-browser": "netscape"}})
+    with pytest.raises(ValueError, match="unsupported browser"):
+        downloader.load_parameter_profiles(path, allow_missing=False)

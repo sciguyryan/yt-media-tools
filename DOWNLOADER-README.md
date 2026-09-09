@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.8.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.9.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -180,7 +180,42 @@ Parameter-profile precedence is:
 built-in defaults -> selected parameter profile -> explicit CLI settings
 ```
 
-`--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true`.
+`--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
+
+Operational policy can also be stored in parameter profiles. Supported settings include `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+
+For example:
+
+```json
+{
+  "version": 1,
+  "profiles": {
+    "patient": {
+      "limit-rate": "12M",
+      "concurrent-fragments": 4,
+      "retries": "infinite",
+      "fragment-retries": 20,
+      "retry-sleep": ["linear=1:5", "fragment:exp=1:20"]
+    }
+  }
+}
+```
+
+The same values may be supplied explicitly on the CLI. Explicit `--extractor-args` values replace Downloader's built-in extractor-argument set for that invocation, preserving the normal explicit-CLI precedence rule rather than silently combining policies.
+
+## Operational policy
+
+The most common network and retry controls have first-class Downloader options:
+
+```bash
+./yt-download.py --limit-rate 12M -N 4 --retries infinite VIDEO_ID
+./yt-download.py --fragment-retries 20 --retry-sleep fragment:exp=1:20 VIDEO_ID
+./yt-download.py --archive ~/media/archive.txt --temp-path ~/media/tmp VIDEO_ID
+```
+
+Downloader keeps its existing `20M` rate limit, script-local archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a parameter profile or explicit CLI setting chooses them.
+
+`--explain` and `--explain-json` include these resolved operational values and their configured archive/temporary paths. Sensitive extractor-argument values such as tokens, keys and credentials are redacted from explanation output. `--dry-run` remains an exact command preview and therefore may contain explicitly configured sensitive values; treat its output accordingly.
 
 ## Cookies
 
@@ -192,7 +227,14 @@ Use an explicit cookie file with:
 ./yt-download.py --cookies /path/to/cookies.txt VIDEO_ID
 ```
 
-An explicitly requested cookie file must exist. To disable cookies even when the script-local file exists, use:
+Cookies may also be loaded directly from a browser using yt-dlp's browser specification:
+
+```bash
+./yt-download.py --cookies-from-browser firefox VIDEO_ID
+./yt-download.py --cookies-from-browser chromium+kwallet6:Default VIDEO_ID
+```
+
+Cookie-file selection, browser cookies and `--no-cookies` are mutually exclusive. An explicitly requested cookie file must exist. To disable cookies even when the script-local file exists, use:
 
 ```bash
 ./yt-download.py --no-cookies VIDEO_ID

@@ -44,3 +44,22 @@ def test_build_command_adds_explicit_cookies_file(downloader, tmp_path: Path) ->
     )
     cookie_index = command.index("--cookies")
     assert command[cookie_index + 1] == str(cookies)
+
+
+def test_build_command_adds_browser_cookies(downloader) -> None:
+    source = downloader.InputSource(direct_targets=("abc",))
+    policy = downloader.DownloadPolicy(
+        resolution="1080",
+        format_selector="bv+ba/best",
+        reverse_playlist=False,
+    )
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        policy,
+        source,
+        None,
+        cookies_from_browser="firefox",
+    )
+    cookie_index = command.index("--cookies-from-browser")
+    assert command[cookie_index + 1] == "firefox"
+    assert "--cookies" not in command

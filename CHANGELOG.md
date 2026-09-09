@@ -1,5 +1,15 @@
 # Changelog
 
+## Downloader 1.9.0 - Known Limits
+
+- Expand typed parameter-profile and CLI policy for rate limiting, throttling, fragment concurrency and retry behaviour.
+- Add configurable download-archive and temporary paths while preserving the existing built-in defaults.
+- Add repeatable retry-sleep and extractor-argument settings with strict JSON typing and explicit CLI precedence.
+- Add browser-cookie selection as a first-class authentication source alongside cookie files, automatic cookies and explicit cookie disabling.
+- Extend resolved plans and explain output with operational policy, authentication and path decisions, redacting sensitive extractor-argument values from explanation output.
+- Keep queue reconciliation bound to the resolved archive path rather than the historical script-local constant.
+- Add deterministic coverage for profile validation, precedence, command compilation and explain output.
+
 ## Downloader 1.8.0 - Clear Intent
 
 - Separate resolved Downloader configuration from command execution with an explicit immutable download-plan model.

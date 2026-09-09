@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Download media through yt-dlp using a small, predictable wrapper.
 
-The downloader keeps global download policy in Python while delegating output
-location and naming to optional output profiles stored beside the script in the
-``profiles`` directory.
+The downloader resolves typed operational policy from built-in defaults, optional
+parameter profiles and explicit CLI settings while delegating output location
+and naming to optional output profiles stored beside the script in ``profiles``.
 
 Targets may be supplied directly on the command line, read from standard input,
 read from an explicitly named batch file, or read from ``./ids.txt`` when no
@@ -34,7 +34,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.8.0"
+PROGRAM_VERSION = "1.9.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -43,13 +43,29 @@ PROFILE_SIGNATURE = "@profile"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
 PARAMETER_PROFILE_VERSION = 1
 PARAMETER_PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+SUPPORTED_COOKIE_BROWSERS = frozenset(
+    {"brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale"}
+)
+
 PARAMETER_PROFILE_KEYS = (
     "resolution",
     "format",
     "cookies",
+    "cookies-from-browser",
     "no-cookies",
     "reverse-playlist",
     "playlist",
+    "limit-rate",
+    "throttled-rate",
+    "concurrent-fragments",
+    "retries",
+    "fragment-retries",
+    "file-access-retries",
+    "extractor-retries",
+    "retry-sleep",
+    "archive",
+    "temp-path",
+    "extractor-args",
 )
 
 DEFAULT_VIDEO_ID_FILE = Path("./ids.txt")
@@ -58,9 +74,9 @@ COOKIES_FILE = SCRIPT_DIR / "cookies.txt"
 TEMP_DIR = Path("/mnt/storage/Temp/yt-dlp")
 
 DEFAULT_RESOLUTION = "1440"
-DOWNLOAD_RATE = "20M"
+DEFAULT_DOWNLOAD_RATE = "20M"
 FORMAT_SELECTOR = "bv+ba/best"
-EXTRACTOR_ARGS = "youtube:player-client=default,-android_sdkless"
+DEFAULT_EXTRACTOR_ARGS = ("youtube:player-client=default,-android_sdkless",)
 
 EXAMPLES = r"""Examples:
 
@@ -113,8 +129,18 @@ EXAMPLES = r"""Examples:
   A failed, skipped, interrupted or partially processed video remains in the file.
   The removal callback runs at yt-dlp's after_move stage, after successful post-processing.
 
+  Limit rate, increase fragment concurrency and adjust retries:
+    %(prog)s --limit-rate 12M -N 4 --retries infinite VIDEO_ID
+    %(prog)s --fragment-retries 20 --retry-sleep fragment:exp=1:20 VIDEO_ID
+
+  Override the archive and temporary paths:
+    %(prog)s --archive ~/media/archive.txt --temp-path ~/media/tmp VIDEO_ID
+
   Use an explicit cookies file when authentication is required:
     %(prog)s --cookies /path/to/cookies.txt VIDEO_ID
+
+  Load cookies directly from a browser:
+    %(prog)s --cookies-from-browser firefox VIDEO_ID
 
   Ignore an automatically discovered script-local cookies.txt:
     %(prog)s --no-cookies VIDEO_ID
@@ -164,6 +190,17 @@ class DownloadPolicy:
     format_selector: str
     reverse_playlist: bool
     playlist: bool | None = None
+    limit_rate: str = DEFAULT_DOWNLOAD_RATE
+    throttled_rate: str | None = None
+    concurrent_fragments: int | None = None
+    retries: str | None = None
+    fragment_retries: str | None = None
+    file_access_retries: str | None = None
+    extractor_retries: str | None = None
+    retry_sleep: tuple[str, ...] = ()
+    archive_file: Path = ARCHIVE_FILE
+    temp_path: Path = TEMP_DIR
+    extractor_args: tuple[str, ...] = DEFAULT_EXTRACTOR_ARGS
 
     @property
     def sort_selector(self) -> str:
@@ -217,6 +254,7 @@ class DownloadPlan:
     input_source: InputSource
     output_profile: OutputProfile | None
     cookies_file: Path | None
+    cookies_from_browser: str | None
     cookies_source: str
     remove_completed_ids: bool
     defaults_file: Path
@@ -231,6 +269,7 @@ class DownloadPlan:
             self.input_source,
             self.output_profile,
             cookies_file=self.cookies_file,
+            cookies_from_browser=self.cookies_from_browser,
             remove_completed_ids=self.remove_completed_ids,
         )
 
@@ -319,6 +358,68 @@ def build_parser() -> argparse.ArgumentParser:
             "This may also be stored in a parameter profile."
         ),
     )
+    parser.add_argument(
+        "--limit-rate",
+        metavar="RATE",
+        help=f"Limit download rate using yt-dlp RATE syntax (built-in default: {DEFAULT_DOWNLOAD_RATE}).",
+    )
+    parser.add_argument(
+        "--throttled-rate",
+        metavar="RATE",
+        help="Treat transfer rates below RATE as throttled and allow yt-dlp to re-extract the media.",
+    )
+    parser.add_argument(
+        "-N",
+        "--concurrent-fragments",
+        type=int,
+        metavar="N",
+        help="Download N fragments concurrently for DASH/HLS-native media.",
+    )
+    parser.add_argument(
+        "-R",
+        "--retries",
+        metavar="RETRIES",
+        help="Set yt-dlp download retries to a non-negative integer or 'infinite'.",
+    )
+    parser.add_argument(
+        "--fragment-retries",
+        metavar="RETRIES",
+        help="Set fragment retries to a non-negative integer or 'infinite'.",
+    )
+    parser.add_argument(
+        "--file-access-retries",
+        metavar="RETRIES",
+        help="Set file-access retries to a non-negative integer or 'infinite'.",
+    )
+    parser.add_argument(
+        "--extractor-retries",
+        metavar="RETRIES",
+        help="Set extractor retries to a non-negative integer or 'infinite'.",
+    )
+    parser.add_argument(
+        "--retry-sleep",
+        action="append",
+        metavar="[TYPE:]EXPR",
+        help="Add one yt-dlp retry-sleep expression. Repeat the option for multiple retry types.",
+    )
+    parser.add_argument(
+        "--archive",
+        type=Path,
+        metavar="FILE",
+        help=f"Use FILE as the yt-dlp download archive (built-in default: {ARCHIVE_FILE}).",
+    )
+    parser.add_argument(
+        "--temp-path",
+        type=Path,
+        metavar="DIR",
+        help=f"Use DIR for yt-dlp temporary/intermediate files (built-in default: {TEMP_DIR}).",
+    )
+    parser.add_argument(
+        "--extractor-args",
+        action="append",
+        metavar="IE_KEY:ARGS",
+        help="Add one yt-dlp extractor-argument string. Repeat to configure multiple extractors.",
+    )
     reverse_group = parser.add_mutually_exclusive_group()
     reverse_group.add_argument(
         "--rev",
@@ -363,6 +464,11 @@ def build_parser() -> argparse.ArgumentParser:
             "Use cookies from FILE. If omitted, cookies.txt beside this script is used "
             "when present; otherwise yt-dlp runs without cookies."
         ),
+    )
+    cookie_group.add_argument(
+        "--cookies-from-browser",
+        metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]",
+        help="Load cookies directly from a browser using yt-dlp's browser-cookie specification.",
     )
     cookie_group.add_argument(
         "--no-cookies",
@@ -593,6 +699,43 @@ def validate_parameter_profile_name(name: str) -> str:
     return name
 
 
+def _validate_rate_setting(key: str, value: object) -> str:
+    """Validate a yt-dlp byte-rate setting without accepting arbitrary option text."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"parameter setting {key!r} must be a non-empty JSON string")
+    normalised = value.strip()
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?[KMGTP]?", normalised, flags=re.IGNORECASE):
+        raise ValueError(f"parameter setting {key!r} must be a yt-dlp byte rate such as '500K' or '20M'")
+    return normalised
+
+
+def _validate_retry_setting(key: str, value: object) -> str:
+    """Validate a retry count accepted by yt-dlp."""
+    if isinstance(value, bool):
+        raise ValueError(f"parameter setting {key!r} must be an integer or 'infinite'")
+    if isinstance(value, int):
+        if value < 0:
+            raise ValueError(f"parameter setting {key!r} must not be negative")
+        return str(value)
+    if isinstance(value, str):
+        normalised = value.strip().lower()
+        if normalised == "infinite" or normalised.isdigit():
+            return normalised
+    raise ValueError(f"parameter setting {key!r} must be a non-negative integer or 'infinite'")
+
+
+def _validate_string_list_setting(key: str, value: object) -> list[str]:
+    """Validate a profile setting represented by one or more non-empty strings."""
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"parameter setting {key!r} must be a non-empty JSON array of strings")
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f"parameter setting {key!r} must contain only non-empty JSON strings")
+        result.append(item.strip())
+    return result
+
+
 def _validate_parameter_setting(key: str, value: object) -> object:
     """Validate one parameter-profile setting and return its normalised value."""
     if key == "resolution":
@@ -604,10 +747,32 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         if not isinstance(value, str) or not value.strip():
             raise ValueError("parameter setting 'format' must be a non-empty JSON string")
         return value.strip()
-    if key == "cookies":
+    if key in {"cookies", "archive", "temp-path"}:
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("parameter setting 'cookies' must be a non-empty JSON string")
+            raise ValueError(f"parameter setting {key!r} must be a non-empty JSON string")
+        return value.strip()
+    if key == "cookies-from-browser":
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("parameter setting 'cookies-from-browser' must be a non-empty JSON string")
+        normalised = value.strip()
+        browser = re.split(r"[+:]", normalised, maxsplit=1)[0].lower()
+        if browser not in SUPPORTED_COOKIE_BROWSERS:
+            supported = ", ".join(sorted(SUPPORTED_COOKIE_BROWSERS))
+            raise ValueError(
+                f"parameter setting 'cookies-from-browser' uses unsupported browser {browser!r}; "
+                f"expected one of: {supported}"
+            )
+        return normalised
+    if key in {"limit-rate", "throttled-rate"}:
+        return _validate_rate_setting(key, value)
+    if key == "concurrent-fragments":
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError("parameter setting 'concurrent-fragments' must be a positive JSON integer")
         return value
+    if key in {"retries", "fragment-retries", "file-access-retries", "extractor-retries"}:
+        return _validate_retry_setting(key, value)
+    if key in {"retry-sleep", "extractor-args"}:
+        return _validate_string_list_setting(key, value)
     if key in {"no-cookies", "reverse-playlist", "playlist"}:
         if not isinstance(value, bool):
             raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
@@ -628,8 +793,10 @@ def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[
             raise ValueError(f"parameter profile {profile_name!r} contains unknown option {key!r}")
         validated[key] = _validate_parameter_setting(key, value)
 
-    if "cookies" in validated and "no-cookies" in validated:
-        raise ValueError(f"parameter profile {profile_name!r} cannot define both 'cookies' and 'no-cookies'")
+    cookie_keys = {"cookies", "cookies-from-browser", "no-cookies"} & set(validated)
+    if len(cookie_keys) > 1:
+        rendered = ", ".join(repr(key) for key in sorted(cookie_keys))
+        raise ValueError(f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}")
     return validated
 
 
@@ -709,17 +876,38 @@ def list_parameter_profiles(path: Path, *, explicit_defaults: bool) -> list[str]
 def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
     """Return only profile-eligible settings explicitly supplied on the CLI."""
     settings: dict[str, object] = {}
-    if args.resolution is not None:
-        validate_resolution(args.resolution)
-        settings["resolution"] = args.resolution
-    if args.format_selector is not None:
-        settings["format"] = _validate_parameter_setting("format", args.format_selector)
+    scalar_settings = {
+        "resolution": args.resolution,
+        "format": args.format_selector,
+        "limit-rate": args.limit_rate,
+        "throttled-rate": args.throttled_rate,
+        "concurrent-fragments": args.concurrent_fragments,
+        "retries": args.retries,
+        "fragment-retries": args.fragment_retries,
+        "file-access-retries": args.file_access_retries,
+        "extractor-retries": args.extractor_retries,
+    }
+    for key, value in scalar_settings.items():
+        if value is not None:
+            settings[key] = _validate_parameter_setting(key, value)
+    if args.retry_sleep is not None:
+        settings["retry-sleep"] = _validate_parameter_setting("retry-sleep", args.retry_sleep)
+    if args.archive is not None:
+        settings["archive"] = str(args.archive.expanduser())
+    if args.temp_path is not None:
+        settings["temp-path"] = str(args.temp_path.expanduser())
+    if args.extractor_args is not None:
+        settings["extractor-args"] = _validate_parameter_setting("extractor-args", args.extractor_args)
     if args.reverse_playlist is not None:
         settings["reverse-playlist"] = args.reverse_playlist
     if args.playlist is not None:
         settings["playlist"] = args.playlist
     if args.cookies is not None:
         settings["cookies"] = str(args.cookies.expanduser())
+    elif args.cookies_from_browser is not None:
+        settings["cookies-from-browser"] = _validate_parameter_setting(
+            "cookies-from-browser", args.cookies_from_browser
+        )
     elif args.no_cookies is True:
         settings["no-cookies"] = True
     elif args.auto_cookies is True:
@@ -733,10 +921,9 @@ def merge_parameter_settings(
 ) -> dict[str, object]:
     """Merge a selected profile with explicit CLI settings, with CLI precedence."""
     merged = dict(profile.settings) if profile is not None else {}
-    if "cookies" in cli_settings:
-        merged.pop("no-cookies", None)
-    if "no-cookies" in cli_settings:
-        merged.pop("cookies", None)
+    if cookie_keys := ({"cookies", "cookies-from-browser", "no-cookies"} & set(cli_settings)):
+        for key in {"cookies", "cookies-from-browser", "no-cookies"} - cookie_keys:
+            merged.pop(key, None)
     merged.update(cli_settings)
     return merged
 
@@ -838,7 +1025,7 @@ def write_parameter_profile(
 
 def resolve_parameter_policy(
     settings: dict[str, object],
-) -> tuple[DownloadPolicy, Path | None, bool]:
+) -> tuple[DownloadPolicy, Path | None, str | None]:
     """Resolve merged profile settings into Downloader runtime policy."""
     resolution = validate_resolution(str(settings.get("resolution", DEFAULT_RESOLUTION)))
     format_selector = str(settings.get("format", FORMAT_SELECTOR))
@@ -846,9 +1033,13 @@ def resolve_parameter_policy(
     playlist_value = settings.get("playlist")
     playlist = playlist_value if isinstance(playlist_value, bool) else None
 
+    cookies_from_browser = None
     if "cookies" in settings:
         cookie_path = Path(str(settings["cookies"])).expanduser()
         cookies_file = resolve_cookies(cookie_path, disabled=False)
+    elif "cookies-from-browser" in settings:
+        cookies_file = None
+        cookies_from_browser = str(settings["cookies-from-browser"])
     else:
         disabled = bool(settings.get("no-cookies", False))
         cookies_file = resolve_cookies(None, disabled=disabled)
@@ -859,9 +1050,22 @@ def resolve_parameter_policy(
             format_selector=format_selector,
             reverse_playlist=reverse_playlist,
             playlist=playlist,
+            limit_rate=str(settings.get("limit-rate", DEFAULT_DOWNLOAD_RATE)),
+            throttled_rate=(str(settings["throttled-rate"]) if "throttled-rate" in settings else None),
+            concurrent_fragments=(
+                int(settings["concurrent-fragments"]) if "concurrent-fragments" in settings else None
+            ),
+            retries=(str(settings["retries"]) if "retries" in settings else None),
+            fragment_retries=(str(settings["fragment-retries"]) if "fragment-retries" in settings else None),
+            file_access_retries=(str(settings["file-access-retries"]) if "file-access-retries" in settings else None),
+            extractor_retries=(str(settings["extractor-retries"]) if "extractor-retries" in settings else None),
+            retry_sleep=tuple(settings.get("retry-sleep", ())),
+            archive_file=Path(str(settings.get("archive", ARCHIVE_FILE))).expanduser(),
+            temp_path=Path(str(settings.get("temp-path", TEMP_DIR))).expanduser(),
+            extractor_args=tuple(settings.get("extractor-args", DEFAULT_EXTRACTOR_ARGS)),
         ),
         cookies_file,
-        bool(settings.get("no-cookies", False)),
+        cookies_from_browser,
     )
 
 
@@ -1008,6 +1212,8 @@ def describe_cookie_source(settings: dict[str, object], cookies_file: Path | Non
     """Return a stable human-readable description of the resolved cookie policy."""
     if "cookies" in settings:
         return "explicit cookie file"
+    if "cookies-from-browser" in settings:
+        return "browser cookies"
     if bool(settings.get("no-cookies", False)):
         return "disabled"
     if cookies_file is not None:
@@ -1026,19 +1232,69 @@ def create_download_plan(
     remove_completed_ids: bool,
 ) -> DownloadPlan:
     """Resolve one complete download plan without mutating queues or launching yt-dlp."""
-    policy, cookies_file, _cookies_disabled = resolve_parameter_policy(resolved_parameters.settings)
+    policy, cookies_file, cookies_from_browser = resolve_parameter_policy(resolved_parameters.settings)
     return DownloadPlan(
         executable=executable,
         policy=policy,
         input_source=input_source,
         output_profile=output_profile,
         cookies_file=cookies_file,
+        cookies_from_browser=cookies_from_browser,
         cookies_source=describe_cookie_source(resolved_parameters.settings, cookies_file),
         remove_completed_ids=remove_completed_ids,
         defaults_file=defaults_file,
         parameter_profile=parameter_profile,
         parameter_sources=dict(resolved_parameters.sources),
     )
+
+
+SENSITIVE_EXTRACTOR_ARGUMENT_NAMES = frozenset(
+    {
+        "api_key",
+        "app_info",
+        "authorization",
+        "client_id",
+        "credential",
+        "data_sync_id",
+        "device_id",
+        "hls_key",
+        "innertube_key",
+        "password",
+        "po_token",
+        "refresh_token",
+        "secret",
+        "token",
+        "visitor_data",
+    }
+)
+
+
+def redact_extractor_argument(value: str) -> str:
+    """Redact likely credentials from one yt-dlp extractor-argument string."""
+    if ":" not in value:
+        return value
+    extractor, argument_text = value.split(":", 1)
+    redacted: list[str] = []
+    for clause in argument_text.split(";"):
+        name, separator, raw_value = clause.partition("=")
+        normalised = name.strip().lower().replace("-", "_")
+        if separator and (
+            normalised in SENSITIVE_EXTRACTOR_ARGUMENT_NAMES
+            or any(marker in normalised for marker in ("token", "password", "secret", "credential"))
+        ):
+            redacted.append(f"{name}=<redacted>")
+        else:
+            redacted.append(clause)
+    return f"{extractor}:{';'.join(redacted)}"
+
+
+def redact_command(command: Sequence[str]) -> list[str]:
+    """Return a diagnostic command with sensitive extractor-argument values removed."""
+    result = list(command)
+    for index, item in enumerate(result[:-1]):
+        if item == "--extractor-args":
+            result[index + 1] = redact_extractor_argument(result[index + 1])
+    return result
 
 
 def _input_source_payload(source: InputSource) -> dict[str, object]:
@@ -1074,16 +1330,26 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "format_sort": plan.policy.sort_selector,
             "reverse_playlist": plan.policy.reverse_playlist,
             "playlist": plan.policy.playlist,
+            "limit_rate": plan.policy.limit_rate,
+            "throttled_rate": plan.policy.throttled_rate,
+            "concurrent_fragments": plan.policy.concurrent_fragments,
+            "retries": plan.policy.retries,
+            "fragment_retries": plan.policy.fragment_retries,
+            "file_access_retries": plan.policy.file_access_retries,
+            "extractor_retries": plan.policy.extractor_retries,
+            "retry_sleep": list(plan.policy.retry_sleep),
+            "extractor_args": [redact_extractor_argument(value) for value in plan.policy.extractor_args],
         },
         "authentication": {
             "source": plan.cookies_source,
             "cookies_file": str(plan.cookies_file) if plan.cookies_file is not None else None,
+            "cookies_from_browser": plan.cookies_from_browser,
         },
         "input": _input_source_payload(plan.input_source),
         "output_profile": output_profile,
         "paths": {
-            "archive": str(ARCHIVE_FILE),
-            "temporary": str(TEMP_DIR),
+            "archive": str(plan.policy.archive_file),
+            "temporary": str(plan.policy.temp_path),
         },
         "queue": {
             "remove_completed_ids": plan.remove_completed_ids,
@@ -1091,7 +1357,7 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
         },
         "yt_dlp": {
             "executable": plan.executable,
-            "command": plan.command(),
+            "command": redact_command(plan.command()),
         },
     }
 
@@ -1138,13 +1404,21 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"Playlist:          {policy['playlist'] if policy['playlist'] is not None else 'yt-dlp default'}",
         f"Reverse playlist:  {policy['reverse_playlist']}",
         f"Cookies:           {authentication['source']}"
-        + (f" ({authentication['cookies_file']})" if authentication["cookies_file"] else ""),
-        f"Archive:           {ARCHIVE_FILE}",
-        f"Temporary path:    {TEMP_DIR}",
+        + (f" ({authentication['cookies_file']})" if authentication["cookies_file"] else "")
+        + (f" ({authentication['cookies_from_browser']})" if authentication["cookies_from_browser"] else ""),
+        f"Limit rate:        {policy['limit_rate']}",
+        f"Throttled rate:    {policy['throttled_rate'] or 'yt-dlp default'}",
+        f"Concurrent frags:  {policy['concurrent_fragments'] or 'yt-dlp default'}",
+        f"Retries:           {policy['retries'] or 'yt-dlp default'}",
+        f"Fragment retries:  {policy['fragment_retries'] or 'yt-dlp default'}",
+        f"File retries:      {policy['file_access_retries'] or 'yt-dlp default'}",
+        f"Extractor retries: {policy['extractor_retries'] or 'yt-dlp default'}",
+        f"Archive:           {plan.policy.archive_file}",
+        f"Temporary path:    {plan.policy.temp_path}",
         f"Queue removal:     {queue['remove_completed_ids']}",
         "",
         "Resolved yt-dlp command:",
-        f"  {format_command(plan.command())}",
+        f"  {format_command(payload['yt_dlp']['command'])}",
     ]
     if plan.parameter_sources:
         lines.extend(["", "Parameter value sources:"])
@@ -1160,6 +1434,7 @@ def build_yt_dlp_command(
     profile: OutputProfile | None,
     *,
     cookies_file: Path | None = None,
+    cookies_from_browser: str | None = None,
     remove_completed_ids: bool = False,
 ) -> list[str]:
     """Build the complete yt-dlp command without invoking a shell."""
@@ -1170,20 +1445,37 @@ def build_yt_dlp_command(
         "-S",
         policy.sort_selector,
         "-r",
-        DOWNLOAD_RATE,
+        policy.limit_rate,
         "--mtime",
         "--embed-chapters",
         "--embed-metadata",
         "--sponsorblock-remove",
         "all",
         "--download-archive",
-        str(ARCHIVE_FILE),
+        str(policy.archive_file),
         "--video-multistreams",
         "--audio-multistreams",
     ]
 
+    if policy.throttled_rate is not None:
+        command.extend(("--throttled-rate", policy.throttled_rate))
+    if policy.concurrent_fragments is not None:
+        command.extend(("--concurrent-fragments", str(policy.concurrent_fragments)))
+    for option, value in (
+        ("--retries", policy.retries),
+        ("--fragment-retries", policy.fragment_retries),
+        ("--file-access-retries", policy.file_access_retries),
+        ("--extractor-retries", policy.extractor_retries),
+    ):
+        if value is not None:
+            command.extend((option, value))
+    for expression in policy.retry_sleep:
+        command.extend(("--retry-sleep", expression))
+
     if cookies_file is not None:
         command.extend(("--cookies", str(cookies_file)))
+    elif cookies_from_browser is not None:
+        command.extend(("--cookies-from-browser", cookies_from_browser))
 
     if profile is not None:
         if profile.output is not None:
@@ -1191,8 +1483,9 @@ def build_yt_dlp_command(
         if profile.path is not None:
             command.extend(("--paths", f"home:{profile.path}"))
 
-    command.extend(("--paths", f"temp:{TEMP_DIR}"))
-    command.extend(("--extractor-args", EXTRACTOR_ARGS))
+    command.extend(("--paths", f"temp:{policy.temp_path}"))
+    for extractor_arg in policy.extractor_args:
+        command.extend(("--extractor-args", extractor_arg))
 
     if policy.reverse_playlist:
         command.append("--playlist-reverse")
@@ -1347,12 +1640,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.remove_completed_ids and not args.dry_run:
         assert input_source.batch_file is not None
         try:
-            removed = remove_archived_ids(input_source.batch_file, ARCHIVE_FILE)
+            removed = remove_archived_ids(input_source.batch_file, plan.policy.archive_file)
         except RuntimeError as exc:
             parser.error(str(exc))
         if removed:
             print(
-                f"Removed {removed} ID(s) already recorded in {ARCHIVE_FILE} from {input_source.batch_file}.",
+                f"Removed {removed} ID(s) already recorded in {plan.policy.archive_file} "
+                f"from {input_source.batch_file}.",
                 file=sys.stderr,
             )
 
