@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.12.1 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.13.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -116,6 +116,30 @@ Print only the resolved `yt-dlp` command without executing it:
 ```
 
 Dry-run mode does not mutate queue files.
+
+## Run manifests and output integrity
+
+Write an operational JSON manifest for an actual run with:
+
+```bash
+./yt-download.py --run-manifest run.json VIDEO_ID
+```
+
+The manifest records the Downloader and detected yt-dlp versions, start and end timestamps, yt-dlp exit status, known input targets, the redacted resolved plan, queue outcome information when queue mode is active, and primary output paths reported by yt-dlp at the successful `after_move` stage. Standard-input targets are reported as unknown because Downloader does not consume or duplicate stdin merely for manifest bookkeeping.
+
+Sensitive extractor-argument values use the same redaction contract as `--explain-json`. Cookie contents are never copied into the manifest. The internal output-event ledger is temporary and is removed after manifest construction.
+
+Optional SHA-256 integrity values can be added with:
+
+```bash
+./yt-download.py --run-manifest run.json --hash-outputs VIDEO_ID
+```
+
+Hashes apply only to primary output files actually reported at `after_move`. They are ordinary verification aids for detecting later byte changes. They are not evidence of authenticity, provenance or who created the file. A successfully reported path that is no longer present when the manifest is built is recorded as missing rather than silently omitted.
+
+Associated subtitle, thumbnail and info-JSON policy is recorded in the manifest, but actual sidecar paths are not guessed from output templates. Downloader will not claim a sidecar was generated unless a future implementation can observe that path authoritatively.
+
+`--run-manifest` is intentionally unavailable with `--dry-run`, `--explain` and `--explain-json` because those modes do not perform an actual download run. `--hash-outputs` requires `--run-manifest`.
 
 ## Automated verification
 
@@ -314,7 +338,7 @@ SponsorBlock processing remains enabled by default with removal category `all`, 
 
 The corresponding parameter-profile keys are `write-subs`, `write-auto-subs`, `sub-langs`, `sub-format`, `embed-subs`, `write-thumbnail`, `embed-thumbnail`, `write-info-json`, `embed-metadata`, `embed-chapters`, `sponsorblock`, `sponsorblock-mark` and `sponsorblock-remove`. Boolean settings have matching positive and negative CLI forms so explicit CLI choices can override a selected profile in either direction.
 
-`--explain` and `--explain-json` report all of these resolved choices. Later integrity and manifest work can therefore distinguish the primary media output from explicitly requested associated artefacts without inferring policy from the final command.
+`--explain` and `--explain-json` report all of these resolved choices. Run manifests reuse that resolved policy and distinguish the primary media output from explicitly requested associated artefacts without inferring policy from the final command.
 
 ## Cookies
 

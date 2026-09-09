@@ -64,7 +64,7 @@ The architecture should remain flexible enough to pass current yt-dlp extractor 
 
 ## Phase 3 - declarative format policy
 
-The candidate implements the core selection contract: hard resolution/FPS bounds, fallback-friendly codec/FPS/HDR/audio-channel preferences, merge-container choice, deterministic compilation and raw-selector authority. Language preference and filesize policy remain deliberately deferred until extractor consistency and exact-versus-approximate size semantics can be specified conservatively. Audio-only and stream-mode policy remains assigned to Phase 7 rather than being duplicated here.
+The implemented selection contract includes: hard resolution/FPS bounds, fallback-friendly codec/FPS/HDR/audio-channel preferences, merge-container choice, deterministic compilation and raw-selector authority. Language preference and filesize policy remain deliberately deferred until extractor consistency and exact-versus-approximate size semantics can be specified conservatively. Audio-only and stream-mode policy remains assigned to Phase 7 rather than being duplicated here.
 
 Build a first-class format policy above yt-dlp's native selector language. Candidate dimensions include:
 
@@ -139,6 +139,10 @@ A manifest may record:
 Investigate optional hashes of completed outputs for ordinary integrity checking. Hashes should be clearly described as verification aids, not proof of authenticity or provenance.
 
 Audit yt-dlp and ffmpeg failure behaviour to determine whether an apparently present output can ever be mistaken for a completed output. yt-dlp's successful completion state should remain authoritative unless Downloader can establish a stronger invariant without introducing false failures. Sidecar expectations should be checked only when the selected policy actually requires those artefacts.
+
+Downloader 1.13.0 records completed primary output paths through an internal `after_move` callback rather than scraping yt-dlp console output. Optional SHA-256 hashes are calculated only for those observed primary files. The manifest reuses the redacted resolved-plan representation, records queue outcomes when available, and deliberately does not invent associated sidecar paths. The deterministic manifest schema, redaction, output-event handling, hashing, interruption and failure boundaries are covered with automated tests and simulated yt-dlp execution.
+
+Actual sidecar-path tracking remains a possible refinement only if it can be based on authoritative yt-dlp events rather than filename inference.
 
 ## Phase 7 - first-class audio workflows
 

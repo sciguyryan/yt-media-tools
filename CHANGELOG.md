@@ -1,11 +1,22 @@
 # Changelog
 
+## Downloader 1.13.0 - Receipt
+
+- Add `--run-manifest FILE` for redacted machine-readable records of actual Downloader runs.
+- Record Downloader and yt-dlp versions, timestamps, exit state, known targets, resolved plan data, queue outcomes and successfully completed primary output paths.
+- Capture primary output paths through yt-dlp `after_move` callbacks instead of parsing human-readable console output.
+- Add optional `--hash-outputs` SHA-256 values for completed primary files as ordinary integrity checks rather than authenticity or provenance claims.
+- Reuse explain-plan redaction so sensitive extractor-argument values are never copied into manifests.
+- Record requested associated-artefact policy without guessing sidecar paths that Downloader has not authoritatively observed.
+- Remove temporary output-event ledgers after manifest construction.
+- Add deterministic unit and simulated orchestration tests for manifest schema, output capture, hashing, redaction, interruption, validation and failure handling.
+
 ## Downloader 1.12.1 - Closed Loop
 
 - Add orchestration-level regression tests for post-processing failure, completion-callback failure and atomic queue-rewrite failure.
 - Require deterministic Downloader behaviour to be covered by automated tests whenever controlled fixtures or simulated process outcomes can represent it faithfully.
 - Reserve manual verification for genuinely external or environment-dependent behaviour that cannot be reproduced faithfully in the automated suite.
-- Reconcile the Downloader roadmap with the accepted Phase 4 and Phase 5 state.
+- Reconcile the Downloader roadmap with the implemented Phase 4 and Phase 5 behaviour.
 
 ## Downloader 1.12.0 - Queue State
 

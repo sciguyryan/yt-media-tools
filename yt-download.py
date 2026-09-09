@@ -21,6 +21,7 @@ Downloader configuration has two deliberately separate profile layers:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -28,13 +29,15 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.12.1"
+PROGRAM_VERSION = "1.13.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -42,6 +45,7 @@ DEFAULT_PROFILE_NAME = "default"
 PROFILE_SIGNATURE = "@profile"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
 PARAMETER_PROFILE_VERSION = 1
+RUN_MANIFEST_SCHEMA_VERSION = 1
 PARAMETER_PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SUPPORTED_COOKIE_BROWSERS = frozenset(
     {"brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale"}
@@ -217,6 +221,12 @@ EXAMPLES = r"""Examples:
   Print the resolved yt-dlp command without executing it:
     %(prog)s --dry-run -p playlist PLAYLIST_URL
 
+  Write a redacted run manifest after actual execution:
+    %(prog)s --run-manifest run.json VIDEO_ID
+
+  Include SHA-256 hashes for successfully completed primary outputs:
+    %(prog)s --run-manifest run.json --hash-outputs VIDEO_ID
+
   Emit a new parameter profile without modifying defaults.json:
     %(prog)s --resolution 1440p --format "bv+ba/best" --no-cookies --generate-profile offline-1440
 
@@ -384,7 +394,7 @@ class DownloadPlan:
     parameter_profile: ParameterProfile | None
     parameter_sources: dict[str, str]
 
-    def command(self) -> list[str]:
+    def command(self, *, output_event_file: Path | None = None) -> list[str]:
         """Return the exact yt-dlp command represented by this plan."""
         return build_yt_dlp_command(
             self.executable,
@@ -394,6 +404,7 @@ class DownloadPlan:
             cookies_file=self.cookies_file,
             cookies_from_browser=self.cookies_from_browser,
             remove_completed_ids=self.remove_completed_ids,
+            output_event_file=output_event_file,
         )
 
 
@@ -836,9 +847,26 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--run-manifest",
+        type=Path,
+        metavar="FILE",
+        help="Write a redacted machine-readable manifest describing this actual download run.",
+    )
+    parser.add_argument(
+        "--hash-outputs",
+        action="store_true",
+        help="Include SHA-256 hashes for completed primary outputs in --run-manifest.",
+    )
+    parser.add_argument(
         "--_remove-completed-id",
         nargs=2,
         metavar=("FILE", "VIDEO_ID"),
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--_record-output",
+        nargs=3,
+        metavar=("LEDGER", "MEDIA_ID", "OUTPUT_PATH"),
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
@@ -1667,6 +1695,34 @@ def completion_exec_command(input_file: Path) -> str:
     return " ".join(command)
 
 
+def output_record_exec_command(event_file: Path) -> str:
+    """Return an ``after_move`` callback that records one completed primary output."""
+    command = [
+        shlex.quote(sys.executable),
+        shlex.quote(str(Path(__file__).resolve())),
+        "--_record-output",
+        shlex.quote(str(event_file.expanduser().resolve())),
+        "%(id)q",
+        "%(filepath)q",
+    ]
+    return " ".join(command)
+
+
+def append_output_record(event_file: Path, media_id: str, output_path: str) -> None:
+    """Durably append one completed-media event for later manifest construction."""
+    resolved = event_file.expanduser().resolve()
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    record = (json.dumps({"id": media_id, "path": output_path}, ensure_ascii=False) + "\n").encode("utf-8")
+    try:
+        descriptor = os.open(resolved, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+        with os.fdopen(descriptor, "ab") as handle:
+            handle.write(record)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except OSError as exc:
+        raise RuntimeError(f"unable to record completed output {output_path}: {exc}") from exc
+
+
 def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputSource) -> None:
     """Validate queue mutation and reporting options as one coherent mode."""
     queue_outputs_requested = (
@@ -1775,6 +1831,158 @@ def write_queue_report(path: Path, report: dict[str, object]) -> None:
 def write_failed_targets(path: Path, targets: Sequence[str]) -> None:
     """Atomically write unresolved targets as a reusable newline-delimited batch file."""
     content = "".join(f"{target}\n" for target in targets).encode("utf-8")
+    atomic_write_bytes(path, content)
+
+
+def utc_timestamp() -> str:
+    """Return the current UTC time in a stable ISO 8601 representation."""
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def read_output_records(event_file: Path) -> tuple[dict[str, str], ...]:
+    """Read unique completed primary-output events from an internal event ledger."""
+    if not event_file.is_file():
+        return ()
+    try:
+        lines = event_file.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RuntimeError(f"unable to read output event ledger {event_file}: {exc}") from exc
+    outputs: list[dict[str, str]] = []
+    seen: set[tuple[str, Path]] = set()
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"invalid output event ledger record: {exc}") from exc
+        media_id = payload.get("id") if isinstance(payload, dict) else None
+        value = payload.get("path") if isinstance(payload, dict) else None
+        if not isinstance(media_id, str) or not media_id:
+            raise RuntimeError("invalid output event ledger record: missing media ID")
+        if not isinstance(value, str) or not value:
+            raise RuntimeError("invalid output event ledger record: missing path")
+        path = Path(value).expanduser().resolve()
+        key = (media_id, path)
+        if key not in seen:
+            outputs.append({"id": media_id, "path": str(path)})
+            seen.add(key)
+    return tuple(outputs)
+
+
+def sha256_file(path: Path) -> str:
+    """Return the SHA-256 digest of one completed output file."""
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                digest.update(chunk)
+    except OSError as exc:
+        raise RuntimeError(f"unable to hash completed output {path}: {exc}") from exc
+    return digest.hexdigest()
+
+
+def output_manifest_entries(records: Sequence[dict[str, str]], *, hash_outputs: bool) -> list[dict[str, object]]:
+    """Describe completed primary outputs and optionally calculate SHA-256 hashes."""
+    entries: list[dict[str, object]] = []
+    for record in records:
+        path = Path(record["path"])
+        exists = path.is_file()
+        entry: dict[str, object] = {"id": record["id"], "path": str(path), "exists": exists}
+        if exists:
+            try:
+                entry["size_bytes"] = path.stat().st_size
+            except OSError as exc:
+                raise RuntimeError(f"unable to inspect completed output {path}: {exc}") from exc
+            if hash_outputs:
+                entry["sha256"] = sha256_file(path)
+        elif hash_outputs:
+            entry["sha256"] = None
+        entries.append(entry)
+    return entries
+
+
+def yt_dlp_version(executable: str) -> str | None:
+    """Return the invoked yt-dlp version without making manifest creation depend on it."""
+    try:
+        completed = subprocess.run(
+            [executable, "--version"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return None
+    if completed.returncode != 0:
+        return None
+    version = completed.stdout.strip()
+    return version or None
+
+
+def manifest_input_targets(input_source: InputSource) -> list[str] | None:
+    """Return known input targets without consuming standard input."""
+    if input_source.batch_file is not None:
+        return list(queue_targets(input_source.batch_file))
+    if input_source.stdin:
+        return None
+    return list(input_source.direct_targets)
+
+
+def run_manifest_payload(
+    *,
+    plan: DownloadPlan,
+    yt_dlp_version_value: str | None,
+    started_at: str,
+    ended_at: str,
+    exit_status: int,
+    targets: list[str] | None,
+    outputs: list[dict[str, object]],
+    queue_report: dict[str, object] | None,
+    hash_outputs: bool,
+) -> dict[str, object]:
+    """Build a redacted operational manifest from authoritative run state."""
+    return {
+        "kind": "yt-download-run-manifest",
+        "schema_version": RUN_MANIFEST_SCHEMA_VERSION,
+        "downloader": {"version": PROGRAM_VERSION},
+        "yt_dlp": {
+            "version": yt_dlp_version_value,
+            "exit_status": exit_status,
+        },
+        "run": {
+            "started_at": started_at,
+            "ended_at": ended_at,
+            "interrupted": exit_status == 130,
+        },
+        "input": {
+            "targets": targets,
+            "targets_known": targets is not None,
+        },
+        "resolved_plan": explain_plan_payload(plan),
+        "queue": queue_report,
+        "outputs": {
+            "primary": outputs,
+            "associated_artefacts": {
+                "actual_paths_tracked": False,
+                "requested_policy": {
+                    "write_subtitles": plan.policy.write_subtitles,
+                    "write_auto_subtitles": plan.policy.write_auto_subtitles,
+                    "write_thumbnail": plan.policy.write_thumbnail,
+                    "write_info_json": plan.policy.write_info_json,
+                },
+            },
+        },
+        "integrity": {
+            "sha256_requested": hash_outputs,
+            "scope": "completed primary outputs recorded at yt-dlp after_move",
+            "meaning": "ordinary integrity verification only; not proof of authenticity or provenance",
+        },
+    }
+
+
+def write_run_manifest(path: Path, manifest: dict[str, object]) -> None:
+    """Atomically write a deterministic UTF-8 JSON run manifest."""
+    content = (json.dumps(manifest, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
     atomic_write_bytes(path, content)
 
 
@@ -2080,6 +2288,7 @@ def build_yt_dlp_command(
     cookies_file: Path | None = None,
     cookies_from_browser: str | None = None,
     remove_completed_ids: bool = False,
+    output_event_file: Path | None = None,
 ) -> list[str]:
     """Build the complete yt-dlp command without invoking a shell."""
     command = [
@@ -2163,6 +2372,9 @@ def build_yt_dlp_command(
     elif policy.playlist is False:
         command.append("--no-playlist")
 
+    if output_event_file is not None:
+        command.extend(("--exec", f"after_move:{output_record_exec_command(output_event_file)}"))
+
     if remove_completed_ids:
         assert input_source.batch_file is not None
         command.extend(
@@ -2215,6 +2427,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Removed completed ID {video_id} from {input_file}", file=sys.stderr)
         return 0
 
+    if args._record_output is not None:
+        event_file, media_id, output_path = args._record_output
+        try:
+            append_output_record(Path(event_file), media_id, output_path)
+        except RuntimeError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
     if args.examples:
         show_examples(parser)
         return 0
@@ -2228,6 +2449,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--dry-run cannot be combined with --explain or --explain-json")
     if args.dry_run and (args.queue_report is not None or args.failed_targets is not None):
         parser.error("--queue-report and --failed-targets are unavailable with --dry-run")
+    if args.dry_run and args.run_manifest is not None:
+        parser.error("--run-manifest is unavailable with --dry-run")
+    if (args.explain or args.explain_json) and args.run_manifest is not None:
+        parser.error("--run-manifest is unavailable with --explain or --explain-json")
+    if args.hash_outputs and args.run_manifest is None:
+        parser.error("--hash-outputs requires --run-manifest FILE")
     if args.write_profile and args.generate_profile is None:
         parser.error("--write-profile requires --generate-profile NAME")
     if args.overwrite_profile and not args.write_profile:
@@ -2307,6 +2534,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(format_plan_explanation(plan))
         return 0
 
+    manifest_targets: list[str] | None = None
+    manifest_started_at: str | None = None
+    manifest_yt_dlp_version: str | None = None
+    output_event_file: Path | None = None
+    if args.run_manifest is not None:
+        try:
+            manifest_targets = manifest_input_targets(input_source)
+        except RuntimeError as exc:
+            parser.error(str(exc))
+        manifest_started_at = utc_timestamp()
+        manifest_yt_dlp_version = yt_dlp_version(plan.executable)
+
     queue_requested: tuple[str, ...] = ()
     archive_before: set[str] = set()
     if args.remove_completed_ids and not args.dry_run:
@@ -2324,8 +2563,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 file=sys.stderr,
             )
 
-    exit_status = run(plan.command(), dry_run=args.dry_run)
+    if args.run_manifest is not None:
+        descriptor, event_name = tempfile.mkstemp(prefix="yt-download-output-", suffix=".jsonl")
+        os.close(descriptor)
+        output_event_file = Path(event_name)
 
+    exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
+
+    queue_report_payload: dict[str, object] | None = None
     if args.remove_completed_ids and not args.dry_run:
         assert input_source.batch_file is not None
         try:
@@ -2338,6 +2583,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 remaining=remaining,
                 exit_status=exit_status,
             )
+            queue_report_payload = report
             counts = report["counts"]
             print(
                 "Queue summary: "
@@ -2354,7 +2600,39 @@ def main(argv: Sequence[str] | None = None) -> int:
                 write_failed_targets(args.failed_targets, report["targets"]["unresolved"])
         except RuntimeError as exc:
             print(f"Error: {exc}", file=sys.stderr)
+            if output_event_file is not None:
+                try:
+                    output_event_file.unlink(missing_ok=True)
+                except OSError:
+                    pass
             return 1 if exit_status == 0 else exit_status
+
+    if args.run_manifest is not None:
+        assert manifest_started_at is not None
+        assert output_event_file is not None
+        try:
+            output_paths = read_output_records(output_event_file)
+            outputs = output_manifest_entries(output_paths, hash_outputs=args.hash_outputs)
+            manifest = run_manifest_payload(
+                plan=plan,
+                yt_dlp_version_value=manifest_yt_dlp_version,
+                started_at=manifest_started_at,
+                ended_at=utc_timestamp(),
+                exit_status=exit_status,
+                targets=manifest_targets,
+                outputs=outputs,
+                queue_report=queue_report_payload,
+                hash_outputs=args.hash_outputs,
+            )
+            write_run_manifest(args.run_manifest, manifest)
+        except RuntimeError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1 if exit_status == 0 else exit_status
+        finally:
+            try:
+                output_event_file.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     return exit_status
 
