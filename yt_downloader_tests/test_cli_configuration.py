@@ -6,7 +6,7 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.11.0"
+    assert downloader.PROGRAM_VERSION == "1.12.0"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:

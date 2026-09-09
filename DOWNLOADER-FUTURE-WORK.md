@@ -107,23 +107,15 @@ Defaults should remain practical, but policy choices that materially alter media
 
 ## Phase 5 - queue durability and failure accounting
 
-Develop the existing archive-backed file queue into a more observable durable workflow without sacrificing its Unix-friendly text-file interface.
+The archive-backed text queue now has a durable observation layer. Queue runs snapshot the initial target set and archive state, reconcile already archived IDs, retain unresolved entries, and report requested, already archived, newly completed and unresolved targets after execution. Concise summaries are written to standard error, `--queue-report FILE` writes deterministic JSON, and `--failed-targets FILE` writes a reusable unresolved-target batch file. Generated report files use atomic replacement.
 
-Track or report useful outcomes such as:
+The current classification is deliberately conservative. A target that remains queued is reported as unresolved rather than being guessed to be unavailable, skipped or failed. A future executor capable of receiving reliable per-entry yt-dlp outcomes may refine those categories. That work should evaluate structured yt-dlp hooks or the Python API rather than scraping unstable human-readable output.
 
-- requested;
-- downloaded successfully;
-- already present in the archive;
-- unavailable;
-- skipped;
-- failed;
-- interrupted.
+`--max-failures` remains deferred because the current subprocess architecture does not expose a trustworthy per-target failure count early enough to stop a multi-target invocation safely. A dedicated `--retry-failed` command is also unnecessary while `--failed-targets FILE` already produces an ordinary batch file that can be passed back through `--input-file` or as a positional file.
 
-Investigate user-facing capabilities such as `--retry-failed`, a failed-target output file, `--max-failures`, and concise human-readable run summaries. Machine-readable reporting should also be available for scripting.
+Further hardening should simulate post-processing failure, callback failure and atomic rewrite failure at the orchestration boundary. An ID must remain queued whenever successful completion cannot be established.
 
-Tests must simulate yt-dlp failures, interruption, archive hits, post-processing failure, callback failure and atomic rewrite failure. An ID must remain queued whenever successful completion cannot be established.
-
-Do not introduce a database merely to make the queue look more sophisticated. A stronger text-file queue plus optional reports may be the better tool.
+Do not introduce a database merely to make the queue look more sophisticated. The durable text-file queue and optional reports remain the preferred model unless future requirements demonstrate a concrete need for stronger storage.
 
 ## Phase 6 - run manifests and output integrity
 

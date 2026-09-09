@@ -1,5 +1,16 @@
 # Changelog
 
+## Downloader 1.12.0 - Queue State
+
+- Add conservative queue outcome accounting for requested, already archived, newly completed and unresolved targets.
+- Print a concise queue summary after file-backed completion-removal runs.
+- Add `--queue-report FILE` for deterministic machine-readable JSON outcome reports.
+- Add `--failed-targets FILE` for atomically generated reusable unresolved-target batch files.
+- Preserve unresolved queue entries on failed or interrupted runs and identify interruption explicitly in JSON reports.
+- Keep unavailable, skipped and failed classifications deliberately unresolved until the executor can establish those per-target outcomes reliably.
+- Add deterministic tests for queue snapshots, outcome classification, interruption and atomic report generation.
+- Add simulated end-to-end executor tests proving queue, archive, report and retry-file behaviour for partial failure and interruption.
+
 ## Downloader 1.11.0 - Alongside
 
 - Add typed manual/automatic subtitle policy, language and format selection, and independent subtitle embedding.

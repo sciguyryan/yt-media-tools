@@ -34,7 +34,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.11.0"
+PROGRAM_VERSION = "1.12.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -818,6 +818,21 @@ def build_parser() -> argparse.ArgumentParser:
             "When input comes from a file, remove each exact video ID from that "
             "file immediately when yt-dlp completes it, or when the same ID is "
             "already recorded in the configured download archive."
+        ),
+    )
+    parser.add_argument(
+        "--queue-report",
+        type=Path,
+        metavar="FILE",
+        help=("Write a JSON queue outcome report to FILE. Requires --remove-completed-ids and file-backed input."),
+    )
+    parser.add_argument(
+        "--failed-targets",
+        type=Path,
+        metavar="FILE",
+        help=(
+            "After a queue run, atomically write targets whose successful completion "
+            "was not established to FILE. Requires --remove-completed-ids."
         ),
     )
     parser.add_argument(
@@ -1653,7 +1668,12 @@ def completion_exec_command(input_file: Path) -> str:
 
 
 def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputSource) -> None:
-    """Validate the public completed-ID removal mode."""
+    """Validate queue mutation and reporting options as one coherent mode."""
+    queue_outputs_requested = (
+        getattr(args, "queue_report", None) is not None or getattr(args, "failed_targets", None) is not None
+    )
+    if queue_outputs_requested and not args.remove_completed_ids:
+        raise ValueError("--queue-report and --failed-targets require --remove-completed-ids")
     if not args.remove_completed_ids:
         return
     if input_source.batch_file is None:
@@ -1661,6 +1681,101 @@ def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputS
             "--remove-completed-ids requires file input; use --input-file FILE, "
             "a positional batch file, or the default ./ids.txt"
         )
+
+
+def queue_targets(path: Path) -> tuple[str, ...]:
+    """Return meaningful batch-file target lines in stable first-seen order."""
+    try:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RuntimeError(f"unable to read queue file {path}: {exc}") from exc
+
+    targets: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        target = line.strip()
+        if not target or target.startswith("#") or target in seen:
+            continue
+        targets.append(target)
+        seen.add(target)
+    return tuple(targets)
+
+
+def atomic_write_bytes(path: Path, content: bytes) -> None:
+    """Durably replace ``path`` with ``content`` using the queue rewrite discipline."""
+    resolved = path.expanduser().resolve()
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    temporary = resolved.with_name(f".{resolved.name}.tmp-{os.getpid()}")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, resolved)
+        try:
+            directory_fd = os.open(resolved.parent, os.O_RDONLY)
+        except OSError:
+            directory_fd = None
+        if directory_fd is not None:
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    except OSError as exc:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise RuntimeError(f"unable to write {resolved}: {exc}") from exc
+
+
+def queue_run_report(
+    *,
+    queue_file: Path,
+    archive_file: Path,
+    requested: Sequence[str],
+    archived_before: set[str],
+    remaining: Sequence[str],
+    exit_status: int,
+) -> dict[str, object]:
+    """Build a conservative queue outcome report from durable observable state."""
+    requested_set = set(requested)
+    remaining_set = set(remaining)
+    already_archived = [target for target in requested if target in archived_before]
+    completed = [target for target in requested if target not in archived_before and target not in remaining_set]
+    unresolved = [target for target in requested if target in remaining_set]
+    return {
+        "kind": "yt-download-queue-report",
+        "version": PROGRAM_VERSION,
+        "queue_file": str(queue_file.expanduser().resolve()),
+        "archive_file": str(archive_file.expanduser().resolve()),
+        "exit_status": exit_status,
+        "interrupted": exit_status == 130,
+        "counts": {
+            "requested": len(requested_set),
+            "already_archived": len(already_archived),
+            "completed": len(completed),
+            "unresolved": len(unresolved),
+        },
+        "targets": {
+            "requested": list(requested),
+            "already_archived": already_archived,
+            "completed": completed,
+            "unresolved": unresolved,
+        },
+    }
+
+
+def write_queue_report(path: Path, report: dict[str, object]) -> None:
+    """Atomically write a deterministic UTF-8 JSON queue report."""
+    content = (json.dumps(report, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    atomic_write_bytes(path, content)
+
+
+def write_failed_targets(path: Path, targets: Sequence[str]) -> None:
+    """Atomically write unresolved targets as a reusable newline-delimited batch file."""
+    content = "".join(f"{target}\n" for target in targets).encode("utf-8")
+    atomic_write_bytes(path, content)
 
 
 def validate_environment(*, dry_run: bool) -> str:
@@ -2111,6 +2226,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--list-parameters cannot be combined with --generate-profile")
     if args.dry_run and (args.explain or args.explain_json):
         parser.error("--dry-run cannot be combined with --explain or --explain-json")
+    if args.dry_run and (args.queue_report is not None or args.failed_targets is not None):
+        parser.error("--queue-report and --failed-targets are unavailable with --dry-run")
     if args.write_profile and args.generate_profile is None:
         parser.error("--write-profile requires --generate-profile NAME")
     if args.overwrite_profile and not args.write_profile:
@@ -2190,9 +2307,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(format_plan_explanation(plan))
         return 0
 
+    queue_requested: tuple[str, ...] = ()
+    archive_before: set[str] = set()
     if args.remove_completed_ids and not args.dry_run:
         assert input_source.batch_file is not None
         try:
+            queue_requested = queue_targets(input_source.batch_file)
+            archive_before = archived_video_ids(plan.policy.archive_file)
             removed = remove_archived_ids(input_source.batch_file, plan.policy.archive_file)
         except RuntimeError as exc:
             parser.error(str(exc))
@@ -2203,7 +2324,39 @@ def main(argv: Sequence[str] | None = None) -> int:
                 file=sys.stderr,
             )
 
-    return run(plan.command(), dry_run=args.dry_run)
+    exit_status = run(plan.command(), dry_run=args.dry_run)
+
+    if args.remove_completed_ids and not args.dry_run:
+        assert input_source.batch_file is not None
+        try:
+            remaining = queue_targets(input_source.batch_file)
+            report = queue_run_report(
+                queue_file=input_source.batch_file,
+                archive_file=plan.policy.archive_file,
+                requested=queue_requested,
+                archived_before=archive_before,
+                remaining=remaining,
+                exit_status=exit_status,
+            )
+            counts = report["counts"]
+            print(
+                "Queue summary: "
+                f"requested={counts['requested']}, "
+                f"already-archived={counts['already_archived']}, "
+                f"completed={counts['completed']}, "
+                f"unresolved={counts['unresolved']}, "
+                f"exit={exit_status}.",
+                file=sys.stderr,
+            )
+            if args.queue_report is not None:
+                write_queue_report(args.queue_report, report)
+            if args.failed_targets is not None:
+                write_failed_targets(args.failed_targets, report["targets"]["unresolved"])
+        except RuntimeError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1 if exit_status == 0 else exit_status
+
+    return exit_status
 
 
 if __name__ == "__main__":

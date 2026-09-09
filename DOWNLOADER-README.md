@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.11.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.12.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -83,7 +83,23 @@ Remove exact completed IDs from a file-backed queue after successful processing,
 ./yt-download.py --remove-completed-ids ids/batch.txt
 ```
 
-The mode requires file-backed input. Failed, skipped, interrupted or partially processed entries remain in the file. Generated queue rewrites are atomic and preserve unrelated lines.
+The mode requires file-backed input. Failed, skipped, interrupted or partially processed entries remain in the file. Generated queue rewrites are atomic and preserve unrelated lines. After execution, Downloader prints a concise queue summary derived from the durable queue and archive state.
+
+Write the same outcome information as deterministic JSON with:
+
+```bash
+./yt-download.py --remove-completed-ids --queue-report run.json ids/batch.txt
+```
+
+The report distinguishes targets requested at the start of the run, IDs already present in the configured archive, IDs whose successful completion caused them to leave the queue, and unresolved targets that remain queued. Downloader deliberately does not label an unresolved target as unavailable, skipped or failed unless that distinction can be established reliably.
+
+Create a reusable batch file containing only unresolved targets with:
+
+```bash
+./yt-download.py --remove-completed-ids --failed-targets retry.txt ids/batch.txt
+```
+
+Both report files are replaced atomically. They are unavailable in dry-run mode because no execution outcome exists to report.
 
 Explain the fully resolved download plan without executing yt-dlp:
 
