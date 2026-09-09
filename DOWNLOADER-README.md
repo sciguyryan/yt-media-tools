@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.12.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.12.1 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -116,6 +116,12 @@ Print only the resolved `yt-dlp` command without executing it:
 ```
 
 Dry-run mode does not mutate queue files.
+
+## Automated verification
+
+Deterministic Downloader behaviour is expected to be verified by the automated test suite. Configuration precedence, command planning, queue transitions, report generation, failure handling and other reproducible behaviour should not rely on manual acceptance checks when a controlled test can exercise the same contract.
+
+Manual verification is reserved for behaviour that genuinely depends on an external environment or service and cannot be represented faithfully with deterministic fixtures, fakes or simulated process outcomes.
 
 ## Parameter profiles
 

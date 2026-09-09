@@ -76,7 +76,7 @@ def test_explain_payload_is_stable_and_machine_readable(downloader, tmp_path: Pa
     )
     payload = downloader.explain_plan_payload(plan)
     assert payload["kind"] == "yt-download-plan"
-    assert payload["version"] == "1.12.0"
+    assert payload["version"] == "1.12.1"
     assert payload["parameter_profile"]["name"] == "best"
     assert payload["policy"]["resolution"] == "best"
     assert payload["policy"]["playlist"] is True

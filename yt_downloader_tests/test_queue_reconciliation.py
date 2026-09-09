@@ -101,7 +101,7 @@ def test_write_queue_report_is_deterministic_json(downloader, tmp_path: Path) ->
     report = {"kind": "yt-download-queue-report", "version": downloader.PROGRAM_VERSION}
     downloader.write_queue_report(output, report)
     assert output.read_text(encoding="utf-8") == (
-        '{\n  "kind": "yt-download-queue-report",\n  "version": "1.12.0"\n}\n'
+        '{\n  "kind": "yt-download-queue-report",\n  "version": "1.12.1"\n}\n'
     )
 
 
@@ -232,3 +232,111 @@ def test_main_generates_interrupted_queue_report_from_simulated_keyboard_interru
     assert report["targets"]["unresolved"] == ["remaining"]
     assert report["exit_status"] == 130
     assert report["interrupted"] is True
+
+
+def test_main_keeps_target_unresolved_after_simulated_postprocessing_failure(
+    downloader, tmp_path: Path, monkeypatch
+) -> None:
+    queue = tmp_path / "ids.txt"
+    archive = tmp_path / "archive.txt"
+    report_path = tmp_path / "queue-report.json"
+    failed_path = tmp_path / "retry.txt"
+    queue.write_text("postprocess-failed\n", encoding="utf-8")
+
+    monkeypatch.setattr(downloader, "validate_environment", lambda *, dry_run: "yt-dlp")
+    monkeypatch.setattr(
+        downloader.subprocess,
+        "run",
+        lambda command, check=False: SimpleNamespace(returncode=1),
+    )
+
+    result = downloader.main(
+        [
+            "--no-cookies",
+            "--archive",
+            str(archive),
+            "--remove-completed-ids",
+            "--queue-report",
+            str(report_path),
+            "--failed-targets",
+            str(failed_path),
+            str(queue),
+        ]
+    )
+
+    assert result == 1
+    assert queue.read_text(encoding="utf-8") == "postprocess-failed\n"
+    assert failed_path.read_text(encoding="utf-8") == "postprocess-failed\n"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["targets"]["completed"] == []
+    assert report["targets"]["unresolved"] == ["postprocess-failed"]
+
+
+def test_main_keeps_current_run_unresolved_when_completion_callback_does_not_rewrite_queue(
+    downloader, tmp_path: Path, monkeypatch
+) -> None:
+    queue = tmp_path / "ids.txt"
+    archive = tmp_path / "archive.txt"
+    report_path = tmp_path / "queue-report.json"
+    failed_path = tmp_path / "retry.txt"
+    queue.write_text("callback-failed\n", encoding="utf-8")
+
+    monkeypatch.setattr(downloader, "validate_environment", lambda *, dry_run: "yt-dlp")
+
+    def simulated_callback_failure(command, check=False):
+        assert check is False
+        with archive.open("a", encoding="utf-8") as handle:
+            handle.write("youtube callback-failed\n")
+        return SimpleNamespace(returncode=1)
+
+    monkeypatch.setattr(downloader.subprocess, "run", simulated_callback_failure)
+
+    result = downloader.main(
+        [
+            "--no-cookies",
+            "--archive",
+            str(archive),
+            "--remove-completed-ids",
+            "--queue-report",
+            str(report_path),
+            "--failed-targets",
+            str(failed_path),
+            str(queue),
+        ]
+    )
+
+    assert result == 1
+    assert queue.read_text(encoding="utf-8") == "callback-failed\n"
+    assert failed_path.read_text(encoding="utf-8") == "callback-failed\n"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["targets"]["completed"] == []
+    assert report["targets"]["unresolved"] == ["callback-failed"]
+
+    assert downloader.remove_archived_ids(queue, archive) == 1
+    assert queue.read_text(encoding="utf-8") == ""
+
+
+def test_internal_completion_callback_atomic_rewrite_failure_preserves_queue(
+    downloader, tmp_path: Path, monkeypatch
+) -> None:
+    queue = tmp_path / "ids.txt"
+    queue.write_text("abc\ndef\n", encoding="utf-8")
+
+    def fail_replace(source, destination):
+        raise OSError("simulated queue replace failure")
+
+    monkeypatch.setattr(downloader.os, "replace", fail_replace)
+
+    result = downloader.main(["--_remove-completed-id", str(queue), "abc"])
+
+    assert result == 1
+    assert queue.read_text(encoding="utf-8") == "abc\ndef\n"
+    assert not list(tmp_path.glob(".ids.txt.tmp-*"))
+
+
+def test_run_reports_process_start_failure_without_raising(downloader, monkeypatch) -> None:
+    def fail_to_start(*args, **kwargs):
+        raise OSError("simulated exec failure")
+
+    monkeypatch.setattr(downloader.subprocess, "run", fail_to_start)
+    assert downloader.run(["yt-dlp", "abc"], dry_run=False) == 1

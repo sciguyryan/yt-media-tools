@@ -1,5 +1,12 @@
 # Changelog
 
+## Downloader 1.12.1 - Closed Loop
+
+- Add orchestration-level regression tests for post-processing failure, completion-callback failure and atomic queue-rewrite failure.
+- Require deterministic Downloader behaviour to be covered by automated tests whenever controlled fixtures or simulated process outcomes can represent it faithfully.
+- Reserve manual verification for genuinely external or environment-dependent behaviour that cannot be reproduced faithfully in the automated suite.
+- Reconcile the Downloader roadmap with the accepted Phase 4 and Phase 5 state.
+
 ## Downloader 1.12.0 - Queue State
 
 - Add conservative queue outcome accounting for requested, already archived, newly completed and unresolved targets.

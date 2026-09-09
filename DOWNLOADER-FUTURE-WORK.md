@@ -113,7 +113,7 @@ The current classification is deliberately conservative. A target that remains q
 
 `--max-failures` remains deferred because the current subprocess architecture does not expose a trustworthy per-target failure count early enough to stop a multi-target invocation safely. A dedicated `--retry-failed` command is also unnecessary while `--failed-targets FILE` already produces an ordinary batch file that can be passed back through `--input-file` or as a positional file.
 
-Further hardening should simulate post-processing failure, callback failure and atomic rewrite failure at the orchestration boundary. An ID must remain queued whenever successful completion cannot be established.
+Post-processing failure, completion-callback failure and atomic queue-rewrite failure are simulated at the orchestration boundary. An ID remains queued whenever successful completion cannot be established. These failure-boundary tests are required regression coverage rather than manual acceptance checks.
 
 Do not introduce a database merely to make the queue look more sophisticated. The durable text-file queue and optional reports remain the preferred model unless future requirements demonstrate a concrete need for stronger storage.
 
@@ -200,7 +200,7 @@ The tooling investigations recorded for Discover also apply to Downloader where 
 
 Hypothesis is particularly promising for configuration/profile precedence, generated valid policies, policy-to-command invariants and queue-state transitions. Mutation testing is particularly valuable around boolean flags, precedence order, completion callbacks and conditions that remove queue entries. Branch coverage can expose untested failure paths. Fuzzing may be useful for profile/configuration parsing but is less central than it is for the yt-sql parser.
 
-Tests should increasingly distinguish pure planning from external execution. Most configuration and command generation should be deterministic and testable without yt-dlp. External-process tests should use controlled fakes/mocks for failure modes rather than depending on live network behaviour.
+Tests should increasingly distinguish pure planning from external execution. Most configuration and command generation should be deterministic and testable without yt-dlp. External-process tests should use controlled fakes/mocks for failure modes rather than depending on live network behaviour. Any useful deterministic behaviour that can be represented faithfully in the suite should be automated; manual verification must not substitute for such coverage.
 
 ## Relationship with Discover
 

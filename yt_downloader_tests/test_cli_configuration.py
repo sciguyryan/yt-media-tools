@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.12.0"
+    assert downloader.PROGRAM_VERSION == "1.12.1"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
@@ -70,3 +72,30 @@ def test_resolve_cookies_no_cookies_overrides_automatic_file(downloader, tmp_pat
     cookie_file.write_text("cookie-data", encoding="utf-8")
     monkeypatch.setattr(downloader, "COOKIES_FILE", cookie_file)
     assert downloader.resolve_cookies(None, disabled=True) is None
+
+
+def test_normal_environment_requires_yt_dlp(downloader, monkeypatch) -> None:
+    monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
+    with pytest.raises(RuntimeError, match="yt-dlp was not found"):
+        downloader.validate_environment(dry_run=False)
+
+
+def test_dry_run_rejects_queue_report_output(downloader, tmp_path: Path) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        downloader.main(
+            [
+                "--dry-run",
+                "--queue-report",
+                str(tmp_path / "report.json"),
+                "abc",
+            ]
+        )
+    assert exc_info.value.code == 2
+
+
+def test_examples_are_available_without_external_environment(downloader, capsys) -> None:
+    assert downloader.main(["--examples"]) == 0
+    output = capsys.readouterr().out
+    assert "--remove-completed-ids" in output
+    assert "--explain" in output
+    assert "--write-subs" in output
