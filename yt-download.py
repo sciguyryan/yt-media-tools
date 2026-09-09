@@ -34,7 +34,7 @@ from typing import Sequence
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.7.0"
+PROGRAM_VERSION = "1.8.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -119,6 +119,9 @@ EXAMPLES = r"""Examples:
   Ignore an automatically discovered script-local cookies.txt:
     %(prog)s --no-cookies VIDEO_ID
 
+  Explain the resolved download plan without executing it:
+    %(prog)s --explain -p playlist PLAYLIST_URL
+
   Print the resolved yt-dlp command without executing it:
     %(prog)s --dry-run -p playlist PLAYLIST_URL
 
@@ -180,6 +183,14 @@ class ParameterProfile:
 
 
 @dataclass(frozen=True)
+class ResolvedParameterSettings:
+    """Merged Downloader settings plus the source of each effective value."""
+
+    settings: dict[str, object]
+    sources: dict[str, str]
+
+
+@dataclass(frozen=True)
 class InputSource:
     """Describe how yt-dlp should receive download targets."""
 
@@ -195,6 +206,33 @@ class InputSource:
             command.extend(("--batch-file", "-"))
         else:
             command.extend(self.direct_targets)
+
+
+@dataclass(frozen=True)
+class DownloadPlan:
+    """Fully resolved Downloader plan ready for explanation or execution."""
+
+    executable: str
+    policy: DownloadPolicy
+    input_source: InputSource
+    output_profile: OutputProfile | None
+    cookies_file: Path | None
+    cookies_source: str
+    remove_completed_ids: bool
+    defaults_file: Path
+    parameter_profile: ParameterProfile | None
+    parameter_sources: dict[str, str]
+
+    def command(self) -> list[str]:
+        """Return the exact yt-dlp command represented by this plan."""
+        return build_yt_dlp_command(
+            self.executable,
+            self.policy,
+            self.input_source,
+            self.output_profile,
+            cookies_file=self.cookies_file,
+            remove_completed_ids=self.remove_completed_ids,
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -337,6 +375,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=None,
         help="Restore automatic script-local cookie discovery, overriding a parameter profile.",
+    )
+    explain_group = parser.add_mutually_exclusive_group()
+    explain_group.add_argument(
+        "--explain",
+        action="store_true",
+        help="Describe the resolved download plan without running yt-dlp.",
+    )
+    explain_group.add_argument(
+        "--explain-json",
+        action="store_true",
+        help="Emit the resolved download plan as JSON without running yt-dlp.",
     )
     parser.add_argument(
         "--dry-run",
@@ -692,6 +741,19 @@ def merge_parameter_settings(
     return merged
 
 
+def resolve_parameter_settings(
+    profile: ParameterProfile | None,
+    cli_settings: dict[str, object],
+) -> ResolvedParameterSettings:
+    """Merge settings and retain deterministic provenance for explanation."""
+    settings = merge_parameter_settings(profile, cli_settings)
+    sources: dict[str, str] = {}
+    if profile is not None:
+        sources.update({key: f"parameter profile {profile.name!r}" for key in profile.settings})
+    sources.update({key: "explicit CLI" for key in cli_settings})
+    return ResolvedParameterSettings(settings=settings, sources=sources)
+
+
 def generated_profile_settings(
     source: ParameterProfile | None,
     cli_settings: dict[str, object],
@@ -942,6 +1004,155 @@ def resolve_cookies(requested: Path | None, *, disabled: bool) -> Path | None:
     return None
 
 
+def describe_cookie_source(settings: dict[str, object], cookies_file: Path | None) -> str:
+    """Return a stable human-readable description of the resolved cookie policy."""
+    if "cookies" in settings:
+        return "explicit cookie file"
+    if bool(settings.get("no-cookies", False)):
+        return "disabled"
+    if cookies_file is not None:
+        return "automatic script-local cookies.txt"
+    return "none available"
+
+
+def create_download_plan(
+    *,
+    executable: str,
+    resolved_parameters: ResolvedParameterSettings,
+    input_source: InputSource,
+    output_profile: OutputProfile | None,
+    defaults_file: Path,
+    parameter_profile: ParameterProfile | None,
+    remove_completed_ids: bool,
+) -> DownloadPlan:
+    """Resolve one complete download plan without mutating queues or launching yt-dlp."""
+    policy, cookies_file, _cookies_disabled = resolve_parameter_policy(resolved_parameters.settings)
+    return DownloadPlan(
+        executable=executable,
+        policy=policy,
+        input_source=input_source,
+        output_profile=output_profile,
+        cookies_file=cookies_file,
+        cookies_source=describe_cookie_source(resolved_parameters.settings, cookies_file),
+        remove_completed_ids=remove_completed_ids,
+        defaults_file=defaults_file,
+        parameter_profile=parameter_profile,
+        parameter_sources=dict(resolved_parameters.sources),
+    )
+
+
+def _input_source_payload(source: InputSource) -> dict[str, object]:
+    """Return a serialisable description of one resolved input source."""
+    if source.batch_file is not None:
+        return {"kind": "batch-file", "path": str(source.batch_file)}
+    if source.stdin:
+        return {"kind": "stdin"}
+    return {"kind": "direct", "targets": list(source.direct_targets)}
+
+
+def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
+    """Return the stable machine-readable representation of a resolved plan."""
+    output_profile = None
+    if plan.output_profile is not None:
+        output_profile = {
+            "source": str(plan.output_profile.source),
+            "path": plan.output_profile.path,
+            "output": plan.output_profile.output,
+        }
+    return {
+        "kind": "yt-download-plan",
+        "version": PROGRAM_VERSION,
+        "parameter_profile": {
+            "name": plan.parameter_profile.name if plan.parameter_profile is not None else None,
+            "source": str(plan.parameter_profile.source) if plan.parameter_profile is not None else None,
+            "defaults_file": str(plan.defaults_file),
+        },
+        "parameter_sources": dict(sorted(plan.parameter_sources.items())),
+        "policy": {
+            "resolution": plan.policy.resolution,
+            "format": plan.policy.format_selector,
+            "format_sort": plan.policy.sort_selector,
+            "reverse_playlist": plan.policy.reverse_playlist,
+            "playlist": plan.policy.playlist,
+        },
+        "authentication": {
+            "source": plan.cookies_source,
+            "cookies_file": str(plan.cookies_file) if plan.cookies_file is not None else None,
+        },
+        "input": _input_source_payload(plan.input_source),
+        "output_profile": output_profile,
+        "paths": {
+            "archive": str(ARCHIVE_FILE),
+            "temporary": str(TEMP_DIR),
+        },
+        "queue": {
+            "remove_completed_ids": plan.remove_completed_ids,
+            "archive_reconciliation": bool(plan.remove_completed_ids and plan.input_source.batch_file is not None),
+        },
+        "yt_dlp": {
+            "executable": plan.executable,
+            "command": plan.command(),
+        },
+    }
+
+
+def format_plan_explanation(plan: DownloadPlan) -> str:
+    """Return a concise human-readable explanation of a resolved download plan."""
+    payload = explain_plan_payload(plan)
+    profile = payload["parameter_profile"]
+    policy = payload["policy"]
+    authentication = payload["authentication"]
+    input_payload = payload["input"]
+    output_profile = payload["output_profile"]
+    queue = payload["queue"]
+
+    parameter_name = profile["name"] if isinstance(profile, dict) else None
+    if parameter_name is None:
+        parameter_text = "none"
+    else:
+        parameter_text = f"{parameter_name} ({profile['source']})"
+
+    if isinstance(output_profile, dict):
+        output_text = str(output_profile["source"])
+    else:
+        output_text = "yt-dlp native defaults"
+
+    if isinstance(input_payload, dict) and input_payload.get("kind") == "batch-file":
+        input_text = f"batch file {input_payload['path']}"
+    elif isinstance(input_payload, dict) and input_payload.get("kind") == "stdin":
+        input_text = "standard input"
+    else:
+        targets = input_payload.get("targets", []) if isinstance(input_payload, dict) else []
+        input_text = f"{len(targets)} direct target(s)"
+
+    lines = [
+        f"{PROGRAM_NAME} {PROGRAM_VERSION} resolved download plan",
+        "",
+        f"Parameter profile: {parameter_text}",
+        f"Defaults file:     {plan.defaults_file}",
+        f"Output profile:    {output_text}",
+        f"Input:             {input_text}",
+        f"Resolution:        {policy['resolution']}",
+        f"Format selector:   {policy['format']}",
+        f"Format sort:       {policy['format_sort']}",
+        f"Playlist:          {policy['playlist'] if policy['playlist'] is not None else 'yt-dlp default'}",
+        f"Reverse playlist:  {policy['reverse_playlist']}",
+        f"Cookies:           {authentication['source']}"
+        + (f" ({authentication['cookies_file']})" if authentication["cookies_file"] else ""),
+        f"Archive:           {ARCHIVE_FILE}",
+        f"Temporary path:    {TEMP_DIR}",
+        f"Queue removal:     {queue['remove_completed_ids']}",
+        "",
+        "Resolved yt-dlp command:",
+        f"  {format_command(plan.command())}",
+    ]
+    if plan.parameter_sources:
+        lines.extend(["", "Parameter value sources:"])
+        for key, source in sorted(plan.parameter_sources.items()):
+            lines.append(f"  {key}: {source}")
+    return "\n".join(lines)
+
+
 def build_yt_dlp_command(
     executable: str,
     policy: DownloadPolicy,
@@ -1052,6 +1263,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.list_parameters and args.generate_profile is not None:
         parser.error("--list-parameters cannot be combined with --generate-profile")
+    if args.dry_run and (args.explain or args.explain_json):
+        parser.error("--dry-run cannot be combined with --explain or --explain-json")
     if args.write_profile and args.generate_profile is None:
         parser.error("--write-profile requires --generate-profile NAME")
     if args.overwrite_profile and not args.write_profile:
@@ -1106,14 +1319,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     try:
-        merged_settings = merge_parameter_settings(selected_parameters, cli_settings)
-        policy, cookies_file, _cookies_disabled = resolve_parameter_policy(merged_settings)
+        resolved_parameters = resolve_parameter_settings(selected_parameters, cli_settings)
         input_source = resolve_input(args)
         validate_remove_completed_ids(args, input_source)
         output_profile = resolve_profile(args.output_profile)
-        executable = validate_environment(dry_run=args.dry_run)
+        explanatory_only = args.dry_run or args.explain or args.explain_json
+        executable = validate_environment(dry_run=explanatory_only)
+        plan = create_download_plan(
+            executable=executable,
+            resolved_parameters=resolved_parameters,
+            input_source=input_source,
+            output_profile=output_profile,
+            defaults_file=resolved_defaults,
+            parameter_profile=selected_parameters,
+            remove_completed_ids=args.remove_completed_ids,
+        )
     except (ValueError, RuntimeError) as exc:
         parser.error(str(exc))
+
+    if args.explain_json:
+        print(json.dumps(explain_plan_payload(plan), indent=2, ensure_ascii=False))
+        return 0
+    if args.explain:
+        print(format_plan_explanation(plan))
+        return 0
 
     if args.remove_completed_ids and not args.dry_run:
         assert input_source.batch_file is not None
@@ -1127,15 +1356,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 file=sys.stderr,
             )
 
-    command = build_yt_dlp_command(
-        executable,
-        policy,
-        input_source,
-        output_profile,
-        cookies_file=cookies_file,
-        remove_completed_ids=args.remove_completed_ids,
-    )
-    return run(command, dry_run=args.dry_run)
+    return run(plan.command(), dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

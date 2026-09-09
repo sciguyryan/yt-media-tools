@@ -1,5 +1,14 @@
 # Changelog
 
+## Downloader 1.8.0 - Clear Intent
+
+- Separate resolved Downloader configuration from command execution with an explicit immutable download-plan model.
+- Add `--explain` and `--explain-json` so effective profiles, policy, authentication, paths, queue behaviour and the final yt-dlp command can be inspected without execution.
+- Record whether effective parameter values came from a selected parameter profile or an explicit command-line override.
+- Keep `--dry-run` as the exact command-only surface while routing normal execution through the same resolved plan.
+- Add deterministic plan-level tests for precedence provenance, command equivalence and human/machine-readable explanation.
+- Remove the completed parameter-profile implementation work from the project TODO list.
+
 ## Discover 0.26.6 - No Loose Ends
 
 - Complete the cleanup, optimiser and test-completeness reconciliation without adding yt-sql syntax.

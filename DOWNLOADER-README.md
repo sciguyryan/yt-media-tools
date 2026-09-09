@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.7.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.8.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -85,7 +85,15 @@ Remove exact completed IDs from a file-backed queue after successful processing,
 
 The mode requires file-backed input. Failed, skipped, interrupted or partially processed entries remain in the file. Generated queue rewrites are atomic and preserve unrelated lines.
 
-Print the resolved `yt-dlp` command without executing it:
+Explain the fully resolved download plan without executing yt-dlp:
+
+```bash
+./yt-download.py --explain VIDEO_ID
+```
+
+The explanation shows the selected parameter and output profiles, effective format and playlist policy, authentication source, input source, archive and temporary paths, queue behaviour, the final yt-dlp command, and where explicitly configured parameter values came from. Use `--explain-json` for a machine-readable form suitable for scripts and regression checks. Explain mode does not require yt-dlp to be installed and does not mutate queue files.
+
+Print only the resolved `yt-dlp` command without executing it:
 
 ```bash
 ./yt-download.py --dry-run VIDEO_ID

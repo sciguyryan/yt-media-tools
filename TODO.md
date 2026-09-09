@@ -25,9 +25,3 @@ This file records accepted future work that is not part of the current released 
 - Add query-file execution for `.yt-sql` files.
 - Add persistent configuration where it reduces repetitive CLI options without making query behaviour implicit or difficult to reproduce.
 - Add shell completion for stable CLI and yt-sql surfaces where practical.
-
-## yt-downloader parameter profiles
-
-- Add JSON-based named parameter profiles for ordinary downloader CLI options, kept conceptually separate from output profiles unless a later design deliberately unifies them. Explicit CLI arguments must take precedence over profile values.
-- Add `--list-parameters` to list available named parameter profiles.
-- Add safe profile generation/export that refuses to overwrite an existing profile name unless the user gives explicit overwrite intent. Do not add a profile-removal command; direct JSON editing remains sufficient for deletion.
