@@ -23,6 +23,8 @@ yt_discover_tests/     Discover test suite
 yt_downloader_tests/   Downloader test suite
 DISCOVER-README.md     Discover documentation
 DOWNLOADER-README.md   Downloader documentation
+DISCOVER-FUTURE-WORK.md   Planned Discover language and capability programme
+DOWNLOADER-FUTURE-WORK.md Planned Downloader architecture and capability programme
 YT-SQL.md              yt-sql language reference
 YT-SQL-OPTIMISATION.md yt-sql optimisation strategy
 TODO.md                Accepted future work and design directions
@@ -76,3 +78,7 @@ Discover supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `
 ## Documentation linting
 
 GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. The initial CI policy enforces MD001 heading increments and MD012 consecutive blank lines through `.markdownlint-cli2.jsonc`. For a project-local installation, run `npm install` once and then `npm run lint:markdown`; the shared configuration excludes `node_modules/**`.
+
+## Future work
+
+The agreed longer-term programmes are documented in `DISCOVER-FUTURE-WORK.md` and `DOWNLOADER-FUTURE-WORK.md`. Discover 0.26.6 is the current hardened language baseline. Downloader is the preferred next implementation target, beginning with architectural cleanup and a resolved download-planning model before broader policy and format work.
