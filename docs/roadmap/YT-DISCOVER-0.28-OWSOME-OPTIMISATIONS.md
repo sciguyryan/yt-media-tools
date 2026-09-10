@@ -28,7 +28,7 @@ Prefer optimisations in this order:
 5.  reduce local relation work;
 6.  reduce scalar expression work.
 
-## 0.28.0 - Semantic Property Framework
+## 0.28.0 - Semantic Property Framework - Complete
 
 ### Scope
 
@@ -68,6 +68,21 @@ reasoning.
 
 Property results should be deterministic and testable independently of
 execution.
+
+### Implemented
+
+`query_properties.py` now provides deterministic expression and query
+property analysis without performing acquisition. The framework records
+resolved type, required fields, constantness, deterministic or volatile
+behaviour, NULL sensitivity, grouping dependence, earliest safe evaluation
+stage, metadata depth, source/facet dependencies, ordering requirements,
+cardinality effects and whether complete relation acquisition is required.
+
+The internal knowledge-state model keeps acquired scalar values, acquired SQL
+NULL, structurally unavailable fields and supported-but-not-yet-acquired
+metadata distinct. In particular, metadata that has not been acquired is not
+interpreted as SQL NULL. Seeded `RANDOM(seed)` is recorded as deterministic but
+row-dependent, while unseeded `RANDOM()` remains volatile.
 
 ## 0.28.1 - Optimiser Proof and Safety Framework
 
@@ -353,6 +368,14 @@ A physical plan should be able to describe stages such as:
 Not every adapter must support every stage. The plan expresses
 requirements; adapters report which distinctions they can honour.
 
+The physical plan should be backend-neutral rather than modelled directly as
+yt-dlp command-line arguments. Capability-based lowering may target yt-dlp,
+youtube-dl, gallery-dl, indexed or API-backed sources, and other useful
+adapters. Unsupported operations remain in the local evaluator unless an
+adapter can implement them with equivalent semantics. Mixed-backend plans must
+preserve source/facet identity, provenance, cache isolation and deterministic
+explainability.
+
 ### yt-dlp integration
 
 Map each physical stage to supported yt-dlp invocation choices,
@@ -369,6 +392,11 @@ already guaranteed.
 
 Potential uses:
 
+-   schedule acquisitions by expected information value per acquisition cost,
+    rather than by a simple cheapest-first rule;
+-   run a moderately costly high-selectivity or high-elimination branch before
+    cheaper work when it can avoid substantially more expensive dependent
+    acquisition;
 -   choose which independently evaluable cheap predicate terms to
     evaluate first locally;
 -   choose whether a deeper metadata stage is worthwhile before another
@@ -377,6 +405,11 @@ Potential uses:
     on branch acquisition order;
 -   avoid acquiring expensive collections until a row survives cheaper
     filters.
+
+An explicit opt-in bounded-concurrency mode may later execute independent
+acquisitions in parallel under an orchestrator. Any such design must preserve
+deterministic consolidation, provenance and cache isolation, resource limits,
+cancellation, partial-failure handling and safe early termination.
 
 ### Non-goal
 
@@ -409,6 +442,14 @@ Include where relevant:
 
 Keep explain structures versionable and deterministic so later machine
 interfaces do not need to scrape human prose.
+
+Human-readable diagnostics may additionally render deterministic Unicode
+query-plan and decision-tree graphs from the actual planner representation,
+with a plain-ASCII fallback for logs, CI and terminals where box drawing is
+unsuitable. Graphs may expose logical structure, optimiser decisions, backend
+selection, acquisition dependencies, information-value and cost estimates,
+pushdown versus residual evaluation, concurrency groups, bailout conditions
+and result consolidation. Exact CLI spelling remains a later UX decision.
 
 ## 0.28.13 - Optimiser Differential and Acquisition Torture
 

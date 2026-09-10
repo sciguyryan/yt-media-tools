@@ -8,7 +8,7 @@ from typing import Any
 
 from .dates import DateContext, parse_date_literal
 from .query_model import Binary, Between, Field, InList, Literal, Query, Unary
-from .query_properties import analyse_query, required_query_fields as required_query_fields
+from .query_properties import QueryProperties, analyse_query, required_query_fields as required_query_fields
 from .source_capabilities import EXACT, selected_facet_capabilities
 from .source_model import SourceSpec
 
@@ -221,7 +221,7 @@ class QueryPlan:
     """Typed boundary between logical optimisation and physical acquisition."""
 
     query: Query
-    properties: object
+    properties: QueryProperties
     acquisition: AcquisitionPlan
     physical_request: PhysicalAcquisitionRequest
     limit_termination: LimitTerminationPlan

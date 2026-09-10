@@ -1,5 +1,13 @@
 # Changelog
 
+## Discover 0.28.0 - Semantic Property Framework
+
+- Add deterministic semantic-property analysis for resolved scalar expressions, predicates and query relations.
+- Track required fields, resolved types, constantness, volatility, NULL sensitivity, evaluation stage, metadata depth, ordering, grouping and cardinality effects independently of execution.
+- Introduce explicit knowledge states for acquired values, SQL NULL, structurally unavailable fields and supported metadata that has not yet been acquired.
+- Expose source/facet dependencies and relation-completeness requirements to the planner without introducing new capability-driven rewrites.
+- Add focused regression coverage for property analysis, seeded and volatile RANDOM behaviour, dynamic metadata depth and knowledge-state safety.
+
 ## Discover 0.27.7 - Reforged Reconciliation
 
 - Reconcile the 0.27.x architectural refactor around the application, query, source, capability, optimiser and planner boundaries.

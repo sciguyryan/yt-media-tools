@@ -260,11 +260,15 @@ The planner analyses required metadata fields recursively through scalar express
 
 Capability-aware planning distinguishes available acquisition stages and can select bounded acquisition only when its preconditions are proven.
 
+The semantic property framework analyses resolved expressions and query relations independently of execution. It records required fields, resolved types, constantness, volatility, NULL sensitivity, earliest safe evaluation stage, metadata depth, source/facet dependencies, ordering and grouping requirements, cardinality effects and whether complete acquisition is required. These properties are planner inputs rather than optimiser rewrites.
+
+Internal knowledge states distinguish acquired scalar values, acquired SQL NULL, structurally unavailable fields and supported metadata that has not yet been acquired. The final state is never treated as SQL NULL. Seeded `RANDOM(seed)` is deterministic but row-dependent; unseeded `RANDOM()` remains volatile.
+
 ### Future candidates
 
 Field/capability analysis can become more aggressive as the language grows. Potential work includes eliminating acquisition of fields made unnecessary by constant folding, source-boundary planning from inferred temporal predicates, and metadata-acquisition planning based on expression dependency sets.
 
-These optimisations should remain separate from semantic rewrites so explain output can state whether a change alters the query tree or only the acquisition plan.
+These optimisations should remain separate from semantic rewrites so explain output can state whether a change alters the query tree or only the acquisition plan. A later backend-neutral physical-plan representation may lower safe subsets to yt-dlp, youtube-dl, gallery-dl, indexed or API-backed sources while retaining unsupported semantics in the local evaluator. Acquisition scheduling should prefer expected information value per cost where enough evidence exists, and any future concurrent acquisition mode should be explicit, bounded and deterministic.
 
 ## Aggregates, GROUP BY, HAVING and FILTER
 
