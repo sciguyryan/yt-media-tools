@@ -268,6 +268,23 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         )
         lines.append("  Detailed: " + (", ".join(sorted(physical.metadata_requirements.detailed_fields)) or "none"))
         lines.append(f"  Reason: {physical.metadata_requirements.reason}")
+    if source_boundaries:
+        simplified = [
+            boundary for boundary in source_boundaries if boundary.eliminated_uses or boundary.redundant_where_uses
+        ]
+        if simplified:
+            lines.extend(["", "Static relation simplification"])
+            for boundary in simplified:
+                facet_text = f" OF {boundary.facet}" if boundary.facet is not None else ""
+                lines.append(
+                    f"  {boundary.source_name}{facet_text}: "
+                    f"eliminated uses={boundary.eliminated_uses}; "
+                    f"redundant WHERE filters={boundary.redundant_where_uses}; "
+                    f"source acquisition={boundary.acquisition.mode}"
+                )
+                for relation in boundary.relation_simplifications:
+                    if relation.empty or relation.where_redundant or relation.having_redundant:
+                        lines.append(f"    Reason: {relation.reason}")
     if cte_dependencies.dependencies:
         lines.extend(["", "CTE dependency propagation"])
         for dependency in cte_dependencies.dependencies:
@@ -345,7 +362,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             limit_plan.limit,
             limit_plan.required_matches,
         )
-    if not offline:
+    if not offline and plan.mode != "skip":
         cost_class, cost_reason = assess_cost(query, plan, source=source, limit_termination=limit_plan)
     if query.limit is None:
         lines.append("  [not applicable] LIMIT-aware acquisition termination: query has no LIMIT.")
@@ -468,6 +485,10 @@ def explain_user_query_json(
         query, requests=source_requests, sources=tuple(explained_sources), dates=dates
     )
     cte_dependencies = plan_cte_dependencies(query)
+    if len(source_boundaries) == 1 and not offline:
+        physical = source_boundaries[0]
+        plan = physical.acquisition
+        cost_class, cost_reason = physical.cost_class, physical.cost_reason
     limit_plan = plan_limit_termination(query, source=source, predicate_stages=predicate_stages)
     if len(source_inputs) > 1 and limit_plan.eligible:
         limit_plan = type(limit_plan)(
@@ -476,7 +497,7 @@ def explain_user_query_json(
             limit_plan.limit,
             limit_plan.required_matches,
         )
-    if not offline:
+    if not offline and plan.mode != "skip":
         cost_class, cost_reason = assess_cost(query, plan, source=source, limit_termination=limit_plan)
 
     try:
@@ -654,6 +675,19 @@ def explain_user_query_json(
                 "acquisition": branch.acquisition.mode,
                 "cost_class": branch.cost_class,
                 "branch_empty": branch.branch_empty,
+                "eliminated_uses": branch.eliminated_uses,
+                "redundant_where_uses": branch.redundant_where_uses,
+                "relation_simplifications": [
+                    {
+                        "empty": relation.empty,
+                        "where_truth": relation.where_truth,
+                        "having_truth": relation.having_truth,
+                        "where_redundant": relation.where_redundant,
+                        "having_redundant": relation.having_redundant,
+                        "reason": relation.reason,
+                    }
+                    for relation in branch.relation_simplifications
+                ],
                 "collection_requirements": sorted(branch.collection_requirements),
             }
             for branch in source_boundaries

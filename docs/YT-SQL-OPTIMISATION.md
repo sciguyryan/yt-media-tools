@@ -234,6 +234,22 @@ A completely constant ordering term could potentially be removed because it cann
 
 Future `NULLS FIRST` and `NULLS LAST` syntax will require its own optimisation notes.
 
+## Static relation and branch simplification
+
+### Implemented
+
+Discover distinguishes scalar predicate equivalence from relational filtering. WHERE and HAVING retain rows or groups only when their result is TRUE, so a proof that a predicate is always FALSE or UNKNOWN is enough to prove that relation empty without rewriting the scalar expression to FALSE. This distinction preserves SQL NULL semantics while still allowing acquisition to be skipped.
+
+The relation planner recognises capability-proven constant predicates, deterministic constant HAVING comparisons, incompatible same-field equality and range constraints, mutually exclusive `IS NULL`/`IS NOT NULL` requirements, and `IS NULL` combined with another predicate that cannot accept NULL. Proven TRUE WHERE predicates are removed from physical filtering; proven TRUE HAVING predicates are omitted from physical group filtering.
+
+Source-boundary planning applies these proofs per logical use. Empty UNION branches do not contribute physical fields or predicates, and a source/facet boundary is skipped when all of its uses are empty. When an empty and a live branch share a physical source, only the live branch contributes metadata requirements. The logical query AST and UNION row-shaping semantics are not rewritten.
+
+Expression-level simplification remains in the ordinary optimiser. Duplicate exact predicates, membership subsumption, compatible bound subsumption, double negation and other scalar rules are not duplicated by the relation planner.
+
+### Conservative limits
+
+Relation contradiction proofs operate only on forms whose truth conditions are explicit and type-safe. OR branches, incompatible literal types, dynamic fields and expressions without a proof remain unchanged. Lack of a proof never means a branch is empty.
+
 ## `DISTINCT`, `LIMIT` and `OFFSET`
 
 ### Implemented

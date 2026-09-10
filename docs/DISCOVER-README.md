@@ -130,9 +130,11 @@ Plain `UNION` removes duplicate logical rows; `UNION ALL` preserves them. Global
 
 yt-sql uses a dedicated post-resolution optimiser. It reduces equivalent query structures before local evaluation while preserving the exact semantics of the resolved query, including SQL-like UNKNOWN results for NULL values. Current rewrites include negation normalisation, duplicate Boolean-term removal, degenerate `BETWEEN` reduction, conservative same-field comparison-bound subsumption, literal `IN` deduplication, singleton membership reduction and safe same-field membership subsumption. Fixed-point predicate rewrites also apply inside searched CASE conditions.
 
+Physical planning also performs proof-backed relation simplification. WHERE and HAVING retain rows only when their result is TRUE, so a predicate can prove a relation empty even when NULL rows would evaluate it as UNKNOWN. Discover can therefore skip branches with incompatible equality/range requirements or constant-false HAVING conditions, remove capability-proven TRUE filters from physical predicate work, and stop empty UNION branches contributing source acquisition or metadata requirements. These proofs do not rewrite the logical query AST.
+
 The optimiser is tested differentially: the unoptimised and optimised resolved queries are executed against the same deterministic records and must produce identical predicate truth values, selected rows and serialised output. The routine conformance matrix also compares both forms across the complete current semantic case set before the optimised path is checked against the independent oracle.
 
-Use `--explain` to inspect applicable rewrites. JSON explain output records them under `predicate_optimiser`, and `-v` reports rewrites applied during real execution. Optimisation is deliberately conservative where a superficially simpler rewrite could alter NULL semantics.
+Use `--explain` to inspect applicable rewrites and relation-level proofs. JSON explain output records scalar rewrites under `predicate_optimiser` and physical relation decisions under `source_boundaries[].relation_simplifications`; `-v` reports rewrites applied during real execution. Optimisation remains conservative where a superficially simpler rewrite could alter NULL semantics.
 
 ## LIMIT-aware execution optimisation
 

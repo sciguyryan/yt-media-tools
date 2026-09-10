@@ -9,6 +9,7 @@ from .dates import DateContext
 from .query_model import Binary, Query
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .query_semantics import query_physical_source_requests
+from .relation_simplification import RelationSimplificationPlan, plan_relation_simplification
 from .query_properties import (
     METADATA_DETAILED,
     METADATA_ENUMERATION,
@@ -338,6 +339,9 @@ class SourceBoundaryPlan:
     branch_empty: bool
     elimination_proof: OptimisationProof | None
     collection_requirements: frozenset[str]
+    eliminated_uses: int = 0
+    redundant_where_uses: int = 0
+    relation_simplifications: tuple[RelationSimplificationPlan, ...] = ()
 
 
 def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, str | None], ...]:
@@ -425,18 +429,40 @@ def plan_source_boundaries(
         uses = grouped.get(request, [])
         if not uses:
             continue
-        predicate = _or_predicates(tuple(use.predicate for use, _owner in uses))
+
+        analysed_uses = [(use, owner, plan_relation_simplification(use, source=source)) for use, owner in uses]
+        live_uses = [(use, owner, relation) for use, owner, relation in analysed_uses if not relation.empty]
+        eliminated_uses = len(analysed_uses) - len(live_uses)
+        redundant_where_uses = sum(1 for _use, _owner, relation in live_uses if relation.where_redundant)
+
+        predicate = _or_predicates(
+            tuple(None if relation.where_redundant else use.predicate for use, _owner, relation in live_uses)
+        )
         use_fields: list[frozenset[str]] = []
-        for use, owner in uses:
+        for use, owner, relation in live_uses:
+            effective = replace(
+                use,
+                predicate=None if relation.where_redundant else use.predicate,
+                having=None if relation.having_redundant else use.having,
+            )
+            required = frozenset(required_query_fields(effective))
             dependency = cte_dependencies.for_cte(owner) if owner is not None else None
             if dependency is not None and dependency.pruning_applied and not use.set_operations:
-                use_fields.append(dependency.input_fields)
-            else:
-                use_fields.append(frozenset(required_query_fields(use)))
-        fields = frozenset().union(*use_fields)
-        synthetic = replace(uses[0][0], predicate=predicate)
-        # Ensure repeated uses contribute all physical field needs without pushing one use's
-        # projection or grouping requirements into another use's predicate semantics.
+                required = required & dependency.input_fields
+            use_fields.append(required)
+
+        fields = frozenset().union(*use_fields) if use_fields else frozenset()
+        synthetic_base = live_uses[0][0] if live_uses else uses[0][0]
+        synthetic = replace(
+            synthetic_base,
+            predicate=predicate,
+            having=(
+                None
+                if live_uses and all(relation.having_redundant for _use, _owner, relation in live_uses)
+                else synthetic_base.having
+            ),
+        )
+
         properties = analyse_query(synthetic, source=source)
         metadata = plan_metadata_requirements(synthetic, source=source)
         if fields != properties.required_fields:
@@ -449,27 +475,58 @@ def plan_source_boundaries(
                 detailed,
                 metadata.predicate_enumeration_fields,
                 metadata.predicate_detailed_fields,
-                "source-boundary requirements union every field needed by all logical uses of this source/facet",
+                "source-boundary requirements union only fields needed by non-empty logical uses after static relation simplification",
             )
+
         stages = plan_predicate_stages(synthetic, source=source)
         temporal = infer_temporal_bounds(predicate, dates)
         acquisition = plan_acquisition(
-            synthetic, source_kind=source.kind, tab=source.facet or "videos", dates=dates, temporal_bounds=temporal
+            synthetic,
+            source_kind=source.kind,
+            tab=source.facet or "videos",
+            dates=dates,
+            temporal_bounds=temporal,
         )
         facet_caps = selected_facet_capabilities(source)
         if acquisition.targeted and (not facet_caps.stable_collection or facet_caps.trustworthy_order_field is None):
             acquisition = AcquisitionPlan(
-                "full", "the selected source/facet does not declare stable trustworthy ordering for bounded acquisition"
+                "full",
+                "the selected source/facet does not declare stable trustworthy ordering for bounded acquisition",
             )
-        truth = prove_predicate_truth(predicate, source=source)
-        empty = predicate is not None and truth.proven and truth.truth != TRUTH_TRUE
+
+        empty = not live_uses
+        elimination_proof = None
         if empty:
             acquisition = AcquisitionPlan(
-                "skip", "source/facet capabilities prove every logical use of this physical request is empty"
+                "skip",
+                "static relation proofs show every logical use of this physical request is empty",
             )
-            cost_class, cost_reason = "none", "the physical source/facet request is proven empty before acquisition"
+            cost_class, cost_reason = (
+                "none",
+                "the physical source/facet request is proven empty before acquisition",
+            )
+            proofs = [proof for _use, _owner, relation in analysed_uses for proof in relation.proofs if proof.proven]
+            elimination_proof = proofs[0] if proofs else None
         else:
-            cost_class, cost_reason = _assess_source_boundary_cost(metadata, acquisition, source=source)
+            truth = prove_predicate_truth(predicate, source=source)
+            empty = predicate is not None and truth.proven and truth.truth != TRUTH_TRUE
+            if empty:
+                acquisition = AcquisitionPlan(
+                    "skip",
+                    "source/facet capabilities prove every live logical use of this physical request is empty",
+                )
+                cost_class, cost_reason = (
+                    "none",
+                    "the physical source/facet request is proven empty before acquisition",
+                )
+                elimination_proof = truth.proof
+            else:
+                cost_class, cost_reason = _assess_source_boundary_cost(
+                    metadata,
+                    acquisition,
+                    source=source,
+                )
+
         result.append(
             SourceBoundaryPlan(
                 request[0],
@@ -496,8 +553,11 @@ def plan_source_boundaries(
                 facet_caps.trustworthy_order_field,
                 acquisition.targeted,
                 empty,
-                truth.proof if empty else None,
+                elimination_proof,
                 _collection_requirements(fields),
+                eliminated_uses,
+                redundant_where_uses,
+                tuple(relation for _use, _owner, relation in analysed_uses),
             )
         )
     return tuple(result)
@@ -525,7 +585,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     physical_required_fields = properties.required_fields
     boundary_override: SourceBoundaryPlan | None = None
     physical_requests = query_physical_source_requests(query)
-    if query.ctes and len(physical_requests) == 1:
+    if len(physical_requests) == 1:
         boundaries = plan_source_boundaries(
             query,
             requests=physical_requests,
@@ -555,7 +615,11 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     if eliminated:
         acquisition = AcquisitionPlan(
             "skip",
-            "source/facet capabilities prove the WHERE predicate cannot evaluate TRUE",
+            (
+                boundary_override.acquisition.reason
+                if boundary_override is not None
+                else "source/facet capabilities prove the WHERE predicate cannot evaluate TRUE"
+            ),
         )
     limit = plan_limit_termination(query, source=source, predicate_stages=predicate_stages)
     if eliminated:

@@ -305,7 +305,7 @@ The query AST and materialised CTE schema are not rewritten in this phase. Depen
 
 Explain output distinguishes pre-propagation logical requirements from the post-propagation physical metadata plan. Acquisition strategy, detailed-metadata status and estimated cost are presented from the final physical source boundary so fields proven unnecessary by CTE propagation are not simultaneously described as active acquisition requirements.
 
-## 0.28.8 - Safe LIMIT/OFFSET Early Termination
+## 0.28.8 - Safe LIMIT/OFFSET Early Termination - Complete
 
 ### Scope
 
@@ -356,6 +356,18 @@ Optimisations may include:
 -   impossible field-capability combinations.
 
 All transformations must preserve NULL semantics.
+
+### Implementation
+
+0.28.9 adds a proof-backed relation simplification layer beneath scalar predicate rewriting. It reasons about whether a WHERE or HAVING filter can ever evaluate TRUE, which is the relevant relational question under SQL three-valued logic. A predicate may therefore prove a relation empty even when its scalar value would be UNKNOWN for NULL rows.
+
+The planner detects incompatible same-field equality and range constraints, mutually exclusive NULL requirements, constant HAVING predicates, and source-capability predicates that are provably TRUE, FALSE or UNKNOWN. Proven TRUE WHERE filters are removed from physical predicate work, and proven TRUE HAVING filters are omitted from physical grouping requirements. Proven FALSE or UNKNOWN filters make the affected logical use empty before acquisition.
+
+Source-boundary planning excludes empty logical uses from field unions and combined physical predicates. If every logical use of a source/facet is empty, the complete physical boundary is skipped. In UNION and UNION ALL plans, an empty branch may therefore avoid acquisition independently while live branches retain their normal semantics. Empty uses of a shared source also stop contributing metadata requirements without changing the logical query tree.
+
+The relation simplifier does not rewrite the user-visible AST into a synthetic empty-relation syntax. Logical evaluation remains unchanged; the new proofs affect physical planning, acquisition and diagnostics. Existing scalar optimiser rules for duplicate predicates, exact membership/bound subsumption and double negation remain responsible for expression-level simplification.
+
+Human and JSON explain output report eliminated logical uses, redundant WHERE filters and the proof reason for each static relation simplification.
 
 ## 0.28.10 - Metadata Acquisition Plan
 

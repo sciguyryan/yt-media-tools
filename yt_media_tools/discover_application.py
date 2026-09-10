@@ -485,7 +485,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.verbose,
                     f"Skipping source boundary {source_value}"
                     + (f" OF {request_facet}" if request_facet is not None else "")
-                    + ": capability proof establishes an empty branch.",
+                    + ": static relation proof establishes an empty branch.",
                 )
                 source_record_counts[(source_value, request_facet)] = 0
                 continue
@@ -570,7 +570,7 @@ def main(argv: list[str] | None = None) -> int:
             detailed_candidates = 0
             _verbose(
                 args.verbose,
-                "Skipped source acquisition because capability proofs show the WHERE predicate cannot evaluate TRUE.",
+                f"Skipped source acquisition: {plan.reason}.",
             )
         elif plan.targeted:
             flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)

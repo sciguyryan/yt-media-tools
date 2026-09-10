@@ -1,5 +1,17 @@
 # Changelog
 
+## Discover 0.28.9 - Static Relation and Branch Simplification
+
+- Add proof-backed relation simplification for filters that can never evaluate TRUE under SQL three-valued logic.
+- Prove incompatible same-field equality/range constraints and mutually exclusive NULL requirements empty without rewriting their scalar UNKNOWN behaviour.
+- Prove constant HAVING predicates before acquisition and skip source work when no group can survive.
+- Remove source-capability predicates proven TRUE from physical filtering and stop their otherwise redundant fields contributing to metadata requirements.
+- Exclude statically empty UNION and UNION ALL uses from source-boundary field unions and acquisition.
+- Skip an entire physical source/facet boundary when every logical use is proven empty.
+- Preserve existing scalar optimiser rules for duplicate predicates, exact subsumption and Boolean normalisation rather than duplicating them at relation level.
+- Expose eliminated logical uses, redundant WHERE filters and relation-simplification reasons through human and JSON explain output.
+- Add regression coverage for contradictory bounds, constant HAVING, capability-proven TRUE filters, empty set branches and shared-source metadata pruning.
+
 ## Discover 0.28.8 - Safe LIMIT/OFFSET Early Termination
 
 - Formalise LIMIT/OFFSET early termination as a stage-aware proof with an explicit `OFFSET + LIMIT` authoritative match target.

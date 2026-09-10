@@ -17,12 +17,14 @@ from .query_model import (
     Field,
     InList,
     IsNull,
+    Literal,
     Query,
     ScalarComparison,
     ScalarIsNull,
     TextPredicate,
     Unary,
 )
+from .query_evaluator import evaluate, evaluate_scalar_expression
 from .query_properties import analyse_expression, analyse_query
 from .source_capabilities import STRUCTURALLY_UNSUPPORTED, selected_facet_capabilities
 from .source_model import SourceSpec
@@ -225,6 +227,64 @@ def prove_predicate_truth(node: Any, *, source: SourceSpec | None) -> PredicateT
     """
     if node is None:
         return _truth_proof(TRUTH_TRUE, reasons=("an absent WHERE predicate accepts every row",))
+
+    if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):
+        truth = TRUTH_UNKNOWN if node.value is None else TRUTH_TRUE if node.value else TRUTH_FALSE
+        return PredicateTruthProof(
+            truth,
+            _proof(
+                "predicate-truth",
+                True,
+                provenance=(PROVENANCE_SEMANTIC_PROPERTIES,),
+                reasons=("the predicate is a resolved Boolean or NULL literal",),
+            ),
+        )
+
+    constant = prove_expression_constant(node, source=source)
+    if constant.proven:
+        try:
+            if isinstance(node, ScalarComparison):
+                left = evaluate_scalar_expression(node.left, {})
+                right = evaluate_scalar_expression(node.right, {})
+                if left is None or right is None:
+                    value = None
+                elif node.operator == "=":
+                    value = left == right
+                elif node.operator == "!=":
+                    value = left != right
+                elif node.operator == "<":
+                    value = left < right
+                elif node.operator == "<=":
+                    value = left <= right
+                elif node.operator == ">":
+                    value = left > right
+                elif node.operator == ">=":
+                    value = left >= right
+                else:
+                    value = NotImplemented
+            elif isinstance(node, ScalarIsNull):
+                value = evaluate_scalar_expression(node.expression, {}) is None
+                if node.negated:
+                    value = not value
+            else:
+                value = evaluate(node, {})
+        except (AssertionError, TypeError, ValueError, ZeroDivisionError):
+            value = NotImplemented
+        if value is None or isinstance(value, bool):
+            truth = TRUTH_UNKNOWN if value is None else TRUTH_TRUE if value else TRUTH_FALSE
+            return PredicateTruthProof(
+                truth,
+                compose_proofs(
+                    "predicate-truth",
+                    constant,
+                    _proof(
+                        "constant-predicate-evaluation",
+                        True,
+                        provenance=(PROVENANCE_SEMANTIC_PROPERTIES,),
+                        reasons=("the deterministic row-independent predicate was evaluated once",),
+                    ),
+                ),
+            )
 
     if isinstance(node, (IsNull, ScalarIsNull)):
         target = node.field if isinstance(node, IsNull) else node.expression

@@ -30,6 +30,8 @@ Torture coverage keeps temporal and numeric values embedded inside larger Boolea
 
 Current coverage includes COUNT(*), COUNT(expr), SUM, AVG, MIN, MAX, GROUP BY, HAVING, aggregate FILTER, NULL elimination, grouping of NULL keys, aggregate aliases, invalid nesting, type checking and aggregate UNION branches. HAVING optimiser coverage includes semantic duplicate-term removal, double-negation elimination, differential execution and idempotence.
 
+Static relation coverage includes WHERE predicates that are impossible under SQL filtering semantics, constant TRUE/FALSE HAVING conditions, capability-proven TRUE filters, per-branch UNION elimination, shared-source field pruning after an empty branch is removed from physical requirements, and explain consistency for skipped acquisition. These tests keep scalar UNKNOWN semantics separate from the relational question of whether a row can ever survive.
+
 Torture coverage chains filtered CTE materialisation into grouping, HAVING and outer ordering, and also aggregates a cross-facet UNION-derived relation containing scalar CASE expressions and seeded RANDOM projection.
 
 ## CTE and set composition
