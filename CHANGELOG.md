@@ -9,6 +9,7 @@
 - Overlay exact enumeration values onto cached or freshly detailed rows so detailed-cache freshness is checked only for genuinely detailed fields.
 - Preserve full lightweight enumeration when enumeration-only execution would otherwise mix fresh flat values with a stale incremental frontier.
 - Add focused field-depth and acquisition-planning regression coverage.
+- Preserve verbose per-entry and inaccessible-entry telemetry when lightweight enumeration replaces detailed extraction.
 
 ## Discover 0.28.2 - Capability-Driven Predicate Simplification
 

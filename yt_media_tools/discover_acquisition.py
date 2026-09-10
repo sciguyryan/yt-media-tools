@@ -46,7 +46,13 @@ def _acquisition_progress(level: int):
     return callback
 
 
-def _enumeration_progress(level: int, *, context: str, warn_threshold: int = 0):
+def _enumeration_progress(
+    level: int,
+    *,
+    context: str,
+    warn_threshold: int = 0,
+    acquisition_observability: bool = False,
+):
     """Create pipe-safe progress reporting for potentially lengthy source enumeration."""
     interval = (
         1
@@ -59,9 +65,15 @@ def _enumeration_progress(level: int, *, context: str, warn_threshold: int = 0):
 
     def callback(event: str, stats: AcquisitionStats, detail: str | None) -> None:
         nonlocal large_warning_emitted
+        if event == "skipped":
+            if acquisition_observability:
+                _verbose(level, f"Skipped inaccessible entry: {detail}.")
+            return
         if event != "enumerated":
             return
         count = stats.available
+        if acquisition_observability and level >= 2:
+            _verbose(level, f"Available entry {count}: {detail}", minimum=2)
         if warn_threshold and not large_warning_emitted and count >= warn_threshold:
             print(
                 f"yt-discover: large-source warning: {context} has already observed {count} items and is still enumerating "

@@ -435,6 +435,9 @@ def main(argv: list[str] | None = None) -> int:
     enumeration_only_acquisition = False
     acquisition_started = perf_counter()
     source_record_counts: dict[tuple[str, str | None], int] = {}
+    # Determine this before enumeration because lightweight progress owns acquisition
+    # observability only when no detailed metadata pass will follow.
+    requires_detailed = metadata_requirements.requires_detailed_metadata or args.fields or args.schema
     if multi_source:
         raw_records = []
         acquisition_stats = AcquisitionStats()
@@ -534,7 +537,10 @@ def main(argv: list[str] | None = None) -> int:
                         confirmation_entries=plan.confirmation_entries,
                         dates=date_context,
                         progress=_enumeration_progress(
-                            args.verbose, context="Bounded YouTube.js enumeration", warn_threshold=args.warn_source_size
+                            args.verbose,
+                            context="Bounded YouTube.js enumeration",
+                            warn_threshold=args.warn_source_size,
+                            acquisition_observability=not requires_detailed,
                         ),
                     )
                 else:
@@ -545,7 +551,10 @@ def main(argv: list[str] | None = None) -> int:
                         stop_before=plan.stop_before,
                         confirmation_entries=plan.confirmation_entries,
                         progress=_enumeration_progress(
-                            args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
+                            args.verbose,
+                            context="Bounded yt-dlp enumeration",
+                            warn_threshold=args.warn_source_size,
+                            acquisition_observability=not requires_detailed,
                         ),
                     )
             except YouTubeJsError as exc:
@@ -564,7 +573,10 @@ def main(argv: list[str] | None = None) -> int:
                         stop_before=plan.stop_before,
                         confirmation_entries=plan.confirmation_entries,
                         progress=_enumeration_progress(
-                            args.verbose, context="Bounded yt-dlp enumeration", warn_threshold=args.warn_source_size
+                            args.verbose,
+                            context="Bounded yt-dlp enumeration",
+                            warn_threshold=args.warn_source_size,
+                            acquisition_observability=not requires_detailed,
                         ),
                     )
                 except YtDlpError as fallback_exc:
@@ -589,7 +601,6 @@ def main(argv: list[str] | None = None) -> int:
                     lightweight_rejected += 1
                     continue
                 candidate_ids.append(video_id)
-            requires_detailed = metadata_requirements.requires_detailed_metadata or args.fields or args.schema
             detailed_candidates = len(candidate_ids) if requires_detailed else 0
             _verbose(
                 args.verbose,
@@ -617,7 +628,7 @@ def main(argv: list[str] | None = None) -> int:
                         for entry in flat_entries
                         if isinstance(entry.get("id"), str) and entry.get("id") in candidate_set
                     ]
-                    acquisition_stats = AcquisitionStats(available=len(raw_records))
+                    acquisition_stats = enumeration_stats.acquisition
                     enumeration_only_acquisition = True
                     _verbose(
                         args.verbose,
@@ -694,6 +705,7 @@ def main(argv: list[str] | None = None) -> int:
                             args.verbose,
                             context="Full lightweight enumeration",
                             warn_threshold=args.warn_source_size,
+                            acquisition_observability=True,
                         ),
                     )
                 except YtDlpError as exc:
@@ -712,7 +724,7 @@ def main(argv: list[str] | None = None) -> int:
                         lightweight_rejected += 1
                         continue
                     raw_records.append(entry)
-                acquisition_stats = AcquisitionStats(available=len(raw_records))
+                acquisition_stats = enumeration_stats.acquisition
                 detailed_candidates = 0
                 enumeration_only_acquisition = True
                 _verbose(

@@ -227,6 +227,7 @@ class EnumerationStats:
     frontier_overlap_entries: int = 0
     stopped_early: bool = False
     stopped_on_frontier: bool = False
+    acquisition: AcquisitionStats = field(default_factory=AcquisitionStats)
 
 
 def build_lazy_flat_command(
@@ -326,6 +327,16 @@ def enumerate_until_date_boundary(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            line = raw_line.rstrip("\n")
+            if line.startswith("ERROR:"):
+                stats.acquisition.error_lines += 1
+            match = _YOUTUBE_ERROR_RE.search(line)
+            if match:
+                stats.acquisition.identified_error_lines += 1
+                video_id, message = match.groups()
+                category = _classify_youtube_error(message)
+                if stats.acquisition.record_skip(video_id, category) and progress is not None:
+                    progress("skipped", stats.acquisition, f"{video_id} ({category})")
 
     stderr_thread = threading.Thread(target=read_stderr, name="yt-discover-ytdlp-flat-stderr", daemon=True)
     stderr_thread.start()
@@ -348,6 +359,7 @@ def enumerate_until_date_boundary(
                 continue
             entries.append(value)
             stats.enumerated += 1
+            stats.acquisition.available += 1
             timestamp = value.get("timestamp")
             approximate_date = None
             if isinstance(timestamp, (int, float)):
@@ -376,7 +388,7 @@ def enumerate_until_date_boundary(
 
             if progress is not None:
                 detail = str(value.get("id") or f"entry {stats.enumerated}")
-                progress("enumerated", AcquisitionStats(available=stats.enumerated), detail)
+                progress("enumerated", stats.acquisition, detail)
 
             if consecutive_old >= confirmation_entries:
                 stats.stopped_early = True
@@ -452,6 +464,16 @@ def enumerate_until_known_overlap(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            line = raw_line.rstrip("\n")
+            if line.startswith("ERROR:"):
+                stats.acquisition.error_lines += 1
+            match = _YOUTUBE_ERROR_RE.search(line)
+            if match:
+                stats.acquisition.identified_error_lines += 1
+                video_id, message = match.groups()
+                category = _classify_youtube_error(message)
+                if stats.acquisition.record_skip(video_id, category) and progress is not None:
+                    progress("skipped", stats.acquisition, f"{video_id} ({category})")
 
     stderr_thread = threading.Thread(target=read_stderr, name="yt-discover-ytdlp-frontier-stderr", daemon=True)
     stderr_thread.start()
@@ -472,6 +494,7 @@ def enumerate_until_known_overlap(
                 continue
             entries.append(value)
             stats.enumerated += 1
+            stats.acquisition.available += 1
             video_id = value.get("id")
             if isinstance(video_id, str) and video_id in known_ids:
                 consecutive_known += 1
@@ -480,7 +503,7 @@ def enumerate_until_known_overlap(
                 consecutive_known = 0
             if progress is not None:
                 detail = str(video_id or f"entry {stats.enumerated}")
-                progress("enumerated", AcquisitionStats(available=stats.enumerated), detail)
+                progress("enumerated", stats.acquisition, detail)
             if consecutive_known >= confirmation_entries:
                 stats.stopped_early = True
                 stats.stopped_on_frontier = True

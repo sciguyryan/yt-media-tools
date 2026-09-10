@@ -5,6 +5,7 @@ from yt_media_tools.ytdlp import (
     build_lazy_flat_command,
     build_metadata_command,
     build_video_metadata_command,
+    enumerate_all_flat,
 )
 
 
@@ -87,3 +88,30 @@ def test_load_metadata_keeps_unexplained_nonzero_exit_fatal(tmp_path, monkeypatc
 
     with pytest.raises(YtDlpError, match=r"yt-dlp exited with status 1"):
         load_metadata(["yt-dlp", "dummy"])
+
+
+def test_flat_enumeration_preserves_acquisition_telemetry(tmp_path, monkeypatch) -> None:
+    fake = tmp_path / "yt-dlp"
+    fake.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, sys\n"
+        "print('ERROR: [youtube] 58x8FebkTSA: Join this channel to get access to members-only content like this video, and other exclusive perks.', file=sys.stderr, flush=True)\n"
+        "print(json.dumps({'id': 'abc123XYZ00', 'title': 'One'}), flush=True)\n"
+        "print(json.dumps({'id': 'def456XYZ00', 'title': 'Two'}), flush=True)\n",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", str(tmp_path) + __import__("os").pathsep + __import__("os").environ.get("PATH", ""))
+    events: list[tuple[str, int, int, str | None]] = []
+
+    def progress(event, stats, detail):
+        events.append((event, stats.available, stats.skipped, detail))
+
+    entries, stats = enumerate_all_flat(["yt-dlp", "dummy"], progress=progress)
+
+    assert [entry["id"] for entry in entries] == ["abc123XYZ00", "def456XYZ00"]
+    assert stats.acquisition.available == 2
+    assert stats.acquisition.skipped == 1
+    assert stats.acquisition.skipped_by_id["58x8FebkTSA"] == "members-only"
+    assert ("enumerated", 1, 1, "abc123XYZ00") in events or ("enumerated", 1, 0, "abc123XYZ00") in events
+    assert any(event == "skipped" and detail == "58x8FebkTSA (members-only)" for event, _, _, detail in events)
