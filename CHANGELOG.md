@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.28.3 - Field Requirement and Metadata Pruning
+
+- Partition physical query fields into authoritative enumeration and detailed-metadata requirements.
+- Keep approximate flat metadata and dynamic fields in the detailed requirement set rather than treating them as authoritative enumeration values.
+- Expose enumeration, detailed and predicate-stage field requirements through the physical acquisition plan.
+- Skip detailed extraction for eligible single-source queries whose complete field requirements are authoritative in lightweight enumeration metadata.
+- Overlay exact enumeration values onto cached or freshly detailed rows so detailed-cache freshness is checked only for genuinely detailed fields.
+- Preserve full lightweight enumeration when enumeration-only execution would otherwise mix fresh flat values with a stale incremental frontier.
+- Add focused field-depth and acquisition-planning regression coverage.
+
 ## Discover 0.28.2 - Capability-Driven Predicate Simplification
 
 - Add source/facet capability proofs for predicate truth under SQL three-valued logic.

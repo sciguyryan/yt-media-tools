@@ -11,6 +11,7 @@ from yt_media_tools.planner import (
     assess_cost,
     plan_acquisition,
     plan_limit_termination,
+    plan_metadata_requirements,
     required_query_fields,
 )
 from yt_media_tools.optimizer import optimise_query
@@ -187,6 +188,19 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"  {capability.field}: YouTube.js={capability.youtubejs}; "
             f"yt-dlp-flat={capability.ytdlp_flat}; yt-dlp-detailed={capability.ytdlp_detailed}"
         )
+    metadata_requirements = plan_metadata_requirements(query, source=source)
+    lines.extend(
+        [
+            "",
+            "Metadata requirements",
+            "  Enumeration: " + (", ".join(sorted(metadata_requirements.enumeration_fields)) or "none"),
+            "  Detailed: " + (", ".join(sorted(metadata_requirements.detailed_fields)) or "none"),
+            "  Predicate enumeration: "
+            + (", ".join(sorted(metadata_requirements.predicate_enumeration_fields)) or "none"),
+            "  Predicate detailed: " + (", ".join(sorted(metadata_requirements.predicate_detailed_fields)) or "none"),
+            f"  Reason: {metadata_requirements.reason}",
+        ]
+    )
 
     plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
     if len(source_inputs) > 1:
@@ -198,7 +212,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
-        cost_class, cost_reason = assess_cost(query, plan)
+        cost_class, cost_reason = assess_cost(query, plan, source=source)
     lines.extend(
         [
             "",
@@ -345,12 +359,13 @@ def explain_user_query_json(
     source = explained_sources[0]
     dates = DateContext(date_order=date_format)
     required = sorted(required_query_fields(query))
+    metadata_requirements = plan_metadata_requirements(query, source=source)
     plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
     if offline:
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
-        cost_class, cost_reason = assess_cost(query, plan)
+        cost_class, cost_reason = assess_cost(query, plan, source=source)
 
     try:
         resolved_for_optimiser = resolve_query(query, QuerySchema(()), dates)
@@ -430,6 +445,14 @@ def explain_user_query_json(
             }
             for capability in capabilities_for_fields(required)
         ],
+        "metadata_requirements": {
+            "enumeration_fields": sorted(metadata_requirements.enumeration_fields),
+            "detailed_fields": sorted(metadata_requirements.detailed_fields),
+            "predicate_enumeration_fields": sorted(metadata_requirements.predicate_enumeration_fields),
+            "predicate_detailed_fields": sorted(metadata_requirements.predicate_detailed_fields),
+            "requires_detailed_metadata": metadata_requirements.requires_detailed_metadata,
+            "reason": metadata_requirements.reason,
+        },
         "acquisition": {
             "strategy": plan.mode,
             "reason": plan.reason,

@@ -254,6 +254,7 @@ def main(argv: list[str] | None = None) -> int:
 
     date_context = DateContext(date_order=args.date_format)
     query_plan = plan_query(query, source=source, dates=date_context)
+    metadata_requirements = query_plan.metadata_requirements
     plan: AcquisitionPlan = query_plan.acquisition
     if multi_source:
         plan = AcquisitionPlan(
@@ -296,7 +297,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.offline:
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
-        cost_class, cost_reason = assess_cost(query, plan)
+        cost_class, cost_reason = assess_cost(query, plan, source=source)
     if not args.offline and not args.dry_run and args.acquisition != "full" and cost_class == "very-high":
         if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
             warning = (
@@ -341,6 +342,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.verbose:
         _verbose(True, f"Acquisition plan: {plan.mode} ({plan.reason}).")
+        _verbose(True, f"Metadata requirements: {metadata_requirements.reason}.")
         if args.offline:
             _verbose(True, "Execution source: persistent metadata cache only; network acquisition is disabled.")
         elif plan.targeted:
@@ -430,6 +432,7 @@ def main(argv: list[str] | None = None) -> int:
     limit_terminated = False
     limit_batches = 0
     limit_candidates_examined = 0
+    enumeration_only_acquisition = False
     acquisition_started = perf_counter()
     source_record_counts: dict[tuple[str, str | None], int] = {}
     if multi_source:
@@ -586,12 +589,18 @@ def main(argv: list[str] | None = None) -> int:
                     lightweight_rejected += 1
                     continue
                 candidate_ids.append(video_id)
-            detailed_candidates = len(candidate_ids)
+            requires_detailed = metadata_requirements.requires_detailed_metadata or args.fields or args.schema
+            detailed_candidates = len(candidate_ids) if requires_detailed else 0
             _verbose(
                 args.verbose,
                 f"Lightweight enumeration observed {enumeration_stats.enumerated} entries "
                 f"({enumeration_stats.dated} dated, {enumeration_stats.undated} undated); "
-                f"{len(candidate_ids)} detailed candidates; {lightweight_rejected} safely rejected before full extraction.",
+                + (
+                    f"{len(candidate_ids)} detailed candidates; "
+                    if requires_detailed
+                    else "no detailed extraction required; "
+                )
+                + f"{lightweight_rejected} safely rejected before full extraction.",
             )
             if enumeration_stats.stopped_early:
                 _verbose(args.verbose, "Stopped channel pagination after the conservative date boundary was confirmed.")
@@ -601,187 +610,268 @@ def main(argv: list[str] | None = None) -> int:
                     "Channel enumeration reached its natural end before the conservative date boundary was confirmed.",
                 )
             if candidate_ids:
-                try:
-                    if limit_plan.eligible:
-                        (
-                            raw_records,
-                            acquisition_stats,
-                            cache_stats,
-                            limit_terminated,
-                            limit_batches,
-                            limit_candidates_examined,
-                        ) = _limit_aware_cached_acquire(
-                            cache=metadata_cache,
-                            source_url=source.canonical_url,
-                            video_ids=candidate_ids,
-                            query=query,
-                            dates=date_context,
-                            required_fields=required_query_fields(query),
-                            verbose=args.verbose,
-                            cookies_file=cookies_file,
-                        )
-                    else:
-                        raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
-                            cache=metadata_cache,
-                            source_url=source.canonical_url,
-                            video_ids=candidate_ids,
-                            required_fields=required_query_fields(query),
-                            verbose=args.verbose,
-                            cookies_file=cookies_file,
-                        )
-                except YtDlpError as exc:
-                    print(f"Error: {exc}.", file=sys.stderr)
-                    return 1
+                if not requires_detailed:
+                    candidate_set = set(candidate_ids)
+                    raw_records = [
+                        entry
+                        for entry in flat_entries
+                        if isinstance(entry.get("id"), str) and entry.get("id") in candidate_set
+                    ]
+                    acquisition_stats = AcquisitionStats(available=len(raw_records))
+                    enumeration_only_acquisition = True
+                    _verbose(
+                        args.verbose,
+                        "All required fields are authoritative in enumeration metadata; skipped detailed yt-dlp extraction.",
+                    )
+                else:
+                    try:
+                        if limit_plan.eligible:
+                            (
+                                raw_records,
+                                acquisition_stats,
+                                cache_stats,
+                                limit_terminated,
+                                limit_batches,
+                                limit_candidates_examined,
+                            ) = _limit_aware_cached_acquire(
+                                cache=metadata_cache,
+                                source_url=source.canonical_url,
+                                video_ids=candidate_ids,
+                                query=query,
+                                dates=date_context,
+                                required_fields=set(metadata_requirements.detailed_fields),
+                                verbose=args.verbose,
+                                cookies_file=cookies_file,
+                            )
+                        else:
+                            raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
+                                cache=metadata_cache,
+                                source_url=source.canonical_url,
+                                video_ids=candidate_ids,
+                                required_fields=set(metadata_requirements.detailed_fields),
+                                verbose=args.verbose,
+                                cookies_file=cookies_file,
+                            )
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
+                    # Enumeration values classified as exact are authoritative for this
+                    # acquisition pass. Overlay them onto cached or freshly detailed rows
+                    # so detailed-cache freshness only needs to cover detailed-only fields.
+                    flat_by_id = {
+                        entry.get("id"): entry
+                        for entry in flat_entries
+                        if isinstance(entry.get("id"), str) and entry.get("id")
+                    }
+                    for raw in raw_records:
+                        video_id = raw.get("id")
+                        flat = flat_by_id.get(video_id)
+                        if flat is None:
+                            continue
+                        for field in metadata_requirements.enumeration_fields:
+                            if field == "source_index":
+                                continue
+                            if field in flat:
+                                raw[field] = flat[field]
             else:
                 raw_records, acquisition_stats = [], AcquisitionStats()
         else:
-            cache_first_full = (
-                metadata_cache is not None
-                and source.kind == "channel"
-                and args.tab == "videos"
-                and args.items is None
-                and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
+            facet_capabilities = source_capabilities(source).facet_capabilities(source.facet)
+            enumeration_only = (
+                not metadata_requirements.requires_detailed_metadata
+                and facet_capabilities.cheaply_enumerates_identities
+                and not explicit_prefilters
+                and not args.fields
+                and not args.schema
             )
-            if cache_first_full:
+            if enumeration_only:
                 flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
-                if args.verbose >= 2:
-                    _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
-                prior_order = metadata_cache.source_entry_ids(source.canonical_url)
-                frontier = metadata_cache.source_frontier(source.canonical_url) if args.acquisition != "full" else None
-                if frontier is not None and prior_order:
-                    frontier_attempted = True
-                    _verbose(
-                        args.verbose,
-                        f"Using incremental source frontier with {len(prior_order)} known entries; "
-                        f"requiring {FRONTIER_OVERLAP_CONFIRMATIONS} consecutive known IDs before stopping.",
+                _verbose(args.verbose, "Enumerating authoritative lightweight metadata without detailed extraction...")
+                try:
+                    flat_entries, enumeration_stats = enumerate_all_flat(
+                        flat_command,
+                        progress=_enumeration_progress(
+                            args.verbose,
+                            context="Full lightweight enumeration",
+                            warn_threshold=args.warn_source_size,
+                        ),
                     )
-                    try:
-                        flat_entries, enumeration_stats = enumerate_until_known_overlap(
-                            flat_command,
-                            known_ids=set(prior_order),
-                            confirmation_entries=FRONTIER_OVERLAP_CONFIRMATIONS,
-                            progress=_enumeration_progress(
-                                args.verbose,
-                                context="Incremental frontier enumeration",
-                                warn_threshold=args.warn_source_size,
-                            ),
-                        )
-                    except YtDlpError as exc:
-                        print(f"Error: {exc}.", file=sys.stderr)
-                        return 1
-                else:
-                    _verbose(
-                        args.verbose,
-                        "No trusted incremental frontier is available; enumerating the complete channel videos source.",
-                    )
-                    try:
-                        flat_entries, enumeration_stats = enumerate_all_flat(
-                            flat_command,
-                            progress=_enumeration_progress(
-                                args.verbose,
-                                context="Full channel enumeration",
-                                warn_threshold=args.warn_source_size,
-                            ),
-                        )
-                    except YtDlpError as exc:
-                        print(f"Error: {exc}.", file=sys.stderr)
-                        return 1
-
-                current_ids: list[str] = []
-                entry_by_id: dict[str, dict] = {}
+                except YtDlpError as exc:
+                    print(f"Error: {exc}.", file=sys.stderr)
+                    return 1
+                raw_records = []
+                observed_ids_for_cache = []
                 seen_ids: set[str] = set()
                 for entry in flat_entries:
                     video_id = entry.get("id")
                     if not (isinstance(video_id, str) and video_id and video_id not in seen_ids):
                         continue
                     seen_ids.add(video_id)
-                    current_ids.append(video_id)
-                    entry_by_id[video_id] = entry
-
-                if frontier_attempted and enumeration_stats.stopped_on_frontier:
-                    frontier_confirmed = True
-                    current_set = set(current_ids)
-                    frontier_new_entries = sum(1 for video_id in current_ids if video_id not in set(prior_order))
-                    observed_ids_for_cache = current_ids + [
-                        video_id for video_id in prior_order if video_id not in current_set
-                    ]
-                    _verbose(
-                        args.verbose,
-                        f"Incremental frontier confirmed after {enumeration_stats.enumerated} observed entries; "
-                        f"{frontier_new_entries} new source entr{'y' if frontier_new_entries == 1 else 'ies'} discovered.",
-                    )
-                else:
-                    observed_ids_for_cache = current_ids
-                    if frontier_attempted:
-                        _verbose(
-                            args.verbose,
-                            "Stored frontier overlap was not confirmed before source end; rebuilt the source ordering from a complete enumeration.",
-                        )
-
-                candidate_ids = []
-                for video_id in observed_ids_for_cache:
-                    entry = entry_by_id.get(video_id)
-                    if entry is not None and safely_reject_lightweight(query.predicate, entry, date_context):
+                    observed_ids_for_cache.append(video_id)
+                    if safely_reject_lightweight(query.predicate, entry, date_context):
                         lightweight_rejected += 1
                         continue
-                    candidate_ids.append(video_id)
-                detailed_candidates = len(candidate_ids)
-                try:
-                    if limit_plan.eligible:
-                        (
-                            raw_records,
-                            acquisition_stats,
-                            cache_stats,
-                            limit_terminated,
-                            limit_batches,
-                            limit_candidates_examined,
-                        ) = _limit_aware_cached_acquire(
-                            cache=metadata_cache,
-                            source_url=source.canonical_url,
-                            video_ids=candidate_ids,
-                            query=query,
-                            dates=date_context,
-                            required_fields=required_query_fields(query),
-                            verbose=args.verbose,
-                            cookies_file=cookies_file,
+                    raw_records.append(entry)
+                acquisition_stats = AcquisitionStats(available=len(raw_records))
+                detailed_candidates = 0
+                enumeration_only_acquisition = True
+                _verbose(
+                    args.verbose,
+                    f"Lightweight-only acquisition retained {len(raw_records)} row(s); "
+                    f"{lightweight_rejected} row(s) were safely rejected before query evaluation.",
+                )
+            else:
+                cache_first_full = (
+                    metadata_cache is not None
+                    and source.kind == "channel"
+                    and args.tab == "videos"
+                    and args.items is None
+                    and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
+                )
+                if cache_first_full:
+                    flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
+                    if args.verbose >= 2:
+                        _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
+                    prior_order = metadata_cache.source_entry_ids(source.canonical_url)
+                    frontier = (
+                        metadata_cache.source_frontier(source.canonical_url) if args.acquisition != "full" else None
+                    )
+                    if frontier is not None and prior_order:
+                        frontier_attempted = True
+                        _verbose(
+                            args.verbose,
+                            f"Using incremental source frontier with {len(prior_order)} known entries; "
+                            f"requiring {FRONTIER_OVERLAP_CONFIRMATIONS} consecutive known IDs before stopping.",
+                        )
+                        try:
+                            flat_entries, enumeration_stats = enumerate_until_known_overlap(
+                                flat_command,
+                                known_ids=set(prior_order),
+                                confirmation_entries=FRONTIER_OVERLAP_CONFIRMATIONS,
+                                progress=_enumeration_progress(
+                                    args.verbose,
+                                    context="Incremental frontier enumeration",
+                                    warn_threshold=args.warn_source_size,
+                                ),
+                            )
+                        except YtDlpError as exc:
+                            print(f"Error: {exc}.", file=sys.stderr)
+                            return 1
+                    else:
+                        _verbose(
+                            args.verbose,
+                            "No trusted incremental frontier is available; enumerating the complete channel videos source.",
+                        )
+                        try:
+                            flat_entries, enumeration_stats = enumerate_all_flat(
+                                flat_command,
+                                progress=_enumeration_progress(
+                                    args.verbose,
+                                    context="Full channel enumeration",
+                                    warn_threshold=args.warn_source_size,
+                                ),
+                            )
+                        except YtDlpError as exc:
+                            print(f"Error: {exc}.", file=sys.stderr)
+                            return 1
+
+                    current_ids: list[str] = []
+                    entry_by_id: dict[str, dict] = {}
+                    seen_ids: set[str] = set()
+                    for entry in flat_entries:
+                        video_id = entry.get("id")
+                        if not (isinstance(video_id, str) and video_id and video_id not in seen_ids):
+                            continue
+                        seen_ids.add(video_id)
+                        current_ids.append(video_id)
+                        entry_by_id[video_id] = entry
+
+                    if frontier_attempted and enumeration_stats.stopped_on_frontier:
+                        frontier_confirmed = True
+                        current_set = set(current_ids)
+                        frontier_new_entries = sum(1 for video_id in current_ids if video_id not in set(prior_order))
+                        observed_ids_for_cache = current_ids + [
+                            video_id for video_id in prior_order if video_id not in current_set
+                        ]
+                        _verbose(
+                            args.verbose,
+                            f"Incremental frontier confirmed after {enumeration_stats.enumerated} observed entries; "
+                            f"{frontier_new_entries} new source entr{'y' if frontier_new_entries == 1 else 'ies'} discovered.",
                         )
                     else:
-                        raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
-                            cache=metadata_cache,
-                            source_url=source.canonical_url,
-                            video_ids=candidate_ids,
-                            required_fields=required_query_fields(query),
-                            verbose=args.verbose,
-                            cookies_file=cookies_file,
+                        observed_ids_for_cache = current_ids
+                        if frontier_attempted:
+                            _verbose(
+                                args.verbose,
+                                "Stored frontier overlap was not confirmed before source end; rebuilt the source ordering from a complete enumeration.",
+                            )
+
+                    candidate_ids = []
+                    for video_id in observed_ids_for_cache:
+                        entry = entry_by_id.get(video_id)
+                        if entry is not None and safely_reject_lightweight(query.predicate, entry, date_context):
+                            lightweight_rejected += 1
+                            continue
+                        candidate_ids.append(video_id)
+                    detailed_candidates = len(candidate_ids)
+                    try:
+                        if limit_plan.eligible:
+                            (
+                                raw_records,
+                                acquisition_stats,
+                                cache_stats,
+                                limit_terminated,
+                                limit_batches,
+                                limit_candidates_examined,
+                            ) = _limit_aware_cached_acquire(
+                                cache=metadata_cache,
+                                source_url=source.canonical_url,
+                                video_ids=candidate_ids,
+                                query=query,
+                                dates=date_context,
+                                required_fields=required_query_fields(query),
+                                verbose=args.verbose,
+                                cookies_file=cookies_file,
+                            )
+                        else:
+                            raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
+                                cache=metadata_cache,
+                                source_url=source.canonical_url,
+                                video_ids=candidate_ids,
+                                required_fields=required_query_fields(query),
+                                verbose=args.verbose,
+                                cookies_file=cookies_file,
+                            )
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
+                else:
+                    if cost_class == "very-high" and args.acquisition != "full":
+                        print(
+                            "yt-discover: warning: no safe acquisition optimisation was identified for this query; detailed metadata may be required for most or all source entries.",
+                            file=sys.stderr,
                         )
-                except YtDlpError as exc:
-                    print(f"Error: {exc}.", file=sys.stderr)
-                    return 1
-            else:
-                if cost_class == "very-high" and args.acquisition != "full":
-                    print(
-                        "yt-discover: warning: no safe acquisition optimisation was identified for this query; detailed metadata may be required for most or all source entries.",
-                        file=sys.stderr,
-                    )
-                _verbose(args.verbose, "Acquiring full video metadata with yt-dlp...")
-                if args.verbose:
-                    _verbose(
-                        args.verbose,
-                        "Queries requiring ORDER BY/LIMIT are evaluated after acquisition; result output may remain quiet until this phase completes.",
-                    )
-                try:
-                    raw_records, acquisition_stats = load_metadata(
-                        command,
-                        progress=_acquisition_progress(args.verbose) if args.verbose else None,
-                    )
-                except YtDlpError as exc:
-                    print(f"Error: {exc}.", file=sys.stderr)
-                    return 1
-                observed_ids_for_cache = [
-                    record.get("id") for record in raw_records if isinstance(record.get("id"), str) and record.get("id")
-                ]
-                if metadata_cache is not None:
-                    cache_stats = CacheStats(written=metadata_cache.put_many(source.canonical_url, raw_records))
+                    _verbose(args.verbose, "Acquiring full video metadata with yt-dlp...")
+                    if args.verbose:
+                        _verbose(
+                            args.verbose,
+                            "Queries requiring ORDER BY/LIMIT are evaluated after acquisition; result output may remain quiet until this phase completes.",
+                        )
+                    try:
+                        raw_records, acquisition_stats = load_metadata(
+                            command,
+                            progress=_acquisition_progress(args.verbose) if args.verbose else None,
+                        )
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
+                    observed_ids_for_cache = [
+                        record.get("id")
+                        for record in raw_records
+                        if isinstance(record.get("id"), str) and record.get("id")
+                    ]
+                    if metadata_cache is not None:
+                        cache_stats = CacheStats(written=metadata_cache.put_many(source.canonical_url, raw_records))
     acquisition_elapsed = perf_counter() - acquisition_started
 
     if args.offline:
@@ -838,6 +928,7 @@ def main(argv: list[str] | None = None) -> int:
                 and (frontier_confirmed or not enumeration_stats.stopped_early)
                 and args.items is None
                 and lightweight_rejected == 0
+                and not enumeration_only_acquisition
                 and len(raw_records) == len(observed_ids_for_cache)
             )
             coverage_reason = (
@@ -861,6 +952,7 @@ def main(argv: list[str] | None = None) -> int:
                 plan.mode == "full"
                 and not explicit_prefilters
                 and acquisition_stats.skipped == 0
+                and not enumeration_only_acquisition
                 and acquisition_stats.attempted == len(raw_records)
             )
             metadata_cache.record_source_coverage(

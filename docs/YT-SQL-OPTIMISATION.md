@@ -375,3 +375,9 @@ Current acquisition planning does not push predicates across UNION boundaries an
 ## Cross-facet source identity
 
 Source-boundary planning must treat `(physical source, logical facet)` as the acquisition identity. Optimisation must not merge two facet requests merely because their source spelling is identical, and per-facet schemas must remain independent during resolution. Seeded randomness also incorporates the facet into stable logical row identity. Future acquisition deduplication may share genuinely invariant detailed metadata only if it can prove that doing so cannot alter source completeness, ordering, provenance or field availability semantics.
+
+## Field requirement and metadata pruning
+
+The planner separates query fields by the earliest metadata stage that can provide an authoritative value. Exact flat fields may be satisfied by lightweight enumeration. Approximate flat values and dynamic fields remain detailed metadata requirements for final query evaluation.
+
+For eligible single-source queries whose complete field set is authoritative in enumeration metadata, Discover can skip detailed extraction. When a mixed query still needs detailed fields, exact enumeration values may be overlaid onto cached or freshly detailed rows so cache freshness is required only for fields that genuinely need the detailed stage.

@@ -9,7 +9,12 @@ from typing import Any
 from .dates import DateContext, parse_date_literal
 from .query_model import Binary, Between, Field, InList, Literal, Query, Unary
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
-from .query_properties import QueryProperties, analyse_query, required_query_fields as required_query_fields
+from .query_properties import (
+    QueryProperties,
+    analyse_expression,
+    analyse_query,
+    required_query_fields as required_query_fields,
+)
 from .source_capabilities import EXACT, selected_facet_capabilities
 from .source_model import SourceSpec
 
@@ -178,12 +183,11 @@ def plan_acquisition(query: Query, *, source_kind: str, tab: str, dates: DateCon
     )
 
 
-def assess_cost(query: Query, plan: AcquisitionPlan) -> tuple[str, str]:
+def assess_cost(query: Query, plan: AcquisitionPlan, *, source: SourceSpec | None = None) -> tuple[str, str]:
     """Classify the actual acquisition plan using the explicit capability model."""
     fields = required_query_fields(query)
-    detailed_only = sorted(
-        field for field in fields if analyse_query(query).field_capability(field).ytdlp_flat != EXACT
-    )
+    properties = analyse_query(query, source=source)
+    detailed_only = sorted(field for field in fields if properties.field_capability(field).ytdlp_flat != EXACT)
     if plan.targeted:
         if detailed_only:
             return (
@@ -195,7 +199,12 @@ def assess_cost(query: Query, plan: AcquisitionPlan) -> tuple[str, str]:
             )
         return (
             "moderate",
-            "a safe source boundary limits enumeration and fresh cached metadata may avoid detailed extraction",
+            "a safe source boundary limits enumeration and no authoritative detailed fields are required",
+        )
+    if source is not None and not detailed_only and selected_facet_capabilities(source).cheaply_enumerates_identities:
+        return (
+            "high",
+            "the complete source must be enumerated, but all named query fields are authoritative in lightweight metadata",
         )
     return (
         "very-high",
@@ -207,11 +216,70 @@ def assess_cost(query: Query, plan: AcquisitionPlan) -> tuple[str, str]:
 
 
 @dataclass(frozen=True)
+class MetadataRequirementPlan:
+    """Authoritative metadata requirements separated by acquisition stage."""
+
+    enumeration_fields: frozenset[str]
+    detailed_fields: frozenset[str]
+    predicate_enumeration_fields: frozenset[str]
+    predicate_detailed_fields: frozenset[str]
+    reason: str
+
+    @property
+    def requires_detailed_metadata(self) -> bool:
+        """Return whether any query field needs more than exact flat metadata."""
+        return bool(self.detailed_fields)
+
+
+def plan_metadata_requirements(query: Query, *, source: SourceSpec) -> MetadataRequirementPlan:
+    """Partition physical fields by the earliest authoritative metadata stage.
+
+    Approximate flat metadata is intentionally not classified as authoritative. Such
+    fields remain detailed requirements even when a lightweight value happens to be
+    available and may still be useful for one-sided conservative rejection.
+    """
+    properties = analyse_query(query, source=source)
+    facet = selected_facet_capabilities(source)
+
+    enumeration_fields = frozenset(
+        field for field in properties.required_fields if facet.field(field).ytdlp_flat == EXACT
+    )
+    detailed_fields = frozenset(properties.required_fields - enumeration_fields)
+
+    predicate_fields = analyse_expression(query.predicate, source=source).required_fields
+    predicate_enumeration_fields = frozenset(
+        field for field in predicate_fields if facet.field(field).ytdlp_flat == EXACT
+    )
+    predicate_detailed_fields = frozenset(predicate_fields - predicate_enumeration_fields)
+
+    if detailed_fields:
+        reason = (
+            "authoritative detailed metadata is required for "
+            + ", ".join(sorted(detailed_fields))
+            + "; exact flat fields may still be evaluated before detailed extraction"
+        )
+    elif enumeration_fields:
+        reason = "all required query fields are authoritative in lightweight enumeration metadata"
+    else:
+        reason = "the query requires source enumeration but no named metadata fields"
+
+    return MetadataRequirementPlan(
+        enumeration_fields=enumeration_fields,
+        detailed_fields=detailed_fields,
+        predicate_enumeration_fields=predicate_enumeration_fields,
+        predicate_detailed_fields=predicate_detailed_fields,
+        reason=reason,
+    )
+
+
+@dataclass(frozen=True)
 class PhysicalAcquisitionRequest:
     """Source-adapter input derived from semantic requirements and source policy."""
 
     source: SourceSpec
     required_fields: frozenset[str]
+    enumeration_fields: frozenset[str]
+    detailed_fields: frozenset[str]
     mode: str
     lower_date_bound: date | None
     stop_before: date | None
@@ -225,6 +293,7 @@ class QueryPlan:
     properties: QueryProperties
     acquisition: AcquisitionPlan
     physical_request: PhysicalAcquisitionRequest
+    metadata_requirements: MetadataRequirementPlan
     limit_termination: LimitTerminationPlan
     cost_class: str
     cost_reason: str
@@ -240,6 +309,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     """
     properties = analyse_query(query, source=source)
     facet = selected_facet_capabilities(source)
+    metadata_requirements = plan_metadata_requirements(query, source=source)
     acquisition = plan_acquisition(
         query,
         source_kind=source.kind,
@@ -264,10 +334,12 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     if eliminated:
         cost_class, cost_reason = "none", "the source branch is proven empty before acquisition"
     else:
-        cost_class, cost_reason = assess_cost(query, acquisition)
+        cost_class, cost_reason = assess_cost(query, acquisition, source=source)
     request = PhysicalAcquisitionRequest(
         source=source,
         required_fields=properties.required_fields,
+        enumeration_fields=metadata_requirements.enumeration_fields,
+        detailed_fields=metadata_requirements.detailed_fields,
         mode=acquisition.mode,
         lower_date_bound=acquisition.lower_date_bound,
         stop_before=acquisition.stop_before,
@@ -277,6 +349,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         properties,
         acquisition,
         request,
+        metadata_requirements,
         limit,
         cost_class,
         cost_reason,

@@ -62,11 +62,14 @@ def test_machine_readable_explain_is_valid_json() -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["kind"] == "yt-discover-explain"
-    assert payload["version"] == "0.28.2"
+    assert payload["version"] == "0.28.3"
     assert payload["acquisition"]["strategy"] == "bounded-date"
     assert payload["limit_aware_termination"]["applicable"] is True
     assert payload["limit_aware_termination"]["implemented"] is True
     assert payload["limit_aware_termination"]["eligible"] is True
+    assert payload["metadata_requirements"]["enumeration_fields"] == ["id"]
+    assert payload["metadata_requirements"]["detailed_fields"] == ["duration", "upload_date"]
+    assert payload["metadata_requirements"]["requires_detailed_metadata"] is True
 
 
 def test_json_explain_reports_predicate_optimizer_rewrites() -> None:

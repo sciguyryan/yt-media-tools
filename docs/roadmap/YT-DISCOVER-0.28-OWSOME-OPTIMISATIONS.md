@@ -2,18 +2,9 @@
 
 ## Purpose
 
-The 0.28.x series builds an optimiser for Discover's actual problem:
-querying remote, heterogeneous media metadata through yt-dlp and
-extractor-specific capabilities. Local expression simplification
-matters, but avoiding unnecessary enumeration and metadata acquisition
-matters more.
+The 0.28.x series builds an optimiser for Discover's actual problem: querying remote, heterogeneous media metadata through yt-dlp and extractor-specific capabilities. Local expression simplification matters, but avoiding unnecessary enumeration and metadata acquisition matters more.
 
-The optimiser must never assume that Discover is a conventional
-database. It must preserve yt-sql's three-valued NULL semantics,
-temporal types, Unicode rules, volatility, source/facet identity and
-deterministic output while translating as much safe work as possible
-into acquisition constraints that yt-dlp or an extractor adapter can
-understand.
+The optimiser must never assume that Discover is a conventional database. It must preserve yt-sql's three-valued NULL semantics, temporal types, Unicode rules, volatility, source/facet identity and deterministic output while translating as much safe work as possible into acquisition constraints that yt-dlp or an extractor adapter can understand.
 
 The spelling of "Owsome" is normative.
 
@@ -32,8 +23,7 @@ Prefer optimisations in this order:
 
 ### Scope
 
-Introduce a formal property-analysis pass over resolved expressions,
-relations and query stages.
+Introduce a formal property-analysis pass over resolved expressions, relations and query stages.
 
 Track properties including:
 
@@ -57,32 +47,20 @@ Explicitly distinguish at least:
 
 -   known scalar value;
 -   SQL NULL;
--   structurally unavailable field whose logical value is necessarily
-    NULL;
+-   structurally unavailable field whose logical value is necessarily NULL;
 -   logically supported field not yet acquired.
 
-The last state must never be converted into SQL NULL by optimiser
-reasoning.
+The last state must never be converted into SQL NULL by optimiser reasoning.
 
 ### Testing
 
-Property results should be deterministic and testable independently of
-execution.
+Property results should be deterministic and testable independently of execution.
 
 ### Implemented
 
-`query_properties.py` now provides deterministic expression and query
-property analysis without performing acquisition. The framework records
-resolved type, required fields, constantness, deterministic or volatile
-behaviour, NULL sensitivity, grouping dependence, earliest safe evaluation
-stage, metadata depth, source/facet dependencies, ordering requirements,
-cardinality effects and whether complete relation acquisition is required.
+`query_properties.py` now provides deterministic expression and query property analysis without performing acquisition. The framework records resolved type, required fields, constantness, deterministic or volatile behaviour, NULL sensitivity, grouping dependence, earliest safe evaluation stage, metadata depth, source/facet dependencies, ordering requirements, cardinality effects and whether complete relation acquisition is required.
 
-The internal knowledge-state model keeps acquired scalar values, acquired SQL
-NULL, structurally unavailable fields and supported-but-not-yet-acquired
-metadata distinct. In particular, metadata that has not been acquired is not
-interpreted as SQL NULL. Seeded `RANDOM(seed)` is recorded as deterministic but
-row-dependent, while unseeded `RANDOM()` remains volatile.
+The internal knowledge-state model keeps acquired scalar values, acquired SQL NULL, structurally unavailable fields and supported-but-not-yet-acquired metadata distinct. In particular, metadata that has not been acquired is not interpreted as SQL NULL. Seeded `RANDOM(seed)` is recorded as deterministic but row-dependent, while unseeded `RANDOM()` remains volatile.
 
 ## 0.28.1 - Optimiser Proof and Safety Framework - Complete
 
@@ -90,8 +68,7 @@ row-dependent, while unseeded `RANDOM()` remains volatile.
 
 Replace or wrap ad hoc rewrites with reusable proofs where practical.
 
-A transformation should be able to state which semantic facts justify
-it, for example:
+A transformation should be able to state which semantic facts justify it, for example:
 
 -   expression is deterministic;
 -   expression contains no volatile descendants;
@@ -116,13 +93,7 @@ Never violate:
 
 ### Implementation
 
-0.28.1 introduces a reusable proof layer with explicit proven and not-proven
-states, proof provenance and deterministic reasons. Constant folding and duplicate
-predicate elimination consume these proofs, and optimiser decisions retain them
-for later explain/diagnostic rendering. Syntactic equality alone is not sufficient
-to eliminate a volatile expression. Structural field unavailability is proven only
-from source/facet capability declarations; unknown or unacquired metadata remains
-unproven.
+0.28.1 introduces a reusable proof layer with explicit proven and not-proven states, proof provenance and deterministic reasons. Constant folding and duplicate predicate elimination consume these proofs, and optimiser decisions retain them for later explain/diagnostic rendering. Syntactic equality alone is not sufficient to eliminate a volatile expression. Structural field unavailability is proven only from source/facet capability declarations; unknown or unacquired metadata remains unproven.
 
 ## 0.28.2 - Capability-Driven Predicate Simplification - Complete
 
@@ -130,8 +101,7 @@ unproven.
 
 Use source/facet capability information during semantic optimisation.
 
-If `duration` is structurally unavailable and therefore SQL NULL for
-every row in a branch:
+If `duration` is structurally unavailable and therefore SQL NULL for every row in a branch:
 
 ``` sql
 WHERE duration >= 1d
@@ -148,41 +118,25 @@ Support safe reasoning for:
 -   LIKE / ILIKE;
 -   CONTAINS / MATCHES where their NULL contract permits;
 -   Boolean combinations;
--   aggregate/HAVING expressions where the relation is already known
-    empty or constant.
+-   aggregate/HAVING expressions where the relation is already known empty or constant.
 
 ### Branch-aware behaviour
 
-A predicate may eliminate one UNION branch while leaving another intact
-if their capabilities differ.
+A predicate may eliminate one UNION branch while leaving another intact if their capabilities differ.
 
 ### yt-dlp translation
 
-When branch elimination is proven, do not invoke yt-dlp for that
-physical branch at all.
+When branch elimination is proven, do not invoke yt-dlp for that physical branch at all.
 
 ### Implementation
 
-0.28.2 adds source/facet-aware predicate truth proofs that distinguish a
-proven SQL UNKNOWN result from an optimiser refusal. Direct comparisons,
-BETWEEN, IN and text predicates over structurally unavailable fields are
-proven UNKNOWN, while IS NULL and IS NOT NULL are proven TRUE or FALSE as
-appropriate. Boolean AND, OR and NOT compose these results using SQL
-three-valued logic, including dominating FALSE for AND and TRUE for OR.
+0.28.2 adds source/facet-aware predicate truth proofs that distinguish a proven SQL UNKNOWN result from an optimiser refusal. Direct comparisons, BETWEEN, IN and text predicates over structurally unavailable fields are proven UNKNOWN, while IS NULL and IS NOT NULL are proven TRUE or FALSE as appropriate. Boolean AND, OR and NOT compose these results using SQL three-valued logic, including dominating FALSE for AND and TRUE for OR.
 
-The resolved optimiser may replace a capability-proven predicate with an
-explicit TRUE, FALSE or NULL predicate literal and retains the proof in its
-decision record. The physical planner independently marks a source branch as
-empty when the complete WHERE predicate is proven unable to evaluate TRUE.
-Such a branch receives a `skip` acquisition mode, zero network cost and an
-attached elimination proof. Ordinary and dynamic metadata remain unchanged
-unless a stable source/facet capability declaration supplies the proof.
+The resolved optimiser may replace a capability-proven predicate with an explicit TRUE, FALSE or NULL predicate literal and retains the proof in its decision record. The physical planner independently marks a source branch as empty when the complete WHERE predicate is proven unable to evaluate TRUE. Such a branch receives a `skip` acquisition mode, zero network cost and an attached elimination proof. Ordinary and dynamic metadata remain unchanged unless a stable source/facet capability declaration supplies the proof.
 
-Single-source application acquisition honours the `skip` mode before invoking
-yt-dlp. Multi-source source-boundary planning remains conservative until the
-dedicated branch-planning work later in this series.
+Single-source application acquisition honours the `skip` mode before invoking yt-dlp. Multi-source source-boundary planning remains conservative until the dedicated branch-planning work later in this series.
 
-## 0.28.3 - Field Requirement and Metadata Pruning
+## 0.28.3 - Field Requirement and Metadata Pruning - Complete
 
 ### Scope
 
@@ -206,20 +160,23 @@ Requirements may originate from:
 
 ### Acquisition translation
 
-Where yt-dlp supports flat/lazy enumeration, extractor arguments,
-metadata-skipping options, format-skipping options or equivalent
-controls, adapters should request no more information than the physical
-plan requires.
+Where yt-dlp supports flat/lazy enumeration, extractor arguments, metadata-skipping options, format-skipping options or equivalentcontrols, adapters should request no more information than the physical plan requires.
 
-Translation must be capability-based and tested. It must not depend on
-undocumented assumptions that can silently change results.
+Translation must be capability-based and tested. It must not depend on undocumented assumptions that can silently change results.
+
+### Implemented
+
+0.28.3 partitions the complete physical field requirement into exact enumeration fields and fields that still require detailed metadata. Approximate flat values remain detailed requirements for authoritative query evaluation, and dynamic fields remain conservative detailed requirements.
+
+The physical acquisition request exposes both partitions together with the predicate-specific enumeration and detailed requirements. Eligible single-source queries whose fields are all exact in lightweight enumeration can therefore avoid detailed yt-dlp extraction entirely. Mixed queries may evaluate exact flat predicate information before detailed extraction, then overlay those exact flat values onto cached or freshly detailed rows. This allows cache freshness to cover only the genuinely detailed fields without allowing stale cached enumeration values to influence query semantics.
+
+Enumeration-only full-source execution does not use an incremental cache frontier, because doing so could combine freshly enumerated rows with older cached values for exact enumeration fields. It performs a complete lightweight enumeration instead.
 
 ## 0.28.4 - Staged Predicate Evaluation
 
 ### Scope
 
-Partition predicates according to the earliest metadata stage at which
-they can be safely evaluated.
+Partition predicates according to the earliest metadata stage at which they can be safely evaluated.
 
 Example stages may include:
 
@@ -229,23 +186,17 @@ Example stages may include:
 -   full entry metadata;
 -   format/collection metadata.
 
-Rows may be rejected before deeper acquisition only when existing
-information proves that the final predicate cannot evaluate to TRUE.
+Rows may be rejected before deeper acquisition only when existing information proves that the final predicate cannot evaluate to TRUE.
 
 ### Partial knowledge
 
-A missing value because it has not yet been acquired is an internal
-planning state, not SQL NULL.
+A missing value because it has not yet been acquired is an internal planning state, not SQL NULL.
 
 ### yt-dlp translation
 
-Where yt-dlp can reject entries or limit deeper extraction using filters
-that exactly match yt-sql semantics, translate eligible predicate
-fragments. Otherwise perform staged local filtering between acquisition
-levels.
+Where yt-dlp can reject entries or limit deeper extraction using filters that exactly match yt-sql semantics, translate eligible predicate fragments. Otherwise perform staged local filtering between acquisition levels.
 
-Never translate a predicate whose yt-dlp interpretation differs in NULL,
-date, string, regex or numeric semantics.
+Never translate a predicate whose yt-dlp interpretation differs in NULL, date, string, regex or numeric semantics.
 
 ## 0.28.5 - Temporal Bound and Frontier Inference
 
@@ -261,21 +212,15 @@ release_timestamp BETWEEN ... AND ...
 
 ### Capability requirement
 
-Only use an acquisition frontier when the relevant source/facet adapter
-declares a trustworthy ordering or suitable yt-dlp filtering capability.
+Only use an acquisition frontier when the relevant source/facet adapter declares a trustworthy ordering or suitable yt-dlp filtering capability.
 
 ### Possible translations
 
-Where an extractor supports stable date-range options or equivalent
-yt-dlp controls, translate proven bounds into those controls. Where it
-does not, use ordered early termination only when the adapter's ordering
-capability proves it safe.
+Where an extractor supports stable date-range options or equivalent yt-dlp controls, translate proven bounds into those controls. Where it does not, use ordered early termination only when the adapter's ordering capability proves it safe.
 
 ### Interaction with cache/frontier state
 
-Inferred query bounds and persisted acquisition frontiers must compose
-conservatively. A query-specific optimisation must never corrupt or
-overstate the reusable cache frontier.
+Inferred query bounds and persisted acquisition frontiers must compose conservatively. A query-specific optimisation must never corrupt or overstate the reusable cache frontier.
 
 ## 0.28.6 - Source-Boundary Predicate and Requirement Planning
 
@@ -296,15 +241,13 @@ Each branch should determine:
 
 ### Composition
 
-Do not push requirements across heterogeneous branches unless their
-semantics and schemas make that transformation provably equivalent.
+Do not push requirements across heterogeneous branches unless their semantics and schemas make that transformation provably equivalent.
 
 ## 0.28.7 - CTE Dependency Propagation
 
 ### Scope
 
-Propagate outer field requirements backwards into non-recursive CTE
-producers.
+Propagate outer field requirements backwards into non-recursive CTE producers.
 
 Example:
 
@@ -318,19 +261,15 @@ FROM candidates
 WHERE duration < 10m
 ```
 
-may require only `id` and `duration` from the physical source if no
-other semantic requirement depends on the discarded fields.
+may require only `id` and `duration` from the physical source if no other semantic requirement depends on the discarded fields.
 
 ### Volatility
 
-Do not duplicate, remove or reorder volatile expressions such as
-unseeded RANDOM in ways that change evaluation count or observable
-value.
+Do not duplicate, remove or reorder volatile expressions such as unseeded RANDOM in ways that change evaluation count or observable value.
 
 ### Materialisation semantics
 
-Document enough CTE execution semantics to make every propagation
-transformation auditable.
+Document enough CTE execution semantics to make every propagation transformation auditable.
 
 ## 0.28.8 - Safe LIMIT/OFFSET Early Termination
 
@@ -354,12 +293,9 @@ The proof must account for:
 
 ### yt-dlp translation
 
-Where yt-dlp exposes playlist/end/range controls that exactly represent
-the proven acquisition bound, use them. Otherwise stop local iteration
-once enough final rows are proven.
+Where yt-dlp exposes playlist/end/range controls that exactly represent the proven acquisition bound, use them. Otherwise stop local iteration once enough final rows are proven.
 
-The planner must not confuse "request N entries" with "need N final
-rows" when filters can remove rows.
+The planner must not confuse "request N entries" with "need N final rows" when filters can remove rows.
 
 ## 0.28.9 - Static Relation and Branch Simplification
 
@@ -396,57 +332,34 @@ A physical plan should be able to describe stages such as:
 -   obtain thumbnails;
 -   obtain dynamic/raw fields.
 
-Not every adapter must support every stage. The plan expresses
-requirements; adapters report which distinctions they can honour.
+Not every adapter must support every stage. The plan expresses requirements; adapters report which distinctions they can honour.
 
-The physical plan should be backend-neutral rather than modelled directly as
-yt-dlp command-line arguments. Capability-based lowering may target yt-dlp,
-youtube-dl, gallery-dl, indexed or API-backed sources, and other useful
-adapters. Unsupported operations remain in the local evaluator unless an
-adapter can implement them with equivalent semantics. Mixed-backend plans must
-preserve source/facet identity, provenance, cache isolation and deterministic
-explainability.
+The physical plan should be backend-neutral rather than modelled directly as yt-dlp command-line arguments. Capability-based lowering may target yt-dlp, youtube-dl, gallery-dl, indexed or API-backed sources, and other useful adapters. Unsupported operations remain in the local evaluator unless an adapter can implement them with equivalent semantics. Mixed-backend plans must preserve source/facet identity, provenance, cache isolation and deterministic explainability.
 
 ### yt-dlp integration
 
-Map each physical stage to supported yt-dlp invocation choices,
-extractor arguments or post-enumeration fetches. Keep the mapping
-isolated in adapters so query semantics do not become tied to
-command-line syntax used by a particular yt-dlp release.
+Map each physical stage to supported yt-dlp invocation choices, extractor arguments or post-enumeration fetches. Keep the mapping isolated in adapters so query semantics do not become tied to command-line syntax used by a particular yt-dlp release.
 
 ## 0.28.11 - Cost and Selectivity Heuristics
 
 ### Scope
 
-Add conservative heuristics only where exact semantic equivalence is
-already guaranteed.
+Add conservative heuristics only where exact semantic equivalence is already guaranteed.
 
 Potential uses:
 
--   schedule acquisitions by expected information value per acquisition cost,
-    rather than by a simple cheapest-first rule;
--   run a moderately costly high-selectivity or high-elimination branch before
-    cheaper work when it can avoid substantially more expensive dependent
-    acquisition;
--   choose which independently evaluable cheap predicate terms to
-    evaluate first locally;
--   choose whether a deeper metadata stage is worthwhile before another
-    local test;
--   order source-branch acquisition where final semantics do not depend
-    on branch acquisition order;
--   avoid acquiring expensive collections until a row survives cheaper
-    filters.
+-   schedule acquisitions by expected information value per acquisition cost, rather than by a simple cheapest-first rule;
+-   run a moderately costly high-selectivity or high-elimination branch before cheaper work when it can avoid substantially more expensive dependent acquisition;
+-   choose which independently evaluable cheap predicate terms to evaluate first locally;
+-   choose whether a deeper metadata stage is worthwhile before another local test;
+-   order source-branch acquisition where final semantics do not depend on branch acquisition order;
+-   avoid acquiring expensive collections until a row survives cheaper filters.
 
-An explicit opt-in bounded-concurrency mode may later execute independent
-acquisitions in parallel under an orchestrator. Any such design must preserve
-deterministic consolidation, provenance and cache isolation, resource limits,
-cancellation, partial-failure handling and safe early termination.
+An explicit opt-in bounded-concurrency mode may later execute independent acquisitions in parallel under an orchestrator. Any such design must preserve deterministic consolidation, provenance and cache isolation, resource limits, cancellation, partial-failure handling and safe early termination.
 
 ### Non-goal
 
-Do not invent precise cost estimates that the extractor cannot justify.
-Prefer coarse capability tiers and measured deterministic rules over
-false numerical precision.
+Do not invent precise cost estimates that the extractor cannot justify. Prefer coarse capability tiers and measured deterministic rules over false numerical precision.
 
 ## 0.28.12 - Explainable Optimisation and Acquisition
 
@@ -471,16 +384,9 @@ Include where relevant:
 
 ### Machine-readable form
 
-Keep explain structures versionable and deterministic so later machine
-interfaces do not need to scrape human prose.
+Keep explain structures versionable and deterministic so later machine interfaces do not need to scrape human prose.
 
-Human-readable diagnostics may additionally render deterministic Unicode
-query-plan and decision-tree graphs from the actual planner representation,
-with a plain-ASCII fallback for logs, CI and terminals where box drawing is
-unsuitable. Graphs may expose logical structure, optimiser decisions, backend
-selection, acquisition dependencies, information-value and cost estimates,
-pushdown versus residual evaluation, concurrency groups, bailout conditions
-and result consolidation. Exact CLI spelling remains a later UX decision.
+Human-readable diagnostics may additionally render deterministic Unicode query-plan and decision-tree graphs from the actual planner representation, with a plain-ASCII fallback for logs, CI and terminals where box drawing is unsuitable. Graphs may expose logical structure, optimiser decisions, backend selection, acquisition dependencies, information-value and cost estimates, pushdown versus residual evaluation, concurrency groups, bailout conditions and result consolidation. Exact CLI spelling remains a later UX decision.
 
 ## 0.28.13 - Optimiser Differential and Acquisition Torture
 
@@ -488,8 +394,7 @@ and result consolidation. Exact CLI spelling remains a later UX decision.
 
 Reconcile the full optimiser against the accepted semantic corpus.
 
-Require optimised and deliberately unoptimised execution to produce
-identical observable results for deterministic cases.
+Require optimised and deliberately unoptimised execution to produce identical observable results for deterministic cases.
 
 ### Mandatory coverage
 
@@ -514,27 +419,14 @@ identical observable results for deterministic cases.
 
 ### Additional techniques
 
-Use property-based tests, generated query transformations and mutation
-testing where they expose classes of optimiser mistakes that ordinary
-fixtures may miss.
+Use property-based tests, generated query transformations and mutation testing where they expose classes of optimiser mistakes that ordinary fixtures may miss.
 
 ## Roadmap maintenance
 
-This file is a living programme document. As each sub-phase is
-completed, mark it complete and reconcile the description with durable
-implemented behaviour. Keep transient local-acceptance notes out of
-committed product documentation. During an active version series,
-structural cleanup may be deferred until the series closes, at which
-point stale notes, duplicated TODOs and obsolete transitional wording
-should be removed.
+This file is a living programme document. As each sub-phase is completed, mark it complete and reconcile the description with durable implemented behaviour. Keep transient local-acceptance notes out of committed product documentation. During an active version series, structural cleanup may be deferred until the series closes, at which point stale notes, duplicated TODOs and obsolete transitional wording should be removed.
 
 The canonical location for these programme documents is `docs/roadmap/`.
 
 ### Runtime Boolean short-circuiting
 
-A later optimiser/execution pass should evaluate Boolean chains with SQL three-valued
-short-circuit semantics. `AND` may stop as soon as an operand is FALSE, while `OR`
-may stop as soon as an operand is TRUE. UNKNOWN must retain exact SQL three-valued
-behaviour. Equivalent safe behaviour should apply to HAVING where relevant. Predicate
-reordering is a separate optimisation and requires explicit volatility and semantic
-safety proofs.
+A later optimiser/execution pass should evaluate Boolean chains with SQL three-valued short-circuit semantics. `AND` may stop as soon as an operand is FALSE, while `OR` may stop as soon as an operand is TRUE. UNKNOWN must retain exact SQL three-valued behaviour. Equivalent safe behaviour should apply to HAVING where relevant. Predicate reordering is a separate optimisation and requires explicit volatility and semantic safety proofs.
