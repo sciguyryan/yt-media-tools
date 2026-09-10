@@ -327,18 +327,20 @@ This is exploratory rather than committed work. Any design must justify its comp
 - Optimise each resolved CTE query independently using the existing predicate and scalar-expression optimiser before optimising the outer query.
 - Prefix CTE optimiser decisions with the logical CTE name so explain and diagnostic output can attribute rewrites to the correct relation.
 - Compute physical-source field requirements from CTE bodies that directly read the extractor source rather than treating later logical CTE output names as extractor metadata fields.
+- Propagate downstream output requirements backwards through non-recursive CTE chains so unused deterministic producer outputs no longer require physical metadata acquisition.
+- Preserve producer-local predicate, grouping and ordering dependencies independently of which exported columns remain observable downstream.
+- Retain volatile CTE projections even when unused, and refuse projection pruning across DISTINCT or set-composed CTE producers until equivalent cardinality and positional semantics are proven.
 
 ### Plausible future strategies
 
 - Push safe predicates through CTE boundaries when projection and NULL semantics prove the rewrite equivalent.
 - Inline single-use non-materialisation-sensitive CTEs when doing so demonstrably reduces planning or execution overhead.
-- Prune unused CTE output columns before acquisition planning.
 
 ### Deliberately not implemented
 
 - No predicate pushdown from CTEs into extractor enumeration. The current planner remains conservative.
 - No CTE inlining or common-subexpression elimination. CTEs are materialised in declaration order.
-- No cross-source CTE planning. Multi-source composition waits for the explicit `UNION` schema-reconciliation architecture.
+- No branch-wise projection pruning inside set-composed CTE producers. Positional UNION reconciliation remains a conservative dependency barrier.
 
 Any future CTE rewrite must preserve row membership, row order, aliases, NULLs, Unicode values, aggregate semantics and serialised output under the same differential verification requirements as ordinary yt-sql optimisation.
 

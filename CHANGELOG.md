@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.28.7 - CTE Dependency Propagation
+
+- Propagate downstream CTE output requirements backwards through non-recursive CTE chains before physical metadata acquisition is planned.
+- Remove unused deterministic CTE output dependencies from physical source field requirements while retaining producer predicates, grouping and ordering dependencies.
+- Preserve volatile CTE projections so planning cannot change their materialisation evaluation count.
+- Treat DISTINCT and UNION producers as conservative projection-pruning barriers until their cardinality and positional semantics have dedicated proofs.
+- Apply propagated CTE requirements to both multi-source source boundaries and single-source physical acquisition requests.
+- Expose required, retained and pruned CTE outputs plus physical input fields through human-readable and machine-readable explain output.
+- Distinguish logical query requirements from post-propagation physical metadata requirements in explain output so pruned CTE fields are not presented as active acquisition requirements.
+- Replace incidental machine-output version literals in tests with the canonical PROGRAM_VERSION constant while retaining a dedicated literal CLI release-version check.
+
 ## Discover 0.28.6 - Source-Boundary Predicate and Requirement Planning
 
 - Build an independent physical planning boundary for every unique source/facet request in composed queries.

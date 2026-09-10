@@ -61,7 +61,7 @@ def test_distinct_facets_of_same_channel_stay_separate_boundaries() -> None:
     assert plans[1].acquisition.mode == "full"
 
 
-def test_cte_physical_sources_are_planned_without_outer_requirement_propagation() -> None:
+def test_cte_physical_sources_receive_outer_requirement_propagation() -> None:
     plans = _plans(
         "WITH recent AS (SELECT id, title FROM @alpha WHERE upload_date >= 2026-04-01), "
         "other AS (SELECT id FROM @beta) "
@@ -69,7 +69,7 @@ def test_cte_physical_sources_are_planned_without_outer_requirement_propagation(
     )
     assert len(plans) == 2
     assert plans[0].source_name == "@alpha"
-    assert plans[0].required_fields == frozenset({"id", "title", "upload_date"})
+    assert plans[0].required_fields == frozenset({"id", "upload_date"})
     assert plans[1].source_name == "@beta"
     assert plans[1].required_fields == frozenset({"id"})
 

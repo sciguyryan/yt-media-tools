@@ -1,5 +1,5 @@
 @profile
 
 # Standard single-item output layout.
-path=/mnt/storage/Downloads/YouTube/
+path=/mnt/storage/Storage/YouTube/YouTube/
 output=%(title)s [%(id)s] [%(uploader)s].%(ext)s

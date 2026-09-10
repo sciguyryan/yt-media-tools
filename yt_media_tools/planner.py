@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
+from .cte_dependencies import plan_cte_dependencies
 from .dates import DateContext
 from .query_model import Binary, Query
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
+from .query_semantics import query_physical_source_requests
 from .query_properties import (
     METADATA_DETAILED,
+    METADATA_ENUMERATION,
+    METADATA_NONE,
     QueryProperties,
     analyse_expression,
     analyse_query,
@@ -284,20 +288,20 @@ class SourceBoundaryPlan:
     collection_requirements: frozenset[str]
 
 
-def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query], ...]:
-    """Return logical query uses of physical source/facet boundaries in execution order."""
+def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, str | None], ...]:
+    """Return logical physical-source uses with their owning CTE, where applicable."""
     cte_names = {cte.name.casefold() for cte in query.ctes}
-    uses: list[tuple[str, str | None, Query]] = []
+    uses: list[tuple[str, str | None, Query, str | None]] = []
 
-    def visit(candidate: Query) -> None:
+    def visit(candidate: Query, owner_cte: str | None = None) -> None:
         if candidate.from_source is not None and candidate.from_source.casefold() not in cte_names:
             local = replace(candidate, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
-            uses.append((candidate.from_source, candidate.from_facet, local))
+            uses.append((candidate.from_source, candidate.from_facet, local, owner_cte))
         for operation in candidate.set_operations:
-            visit(operation.query)
+            visit(operation.query, owner_cte)
 
     for cte in query.ctes:
-        visit(cte.query)
+        visit(cte.query, cte.name)
     visit(query)
     return tuple(uses)
 
@@ -358,9 +362,10 @@ def plan_source_boundaries(
 ) -> tuple[SourceBoundaryPlan, ...]:
     """Build an independent conservative physical plan for every unique source/facet request."""
     source_map = {request: source for request, source in zip(requests, sources, strict=True)}
-    grouped: dict[tuple[str, str | None], list[Query]] = {request: [] for request in requests}
-    for source_name, facet, branch in _physical_query_uses(query):
-        grouped.setdefault((source_name, facet), []).append(branch)
+    cte_dependencies = plan_cte_dependencies(query)
+    grouped: dict[tuple[str, str | None], list[tuple[Query, str | None]]] = {request: [] for request in requests}
+    for source_name, facet, branch, owner_cte in _physical_query_uses(query):
+        grouped.setdefault((source_name, facet), []).append((branch, owner_cte))
 
     result: list[SourceBoundaryPlan] = []
     for request in requests:
@@ -368,9 +373,16 @@ def plan_source_boundaries(
         uses = grouped.get(request, [])
         if not uses:
             continue
-        predicate = _or_predicates(tuple(use.predicate for use in uses))
-        fields = frozenset().union(*(required_query_fields(use) for use in uses))
-        synthetic = replace(uses[0], predicate=predicate)
+        predicate = _or_predicates(tuple(use.predicate for use, _owner in uses))
+        use_fields: list[frozenset[str]] = []
+        for use, owner in uses:
+            dependency = cte_dependencies.for_cte(owner) if owner is not None else None
+            if dependency is not None and dependency.pruning_applied and not use.set_operations:
+                use_fields.append(dependency.input_fields)
+            else:
+                use_fields.append(frozenset(required_query_fields(use)))
+        fields = frozenset().union(*use_fields)
+        synthetic = replace(uses[0][0], predicate=predicate)
         # Ensure repeated uses contribute all physical field needs without pushing one use's
         # projection or grouping requirements into another use's predicate semantics.
         properties = analyse_query(synthetic, source=source)
@@ -421,7 +433,13 @@ def plan_source_boundaries(
                 acquisition,
                 cost_class,
                 cost_reason,
-                METADATA_DETAILED if metadata.requires_detailed_metadata else properties.metadata_depth,
+                (
+                    METADATA_DETAILED
+                    if metadata.requires_detailed_metadata
+                    else METADATA_ENUMERATION
+                    if fields
+                    else METADATA_NONE
+                ),
                 facet_caps.stable_collection,
                 facet_caps.trustworthy_order_field,
                 acquisition.targeted,
@@ -451,6 +469,24 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         dates=dates,
         temporal_bounds=temporal_bounds,
     )
+
+    physical_required_fields = properties.required_fields
+    boundary_override: SourceBoundaryPlan | None = None
+    physical_requests = query_physical_source_requests(query)
+    if query.ctes and len(physical_requests) == 1:
+        boundaries = plan_source_boundaries(
+            query,
+            requests=physical_requests,
+            sources=(source,),
+            dates=dates,
+        )
+        if len(boundaries) == 1:
+            boundary_override = boundaries[0]
+            physical_required_fields = boundary_override.required_fields
+            metadata_requirements = boundary_override.metadata_requirements
+            predicate_stages = boundary_override.predicate_stages
+            temporal_bounds = boundary_override.temporal_bounds
+            acquisition = boundary_override.acquisition
     # A bounded newest-first scan is valid only when the selected adapter explicitly
     # declares a stable collection and trustworthy source order.
     if acquisition.targeted and (not facet.stable_collection or facet.trustworthy_order_field is None):
@@ -460,19 +496,25 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         )
     truth = prove_predicate_truth(query.predicate, source=source)
     eliminated = truth.proven and truth.truth != TRUTH_TRUE
+    elimination_proof = truth.proof if eliminated else None
+    if boundary_override is not None:
+        eliminated = boundary_override.branch_empty
+        elimination_proof = boundary_override.elimination_proof if eliminated else None
     if eliminated:
         acquisition = AcquisitionPlan(
             "skip",
             "source/facet capabilities prove the WHERE predicate cannot evaluate TRUE",
         )
     limit = plan_limit_termination(query)
-    if eliminated:
+    if boundary_override is not None:
+        cost_class, cost_reason = boundary_override.cost_class, boundary_override.cost_reason
+    elif eliminated:
         cost_class, cost_reason = "none", "the source branch is proven empty before acquisition"
     else:
         cost_class, cost_reason = assess_cost(query, acquisition, source=source)
     request = PhysicalAcquisitionRequest(
         source=source,
-        required_fields=properties.required_fields,
+        required_fields=physical_required_fields,
         enumeration_fields=metadata_requirements.enumeration_fields,
         detailed_fields=metadata_requirements.detailed_fields,
         mode=acquisition.mode,
@@ -491,5 +533,5 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         cost_class,
         cost_reason,
         eliminated,
-        truth.proof if eliminated else None,
+        elimination_proof,
     )

@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from yt_media_tools.discover_constants import PROGRAM_VERSION
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "yt-discover.py"
@@ -52,7 +54,7 @@ def test_offline_provenance_sidecar_records_query_and_execution(tmp_path: Path) 
     assert proc.returncode == 0, proc.stderr
     payload = json.loads(provenance.read_text(encoding="utf-8"))
     assert payload["kind"] == "yt-discover-query-provenance"
-    assert payload["version"] == "0.28.6"
+    assert payload["version"] == PROGRAM_VERSION
     assert payload["query"]["parameters"] == {"needle": "Alpha"}
     assert payload["execution"]["offline"] is True
     assert payload["execution"]["emitted_rows"] == 1

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from yt_media_tools.cache import CacheStats, SourceCoverage
+from yt_media_tools.cte_dependencies import plan_cte_dependencies
 from yt_media_tools.capabilities import capabilities_for_fields
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_constants import PROGRAM_VERSION
@@ -185,7 +186,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
     )
 
     required = required_query_fields(query)
-    lines.extend(["", "Required fields"])
+    lines.extend(["", "Logical required fields"])
     for capability in capabilities_for_fields(required):
         lines.append(
             f"  {capability.field}: YouTube.js={capability.youtubejs}; "
@@ -195,7 +196,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
     lines.extend(
         [
             "",
-            "Metadata requirements",
+            "Logical metadata requirements",
             "  Enumeration: " + (", ".join(sorted(metadata_requirements.enumeration_fields)) or "none"),
             "  Detailed: " + (", ".join(sorted(metadata_requirements.detailed_fields)) or "none"),
             "  Predicate enumeration: "
@@ -257,6 +258,29 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
     source_boundaries = plan_source_boundaries(
         query, requests=source_requests, sources=tuple(explained_sources), dates=dates
     )
+    cte_dependencies = plan_cte_dependencies(query)
+    if len(source_boundaries) == 1:
+        physical = source_boundaries[0]
+        lines.extend(["", "Physical metadata requirements"])
+        lines.append("  Required fields: " + (", ".join(sorted(physical.required_fields)) or "none"))
+        lines.append(
+            "  Enumeration: " + (", ".join(sorted(physical.metadata_requirements.enumeration_fields)) or "none")
+        )
+        lines.append("  Detailed: " + (", ".join(sorted(physical.metadata_requirements.detailed_fields)) or "none"))
+        lines.append(f"  Reason: {physical.metadata_requirements.reason}")
+    if cte_dependencies.dependencies:
+        lines.extend(["", "CTE dependency propagation"])
+        for dependency in cte_dependencies.dependencies:
+            lines.append(
+                f"  {dependency.name}: required outputs={', '.join(sorted(dependency.required_outputs)) or 'none'}; "
+                f"input fields={', '.join(sorted(dependency.input_fields)) or 'none'}; "
+                f"pruned outputs={', '.join(sorted(dependency.pruned_outputs)) or 'none'}"
+            )
+            lines.append(f"    Reason: {dependency.reason}")
+    if len(source_boundaries) == 1 and not offline:
+        physical = source_boundaries[0]
+        plan = physical.acquisition
+        cost_class, cost_reason = physical.cost_class, physical.cost_reason
     if len(source_boundaries) > 1:
         lines.extend(["", "Source-boundary plans"])
         for index, branch in enumerate(source_boundaries, 1):
@@ -364,8 +388,8 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             ),
             "",
             "Detailed metadata",
-            f"  Required: {'cached only' if offline else 'yes'}",
-            f"  Reason: {'offline mode never refreshes metadata' if offline else 'final WHERE evaluation and selected metadata remain authoritative yt-dlp operations'}.",
+            f"  Required: {'cached only' if offline else ('yes' if (source_boundaries and source_boundaries[0].metadata_requirements.requires_detailed_metadata) else 'no')}",
+            f"  Reason: {'offline mode never refreshes metadata' if offline else (source_boundaries[0].metadata_requirements.reason if source_boundaries else metadata_requirements.reason)}.",
             "",
             "Estimated cost",
             f"  {cost_class}",
@@ -430,6 +454,7 @@ def explain_user_query_json(
     source_boundaries = plan_source_boundaries(
         query, requests=source_requests, sources=tuple(explained_sources), dates=dates
     )
+    cte_dependencies = plan_cte_dependencies(query)
 
     try:
         resolved_for_optimiser = resolve_query(query, QuerySchema(()), dates)
@@ -517,6 +542,14 @@ def explain_user_query_json(
             "requires_detailed_metadata": metadata_requirements.requires_detailed_metadata,
             "reason": metadata_requirements.reason,
         },
+        "logical_metadata_requirements": {
+            "enumeration_fields": sorted(metadata_requirements.enumeration_fields),
+            "detailed_fields": sorted(metadata_requirements.detailed_fields),
+            "predicate_enumeration_fields": sorted(metadata_requirements.predicate_enumeration_fields),
+            "predicate_detailed_fields": sorted(metadata_requirements.predicate_detailed_fields),
+            "requires_detailed_metadata": metadata_requirements.requires_detailed_metadata,
+            "reason": metadata_requirements.reason,
+        },
         "predicate_stages": {
             "enumeration_terms": [format_expression(term) for term in predicate_stages.enumeration_terms],
             "residual_terms": [format_expression(term) for term in predicate_stages.residual_terms],
@@ -541,6 +574,30 @@ def explain_user_query_json(
             ],
             "reason": temporal_bounds.reason,
         },
+        "physical_metadata_requirements": [
+            {
+                "source": boundary.source_name,
+                "facet": boundary.facet,
+                "required_fields": sorted(boundary.required_fields),
+                "enumeration_fields": sorted(boundary.metadata_requirements.enumeration_fields),
+                "detailed_fields": sorted(boundary.metadata_requirements.detailed_fields),
+                "requires_detailed_metadata": boundary.metadata_requirements.requires_detailed_metadata,
+                "reason": boundary.metadata_requirements.reason,
+            }
+            for boundary in source_boundaries
+        ],
+        "cte_dependencies": [
+            {
+                "name": dependency.name,
+                "required_outputs": sorted(dependency.required_outputs),
+                "retained_outputs": sorted(dependency.retained_outputs),
+                "pruned_outputs": sorted(dependency.pruned_outputs),
+                "input_fields": sorted(dependency.input_fields),
+                "pruning_applied": dependency.pruning_applied,
+                "reason": dependency.reason,
+            }
+            for dependency in cte_dependencies.dependencies
+        ],
         "source_boundaries": [
             {
                 "source": branch.source_name,

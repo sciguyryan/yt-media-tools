@@ -295,6 +295,16 @@ Do not duplicate, remove or reorder volatile expressions such as unseeded RANDOM
 
 Document enough CTE execution semantics to make every propagation transformation auditable.
 
+### Implementation
+
+0.28.7 introduces a backwards CTE dependency plan without rewriting the logical query tree. Downstream references seed each CTE's required exported columns, then requirements propagate in reverse declaration order through earlier non-recursive CTEs. A physical producer therefore acquires metadata only for exported expressions that remain observable downstream plus fields required by the producer's own filtering, grouping and ordering semantics.
+
+Unused deterministic projections may stop contributing metadata requirements. Volatile projections remain retained even when no downstream consumer references them, preserving the existing declaration-order CTE materialisation model and volatile evaluation count. `DISTINCT` is a pruning barrier because projected columns participate in row identity, and set-composed CTE producers remain conservative because positional UNION reconciliation requires a separate branch-wise proof.
+
+The query AST and materialised CTE schema are not rewritten in this phase. Dependency propagation affects physical metadata requirements only, so aliases, output order and logical CTE semantics remain unchanged. Human-readable and JSON explain output expose required outputs, retained outputs, pruned outputs, physical input fields and the reason a CTE was or was not pruned.
+
+Explain output distinguishes pre-propagation logical requirements from the post-propagation physical metadata plan. Acquisition strategy, detailed-metadata status and estimated cost are presented from the final physical source boundary so fields proven unnecessary by CTE propagation are not simultaneously described as active acquisition requirements.
+
 ## 0.28.8 - Safe LIMIT/OFFSET Early Termination
 
 ### Scope

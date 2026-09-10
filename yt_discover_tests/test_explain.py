@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from yt_media_tools.cache import MetadataCache
+from yt_media_tools.discover_constants import PROGRAM_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +63,7 @@ def test_machine_readable_explain_is_valid_json() -> None:
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["kind"] == "yt-discover-explain"
-    assert payload["version"] == "0.28.6"
+    assert payload["version"] == PROGRAM_VERSION
     assert payload["acquisition"]["strategy"] == "bounded-date"
     assert payload["limit_aware_termination"]["applicable"] is True
     assert payload["limit_aware_termination"]["implemented"] is True
@@ -251,3 +252,31 @@ def test_explain_preserves_legacy_tab_origin_while_using_facet_model() -> None:
     assert payload["source"]["facet"] == "videos"
     assert payload["source"]["tab"] == "videos"
     assert payload["source"]["adapter"] == "youtube-channel"
+
+
+def test_json_explain_reports_cte_dependency_propagation() -> None:
+    result = run_cli(
+        "--explain-format",
+        "json",
+        "--explain",
+        "WITH candidates AS (SELECT id, title, duration, view_count FROM @example) "
+        "SELECT id FROM candidates WHERE duration < 10m",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["version"] == PROGRAM_VERSION
+    assert payload["cte_dependencies"] == [
+        {
+            "name": "candidates",
+            "required_outputs": ["duration", "id"],
+            "retained_outputs": ["duration", "id"],
+            "pruned_outputs": ["title", "view_count"],
+            "input_fields": ["duration", "id"],
+            "pruning_applied": True,
+            "reason": "unused deterministic CTE outputs do not contribute physical metadata requirements",
+        }
+    ]
+    assert payload["source_boundaries"][0]["required_fields"] == ["duration", "id"]
+    assert payload["physical_metadata_requirements"][0]["required_fields"] == ["duration", "id"]
+    assert payload["physical_metadata_requirements"][0]["enumeration_fields"] == ["id"]
+    assert payload["physical_metadata_requirements"][0]["detailed_fields"] == ["duration"]
