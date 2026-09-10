@@ -453,3 +453,13 @@ point stale notes, duplicated TODOs and obsolete transitional wording
 should be removed.
 
 The canonical location for these programme documents is `docs/roadmap/`.
+
+### Future optimiser and acquisition architecture
+
+The refactored planner boundary is intended to support a backend-neutral acquisition or physical-plan representation beneath yt-sql's resolved semantic model. Future work may lower compatible portions of a plan conservatively to yt-dlp, youtube-dl, gallery-dl, indexed or API-backed sources, and other useful adapters. Operations a backend cannot perform with equivalent semantics must remain in the local evaluator.
+
+Acquisition scheduling should prefer expected information value per acquisition cost rather than a simple cheapest-first rule. Dependency position, selectivity and elimination potential may justify running a moderately costly acquisition before cheaper work when it can avoid substantially more expensive dependent acquisition.
+
+A future opt-in bounded-concurrency mode may execute independent acquisitions concurrently under an orchestrator. Any such design must preserve source and facet identity, provenance and cache isolation, deterministic consolidation and explainability, resource limits, cancellation, partial-failure handling, and safe early termination.
+
+Explain and diagnostic output should eventually be able to render deterministic Unicode query-plan and decision-tree graphs from the actual planner representation, with a plain-ASCII fallback for logs and CI. Graphs may show logical structure, optimisation decisions, backend selection, acquisition dependencies, information-value and cost estimates, predicate pushdown versus residual evaluation, concurrency groups, bailout conditions and result consolidation. Exact CLI spelling remains a later UX decision.

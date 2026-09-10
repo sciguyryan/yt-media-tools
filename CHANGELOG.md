@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.27.7 - Reforged Reconciliation
+
+- Reconcile the 0.27.x architectural refactor around the application, query, source, capability, optimiser and planner boundaries.
+- Preserve the hardened yt-sql language and observable CLI behaviour while removing stale refactor-era duplication and compatibility assumptions where safe.
+- Record multi-backend acquisition, information-value-aware scheduling, bounded concurrency and deterministic query-plan graphs as future optimiser and planner directions.
+- Add reconciliation coverage for compatibility exports and architectural boundaries relied upon by the refactored modules.
+
 ## Discover 0.27.6 - Planner and Optimiser Boundaries
 
 - Extract stable semantic query requirements into `query_properties.py` so acquisition planning no longer owns AST field traversal.
