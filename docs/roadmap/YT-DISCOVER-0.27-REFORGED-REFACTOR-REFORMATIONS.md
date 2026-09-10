@@ -349,6 +349,8 @@ yt-sql semantics.
 
 ## 0.27.6 - Planner and Optimiser Boundaries
 
+**Status: complete.**
+
 ### Scope
 
 Define an explicit pipeline:

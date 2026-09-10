@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.27.6 - Planner and Optimiser Boundaries
+
+- Extract stable semantic query requirements into `query_properties.py` so acquisition planning no longer owns AST field traversal.
+- Add a typed source-aware `QueryPlan` boundary combining semantic requirements, source/facet capabilities, acquisition strategy, LIMIT termination and cost classification.
+- Keep logical optimisation source-independent while exposing source/facet capability contracts to the acquisition planner without changing established termination semantics.
+- Preserve established planner helpers as compatibility exports and add architectural regression coverage for the new planning boundary.
+
 ## Discover 0.27.5 - Source, Facet and Capability Architecture
 
 - Extract stable physical/logical source identity into `source_model.py` while preserving `sources.py` compatibility exports.

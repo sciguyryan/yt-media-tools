@@ -51,8 +51,7 @@ from yt_media_tools.output import append_unique_ids, write_records
 from yt_media_tools.planner import (
     AcquisitionPlan,
     assess_cost,
-    plan_acquisition,
-    plan_limit_termination,
+    plan_query,
     required_query_fields,
 )
 from yt_media_tools.query import (
@@ -254,8 +253,8 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(args.verbose, f"Resolved source{facet_text} as {source.kind}: {source.canonical_url}")
 
     date_context = DateContext(date_order=args.date_format)
-    planning_tab = source.facet or args.tab
-    plan: AcquisitionPlan = plan_acquisition(query, source_kind=source.kind, tab=planning_tab, dates=date_context)
+    query_plan = plan_query(query, source=source, dates=date_context)
+    plan: AcquisitionPlan = query_plan.acquisition
     if multi_source:
         plan = AcquisitionPlan(
             "full",
@@ -274,7 +273,7 @@ def main(argv: list[str] | None = None) -> int:
             "explicit yt-dlp acquisition prefilters are present; automatic bounded planning is disabled",
         )
 
-    limit_plan = plan_limit_termination(query)
+    limit_plan = query_plan.limit_termination
     if multi_source and limit_plan.eligible:
         limit_plan = type(limit_plan)(
             False,

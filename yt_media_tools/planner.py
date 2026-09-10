@@ -7,24 +7,10 @@ from datetime import date, timedelta
 from typing import Any
 
 from .dates import DateContext, parse_date_literal
-from .query import (
-    AggregateFunction,
-    Between,
-    Binary,
-    Field,
-    InList,
-    Literal,
-    Query,
-    ScalarBinary,
-    ScalarCase,
-    ScalarComparison,
-    ScalarFunction,
-    ScalarIsNull,
-    ScalarUnary,
-    Unary,
-)
-from .query_semantics import _contains_aggregate
-from .schema import ALIASES, KNOWN_FIELD_TYPES
+from .query_model import Binary, Between, Field, InList, Literal, Query, Unary
+from .query_properties import analyse_query, required_query_fields as required_query_fields
+from .source_capabilities import EXACT, selected_facet_capabilities
+from .source_model import SourceSpec
 
 
 # yt-dlp documents flat-playlist dates as approximate. Keep a generous boundary margin and
@@ -81,11 +67,8 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
             "UNION composition requires complete branch results before global LIMIT can be applied",
             query.limit,
         )
-    if (
-        query.group_by
-        or query.having is not None
-        or any(_contains_aggregate(term.expression) for term in query.select + query.order_by)
-    ):
+    properties = analyse_query(query)
+    if properties.requires_aggregation:
         return LimitTerminationPlan(
             False,
             "aggregation requires complete input groups before LIMIT can be applied",
@@ -101,10 +84,7 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
             "DISTINCT may discard earlier duplicate projections, so complete duplicate resolution is required",
             query.limit,
         )
-    fields = required_query_fields(query)
-    dynamic = sorted(
-        field for field in fields if field.casefold() not in KNOWN_FIELD_TYPES and field.casefold() not in ALIASES
-    )
+    dynamic = properties.dynamic_fields
     if dynamic:
         return LimitTerminationPlan(
             False,
@@ -197,111 +177,12 @@ def plan_acquisition(query: Query, *, source_kind: str, tab: str, dates: DateCon
     )
 
 
-def _fields_in_node(node: Any) -> set[str]:
-    """Return field names referenced by a predicate node."""
-    if node is None:
-        return set()
-    if isinstance(node, Unary):
-        return _fields_in_node(node.operand)
-    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        return _fields_in_node(node.left) | _fields_in_node(node.right)
-    field = getattr(node, "field", None)
-    if isinstance(field, Field):
-        return {field.name.casefold()}
-    if isinstance(node, Binary) and isinstance(node.left, Field):
-        return {node.left.name.casefold()}
-    return set()
-
-
-def _fields_in_scalar_expression(expression: Any) -> set[str]:
-    """Return field names referenced by a scalar expression."""
-    if expression is None:
-        return set()
-    if isinstance(expression, Field):
-        return {expression.name.casefold()}
-    if isinstance(expression, ScalarUnary):
-        return _fields_in_scalar_expression(expression.operand)
-    if isinstance(expression, ScalarBinary):
-        return _fields_in_scalar_expression(expression.left) | _fields_in_scalar_expression(expression.right)
-    if isinstance(expression, AggregateFunction):
-        fields: set[str] = set()
-        for arg in expression.args:
-            fields.update(_fields_in_scalar_expression(arg))
-        fields.update(_fields_in_node(expression.filter_predicate))
-        return fields
-    if isinstance(expression, ScalarFunction):
-        fields: set[str] = set()
-        for arg in expression.args:
-            fields.update(_fields_in_scalar_expression(arg))
-        return fields
-    if isinstance(expression, ScalarCase):
-        fields: set[str] = set()
-        for branch in expression.whens:
-            fields.update(_fields_in_node(branch.condition))
-            fields.update(_fields_in_scalar_expression(branch.result))
-        fields.update(_fields_in_scalar_expression(expression.else_result))
-        return fields
-    return set()
-
-
-def _fields_in_having(node: Any) -> set[str]:
-    if node is None:
-        return set()
-    if isinstance(node, Unary):
-        return _fields_in_having(node.operand)
-    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        return _fields_in_having(node.left) | _fields_in_having(node.right)
-    if isinstance(node, ScalarComparison):
-        return _fields_in_scalar_expression(node.left) | _fields_in_scalar_expression(node.right)
-    if isinstance(node, ScalarIsNull):
-        return _fields_in_scalar_expression(node.expression)
-    return set()
-
-
-def _required_body_fields(query: Query) -> set[str]:
-    """Return fields referenced by one query body, excluding nested CTE relations."""
-    fields = _fields_in_node(query.predicate)
-    for term in query.order_by:
-        if term.expression is not None:
-            fields.update(_fields_in_scalar_expression(term.expression))
-        else:
-            fields.add(term.field.casefold())
-    for term in query.select or ():
-        if term.expression is not None:
-            fields.update(_fields_in_scalar_expression(term.expression))
-        else:
-            fields.add(term.field.casefold())
-    for expression in query.group_by:
-        fields.update(_fields_in_scalar_expression(expression))
-    fields.update(_fields_in_having(query.having))
-    if not query.select:
-        fields.add("id")
-    return fields
-
-
-def required_query_fields(query: Query) -> set[str]:
-    """Return physical-source fields needed by a query, CTEs, and UNION branches."""
-    cte_names = {cte.name.casefold() for cte in query.ctes}
-    fields: set[str] = set()
-
-    def visit(candidate: Query) -> None:
-        if (candidate.from_source or "").casefold() not in cte_names:
-            fields.update(_required_body_fields(candidate))
-        for operation in candidate.set_operations:
-            visit(operation.query)
-
-    for cte in query.ctes:
-        visit(cte.query)
-    visit(query)
-    return fields
-
-
 def assess_cost(query: Query, plan: AcquisitionPlan) -> tuple[str, str]:
     """Classify the actual acquisition plan using the explicit capability model."""
-    from .capabilities import EXACT, field_capability
-
     fields = required_query_fields(query)
-    detailed_only = sorted(field for field in fields if field_capability(field).ytdlp_flat != EXACT)
+    detailed_only = sorted(
+        field for field in fields if analyse_query(query).field_capability(field).ytdlp_flat != EXACT
+    )
     if plan.targeted:
         if detailed_only:
             return (
@@ -322,3 +203,60 @@ def assess_cost(query: Query, plan: AcquisitionPlan) -> tuple[str, str]:
             "detailed metadata refreshed as required"
         ),
     )
+
+
+@dataclass(frozen=True)
+class PhysicalAcquisitionRequest:
+    """Source-adapter input derived from semantic requirements and source policy."""
+
+    source: SourceSpec
+    required_fields: frozenset[str]
+    mode: str
+    lower_date_bound: date | None
+    stop_before: date | None
+
+
+@dataclass(frozen=True)
+class QueryPlan:
+    """Typed boundary between logical optimisation and physical acquisition."""
+
+    query: Query
+    properties: object
+    acquisition: AcquisitionPlan
+    physical_request: PhysicalAcquisitionRequest
+    limit_termination: LimitTerminationPlan
+    cost_class: str
+    cost_reason: str
+
+
+def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> QueryPlan:
+    """Build the source-aware plan consumed by acquisition orchestration.
+
+    The logical optimiser remains source-independent. This boundary is the first point
+    where a resolved query is combined with an adapter/facet capability contract.
+    """
+    properties = analyse_query(query, source=source)
+    facet = selected_facet_capabilities(source)
+    acquisition = plan_acquisition(
+        query,
+        source_kind=source.kind,
+        tab=source.facet or "videos",
+        dates=dates,
+    )
+    # A bounded newest-first scan is valid only when the selected adapter explicitly
+    # declares a stable collection and trustworthy source order.
+    if acquisition.targeted and (not facet.stable_collection or facet.trustworthy_order_field is None):
+        acquisition = AcquisitionPlan(
+            "full",
+            "the selected source/facet does not declare stable trustworthy ordering for bounded acquisition",
+        )
+    limit = plan_limit_termination(query)
+    cost_class, cost_reason = assess_cost(query, acquisition)
+    request = PhysicalAcquisitionRequest(
+        source=source,
+        required_fields=properties.required_fields,
+        mode=acquisition.mode,
+        lower_date_bound=acquisition.lower_date_bound,
+        stop_before=acquisition.stop_before,
+    )
+    return QueryPlan(query, properties, acquisition, request, limit, cost_class, cost_reason)
