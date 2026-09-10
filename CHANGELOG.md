@@ -1,5 +1,13 @@
 # Changelog
 
+## Discover 0.27.5 - Source, Facet and Capability Architecture
+
+- Extract stable physical/logical source identity into `source_model.py` while preserving `sources.py` compatibility exports.
+- Extract adapter, facet, logical-schema and field-acquisition capability declarations into `source_capabilities.py`.
+- Distinguish stable logical support from dynamic metadata whose structure remains unknown until detailed acquisition.
+- Declare YouTube channel, playlist and generic yt-dlp source capabilities conservatively without changing acquisition behaviour.
+- Add deterministic architectural coverage for source identity, facet isolation, logical schemas and capability declarations.
+
 ## Discover 0.27.4 - Resolver and Evaluator Separation
 
 - Extract semantic field/schema resolution, type checking, aggregate validation, CTE/set-operation reconciliation and RANDOM placement validation into `yt_media_tools/query_resolver.py`.

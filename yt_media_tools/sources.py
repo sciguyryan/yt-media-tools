@@ -3,72 +3,32 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from urllib.parse import parse_qs, quote, urlsplit, urlunsplit
+
+from .source_capabilities import (
+    SourceCapabilities as SourceCapabilities,
+    YOUTUBE_CHANNEL_FACET_SUFFIXES as YOUTUBE_CHANNEL_FACET_SUFFIXES,
+    YOUTUBE_CHANNEL_FACETS as YOUTUBE_CHANNEL_FACETS,
+    logical_source_identity as logical_source_identity,
+    selected_facet_capabilities as selected_facet_capabilities,
+    source_capabilities as source_capabilities,
+)
+from .source_model import (
+    LogicalSourceIdentity as LogicalSourceIdentity,
+    PhysicalSourceIdentity as PhysicalSourceIdentity,
+    SourceSpec as SourceSpec,
+)
 
 
 YOUTUBE_BASE_URL = "https://www.youtube.com"
 
-TAB_SUFFIXES = {
-    "all": None,
-    "videos": "videos",
-    "shorts": "shorts",
-    "live": "streams",
-}
+TAB_SUFFIXES = {"all": None, **YOUTUBE_CHANNEL_FACET_SUFFIXES}
 KNOWN_TAB_SUFFIXES = frozenset({"videos", "shorts", "streams", "featured"})
-YOUTUBE_CHANNEL_FACETS = ("videos", "shorts", "live")
 
 _CHANNEL_ID_RE = re.compile(r"UC[A-Za-z0-9_-]{20,}")
 # YouTube uses several playlist families. These prefixes are intentionally limited to
 # recognisable collection identifiers rather than treating every arbitrary token as a playlist.
 _PLAYLIST_ID_RE = re.compile(r"(?:PL|UU|LL|FL|RD|UL|TL|OLAK5uy_)[A-Za-z0-9_-]{8,}")
-
-
-@dataclass(frozen=True)
-class SourceSpec:
-    """Resolved physical source and, when selected, its logical facet."""
-
-    kind: str
-    original: str
-    canonical_url: str
-    identifier: str | None = None
-    facet: str | None = None
-
-
-@dataclass(frozen=True)
-class SourceCapabilities:
-    """Logical collections advertised by one classified physical source.
-
-    ``default_facet`` is ``None`` when the bare source is itself the default
-    collection. ``facets`` contains only explicit names that may appear after
-    yt-sql ``OF``. The core query layer consumes this contract without needing
-    extractor-specific URL or command knowledge.
-    """
-
-    adapter: str
-    facets: tuple[str, ...] = ()
-    default_facet: str | None = None
-
-    def supports(self, facet: str) -> bool:
-        """Return whether this source advertises the requested logical facet."""
-        return facet.casefold() in self.facets
-
-
-def source_capabilities(source: SourceSpec) -> SourceCapabilities:
-    """Return deterministic logical capabilities for a classified source.
-
-    Capability discovery is deliberately conservative. Known YouTube channel
-    sources advertise stable logical channel collections. Playlists and generic
-    yt-dlp extractor URLs currently expose only their default collection until a
-    dedicated adapter can make stronger promises.
-    """
-    if source.kind == "channel":
-        return SourceCapabilities("youtube-channel", YOUTUBE_CHANNEL_FACETS)
-    if source.kind == "playlist":
-        return SourceCapabilities("youtube-playlist")
-    if source.kind == "extractor":
-        return SourceCapabilities("yt-dlp-generic")
-    return SourceCapabilities("unknown")
 
 
 def resolve_source_request(

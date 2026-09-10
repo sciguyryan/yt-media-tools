@@ -2,50 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
 from .dates import DateContext, parse_date_literal
 from .query import Between, Binary, Field, InList, IsNull, Literal, TextPredicate, Unary, like_matches
-
-
-EXACT = "exact"
-APPROXIMATE = "approximate"
-UNAVAILABLE = "unavailable"
-
-
-@dataclass(frozen=True)
-class FieldCapability:
-    """Describe how authoritatively one acquisition stage can supply a field."""
-
-    field: str
-    youtubejs: str
-    ytdlp_flat: str
-    ytdlp_detailed: str = EXACT
-
-
-_FIELD_CAPABILITIES = {
-    "id": FieldCapability("id", EXACT, EXACT),
-    "title": FieldCapability("title", EXACT, EXACT),
-    "upload_date": FieldCapability("upload_date", APPROXIMATE, APPROXIMATE),
-    "date": FieldCapability("date", APPROXIMATE, APPROXIMATE),
-    "duration": FieldCapability("duration", UNAVAILABLE, APPROXIMATE),
-    "view_count": FieldCapability("view_count", APPROXIMATE, APPROXIMATE),
-    "views": FieldCapability("views", APPROXIMATE, APPROXIMATE),
-    "source_index": FieldCapability("source_index", EXACT, EXACT),
-}
-
-
-def field_capability(field: str) -> FieldCapability:
-    """Return the conservative capability declaration for a query field."""
-    key = field.casefold()
-    return _FIELD_CAPABILITIES.get(key, FieldCapability(field, UNAVAILABLE, UNAVAILABLE, EXACT))
-
-
-def capabilities_for_fields(fields: set[str]) -> list[FieldCapability]:
-    """Return capabilities for fields in deterministic order."""
-    return [field_capability(field) for field in sorted(fields)]
+from .source_capabilities import (
+    APPROXIMATE as APPROXIMATE,
+    EXACT as EXACT,
+    UNAVAILABLE as UNAVAILABLE,
+    FieldCapability as FieldCapability,
+    capabilities_for_fields as capabilities_for_fields,
+    field_capability as field_capability,
+)
 
 
 def _date_literal(literal: Literal, dates: DateContext) -> date | None:

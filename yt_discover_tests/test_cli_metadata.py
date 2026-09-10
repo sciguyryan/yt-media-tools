@@ -19,7 +19,7 @@ def test_cli_reports_current_version() -> None:
         capture_output=True,
         check=False,
     )
-    assert "0.27.4" in proc.stdout
+    assert "0.27.5" in proc.stdout
 
 
 def test_no_arguments_include_easter_egg_without_changing_error_status() -> None:

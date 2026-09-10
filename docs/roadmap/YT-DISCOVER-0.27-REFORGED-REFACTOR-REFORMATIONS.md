@@ -282,6 +282,20 @@ not reinterpret raw query text.
 
 ## 0.27.5 - Source, Facet and Capability Architecture
 
+**Status:** Complete.
+
+Physical and logical source identity now have a stable model boundary in
+`source_model.py`. Adapter, facet, logical-schema and acquisition capability
+declarations live in `source_capabilities.py`, while `sources.py` remains the
+classification and request-resolution compatibility surface. Existing lightweight
+predicate evaluation remains in `capabilities.py` and consumes the shared field
+capability declarations rather than owning a duplicate capability model.
+
+Generic yt-dlp extractor sources remain conservative: Discover does not claim stable
+collection semantics, trustworthy ordering or cheap identity enumeration unless a
+dedicated adapter can make those guarantees. Dynamic extractor fields remain unknown
+until acquired rather than being treated as structurally unavailable.
+
 ### Scope
 
 Consolidate the current source/facet architecture into an explicit model
