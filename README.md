@@ -3,7 +3,7 @@
 `yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
 - `yt-discover.py` discovers, caches, queries and reports media metadata using the yt-sql query language.
-- `yt-download.py` 1.7.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
+- `yt-download.py` 1.19.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
 
 The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
 
@@ -21,13 +21,15 @@ defaults.json          Downloader parameter profiles
 profiles/              Downloader output profiles
 yt_discover_tests/     Discover test suite
 yt_downloader_tests/   Downloader test suite
-DISCOVER-README.md     Discover documentation
-DOWNLOADER-README.md   Downloader documentation
-DISCOVER-FUTURE-WORK.md   Planned Discover language and capability programme
-DOWNLOADER-FUTURE-WORK.md Planned Downloader architecture and capability programme
-YT-SQL.md              yt-sql language reference
-YT-SQL-OPTIMISATION.md yt-sql optimisation strategy
-TODO.md                Accepted future work and design directions
+docs/                   Project documentation
+docs/DISCOVER-README.md     Discover documentation
+docs/DOWNLOADER-README.md   Downloader documentation
+docs/DISCOVER-FUTURE-WORK.md   Planned Discover language and capability programme
+docs/DOWNLOADER-FUTURE-WORK.md Planned Downloader architecture and capability programme
+docs/YT-SQL.md              yt-sql language reference
+docs/YT-SQL-OPTIMISATION.md yt-sql optimisation strategy
+docs/TODO.md                Accepted future work and design directions
+docs/roadmap/          Living Discover version-series roadmaps
 pytest.ini             Combined test discovery configuration
 ```
 
@@ -37,7 +39,7 @@ The internal package is named `yt_media_tools`. It keeps reusable implementation
 
 Both tools require Python 3. `yt-dlp` is required for live acquisition or downloading. Discover can additionally use Node.js and YouTube.js for bounded channel acquisition when the optional adapter is installed.
 
-See `DISCOVER-README.md` and `DOWNLOADER-README.md` for tool-specific requirements and usage.
+See `docs/DISCOVER-README.md` and `docs/DOWNLOADER-README.md` for tool-specific requirements and usage.
 
 ## Testing
 
@@ -73,7 +75,7 @@ The two command-line applications retain independent versions because they evolv
 
 ## Common table expressions
 
-Discover supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `UNION ALL`, including composition across independently acquired yt-dlp sources. See `DISCOVER-README.md` and `YT-SQL.md` for the execution, schema-reconciliation and scoping contracts.
+Discover supports non-recursive yt-sql `WITH` CTEs plus positional `UNION` and `UNION ALL`, including composition across independently acquired yt-dlp sources. See `docs/DISCOVER-README.md` and `docs/YT-SQL.md` for the execution, schema-reconciliation and scoping contracts.
 
 ## Documentation linting
 
@@ -81,4 +83,4 @@ GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. 
 
 ## Future work
 
-The agreed longer-term programmes are documented in `DISCOVER-FUTURE-WORK.md` and `DOWNLOADER-FUTURE-WORK.md`. Discover 0.26.6 is the current hardened language baseline. Downloader is the preferred next implementation target, beginning with architectural cleanup and a resolved download-planning model before broader policy and format work.
+The agreed longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Discover 0.27.0 begins the behaviour-preserving architectural refactor from the hardened 0.26.6 language baseline. Downloader 1.19.0 contains the current machine-interface foundation.

@@ -36,6 +36,14 @@ fixed with dedicated regression coverage.
 
 ## 0.27.0 - Application Shell Extraction
 
+**Status:** Complete.
+
+The executable is now a thin bootstrap into dedicated Discover application
+modules. CLI parsing/query preparation, explain/analyse presentation,
+acquisition/cache orchestration, output/provenance helpers, shared application
+constants and top-level application execution are separated without intentional
+query or acquisition semantic changes.
+
 ### Scope
 
 Reduce `yt-discover.py` to a small executable layer responsible for

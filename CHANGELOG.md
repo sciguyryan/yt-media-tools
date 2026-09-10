@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.27.0 - Application Shell Extraction
+
+- Reduce `yt-discover.py` to a thin executable bootstrap.
+- Extract CLI parsing and query preparation, explain/analyse presentation, acquisition/cache orchestration, output/provenance helpers and top-level application execution into focused package modules.
+- Preserve the 0.26.6 query, acquisition, CLI, output and error behaviour while retaining the original project-root semantics for the relocated application layer.
+- Add deterministic architectural regression coverage for the thin executable and extracted CLI boundary.
+
 ## Downloader 1.19.0 - Machine Check
 
 - Add runtime parameter-profile validation through `--validate-config`.
