@@ -9,6 +9,7 @@ from pathlib import Path
 from yt_media_tools.cache import SourceCoverage
 from yt_media_tools.schema import QuerySchema
 
+
 def print_schema(schema: QuerySchema, *, include_raw: bool) -> None:
     print("Field\tType\tNullable\tNotes")
     for info in schema.available_fields():
@@ -22,6 +23,7 @@ def print_schema(schema: QuerySchema, *, include_raw: bool) -> None:
         for info in schema.raw_scalar_paths():
             print(f"{info.name}\t{info.kind}\t{'yes' if info.nullable else 'no'}\traw nested scalar")
 
+
 def _effective_output_format(output_format: str, selected_count: int, *, explicit_select: bool) -> str:
     if output_format == "auto":
         return "lines" if selected_count == 1 else "jsonl"
@@ -30,6 +32,7 @@ def _effective_output_format(output_format: str, selected_count: int, *, explici
     if output_format == "urls":
         return "lines (legacy urls shortcut)"
     return output_format
+
 
 def _format_coverage_warning(coverage: SourceCoverage | None, cached_count: int) -> str:
     """Describe offline source coverage without overstating completeness."""
@@ -45,6 +48,7 @@ def _format_coverage_warning(coverage: SourceCoverage | None, cached_count: int)
         f"(last observation {coverage.observed_at.isoformat()})"
     )
 
+
 def _write_provenance(destination: str, payload: dict[str, object]) -> None:
     text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if destination == "-":
@@ -53,4 +57,3 @@ def _write_provenance(destination: str, payload: dict[str, object]) -> None:
     path = Path(destination).expanduser()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
-

@@ -23,6 +23,7 @@ from .query import (
     ScalarUnary,
     Unary,
 )
+from .query_semantics import _contains_aggregate
 from .schema import ALIASES, KNOWN_FIELD_TYPES
 
 
@@ -83,7 +84,7 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
     if (
         query.group_by
         or query.having is not None
-        or any(_contains_aggregate_expression(term.expression) for term in query.select + query.order_by)
+        or any(_contains_aggregate(term.expression) for term in query.select + query.order_by)
     ):
         return LimitTerminationPlan(
             False,
@@ -241,22 +242,6 @@ def _fields_in_scalar_expression(expression: Any) -> set[str]:
         fields.update(_fields_in_scalar_expression(expression.else_result))
         return fields
     return set()
-
-
-def _contains_aggregate_expression(expression: Any) -> bool:
-    if isinstance(expression, AggregateFunction):
-        return True
-    if isinstance(expression, ScalarUnary):
-        return _contains_aggregate_expression(expression.operand)
-    if isinstance(expression, ScalarBinary):
-        return _contains_aggregate_expression(expression.left) or _contains_aggregate_expression(expression.right)
-    if isinstance(expression, ScalarFunction):
-        return any(_contains_aggregate_expression(arg) for arg in expression.args)
-    if isinstance(expression, ScalarCase):
-        return any(_contains_aggregate_expression(branch.result) for branch in expression.whens) or (
-            expression.else_result is not None and _contains_aggregate_expression(expression.else_result)
-        )
-    return False
 
 
 def _fields_in_having(node: Any) -> set[str]:

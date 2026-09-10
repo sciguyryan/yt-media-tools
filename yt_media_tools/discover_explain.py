@@ -30,6 +30,7 @@ from yt_media_tools.query import (
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats
 
+
 def explain_user_query(query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False) -> str:
     """Explain query semantics, field capabilities, and safe acquisition optimisations."""
     query = parse_query(query_text)
@@ -327,6 +328,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         )
     return "\n".join(lines)
 
+
 def explain_user_query_json(
     query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False
 ) -> dict[str, object]:
@@ -458,6 +460,7 @@ def explain_user_query_json(
         },
     }
 
+
 def _explain_analyze_payload(
     *,
     query: Query,
@@ -548,6 +551,7 @@ def _explain_analyze_payload(
         },
     }
 
+
 def _format_explain_analyze_text(payload: dict[str, object]) -> str:
     actual = payload["actual"]
     timing = payload["timing_seconds"]
@@ -627,4 +631,3 @@ def _format_explain_analyze_text(payload: dict[str, object]) -> str:
     else:
         lines.extend(["", "Source coverage", "  Unknown"])
     return "\n".join(lines)
-

@@ -1,5 +1,13 @@
 # Changelog
 
+## Discover 0.27.4 - Resolver and Evaluator Separation
+
+- Extract semantic field/schema resolution, type checking, aggregate validation, CTE/set-operation reconciliation and RANDOM placement validation into `yt_media_tools/query_resolver.py`.
+- Extract resolved scalar/predicate evaluation, projection, grouping, aggregation, ordering, CTE materialisation and UNION execution into `yt_media_tools/query_evaluator.py`.
+- Centralise shared structural query inspection in `query_semantics.py` so the resolver and evaluator do not duplicate or cyclically depend on one another.
+- Preserve the established resolver, evaluator and physical-source helper imports through the `query.py` compatibility facade.
+- Add architectural regression coverage for the separated ownership boundary and resolved-query execution.
+
 ## Discover 0.27.3 - Parser and Formatter Separation
 
 - Extract lexical analysis, recursive-descent parsing and parser-owned literal syntax into `yt_media_tools/query_parser.py` while preserving compatibility exports from `query.py`.

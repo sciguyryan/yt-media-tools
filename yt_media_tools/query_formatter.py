@@ -63,6 +63,7 @@ def format_scalar_expression(expression: Any) -> str:
         return " ".join(parts)
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
+
 def format_expression(node: Any) -> str:
     if isinstance(node, Field):
         return node.name
@@ -97,6 +98,7 @@ def format_expression(node: Any) -> str:
     if isinstance(node, ScalarIsNull):
         return f"{format_scalar_expression(node.expression)} IS {'NOT ' if node.negated else ''}NULL"
     raise AssertionError(f"Unsupported query node {node!r}")
+
 
 def format_query(query: Query) -> str:
     parts: list[str] = []

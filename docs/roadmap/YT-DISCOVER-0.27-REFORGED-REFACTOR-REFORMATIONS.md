@@ -226,6 +226,16 @@ Formatter responsibilities should include:
 
 ## 0.27.4 - Resolver and Evaluator Separation
 
+**Status:** Complete.
+
+Semantic resolution and local execution now have separate module boundaries.
+`query_resolver.py` owns field/schema resolution, scalar and aggregate typing,
+CTE/set-operation reconciliation, grouping/HAVING validation and RANDOM placement
+validation. `query_evaluator.py` owns resolved-expression evaluation, filtering,
+projection, aggregation, ordering, CTE materialisation and set-operation execution.
+Shared structural query facts used by both layers live in `query_semantics.py`, while
+`query.py` remains a compatibility facade for the established imports.
+
 ### Scope
 
 Separate semantic resolution from local execution.

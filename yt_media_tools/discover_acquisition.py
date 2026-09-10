@@ -24,10 +24,12 @@ from yt_media_tools.ytdlp import (
     shell_join,
 )
 
+
 def _verbose(level: int, message: str, *, minimum: int = 1) -> None:
     """Write operational progress to stderr without contaminating pipeline output."""
     if level >= minimum:
         print(f"[yt-discover] {message}", file=sys.stderr, flush=True)
+
 
 def _acquisition_progress(level: int):
     """Create a yt-dlp progress callback for concise (-v) or detailed (-vv) telemetry."""
@@ -42,6 +44,7 @@ def _acquisition_progress(level: int):
             _verbose(level, f"Skipped inaccessible entry: {detail}.")
 
     return callback
+
 
 def _enumeration_progress(level: int, *, context: str, warn_threshold: int = 0):
     """Create pipe-safe progress reporting for potentially lengthy source enumeration."""
@@ -80,6 +83,7 @@ def _enumeration_progress(level: int, *, context: str, warn_threshold: int = 0):
                 )
 
     return callback
+
 
 def _cached_or_refresh_metadata(
     *,
@@ -145,6 +149,7 @@ def _cached_or_refresh_metadata(
         ),
     )
 
+
 def _merge_acquisition_stats(total: AcquisitionStats, part: AcquisitionStats) -> None:
     """Merge one detailed-extraction batch into aggregate telemetry."""
     total.available += part.available
@@ -152,6 +157,7 @@ def _merge_acquisition_stats(total: AcquisitionStats, part: AcquisitionStats) ->
     total.identified_error_lines += part.identified_error_lines
     for video_id, category in part.skipped_by_id.items():
         total.record_skip(video_id, category)
+
 
 def _merge_cache_stats(total: CacheStats, part: CacheStats) -> CacheStats:
     """Return aggregate cache telemetry for repeated LIMIT-aware batches."""
@@ -163,6 +169,7 @@ def _merge_cache_stats(total: CacheStats, part: CacheStats) -> CacheStats:
         refreshed=total.refreshed + part.refreshed,
         written=total.written + part.written,
     )
+
 
 def _limit_aware_cached_acquire(
     *,
@@ -222,4 +229,3 @@ def _limit_aware_cached_acquire(
             return raw_records, acquisition, cache_stats, True, batches, examined_candidates
 
     return raw_records, acquisition, cache_stats, False, batches, examined_candidates
-

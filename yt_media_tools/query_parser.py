@@ -65,6 +65,7 @@ _DECIMAL_NUMBER_RE = re.compile(r"[+-]?\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*))?")
 
 _BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Za-z]+(?:_[0-9A-Za-z]+)*)")
 
+
 def _unescape_string(text: str) -> str:
     quote = text[0]
     body = text[1:-1]
@@ -73,6 +74,7 @@ def _unescape_string(text: str) -> str:
     body = body.replace(f"\\{quote}", quote)
     body = body.replace("\\n", "\n").replace("\\t", "\t")
     return body
+
 
 def tokenise(source: str) -> list[Token]:
     tokens: list[Token] = []
@@ -93,6 +95,7 @@ def tokenise(source: str) -> list[Token]:
         position = match.end()
     tokens.append(Token("EOF", "", len(source), None))
     return tokens
+
 
 def _parse_integer_literal_text(text: str, source: str, position: int) -> int:
     """Parse a decimal, hexadecimal, octal or binary integer literal."""
@@ -119,6 +122,7 @@ def _parse_integer_literal_text(text: str, source: str, position: int) -> int:
         raise QuerySyntaxError(source, f"Invalid non-decimal integer literal {text!r}.", position)
     raise QuerySyntaxError(source, f"Could not understand integer value {text!r}.", position)
 
+
 def _parse_number_text(text: str, source: str, position: int) -> int | float:
     compact = re.sub(r"\s+", "", text)
     if re.match(r"[+-]?0[xXoObB]", compact):
@@ -129,9 +133,11 @@ def _parse_number_text(text: str, source: str, position: int) -> int | float:
         return float(compact.replace("_", ""))
     raise QuerySyntaxError(source, f"Could not understand numeric value {text!r}.", position)
 
+
 def _parse_generic_numeric_literal(text: str, source: str, position: int) -> int | float:
     """Parse a numeric token whose field type is not yet known."""
     return _parse_number_text(text, source, position)
+
 
 def _validate_like_pattern(pattern: str, source: str, position: int) -> None:
     """Validate yt-sql LIKE escaping.
@@ -148,6 +154,7 @@ def _validate_like_pattern(pattern: str, source: str, position: int) -> None:
             escaped = True
     if escaped:
         raise QuerySyntaxError(source, "LIKE pattern ends with an incomplete backslash escape.", position)
+
 
 class Parser:
     """Recursive-descent parser. It deliberately knows no yt-dlp field schema."""
@@ -882,8 +889,10 @@ class Parser:
             or self.keyword("END")
         )
 
+
 def parse_query(source: str) -> Query:
     return Parser(source).parse_query(where_only=False)
+
 
 def parse_where(source: str) -> Query:
     return Parser(source).parse_query(where_only=True)

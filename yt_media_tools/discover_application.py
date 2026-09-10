@@ -89,6 +89,7 @@ from yt_media_tools.ytdlp import (
     shell_join,
 )
 
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
