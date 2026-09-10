@@ -52,6 +52,7 @@ from yt_media_tools.planner import (
     AcquisitionPlan,
     assess_cost,
     plan_query,
+    plan_source_boundaries,
     required_query_fields,
 )
 from yt_media_tools.query import (
@@ -255,6 +256,11 @@ def main(argv: list[str] | None = None) -> int:
 
     date_context = DateContext(date_order=args.date_format)
     query_plan = plan_query(query, source=source, dates=date_context)
+    source_boundary_plans = (
+        plan_source_boundaries(query, requests=source_requests, sources=sources, dates=date_context)
+        if multi_source
+        else ()
+    )
     metadata_requirements = query_plan.metadata_requirements
     predicate_stages = query_plan.predicate_stages
     plan: AcquisitionPlan = query_plan.acquisition
@@ -314,6 +320,15 @@ def main(argv: list[str] | None = None) -> int:
         print(warning, file=sys.stderr, flush=True)
     if args.verbose:
         _verbose(True, f"Acquisition cost estimate: {cost_class} ({cost_reason}).")
+        if source_boundary_plans:
+            for index, branch in enumerate(source_boundary_plans, 1):
+                facet_text = f" OF {branch.facet}" if branch.facet is not None else ""
+                _verbose(
+                    True,
+                    f"Source boundary {index}: {branch.source_name}{facet_text}; "
+                    f"uses={branch.use_count}; acquisition={branch.acquisition.mode}; "
+                    f"cost={branch.cost_class}; fields={', '.join(sorted(branch.required_fields)) or 'none'}.",
+                )
 
     requested_backend = args.backend
     selected_backend = "cache" if args.offline else "ytdlp"
@@ -461,7 +476,18 @@ def main(argv: list[str] | None = None) -> int:
     if multi_source:
         raw_records = []
         acquisition_stats = AcquisitionStats()
-        for (source_value, request_facet), source_spec in zip(source_requests, sources, strict=True):
+        for (source_value, request_facet), source_spec, branch_plan in zip(
+            source_requests, sources, source_boundary_plans, strict=True
+        ):
+            if branch_plan.branch_empty and not args.offline:
+                _verbose(
+                    args.verbose,
+                    f"Skipping source boundary {source_value}"
+                    + (f" OF {request_facet}" if request_facet is not None else "")
+                    + ": capability proof establishes an empty branch.",
+                )
+                source_record_counts[(source_value, request_facet)] = 0
+                continue
             if args.offline:
                 assert metadata_cache is not None
                 cached_items = metadata_cache.source_records(source_spec.canonical_url)

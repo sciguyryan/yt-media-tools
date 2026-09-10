@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from .dates import DateContext
-from .query_model import Query
+from .query_model import Binary, Query
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .query_properties import (
+    METADATA_DETAILED,
     QueryProperties,
     analyse_expression,
     analyse_query,
@@ -255,6 +256,181 @@ class QueryPlan:
     cost_reason: str
     source_branch_eliminated: bool = False
     elimination_proof: OptimisationProof | None = None
+
+
+@dataclass(frozen=True)
+class SourceBoundaryPlan:
+    """Physical planning state for one unique source/facet acquisition boundary."""
+
+    source_name: str
+    facet: str | None
+    source: SourceSpec
+    use_count: int
+    required_fields: frozenset[str]
+    combined_predicate: object | None
+    pre_acquisition_predicates: tuple[object, ...]
+    metadata_requirements: MetadataRequirementPlan
+    predicate_stages: PredicateStagePlan
+    temporal_bounds: TemporalBoundPlan
+    acquisition: AcquisitionPlan
+    cost_class: str
+    cost_reason: str
+    metadata_depth: str
+    stable_collection: bool
+    stable_order_field: str | None
+    early_termination: bool
+    branch_empty: bool
+    elimination_proof: OptimisationProof | None
+    collection_requirements: frozenset[str]
+
+
+def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query], ...]:
+    """Return logical query uses of physical source/facet boundaries in execution order."""
+    cte_names = {cte.name.casefold() for cte in query.ctes}
+    uses: list[tuple[str, str | None, Query]] = []
+
+    def visit(candidate: Query) -> None:
+        if candidate.from_source is not None and candidate.from_source.casefold() not in cte_names:
+            local = replace(candidate, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+            uses.append((candidate.from_source, candidate.from_facet, local))
+        for operation in candidate.set_operations:
+            visit(operation.query)
+
+    for cte in query.ctes:
+        visit(cte.query)
+    visit(query)
+    return tuple(uses)
+
+
+def _or_predicates(predicates: tuple[object | None, ...]) -> object | None:
+    """Return a predicate that retains every row needed by any physical-source use."""
+    if not predicates or any(item is None for item in predicates):
+        return None
+    result = predicates[0]
+    for predicate in predicates[1:]:
+        result = Binary("OR", result, predicate)
+    return result
+
+
+def _collection_requirements(fields: frozenset[str]) -> frozenset[str]:
+    """Identify nested collection families required by dynamic metadata references."""
+    families = {
+        field.split(".", 1)[0].casefold()
+        for field in fields
+        if "." in field
+        and field.split(".", 1)[0].casefold()
+        in {"formats", "chapters", "subtitles", "automatic_captions", "thumbnails", "tags"}
+    }
+    return frozenset(families)
+
+
+def _assess_source_boundary_cost(
+    metadata: MetadataRequirementPlan, acquisition: AcquisitionPlan, *, source: SourceSpec
+) -> tuple[str, str]:
+    """Classify one physical boundary from its complete unioned metadata requirements."""
+    detailed = sorted(metadata.detailed_fields)
+    if acquisition.targeted:
+        if detailed:
+            return (
+                "moderate",
+                "a safe source boundary limits enumeration; detailed metadata is required for "
+                + ", ".join(detailed)
+                + " unless a fresh cache entry can satisfy it",
+            )
+        return "moderate", "a safe source boundary limits enumeration and no authoritative detailed fields are required"
+    if not detailed and selected_facet_capabilities(source).cheaply_enumerates_identities:
+        return (
+            "high",
+            "the complete source boundary must be enumerated, but its required fields are authoritative in lightweight metadata",
+        )
+    return (
+        "very-high",
+        "no safe source boundary exists; the boundary must be fully enumerated and stale or missing detailed metadata refreshed as required",
+    )
+
+
+def plan_source_boundaries(
+    query: Query,
+    *,
+    requests: tuple[tuple[str, str | None], ...],
+    sources: tuple[SourceSpec, ...],
+    dates: DateContext,
+) -> tuple[SourceBoundaryPlan, ...]:
+    """Build an independent conservative physical plan for every unique source/facet request."""
+    source_map = {request: source for request, source in zip(requests, sources, strict=True)}
+    grouped: dict[tuple[str, str | None], list[Query]] = {request: [] for request in requests}
+    for source_name, facet, branch in _physical_query_uses(query):
+        grouped.setdefault((source_name, facet), []).append(branch)
+
+    result: list[SourceBoundaryPlan] = []
+    for request in requests:
+        source = source_map[request]
+        uses = grouped.get(request, [])
+        if not uses:
+            continue
+        predicate = _or_predicates(tuple(use.predicate for use in uses))
+        fields = frozenset().union(*(required_query_fields(use) for use in uses))
+        synthetic = replace(uses[0], predicate=predicate)
+        # Ensure repeated uses contribute all physical field needs without pushing one use's
+        # projection or grouping requirements into another use's predicate semantics.
+        properties = analyse_query(synthetic, source=source)
+        metadata = plan_metadata_requirements(synthetic, source=source)
+        if fields != properties.required_fields:
+            enum = frozenset(
+                field for field in fields if selected_facet_capabilities(source).field(field).ytdlp_flat == EXACT
+            )
+            detailed = fields - enum
+            metadata = MetadataRequirementPlan(
+                enum,
+                detailed,
+                metadata.predicate_enumeration_fields,
+                metadata.predicate_detailed_fields,
+                "source-boundary requirements union every field needed by all logical uses of this source/facet",
+            )
+        stages = plan_predicate_stages(synthetic, source=source)
+        temporal = infer_temporal_bounds(predicate, dates)
+        acquisition = plan_acquisition(
+            synthetic, source_kind=source.kind, tab=source.facet or "videos", dates=dates, temporal_bounds=temporal
+        )
+        facet_caps = selected_facet_capabilities(source)
+        if acquisition.targeted and (not facet_caps.stable_collection or facet_caps.trustworthy_order_field is None):
+            acquisition = AcquisitionPlan(
+                "full", "the selected source/facet does not declare stable trustworthy ordering for bounded acquisition"
+            )
+        truth = prove_predicate_truth(predicate, source=source)
+        empty = predicate is not None and truth.proven and truth.truth != TRUTH_TRUE
+        if empty:
+            acquisition = AcquisitionPlan(
+                "skip", "source/facet capabilities prove every logical use of this physical request is empty"
+            )
+            cost_class, cost_reason = "none", "the physical source/facet request is proven empty before acquisition"
+        else:
+            cost_class, cost_reason = _assess_source_boundary_cost(metadata, acquisition, source=source)
+        result.append(
+            SourceBoundaryPlan(
+                request[0],
+                request[1],
+                source,
+                len(uses),
+                fields,
+                predicate,
+                stages.enumeration_terms,
+                metadata,
+                stages,
+                temporal,
+                acquisition,
+                cost_class,
+                cost_reason,
+                METADATA_DETAILED if metadata.requires_detailed_metadata else properties.metadata_depth,
+                facet_caps.stable_collection,
+                facet_caps.trustworthy_order_field,
+                acquisition.targeted,
+                empty,
+                truth.proof if empty else None,
+                _collection_requirements(fields),
+            )
+        )
+    return tuple(result)
 
 
 def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> QueryPlan:

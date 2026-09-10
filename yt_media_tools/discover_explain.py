@@ -12,6 +12,7 @@ from yt_media_tools.planner import (
     plan_acquisition,
     plan_limit_termination,
     plan_metadata_requirements,
+    plan_source_boundaries,
     required_query_fields,
 )
 from yt_media_tools.optimizer import optimise_query
@@ -253,6 +254,18 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
         cost_class, cost_reason = assess_cost(query, plan, source=source)
+    source_boundaries = plan_source_boundaries(
+        query, requests=source_requests, sources=tuple(explained_sources), dates=dates
+    )
+    if len(source_boundaries) > 1:
+        lines.extend(["", "Source-boundary plans"])
+        for index, branch in enumerate(source_boundaries, 1):
+            facet_text = f" OF {branch.facet}" if branch.facet is not None else ""
+            lines.append(
+                f"  {index}. {branch.source_name}{facet_text}: uses={branch.use_count}; "
+                f"acquisition={branch.acquisition.mode}; metadata={branch.metadata_requirements.reason}; "
+                f"fields={', '.join(sorted(branch.required_fields)) or 'none'}"
+            )
     lines.extend(
         [
             "",
@@ -414,6 +427,9 @@ def explain_user_query_json(
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
         cost_class, cost_reason = assess_cost(query, plan, source=source)
+    source_boundaries = plan_source_boundaries(
+        query, requests=source_requests, sources=tuple(explained_sources), dates=dates
+    )
 
     try:
         resolved_for_optimiser = resolve_query(query, QuerySchema(()), dates)
@@ -525,6 +541,43 @@ def explain_user_query_json(
             ],
             "reason": temporal_bounds.reason,
         },
+        "source_boundaries": [
+            {
+                "source": branch.source_name,
+                "facet": branch.facet,
+                "url": branch.source.canonical_url,
+                "uses": branch.use_count,
+                "required_fields": sorted(branch.required_fields),
+                "enumeration_fields": sorted(branch.metadata_requirements.enumeration_fields),
+                "detailed_fields": sorted(branch.metadata_requirements.detailed_fields),
+                "pre_acquisition_predicate": format_expression(branch.combined_predicate)
+                if branch.combined_predicate is not None
+                else None,
+                "temporal_bounds": [
+                    {
+                        "field": item.field,
+                        "kind": item.kind,
+                        "lower": None
+                        if item.lower is None
+                        else {"value": item.lower.value.isoformat(), "inclusive": item.lower.inclusive},
+                        "upper": None
+                        if item.upper is None
+                        else {"value": item.upper.value.isoformat(), "inclusive": item.upper.inclusive},
+                    }
+                    for item in branch.temporal_bounds.fields
+                ],
+                "pre_acquisition_predicates": [format_expression(term) for term in branch.pre_acquisition_predicates],
+                "metadata_depth": branch.metadata_depth,
+                "stable_collection": branch.stable_collection,
+                "stable_order_field": branch.stable_order_field,
+                "early_termination": branch.early_termination,
+                "acquisition": branch.acquisition.mode,
+                "cost_class": branch.cost_class,
+                "branch_empty": branch.branch_empty,
+                "collection_requirements": sorted(branch.collection_requirements),
+            }
+            for branch in source_boundaries
+        ],
         "acquisition": {
             "strategy": plan.mode,
             "reason": plan.reason,

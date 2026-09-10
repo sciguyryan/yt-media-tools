@@ -258,6 +258,8 @@ The planner analyses required metadata fields recursively through scalar express
 
 Capability-aware planning distinguishes available acquisition stages and can select bounded acquisition only when its preconditions are proven.
 
+Composed queries are planned through independent source/facet boundaries. A boundary carries only the fields, predicate constraints, temporal bounds, metadata depth and ordering assumptions required by its physical uses. Reuse of one source/facet unions field requirements and combines branch predicates with OR; heterogeneous source/facet boundaries are not merged or cross-optimised without proof.
+
 The semantic property framework analyses resolved expressions and query relations independently of execution. It records required fields, resolved types, constantness, volatility, NULL sensitivity, earliest safe evaluation stage, metadata depth, source/facet dependencies, ordering and grouping requirements, cardinality effects and whether complete acquisition is required. These properties are planner inputs rather than optimiser rewrites.
 
 Internal knowledge states distinguish acquired scalar values, acquired SQL NULL, structurally unavailable fields and supported metadata that has not yet been acquired. The final state is never treated as SQL NULL. Seeded `RANDOM(seed)` is deterministic but row-dependent; unseeded `RANDOM()` remains volatile.

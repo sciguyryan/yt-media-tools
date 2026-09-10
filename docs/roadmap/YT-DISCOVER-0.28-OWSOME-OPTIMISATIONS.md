@@ -259,6 +259,14 @@ Each branch should determine:
 
 Do not push requirements across heterogeneous branches unless their semantics and schemas make that transformation provably equivalent.
 
+### Implementation
+
+0.28.6 introduces an explicit source-boundary plan for each unique `(physical source, logical facet)` request. Each boundary owns its required fields, staged pre-acquisition predicate, metadata requirements, temporal bounds, stable ordering declaration, acquisition strategy, cost classification, collection requirements and branch-emptiness proof. Logical UNION and CTE evaluation remain unchanged above this physical planning layer.
+
+When the same source/facet is used by more than one logical branch, physical field requirements are unioned and the pre-acquisition predicate is the OR of the branch predicates. This retains any row that could be needed by at least one use. If any reuse is unfiltered, no physical pre-acquisition predicate is inferred. Different facets of the same source remain separate boundaries and are never merged merely because their underlying channel identity matches.
+
+Capability-proven empty boundaries may be skipped before multi-source acquisition. Other per-boundary acquisition strategies are exposed by the planner but execution remains conservative where branch-local lowering would require additional orchestration. Outer CTE consumer requirements are not propagated into CTE producers in this phase; that belongs to 0.28.7.
+
 ## 0.28.7 - CTE Dependency Propagation
 
 ### Scope

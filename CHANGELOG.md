@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.28.6 - Source-Boundary Predicate and Requirement Planning
+
+- Build an independent physical planning boundary for every unique source/facet request in composed queries.
+- Keep required fields, metadata depth, predicate stages, temporal bounds, ordering assumptions, cost and branch-emptiness proofs scoped to the source/facet that owns them.
+- Union field requirements when the same source/facet is reused and combine its pre-acquisition predicates with OR so every logical use remains satisfiable.
+- Preserve distinct facets of the same physical source as separate acquisition identities.
+- Skip a multi-source acquisition branch only when source/facet capability proofs establish that every logical use of that request is empty.
+- Expose source-boundary plans through verbose and explain diagnostics while keeping logical UNION and CTE reconciliation unchanged.
+
 ## Discover 0.28.5 - Temporal Bound and Frontier Inference
 
 - Infer conservative lower and upper bounds for date and timestamp predicates across comparisons, BETWEEN, IN and Boolean composition.
