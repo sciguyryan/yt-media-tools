@@ -368,8 +368,9 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             )
         else:
             lines.append(
-                "           Source enumeration remains exhaustive; detailed metadata acquisition may stop in source-order batches."
+                "           Detailed metadata is acquired in source-order batches and may stop once the authoritative match target is satisfied."
             )
+            lines.append("           Source enumeration remains exhaustive.")
     else:
         lines.extend(
             [

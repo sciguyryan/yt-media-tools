@@ -102,7 +102,9 @@ def plan_limit_termination(
         return blocked("UNION composition requires complete branch results before global LIMIT can be applied")
     properties = analyse_query(query, source=source)
     if properties.requires_aggregation:
-        return blocked("aggregation or HAVING requires complete input groups before LIMIT can be applied")
+        return blocked(
+            "aggregation requires complete input groups before LIMIT can be applied; HAVING is evaluated only after those groups are complete"
+        )
     if query.order_by:
         return blocked("explicit ORDER BY requires complete result ordering before LIMIT can be applied")
     if query.distinct:
@@ -184,17 +186,11 @@ def assess_cost(
     limit_termination: LimitTerminationPlan | None = None,
 ) -> tuple[str, str]:
     """Classify the actual acquisition plan using explicit capability and LIMIT proofs."""
-    if limit_termination is not None and limit_termination.eligible:
-        if limit_termination.stops_enumeration:
-            return (
-                "low",
-                f"source enumeration may stop after {limit_termination.required_matches} authoritative match(es) satisfy OFFSET + LIMIT",
-            )
-        if limit_termination.stops_detailed_acquisition:
-            return (
-                "high",
-                "source enumeration remains exhaustive, but detailed metadata acquisition may stop once the proven OFFSET + LIMIT match target is satisfied",
-            )
+    if limit_termination is not None and limit_termination.eligible and limit_termination.stops_enumeration:
+        return (
+            "low",
+            f"source enumeration may stop after {limit_termination.required_matches} authoritative match(es) satisfy OFFSET + LIMIT",
+        )
     fields = required_query_fields(query)
     properties = analyse_query(query, source=source)
     detailed_only = sorted(field for field in fields if properties.field_capability(field).ytdlp_flat != EXACT)
@@ -210,6 +206,11 @@ def assess_cost(
         return (
             "moderate",
             "a safe source boundary limits enumeration and no authoritative detailed fields are required",
+        )
+    if limit_termination is not None and limit_termination.eligible and limit_termination.stops_detailed_acquisition:
+        return (
+            "high",
+            "source enumeration remains exhaustive, but detailed metadata acquisition may stop once the proven OFFSET + LIMIT match target is satisfied",
         )
     if source is not None and not detailed_only and selected_facet_capabilities(source).cheaply_enumerates_identities:
         return (
