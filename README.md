@@ -3,7 +3,7 @@
 `yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
 - `yt-discover.py` discovers, caches, queries and reports media metadata using the yt-sql query language.
-- `yt-download.py` 1.19.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
+- `yt-download.py` 1.19.1 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and optional output profiles.
 
 The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
 
@@ -21,6 +21,7 @@ defaults.json          Downloader parameter profiles
 profiles/              Downloader output profiles
 yt_discover_tests/     Discover test suite
 yt_downloader_tests/   Downloader test suite
+yt_media_tools_tests/  Shared internal-package test suite
 docs/                   Project documentation
 docs/DISCOVER-README.md     Discover documentation
 docs/DOWNLOADER-README.md   Downloader documentation
@@ -33,7 +34,7 @@ docs/roadmap/          Living Discover version-series roadmaps
 pytest.ini             Combined test discovery configuration
 ```
 
-The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained.
+The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained. Common low-level yt-dlp runtime mechanics are shared by both applications without merging their higher-level acquisition and download policies.
 
 ## Requirements
 
@@ -83,4 +84,4 @@ GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. 
 
 ## Future work
 
-The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Discover 0.27.x is the behaviour-preserving architectural refactor from the hardened 0.26.6 language baseline. Downloader 1.19.0 contains the current machine-interface foundation.
+The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Discover 0.27.x is the behaviour-preserving architectural refactor from the hardened 0.26.6 language baseline. Downloader 1.19.1 contains the current machine-interface foundation.

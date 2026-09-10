@@ -8,7 +8,7 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.19.0"
+    assert downloader.PROGRAM_VERSION == "1.19.1"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
@@ -44,7 +44,7 @@ def test_validate_resolution_rejects_invalid_values(downloader, value: str) -> N
 
 
 def test_dry_run_environment_does_not_require_yt_dlp_or_cookies(downloader, monkeypatch) -> None:
-    monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
+    monkeypatch.setattr(downloader, "resolve_executable", lambda *, dry_run: "yt-dlp")
     assert downloader.validate_environment(dry_run=True) == "yt-dlp"
 
 
@@ -75,7 +75,10 @@ def test_resolve_cookies_no_cookies_overrides_automatic_file(downloader, tmp_pat
 
 
 def test_normal_environment_requires_yt_dlp(downloader, monkeypatch) -> None:
-    monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
+    def fail_resolve(*, dry_run):
+        raise RuntimeError("yt-dlp was not found on PATH")
+
+    monkeypatch.setattr(downloader, "resolve_executable", fail_resolve)
     with pytest.raises(RuntimeError, match="yt-dlp was not found"):
         downloader.validate_environment(dry_run=False)
 

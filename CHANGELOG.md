@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.27.2 - Shared yt-dlp Runtime Extraction
+
+- Extract common yt-dlp executable resolution, version probing, cookie-file resolution, authentication argument emission and diagnostic command formatting into `yt_media_tools/ytdlp_runtime.py`.
+- Keep Discover metadata acquisition, lazy enumeration and acquisition telemetry component-owned while routing common runtime mechanics through the shared boundary.
+- Add deterministic shared-runtime coverage for executable discovery, version probing, cookie policy, browser-cookie arguments and shell-readable command formatting.
+
+## Downloader 1.19.1 - Shared Runtime
+
+- Reuse the shared yt-dlp runtime for executable resolution, version probing, cookie-file resolution, authentication argument emission and diagnostic command formatting.
+- Preserve Downloader's typed download policy, command planning, machine contracts and public compatibility wrappers while removing duplicated runtime mechanics.
+
 ## Discover 0.27.1 - Query Model Extraction
 
 - Extract the shared yt-sql AST, query/relation structures and deterministic query diagnostic type into `query_model.py` while preserving compatibility exports from `query.py`.

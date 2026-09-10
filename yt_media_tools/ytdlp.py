@@ -4,14 +4,18 @@ from __future__ import annotations
 
 import json
 import re
-import shlex
-import shutil
 import subprocess
 import sys
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
+
+from .ytdlp_runtime import (
+    append_authentication_options,
+    ensure_executable,
+    format_command,
+)
 
 
 DEFAULT_COOKIES_FILE = Path(__file__).resolve().parent.parent / "cookies.txt"
@@ -54,18 +58,22 @@ ProgressCallback = Callable[[str, AcquisitionStats, str | None], None]
 
 
 def shell_join(command: list[str]) -> str:
-    return shlex.join(command)
+    """Compatibility wrapper for the shared yt-dlp command formatter."""
+    return format_command(command)
 
 
 def ensure_ytdlp() -> None:
-    if shutil.which("yt-dlp") is None:
-        raise YtDlpError("yt-dlp was not found in PATH")
+    """Require yt-dlp while preserving Discover's public error type."""
+    try:
+        ensure_executable()
+    except RuntimeError as exc:
+        raise YtDlpError(str(exc)) from exc
 
 
 def build_metadata_command(
     source_url: str,
     *,
-    cookies_file: Path = DEFAULT_COOKIES_FILE,
+    cookies_file: Path | None = DEFAULT_COOKIES_FILE,
     extractor_args: str = DEFAULT_EXTRACTOR_ARGS,
     playlist_items: str | None = None,
     date: str | None = None,
@@ -82,8 +90,10 @@ def build_metadata_command(
         "--no-flat-playlist",
         "--dump-json",
     ]
-    if cookies_file.is_file():
-        command.extend(("--cookies", str(cookies_file)))
+    append_authentication_options(
+        command,
+        cookies_file=cookies_file if cookies_file is not None and cookies_file.is_file() else None,
+    )
     if extractor_args:
         command.extend(("--extractor-args", extractor_args))
     if date:
@@ -222,7 +232,7 @@ class EnumerationStats:
 def build_lazy_flat_command(
     source_url: str,
     *,
-    cookies_file: Path = DEFAULT_COOKIES_FILE,
+    cookies_file: Path | None = DEFAULT_COOKIES_FILE,
     extractor_args: str = DEFAULT_EXTRACTOR_ARGS,
     playlist_items: str | None = None,
 ) -> list[str]:
@@ -236,8 +246,10 @@ def build_lazy_flat_command(
         "--lazy-playlist",
         "--dump-json",
     ]
-    if cookies_file.is_file():
-        command.extend(("--cookies", str(cookies_file)))
+    append_authentication_options(
+        command,
+        cookies_file=cookies_file if cookies_file is not None and cookies_file.is_file() else None,
+    )
     combined_args = extractor_args.strip()
     approximate = "youtubetab:approximate_date"
     if combined_args:
@@ -254,7 +266,7 @@ def build_lazy_flat_command(
 def build_video_metadata_command(
     video_ids: list[str],
     *,
-    cookies_file: Path = DEFAULT_COOKIES_FILE,
+    cookies_file: Path | None = DEFAULT_COOKIES_FILE,
     extractor_args: str = DEFAULT_EXTRACTOR_ARGS,
 ) -> list[str]:
     """Build one yt-dlp command that fully extracts a known set of YouTube video IDs."""
@@ -266,8 +278,10 @@ def build_video_metadata_command(
         "--no-playlist",
         "--dump-json",
     ]
-    if cookies_file.is_file():
-        command.extend(("--cookies", str(cookies_file)))
+    append_authentication_options(
+        command,
+        cookies_file=cookies_file if cookies_file is not None and cookies_file.is_file() else None,
+    )
     if extractor_args:
         command.extend(("--extractor-args", extractor_args))
     command.extend(f"https://www.youtube.com/watch?v={video_id}" for video_id in video_ids)

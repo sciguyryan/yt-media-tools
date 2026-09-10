@@ -27,6 +27,8 @@ fixed with dedicated regression coverage.
     explicit.
 -   Keep extractor-specific behaviour behind source and capability
     abstractions.
+-   Share low-level yt-dlp runtime mechanics between Discover and Downloader
+    without sharing their higher-level execution policy.
 -   Preserve SQL-like three-valued NULL logic, temporal infinity, exact
     Unicode behaviour, deterministic ordering and RANDOM semantics.
 -   Add automated tests for every deterministic architectural seam that
@@ -137,7 +139,45 @@ Separate at least:
 -   Tests confirming source positions do not affect semantic equivalence
     where the current optimiser intentionally ignores them.
 
-## 0.27.2 - Parser and Formatter Separation
+## 0.27.2 - Shared yt-dlp Runtime Extraction
+
+**Status:** Complete.
+
+Discover and Downloader now share a narrow low-level yt-dlp runtime boundary for
+mechanics that should not be independently reimplemented by each application.
+Application-specific policy remains separate: Discover still owns metadata
+acquisition, enumeration, frontier handling and telemetry, while Downloader still
+owns its typed download plan and media acquisition policy.
+
+### Scope
+
+Extract common external-engine mechanics into shared implementation, including:
+
+-   yt-dlp executable resolution;
+-   optional version probing;
+-   explicit and script-local cookie-file resolution;
+-   yt-dlp cookie and browser-cookie argument emission;
+-   shell-readable diagnostic command formatting.
+
+### Architectural boundary
+
+The shared runtime must not become a universal yt-dlp command builder. Discover
+and Downloader continue to decide what yt-dlp should do. The common layer only
+owns how shared runtime concerns are represented and emitted.
+
+Discover-specific acquisition stopping, metadata interpretation and source/facet
+planning remain outside the shared layer. Downloader-specific format, archive,
+output, subtitle, live, retry and partial-media policy likewise remain outside it.
+
+### Testing
+
+-   Shared runtime tests cover executable discovery, version probing, cookie
+    resolution, browser-cookie emission and command formatting.
+-   Existing component tests continue to exercise compatibility wrappers and
+    component-owned command planning.
+-   No network access is required for the shared-runtime regression suite.
+
+## 0.27.3 - Parser and Formatter Separation
 
 ### Scope
 
@@ -178,7 +218,7 @@ Formatter responsibilities should include:
 -   Malformed CTE/UNION/source/facet cases.
 -   Unicode delimiter/lookalike and line-separator coverage.
 
-## 0.27.3 - Resolver and Evaluator Separation
+## 0.27.4 - Resolver and Evaluator Separation
 
 ### Scope
 
@@ -224,7 +264,7 @@ not reinterpret raw query text.
     fixture rows.
 -   Optimised versus unoptimised evaluation must remain identical.
 
-## 0.27.4 - Source, Facet and Capability Architecture
+## 0.27.5 - Source, Facet and Capability Architecture
 
 ### Scope
 
@@ -277,7 +317,7 @@ yt-sql semantics.
 -   Cross-facet cache/provenance isolation.
 -   Incompatible dynamic-field kind detection.
 
-## 0.27.5 - Planner and Optimiser Boundaries
+## 0.27.6 - Planner and Optimiser Boundaries
 
 ### Scope
 
@@ -324,7 +364,7 @@ optimiser/planner interfaces without changing their semantics.
 -   Tests that CLI options do not directly alter semantic optimiser
     nodes except through typed policy inputs.
 
-## 0.27.6 - Reforged Reconciliation
+## 0.27.7 - Reforged Reconciliation
 
 ### Scope
 

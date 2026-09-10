@@ -35,9 +35,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
+from yt_media_tools.ytdlp_runtime import (
+    append_authentication_options,
+    format_command as format_ytdlp_command,
+    probe_version,
+    resolve_cookie_file,
+    resolve_executable,
+)
+
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.19.0"
+PROGRAM_VERSION = "1.19.1"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROFILES_DIR = SCRIPT_DIR / "profiles"
@@ -3005,20 +3013,8 @@ def output_manifest_entries(records: Sequence[dict[str, str]], *, hash_outputs: 
 
 
 def yt_dlp_version(executable: str) -> str | None:
-    """Return the invoked yt-dlp version without making manifest creation depend on it."""
-    try:
-        completed = subprocess.run(
-            [executable, "--version"],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    except OSError:
-        return None
-    if completed.returncode != 0:
-        return None
-    version = completed.stdout.strip()
-    return version or None
+    """Return the invoked yt-dlp version through the shared runtime boundary."""
+    return probe_version(executable)
 
 
 def manifest_input_targets(input_source: InputSource) -> list[str] | None:
@@ -3091,31 +3087,12 @@ def write_run_manifest(path: Path, manifest: dict[str, object]) -> None:
 
 def validate_environment(*, dry_run: bool) -> str:
     """Validate external executable requirements and return the yt-dlp command name."""
-    executable = shutil.which("yt-dlp")
-    if executable is None:
-        if dry_run:
-            executable = "yt-dlp"
-        else:
-            raise RuntimeError("yt-dlp was not found on PATH")
-    return executable
+    return resolve_executable(dry_run=dry_run)
 
 
 def resolve_cookies(requested: Path | None, *, disabled: bool) -> Path | None:
-    """Resolve the cookie policy for one invocation.
-
-    Explicitly requested cookie files are validated strictly. Without an explicit
-    request, the script-local cookies.txt is used only when it exists.
-    """
-    if disabled:
-        return None
-    if requested is not None:
-        path = requested.expanduser()
-        if not path.is_file():
-            raise ValueError(f"cookies file not found: {path}")
-        return path
-    if COOKIES_FILE.is_file():
-        return COOKIES_FILE
-    return None
+    """Resolve Downloader's cookie-file policy through the shared runtime helper."""
+    return resolve_cookie_file(requested, default_file=COOKIES_FILE, disabled=disabled)
 
 
 def describe_cookie_source(settings: dict[str, object], cookies_file: Path | None) -> str:
@@ -3509,10 +3486,11 @@ def build_yt_dlp_command(
     for expression in policy.retry_sleep:
         command.extend(("--retry-sleep", expression))
 
-    if cookies_file is not None:
-        command.extend(("--cookies", str(cookies_file)))
-    elif cookies_from_browser is not None:
-        command.extend(("--cookies-from-browser", cookies_from_browser))
+    append_authentication_options(
+        command,
+        cookies_file=cookies_file,
+        cookies_from_browser=cookies_from_browser,
+    )
 
     if profile is not None:
         if profile.output is not None and not policy.partial_media:
@@ -3572,8 +3550,8 @@ def build_yt_dlp_command(
 
 
 def format_command(command: Sequence[str]) -> str:
-    """Return a shell-readable representation of a command for diagnostics."""
-    return shlex.join(command)
+    """Return the shared shell-readable representation used for diagnostics."""
+    return format_ytdlp_command(command)
 
 
 def run(command: Sequence[str], *, dry_run: bool) -> int:

@@ -101,21 +101,8 @@ def test_run_manifest_records_unknown_stdin_targets_without_consuming_input(down
     assert downloader.manifest_input_targets(source) is None
 
 
-def test_yt_dlp_version_is_optional_on_failure(downloader, monkeypatch) -> None:
-    monkeypatch.setattr(
-        downloader.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(returncode=1, stdout="", stderr="failure"),
-    )
-    assert downloader.yt_dlp_version("yt-dlp") is None
-
-
-def test_yt_dlp_version_strips_successful_output(downloader, monkeypatch) -> None:
-    monkeypatch.setattr(
-        downloader.subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="2026.09.01\n", stderr=""),
-    )
+def test_yt_dlp_version_delegates_to_shared_runtime(downloader, monkeypatch) -> None:
+    monkeypatch.setattr(downloader, "probe_version", lambda executable: "2026.09.01")
     assert downloader.yt_dlp_version("yt-dlp") == "2026.09.01"
 
 
@@ -190,7 +177,7 @@ def test_main_writes_hashed_manifest_from_simulated_after_move_event(downloader,
 
     assert result == 0
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["downloader"]["version"] == "1.19.0"
+    assert manifest["downloader"]["version"] == "1.19.1"
     assert manifest["yt_dlp"] == {"version": "2026.09.01", "exit_status": 0}
     assert manifest["run"] == {
         "started_at": "2026-09-09T10:00:00Z",

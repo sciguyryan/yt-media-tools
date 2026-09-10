@@ -70,6 +70,7 @@ from yt_media_tools.query import (
 from yt_media_tools.report import RunReport, write_report
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.tools import ToolRegistry, ToolStatus, check_tools, format_tool_check
+from yt_media_tools.ytdlp_runtime import resolve_cookie_file
 from yt_media_tools.youtubejs import (
     YouTubeJsError,
     enumerate_until_date_boundary as enumerate_youtubejs_until_date_boundary,
@@ -93,9 +94,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    cookies_file = args.cookies.expanduser() if args.cookies is not None else DEFAULT_COOKIES_FILE
-    if args.cookies is not None and not cookies_file.is_file():
-        parser.error(f"cookies file not found: {cookies_file}")
+    try:
+        cookies_file = resolve_cookie_file(args.cookies, default_file=DEFAULT_COOKIES_FILE)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if args.examples:
         print(EXAMPLES)

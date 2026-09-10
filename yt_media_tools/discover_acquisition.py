@@ -92,7 +92,7 @@ def _cached_or_refresh_metadata(
     video_ids: list[str],
     required_fields: set[str],
     verbose: int,
-    cookies_file: Path,
+    cookies_file: Path | None,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats]:
     """Reuse fresh source-scoped cache rows and refresh only stale or missing videos."""
     cached_by_id: dict[str, dict] = {}
@@ -180,7 +180,7 @@ def _limit_aware_cached_acquire(
     dates: DateContext,
     required_fields: set[str],
     verbose: int,
-    cookies_file: Path,
+    cookies_file: Path | None,
     batch_size: int = 25,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats, bool, int, int]:
     """Acquire source-order candidates in batches until LIMIT authoritative matches exist.
