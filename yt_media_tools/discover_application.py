@@ -68,6 +68,7 @@ from yt_media_tools.query import (
 )
 from yt_media_tools.report import RunReport, write_report
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
+from yt_media_tools.staged_predicates import rejects_at_enumeration
 from yt_media_tools.tools import ToolRegistry, ToolStatus, check_tools, format_tool_check
 from yt_media_tools.ytdlp_runtime import resolve_cookie_file
 from yt_media_tools.youtubejs import (
@@ -255,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
     date_context = DateContext(date_order=args.date_format)
     query_plan = plan_query(query, source=source, dates=date_context)
     metadata_requirements = query_plan.metadata_requirements
+    predicate_stages = query_plan.predicate_stages
     plan: AcquisitionPlan = query_plan.acquisition
     if multi_source:
         plan = AcquisitionPlan(
@@ -343,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.verbose:
         _verbose(True, f"Acquisition plan: {plan.mode} ({plan.reason}).")
         _verbose(True, f"Metadata requirements: {metadata_requirements.reason}.")
+        _verbose(True, f"Predicate stages: {predicate_stages.reason}.")
         if args.offline:
             _verbose(True, "Execution source: persistent metadata cache only; network acquisition is disabled.")
         elif plan.targeted:
@@ -594,9 +597,13 @@ def main(argv: list[str] | None = None) -> int:
                     continue
                 seen_ids.add(video_id)
                 observed_ids_for_cache.append(video_id)
-                # Lightweight evaluation is deliberately one-sided: a candidate is discarded
-                # only when exact values or conservative uncertainty intervals prove that the
-                # complete WHERE predicate is false. Unknown or approximate cases are retained.
+                # Authoritative enumeration-stage predicates run first. Missing keys remain
+                # not-acquired knowledge and therefore defer evaluation rather than becoming NULL.
+                if rejects_at_enumeration(predicate_stages, entry):
+                    lightweight_rejected += 1
+                    continue
+                # Approximate lightweight metadata may still provide a conservative one-sided
+                # proof that the complete predicate cannot match. Unknown cases are retained.
                 if safely_reject_lightweight(query.predicate, entry, date_context):
                     lightweight_rejected += 1
                     continue
@@ -720,6 +727,9 @@ def main(argv: list[str] | None = None) -> int:
                         continue
                     seen_ids.add(video_id)
                     observed_ids_for_cache.append(video_id)
+                    if rejects_at_enumeration(predicate_stages, entry):
+                        lightweight_rejected += 1
+                        continue
                     if safely_reject_lightweight(query.predicate, entry, date_context):
                         lightweight_rejected += 1
                         continue

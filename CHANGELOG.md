@@ -1,5 +1,13 @@
 # Changelog
 
+## Discover 0.28.4 - Staged Predicate Evaluation
+
+- Partition safe top-level `AND` predicate fragments into authoritative enumeration-stage and residual later-stage work.
+- Reject rows before detailed metadata acquisition only when acquired exact enumeration values prove a WHERE fragment cannot be TRUE.
+- Preserve missing enumeration values as not-acquired knowledge rather than interpreting them as SQL NULL.
+- Keep mixed `OR`, `NOT`, volatile and later-stage expressions intact unless the complete expression is safe at enumeration time.
+- Expose staged predicate requirements through human-readable and machine-readable explain output.
+
 ## Discover 0.28.3 - Field Requirement and Metadata Pruning
 
 - Partition physical query fields into authoritative enumeration and detailed-metadata requirements.

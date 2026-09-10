@@ -17,6 +17,7 @@ from .query_properties import (
 )
 from .source_capabilities import EXACT, selected_facet_capabilities
 from .source_model import SourceSpec
+from .staged_predicates import PredicateStagePlan, plan_predicate_stages
 
 
 # yt-dlp documents flat-playlist dates as approximate. Keep a generous boundary margin and
@@ -294,6 +295,7 @@ class QueryPlan:
     acquisition: AcquisitionPlan
     physical_request: PhysicalAcquisitionRequest
     metadata_requirements: MetadataRequirementPlan
+    predicate_stages: PredicateStagePlan
     limit_termination: LimitTerminationPlan
     cost_class: str
     cost_reason: str
@@ -310,6 +312,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     properties = analyse_query(query, source=source)
     facet = selected_facet_capabilities(source)
     metadata_requirements = plan_metadata_requirements(query, source=source)
+    predicate_stages = plan_predicate_stages(query, source=source)
     acquisition = plan_acquisition(
         query,
         source_kind=source.kind,
@@ -350,6 +353,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         acquisition,
         request,
         metadata_requirements,
+        predicate_stages,
         limit,
         cost_class,
         cost_reason,

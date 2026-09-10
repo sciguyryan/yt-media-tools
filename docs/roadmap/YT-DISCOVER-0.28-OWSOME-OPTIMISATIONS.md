@@ -172,7 +172,7 @@ The physical acquisition request exposes both partitions together with the predi
 
 Enumeration-only full-source execution does not use an incremental cache frontier, because doing so could combine freshly enumerated rows with older cached values for exact enumeration fields. It performs a complete lightweight enumeration instead.
 
-## 0.28.4 - Staged Predicate Evaluation
+## 0.28.4 - Staged Predicate Evaluation - Complete
 
 ### Scope
 
@@ -197,6 +197,14 @@ A missing value because it has not yet been acquired is an internal planning sta
 Where yt-dlp can reject entries or limit deeper extraction using filters that exactly match yt-sql semantics, translate eligible predicate fragments. Otherwise perform staged local filtering between acquisition levels.
 
 Never translate a predicate whose yt-dlp interpretation differs in NULL, date, string, regex or numeric semantics.
+
+### Implementation
+
+0.28.4 introduces an explicit predicate-stage plan. Safe top-level `AND` terms whose complete dependencies are deterministic and authoritative at enumeration time are separated from residual terms that require later metadata. Mixed `OR` and `NOT` expressions remain intact unless the complete expression is safe at enumeration time.
+
+Enumeration-stage execution rejects a candidate only when all required exact values for a staged term have actually been acquired and that term cannot evaluate TRUE. Missing dictionary fields remain not-acquired knowledge rather than becoming SQL NULL, while an explicitly acquired NULL retains normal three-valued WHERE semantics. Existing conservative proofs from approximate lightweight metadata remain available as an independent one-sided rejection path and are not promoted to authoritative evaluation.
+
+Human-readable and JSON explain output expose the enumeration and residual predicate fragments, their field dependencies and the reason for the selected stage split.
 
 ## 0.28.5 - Temporal Bound and Frontier Inference
 

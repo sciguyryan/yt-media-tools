@@ -28,6 +28,7 @@ from yt_media_tools.query import (
     query_physical_source_requests,
     resolve_query,
 )
+from yt_media_tools.staged_predicates import plan_predicate_stages
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats
 
@@ -201,6 +202,20 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"  Reason: {metadata_requirements.reason}",
         ]
     )
+    predicate_stages = plan_predicate_stages(query, source=source)
+    lines.extend(
+        [
+            "",
+            "Predicate stages",
+            "  Enumeration: "
+            + (" AND ".join(format_expression(term) for term in predicate_stages.enumeration_terms) or "none"),
+            "  Residual: "
+            + (" AND ".join(format_expression(term) for term in predicate_stages.residual_terms) or "none"),
+            "  Enumeration fields: " + (", ".join(sorted(predicate_stages.enumeration_fields)) or "none"),
+            "  Residual fields: " + (", ".join(sorted(predicate_stages.residual_fields)) or "none"),
+            f"  Reason: {predicate_stages.reason}",
+        ]
+    )
 
     plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
     if len(source_inputs) > 1:
@@ -360,6 +375,7 @@ def explain_user_query_json(
     dates = DateContext(date_order=date_format)
     required = sorted(required_query_fields(query))
     metadata_requirements = plan_metadata_requirements(query, source=source)
+    predicate_stages = plan_predicate_stages(query, source=source)
     plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
     if offline:
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
@@ -452,6 +468,13 @@ def explain_user_query_json(
             "predicate_detailed_fields": sorted(metadata_requirements.predicate_detailed_fields),
             "requires_detailed_metadata": metadata_requirements.requires_detailed_metadata,
             "reason": metadata_requirements.reason,
+        },
+        "predicate_stages": {
+            "enumeration_terms": [format_expression(term) for term in predicate_stages.enumeration_terms],
+            "residual_terms": [format_expression(term) for term in predicate_stages.residual_terms],
+            "enumeration_fields": sorted(predicate_stages.enumeration_fields),
+            "residual_fields": sorted(predicate_stages.residual_fields),
+            "reason": predicate_stages.reason,
         },
         "acquisition": {
             "strategy": plan.mode,
