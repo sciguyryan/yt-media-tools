@@ -523,7 +523,6 @@ The bundle includes `profiles/default` and `profiles/playlist`.
 
 `yt-discover.py` is responsible for discovery, metadata acquisition and yt-sql querying. `yt-download.py` is responsible for downloading the resulting IDs or URLs. Keeping discovery output on stdout and diagnostics on stderr allows the tools to compose safely in shell pipelines.
 
-
 ## Machine validation and capabilities
 
 Use `--validate-config [FILE]` to validate a complete parameter-profile file with the same runtime validation used for normal Downloader configuration. When FILE is omitted, Downloader validates the resolved defaults file. Successful validation emits a small JSON result suitable for scripts.
