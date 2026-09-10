@@ -26,6 +26,7 @@ from .query import (
     format_expression,
     format_scalar_expression,
 )
+from .optimizer_proofs import OptimisationProof, prove_expression_constant, prove_expression_deterministic
 from .query_semantics import same_field as _same_field
 from .query_semantics import semantic_key as _semantic_key
 
@@ -49,6 +50,7 @@ class OptimisationDecision:
     rule: str
     before: str
     after: str
+    proofs: tuple[OptimisationProof, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -77,7 +79,7 @@ def optimise_query(query: Query) -> OptimisationResult:
         cte_result = optimise_query(cte.query)
         optimised_ctes.append(replace(cte, query=cte_result.query))
         decisions.extend(
-            OptimisationDecision(f"cte-{cte.name}-{item.rule}", item.before, item.after)
+            OptimisationDecision(f"cte-{cte.name}-{item.rule}", item.before, item.after, item.proofs)
             for item in cte_result.decisions
         )
 
@@ -86,7 +88,7 @@ def optimise_query(query: Query) -> OptimisationResult:
         branch_result = optimise_query(operation.query)
         optimised_set_operations.append(replace(operation, query=branch_result.query))
         decisions.extend(
-            OptimisationDecision(f"union-{index}-{item.rule}", item.before, item.after)
+            OptimisationDecision(f"union-{index}-{item.rule}", item.before, item.after, item.proofs)
             for item in branch_result.decisions
         )
 
@@ -216,7 +218,7 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
             decisions.extend(arg_decisions)
         filter_predicate, filter_decisions = _optimise_predicate_fixed_point(expression.filter_predicate)
         decisions.extend(
-            OptimisationDecision(f"aggregate-filter-{decision.rule}", decision.before, decision.after)
+            OptimisationDecision(f"aggregate-filter-{decision.rule}", decision.before, decision.after, decision.proofs)
             for decision in filter_decisions
         )
         return replace(expression, args=tuple(args), filter_predicate=filter_predicate), decisions
@@ -246,6 +248,7 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
                         f"case-when-{decision.rule}",
                         decision.before,
                         decision.after,
+                        decision.proofs,
                     )
                 )
             result, result_decisions = _optimise_scalar_expression(branch.result)
@@ -277,7 +280,15 @@ def _literal_raw(value: Any) -> str:
 
 
 def _scalar_decision(rule: str, before: Any, after: Any) -> OptimisationDecision:
-    return OptimisationDecision(rule, format_scalar_expression(before), format_scalar_expression(after))
+    proof = prove_expression_constant(before)
+    if not proof.proven:
+        raise AssertionError(f"Constant-fold rule {rule} lacks a constant-expression proof")
+    return OptimisationDecision(
+        rule,
+        format_scalar_expression(before),
+        format_scalar_expression(after),
+        (proof,),
+    )
 
 
 def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:
@@ -371,9 +382,22 @@ def _deduplicate_terms(operator: str, terms: list[Any]) -> tuple[list[Any], list
     unique: list[Any] = []
     decisions: list[OptimisationDecision] = []
     for term in terms:
-        if any(_semantic_key(term) == _semantic_key(existing) for existing in unique):
-            decisions.append(_decision(f"deduplicate-{operator.casefold()}", Binary(operator, term, term), term))
-            continue
+        duplicate = next(
+            (existing for existing in unique if _semantic_key(term) == _semantic_key(existing)),
+            None,
+        )
+        if duplicate is not None:
+            proof = prove_expression_deterministic(term)
+            if proof.proven:
+                decisions.append(
+                    _decision(
+                        f"deduplicate-{operator.casefold()}",
+                        Binary(operator, term, duplicate),
+                        term,
+                        proofs=(proof,),
+                    )
+                )
+                continue
         unique.append(term)
     return unique, decisions
 
@@ -556,5 +580,11 @@ def _comparison_is_true(left: Any, operator: str, right: Any) -> bool:
     return False
 
 
-def _decision(rule: str, before: Any, after: Any) -> OptimisationDecision:
-    return OptimisationDecision(rule, format_expression(before), format_expression(after))
+def _decision(
+    rule: str,
+    before: Any,
+    after: Any,
+    *,
+    proofs: tuple[OptimisationProof, ...] = (),
+) -> OptimisationDecision:
+    return OptimisationDecision(rule, format_expression(before), format_expression(after), proofs)

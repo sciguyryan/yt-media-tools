@@ -84,7 +84,7 @@ metadata distinct. In particular, metadata that has not been acquired is not
 interpreted as SQL NULL. Seeded `RANDOM(seed)` is recorded as deterministic but
 row-dependent, while unseeded `RANDOM()` remains volatile.
 
-## 0.28.1 - Optimiser Proof and Safety Framework
+## 0.28.1 - Optimiser Proof and Safety Framework - Complete
 
 ### Scope
 
@@ -113,6 +113,16 @@ Never violate:
 -   source/facet identity;
 -   CTE scope/materialisation behaviour;
 -   set-operation semantics.
+
+### Implementation
+
+0.28.1 introduces a reusable proof layer with explicit proven and not-proven
+states, proof provenance and deterministic reasons. Constant folding and duplicate
+predicate elimination consume these proofs, and optimiser decisions retain them
+for later explain/diagnostic rendering. Syntactic equality alone is not sufficient
+to eliminate a volatile expression. Structural field unavailability is proven only
+from source/facet capability declarations; unknown or unacquired metadata remains
+unproven.
 
 ## 0.28.2 - Capability-Driven Predicate Simplification
 
@@ -498,3 +508,12 @@ point stale notes, duplicated TODOs and obsolete transitional wording
 should be removed.
 
 The canonical location for these programme documents is `docs/roadmap/`.
+
+### Runtime Boolean short-circuiting
+
+A later optimiser/execution pass should evaluate Boolean chains with SQL three-valued
+short-circuit semantics. `AND` may stop as soon as an operand is FALSE, while `OR`
+may stop as soon as an operand is TRUE. UNKNOWN must retain exact SQL three-valued
+behaviour. Equivalent safe behaviour should apply to HAVING where relevant. Predicate
+reordering is a separate optimisation and requires explicit volatility and semantic
+safety proofs.
