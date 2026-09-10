@@ -230,6 +230,14 @@ Where an extractor supports stable date-range options or equivalent yt-dlp contr
 
 Inferred query bounds and persisted acquisition frontiers must compose conservatively. A query-specific optimisation must never corrupt or overstate the reusable cache frontier.
 
+### Implementation
+
+0.28.5 introduces a typed temporal-bound plan for `upload_date`, `date`, `timestamp`, `release_timestamp` and `modified_timestamp`. Comparisons, non-negated `BETWEEN`, non-negated `IN`, `AND` and `OR` are analysed conservatively. `AND` retains the strongest compatible bounds, while `OR` retains only a weaker bound implied by every branch. `NOT`, negated range/membership predicates and unparseable temporal literals do not produce acquisition bounds.
+
+A proven lower `upload_date` or `date` bound becomes an ordered acquisition frontier only for channel video sources whose capability contract already permits the existing newest-first bounded scan. Strict date lower bounds advance the frontier by one day. Timestamp bounds and upper date bounds remain planner information until a backend capability can represent them with equivalent semantics.
+
+Query-specific bounded scans continue to be recorded only as observations and never establish complete source ordering, detailed coverage or a reusable cache frontier. Human-readable, JSON and verbose diagnostics expose the inferred interval independently from whether a physical acquisition frontier can use it.
+
 ## 0.28.6 - Source-Boundary Predicate and Requirement Planning
 
 ### Scope

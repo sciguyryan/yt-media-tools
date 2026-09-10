@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.28.5 - Temporal Bound and Frontier Inference
+
+- Infer conservative lower and upper bounds for date and timestamp predicates across comparisons, BETWEEN, IN and Boolean composition.
+- Use only bounds implied by every OR branch and combine AND constraints using the strongest proven interval.
+- Convert proven lower upload-date bounds into ordered acquisition frontiers only for source/facet contracts with suitable trustworthy ordering.
+- Keep timestamp and upper-bound inference visible to planning without pushing unsupported extractor filters.
+- Keep query-specific bounded observations separate from reusable complete cache/frontier state.
+- Expose inferred temporal intervals through verbose, human-readable explain and machine-readable explain output.
+
 ## Discover 0.28.4 - Staged Predicate Evaluation
 
 - Partition safe top-level `AND` predicate fragments into authoritative enumeration-stage and residual later-stage work.

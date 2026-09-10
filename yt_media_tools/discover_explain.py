@@ -29,6 +29,7 @@ from yt_media_tools.query import (
     resolve_query,
 )
 from yt_media_tools.staged_predicates import plan_predicate_stages
+from yt_media_tools.temporal_bounds import infer_temporal_bounds
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats
 
@@ -203,6 +204,7 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         ]
     )
     predicate_stages = plan_predicate_stages(query, source=source)
+    temporal_bounds = infer_temporal_bounds(query.predicate, dates)
     lines.extend(
         [
             "",
@@ -216,8 +218,31 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"  Reason: {predicate_stages.reason}",
         ]
     )
+    lines.extend(["", "Temporal bounds"])
+    if temporal_bounds.fields:
+        for item in temporal_bounds.fields:
+            lower = (
+                "none"
+                if item.lower is None
+                else ((">=" if item.lower.inclusive else ">") + " " + item.lower.value.isoformat())
+            )
+            upper = (
+                "none"
+                if item.upper is None
+                else (("<=" if item.upper.inclusive else "<") + " " + item.upper.value.isoformat())
+            )
+            lines.append(f"  {item.field}: lower {lower}; upper {upper}")
+    else:
+        lines.append("  none")
+    lines.append(f"  Reason: {temporal_bounds.reason}")
 
-    plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
+    plan = plan_acquisition(
+        query,
+        source_kind=source.kind,
+        tab=(source.facet or tab),
+        dates=dates,
+        temporal_bounds=temporal_bounds,
+    )
     if len(source_inputs) > 1:
         plan = AcquisitionPlan(
             "full",
@@ -376,7 +401,14 @@ def explain_user_query_json(
     required = sorted(required_query_fields(query))
     metadata_requirements = plan_metadata_requirements(query, source=source)
     predicate_stages = plan_predicate_stages(query, source=source)
-    plan = plan_acquisition(query, source_kind=source.kind, tab=(source.facet or tab), dates=dates)
+    temporal_bounds = infer_temporal_bounds(query.predicate, dates)
+    plan = plan_acquisition(
+        query,
+        source_kind=source.kind,
+        tab=(source.facet or tab),
+        dates=dates,
+        temporal_bounds=temporal_bounds,
+    )
     if offline:
         plan = AcquisitionPlan("offline-cache", "offline mode uses cached detailed metadata only")
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
@@ -475,6 +507,23 @@ def explain_user_query_json(
             "enumeration_fields": sorted(predicate_stages.enumeration_fields),
             "residual_fields": sorted(predicate_stages.residual_fields),
             "reason": predicate_stages.reason,
+        },
+        "temporal_bounds": {
+            "fields": [
+                {
+                    "field": item.field,
+                    "kind": item.kind,
+                    "lower": None
+                    if item.lower is None
+                    else {"value": item.lower.value.isoformat(), "inclusive": item.lower.inclusive},
+                    "upper": None
+                    if item.upper is None
+                    else {"value": item.upper.value.isoformat(), "inclusive": item.upper.inclusive},
+                    "contradictory": item.contradictory,
+                }
+                for item in temporal_bounds.fields
+            ],
+            "reason": temporal_bounds.reason,
         },
         "acquisition": {
             "strategy": plan.mode,

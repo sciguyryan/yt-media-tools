@@ -346,6 +346,23 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(True, f"Acquisition plan: {plan.mode} ({plan.reason}).")
         _verbose(True, f"Metadata requirements: {metadata_requirements.reason}.")
         _verbose(True, f"Predicate stages: {predicate_stages.reason}.")
+        if query_plan.temporal_bounds.fields:
+            temporal_summary = "; ".join(
+                f"{item.field} "
+                + (
+                    ("lower " + (">=" if item.lower.inclusive else ">") + " " + item.lower.value.isoformat())
+                    if item.lower is not None
+                    else "no lower bound"
+                )
+                + "; "
+                + (
+                    ("upper " + ("<=" if item.upper.inclusive else "<") + " " + item.upper.value.isoformat())
+                    if item.upper is not None
+                    else "no upper bound"
+                )
+                for item in query_plan.temporal_bounds.fields
+            )
+            _verbose(True, f"Temporal bounds: {temporal_summary}.")
         if args.offline:
             _verbose(True, "Execution source: persistent metadata cache only; network acquisition is disabled.")
         elif plan.targeted:

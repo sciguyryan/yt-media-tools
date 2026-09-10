@@ -47,15 +47,13 @@ Degenerate `BETWEEN x AND x` is rewritten to equality. `NOT BETWEEN x AND x` is 
 
 Typed temporal values and the `INFINITY()` and `-INFINITY()` sentinels participate in bound comparison only after semantic resolution.
 
+The acquisition planner separately infers typed date and timestamp intervals from comparisons, non-negated `BETWEEN`, non-negated `IN`, `AND` and `OR`. `AND` keeps the strongest proven interval while `OR` keeps only a weaker interval implied by every branch. A proven lower upload-date bound may become a bounded newest-first acquisition frontier only when the source/facet capability contract proves that ordered termination is safe.
+
 ### Deliberately not implemented
 
 Contradictory comparison sets are not collapsed to Boolean constants because NULL inputs can make the original expression UNKNOWN rather than FALSE.
 
 Cross-field algebra, transitive inference between unrelated metadata fields and reordering based on assumed evaluation cost are not performed.
-
-### Future candidates
-
-Temporal-bound inference may be expanded where the planner can use a proven universal bound for acquisition. More complete interval reasoning may also be useful, provided UNKNOWN semantics remain identical.
 
 ## `BETWEEN`, `IN`, `IS NULL` and text predicates
 

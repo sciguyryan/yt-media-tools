@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Any
-
-from .dates import DateContext, parse_date_literal
-from .query_model import Binary, Between, Field, InList, Literal, Query, Unary
+from .dates import DateContext
+from .query_model import Query
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .query_properties import (
     QueryProperties,
@@ -18,6 +16,7 @@ from .query_properties import (
 from .source_capabilities import EXACT, selected_facet_capabilities
 from .source_model import SourceSpec
 from .staged_predicates import PredicateStagePlan, plan_predicate_stages
+from .temporal_bounds import TemporalBoundPlan, infer_temporal_bounds, upload_date_frontier
 
 
 # yt-dlp documents flat-playlist dates as approximate. Keep a generous boundary margin and
@@ -109,62 +108,15 @@ def plan_limit_termination(query: Query) -> LimitTerminationPlan:
     )
 
 
-def _is_upload_date(field: Field) -> bool:
-    return field.name.casefold() in {"upload_date", "date"}
-
-
-def _literal_date(literal: Literal, context: DateContext) -> date | None:
-    if isinstance(literal.value, date):
-        return literal.value
-    try:
-        return parse_date_literal(str(literal.value), context)
-    except ValueError:
-        return None
-
-
-def _lower_bound(node: Any, context: DateContext) -> date | None:
-    """Return a date that the expression logically implies upload_date cannot precede.
-
-    None means no safe lower bound can be proven. The function is intentionally conservative.
-    """
-    if node is None or isinstance(node, Unary):
-        return None
-
-    if isinstance(node, Between) and _is_upload_date(node.field) and not node.negated:
-        return _literal_date(node.lower, context)
-
-    if isinstance(node, InList) and _is_upload_date(node.field) and not node.negated:
-        values = [_literal_date(item, context) for item in node.values]
-        if not values or any(item is None for item in values):
-            return None
-        return min(item for item in values if item is not None)
-
-    if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        left = _lower_bound(node.left, context)
-        right = _lower_bound(node.right, context)
-        if node.operator == "AND":
-            if left is None:
-                return right
-            if right is None:
-                return left
-            return max(left, right)
-        if left is None or right is None:
-            return None
-        return min(left, right)
-
-    if isinstance(node, Binary) and isinstance(node.left, Field) and _is_upload_date(node.left):
-        value = _literal_date(node.right, context)
-        if value is None:
-            return None
-        if node.operator in {">=", "="}:
-            return value
-        if node.operator == ">":
-            return value + timedelta(days=1)
-    return None
-
-
-def plan_acquisition(query: Query, *, source_kind: str, tab: str, dates: DateContext) -> AcquisitionPlan:
-    """Choose a bounded lazy scan only where source order and the predicate make it safe."""
+def plan_acquisition(
+    query: Query,
+    *,
+    source_kind: str,
+    tab: str,
+    dates: DateContext,
+    temporal_bounds: TemporalBoundPlan | None = None,
+) -> AcquisitionPlan:
+    """Choose an ordered temporal frontier only where source semantics prove it safe."""
     if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
         return AcquisitionPlan("full", "UNION composition is acquired conservatively per physical source")
     if source_kind != "channel":
@@ -172,13 +124,14 @@ def plan_acquisition(query: Query, *, source_kind: str, tab: str, dates: DateCon
     if tab != "videos":
         return AcquisitionPlan("full", f"the {tab!r} channel tab is not assumed to have safe upload-date ordering")
 
-    lower = _lower_bound(query.predicate, dates)
+    bounds = temporal_bounds or infer_temporal_bounds(query.predicate, dates)
+    lower = upload_date_frontier(bounds)
     if lower is None:
         return AcquisitionPlan("full", "the WHERE expression does not imply a safe lower upload-date bound")
 
     return AcquisitionPlan(
         "bounded-date",
-        "the query implies a lower upload-date bound on a newest-first channel feed",
+        "the query implies a proven lower upload-date frontier on a newest-first channel feed",
         lower_date_bound=lower,
         stop_before=lower - timedelta(days=APPROXIMATE_DATE_MARGIN_DAYS),
     )
@@ -296,6 +249,7 @@ class QueryPlan:
     physical_request: PhysicalAcquisitionRequest
     metadata_requirements: MetadataRequirementPlan
     predicate_stages: PredicateStagePlan
+    temporal_bounds: TemporalBoundPlan
     limit_termination: LimitTerminationPlan
     cost_class: str
     cost_reason: str
@@ -313,11 +267,13 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     facet = selected_facet_capabilities(source)
     metadata_requirements = plan_metadata_requirements(query, source=source)
     predicate_stages = plan_predicate_stages(query, source=source)
+    temporal_bounds = infer_temporal_bounds(query.predicate, dates)
     acquisition = plan_acquisition(
         query,
         source_kind=source.kind,
         tab=source.facet or "videos",
         dates=dates,
+        temporal_bounds=temporal_bounds,
     )
     # A bounded newest-first scan is valid only when the selected adapter explicitly
     # declares a stable collection and trustworthy source order.
@@ -354,6 +310,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         request,
         metadata_requirements,
         predicate_stages,
+        temporal_bounds,
         limit,
         cost_class,
         cost_reason,
