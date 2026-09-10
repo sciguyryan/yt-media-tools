@@ -8,7 +8,7 @@ import json
 import random
 import re
 from functools import lru_cache
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from datetime import date, datetime
 from typing import Any, Sequence
 
@@ -23,215 +23,33 @@ from .schema import FieldInfo, QuerySchema, raw_path_value
 from .units import load_default_unit_registry
 
 
-class QuerySyntaxError(ValueError):
-    """Raised when a query cannot be parsed or semantically resolved."""
-
-    def __init__(self, source: str, message: str, position: int = 0) -> None:
-        super().__init__(message)
-        self.source = source
-        self.message = message
-        self.position = max(0, min(position, len(source)))
-
-    def format(self) -> str:
-        line_start = self.source.rfind("\n", 0, self.position) + 1
-        line_end = self.source.find("\n", self.position)
-        if line_end < 0:
-            line_end = len(self.source)
-        line = self.source[line_start:line_end]
-        column = self.position - line_start
-        line_number = self.source.count("\n", 0, self.position) + 1
-        return f"{self.message} (line {line_number}, column {column + 1})\n  {line}\n  {' ' * column}^"
-
-
-@dataclass(frozen=True)
-class Token:
-    kind: str
-    text: str
-    position: int
-    value: Any = None
-
-
-@dataclass(frozen=True)
-class Field:
-    name: str
-    position: int = 0
-    kind: str | None = None
-
-
-@dataclass(frozen=True)
-class Literal:
-    value: Any
-    raw: str
-    position: int = 0
-    quoted: bool = False
-
-
-@dataclass(frozen=True)
-class Unary:
-    operator: str
-    operand: Any
-
-
-@dataclass(frozen=True)
-class Binary:
-    operator: str
-    left: Any
-    right: Any
-
-
-@dataclass(frozen=True)
-class Between:
-    field: Field
-    lower: Literal
-    upper: Literal
-    negated: bool = False
-
-
-@dataclass(frozen=True)
-class InList:
-    field: Field
-    values: tuple[Literal, ...]
-    negated: bool = False
-
-
-@dataclass(frozen=True)
-class IsNull:
-    field: Field
-    negated: bool = False
-
-
-@dataclass(frozen=True)
-class TextPredicate:
-    operator: str
-    field: Field
-    value: Literal
-    negated: bool = False
-
-
-@dataclass(frozen=True)
-class ScalarFunction:
-    name: str
-    args: tuple[Any, ...]
-    position: int = 0
-    kind: str | None = None
-
-
-@dataclass(frozen=True)
-class AggregateFunction:
-    """One SQL aggregate evaluated over the current group."""
-
-    name: str
-    args: tuple[Any, ...] = ()
-    count_star: bool = False
-    filter_predicate: Any | None = None
-    position: int = 0
-    kind: str | None = None
-
-
-@dataclass(frozen=True)
-class ScalarComparison:
-    """Comparison between scalar expressions, used by aggregate HAVING."""
-
-    operator: str
-    left: Any
-    right: Any
-
-
-@dataclass(frozen=True)
-class ScalarIsNull:
-    """NULL test over a scalar expression, used by aggregate HAVING."""
-
-    expression: Any
-    negated: bool = False
-
-
-@dataclass(frozen=True)
-class ScalarUnary:
-    operator: str
-    operand: Any
-    position: int = 0
-    kind: str | None = None
-
-
-@dataclass(frozen=True)
-class ScalarBinary:
-    operator: str
-    left: Any
-    right: Any
-    position: int = 0
-    kind: str | None = None
-
-
-@dataclass(frozen=True)
-class CaseWhen:
-    condition: Any
-    result: Any
-    position: int = 0
-
-
-@dataclass(frozen=True)
-class ScalarCase:
-    whens: tuple[CaseWhen, ...]
-    else_result: Any | None = None
-    position: int = 0
-    kind: str | None = None
-
-
-@dataclass(frozen=True)
-class OrderTerm:
-    field: str
-    descending: bool = False
-    position: int = 0
-    kind: str | None = None
-    expression: Any | None = None
-
-
-@dataclass(frozen=True)
-class SelectTerm:
-    field: str
-    alias: str | None = None
-    position: int = 0
-    kind: str | None = None
-    expression: Any | None = None
-
-    @property
-    def output_name(self) -> str:
-        return self.alias or self.field
-
-
-@dataclass(frozen=True)
-class CommonTableExpression:
-    """One non-recursive common table expression."""
-
-    name: str
-    query: "Query"
-    position: int = 0
-
-
-@dataclass(frozen=True)
-class SetOperation:
-    """One positional UNION or UNION ALL branch."""
-
-    query: "Query"
-    all: bool = False
-    position: int = 0
-
-
-@dataclass(frozen=True)
-class Query:
-    predicate: Any | None = None
-    order_by: tuple[OrderTerm, ...] = ()
-    limit: int | None = None
-    source: str = ""
-    select: tuple[SelectTerm, ...] = ()
-    from_source: str | None = None
-    distinct: bool = False
-    offset: int = 0
-    group_by: tuple[Any, ...] = ()
-    having: Any | None = None
-    ctes: tuple[CommonTableExpression, ...] = ()
-    set_operations: tuple[SetOperation, ...] = ()
-    from_facet: str | None = None
+from .query_model import (
+    AggregateFunction,
+    Between,
+    Binary,
+    CaseWhen,
+    CommonTableExpression,
+    Field,
+    InList,
+    IsNull,
+    Literal,
+    OrderTerm,
+    Query,
+    QuerySyntaxError,
+    ScalarBinary,
+    ScalarCase,
+    ScalarComparison,
+    ScalarFunction,
+    ScalarIsNull,
+    ScalarUnary,
+    SelectTerm,
+    SetOperation,
+    TextPredicate,
+    Token,
+    Unary,
+)
+from .query_values import comparison_values as _comparison_values
+from .query_values import hashable_group_value as _hashable_group_value
 
 
 _TOKEN_RE = re.compile(
@@ -2388,16 +2206,6 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
     return re.compile("".join(pieces), flags)
 
 
-_CASE_INSENSITIVE_ENUM_FIELDS = {"live_status", "availability"}
-
-
-def _comparison_values(field: Field, left: Any, right: Any) -> tuple[Any, Any]:
-    """Normalise comparison values where a field has explicit enum-like semantics."""
-    if field.name.casefold() in _CASE_INSENSITIVE_ENUM_FIELDS and isinstance(left, str) and isinstance(right, str):
-        return left.casefold(), right.casefold()
-    return left, right
-
-
 def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
     """Evaluate a resolved AST using SQL-like three-valued Boolean logic."""
     if node is None:
@@ -2479,14 +2287,6 @@ def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
             raise AssertionError(f"Unsupported text operator {node.operator}")
         return not result if node.negated else result
     raise AssertionError(f"Unsupported query node {node!r}")
-
-
-def _hashable_group_value(value: Any) -> Any:
-    if isinstance(value, dict):
-        return tuple((key, _hashable_group_value(item)) for key, item in value.items())
-    if isinstance(value, list):
-        return tuple(_hashable_group_value(item) for item in value)
-    return value
 
 
 def _apply_scalar_function_values(name: str, values: list[Any]) -> Any:

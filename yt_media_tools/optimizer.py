@@ -26,6 +26,8 @@ from .query import (
     format_expression,
     format_scalar_expression,
 )
+from .query_semantics import same_field as _same_field
+from .query_semantics import semantic_key as _semantic_key
 
 MAX_OPTIMISER_PASSES = 32
 _INVERTED_COMPARISON = {
@@ -500,82 +502,6 @@ def _dominant_comparison(operator: str, left: Any, right: Any) -> tuple[int, int
         return 1 - equality_index, equality_index
 
     return None
-
-
-def _semantic_key(node: Any) -> Any:
-    """Return an AST identity that excludes source positions and display-only metadata."""
-    if isinstance(node, ScalarUnary):
-        return ("scalar-unary", node.operator, _semantic_key(node.operand))
-    if isinstance(node, ScalarBinary):
-        return ("scalar-binary", node.operator, _semantic_key(node.left), _semantic_key(node.right))
-    if isinstance(node, ScalarComparison):
-        return ("scalar-comparison", node.operator, _semantic_key(node.left), _semantic_key(node.right))
-    if isinstance(node, ScalarIsNull):
-        return ("scalar-is-null", _semantic_key(node.expression), node.negated)
-    if isinstance(node, ScalarFunction):
-        return (
-            "scalar-function",
-            node.name,
-            tuple(_semantic_key(arg) for arg in node.args),
-            getattr(node, "kind", None),
-        )
-    if isinstance(node, AggregateFunction):
-        return (
-            "aggregate",
-            node.name,
-            tuple(_semantic_key(arg) for arg in node.args),
-            node.count_star,
-            _semantic_key(node.filter_predicate),
-            getattr(node, "kind", None),
-        )
-    if isinstance(node, ScalarCase):
-        return (
-            "scalar-case",
-            tuple((_semantic_key(branch.condition), _semantic_key(branch.result)) for branch in node.whens),
-            _semantic_key(node.else_result),
-            getattr(node, "kind", None),
-        )
-    if isinstance(node, Unary):
-        return ("unary", node.operator, _semantic_key(node.operand))
-    if isinstance(node, Binary):
-        return ("binary", node.operator, _semantic_key(node.left), _semantic_key(node.right))
-    if isinstance(node, Between):
-        return (
-            "between",
-            _semantic_key(node.field),
-            _semantic_key(node.lower),
-            _semantic_key(node.upper),
-            node.negated,
-        )
-    if isinstance(node, InList):
-        return ("in", _semantic_key(node.field), tuple(_semantic_key(item) for item in node.values), node.negated)
-    if isinstance(node, IsNull):
-        return ("is-null", _semantic_key(node.field), node.negated)
-    if isinstance(node, TextPredicate):
-        return ("text", node.operator, _semantic_key(node.field), _semantic_key(node.value), node.negated)
-    if hasattr(node, "name") and hasattr(node, "kind"):
-        return ("field", node.name.casefold(), node.kind)
-    if hasattr(node, "value") and hasattr(node, "quoted"):
-        return ("literal", _hashable_value(node.value), node.quoted)
-    return node
-
-
-def _hashable_value(value: Any) -> Any:
-    try:
-        hash(value)
-    except TypeError:
-        return repr(value)
-    return value
-
-
-def _same_field(left: Any, right: Any) -> bool:
-    """Compare resolved fields without treating source positions as semantic."""
-    return (
-        hasattr(left, "name")
-        and hasattr(right, "name")
-        and left.name.casefold() == right.name.casefold()
-        and getattr(left, "kind", None) == getattr(right, "kind", None)
-    )
 
 
 def _safe_compare(left: Any, right: Any) -> int | None:

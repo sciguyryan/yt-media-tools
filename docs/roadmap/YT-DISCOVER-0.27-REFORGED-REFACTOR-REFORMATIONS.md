@@ -91,6 +91,19 @@ substantial query, acquisition, provenance or formatting logic.
 
 ## 0.27.1 - Query Model Extraction
 
+**Status:** Complete.
+
+The shared AST, scalar/aggregate expression nodes, query/relation structures
+and query diagnostic type now live in `yt_media_tools/query_model.py`.
+Source-position-insensitive semantic identity and field equivalence live in
+`yt_media_tools/query_semantics.py`, while shared scalar comparison/grouping
+value helpers live in `yt_media_tools/query_values.py`. Existing type
+descriptors remain in `schema.py`, while temporal context and typed infinity
+sentinels remain in `dates.py`; those were already separated model boundaries
+and were not duplicated merely to satisfy the refactor. `query.py` continues
+to re-export its established model names so callers are not forced through a
+compatibility break during 0.27.x.
+
 ### Scope
 
 Extract the core syntactic and resolved query data structures from

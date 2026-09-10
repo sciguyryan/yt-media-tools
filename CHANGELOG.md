@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.27.1 - Query Model Extraction
+
+- Extract the shared yt-sql AST, query/relation structures and deterministic query diagnostic type into `query_model.py` while preserving compatibility exports from `query.py`.
+- Extract source-position-insensitive semantic identity and resolved-field equivalence into `query_semantics.py`, plus common comparison/grouping value helpers into `query_values.py`.
+- Preserve existing schema/type descriptors in `schema.py` and temporal context/infinity values in `dates.py` as the stable model boundaries already established before this phase.
+- Add deterministic regression coverage for model re-exports, exact structural equality and semantic identity across expressions, CASE, aggregates and composed queries.
+
 ## Discover 0.27.0 - Application Shell Extraction
 
 - Reduce `yt-discover.py` to a thin executable bootstrap.
