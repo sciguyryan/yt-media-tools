@@ -179,6 +179,12 @@ output, subtitle, live, retry and partial-media policy likewise remain outside i
 
 ## 0.27.3 - Parser and Formatter Separation
 
+**Status:** Complete.
+
+Text parsing and canonical query formatting now have focused module boundaries while
+`query.py` preserves the established public imports used by callers and tests. Semantic
+resolution and local execution remain in `query.py` for the following refactor phase.
+
 ### Scope
 
 Separate text parsing from canonical query formatting.

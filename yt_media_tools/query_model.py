@@ -220,3 +220,4 @@ class Query:
     ctes: tuple[CommonTableExpression, ...] = ()
     set_operations: tuple[SetOperation, ...] = ()
     from_facet: str | None = None
+

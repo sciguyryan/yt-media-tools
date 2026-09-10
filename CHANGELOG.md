@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover 0.27.3 - Parser and Formatter Separation
+
+- Extract lexical analysis, recursive-descent parsing and parser-owned literal syntax into `yt_media_tools/query_parser.py` while preserving compatibility exports from `query.py`.
+- Extract canonical scalar, predicate and complete-query rendering into `yt_media_tools/query_formatter.py` without changing yt-sql formatting semantics.
+- Keep semantic resolution and local evaluation outside the parser and formatter modules for the following refactor phase.
+- Add architectural regression coverage for compatibility exports, parser/formatter ownership, canonical round trips and deterministic syntax diagnostics.
+
 ## Discover 0.27.2 - Shared yt-dlp Runtime Extraction
 
 - Extract common yt-dlp executable resolution, version probing, cookie-file resolution, authentication argument emission and diagnostic command formatting into `yt_media_tools/ytdlp_runtime.py`.

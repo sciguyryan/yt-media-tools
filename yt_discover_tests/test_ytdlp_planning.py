@@ -1,11 +1,6 @@
 from pathlib import Path
 
-from yt_media_tools.ytdlp import (
-    DEFAULT_COOKIES_FILE,
-    build_lazy_flat_command,
-    build_metadata_command,
-    build_video_metadata_command,
-)
+from yt_media_tools.ytdlp import DEFAULT_COOKIES_FILE, build_lazy_flat_command, build_metadata_command, build_video_metadata_command
 
 
 def test_lazy_flat_command_processes_playlist_incrementally():

@@ -33,7 +33,11 @@ def test_cli_logic_lives_in_discover_cli_module() -> None:
 
 def test_parser_retains_established_programme_surface() -> None:
     parser = discover_cli.build_parser()
-    option_strings = {option for action in parser._actions for option in action.option_strings}
+    option_strings = {
+        option
+        for action in parser._actions
+        for option in action.option_strings
+    }
     assert {
         "--examples",
         "--check-query",

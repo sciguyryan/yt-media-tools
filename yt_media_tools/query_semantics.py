@@ -10,27 +10,10 @@ from __future__ import annotations
 from typing import Any
 
 from .query_model import (
-    AggregateFunction,
-    Between,
-    Binary,
-    CaseWhen,
-    CommonTableExpression,
-    Field,
-    InList,
-    IsNull,
-    Literal,
-    OrderTerm,
-    Query,
-    ScalarBinary,
-    ScalarCase,
-    ScalarComparison,
-    ScalarFunction,
-    ScalarIsNull,
-    ScalarUnary,
-    SelectTerm,
-    SetOperation,
-    TextPredicate,
-    Unary,
+    AggregateFunction, Between, Binary, CaseWhen, CommonTableExpression, Field,
+    InList, IsNull, Literal, OrderTerm, Query, ScalarBinary, ScalarCase,
+    ScalarComparison, ScalarFunction, ScalarIsNull, ScalarUnary, SelectTerm,
+    SetOperation, TextPredicate, Unary,
 )
 
 
@@ -48,12 +31,8 @@ def semantic_key(node: Any) -> Any:
         return ("scalar-function", node.name, tuple(semantic_key(arg) for arg in node.args), node.kind)
     if isinstance(node, AggregateFunction):
         return (
-            "aggregate",
-            node.name,
-            tuple(semantic_key(arg) for arg in node.args),
-            node.count_star,
-            semantic_key(node.filter_predicate),
-            node.kind,
+            "aggregate", node.name, tuple(semantic_key(arg) for arg in node.args),
+            node.count_star, semantic_key(node.filter_predicate), node.kind,
         )
     if isinstance(node, CaseWhen):
         return ("case-when", semantic_key(node.condition), semantic_key(node.result))
@@ -90,19 +69,11 @@ def semantic_key(node: Any) -> Any:
         return ("set-operation", node.all, semantic_key(node.query))
     if isinstance(node, Query):
         return (
-            "query",
-            semantic_key(node.predicate),
-            tuple(semantic_key(term) for term in node.order_by),
-            node.limit,
-            tuple(semantic_key(term) for term in node.select),
-            node.from_source,
-            node.distinct,
-            node.offset,
-            tuple(semantic_key(item) for item in node.group_by),
-            semantic_key(node.having),
-            tuple(semantic_key(cte) for cte in node.ctes),
-            tuple(semantic_key(operation) for operation in node.set_operations),
-            node.from_facet,
+            "query", semantic_key(node.predicate), tuple(semantic_key(term) for term in node.order_by),
+            node.limit, tuple(semantic_key(term) for term in node.select), node.from_source,
+            node.distinct, node.offset, tuple(semantic_key(item) for item in node.group_by),
+            semantic_key(node.having), tuple(semantic_key(cte) for cte in node.ctes),
+            tuple(semantic_key(operation) for operation in node.set_operations), node.from_facet,
         )
     return node
 
