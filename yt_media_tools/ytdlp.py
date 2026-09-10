@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 
-DEFAULT_COOKIES_FILE = Path("/mnt/storage/Storage/Scripts/cookies.txt")
+DEFAULT_COOKIES_FILE = Path(__file__).resolve().parent.parent / "cookies.txt"
 DEFAULT_EXTRACTOR_ARGS = "youtube:player-client=default,-android_sdkless"
 
 

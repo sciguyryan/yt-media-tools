@@ -6,6 +6,7 @@
 - Extract source-position-insensitive semantic identity and resolved-field equivalence into `query_semantics.py`, plus common comparison/grouping value helpers into `query_values.py`.
 - Preserve existing schema/type descriptors in `schema.py` and temporal context/infinity values in `dates.py` as the stable model boundaries already established before this phase.
 - Add deterministic regression coverage for model re-exports, exact structural equality and semantic identity across expressions, CASE, aggregates and composed queries.
+- Replace Discover's machine-specific default cookie path with optional script-local `cookies.txt` discovery and add `--cookies FILE` as an explicit per-run override.
 
 ## Discover 0.27.0 - Application Shell Extraction
 

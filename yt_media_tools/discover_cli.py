@@ -295,6 +295,10 @@ Examples:
   Keep expert yt-dlp acquisition prefilters where useful:
     yt-discover.py @example --after 20240101 --match-filter "duration > 600"
 
+  If cookies.txt exists beside yt-discover.py, it is supplied to yt-dlp automatically.
+  Override that optional default with an explicit cookie file when needed:
+    yt-discover.py --cookies /path/to/cookies.txt @example --where "duration < 1h"
+
   Cache-native and offline queries
   --------------------------------
   Query cached detailed metadata without contacting YouTube or refreshing stale fields:
@@ -494,6 +498,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("auto", "full"),
         default="auto",
         help="choose query-planned acquisition or force exhaustive yt-dlp extraction (default: auto)",
+    )
+    compatibility.add_argument(
+        "--cookies",
+        type=Path,
+        metavar="FILE",
+        help="use cookies from FILE; if omitted, cookies.txt beside yt-discover.py is used when present",
     )
 
     selection = parser.add_argument_group("selection and ordering")

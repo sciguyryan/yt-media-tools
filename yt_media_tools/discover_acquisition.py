@@ -7,6 +7,7 @@ keeping remote acquisition concerns out of the executable entry point.
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 from yt_media_tools.cache import CacheStats, MetadataCache
 from yt_media_tools.dates import DateContext
@@ -91,6 +92,7 @@ def _cached_or_refresh_metadata(
     video_ids: list[str],
     required_fields: set[str],
     verbose: int,
+    cookies_file: Path,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats]:
     """Reuse fresh source-scoped cache rows and refresh only stale or missing videos."""
     cached_by_id: dict[str, dict] = {}
@@ -116,7 +118,7 @@ def _cached_or_refresh_metadata(
     fetched_records: list[dict] = []
     acquisition_stats = AcquisitionStats()
     if refresh_ids:
-        command = build_video_metadata_command(refresh_ids)
+        command = build_video_metadata_command(refresh_ids, cookies_file=cookies_file)
         _verbose(verbose, f"Refreshing detailed metadata for {len(refresh_ids)} cache-miss/stale videos...")
         if verbose >= 2:
             _verbose(verbose, f"Candidate yt-dlp command: {shell_join(command)}")
@@ -178,6 +180,7 @@ def _limit_aware_cached_acquire(
     dates: DateContext,
     required_fields: set[str],
     verbose: int,
+    cookies_file: Path,
     batch_size: int = 25,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats, bool, int, int]:
     """Acquire source-order candidates in batches until LIMIT authoritative matches exist.
@@ -206,6 +209,7 @@ def _limit_aware_cached_acquire(
             video_ids=batch_ids,
             required_fields=required_fields,
             verbose=verbose,
+            cookies_file=cookies_file,
         )
         _merge_acquisition_stats(acquisition, batch_acquisition)
         cache_stats = _merge_cache_stats(cache_stats, batch_cache)

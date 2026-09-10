@@ -1,4 +1,11 @@
-from yt_media_tools.ytdlp import build_lazy_flat_command, build_video_metadata_command
+from pathlib import Path
+
+from yt_media_tools.ytdlp import (
+    DEFAULT_COOKIES_FILE,
+    build_lazy_flat_command,
+    build_metadata_command,
+    build_video_metadata_command,
+)
 
 
 def test_lazy_flat_command_processes_playlist_incrementally():
@@ -16,6 +23,27 @@ def test_candidate_command_extracts_only_supplied_video_ids():
         "https://www.youtube.com/watch?v=abc123XYZ00",
         "https://www.youtube.com/watch?v=def456XYZ00",
     ]
+
+
+def test_default_cookie_path_is_script_local():
+    project_root = Path(__file__).resolve().parent.parent
+    assert DEFAULT_COOKIES_FILE == project_root / "cookies.txt"
+
+
+def test_metadata_command_uses_explicit_cookie_override(tmp_path):
+    cookies = tmp_path / "cookies.txt"
+    cookies.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+    command = build_metadata_command("https://www.youtube.com/@example/videos", cookies_file=cookies)
+    cookie_index = command.index("--cookies")
+    assert command[cookie_index + 1] == str(cookies)
+
+
+def test_metadata_command_omits_missing_cookie_file(tmp_path):
+    command = build_metadata_command(
+        "https://www.youtube.com/@example/videos",
+        cookies_file=tmp_path / "missing-cookies.txt",
+    )
+    assert "--cookies" not in command
 
 
 def test_load_metadata_tolerates_fully_accounted_inaccessible_only_batch(tmp_path, monkeypatch) -> None:

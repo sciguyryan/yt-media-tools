@@ -75,6 +75,7 @@ from yt_media_tools.youtubejs import (
     enumerate_until_date_boundary as enumerate_youtubejs_until_date_boundary,
 )
 from yt_media_tools.ytdlp import (
+    DEFAULT_COOKIES_FILE,
     AcquisitionStats,
     EnumerationStats,
     YtDlpError,
@@ -91,6 +92,10 @@ from yt_media_tools.ytdlp import (
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    cookies_file = args.cookies.expanduser() if args.cookies is not None else DEFAULT_COOKIES_FILE
+    if args.cookies is not None and not cookies_file.is_file():
+        parser.error(f"cookies file not found: {cookies_file}")
 
     if args.examples:
         print(EXAMPLES)
@@ -325,6 +330,7 @@ def main(argv: list[str] | None = None) -> int:
 
     command = build_metadata_command(
         source.canonical_url,
+        cookies_file=cookies_file,
         playlist_items=args.items,
         date=args.date,
         date_after=args.after,
@@ -365,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"backend: requested={requested_backend} selected={selected_backend}")
             if fallback_reason:
                 print(f"fallback: {fallback_reason}")
-            flat_command = build_lazy_flat_command(source.canonical_url)
+            flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
             if selected_backend == "youtubejs":
                 print("enumeration: YouTube.js continuation-driven channel videos feed")
             else:
@@ -379,6 +385,7 @@ def main(argv: list[str] | None = None) -> int:
                 for source_value, source_spec in zip(source_values, sources, strict=True):
                     source_command = build_metadata_command(
                         source_spec.canonical_url,
+                        cookies_file=cookies_file,
                         playlist_items=args.items,
                         date=args.date,
                         date_after=args.after,
@@ -441,6 +448,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 source_command = build_metadata_command(
                     source_spec.canonical_url,
+                    cookies_file=cookies_file,
                     playlist_items=args.items,
                     date=args.date,
                     date_after=args.after,
@@ -501,7 +509,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"Offline query loaded {len(cached_items)} cached detailed records and made no YouTube requests.",
             )
         elif plan.targeted:
-            flat_command = build_lazy_flat_command(source.canonical_url)
+            flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
             _verbose(args.verbose, f"Enumerating lightweight channel metadata lazily with {selected_backend}...")
             try:
                 if selected_backend == "youtubejs":
@@ -599,6 +607,7 @@ def main(argv: list[str] | None = None) -> int:
                             dates=date_context,
                             required_fields=required_query_fields(query),
                             verbose=args.verbose,
+                            cookies_file=cookies_file,
                         )
                     else:
                         raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
@@ -607,6 +616,7 @@ def main(argv: list[str] | None = None) -> int:
                             video_ids=candidate_ids,
                             required_fields=required_query_fields(query),
                             verbose=args.verbose,
+                            cookies_file=cookies_file,
                         )
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)
@@ -622,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
                 and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
             )
             if cache_first_full:
-                flat_command = build_lazy_flat_command(source.canonical_url)
+                flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
                 if args.verbose >= 2:
                     _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
                 prior_order = metadata_cache.source_entry_ids(source.canonical_url)
@@ -722,6 +732,7 @@ def main(argv: list[str] | None = None) -> int:
                             dates=date_context,
                             required_fields=required_query_fields(query),
                             verbose=args.verbose,
+                            cookies_file=cookies_file,
                         )
                     else:
                         raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
@@ -730,6 +741,7 @@ def main(argv: list[str] | None = None) -> int:
                             video_ids=candidate_ids,
                             required_fields=required_query_fields(query),
                             verbose=args.verbose,
+                            cookies_file=cookies_file,
                         )
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)

@@ -19,6 +19,12 @@ def test_executable_is_a_thin_application_shell() -> None:
     assert discover_application.main is not None
 
 
+def test_cookie_override_is_parsed_as_path() -> None:
+    parser = discover_cli.build_parser()
+    args = parser.parse_args(["--cookies", "/tmp/example-cookies.txt", "@example"])
+    assert args.cookies == Path("/tmp/example-cookies.txt")
+
+
 def test_cli_logic_lives_in_discover_cli_module() -> None:
     assert discover_cli.build_parser.__module__ == "yt_media_tools.discover_cli"
     assert discover_cli.parse_user_query.__module__ == "yt_media_tools.discover_cli"

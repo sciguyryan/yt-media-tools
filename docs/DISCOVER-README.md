@@ -662,6 +662,13 @@ Verbose mode reports source resolution, the yt-dlp command, acquisition progress
 
 Existing acquisition controls remain available, including `--items`, `--date`, `--after`, `--before`, `--match-filter`, `--exclude-live`, `--exclude-upcoming`, and downloader-archive exclusion. These are kept separate from the local query language where they represent yt-dlp acquisition policy rather than metadata query semantics.
 
+If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to yt-dlp automatically. The file is optional. Use `--cookies FILE` to override the script-local default for a run. An explicitly selected cookie file must exist.
+
+```bash
+./yt-discover.py --cookies /path/to/cookies.txt \
+  --tab videos "FROM @channel WHERE upload_date >= TODAY()-30d"
+```
+
 ## Live progress and acquisition reports
 
 Long channel or playlist scans can take time because yt-discover acquires full metadata before applying operations such as ORDER BY. Use `-v` for periodic acquisition counts and important inaccessible/skipped entries on standard error. Use `-vv` to additionally report every successfully acquired entry. Query results remain on standard output, so both modes are safe in pipelines.
