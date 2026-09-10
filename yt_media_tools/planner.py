@@ -48,68 +48,102 @@ class AcquisitionPlan:
 
 @dataclass(frozen=True)
 class LimitTerminationPlan:
-    """Proof that LIMIT may stop detailed acquisition without changing results."""
+    """Proof describing the earliest safe stage at which LIMIT may stop source work."""
 
     eligible: bool
     reason: str
     limit: int | None = None
+    required_matches: int = 0
+    mode: str = "none"
+
+    @property
+    def stops_enumeration(self) -> bool:
+        """Return whether the proof can terminate lightweight source enumeration."""
+        return self.mode == "enumeration-match"
+
+    @property
+    def stops_detailed_acquisition(self) -> bool:
+        """Return whether authoritative detailed acquisition may terminate early."""
+        return self.mode == "detailed-match"
 
 
-def plan_limit_termination(query: Query) -> LimitTerminationPlan:
-    """Return whether source-order streaming may stop after LIMIT matching rows.
+def plan_limit_termination(
+    query: Query,
+    *,
+    source: SourceSpec | None = None,
+    predicate_stages: PredicateStagePlan | None = None,
+) -> LimitTerminationPlan:
+    """Return the earliest stage where OFFSET + LIMIT is proven complete.
 
-    This implementation is intentionally narrow. With no explicit ORDER BY,
-    yt-discover preserves source order, so once OFFSET + LIMIT authoritative matches
-    have been observed no later row can enter the requested result slice. Dynamic
-    fields are deferred because their types cannot be proven before detailed metadata
-    is observed.
+    A source-order slice is safe only when later rows cannot change the requested
+    result prefix. Barriers that can reorder, collapse, combine or globally evaluate
+    rows therefore disable early termination. Volatile expressions also disable the
+    optimisation because avoiding evaluation of later rows can change observable
+    volatile values elsewhere in the query.
+
+    When the complete query can be decided from authoritative lightweight metadata,
+    enumeration itself may stop once OFFSET + LIMIT matching rows are proven. yt-dlp
+    positional item ranges are not treated as final-row limits because source entries
+    may be skipped or unavailable. Otherwise the detailed-metadata path may stop after
+    enough authoritative matches, but source enumeration remains exhaustive.
     """
     if query.limit is None:
         return LimitTerminationPlan(False, "the query has no LIMIT")
+    required_matches = query.offset + query.limit
+
+    def blocked(reason: str) -> LimitTerminationPlan:
+        return LimitTerminationPlan(False, reason, query.limit, required_matches)
+
     if query.ctes:
-        return LimitTerminationPlan(
-            False,
-            "CTE materialisation may filter, reorder or reshape source rows before LIMIT; early termination is not yet proven safe",
-            query.limit,
+        return blocked(
+            "CTE materialisation may filter, reorder or reshape source rows before LIMIT; no source-prefix proof is available"
         )
     if query.set_operations:
-        return LimitTerminationPlan(
-            False,
-            "UNION composition requires complete branch results before global LIMIT can be applied",
-            query.limit,
-        )
-    properties = analyse_query(query)
+        return blocked("UNION composition requires complete branch results before global LIMIT can be applied")
+    properties = analyse_query(query, source=source)
     if properties.requires_aggregation:
-        return LimitTerminationPlan(
-            False,
-            "aggregation requires complete input groups before LIMIT can be applied",
-            query.limit,
-        )
+        return blocked("aggregation or HAVING requires complete input groups before LIMIT can be applied")
     if query.order_by:
-        return LimitTerminationPlan(
-            False, "explicit ORDER BY requires complete result ordering before LIMIT can be applied", query.limit
-        )
+        return blocked("explicit ORDER BY requires complete result ordering before LIMIT can be applied")
     if query.distinct:
-        return LimitTerminationPlan(
-            False,
-            "DISTINCT may discard earlier duplicate projections, so complete duplicate resolution is required",
-            query.limit,
+        return blocked(
+            "DISTINCT may discard earlier duplicate projections, so complete duplicate resolution is required"
         )
-    dynamic = properties.dynamic_fields
-    if dynamic:
-        return LimitTerminationPlan(
-            False,
-            "dynamic fields require post-acquisition schema resolution: " + ", ".join(dynamic),
-            query.limit,
+    if properties.has_volatile_expressions:
+        return blocked("volatile expressions may change observable evaluation behaviour if later rows are skipped")
+    if properties.dynamic_fields:
+        return blocked(
+            "dynamic fields require post-acquisition schema resolution: " + ", ".join(properties.dynamic_fields)
         )
-    required_matches = query.offset + query.limit
+    stages = predicate_stages
+    if source is not None and stages is None:
+        stages = plan_predicate_stages(query, source=source)
+    lightweight_complete = properties.metadata_depth != METADATA_DETAILED
+    if source is not None:
+        lightweight_complete = (
+            lightweight_complete and selected_facet_capabilities(source).cheaply_enumerates_identities
+        )
+    if (
+        lightweight_complete
+        and stages is not None
+        and not stages.requires_residual_evaluation
+        and "source_index" not in stages.enumeration_fields
+    ):
+        return LimitTerminationPlan(
+            True,
+            "the complete WHERE predicate and projection are authoritative during lightweight enumeration, so local enumeration may stop after "
+            + f"{required_matches} emitted matching row(s) satisfy OFFSET + LIMIT; yt-dlp positional item ranges are not used because skipped source entries need not correspond to final rows",
+            query.limit,
+            required_matches,
+            "enumeration-match",
+        )
     return LimitTerminationPlan(
         True,
-        (
-            "source order is the final result order, so acquisition may stop after "
-            f"{required_matches} authoritative match(es) satisfy OFFSET + LIMIT"
-        ),
+        "source order is the final result order, so detailed acquisition may stop after "
+        + f"{required_matches} authoritative match(es) satisfy OFFSET + LIMIT; source enumeration remains exhaustive",
         query.limit,
+        required_matches,
+        "detailed-match",
     )
 
 
@@ -142,8 +176,25 @@ def plan_acquisition(
     )
 
 
-def assess_cost(query: Query, plan: AcquisitionPlan, *, source: SourceSpec | None = None) -> tuple[str, str]:
-    """Classify the actual acquisition plan using the explicit capability model."""
+def assess_cost(
+    query: Query,
+    plan: AcquisitionPlan,
+    *,
+    source: SourceSpec | None = None,
+    limit_termination: LimitTerminationPlan | None = None,
+) -> tuple[str, str]:
+    """Classify the actual acquisition plan using explicit capability and LIMIT proofs."""
+    if limit_termination is not None and limit_termination.eligible:
+        if limit_termination.stops_enumeration:
+            return (
+                "low",
+                f"source enumeration may stop after {limit_termination.required_matches} authoritative match(es) satisfy OFFSET + LIMIT",
+            )
+        if limit_termination.stops_detailed_acquisition:
+            return (
+                "high",
+                "source enumeration remains exhaustive, but detailed metadata acquisition may stop once the proven OFFSET + LIMIT match target is satisfied",
+            )
     fields = required_query_fields(query)
     properties = analyse_query(query, source=source)
     detailed_only = sorted(field for field in fields if properties.field_capability(field).ytdlp_flat != EXACT)
@@ -505,13 +556,11 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
             "skip",
             "source/facet capabilities prove the WHERE predicate cannot evaluate TRUE",
         )
-    limit = plan_limit_termination(query)
-    if boundary_override is not None:
-        cost_class, cost_reason = boundary_override.cost_class, boundary_override.cost_reason
-    elif eliminated:
+    limit = plan_limit_termination(query, source=source, predicate_stages=predicate_stages)
+    if eliminated:
         cost_class, cost_reason = "none", "the source branch is proven empty before acquisition"
     else:
-        cost_class, cost_reason = assess_cost(query, acquisition, source=source)
+        cost_class, cost_reason = assess_cost(query, acquisition, source=source, limit_termination=limit)
     request = PhysicalAcquisitionRequest(
         source=source,
         required_fields=physical_required_fields,

@@ -51,6 +51,7 @@ class RunReport:
     frontier_confirmed: bool = False
     frontier_new_entries: int = 0
     limit_termination_eligible: bool = False
+    limit_termination_mode: str = "none"
     limit_terminated: bool = False
     limit_batches: int = 0
     limit_candidates_examined: int = 0
@@ -179,12 +180,12 @@ def format_report(report: RunReport) -> str:
             lines.append("  Full source enumeration executed: yes")
 
     if report.limit is not None:
-        lines.append(
-            f"  LIMIT-aware detailed acquisition eligible: {'yes' if report.limit_termination_eligible else 'no'}"
-        )
+        lines.append(f"  LIMIT-aware acquisition eligible: {'yes' if report.limit_termination_eligible else 'no'}")
         if report.limit_termination_eligible:
-            lines.append(f"  LIMIT terminated detailed acquisition early: {'yes' if report.limit_terminated else 'no'}")
-            lines.append(f"  LIMIT acquisition batches: {report.limit_batches}")
+            lines.append(f"  LIMIT termination mode: {report.limit_termination_mode}")
+            lines.append(f"  LIMIT terminated acquisition early: {'yes' if report.limit_terminated else 'no'}")
+            if report.limit_termination_mode == "detailed-match":
+                lines.append(f"  LIMIT detailed-acquisition batches: {report.limit_batches}")
             lines.append(f"  LIMIT candidates examined: {report.limit_candidates_examined}")
 
     lines.extend(

@@ -136,18 +136,18 @@ Use `--explain` to inspect applicable rewrites. JSON explain output records them
 
 ## LIMIT-aware execution optimisation
 
-yt-discover implements proof-based LIMIT-aware acquisition termination. When a query has `LIMIT`, preserves source order by omitting `ORDER BY`, and uses only statically known fields, yt-discover acquires detailed metadata in source-order batches and stops once enough authoritative matches have been observed. With no `OFFSET` this is `LIMIT` matches; with `OFFSET`, it is `OFFSET + LIMIT` matches so the skipped prefix and requested output are both proven complete. Later source rows cannot displace those matches from the final source-order slice, so the optimisation is exact rather than heuristic.
+yt-discover implements proof-based LIMIT-aware acquisition termination. The planner uses `OFFSET + LIMIT` as the authoritative match target. When the complete predicate and selected output are authoritative in lightweight metadata, source enumeration itself can stop after enough emitted matching rows. Queries that require detailed metadata still enumerate the source conservatively, but detailed extraction may stop once the same target is satisfied.
 
 ```bash
 ./yt-discover.py --tab videos \
   "SELECT id FROM @whatdamath WHERE duration < 1h LIMIT 25" -v
 ```
 
-Queries with an explicit `ORDER BY` remain exhaustive because a later row may still outrank an earlier match. `DISTINCT`, aggregation, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields are excluded from early termination because their types are resolved only after detailed metadata exists. Archive exclusion disables the optimisation because archived rows are removed after acquisition and could otherwise cause an unsafe early stop. Offline queries do not need the optimisation because they perform no network metadata acquisition.
+Queries with an explicit `ORDER BY` remain exhaustive because a later row may still outrank an earlier match. `DISTINCT`, aggregation/HAVING, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields and volatile expressions such as unseeded `RANDOM()` are excluded. Archive exclusion disables the optimisation because archived rows are removed after acquisition. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
 
-`--explain` and JSON explain now state whether LIMIT-aware acquisition is eligible and why. `--explain-analyze` and `--report` record whether detailed acquisition actually stopped early, how many source-order batches ran, and how many candidates were examined. When acquisition stops after LIMIT is satisfied, result statistics explicitly mark the observed match count as a lower bound rather than pretending the unexamined tail has been counted.
+`--explain` and JSON explain state whether LIMIT-aware acquisition is eligible, the selected termination mode and the authoritative match target. `--explain-analyze` and `--report` record whether source enumeration or detailed acquisition actually stopped early and how many candidates were examined. When acquisition stops after LIMIT is satisfied, result statistics explicitly mark the observed match count as a lower bound rather than pretending the unexamined tail has been counted.
 
-The batch size is intentionally conservative and implementation-defined. LIMIT therefore bounds detailed acquisition work without promising exactly N metadata requests. Source enumeration and the D8 frontier remain independent: a query may avoid most detailed extraction even when the source itself still requires a complete or frontier-confirming lightweight scan.
+Detailed-acquisition batch size remains implementation-defined. LIMIT bounds work without promising exactly N metadata requests. Source enumeration and the incremental frontier remain independent for queries whose final predicate or projection still requires detailed metadata.
 
 ## Incremental source frontier and safe append
 

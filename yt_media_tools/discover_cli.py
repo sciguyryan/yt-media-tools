@@ -197,9 +197,11 @@ Examples:
 
   Missing ORDER BY values are always placed last. BETWEEN is inclusive.
 
-  LIMIT can stop detailed metadata acquisition early when source order is the final
-  result order. This is exact for queries without ORDER BY:
+  LIMIT can stop acquisition early when source order is the final result order. Queries decided entirely from authoritative lightweight metadata may stop source enumeration; queries needing detailed metadata may stop detailed extraction after enough final matches:
+    yt-discover.py "SELECT id FROM @example LIMIT 25" -v
     yt-discover.py "SELECT id FROM @example WHERE duration < 1h LIMIT 25" -v
+
+  OFFSET raises the proof target to OFFSET + LIMIT. yt-dlp positional item ranges are not treated as final-row limits because unavailable source entries may be skipped.
 
   An explicit ORDER BY may require later rows to be considered, so those LIMIT queries
   remain exhaustive unless a future planner rule can prove an ordering-specific shortcut:

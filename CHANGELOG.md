@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.28.8 - Safe LIMIT/OFFSET Early Termination
+
+- Formalise LIMIT/OFFSET early termination as a stage-aware proof with an explicit `OFFSET + LIMIT` authoritative match target.
+- Stop lightweight source enumeration when the complete filter and selected output are authoritative at enumeration time.
+- Preserve source-order detailed-acquisition termination for queries that still require authoritative detailed metadata.
+- Reject early termination across explicit ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, dynamic fields and volatile expressions unless a dedicated proof exists.
+- Avoid lowering final-row limits to yt-dlp positional item ranges because skipped or unavailable source entries can break positional equivalence.
+- Expose the selected LIMIT termination mode through explain, explain-analyse, verbose execution and run reports.
+
 ## Discover 0.28.7 - CTE Dependency Propagation
 
 - Propagate downstream CTE output requirements backwards through non-recursive CTE chains before physical metadata acquisition is planned.

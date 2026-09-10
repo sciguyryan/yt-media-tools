@@ -337,13 +337,16 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
                 "                Lightweight rejection is available for entries observed during lightweight enumeration; cached historical entries are evaluated authoritatively.",
             ]
         )
-    limit_plan = plan_limit_termination(query)
+    limit_plan = plan_limit_termination(query, source=source, predicate_stages=predicate_stages)
     if len(source_inputs) > 1 and limit_plan.eligible:
         limit_plan = type(limit_plan)(
             False,
             "multi-source UNION requires complete branch acquisition before global LIMIT",
             limit_plan.limit,
+            limit_plan.required_matches,
         )
+    if not offline:
+        cost_class, cost_reason = assess_cost(query, plan, source=source, limit_termination=limit_plan)
     if query.limit is None:
         lines.append("  [not applicable] LIMIT-aware acquisition termination: query has no LIMIT.")
     elif offline:
@@ -354,10 +357,19 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         lines.extend(
             [
                 "  [active] LIMIT-aware acquisition termination",
+                f"           Mode: {limit_plan.mode}",
+                f"           Required authoritative matches: {limit_plan.required_matches}",
                 f"           {limit_plan.reason}.",
-                "           Detailed metadata is acquired in source-order batches and may stop once LIMIT authoritative matches exist.",
             ]
         )
+        if limit_plan.stops_enumeration:
+            lines.append(
+                "           Lightweight source enumeration itself may stop once the final source-order slice is proven."
+            )
+        else:
+            lines.append(
+                "           Source enumeration remains exhaustive; detailed metadata acquisition may stop in source-order batches."
+            )
     else:
         lines.extend(
             [
@@ -455,6 +467,16 @@ def explain_user_query_json(
         query, requests=source_requests, sources=tuple(explained_sources), dates=dates
     )
     cte_dependencies = plan_cte_dependencies(query)
+    limit_plan = plan_limit_termination(query, source=source, predicate_stages=predicate_stages)
+    if len(source_inputs) > 1 and limit_plan.eligible:
+        limit_plan = type(limit_plan)(
+            False,
+            "multi-source UNION requires complete branch acquisition before global LIMIT",
+            limit_plan.limit,
+            limit_plan.required_matches,
+        )
+    if not offline:
+        cost_class, cost_reason = assess_cost(query, plan, source=source, limit_termination=limit_plan)
 
     try:
         resolved_for_optimiser = resolve_query(query, QuerySchema(()), dates)
@@ -650,13 +672,19 @@ def explain_user_query_json(
         "limit_aware_termination": {
             "applicable": query.limit is not None,
             "implemented": True,
-            "eligible": (False if offline else plan_limit_termination(query).eligible),
-            "reason": (
-                "offline execution performs no metadata acquisition"
-                if offline
-                else plan_limit_termination(query).reason
+            "eligible": (False if offline else limit_plan.eligible),
+            "reason": ("offline execution performs no metadata acquisition" if offline else limit_plan.reason),
+            "mode": ("none" if offline else limit_plan.mode),
+            "required_matches": limit_plan.required_matches,
+            "stops_source_enumeration": (False if offline else limit_plan.stops_enumeration),
+            "stops_detailed_acquisition": (False if offline else limit_plan.stops_detailed_acquisition),
+            "backend_range_lowered": False,
+            "backend_range_reason": (
+                "yt-dlp positional item ranges are not equivalent to final rows when source entries may be skipped or unavailable"
+                if limit_plan.eligible
+                else "no eligible LIMIT termination proof is available"
             ),
-            "scope": "source-order detailed metadata acquisition",
+            "scope": "source-order acquisition",
         },
         "cost": {"class": cost_class, "reason": cost_reason},
         "temporal_context": {
@@ -692,6 +720,7 @@ def _explain_analyze_payload(
     frontier_confirmed: bool = False,
     frontier_new_entries: int = 0,
     limit_termination_eligible: bool = False,
+    limit_termination_mode: str = "none",
     limit_terminated: bool = False,
     limit_batches: int = 0,
     limit_candidates_examined: int = 0,
@@ -719,6 +748,7 @@ def _explain_analyze_payload(
             },
             "limit_termination": {
                 "eligible": limit_termination_eligible,
+                "mode": limit_termination_mode,
                 "terminated_early": limit_terminated,
                 "batches": limit_batches,
                 "candidates_examined": limit_candidates_examined,

@@ -240,11 +240,11 @@ Future `NULLS FIRST` and `NULLS LAST` syntax will require its own optimisation n
 
 No local AST rewrites currently change `DISTINCT`, `LIMIT` or `OFFSET`.
 
-Discover does implement a separate proof-based acquisition optimisation for eligible `LIMIT` queries. When source order is preserved, no explicit ordering can allow later rows to displace earlier matches, required fields are statically known and other safety conditions hold, acquisition may stop once enough authoritative matches have been observed. A query without OFFSET requires `LIMIT` matches; a query with OFFSET requires exactly `OFFSET + LIMIT` matches before acquisition can stop, so the skipped prefix and requested result slice are both complete.
+Discover implements a stage-aware proof-based acquisition optimisation for eligible `LIMIT` queries. The planner computes `OFFSET + LIMIT` as the authoritative match target and records the earliest safe termination stage. If the complete predicate and projection are authoritative in lightweight metadata, source enumeration itself may stop after enough emitted matching rows. If detailed metadata is still required, source enumeration remains exhaustive but detailed acquisition may stop after the same authoritative target.
 
 ### Deliberately not implemented
 
-`LIMIT` is not pushed through arbitrary ordering, DISTINCT, aggregation, CTE materialisation, UNION composition, dynamic raw fields or archive exclusion. These cases can change which rows survive or how they are ordered.
+`LIMIT` is not pushed through arbitrary ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, dynamic raw fields, volatile expressions or archive exclusion. These cases can change which rows survive, how they are ordered, or which evaluations remain observable. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
 
 ### Future candidates
 

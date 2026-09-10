@@ -206,7 +206,7 @@ Enumeration-stage execution rejects a candidate only when all required exact val
 
 Human-readable and JSON explain output expose the enumeration and residual predicate fragments, their field dependencies and the reason for the selected stage split.
 
-## 0.28.5 - Temporal Bound and Frontier Inference
+## 0.28.5 - Temporal Bound and Frontier Inference - Complete
 
 ### Scope
 
@@ -238,7 +238,7 @@ A proven lower `upload_date` or `date` bound becomes an ordered acquisition fron
 
 Query-specific bounded scans continue to be recorded only as observations and never establish complete source ordering, detailed coverage or a reusable cache frontier. Human-readable, JSON and verbose diagnostics expose the inferred interval independently from whether a physical acquisition frontier can use it.
 
-## 0.28.6 - Source-Boundary Predicate and Requirement Planning
+## 0.28.6 - Source-Boundary Predicate and Requirement Planning - Complete
 
 ### Scope
 
@@ -267,7 +267,7 @@ When the same source/facet is used by more than one logical branch, physical fie
 
 Capability-proven empty boundaries may be skipped before multi-source acquisition. Other per-boundary acquisition strategies are exposed by the planner but execution remains conservative where branch-local lowering would require additional orchestration. Outer CTE consumer requirements are not propagated into CTE producers in this phase; that belongs to 0.28.7.
 
-## 0.28.7 - CTE Dependency Propagation
+## 0.28.7 - CTE Dependency Propagation - Complete
 
 ### Scope
 
@@ -330,6 +330,14 @@ The proof must account for:
 Where yt-dlp exposes playlist/end/range controls that exactly represent the proven acquisition bound, use them. Otherwise stop local iteration once enough final rows are proven.
 
 The planner must not confuse "request N entries" with "need N final rows" when filters can remove rows.
+
+### Implementation
+
+0.28.8 formalises LIMIT/OFFSET termination as a stage-aware proof. The planner records `OFFSET + LIMIT` as the authoritative match target and distinguishes lightweight-enumeration termination from detailed-metadata termination.
+
+Explicit ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, dynamic fields and volatile expressions remain proof barriers. When the complete predicate and projection are authoritative in lightweight metadata, lazy enumeration may stop after enough emitted matching rows. Otherwise source enumeration remains exhaustive and only detailed acquisition may stop early.
+
+yt-dlp positional item ranges are not used as final-row limits because skipped or unavailable source positions need not correspond to emitted query rows. Explain, explain-analyse and run reports expose the selected termination mode.
 
 ## 0.28.9 - Static Relation and Branch Simplification
 

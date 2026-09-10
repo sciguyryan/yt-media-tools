@@ -96,3 +96,15 @@ def rejects_at_enumeration(plan: PredicateStagePlan, record: dict[str, Any]) -> 
         if evaluate(term, record) is not True:
             return True
     return False
+
+
+def matches_at_enumeration(plan: PredicateStagePlan, record: dict[str, Any]) -> bool:
+    """Return True only when lightweight metadata proves the complete WHERE predicate TRUE."""
+    if plan.requires_residual_evaluation:
+        return False
+    for term, fields in zip(plan.enumeration_terms, plan.enumeration_term_fields, strict=True):
+        if any(field not in record for field in fields):
+            return False
+        if evaluate(term, record) is not True:
+            return False
+    return True

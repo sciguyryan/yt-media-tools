@@ -516,3 +516,95 @@ def enumerate_until_known_overlap(
     if return_code not in (0, -15) and not stats.stopped_on_frontier:
         raise YtDlpError(f"yt-dlp flat enumeration exited with status {return_code}")
     return entries, stats
+
+
+def enumerate_until_match_limit(
+    command: list[str],
+    *,
+    required_matches: int,
+    matches: Callable[[dict[str, Any]], bool],
+    progress: ProgressCallback | None = None,
+) -> tuple[list[dict[str, Any]], EnumerationStats]:
+    """Enumerate lazily until authoritative lightweight rows satisfy OFFSET + LIMIT."""
+    ensure_ytdlp()
+    try:
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+        )
+    except OSError as exc:
+        raise YtDlpError(f"could not run yt-dlp: {exc}") from exc
+    assert process.stdout is not None
+    assert process.stderr is not None
+    entries: list[dict[str, Any]] = []
+    stats = EnumerationStats()
+    matched = 0
+    terminated = False
+
+    def read_stderr() -> None:
+        for raw_line in process.stderr:
+            sys.stderr.write(raw_line)
+            sys.stderr.flush()
+            line = raw_line.rstrip("\n")
+            if line.startswith("ERROR:"):
+                stats.acquisition.error_lines += 1
+            match = _YOUTUBE_ERROR_RE.search(line)
+            if match:
+                video_id, message = match.groups()
+                stats.acquisition.identified_error_lines += 1
+                category = _classify_youtube_error(message)
+                if stats.acquisition.record_skip(video_id, category) and progress is not None:
+                    progress("skipped", stats.acquisition, f"{video_id} ({category})")
+
+    stderr_thread = threading.Thread(
+        target=read_stderr,
+        name="yt-discover-ytdlp-limit-stderr",
+        daemon=True,
+    )
+    stderr_thread.start()
+    try:
+        for line_number, line in enumerate(process.stdout, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as exc:
+                process.kill()
+                process.wait()
+                stderr_thread.join(timeout=1)
+                raise YtDlpError(f"yt-dlp emitted invalid flat JSON on output line {line_number}: {exc.msg}") from exc
+            if not isinstance(value, dict):
+                continue
+            entries.append(value)
+            stats.enumerated += 1
+            stats.acquisition.available += 1
+            if progress is not None:
+                progress(
+                    "enumerated",
+                    stats.acquisition,
+                    str(value.get("id") or f"entry {stats.enumerated}"),
+                )
+            if matches(value):
+                matched += 1
+                if matched >= required_matches:
+                    stats.stopped_early = True
+                    terminated = True
+                    process.terminate()
+                    break
+    finally:
+        if terminated:
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        else:
+            process.wait()
+        stderr_thread.join()
+    return entries, stats

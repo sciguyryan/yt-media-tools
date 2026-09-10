@@ -69,7 +69,7 @@ from yt_media_tools.query import (
 )
 from yt_media_tools.report import RunReport, write_report
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
-from yt_media_tools.staged_predicates import rejects_at_enumeration
+from yt_media_tools.staged_predicates import matches_at_enumeration, rejects_at_enumeration
 from yt_media_tools.tools import ToolRegistry, ToolStatus, check_tools, format_tool_check
 from yt_media_tools.ytdlp_runtime import resolve_cookie_file
 from yt_media_tools.youtubejs import (
@@ -84,6 +84,7 @@ from yt_media_tools.ytdlp import (
     build_lazy_flat_command,
     build_metadata_command,
     enumerate_all_flat,
+    enumerate_until_match_limit,
     enumerate_until_date_boundary,
     enumerate_until_known_overlap,
     load_metadata,
@@ -305,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.offline:
         cost_class, cost_reason = "local", "no network acquisition is permitted; only cached records are evaluated"
     else:
-        cost_class, cost_reason = assess_cost(query, plan, source=source)
+        cost_class, cost_reason = assess_cost(query, plan, source=source, limit_termination=limit_plan)
     if not args.offline and not args.dry_run and args.acquisition != "full" and cost_class == "very-high":
         if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
             warning = (
@@ -749,15 +750,28 @@ def main(argv: list[str] | None = None) -> int:
                 flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
                 _verbose(args.verbose, "Enumerating authoritative lightweight metadata without detailed extraction...")
                 try:
-                    flat_entries, enumeration_stats = enumerate_all_flat(
-                        flat_command,
-                        progress=_enumeration_progress(
-                            args.verbose,
-                            context="Full lightweight enumeration",
-                            warn_threshold=args.warn_source_size,
-                            acquisition_observability=True,
+                    progress = _enumeration_progress(
+                        args.verbose,
+                        context=(
+                            "LIMIT-bounded lightweight enumeration"
+                            if limit_plan.eligible and limit_plan.stops_enumeration
+                            else "Full lightweight enumeration"
                         ),
+                        warn_threshold=args.warn_source_size,
+                        acquisition_observability=True,
                     )
+                    if limit_plan.eligible and limit_plan.mode == "enumeration-match":
+                        flat_entries, enumeration_stats = enumerate_until_match_limit(
+                            flat_command,
+                            required_matches=limit_plan.required_matches,
+                            matches=lambda entry: matches_at_enumeration(predicate_stages, entry),
+                            progress=progress,
+                        )
+                        limit_terminated = enumeration_stats.stopped_early
+                        limit_candidates_examined = enumeration_stats.enumerated
+                        limit_batches = 1 if enumeration_stats.enumerated else 0
+                    else:
+                        flat_entries, enumeration_stats = enumerate_all_flat(flat_command, progress=progress)
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)
                     return 1
@@ -953,14 +967,20 @@ def main(argv: list[str] | None = None) -> int:
         )
     if limit_plan.eligible and not args.offline:
         if limit_terminated:
+            if limit_plan.stops_enumeration:
+                _verbose(
+                    args.verbose,
+                    f"LIMIT-aware source enumeration stopped after {limit_candidates_examined} candidate(s); {limit_plan.required_matches} authoritative match(es) were sufficient for OFFSET + LIMIT in source order.",
+                )
+            else:
+                _verbose(
+                    args.verbose,
+                    f"LIMIT-aware detailed acquisition stopped after {limit_candidates_examined} candidate(s) in {limit_batches} batch(es); {limit_plan.required_matches} authoritative match(es) were sufficient for OFFSET + LIMIT in source order.",
+                )
+        elif limit_batches and limit_plan.stops_detailed_acquisition:
             _verbose(
                 args.verbose,
-                f"LIMIT-aware detailed acquisition stopped after {limit_candidates_examined} candidate(s) in {limit_batches} batch(es); {query.offset + query.limit} authoritative match(es) were sufficient for OFFSET + LIMIT in source order.",
-            )
-        elif limit_batches:
-            _verbose(
-                args.verbose,
-                f"LIMIT-aware detailed acquisition examined all {limit_candidates_examined} candidate(s); fewer than {query.offset + query.limit} authoritative matches were available for OFFSET + LIMIT.",
+                f"LIMIT-aware detailed acquisition examined all {limit_candidates_examined} candidate(s); fewer than {limit_plan.required_matches} authoritative matches were available for OFFSET + LIMIT.",
             )
     if metadata_cache is not None and not multi_source:
         _verbose(
@@ -1333,6 +1353,7 @@ def main(argv: list[str] | None = None) -> int:
             frontier_confirmed=frontier_confirmed,
             frontier_new_entries=frontier_new_entries,
             limit_termination_eligible=limit_plan.eligible,
+            limit_termination_mode=limit_plan.mode,
             limit_terminated=limit_terminated,
             limit_batches=limit_batches,
             limit_candidates_examined=limit_candidates_examined,
@@ -1376,6 +1397,7 @@ def main(argv: list[str] | None = None) -> int:
             frontier_confirmed=frontier_confirmed,
             frontier_new_entries=frontier_new_entries,
             limit_termination_eligible=limit_plan.eligible,
+            limit_termination_mode=limit_plan.mode,
             limit_terminated=limit_terminated,
             limit_batches=limit_batches,
             limit_candidates_examined=limit_candidates_examined,
