@@ -26,9 +26,18 @@ from .query import (
     format_expression,
     format_scalar_expression,
 )
-from .optimizer_proofs import OptimisationProof, prove_expression_constant, prove_expression_deterministic
+from .optimizer_proofs import (
+    TRUTH_FALSE,
+    TRUTH_TRUE,
+    TRUTH_UNKNOWN,
+    OptimisationProof,
+    prove_expression_constant,
+    prove_expression_deterministic,
+    prove_predicate_truth,
+)
 from .query_semantics import same_field as _same_field
 from .query_semantics import semantic_key as _semantic_key
+from .source_model import SourceSpec
 
 MAX_OPTIMISER_PASSES = 32
 _INVERTED_COMPARISON = {
@@ -65,7 +74,7 @@ class OptimisationResult:
         return bool(self.decisions)
 
 
-def optimise_query(query: Query) -> OptimisationResult:
+def optimise_query(query: Query, *, source: SourceSpec | None = None) -> OptimisationResult:
     """Optimise a resolved query without changing its observable semantics.
 
     The optimiser deliberately works after semantic resolution so comparisons operate
@@ -92,12 +101,12 @@ def optimise_query(query: Query) -> OptimisationResult:
             for item in branch_result.decisions
         )
 
-    predicate, predicate_decisions = _optimise_predicate_fixed_point(query.predicate)
+    predicate, predicate_decisions = _optimise_predicate_fixed_point(query.predicate, source=source)
     decisions.extend(predicate_decisions)
 
     select_terms = []
     for term in query.select:
-        expression, expression_decisions = _optimise_scalar_expression(term.expression)
+        expression, expression_decisions = _optimise_scalar_expression(term.expression, source=source)
         decisions.extend(expression_decisions)
         select_terms.append(
             replace(term, field=format_scalar_expression(expression), expression=expression)
@@ -107,16 +116,16 @@ def optimise_query(query: Query) -> OptimisationResult:
 
     group_by = []
     for expression in query.group_by:
-        optimised, expression_decisions = _optimise_scalar_expression(expression)
+        optimised, expression_decisions = _optimise_scalar_expression(expression, source=source)
         decisions.extend(expression_decisions)
         group_by.append(optimised)
 
-    having, having_decisions = _optimise_having(query.having)
+    having, having_decisions = _optimise_having(query.having, source=source)
     decisions.extend(having_decisions)
 
     order_terms = []
     for term in query.order_by:
-        expression, expression_decisions = _optimise_scalar_expression(term.expression)
+        expression, expression_decisions = _optimise_scalar_expression(term.expression, source=source)
         decisions.extend(expression_decisions)
         order_terms.append(
             replace(term, field=format_scalar_expression(expression), expression=expression)
@@ -139,20 +148,34 @@ def optimise_query(query: Query) -> OptimisationResult:
     )
 
 
-def _optimise_having(node: Any) -> tuple[Any, list[OptimisationDecision]]:
+def _optimise_having(node: Any, *, source: SourceSpec | None = None) -> tuple[Any, list[OptimisationDecision]]:
     """Optimise scalar subexpressions in HAVING without changing its Boolean semantics."""
     if node is None:
         return None, []
+    if source is not None:
+        truth = prove_predicate_truth(node, source=source)
+        if truth.proven and truth.truth is not None:
+            value = {TRUTH_TRUE: True, TRUTH_FALSE: False, TRUTH_UNKNOWN: None}[truth.truth]
+            literal = Literal(value, "NULL" if value is None else ("TRUE" if value else "FALSE"))
+            if literal != node:
+                return literal, [
+                    _decision(
+                        "capability-constant-having",
+                        node,
+                        literal,
+                        proofs=(truth.proof,),
+                    )
+                ]
     if isinstance(node, Unary):
-        operand, decisions = _optimise_having(node.operand)
+        operand, decisions = _optimise_having(node.operand, source=source)
         optimised = replace(node, operand=operand)
         if isinstance(operand, Unary):
             decisions.append(_decision("having-double-negation", optimised, operand.operand))
             return operand.operand, decisions
         return optimised, decisions
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        left, left_decisions = _optimise_having(node.left)
-        right, right_decisions = _optimise_having(node.right)
+        left, left_decisions = _optimise_having(node.left, source=source)
+        right, right_decisions = _optimise_having(node.right, source=source)
         decisions = left_decisions + right_decisions
         optimised = replace(node, left=left, right=right)
         if _semantic_key(left) == _semantic_key(right):
@@ -160,21 +183,23 @@ def _optimise_having(node: Any) -> tuple[Any, list[OptimisationDecision]]:
             return left, decisions
         return optimised, decisions
     if isinstance(node, ScalarComparison):
-        left, left_decisions = _optimise_scalar_expression(node.left)
-        right, right_decisions = _optimise_scalar_expression(node.right)
+        left, left_decisions = _optimise_scalar_expression(node.left, source=source)
+        right, right_decisions = _optimise_scalar_expression(node.right, source=source)
         return replace(node, left=left, right=right), left_decisions + right_decisions
     if isinstance(node, ScalarIsNull):
-        expression, decisions = _optimise_scalar_expression(node.expression)
+        expression, decisions = _optimise_scalar_expression(node.expression, source=source)
         return replace(node, expression=expression), decisions
     return node, []
 
 
-def _optimise_predicate_fixed_point(node: Any) -> tuple[Any, list[OptimisationDecision]]:
+def _optimise_predicate_fixed_point(
+    node: Any, *, source: SourceSpec | None = None
+) -> tuple[Any, list[OptimisationDecision]]:
     """Optimise one predicate tree to convergence with the ordinary pass limit."""
     predicate = node
     decisions: list[OptimisationDecision] = []
     for _ in range(MAX_OPTIMISER_PASSES):
-        optimised, pass_decisions = _optimise_node(predicate)
+        optimised, pass_decisions = _optimise_node(predicate, source=source)
         decisions.extend(pass_decisions)
         if optimised == predicate:
             return predicate, decisions
@@ -182,7 +207,9 @@ def _optimise_predicate_fixed_point(node: Any) -> tuple[Any, list[OptimisationDe
     raise RuntimeError("yt-sql optimiser did not converge")
 
 
-def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[OptimisationDecision]]:
+def _optimise_scalar_expression(
+    expression: Any, *, source: SourceSpec | None = None
+) -> tuple[Any, list[OptimisationDecision]]:
     """Optimise a resolved scalar expression without changing observable semantics.
 
     Constant folding is deliberately limited to subtrees whose inputs are all
@@ -192,7 +219,7 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
     if expression is None:
         return None, []
     if isinstance(expression, ScalarUnary):
-        operand, decisions = _optimise_scalar_expression(expression.operand)
+        operand, decisions = _optimise_scalar_expression(expression.operand, source=source)
         optimised = replace(expression, operand=operand)
         if isinstance(operand, Literal):
             folded = _fold_constant_scalar(optimised)
@@ -200,8 +227,8 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
             return folded, decisions
         return optimised, decisions
     if isinstance(expression, ScalarBinary):
-        left, left_decisions = _optimise_scalar_expression(expression.left)
-        right, right_decisions = _optimise_scalar_expression(expression.right)
+        left, left_decisions = _optimise_scalar_expression(expression.left, source=source)
+        right, right_decisions = _optimise_scalar_expression(expression.right, source=source)
         decisions = left_decisions + right_decisions
         optimised = replace(expression, left=left, right=right)
         if isinstance(left, Literal) and isinstance(right, Literal):
@@ -213,10 +240,10 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
         args = []
         decisions: list[OptimisationDecision] = []
         for arg in expression.args:
-            optimised, arg_decisions = _optimise_scalar_expression(arg)
+            optimised, arg_decisions = _optimise_scalar_expression(arg, source=source)
             args.append(optimised)
             decisions.extend(arg_decisions)
-        filter_predicate, filter_decisions = _optimise_predicate_fixed_point(expression.filter_predicate)
+        filter_predicate, filter_decisions = _optimise_predicate_fixed_point(expression.filter_predicate, source=source)
         decisions.extend(
             OptimisationDecision(f"aggregate-filter-{decision.rule}", decision.before, decision.after, decision.proofs)
             for decision in filter_decisions
@@ -226,7 +253,7 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
         args = []
         decisions: list[OptimisationDecision] = []
         for arg in expression.args:
-            optimised, arg_decisions = _optimise_scalar_expression(arg)
+            optimised, arg_decisions = _optimise_scalar_expression(arg, source=source)
             args.append(optimised)
             decisions.extend(arg_decisions)
         optimised = replace(expression, args=tuple(args))
@@ -241,7 +268,7 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
         branches = []
         decisions: list[OptimisationDecision] = []
         for branch in expression.whens:
-            condition, condition_decisions = _optimise_predicate_fixed_point(branch.condition)
+            condition, condition_decisions = _optimise_predicate_fixed_point(branch.condition, source=source)
             for decision in condition_decisions:
                 decisions.append(
                     OptimisationDecision(
@@ -251,10 +278,10 @@ def _optimise_scalar_expression(expression: Any) -> tuple[Any, list[Optimisation
                         decision.proofs,
                     )
                 )
-            result, result_decisions = _optimise_scalar_expression(branch.result)
+            result, result_decisions = _optimise_scalar_expression(branch.result, source=source)
             decisions.extend(result_decisions)
             branches.append(CaseWhen(condition, result, branch.position))
-        else_result, else_decisions = _optimise_scalar_expression(expression.else_result)
+        else_result, else_decisions = _optimise_scalar_expression(expression.else_result, source=source)
         decisions.extend(else_decisions)
         optimised = replace(expression, whens=tuple(branches), else_result=else_result)
         return optimised, decisions
@@ -291,13 +318,29 @@ def _scalar_decision(rule: str, before: Any, after: Any) -> OptimisationDecision
     )
 
 
-def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:
+def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any, list[OptimisationDecision]]:
     decisions: list[OptimisationDecision] = []
     if node is None:
         return None, decisions
 
+    if source is not None:
+        truth = prove_predicate_truth(node, source=source)
+        if truth.proven and truth.truth is not None:
+            value = {TRUTH_TRUE: True, TRUTH_FALSE: False, TRUTH_UNKNOWN: None}[truth.truth]
+            literal = Literal(value, "NULL" if value is None else ("TRUE" if value else "FALSE"))
+            if literal != node:
+                decisions.append(
+                    _decision(
+                        "capability-constant-predicate",
+                        node,
+                        literal,
+                        proofs=(truth.proof,),
+                    )
+                )
+                return literal, decisions
+
     if isinstance(node, Unary) and node.operator == "NOT":
-        operand, child_decisions = _optimise_node(node.operand)
+        operand, child_decisions = _optimise_node(node.operand, source=source)
         decisions.extend(child_decisions)
         rewritten = _normalise_not(operand)
         if rewritten != Unary("NOT", operand):
@@ -306,10 +349,37 @@ def _optimise_node(node: Any) -> tuple[Any, list[OptimisationDecision]]:
         return Unary("NOT", operand), decisions
 
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        left, left_decisions = _optimise_node(node.left)
-        right, right_decisions = _optimise_node(node.right)
+        left, left_decisions = _optimise_node(node.left, source=source)
+        right, right_decisions = _optimise_node(node.right, source=source)
         decisions.extend(left_decisions)
         decisions.extend(right_decisions)
+        operator = node.operator
+        if isinstance(left, Literal) and (left.value is None or isinstance(left.value, bool)):
+            if operator == "AND" and left.value is False:
+                decisions.append(_decision("constant-and-false", Binary(operator, left, right), left))
+                return left, decisions
+            if operator == "OR" and left.value is True:
+                decisions.append(_decision("constant-or-true", Binary(operator, left, right), left))
+                return left, decisions
+            if left.value is True and operator == "AND":
+                decisions.append(_decision("constant-and-true", Binary(operator, left, right), right))
+                return right, decisions
+            if left.value is False and operator == "OR":
+                decisions.append(_decision("constant-or-false", Binary(operator, left, right), right))
+                return right, decisions
+        if isinstance(right, Literal) and (right.value is None or isinstance(right.value, bool)):
+            if operator == "AND" and right.value is False:
+                decisions.append(_decision("constant-and-false", Binary(operator, left, right), right))
+                return right, decisions
+            if operator == "OR" and right.value is True:
+                decisions.append(_decision("constant-or-true", Binary(operator, left, right), right))
+                return right, decisions
+            if right.value is True and operator == "AND":
+                decisions.append(_decision("constant-and-true", Binary(operator, left, right), left))
+                return left, decisions
+            if right.value is False and operator == "OR":
+                decisions.append(_decision("constant-or-false", Binary(operator, left, right), left))
+                return left, decisions
         operator = node.operator
         terms = _flatten(operator, Binary(operator, left, right))
         terms, dedupe_decisions = _deduplicate_terms(operator, terms)

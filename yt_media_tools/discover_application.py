@@ -368,6 +368,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.offline:
             print(f"cache: {args.cache.expanduser()}")
             print("network: disabled")
+        elif plan.mode == "skip":
+            print("network: skipped because source capabilities prove the branch cannot match")
         elif plan.targeted:
             print(f"backend: requested={requested_backend} selected={selected_backend}")
             if fallback_reason:
@@ -508,6 +510,14 @@ def main(argv: list[str] | None = None) -> int:
             _verbose(
                 args.verbose,
                 f"Offline query loaded {len(cached_items)} cached detailed records and made no YouTube requests.",
+            )
+        elif plan.mode == "skip":
+            raw_records = []
+            acquisition_stats = AcquisitionStats()
+            detailed_candidates = 0
+            _verbose(
+                args.verbose,
+                "Skipped source acquisition because capability proofs show the WHERE predicate cannot evaluate TRUE.",
             )
         elif plan.targeted:
             flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
@@ -920,7 +930,7 @@ def main(argv: list[str] | None = None) -> int:
     except QuerySyntaxError as exc:
         parser.error(exc.format())
 
-    optimisation = optimise_query(resolved_query)
+    optimisation = optimise_query(resolved_query, source=source if not multi_source else None)
     resolved_query = optimisation.query
     if optimisation.changed:
         _verbose(args.verbose, f"Optimiser applied {len(optimisation.decisions)} semantics-preserving rewrite(s).")

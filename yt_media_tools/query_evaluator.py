@@ -274,6 +274,8 @@ def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
     """Evaluate a resolved AST using SQL-like three-valued Boolean logic."""
     if node is None:
         return True
+    if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):
+        return node.value
     if isinstance(node, Unary):
         value = evaluate(node.operand, record)
         return None if value is None else not value
@@ -467,6 +469,8 @@ def _evaluate_group_expression(expression: Any, group: Sequence[dict[str, Any]])
 def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
     if node is None:
         return True
+    if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):
+        return node.value
     if isinstance(node, Unary):
         value = _evaluate_having(node.operand, group)
         return None if value is None else not value

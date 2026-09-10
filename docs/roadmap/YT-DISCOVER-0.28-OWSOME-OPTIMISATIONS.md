@@ -124,7 +124,7 @@ to eliminate a volatile expression. Structural field unavailability is proven on
 from source/facet capability declarations; unknown or unacquired metadata remains
 unproven.
 
-## 0.28.2 - Capability-Driven Predicate Simplification
+## 0.28.2 - Capability-Driven Predicate Simplification - Complete
 
 ### Scope
 
@@ -160,6 +160,27 @@ if their capabilities differ.
 
 When branch elimination is proven, do not invoke yt-dlp for that
 physical branch at all.
+
+### Implementation
+
+0.28.2 adds source/facet-aware predicate truth proofs that distinguish a
+proven SQL UNKNOWN result from an optimiser refusal. Direct comparisons,
+BETWEEN, IN and text predicates over structurally unavailable fields are
+proven UNKNOWN, while IS NULL and IS NOT NULL are proven TRUE or FALSE as
+appropriate. Boolean AND, OR and NOT compose these results using SQL
+three-valued logic, including dominating FALSE for AND and TRUE for OR.
+
+The resolved optimiser may replace a capability-proven predicate with an
+explicit TRUE, FALSE or NULL predicate literal and retains the proof in its
+decision record. The physical planner independently marks a source branch as
+empty when the complete WHERE predicate is proven unable to evaluate TRUE.
+Such a branch receives a `skip` acquisition mode, zero network cost and an
+attached elimination proof. Ordinary and dynamic metadata remain unchanged
+unless a stable source/facet capability declaration supplies the proof.
+
+Single-source application acquisition honours the `skip` mode before invoking
+yt-dlp. Multi-source source-boundary planning remains conservative until the
+dedicated branch-planning work later in this series.
 
 ## 0.28.3 - Field Requirement and Metadata Pruning
 

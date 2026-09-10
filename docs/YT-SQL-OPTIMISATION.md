@@ -264,6 +264,10 @@ The semantic property framework analyses resolved expressions and query relation
 
 Internal knowledge states distinguish acquired scalar values, acquired SQL NULL, structurally unavailable fields and supported metadata that has not yet been acquired. The final state is never treated as SQL NULL. Seeded `RANDOM(seed)` is deterministic but row-dependent; unseeded `RANDOM()` remains volatile.
 
+Capability-driven predicate simplification now consumes stable source/facet declarations directly. A field declared structurally unavailable is a proven SQL NULL for that logical collection. Comparisons, BETWEEN, IN and text predicates over that field therefore evaluate to UNKNOWN, while IS NULL and IS NOT NULL become TRUE and FALSE respectively. Boolean combinations compose those facts using SQL three-valued logic. A proven UNKNOWN result is distinct from the optimiser lacking enough information to decide.
+
+When the complete WHERE predicate is proven unable to evaluate TRUE, the physical planner marks that source branch as empty and emits a `skip` acquisition request. The single-source application path honours that plan without invoking yt-dlp. No such conclusion is drawn for dynamic fields, merely unfetched metadata or capability contracts that do not explicitly prove structural unavailability.
+
 ### Future candidates
 
 Field/capability analysis can become more aggressive as the language grows. Potential work includes eliminating acquisition of fields made unnecessary by constant folding, source-boundary planning from inferred temporal predicates, and metadata-acquisition planning based on expression dependency sets.

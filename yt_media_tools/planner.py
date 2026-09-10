@@ -8,6 +8,7 @@ from typing import Any
 
 from .dates import DateContext, parse_date_literal
 from .query_model import Binary, Between, Field, InList, Literal, Query, Unary
+from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .query_properties import QueryProperties, analyse_query, required_query_fields as required_query_fields
 from .source_capabilities import EXACT, selected_facet_capabilities
 from .source_model import SourceSpec
@@ -227,6 +228,8 @@ class QueryPlan:
     limit_termination: LimitTerminationPlan
     cost_class: str
     cost_reason: str
+    source_branch_eliminated: bool = False
+    elimination_proof: OptimisationProof | None = None
 
 
 def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> QueryPlan:
@@ -250,8 +253,18 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
             "full",
             "the selected source/facet does not declare stable trustworthy ordering for bounded acquisition",
         )
+    truth = prove_predicate_truth(query.predicate, source=source)
+    eliminated = truth.proven and truth.truth != TRUTH_TRUE
+    if eliminated:
+        acquisition = AcquisitionPlan(
+            "skip",
+            "source/facet capabilities prove the WHERE predicate cannot evaluate TRUE",
+        )
     limit = plan_limit_termination(query)
-    cost_class, cost_reason = assess_cost(query, acquisition)
+    if eliminated:
+        cost_class, cost_reason = "none", "the source branch is proven empty before acquisition"
+    else:
+        cost_class, cost_reason = assess_cost(query, acquisition)
     request = PhysicalAcquisitionRequest(
         source=source,
         required_fields=properties.required_fields,
@@ -259,4 +272,14 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         lower_date_bound=acquisition.lower_date_bound,
         stop_before=acquisition.stop_before,
     )
-    return QueryPlan(query, properties, acquisition, request, limit, cost_class, cost_reason)
+    return QueryPlan(
+        query,
+        properties,
+        acquisition,
+        request,
+        limit,
+        cost_class,
+        cost_reason,
+        eliminated,
+        truth.proof if eliminated else None,
+    )

@@ -1,5 +1,22 @@
 # Changelog
 
+## Discover 0.28.2 - Capability-Driven Predicate Simplification
+
+- Add source/facet capability proofs for predicate truth under SQL three-valued logic.
+- Simplify predicates only when stable capability declarations prove TRUE, FALSE or UNKNOWN.
+- Distinguish proven SQL UNKNOWN from an optimiser refusal caused by insufficient information.
+- Allow the planner to mark a source branch as empty and skip physical acquisition when its WHERE predicate is proven unable to evaluate TRUE.
+- Preserve unknown and not-yet-acquired metadata conservatively instead of treating missing capability evidence as SQL NULL.
+- Add focused regression coverage for comparisons, NULL tests, Boolean composition, optimiser rewrites and branch-elimination planning.
+
+## Discover 0.28.1 - Optimiser Proof and Safety Framework
+
+- Add reusable optimiser proofs with explicit proven and not-proven states, provenance and deterministic reasons.
+- Derive expression determinism and constantness from semantic property analysis and consume those proofs in optimiser rewrites.
+- Prove structural field unavailability only from explicit source/facet capability declarations.
+- Preserve proof metadata through nested optimisation decisions and refuse volatile-expression elimination without an appropriate proof.
+- Add focused proof-framework regression coverage for constant, volatile, seeded-random, dynamic-field and source-capability cases.
+
 ## Discover 0.28.0 - Semantic Property Framework
 
 - Add deterministic semantic-property analysis for resolved scalar expressions, predicates and query relations.
