@@ -441,7 +441,7 @@ Source-branch acquisition order is not changed in this release. Although the pla
 
 Human and JSON explain output expose predicate selectivity, local evaluation cost, information value, whether the safe enumeration order changed, boundary cost/selectivity tiers and deferred expensive stages.
 
-## 0.28.12 - Explainable Optimisation and Acquisition
+## 0.28.12 - Explainable Optimisation and Acquisition - Complete
 
 ### Scope
 
@@ -512,6 +512,18 @@ Require optimised and deliberately unoptimised execution to produce identical ob
 ### Additional techniques
 
 Use property-based tests, generated query transformations and mutation testing where they expose classes of optimiser mistakes that ordinary fixtures may miss.
+
+### Implementation
+
+0.28.13 reconciles the complete 0.28 optimiser programme against a broader deterministic differential corpus. Each deterministic case executes both the original resolved query and the optimised query and requires identical observable rows, then optimises the result a second time and requires a stable query with no further optimiser decisions.
+
+The corpus spans SQL NULL and three-valued logic, Unicode, temporal infinity and relative dates, decimal and alternate-base numeric forms, CASE and scalar functions, aggregate FILTER, GROUP BY/HAVING, CTE chains, UNION and UNION ALL, heterogeneous source schemas, same-source cross-facet identity, DISTINCT, LIMIT/OFFSET and seeded RANDOM. Canonical format/parse round-trips and repeated malformed-input failures are checked alongside execution equivalence. Volatile `RANDOM()` remains an execution-time expression and is not subjected to result-equality assertions that would mistake volatility for an optimiser difference.
+
+Generated equivalent Boolean transformations exercise duplicate predicates and double negation over several predicate families. A small deterministic mutation-style sensitivity matrix proves that the fixture corpus can detect representative unsafe changes to comparison boundaries, equality polarity, AND/OR composition and NULL predicates. These checks provide useful mutation-style confidence without adding a heavyweight mutation runner to routine CI. External property-based and full mutation-testing tools remain available for explicit future hardening where their additional cost is justified.
+
+Physical-planning torture coverage composes the optimiser with acquisition decisions. It checks static empty-branch elimination, LIMIT termination barriers, detailed-stage stopping, temporal frontiers, deferred expensive metadata, cross-facet source identity, CTE requirement pruning, reused-source union requirements, dynamic raw metadata and volatile random ordering. The tests also retain the semantic distinction between structurally unavailable metadata and metadata that has merely not yet been acquired.
+
+No new optimiser rewrite is introduced by this phase. The purpose is to prove the accumulated 0.28 optimisation and acquisition behaviour against the accepted language semantics and to expose regressions before the optimisation series is closed.
 
 ## Roadmap maintenance
 

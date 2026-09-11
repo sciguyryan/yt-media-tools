@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.28.13 - Optimiser Differential and Acquisition Torture
+
+- Add a broad deterministic optimiser differential corpus spanning NULL and three-valued logic, Unicode, temporal infinity, numeric literal forms, CASE/scalar expressions, aggregation, CTEs, set composition, DISTINCT, slicing and seeded RANDOM.
+- Reconcile optimised execution against deliberately unoptimised resolved queries and require optimiser idempotence across the new semantic corpus.
+- Add heterogeneous-source and same-source cross-facet differential cases so source/facet identity and schema isolation remain part of optimiser correctness.
+- Add generated equivalent Boolean transformations that exercise duplicate elimination, double negation and rewrite stability without introducing a property-testing dependency into the routine suite.
+- Add mutation-style fixture-sensitivity checks for comparison boundaries, Boolean conjunction/disjunction and NULL predicates so representative unsafe rewrites are proven observable.
+- Add deterministic malformed-input repetition checks and canonical format/parse round-trip checks across the semantic corpus.
+- Add acquisition torture coverage for static branch elimination, LIMIT barriers, detailed-stage termination, temporal frontiers, metadata deferral, CTE requirement pruning, shared-source unions, dynamic raw metadata and volatile RANDOM ordering.
+- Keep structurally unavailable metadata distinct from metadata that is merely not yet acquired.
+
 ## Discover 0.28.12 - Explainable Optimisation and Acquisition
 
 - Add a versioned deterministic explanation model for planner decisions and rendered plan structure.

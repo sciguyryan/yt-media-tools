@@ -253,13 +253,13 @@ Property-based testing is a compelling candidate and should be evaluated before 
 - production evaluator versus an independent reference evaluator;
 - generated typed ASTs that remain valid across formatting and parsing.
 
-Hypothesis should complement, not replace, deterministic golden conformance and hand-authored torture tests.
+Hypothesis should complement, not replace, deterministic golden conformance and hand-authored torture tests. Discover 0.28.13 already adds finite deterministic generated transformations for optimiser equivalence and format stability, so a future Hypothesis integration should target broader generated AST/state spaces rather than duplicate those fixed cases.
 
 ### Mutation testing
 
 Evaluate a maintained Python mutation-testing tool, currently with `mutmut` as a leading candidate, for explicit hardening runs. Mutation testing is especially valuable around comparison boundaries, Boolean logic, NULL behaviour, optimiser guards, ordering and source/facet planning.
 
-A full mutation run should not be added to routine CI if its cost is disproportionate. It belongs naturally alongside explicit scale/stress and release-hardening work.
+A full mutation run should not be added to routine CI if its cost is disproportionate. It belongs naturally alongside explicit scale/stress and release-hardening work. Discover 0.28.13 adds a small deterministic mutation-style sensitivity matrix for representative comparison, Boolean and NULL mistakes, but that does not replace a future external mutation run.
 
 ### Coverage-guided fuzzing
 

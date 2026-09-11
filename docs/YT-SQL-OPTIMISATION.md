@@ -338,6 +338,16 @@ The routine deterministic conformance corpus is executed in both unoptimised and
 
 The optimiser must also be idempotent: optimising an already optimised query must produce the same query with no new decisions.
 
+## 0.28 differential reconciliation
+
+The completed 0.28 optimisation programme is covered by a dedicated deterministic differential corpus. For deterministic cases, the same resolved query is executed before and after optimisation and the complete observable rows must match exactly. The optimised query is then optimised again and must remain unchanged with no new optimiser decisions.
+
+The reconciliation corpus deliberately composes previously separate semantic surfaces: SQL NULL and three-valued logic, Unicode, temporal infinity and relative dates, alternate-base numeric literals, CASE and scalar functions, aggregate FILTER, GROUP BY/HAVING, CTEs, UNION and UNION ALL, heterogeneous source schemas, same-source facet identity, DISTINCT, LIMIT/OFFSET and seeded RANDOM. Volatile `RANDOM()` is instead checked structurally so a legitimate execution-time value change is not confused with an optimiser regression.
+
+Generated transformation checks build semantically equivalent Boolean forms such as duplicate AND/OR terms and double negation across several predicate families. A deterministic mutation-style matrix also confirms that the fixture corpus distinguishes representative unsafe comparison, Boolean and NULL mutations. These focused checks supplement the ordinary golden corpus without making Hypothesis or a full mutation runner a routine dependency.
+
+Physical-planning torture tests extend the same reconciliation boundary through source planning. They cover static branch elimination, safe and rejected LIMIT termination, detailed metadata stages, temporal frontiers, metadata deferral, CTE requirement pruning, source/facet isolation, reused-source union requirements, dynamic raw metadata and volatile random ordering. Planning tests must continue to distinguish metadata that is structurally unavailable from metadata that is simply not yet acquired.
+
 ## Compiled-query investigation
 
 A future design investigation may evaluate a compact compiled yt-sql representation to avoid repeated parsing and semantic-resolution overhead. Candidate forms include a versioned serialised resolved AST, a compact intermediate representation or bytecode, and a canonical cacheable query plan.
