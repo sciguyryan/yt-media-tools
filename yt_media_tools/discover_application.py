@@ -33,6 +33,7 @@ from yt_media_tools.discover_constants import (
     FRONTIER_OVERLAP_CONFIRMATIONS,
     PROGRAM_VERSION,
 )
+from yt_media_tools.explain_presentation import render_svg, resolve_console_modes
 from yt_media_tools.discover_explain import (
     _explain_analyze_payload,
     _format_explain_analyze_text,
@@ -118,11 +119,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.explain is not None:
         try:
+            explained_query = bind_query_parameters(
+                args.explain,
+                _parse_parameters(args.param),
+            )
             if args.explain_format == "json":
                 print(
                     json.dumps(
                         explain_user_query_json(
-                            bind_query_parameters(args.explain, _parse_parameters(args.param)),
+                            explained_query,
                             source_type=args.source_type,
                             tab=args.tab,
                             date_format=args.date_format,
@@ -133,23 +138,41 @@ def main(argv: list[str] | None = None) -> int:
                         sort_keys=True,
                     )
                 )
+            elif args.explain_format == "svg":
+                payload = explain_user_query_json(
+                    explained_query,
+                    source_type=args.source_type,
+                    tab=args.tab,
+                    date_format=args.date_format,
+                    offline=args.offline,
+                )
+                print(render_svg(payload), end="")
             else:
+                colour, unicode = resolve_console_modes(
+                    stream=sys.stdout,
+                    colour_mode=args.colour,
+                    unicode_mode=args.unicode,
+                )
                 print(
                     explain_user_query(
-                        bind_query_parameters(args.explain, _parse_parameters(args.param)),
+                        explained_query,
                         source_type=args.source_type,
                         tab=args.tab,
                         date_format=args.date_format,
                         offline=args.offline,
+                        unicode=unicode,
+                        colour=colour,
                     )
                 )
         except QuerySyntaxError as exc:
             parser.error(exc.format())
-        except ValueError as exc:
+        except (RuntimeError, ValueError) as exc:
             parser.error(str(exc))
         return 0
 
     explain_analyze = args.explain_analyze is not None
+    if explain_analyze and args.explain_format == "svg":
+        parser.error("--explain-format svg is supported for --explain, not --explain-analyze")
     if explain_analyze:
         if args.source is not None or args.query or args.where:
             parser.error("--explain-analyze cannot be combined with SOURCE_OR_QUERY, --query, or --where")
@@ -1442,7 +1465,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.explain_format == "json":
             print(json.dumps(analysis_payload, ensure_ascii=False, indent=2, sort_keys=True))
         else:
-            print(_format_explain_analyze_text(analysis_payload))
+            colour, unicode = resolve_console_modes(
+                stream=sys.stdout,
+                colour_mode=args.colour,
+                unicode_mode=args.unicode,
+            )
+            print(
+                _format_explain_analyze_text(
+                    analysis_payload,
+                    unicode=unicode,
+                    colour=colour,
+                )
+            )
 
     if metadata_cache is not None:
         metadata_cache.close()

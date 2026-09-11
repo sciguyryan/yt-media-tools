@@ -180,12 +180,23 @@ The persistent cache can be queried directly with `--offline`, which guarantees 
 
 A cache-only query fails clearly when there are no cached detailed records for the requested source. Source order observations are persisted separately so offline queries can preserve the most recently observed source order when no explicit `ORDER BY` is supplied. Trusted frontier state is recorded separately and is used only when its conservative overlap requirements are satisfied.
 
-`--explain` now has a machine-readable form:
+`--explain` now has a versioned machine-readable form and a richer console presentation. Interactive console output uses conservative ANSI colour, Unicode box drawing and arrows when available. Redirected output automatically falls back to plain ASCII/no-colour presentation. Use `--colour auto|always|never` and `--unicode auto|always|never` to override those choices.
 
 ```bash
 ./yt-discover.py --tab videos --explain-format json --explain \
   "SELECT id FROM @whatdamath WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
 ```
+
+The JSON form remains free of console presentation sequences and exposes an explicit explanation schema version, deterministic planner decisions and the graph structure used by richer renderers. Applied, rejected, deferred and eliminated decisions include their reasons where the planner has an explicit proof or policy basis.
+
+Graphviz can render the same explanation model as SVG:
+
+```bash
+./yt-discover.py --tab videos --explain-format svg --explain \
+  "SELECT id FROM @whatdamath WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25" > plan.svg
+```
+
+SVG rendering is optional presentation functionality. If Graphviz is not installed, normal text and JSON explain modes continue to work unchanged.
 
 B1 `EXPLAIN ANALYZE` is available as `--explain-analyze`. It executes the query but suppresses normal result rows, then reports the plan and actual execution outcome, including enumeration, lightweight rejection, detailed candidates, cache reuse, query-result statistics and timings. Use `--explain-format json` for structured output.
 
@@ -266,6 +277,14 @@ Alternatively, use the official yt-dlp binary or a distribution package, provide
 
 ```bash
 yt-dlp --version
+```
+
+### Optional: Graphviz
+
+Graphviz is used only for rendered `--explain-format svg` output. It is not required for query parsing, optimisation, acquisition, text explain output or JSON explain output. Install the distribution's Graphviz package and verify that `dot` is available in `PATH`:
+
+```bash
+dot -V
 ```
 
 ### Optional: Node.js and YouTube.js
@@ -645,7 +664,7 @@ Use `--explain` to describe the semantics of a complete query without contacting
 yt-discover.py --explain "SELECT id FROM @channel WHERE upload_date BETWEEN TODAY()-1yr AND TODAY() ORDER BY upload_date ASC"
 ```
 
-The explanation reports source classification, projection and aliases, the interpreted filter, ordering, limit, default serialisation, and the single captured values of `TODAY()` and `NOW()`. Known fields are type-checked immediately. Dynamic yt-dlp fields are explicitly marked as requiring post-acquisition validation rather than being guessed.
+The explanation reports source classification, projection and aliases, the interpreted filter, ordering, limit, default serialisation, field requirements, inferred availability, acquisition stages, predicate staging, source-boundary planning, temporal bounds, optimisation decisions, rejection reasons where available, and the single captured values of `TODAY()` and `NOW()`. Known fields are type-checked immediately. Dynamic yt-dlp fields are explicitly marked as requiring post-acquisition validation rather than being guessed. The console overview and Graphviz SVG are both derived from the versioned explanation model rather than maintaining separate planner logic.
 
 Use `--dry-run` to inspect source resolution, the yt-dlp command, and the parsed query without running yt-dlp:
 

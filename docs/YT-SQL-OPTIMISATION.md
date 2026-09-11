@@ -407,3 +407,13 @@ Source-boundary planning must treat `(physical source, logical facet)` as the ac
 The planner separates query fields by the earliest metadata stage that can provide an authoritative value. Exact flat fields may be satisfied by lightweight enumeration. Approximate flat values and dynamic fields remain detailed metadata requirements for final query evaluation.
 
 For eligible single-source queries whose complete field set is authoritative in enumeration metadata, Discover can skip detailed extraction. When a mixed query still needs detailed fields, exact enumeration values may be overlaid onto cached or freshly detailed rows so cache freshness is required only for fields that genuinely need the detailed stage.
+
+## Explainable optimisation and acquisition
+
+The optimiser and physical planner expose a versioned presentation-level explanation model rather than requiring consumers to infer decisions from human prose. The model records deterministic decision states and graph relationships derived from the existing explain payload. It does not participate in semantic planning and cannot change query results.
+
+Human console presentation labels applied, rejected, deferred and eliminated decisions in words. ANSI colour and dependable Unicode box drawing/arrows improve scanability when an interactive terminal supports them, while redirected output falls back to ASCII and no colour. Colour and glyphs are presentation-only and carry no information that is absent from the text labels and reasons.
+
+Rendered plans use Graphviz to emit SVG from the same explanation graph. Graphviz is an optional presentation dependency; unavailable Graphviz support must never alter optimiser, acquisition or execution behaviour. JSON remains the machine-readable structural form and is kept free of terminal escape sequences.
+
+Rejection reporting is conservative. A potential optimisation is reported as rejected only when the planner already has an explicit reason for choosing a less aggressive path, such as an ineligible bounded acquisition or a LIMIT termination barrier. Explain output must not invent speculative alternatives merely to populate a diagnostic section.

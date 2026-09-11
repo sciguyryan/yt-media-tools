@@ -326,6 +326,12 @@ Examples:
   Emit the planned explanation as machine-readable JSON:
     yt-discover.py --tab videos --explain-format json --explain "SELECT id FROM @example WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
 
+  Render the same planned explanation as a Graphviz SVG:
+    yt-discover.py --tab videos --explain-format svg --explain "SELECT id FROM @example WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25" > plan.svg
+
+  Force rich Unicode/ANSI console presentation when output is handled by a compatible pager:
+    yt-discover.py --unicode always --colour always --explain "SELECT id FROM @example WHERE duration < 1h LIMIT 25"
+
   Execute the query but suppress normal rows and show what actually happened:
     yt-discover.py --tab videos --explain-analyze "SELECT id FROM @example WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
 
@@ -586,9 +592,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     introspection.add_argument(
         "--explain-format",
-        choices=("text", "json"),
+        choices=("text", "json", "svg"),
         default="text",
-        help="format for --explain and --explain-analyze (default: text)",
+        help="format for --explain and --explain-analyze; SVG is supported for --explain (default: text)",
+    )
+    introspection.add_argument(
+        "--colour",
+        choices=("auto", "always", "never"),
+        default="auto",
+        help="colour mode for console explain output (default: auto; NO_COLOR is respected)",
+    )
+    introspection.add_argument(
+        "--unicode",
+        choices=("auto", "always", "never"),
+        default="auto",
+        help="Unicode tree/arrow mode for console explain output (default: auto)",
     )
 
     output = parser.add_argument_group("output")

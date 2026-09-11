@@ -36,6 +36,8 @@ Physical acquisition-plan coverage checks identity-only enumeration, authoritati
 
 Cost/selectivity heuristic coverage checks safe AND-term reordering, stable ordering for equal-ranked terms, detailed-stage deferral behind cheap authoritative filters, very-high cost classification for dynamic raw metadata, zero-cost empty relations, consistency with the established planner cost classes, and human/JSON explain observability. Residual and unsafe predicate forms remain covered by the staged-predicate differential and NULL-semantics suites.
 
+Explain-presentation coverage checks explicit schema versioning, deterministic decision/graph construction, semantic ANSI colour that can be disabled completely, `NO_COLOR`, automatic Unicode/ASCII fallback, deterministic Graphviz DOT generation, human plan-overview integration, and JSON output free from ANSI escape sequences. Graphviz SVG generation is exercised separately as an optional-tool smoke check rather than making the external renderer a prerequisite for the ordinary Python test suite.
+
 Torture coverage chains filtered CTE materialisation into grouping, HAVING and outer ordering, and also aggregates a cross-facet UNION-derived relation containing scalar CASE expressions and seeded RANDOM projection.
 
 ## CTE and set composition

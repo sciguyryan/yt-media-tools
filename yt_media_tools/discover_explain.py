@@ -6,6 +6,13 @@ from yt_media_tools.cache import CacheStats, SourceCoverage
 from yt_media_tools.cte_dependencies import plan_cte_dependencies
 from yt_media_tools.capabilities import capabilities_for_fields
 from yt_media_tools.dates import DateContext
+from yt_media_tools.explain_presentation import (
+    EXPLANATION_SCHEMA_VERSION,
+    build_explain_graph,
+    explain_decisions,
+    graph_to_json,
+    render_console_overview,
+)
 from yt_media_tools.discover_constants import PROGRAM_VERSION
 from yt_media_tools.planner import (
     AcquisitionPlan,
@@ -36,7 +43,130 @@ from yt_media_tools.sources import SourceSpec, resolve_source_request, source_ca
 from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats, lower_acquisition_plan_to_ytdlp
 
 
-def explain_user_query(query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False) -> str:
+def _optimiser_explain_payload(
+    optimisation: object | None,
+    *,
+    deferred_reason: str | None = None,
+) -> dict[str, object]:
+    """Build the stable optimiser subsection used by text and JSON explain."""
+    if optimisation is None:
+        return {
+            "status": "deferred",
+            "changed": None,
+            "rewrites": [],
+            "reason": deferred_reason or "dynamic metadata fields require post-acquisition type resolution",
+        }
+
+    decisions = getattr(optimisation, "decisions")
+    query = getattr(optimisation, "query")
+    return {
+        "status": "active",
+        "changed": bool(getattr(optimisation, "changed")),
+        "rewrites": [
+            {
+                "rule": item.rule,
+                "before": item.before,
+                "after": item.after,
+            }
+            for item in decisions
+        ],
+        "optimised_query": format_query(query),
+    }
+
+
+def _presentation_input(
+    *,
+    query: Query,
+    optimiser_payload: dict[str, object],
+    predicate_stages: object,
+    source_boundaries: tuple[object, ...],
+    limit_plan: object,
+    cte_dependencies: object,
+    offline: bool,
+) -> dict[str, object]:
+    """Project planner state into the renderer-facing explanation subset."""
+    return {
+        "query": format_query(query),
+        "predicate_optimiser": optimiser_payload,
+        "predicate_stages": {
+            "enumeration_terms": [format_expression(term) for term in getattr(predicate_stages, "enumeration_terms")],
+            "residual_terms": [format_expression(term) for term in getattr(predicate_stages, "residual_terms")],
+            "reason": getattr(predicate_stages, "reason"),
+        },
+        "source_boundaries": [
+            {
+                "source": getattr(boundary, "source_name"),
+                "facet": getattr(boundary, "facet"),
+                "acquisition_stages": [
+                    {
+                        "name": stage.name,
+                        "required": stage.required,
+                        "fields": sorted(stage.fields),
+                        "reason": stage.reason,
+                    }
+                    for stage in getattr(
+                        boundary,
+                        "physical_acquisition",
+                    ).stages
+                ],
+                "pre_acquisition_predicates": [
+                    format_expression(term) for term in getattr(boundary, "pre_acquisition_predicates")
+                ],
+                "acquisition": getattr(boundary, "acquisition").mode,
+                "acquisition_reason": getattr(boundary, "acquisition").reason,
+                "cost_class": getattr(boundary, "cost_class"),
+                "heuristics": {
+                    "cost_tier": getattr(boundary, "heuristics").cost_tier,
+                    "selectivity_tier": getattr(
+                        boundary,
+                        "heuristics",
+                    ).selectivity_tier,
+                    "information_value_tier": getattr(
+                        boundary,
+                        "heuristics",
+                    ).information_value_tier,
+                    "deferred_expensive_stages": list(
+                        getattr(
+                            boundary,
+                            "heuristics",
+                        ).deferred_expensive_stages
+                    ),
+                    "reason": getattr(boundary, "heuristics").reason,
+                },
+                "branch_empty": getattr(boundary, "branch_empty"),
+            }
+            for boundary in source_boundaries
+        ],
+        "limit_aware_termination": {
+            "applicable": query.limit is not None,
+            "eligible": False if offline else bool(getattr(limit_plan, "eligible")),
+            "reason": (
+                "offline execution performs no metadata acquisition" if offline else getattr(limit_plan, "reason")
+            ),
+            "mode": "none" if offline else getattr(limit_plan, "mode"),
+        },
+        "cte_dependencies": [
+            {
+                "name": dependency.name,
+                "pruned_outputs": sorted(dependency.pruned_outputs),
+                "pruning_applied": dependency.pruning_applied,
+                "reason": dependency.reason,
+            }
+            for dependency in getattr(cte_dependencies, "dependencies")
+        ],
+    }
+
+
+def explain_user_query(
+    query_text: str,
+    *,
+    source_type: str,
+    tab: str,
+    date_format: str,
+    offline: bool = False,
+    unicode: bool = True,
+    colour: bool = False,
+) -> str:
     """Explain query semantics, field capabilities, and safe acquisition optimisations."""
     query = parse_query(query_text)
     source_requests = query_physical_source_requests(query)
@@ -499,7 +629,27 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
                 "  One or more fields are dynamic yt-dlp metadata fields and can only be type-checked after metadata acquisition.",
             ]
         )
-    return "\n".join(lines)
+    optimiser_payload = _optimiser_explain_payload(
+        optimisation,
+        deferred_reason=(
+            "dynamic metadata fields require post-acquisition type resolution" if dynamic_deferred else None
+        ),
+    )
+    presentation = _presentation_input(
+        query=query,
+        optimiser_payload=optimiser_payload,
+        predicate_stages=predicate_stages,
+        source_boundaries=tuple(source_boundaries),
+        limit_plan=limit_plan,
+        cte_dependencies=cte_dependencies,
+        offline=offline,
+    )
+    overview = render_console_overview(
+        presentation,
+        unicode=unicode,
+        colour=colour,
+    )
+    return overview + "\n\n" + "\n".join(lines)
 
 
 def explain_user_query_json(
@@ -555,26 +705,18 @@ def explain_user_query_json(
     try:
         resolved_for_optimiser = resolve_query(query, QuerySchema(()), dates)
         optimiser_result = optimise_query(resolved_for_optimiser)
-        optimiser_payload: dict[str, object] = {
-            "status": "active",
-            "changed": optimiser_result.changed,
-            "rewrites": [
-                {"rule": item.rule, "before": item.before, "after": item.after} for item in optimiser_result.decisions
-            ],
-            "optimised_query": format_query(optimiser_result.query),
-        }
+        optimiser_payload = _optimiser_explain_payload(optimiser_result)
     except QuerySyntaxError as exc:
         if not exc.message.startswith("Unknown field "):
             raise
-        optimiser_payload = {
-            "status": "deferred",
-            "changed": None,
-            "rewrites": [],
-            "reason": "dynamic metadata fields require post-acquisition type resolution",
-        }
+        optimiser_payload = _optimiser_explain_payload(
+            None,
+            deferred_reason=("dynamic metadata fields require post-acquisition type resolution"),
+        )
 
-    return {
+    payload = {
         "kind": "yt-discover-explain",
+        "schema_version": EXPLANATION_SCHEMA_VERSION,
         "version": PROGRAM_VERSION,
         "query": format_query(query),
         "ctes": [
@@ -760,6 +902,7 @@ def explain_user_query_json(
                 "stable_order_field": branch.stable_order_field,
                 "early_termination": branch.early_termination,
                 "acquisition": branch.acquisition.mode,
+                "acquisition_reason": branch.acquisition.reason,
                 "cost_class": branch.cost_class,
                 "heuristics": {
                     "cost_tier": branch.heuristics.cost_tier,
@@ -821,6 +964,13 @@ def explain_user_query_json(
             "now": dates.local_now.isoformat(),
         },
     }
+    graph = build_explain_graph(payload)
+    payload["explanation"] = {
+        "schema_version": EXPLANATION_SCHEMA_VERSION,
+        "decisions": explain_decisions(payload),
+        "graph": graph_to_json(graph),
+    }
+    return payload
 
 
 def _explain_analyze_payload(
@@ -916,21 +1066,35 @@ def _explain_analyze_payload(
     }
 
 
-def _format_explain_analyze_text(payload: dict[str, object]) -> str:
+def _format_explain_analyze_text(
+    payload: dict[str, object],
+    *,
+    unicode: bool = True,
+    colour: bool = False,
+) -> str:
     actual = payload["actual"]
     timing = payload["timing_seconds"]
     assert isinstance(actual, dict)
     assert isinstance(timing, dict)
     cache = actual["cache"]
     assert isinstance(cache, dict)
+
+    reset = "\x1b[0m"
+    heading_colour = "\x1b[1;36m"
+
+    def heading(value: str) -> str:
+        return f"{heading_colour}{value}{reset}" if colour else value
+
+    rule = "═" * 15 if unicode else "=" * 15
     lines = [
-        "EXPLAIN ANALYZE",
+        heading("EXPLAIN ANALYZE"),
+        rule,
         "",
-        "Plan",
+        heading("Plan"),
         f"  Strategy: {payload['plan']['strategy']}",
         f"  Reason: {payload['plan']['reason']}",
         "",
-        "Actual execution",
+        heading("Actual execution"),
         f"  Offline: {'yes' if actual['offline'] else 'no'}",
         f"  Backend: {actual['selected_backend']} (requested: {actual['requested_backend']})",
         f"  Entries enumerated: {actual['enumerated']}",
@@ -940,19 +1104,19 @@ def _format_explain_analyze_text(payload: dict[str, object]) -> str:
         f"  Metadata available from refresh: {actual['metadata_available']}",
         f"  Inaccessible/skipped during refresh: {actual['metadata_skipped']}",
         "",
-        "Incremental frontier",
+        heading("Incremental frontier"),
         f"  Attempted: {'yes' if actual['frontier']['attempted'] else 'no'}",
         f"  Overlap confirmed: {'yes' if actual['frontier']['confirmed'] else 'no'}",
         f"  New source entries: {actual['frontier']['new_source_entries']}",
         f"  Full enumeration avoided: {'yes' if actual['frontier']['full_enumeration_avoided'] else 'no'}",
         "",
-        "LIMIT-aware acquisition",
+        heading("LIMIT-aware acquisition"),
         f"  Eligible: {'yes' if actual['limit_termination']['eligible'] else 'no'}",
         f"  Detailed acquisition stopped early: {'yes' if actual['limit_termination']['terminated_early'] else 'no'}",
         f"  Batches: {actual['limit_termination']['batches']}",
         f"  Candidates examined: {actual['limit_termination']['candidates_examined']}",
         "",
-        "Cache outcome",
+        heading("Cache outcome"),
         f"  Records examined: {cache['examined']}",
         f"  Fresh hits: {cache['fresh_hits']}",
         f"  Stale entries: {cache['stale']}",
@@ -960,7 +1124,7 @@ def _format_explain_analyze_text(payload: dict[str, object]) -> str:
         f"  Refreshed: {cache['refreshed']}",
         f"  Written: {cache['written']}",
         "",
-        "Result statistics",
+        heading("Result statistics"),
         f"  DISTINCT: {'yes' if payload['row_shaping']['distinct'] else 'no'}",
         f"  OFFSET: {payload['row_shaping']['offset']}",
         f"  LIMIT: {payload['row_shaping']['limit'] if payload['row_shaping']['limit'] is not None else 'None'}",
@@ -973,7 +1137,7 @@ def _format_explain_analyze_text(payload: dict[str, object]) -> str:
         ),
         f"  Rows that would be emitted: {actual['emitted']}",
         "",
-        "Timing",
+        heading("Timing"),
         f"  Acquisition/cache phase: {timing['acquisition_or_cache']:.3f}s",
         f"  Query evaluation: {timing['query']:.3f}s",
         f"  Total: {timing['total']:.3f}s",
@@ -985,7 +1149,7 @@ def _format_explain_analyze_text(payload: dict[str, object]) -> str:
         lines.extend(
             [
                 "",
-                "Source coverage",
+                heading("Source coverage"),
                 f"  Complete at last observation: {'yes' if coverage['complete'] else 'no'}",
                 f"  Observed at: {coverage['observed_at']}",
                 f"  Cached/observed records: {coverage['cached_entries']}/{coverage['observed_entries']}",

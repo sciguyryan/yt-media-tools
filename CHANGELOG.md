@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.28.12 - Explainable Optimisation and Acquisition
+
+- Add a versioned deterministic explanation model for planner decisions and rendered plan structure.
+- Add compact console plan and decision-tree output derived from the same explanation data as JSON.
+- Use ANSI colour for semantic console states when an interactive terminal supports it, with explicit auto/always/never control and `NO_COLOR` support.
+- Use conservative Unicode box drawing and arrows for terminal structure, with deterministic ASCII fallback for redirected or unsuitable output.
+- Report applied, rejected, deferred and eliminated planning decisions, including predicate staging, source-boundary predicate pushdown, bounded acquisition, metadata deferral, CTE projection pruning and LIMIT termination.
+- Add Graphviz-backed SVG explain rendering without making Graphviz part of query semantics or normal execution.
+- Keep JSON free of terminal presentation sequences and expose the explanation schema, decision list and graph model explicitly.
+- Add deterministic coverage for explanation schema versioning, console modes, ANSI suppression, Unicode/ASCII fallback, DOT generation and JSON cleanliness.
+
 ## Discover 0.28.11 - Cost and Selectivity Heuristics
 
 - Add deterministic coarse cost, selectivity and information-value heuristics without fabricated numeric estimates.

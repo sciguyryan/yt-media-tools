@@ -406,7 +406,7 @@ Runtime detailed-metadata decisions now consume the explicit physical acquisitio
 
 The plan remains a requirements model, not a promise that every backend can fetch each stage separately. Unsupported or collapsed distinctions are reported by lowering rather than erased from the planner representation.
 
-## 0.28.11 - Cost and Selectivity Heuristics
+## 0.28.11 - Cost and Selectivity Heuristics - Complete
 
 ### Scope
 
@@ -466,7 +466,19 @@ Include where relevant:
 
 Keep explain structures versionable and deterministic so later machine interfaces do not need to scrape human prose.
 
-Human-readable diagnostics may additionally render deterministic Unicode query-plan and decision-tree graphs from the actual planner representation, with a plain-ASCII fallback for logs, CI and terminals where box drawing is unsuitable. Graphs may expose logical structure, optimiser decisions, backend selection, acquisition dependencies, information-value and cost estimates, pushdown versus residual evaluation, concurrency groups, bailout conditions and result consolidation. Exact CLI spelling remains a later UX decision.
+Human-readable diagnostics may additionally render deterministic Unicode query-plan and decision-tree graphs from the actual planner representation, with a plain-ASCII fallback for logs, CI and terminals where box drawing is unsuitable. Graphs may expose logical structure, optimiser decisions, backend selection, acquisition dependencies, information-value and cost estimates, pushdown versus residual evaluation, concurrency groups, bailout conditions and result consolidation. This phase settles the initial presentation controls and rendered SVG interface while leaving any broader future renderer UX open to evidence.
+
+### Implementation
+
+0.28.12 introduces a versioned presentation-level explanation model derived from the existing machine explain payload. The model records deterministic planner decisions and graph structure without moving query semantics into a renderer.
+
+Console explain output gains a compact plan overview and planner-decision tree before the detailed semantic explanation. Applied, rejected, deferred and eliminated decisions are labelled in words rather than pictographic status symbols. Rich terminal mode uses conservative ANSI colour plus dependable Unicode box drawing and arrows. `--colour auto|always|never` and `--unicode auto|always|never` provide explicit control; automatic mode disables ANSI colour and Unicode structure for redirected output, respects `NO_COLOR`, and falls back to ASCII when the stream encoding cannot represent the selected Unicode set.
+
+The machine JSON representation remains presentation-neutral and now carries an explicit explanation schema version together with the deterministic decision list and graph model. ANSI escape sequences are never introduced into JSON.
+
+Rendered explain output uses Graphviz as an optional presentation dependency and emits SVG from the same explanation graph used by the console view. Graphviz availability therefore affects only rendered presentation, not parsing, optimisation, planning or query execution. No separate HTML/web renderer is introduced in this phase.
+
+The decision model exposes safe predicate staging, source-boundary predicate pushdown, acquisition strategy selection or rejection, deferred expensive metadata stages, branch elimination, CTE projection pruning and LIMIT-aware termination where those decisions are present. Existing detailed explain sections continue to expose field requirements, capability availability, acquisition stages, yt-dlp lowering, temporal bounds and heuristic guidance.
 
 ## 0.28.13 - Optimiser Differential and Acquisition Torture
 
