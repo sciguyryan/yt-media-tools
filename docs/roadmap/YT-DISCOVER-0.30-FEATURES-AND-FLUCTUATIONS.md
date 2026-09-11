@@ -1,8 +1,8 @@
-# yt-discover 0.29.x - Features and Fluctuations
+# yt-discover 0.30.x - Features and Fluctuations
 
 ## Purpose
 
-The 0.29.x series expands yt-sql after the 0.27.x architectural refactor and 0.28.x acquisition optimiser are stable. SQL syntax is used where it gives users a familiar, precise way to query media metadata, but SQL compatibility is not a goal in itself.
+The 0.30.x series expands yt-sql after the 0.27.x architectural refactor, 0.28.x acquisition optimiser, and 0.29.x language and parser architecture programme are stable. SQL syntax is used where it gives users a familiar, precise way to query media metadata, but SQL compatibility is not a goal in itself.
 
 Discover is a metadata query language over heterogeneous yt-dlp extractors. Its language may therefore add, omit or adapt features according to media metadata, extractor capabilities, acquisition cost and the logical source/facet model.
 
@@ -27,7 +27,7 @@ Every new language feature must include, where applicable:
 
 No feature should be added solely because another SQL dialect contains it.
 
-## 0.29.0 - Comparison and Conversion Syntax
+## 0.30.0 - Comparison and Conversion Syntax
 
 ### Statements and operators
 
@@ -61,7 +61,7 @@ Initial targets should correspond to stable yt-sql logical types, including inte
 
 Safe conversion is especially useful for extractor-specific dynamic fields whose logical representation is known but whose individual values may be inconsistent.
 
-## 0.29.1 - Set-Operation Statements
+## 0.30.1 - Set-Operation Statements
 
 ### Add
 
@@ -87,7 +87,7 @@ Allow branch-specific acquisition planning. A branch eliminated by capability or
 
 Do not introduce JOIN to complete a SQL family. Independent source composition remains set-based.
 
-## 0.29.2 - Ordering and Row Selection Statements
+## 0.30.2 - Ordering and Row Selection Statements
 
 ### Add
 
@@ -118,7 +118,7 @@ Require a deterministic ordering sufficient to select a unique representative fo
 
 These constructs participate directly in safe early-termination proofs.
 
-## 0.29.3 - Window and QUALIFY Statement Architecture
+## 0.30.3 - Window and QUALIFY Statement Architecture
 
 ### Add syntax
 
@@ -154,7 +154,7 @@ Define a stable yt-sql logical evaluation order. QUALIFY filters after window ev
 
 Evaluate `RANGE`, `GROUPS` and frame `EXCLUDE` only after ROWS semantics are proven useful and stable.
 
-## 0.29.4 - Temporal Functions
+## 0.30.4 - Temporal Functions
 
 ### Add a coherent temporal family
 
@@ -197,7 +197,7 @@ Preserve query-captured TODAY/NOW semantics.
 
 Temporal expressions that can be reduced to source-field bounds should feed 0.28 temporal-frontier inference where equivalence is provable.
 
-## 0.29.5 - String Functions
+## 0.30.5 - String Functions
 
 ### Add useful metadata operations
 
@@ -230,7 +230,7 @@ Review splitting functions only if they serve common metadata workflows and inte
 
 Do not add duplicate syntax such as `SIMILAR TO` when LIKE/ILIKE and MATCHES already cover the useful search spaces.
 
-## 0.29.6 - Numeric Functions
+## 0.30.6 - Numeric Functions
 
 ### Add a restrained analytical set
 
@@ -255,7 +255,7 @@ Preserve integer/real distinctions and deterministic conversion behaviour.
 
 No cryptographic hashes, encryption, arbitrary scientific catalogue or specialist database numerics without a demonstrated media-query use case.
 
-## 0.29.7 - Aggregate and Statistical Functions
+## 0.30.7 - Aggregate and Statistical Functions
 
 ### Aggregate DISTINCT
 
@@ -300,7 +300,7 @@ These support useful questions about duration distributions, view statistics, up
 -   nondeterministic `ANY_VALUE`;
 -   large specialist statistics libraries.
 
-## 0.29.8 - Window Functions
+## 0.30.8 - Window Functions
 
 ### Ranking
 
@@ -339,7 +339,7 @@ Permit suitable existing aggregate/statistical functions as window functions whe
 
 Review `IGNORE NULLS` / `RESPECT NULLS` after base navigation semantics are stable.
 
-## 0.29.9 - Stable Media and Source Identity Model
+## 0.30.9 - Stable Media and Source Identity Model
 
 ### Purpose
 
@@ -362,7 +362,7 @@ Prefer pseudo-fields when the value is row data. Prefer functions only when comp
 
 Do not expose unstable internal yt-dlp extractor class names or transient implementation details as permanent yt-sql semantics.
 
-## 0.29.10 - Format Metadata Model
+## 0.30.10 - Format Metadata Model
 
 ### Purpose
 
@@ -400,7 +400,7 @@ Translate raw yt-dlp format dictionaries into a typed logical schema. Missing ra
 
 Format metadata must be acquired only when the query requires it. Queries that do not inspect formats should retain opportunities for flat/lightweight metadata acquisition.
 
-## 0.29.11 - Format Inspection Functions
+## 0.30.11 - Format Inspection Functions
 
 ### Purpose
 
@@ -438,7 +438,7 @@ Where an inspection predicate can be represented exactly using yt-dlp's format f
 
 Do not introduce policy-heavy functions such as `IS_4K` unless the exact threshold and semantics are clearly preferable to simple numeric comparison.
 
-## 0.29.12 - Typed Metadata Collections
+## 0.30.12 - Typed Metadata Collections
 
 ### Purpose
 
@@ -473,7 +473,7 @@ Define separately:
 
 The optimiser must also retain its separate internal state for a collection not yet acquired.
 
-## 0.29.13 - Collection Expansion
+## 0.30.13 - Collection Expansion
 
 ### Purpose
 
@@ -505,7 +505,7 @@ UNNEST formats AS format
 -   thumbnail-dimension analysis;
 -   tag/category analysis.
 
-## 0.29.14 - Collection Predicates and Quantifiers
+## 0.30.14 - Collection Predicates and Quantifiers
 
 ### Purpose
 
@@ -534,7 +534,7 @@ Do not add a general lambda language until real collection queries demonstrate t
 
 Quantified predicates are strong candidates for yt-dlp format-filter translation when their semantics match supported yt-dlp expressions exactly.
 
-## 0.29.15 - Subtitle, Caption, Chapter and Thumbnail Schemas
+## 0.30.15 - Subtitle, Caption, Chapter and Thumbnail Schemas
 
 ### Subtitle/caption logical fields
 
@@ -564,7 +564,7 @@ Review stable fields such as:
 
 Each collection should be independently demand-driven where yt-dlp permits. Asking about formats should not force subtitle or thumbnail acquisition unless yt-dlp's actual extractor boundary makes that inseparable.
 
-## 0.29.16 - Source Capability Introspection
+## 0.30.16 - Source Capability Introspection
 
 ### Purpose
 
@@ -584,7 +584,7 @@ Public query semantics may expose structural support and row-level NULL values.
 
 Do not expose whether metadata happens to have been fetched yet. Physical acquisition state must not change logical query results.
 
-## 0.29.17 - Extractor-Aware Predicate Translation
+## 0.30.17 - Extractor-Aware Predicate Translation
 
 ### Purpose
 
@@ -609,7 +609,7 @@ Now that the language includes richer media predicates, expand the 0.28 pushdown
 -   Explain output should show what was translated and what remains local.
 -   Version-specific yt-dlp syntax remains adapter implementation detail.
 
-## 0.29.18 - Advanced Grouping and Collection Review
+## 0.30.18 - Advanced Grouping and Collection Review
 
 ### Review individually
 
@@ -627,7 +627,7 @@ Now that the language includes richer media predicates, expand the 0.28 pushdown
 
 Do not adopt the family wholesale.
 
-## 0.29.19 - Remaining SQL and LINQ Value Review
+## 0.30.19 - Remaining SQL and LINQ Value Review
 
 ### Purpose
 
@@ -664,7 +664,7 @@ Repeat the cross-dialect review after the implemented features exist and evaluat
 -   arbitrary shell execution;
 -   aliases added only for dialect compatibility.
 
-## 0.29.20 - Features and Fluctuations Reconciliation
+## 0.30.20 - Features and Fluctuations Reconciliation
 
 ### Scope
 
@@ -702,7 +702,7 @@ Require comprehensive coverage of every new construct across:
 
 ### Completion criterion
 
-0.29.x is complete when yt-sql is a coherent media-metadata query language rather than a collection of SQL-inspired additions, and every accepted media-specific feature composes correctly with the acquisition optimiser.
+0.30.x is complete when yt-sql is a coherent media-metadata query language rather than a collection of SQL-inspired additions, and every accepted media-specific feature composes correctly with the acquisition optimiser.
 
 ## Roadmap maintenance
 

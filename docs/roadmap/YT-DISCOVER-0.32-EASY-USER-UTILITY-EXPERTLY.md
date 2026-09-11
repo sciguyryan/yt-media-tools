@@ -1,4 +1,4 @@
-# yt-discover 0.31.x - Easy User Utility, Expertly
+# yt-discover 0.32.x - Easy User Utility, Expertly
 
 ## Status of release name
 
@@ -6,11 +6,11 @@
 
 ## Purpose
 
-The 0.31.x series makes the mature Discover engine easier to use without diluting expert control or making query behaviour implicit. Usability work follows the refactor, optimiser and feature programmes so it can expose stable capabilities rather than designing interfaces around moving internals.
+The 0.32.x series makes the mature Discover engine easier to use without diluting expert control or making query behaviour implicit. Usability work follows the refactor, optimiser and feature programmes so it can expose stable capabilities rather than designing interfaces around moving internals.
 
 The tool remains suitable for scripting and internal use. Human convenience must not damage deterministic execution, machine-readable behaviour or reproducibility.
 
-## 0.31.0 - Query Files
+## 0.32.0 - Query Files
 
 ### Add
 
@@ -31,7 +31,7 @@ First-class execution of `.yt-sql` files.
 
 Choose spelling during implementation, but avoid ambiguous positional behaviour. The file path should be explicitly distinguishable from a literal query when necessary.
 
-## 0.31.1 - Saved Queries
+## 0.32.1 - Saved Queries
 
 ### Purpose
 
@@ -52,7 +52,7 @@ Allow frequently used queries to be named without duplicating long command lines
 
 Do not create a database-backed query library unless ordinary files prove insufficient.
 
-## 0.31.2 - Persistent Configuration
+## 0.32.2 - Persistent Configuration
 
 ### Scope
 
@@ -81,7 +81,7 @@ built-in defaults
 
 Provide a way to inspect effective configuration. Avoid settings that make a copied query impossible to understand without hidden local state.
 
-## 0.31.3 - Shell Completion
+## 0.32.3 - Shell Completion
 
 ### Scope
 
@@ -101,7 +101,7 @@ Initial shells may include those common on supported development environments, w
 
 Do not implement a shell parser or fragile context engine merely to complete arbitrary SQL expressions.
 
-## 0.31.4 - Diagnostic and Error Presentation
+## 0.32.4 - Diagnostic and Error Presentation
 
 ### Improve
 
@@ -120,7 +120,7 @@ Do not implement a shell parser or fragile context engine merely to complete arb
 -   Do not change machine-readable error contracts merely for prettier prose.
 -   Avoid speculative suggestions when multiple interpretations are equally plausible.
 
-## 0.31.5 - Discovery and Introspection Helpers
+## 0.32.5 - Discovery and Introspection Helpers
 
 ### Purpose
 
@@ -143,7 +143,7 @@ Make the language discoverable without requiring documentation lookup for every 
 
 Provide human-readable output and machine-readable forms where the information is likely to be consumed by tooling.
 
-## 0.31.6 - Query Authoring Assistance
+## 0.32.6 - Query Authoring Assistance
 
 ### Scope
 
@@ -162,7 +162,7 @@ Candidates:
 
 Performance advice must be grounded in the actual physical plan. Do not emit generic SQL folklore such as warnings about constructs that are cheap in Discover's architecture.
 
-## 0.31.7 - Machine-Readable Query Contract
+## 0.32.7 - Machine-Readable Query Contract
 
 ### Purpose
 
@@ -190,11 +190,11 @@ Evaluate and, if justified, expose a versioned language-neutral representation f
 
 If the earlier compiled/serialised query investigation demonstrates value, align the machine contract with it without making the on-disk representation an opaque implementation dump.
 
-## 0.31.8 - Explain and Plan UX
+## 0.32.8 - Explain and Plan UX
 
 ### Purpose
 
-Make the substantial 0.28/0.29 optimiser behaviour understandable to expert users.
+Make the substantial 0.28 optimiser and 0.30 language behaviour understandable to expert users.
 
 ### Human explain should answer
 
@@ -212,7 +212,7 @@ Make the substantial 0.28/0.29 optimiser behaviour understandable to expert user
 
 Keep a stable versioned structure suitable for testing and tooling.
 
-## 0.31.9 - Usability Reconciliation
+## 0.32.9 - Usability Reconciliation
 
 ### Scope
 
