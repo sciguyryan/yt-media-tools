@@ -14,24 +14,24 @@ The tools remain independently useful, but are deliberately designed to compose 
 ## Repository layout
 
 ```text
-yt-discover.py
-yt-download.py
-yt_media_tools/        Shared/internal Python package
-defaults.json          Downloader parameter profiles
-profiles/              Downloader output profiles
-yt_discover_tests/     Discover test suite
-yt_downloader_tests/   Downloader test suite
-yt_media_tools_tests/  Shared internal-package test suite
-docs/                   Project documentation
-docs/DISCOVER-README.md     Discover documentation
-docs/DOWNLOADER-README.md   Downloader documentation
-docs/DISCOVER-FUTURE-WORK.md   Planned Discover language and capability programme
-docs/DOWNLOADER-FUTURE-WORK.md Planned Downloader architecture and capability programme
-docs/YT-SQL.md              yt-sql language reference
-docs/YT-SQL-OPTIMISATION.md yt-sql optimisation strategy
-docs/TODO.md                Accepted future work and design directions
-docs/roadmap/          Living Discover version-series roadmaps
-pytest.ini             Combined test discovery configuration
+yt-discover.py                    Discover command-line application
+yt-download.py                    Downloader command-line application
+yt_media_tools/                   Shared/internal Python package
+defaults.json                     Downloader parameter profiles
+profiles/                         Downloader output profiles
+yt_discover_tests/                Discover test suite
+yt_downloader_tests/              Downloader test suite
+yt_media_tools_tests/             Shared internal-package test suite
+docs/                              Project documentation
+docs/DISCOVER-README.md           Discover documentation
+docs/DOWNLOADER-README.md         Downloader documentation
+docs/DISCOVER-FUTURE-WORK.md      Planned Discover language and capability programme
+docs/DOWNLOADER-FUTURE-WORK.md    Planned Downloader architecture and capability programme
+docs/YT-SQL.md                    yt-sql language reference
+docs/YT-SQL-OPTIMISATION.md       yt-sql optimisation strategy
+docs/TODO.md                      Accepted future work and design directions
+docs/roadmap/                     Living Discover version-series roadmaps
+pytest.ini                        Combined test discovery configuration
 ```
 
 The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained. Common low-level yt-dlp runtime mechanics are shared by both applications without merging their higher-level acquisition and download policies.
