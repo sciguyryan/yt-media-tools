@@ -369,7 +369,7 @@ The relation simplifier does not rewrite the user-visible AST into a synthetic e
 
 Human and JSON explain output report eliminated logical uses, redundant WHERE filters and the proof reason for each static relation simplification.
 
-## 0.28.10 - Metadata Acquisition Plan
+## 0.28.10 - Metadata Acquisition Plan - Complete
 
 ### Scope
 
@@ -426,6 +426,20 @@ An explicit opt-in bounded-concurrency mode may later execute independent acquis
 ### Non-goal
 
 Do not invent precise cost estimates that the extractor cannot justify. Prefer coarse capability tiers and measured deterministic rules over false numerical precision.
+
+### Implementation
+
+0.28.11 adds deterministic coarse cost, selectivity and information-value heuristics on top of the explicit physical acquisition plan. The heuristics use named tiers rather than fabricated numeric probabilities or timings.
+
+Safe enumeration-stage top-level AND terms are ranked by expected information value per local evaluation cost. Equality and small positive membership predicates receive stronger selectivity guidance than broad inequalities, negated predicates and otherwise unclassified forms. Expensive local text matching remains less attractive than equally selective cheap comparisons. Ties retain original query order. Only deterministic terms already proven safe for independent enumeration-stage evaluation are eligible for reordering, so the logical query AST and residual evaluation order remain unchanged.
+
+Physical source/facet boundaries record a coarse acquisition cost tier, the strongest available enumeration selectivity tier, the corresponding information-value tier and any expensive metadata stages that can remain deferred until cheap enumeration filters have survived. The acquisition cost tier is aligned with the existing planner cost class so explain output does not present contradictory cost labels.
+
+The runtime already evaluates authoritative enumeration predicates before detailed extraction where that staged path exists. 0.28.11 makes the cheap-term order heuristic explicit and observable rather than adding speculative backend behaviour. Nested collection and dynamic/raw metadata stages are identified as expensive deferred work when cheap authoritative filters are available, even when the current yt-dlp lowering ultimately collapses those stages into complete JSON extraction.
+
+Source-branch acquisition order is not changed in this release. Although the planner can describe independent source boundaries, there is not yet a proven cross-branch bailout or dependency rule that would make cost-based branch reordering reduce required work. Bounded concurrent acquisition also remains future work.
+
+Human and JSON explain output expose predicate selectivity, local evaluation cost, information value, whether the safe enumeration order changed, boundary cost/selectivity tiers and deferred expensive stages.
 
 ## 0.28.12 - Explainable Optimisation and Acquisition
 

@@ -34,6 +34,8 @@ Static relation coverage includes WHERE predicates that are impossible under SQL
 
 Physical acquisition-plan coverage checks identity-only enumeration, authoritative lightweight fields, ordinary complete metadata, nested formats/subtitles/chapters/thumbnails metadata, open-ended raw metadata, independent UNION source plans, empty-boundary plans, yt-dlp stage lowering, and human/JSON explain output. The tests assert the semantic stage model separately from the backend mapping so future adapters can honour finer-grained stages without changing the query contract.
 
+Cost/selectivity heuristic coverage checks safe AND-term reordering, stable ordering for equal-ranked terms, detailed-stage deferral behind cheap authoritative filters, very-high cost classification for dynamic raw metadata, zero-cost empty relations, consistency with the established planner cost classes, and human/JSON explain observability. Residual and unsafe predicate forms remain covered by the staged-predicate differential and NULL-semantics suites.
+
 Torture coverage chains filtered CTE materialisation into grouping, HAVING and outer ordering, and also aggregates a cross-facet UNION-derived relation containing scalar CASE expressions and seeded RANDOM projection.
 
 ## CTE and set composition

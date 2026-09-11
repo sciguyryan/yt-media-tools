@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .planning_heuristics import PredicateHeuristic, order_predicate_terms
 from .query_evaluator import evaluate
 from .query_model import Binary, Query
 from .query_properties import STAGE_CONSTANT, STAGE_ENUMERATION, analyse_expression
@@ -21,6 +22,8 @@ class PredicateStagePlan:
     enumeration_fields: frozenset[str]
     residual_fields: frozenset[str]
     reason: str
+    enumeration_heuristics: tuple[PredicateHeuristic, ...] = ()
+    heuristic_order_changed: bool = False
 
     @property
     def has_enumeration_filter(self) -> bool:
@@ -56,7 +59,14 @@ def plan_predicate_stages(query: Query, *, source: SourceSpec) -> PredicateStage
     kept intact unless the complete expression is authoritative at enumeration time.
     """
     if query.predicate is None:
-        return PredicateStagePlan((), (), (), frozenset(), frozenset(), "the query has no WHERE predicate")
+        return PredicateStagePlan(
+            (),
+            (),
+            (),
+            frozenset(),
+            frozenset(),
+            "the query has no WHERE predicate",
+        )
 
     terms = _and_terms(query.predicate)
     enumeration: list[Any] = []
@@ -65,7 +75,13 @@ def plan_predicate_stages(query: Query, *, source: SourceSpec) -> PredicateStage
         (enumeration if _enumeration_safe(term, source=source) else residual).append(term)
 
     enumeration_term_fields = tuple(analyse_expression(term, source=source).required_fields for term in enumeration)
-    enumeration_fields = frozenset().union(*enumeration_term_fields) if enumeration_term_fields else frozenset()
+    (
+        ordered_enumeration,
+        ordered_enumeration_fields,
+        enumeration_heuristics,
+        heuristic_order_changed,
+    ) = order_predicate_terms(tuple(enumeration), enumeration_term_fields)
+    enumeration_fields = frozenset().union(*ordered_enumeration_fields) if ordered_enumeration_fields else frozenset()
     residual_fields = (
         frozenset().union(*(analyse_expression(term, source=source).required_fields for term in residual))
         if residual
@@ -78,8 +94,17 @@ def plan_predicate_stages(query: Query, *, source: SourceSpec) -> PredicateStage
         reason = "the complete WHERE predicate is authoritative at enumeration time"
     else:
         reason = "no WHERE fragment can be separated for authoritative enumeration-stage evaluation"
+    if heuristic_order_changed:
+        reason += "; cheap deterministic AND terms are reordered by coarse information value per local evaluation cost"
     return PredicateStagePlan(
-        tuple(enumeration), enumeration_term_fields, tuple(residual), enumeration_fields, residual_fields, reason
+        ordered_enumeration,
+        ordered_enumeration_fields,
+        tuple(residual),
+        enumeration_fields,
+        residual_fields,
+        reason,
+        enumeration_heuristics,
+        heuristic_order_changed,
     )
 
 

@@ -220,6 +220,25 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
             f"  Reason: {predicate_stages.reason}",
         ]
     )
+    if predicate_stages.enumeration_heuristics:
+        lines.extend(["", "Predicate cost/selectivity heuristics"])
+        for index, (term, heuristic) in enumerate(
+            zip(
+                predicate_stages.enumeration_terms,
+                predicate_stages.enumeration_heuristics,
+                strict=True,
+            ),
+            1,
+        ):
+            lines.append(
+                f"  {index}. {format_expression(term)}: "
+                f"selectivity={heuristic.selectivity}; "
+                f"local-cost={heuristic.evaluation_cost}; "
+                f"information-value={heuristic.information_value}"
+            )
+            lines.append(f"     Reason: {heuristic.reason}")
+        lines.append("  Evaluation order changed: " + ("yes" if predicate_stages.heuristic_order_changed else "no"))
+
     lines.extend(["", "Temporal bounds"])
     if temporal_bounds.fields:
         for item in temporal_bounds.fields:
@@ -283,6 +302,23 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
                 lines.append(
                     "    Collapsed into detailed JSON extraction: " + ", ".join(lowering.collapsed_detailed_stages)
                 )
+
+    if source_boundaries:
+        lines.extend(["", "Cost and selectivity heuristics"])
+        for boundary in source_boundaries:
+            facet_text = f" OF {boundary.facet}" if boundary.facet is not None else ""
+            lines.append(
+                f"  {boundary.source_name}{facet_text}: "
+                f"cost={boundary.heuristics.cost_tier}; "
+                f"selectivity={boundary.heuristics.selectivity_tier}; "
+                f"information-value={boundary.heuristics.information_value_tier}"
+            )
+            if boundary.heuristics.deferred_expensive_stages:
+                lines.append(
+                    "    Deferred until cheap filters survive: "
+                    + ", ".join(boundary.heuristics.deferred_expensive_stages)
+                )
+            lines.append(f"    Reason: {boundary.heuristics.reason}")
 
     if source_boundaries:
         simplified = [
@@ -616,6 +652,21 @@ def explain_user_query_json(
             "enumeration_fields": sorted(predicate_stages.enumeration_fields),
             "residual_fields": sorted(predicate_stages.residual_fields),
             "reason": predicate_stages.reason,
+            "heuristic_order_changed": predicate_stages.heuristic_order_changed,
+            "enumeration_heuristics": [
+                {
+                    "term": format_expression(term),
+                    "selectivity": heuristic.selectivity,
+                    "evaluation_cost": heuristic.evaluation_cost,
+                    "information_value": heuristic.information_value,
+                    "reason": heuristic.reason,
+                }
+                for term, heuristic in zip(
+                    predicate_stages.enumeration_terms,
+                    predicate_stages.enumeration_heuristics,
+                    strict=True,
+                )
+            ],
         },
         "temporal_bounds": {
             "fields": [
@@ -710,6 +761,13 @@ def explain_user_query_json(
                 "early_termination": branch.early_termination,
                 "acquisition": branch.acquisition.mode,
                 "cost_class": branch.cost_class,
+                "heuristics": {
+                    "cost_tier": branch.heuristics.cost_tier,
+                    "selectivity_tier": branch.heuristics.selectivity_tier,
+                    "information_value_tier": branch.heuristics.information_value_tier,
+                    "deferred_expensive_stages": list(branch.heuristics.deferred_expensive_stages),
+                    "reason": branch.heuristics.reason,
+                },
                 "branch_empty": branch.branch_empty,
                 "eliminated_uses": branch.eliminated_uses,
                 "redundant_where_uses": branch.redundant_where_uses,

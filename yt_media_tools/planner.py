@@ -9,6 +9,7 @@ from .cte_dependencies import plan_cte_dependencies
 from .dates import DateContext
 from .query_model import Binary, Query
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
+from .planning_heuristics import AcquisitionHeuristicPlan, plan_acquisition_heuristics
 from .query_semantics import query_physical_source_requests
 from .relation_simplification import RelationSimplificationPlan, plan_relation_simplification
 from .query_properties import (
@@ -311,6 +312,7 @@ class QueryPlan:
     temporal_bounds: TemporalBoundPlan
     limit_termination: LimitTerminationPlan
     physical_acquisition: PhysicalAcquisitionPlan
+    heuristics: AcquisitionHeuristicPlan
     cost_class: str
     cost_reason: str
     source_branch_eliminated: bool = False
@@ -342,6 +344,7 @@ class SourceBoundaryPlan:
     elimination_proof: OptimisationProof | None
     collection_requirements: frozenset[str]
     physical_acquisition: PhysicalAcquisitionPlan
+    heuristics: AcquisitionHeuristicPlan
     eliminated_uses: int = 0
     redundant_where_uses: int = 0
     relation_simplifications: tuple[RelationSimplificationPlan, ...] = ()
@@ -537,6 +540,11 @@ def plan_source_boundaries(
             detailed_fields=metadata.detailed_fields,
             skip=empty,
         )
+        heuristics = plan_acquisition_heuristics(
+            physical_acquisition=physical_acquisition,
+            predicate_heuristics=stages.enumeration_heuristics,
+            bounded=acquisition.targeted,
+        )
 
         result.append(
             SourceBoundaryPlan(
@@ -567,6 +575,7 @@ def plan_source_boundaries(
                 elimination_proof,
                 _collection_requirements(fields),
                 physical_acquisition,
+                heuristics,
                 eliminated_uses,
                 redundant_where_uses,
                 tuple(relation for _use, _owner, relation in analysed_uses),
@@ -658,6 +667,15 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
             skip=eliminated,
         )
     )
+    heuristics = (
+        boundary_override.heuristics
+        if boundary_override is not None
+        else plan_acquisition_heuristics(
+            physical_acquisition=physical_acquisition,
+            predicate_heuristics=predicate_stages.enumeration_heuristics,
+            bounded=acquisition.targeted,
+        )
+    )
     return QueryPlan(
         query,
         properties,
@@ -668,6 +686,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         temporal_bounds,
         limit,
         physical_acquisition,
+        heuristics,
         cost_class,
         cost_reason,
         eliminated,

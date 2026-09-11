@@ -1,5 +1,18 @@
 # Changelog
 
+## Discover 0.28.11 - Cost and Selectivity Heuristics
+
+- Add deterministic coarse cost, selectivity and information-value heuristics without fabricated numeric estimates.
+- Rank safe deterministic enumeration-stage AND terms by expected information value per local evaluation cost.
+- Preserve original query order for equally ranked predicate terms.
+- Keep residual predicate evaluation order and the logical query AST unchanged.
+- Record per-boundary acquisition cost, selectivity, information-value and deferred expensive-stage guidance.
+- Align heuristic cost tiers with the existing planner cost classes.
+- Identify detailed, nested collection and dynamic raw stages that can remain behind cheap authoritative enumeration filters.
+- Keep source-branch acquisition order unchanged until a semantics-preserving bailout or dependency rule can justify reordering.
+- Expose predicate and boundary heuristic decisions through verbose, human explain and JSON explain output.
+- Add deterministic coverage for predicate ordering, tie stability, expensive-stage deferral, dynamic metadata costs and explain output.
+
 ## Discover 0.28.10 - Metadata Acquisition Plan
 
 - Add a backend-neutral physical metadata acquisition plan with ordered semantic stages.

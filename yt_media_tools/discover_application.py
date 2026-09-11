@@ -336,10 +336,24 @@ def main(argv: list[str] | None = None) -> int:
                     + (", ".join(branch.physical_acquisition.required_stage_names) or "none")
                     + ".",
                 )
+                _verbose(
+                    True,
+                    "  Heuristics: "
+                    f"cost={branch.heuristics.cost_tier}; "
+                    f"selectivity={branch.heuristics.selectivity_tier}; "
+                    f"information-value={branch.heuristics.information_value_tier}.",
+                )
         elif not multi_source:
             _verbose(
                 True,
                 "Metadata stages: " + (", ".join(query_plan.physical_acquisition.required_stage_names) or "none") + ".",
+            )
+            _verbose(
+                True,
+                "Heuristics: "
+                f"cost={query_plan.heuristics.cost_tier}; "
+                f"selectivity={query_plan.heuristics.selectivity_tier}; "
+                f"information-value={query_plan.heuristics.information_value_tier}.",
             )
 
     requested_backend = args.backend
