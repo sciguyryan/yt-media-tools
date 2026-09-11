@@ -339,7 +339,7 @@ Explicit ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION comp
 
 yt-dlp positional item ranges are not used as final-row limits because skipped or unavailable source positions need not correspond to emitted query rows. Explain, explain-analyse and run reports expose the selected termination mode.
 
-## 0.28.9 - Static Relation and Branch Simplification
+## 0.28.9 - Static Relation and Branch Simplification - Complete
 
 ### Scope
 
@@ -393,6 +393,18 @@ The physical plan should be backend-neutral rather than modelled directly as yt-
 ### yt-dlp integration
 
 Map each physical stage to supported yt-dlp invocation choices, extractor arguments or post-enumeration fetches. Keep the mapping isolated in adapters so query semantics do not become tied to command-line syntax used by a particular yt-dlp release.
+
+### Implementation
+
+0.28.10 introduces a backend-neutral `PhysicalAcquisitionPlan` for every physical source/facet boundary. The plan contains ordered semantic stages for source identity enumeration, basic authoritative metadata, complete entry metadata, formats, subtitles and automatic captions, chapters, thumbnails, tags, and open-ended `raw.*` metadata.
+
+The stage plan is derived from the already-pruned physical field requirements rather than from the original logical query. It therefore composes with capability simplification, CTE dependency propagation, source-boundary pruning, static relation elimination and empty-branch removal. A source boundary proven empty has no required acquisition stages.
+
+The current yt-dlp lowering is isolated in the yt-dlp adapter layer. Identity and basic metadata stages map to flat enumeration where that execution path is available. Complete metadata and collection-specific stages map to complete JSON extraction because yt-dlp does not currently expose those semantic collections as independently acquirable stages in Discover's execution model. The logical plan retains the distinction so a future backend can honour a finer-grained capability without changing yt-sql semantics.
+
+Runtime detailed-metadata decisions now consume the explicit physical acquisition plan rather than re-deriving that requirement from incidental control flow. Verbose output reports the selected metadata stages, and human and JSON explain output expose every stage, its fields, whether it is required, and how the current yt-dlp lowering collapses stages.
+
+The plan remains a requirements model, not a promise that every backend can fetch each stage separately. Unsupported or collapsed distinctions are reported by lowering rather than erased from the planner representation.
 
 ## 0.28.11 - Cost and Selectivity Heuristics
 

@@ -221,7 +221,9 @@ The cache schema is explicitly versioned at version 3. Version 1 and 2 caches mi
 
 ## Capability-aware planning and explain output
 
-yt-discover uses an explicit acquisition capability model. yt-discover now distinguishes metadata that is exact, approximate, or unavailable at the YouTube.js, yt-dlp flat, and yt-dlp detailed stages. `--explain` exposes those capabilities together with the planned acquisition strategy, optimisation paths that are active or available, reasons an optimisation cannot be used, and the estimated acquisition cost.
+yt-discover uses an explicit acquisition capability model. yt-discover distinguishes metadata that is exact, approximate, or unavailable at the YouTube.js, yt-dlp flat, and yt-dlp detailed stages. Physical planning now also produces a backend-neutral ordered metadata-acquisition plan for each source/facet boundary. The plan distinguishes identity enumeration, basic metadata, complete entry metadata, formats, subtitles and automatic captions, chapters, thumbnails, tags, and dynamic `raw.*` metadata.
+
+The current yt-dlp adapter lowers identity/basic stages to flat enumeration where applicable and collapses deeper semantic stages into complete JSON extraction. Those distinctions remain visible in the physical plan so another backend can honour finer-grained capabilities without changing yt-sql semantics. `--explain` exposes the semantic stages, yt-dlp lowering, field capabilities, acquisition strategy, optimisation paths and estimated acquisition cost.
 
 Bounded channel scans now use a general conservative lightweight predicate evaluator. It may reject a candidate before detailed yt-dlp extraction when exact lightweight values or conservative upload-date uncertainty intervals prove that the complete `WHERE` expression is false. This includes safe upper-date pruning as well as the existing lower-bound rejection. Unknown or ambiguous values are always retained for authoritative detailed evaluation.
 

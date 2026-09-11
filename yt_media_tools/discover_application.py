@@ -330,6 +330,17 @@ def main(argv: list[str] | None = None) -> int:
                     f"uses={branch.use_count}; acquisition={branch.acquisition.mode}; "
                     f"cost={branch.cost_class}; fields={', '.join(sorted(branch.required_fields)) or 'none'}.",
                 )
+                _verbose(
+                    True,
+                    "  Metadata stages: "
+                    + (", ".join(branch.physical_acquisition.required_stage_names) or "none")
+                    + ".",
+                )
+        elif not multi_source:
+            _verbose(
+                True,
+                "Metadata stages: " + (", ".join(query_plan.physical_acquisition.required_stage_names) or "none") + ".",
+            )
 
     requested_backend = args.backend
     selected_backend = "cache" if args.offline else "ytdlp"
@@ -473,7 +484,19 @@ def main(argv: list[str] | None = None) -> int:
     source_record_counts: dict[tuple[str, str | None], int] = {}
     # Determine this before enumeration because lightweight progress owns acquisition
     # observability only when no detailed metadata pass will follow.
-    requires_detailed = metadata_requirements.requires_detailed_metadata or args.fields or args.schema
+    requires_detailed = (
+        (
+            any(
+                boundary.physical_acquisition.requires_detailed_metadata
+                for boundary in source_boundary_plans
+                if not boundary.branch_empty
+            )
+            if multi_source
+            else query_plan.physical_acquisition.requires_detailed_metadata
+        )
+        or args.fields
+        or args.schema
+    )
     if multi_source:
         raw_records = []
         acquisition_stats = AcquisitionStats()
@@ -740,7 +763,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             facet_capabilities = source_capabilities(source).facet_capabilities(source.facet)
             enumeration_only = (
-                not metadata_requirements.requires_detailed_metadata
+                not query_plan.physical_acquisition.requires_detailed_metadata
                 and facet_capabilities.cheaply_enumerates_identities
                 and not explicit_prefilters
                 and not args.fields
@@ -908,7 +931,7 @@ def main(argv: list[str] | None = None) -> int:
                                 video_ids=candidate_ids,
                                 query=query,
                                 dates=date_context,
-                                required_fields=required_query_fields(query),
+                                required_fields=set(query_plan.physical_request.required_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
                             )
@@ -917,7 +940,7 @@ def main(argv: list[str] | None = None) -> int:
                                 cache=metadata_cache,
                                 source_url=source.canonical_url,
                                 video_ids=candidate_ids,
-                                required_fields=required_query_fields(query),
+                                required_fields=set(query_plan.physical_request.required_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
                             )

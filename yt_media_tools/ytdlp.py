@@ -11,6 +11,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+from .acquisition_plan import (
+    PhysicalAcquisitionPlan,
+    STAGE_BASIC_METADATA,
+    STAGE_COMPLETE_METADATA,
+    STAGE_ENUMERATE_IDENTITIES,
+)
 from .ytdlp_runtime import (
     append_authentication_options,
     ensure_executable,
@@ -20,6 +26,51 @@ from .ytdlp_runtime import (
 
 DEFAULT_COOKIES_FILE = Path(__file__).resolve().parent.parent / "cookies.txt"
 DEFAULT_EXTRACTOR_ARGS = "youtube:player-client=default,-android_sdkless"
+
+
+@dataclass(frozen=True)
+class YtDlpAcquisitionLowering:
+    """How a backend-neutral metadata plan maps onto yt-dlp execution phases."""
+
+    flat_stages: tuple[str, ...]
+    detailed_stages: tuple[str, ...]
+    collapsed_detailed_stages: tuple[str, ...]
+    reason: str
+
+    @property
+    def requires_flat_enumeration(self) -> bool:
+        """Return whether yt-dlp must enumerate source entries."""
+        return bool(self.flat_stages)
+
+    @property
+    def requires_detailed_extraction(self) -> bool:
+        """Return whether yt-dlp must perform complete per-entry extraction."""
+        return bool(self.detailed_stages)
+
+
+def lower_acquisition_plan_to_ytdlp(plan: PhysicalAcquisitionPlan) -> YtDlpAcquisitionLowering:
+    """Lower semantic metadata stages to the stable yt-dlp execution model.
+
+    yt-dlp currently exposes a useful flat-playlist distinction and a complete JSON
+    extraction distinction. Nested metadata collections and open-ended raw fields are
+    therefore explicit in the logical plan but collapse into the detailed JSON phase.
+    """
+    required = plan.required_stage_names
+    flat = tuple(stage for stage in required if stage in {STAGE_ENUMERATE_IDENTITIES, STAGE_BASIC_METADATA})
+    detailed = tuple(stage for stage in required if stage not in flat)
+    collapsed = tuple(stage for stage in detailed if stage != STAGE_COMPLETE_METADATA)
+
+    if not required:
+        reason = "no yt-dlp work is required because the physical acquisition plan is empty"
+    elif detailed:
+        reason = (
+            "yt-dlp lowers identity/basic stages to flat enumeration and all deeper "
+            "metadata stages to complete JSON extraction"
+        )
+    else:
+        reason = "yt-dlp can satisfy all required stages through flat enumeration"
+
+    return YtDlpAcquisitionLowering(flat, detailed, collapsed, reason)
 
 
 class YtDlpError(RuntimeError):

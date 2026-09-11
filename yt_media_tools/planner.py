@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
+from .acquisition_plan import PhysicalAcquisitionPlan, plan_physical_acquisition
 from .cte_dependencies import plan_cte_dependencies
 from .dates import DateContext
 from .query_model import Binary, Query
@@ -309,6 +310,7 @@ class QueryPlan:
     predicate_stages: PredicateStagePlan
     temporal_bounds: TemporalBoundPlan
     limit_termination: LimitTerminationPlan
+    physical_acquisition: PhysicalAcquisitionPlan
     cost_class: str
     cost_reason: str
     source_branch_eliminated: bool = False
@@ -339,6 +341,7 @@ class SourceBoundaryPlan:
     branch_empty: bool
     elimination_proof: OptimisationProof | None
     collection_requirements: frozenset[str]
+    physical_acquisition: PhysicalAcquisitionPlan
     eliminated_uses: int = 0
     redundant_where_uses: int = 0
     relation_simplifications: tuple[RelationSimplificationPlan, ...] = ()
@@ -527,6 +530,14 @@ def plan_source_boundaries(
                     source=source,
                 )
 
+        physical_acquisition = plan_physical_acquisition(
+            source=source,
+            required_fields=fields,
+            enumeration_fields=metadata.enumeration_fields,
+            detailed_fields=metadata.detailed_fields,
+            skip=empty,
+        )
+
         result.append(
             SourceBoundaryPlan(
                 request[0],
@@ -555,6 +566,7 @@ def plan_source_boundaries(
                 empty,
                 elimination_proof,
                 _collection_requirements(fields),
+                physical_acquisition,
                 eliminated_uses,
                 redundant_where_uses,
                 tuple(relation for _use, _owner, relation in analysed_uses),
@@ -635,6 +647,17 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         lower_date_bound=acquisition.lower_date_bound,
         stop_before=acquisition.stop_before,
     )
+    physical_acquisition = (
+        boundary_override.physical_acquisition
+        if boundary_override is not None
+        else plan_physical_acquisition(
+            source=source,
+            required_fields=physical_required_fields,
+            enumeration_fields=metadata_requirements.enumeration_fields,
+            detailed_fields=metadata_requirements.detailed_fields,
+            skip=eliminated,
+        )
+    )
     return QueryPlan(
         query,
         properties,
@@ -644,6 +667,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         predicate_stages,
         temporal_bounds,
         limit,
+        physical_acquisition,
         cost_class,
         cost_reason,
         eliminated,

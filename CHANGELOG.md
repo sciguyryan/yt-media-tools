@@ -1,5 +1,17 @@
 # Changelog
 
+## Discover 0.28.10 - Metadata Acquisition Plan
+
+- Add a backend-neutral physical metadata acquisition plan with ordered semantic stages.
+- Distinguish source identity enumeration, basic metadata, complete metadata, formats, subtitles and captions, chapters, thumbnails, tags, and dynamic raw metadata.
+- Derive acquisition stages from pruned physical field requirements so CTE, branch and relation simplifications carry through to remote work.
+- Represent statically empty source boundaries with no required acquisition stages.
+- Add an isolated yt-dlp lowering that maps identity/basic stages to flat enumeration and deeper stages to complete JSON extraction.
+- Keep nested metadata stages explicit when yt-dlp must currently collapse them into one detailed extraction phase.
+- Make runtime detailed-metadata decisions consume the explicit physical acquisition plan.
+- Report physical metadata stages through verbose output and human and JSON explain output.
+- Add deterministic coverage for identity-only, lightweight, detailed, collection, dynamic, UNION and empty-boundary acquisition plans.
+
 ## Discover 0.28.9 - Static Relation and Branch Simplification
 
 - Add proof-backed relation simplification for filters that can never evaluate TRUE under SQL three-valued logic.

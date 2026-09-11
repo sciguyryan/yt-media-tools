@@ -33,7 +33,7 @@ from yt_media_tools.query import (
 from yt_media_tools.staged_predicates import plan_predicate_stages
 from yt_media_tools.temporal_bounds import infer_temporal_bounds
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
-from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats
+from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats, lower_acquisition_plan_to_ytdlp
 
 
 def explain_user_query(query_text: str, *, source_type: str, tab: str, date_format: str, offline: bool = False) -> str:
@@ -268,6 +268,22 @@ def explain_user_query(query_text: str, *, source_type: str, tab: str, date_form
         )
         lines.append("  Detailed: " + (", ".join(sorted(physical.metadata_requirements.detailed_fields)) or "none"))
         lines.append(f"  Reason: {physical.metadata_requirements.reason}")
+    if source_boundaries:
+        lines.extend(["", "Metadata acquisition stages"])
+        for boundary in source_boundaries:
+            facet_text = f" OF {boundary.facet}" if boundary.facet is not None else ""
+            lowering = lower_acquisition_plan_to_ytdlp(boundary.physical_acquisition)
+            lines.append(f"  {boundary.source_name}{facet_text}")
+            for stage in boundary.physical_acquisition.stages:
+                status = "required" if stage.required else "not required"
+                fields = ", ".join(sorted(stage.fields)) or "none"
+                lines.append(f"    {stage.name}: {status}; fields={fields}; {stage.reason}")
+            lines.append(f"    yt-dlp lowering: {lowering.reason}")
+            if lowering.collapsed_detailed_stages:
+                lines.append(
+                    "    Collapsed into detailed JSON extraction: " + ", ".join(lowering.collapsed_detailed_stages)
+                )
+
     if source_boundaries:
         simplified = [
             boundary for boundary in source_boundaries if boundary.eliminated_uses or boundary.redundant_where_uses
@@ -649,6 +665,26 @@ def explain_user_query_json(
                 "url": branch.source.canonical_url,
                 "uses": branch.use_count,
                 "required_fields": sorted(branch.required_fields),
+                "acquisition_stages": [
+                    {
+                        "name": stage.name,
+                        "required": stage.required,
+                        "fields": sorted(stage.fields),
+                        "reason": stage.reason,
+                    }
+                    for stage in branch.physical_acquisition.stages
+                ],
+                "required_acquisition_stages": list(branch.physical_acquisition.required_stage_names),
+                "ytdlp_lowering": {
+                    "flat_stages": list(lower_acquisition_plan_to_ytdlp(branch.physical_acquisition).flat_stages),
+                    "detailed_stages": list(
+                        lower_acquisition_plan_to_ytdlp(branch.physical_acquisition).detailed_stages
+                    ),
+                    "collapsed_detailed_stages": list(
+                        lower_acquisition_plan_to_ytdlp(branch.physical_acquisition).collapsed_detailed_stages
+                    ),
+                    "reason": lower_acquisition_plan_to_ytdlp(branch.physical_acquisition).reason,
+                },
                 "enumeration_fields": sorted(branch.metadata_requirements.enumeration_fields),
                 "detailed_fields": sorted(branch.metadata_requirements.detailed_fields),
                 "pre_acquisition_predicate": format_expression(branch.combined_predicate)

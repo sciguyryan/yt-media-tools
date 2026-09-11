@@ -32,6 +32,8 @@ Current coverage includes COUNT(*), COUNT(expr), SUM, AVG, MIN, MAX, GROUP BY, H
 
 Static relation coverage includes WHERE predicates that are impossible under SQL filtering semantics, constant TRUE/FALSE HAVING conditions, capability-proven TRUE filters, per-branch UNION elimination, shared-source field pruning after an empty branch is removed from physical requirements, and explain consistency for skipped acquisition. These tests keep scalar UNKNOWN semantics separate from the relational question of whether a row can ever survive.
 
+Physical acquisition-plan coverage checks identity-only enumeration, authoritative lightweight fields, ordinary complete metadata, nested formats/subtitles/chapters/thumbnails metadata, open-ended raw metadata, independent UNION source plans, empty-boundary plans, yt-dlp stage lowering, and human/JSON explain output. The tests assert the semantic stage model separately from the backend mapping so future adapters can honour finer-grained stages without changing the query contract.
+
 Torture coverage chains filtered CTE materialisation into grouping, HAVING and outer ordering, and also aggregates a cross-facet UNION-derived relation containing scalar CASE expressions and seeded RANDOM projection.
 
 ## CTE and set composition
