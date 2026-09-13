@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.29.0 - Typed Collections and Indexing
+
+- Add first-class typed collection values with declared element types, NULLability and explicit logical ordering contracts.
+- Add composable zero-based postfix indexing with deterministic NULL, out-of-range and invalid-index semantics across projection, ordering and predicates.
+- Model tags, categories, formats, chapters and thumbnails as collection metadata while preserving conservative ordering for structured collections.
+- Support ordered dynamic `raw.*` sequence indexing without promoting backend-specific order or opaque structured values into portable yt-sql semantics.
+- Carry indexed and whole-collection requirements through source-boundary and physical acquisition planning, permitting partial indexed acquisition only when a backend explicitly proves exact equivalence.
+- Serialise collection results as JSON arrays and expose collection type, element type, ordering, positional-indexing and acquisition capability through explain output.
+- Extend the deterministic conformance corpus, formatter round trips, offline CLI integration and regression coverage for collection indexing, parameters, NULLs, bounds, raw metadata and malformed predicates.
+- Preserve the scalar-only `SELECT *` contract and deterministic predicate diagnostics while integrating general indexed scalar expressions into WHERE.
+
 ## Discover 0.28.13 - Optimiser Differential and Acquisition Torture
 
 - Add a broad deterministic optimiser differential corpus spanning NULL and three-valued logic, Unicode, temporal infinity, numeric literal forms, CASE/scalar expressions, aggregation, CTEs, set composition, DISTINCT, slicing and seeded RANDOM.
