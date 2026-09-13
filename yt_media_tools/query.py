@@ -35,6 +35,7 @@ from .query_model import (
     ScalarCase as ScalarCase,
     ScalarComparison as ScalarComparison,
     ScalarFunction as ScalarFunction,
+    ScalarIndex as ScalarIndex,
     ScalarIsNull as ScalarIsNull,
     ScalarUnary as ScalarUnary,
     SelectTerm as SelectTerm,

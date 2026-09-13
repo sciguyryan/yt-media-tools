@@ -18,6 +18,7 @@ from .query_model import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     TextPredicate,
@@ -45,6 +46,8 @@ def format_scalar_expression(expression: Any) -> str:
             f"({format_scalar_expression(expression.left)} {expression.operator} "
             f"{format_scalar_expression(expression.right)})"
         )
+    if isinstance(expression, ScalarIndex):
+        return f"{format_scalar_expression(expression.collection)}[{format_scalar_expression(expression.index)}]"
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
     if isinstance(expression, AggregateFunction):

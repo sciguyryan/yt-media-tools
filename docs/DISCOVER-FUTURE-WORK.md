@@ -16,7 +16,7 @@ Documentation is part of implementation. `DISCOVER-README.md`, `YT-SQL.md`, `YT-
 
 The deterministic conformance corpus remains the semantic authority for routine testing. Small and normal generated datasets remain suitable for normal tests. Large and huge datasets remain explicit scale/stress work and must not make routine CI slow.
 
-General relational composition is no longer rejected categorically. The dedicated 0.30.x roadmap evaluates selected JOIN forms where independently acquired media relations create compelling Discover use cases, particularly SEMI and ANTI joins. SQL completeness remains a non-goal, and unsupported relational forms should remain unsupported unless concrete media-query value justifies them.
+General relational composition is no longer rejected categorically. The dedicated 0.31.x roadmap evaluates selected JOIN forms where independently acquired media relations create compelling Discover use cases, particularly SEMI and ANTI joins. SQL completeness remains a non-goal, and unsupported relational forms should remain unsupported unless concrete media-query value justifies them.
 
 ## Phase 1 - comparison and ordering completion
 

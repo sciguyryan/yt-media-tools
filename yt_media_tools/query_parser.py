@@ -23,6 +23,7 @@ from .query_model import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     SelectTerm,
@@ -39,6 +40,8 @@ _TOKEN_RE = re.compile(
   | (?P<INFINITY>-?INFINITY\(\))
   | (?P<OP><=|>=|!=|<>|=|<|>)
   | (?P<LPAREN>\()
+  | (?P<LBRACKET>\[)
+  | (?P<RBRACKET>\])
   | (?P<ATIDENT>@[A-Za-z0-9_.-]+)
   | (?P<RPAREN>\))
   | (?P<STRING>'(?:''|\\.|[^'\\])*'|\"(?:\"\"|\\.|[^\"\\])*\")
@@ -429,7 +432,21 @@ class Parser:
         if self.current.kind in {"PLUS", "MINUS"}:
             token = self.advance()
             return ScalarUnary(token.text, self.parse_scalar_unary(), token.position)
-        return self.parse_scalar_atom()
+        return self.parse_scalar_postfix()
+
+    def parse_scalar_postfix(self) -> Any:
+        """Parse tightly binding postfix operations over a scalar atom."""
+        node = self.parse_scalar_atom()
+        while self.current.kind == "LBRACKET":
+            bracket = self.advance()
+            if self.current.kind == "RBRACKET":
+                raise QuerySyntaxError(
+                    self.source, "Collection indexing requires an index expression.", bracket.position
+                )
+            index = self.parse_scalar_expression()
+            self.expect("RBRACKET", "Expected ']' to close the collection index.")
+            node = ScalarIndex(node, index, bracket.position)
+        return node
 
     def parse_scalar_atom(self) -> Any:
         token = self.current

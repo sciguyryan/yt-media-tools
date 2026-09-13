@@ -97,6 +97,16 @@ class TextPredicate:
 
 
 @dataclass(frozen=True)
+class ScalarIndex:
+    """Postfix positional indexing of a collection-valued scalar expression."""
+
+    collection: Any
+    index: Any
+    position: int = 0
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
 class ScalarFunction:
     name: str
     args: tuple[Any, ...]
