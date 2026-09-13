@@ -18,6 +18,7 @@ from .query import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     TextPredicate,
@@ -236,6 +237,10 @@ def _optimise_scalar_expression(
             decisions.append(_scalar_decision("fold-constant-arithmetic", optimised, folded))
             return folded, decisions
         return optimised, decisions
+    if isinstance(expression, ScalarIndex):
+        collection, collection_decisions = _optimise_scalar_expression(expression.collection, source=source)
+        index, index_decisions = _optimise_scalar_expression(expression.index, source=source)
+        return replace(expression, collection=collection, index=index), collection_decisions + index_decisions
     if isinstance(expression, AggregateFunction):
         args = []
         decisions: list[OptimisationDecision] = []

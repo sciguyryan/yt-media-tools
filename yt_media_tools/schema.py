@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
-from .query_types import QueryType
+from .query_types import CollectionOrdering, QueryType
 
 
 SCALAR_TYPES = (str, int, float, bool, type(None))
@@ -73,6 +73,31 @@ class FieldInfo:
         return QueryType.scalar(self.kind, nullable=self.nullable)
 
 
+def infer_collection_type(name: str, values: Iterable[Any], *, nullable: bool) -> QueryType | None:
+    """Infer a nested collection type without treating structured records as scalar elements."""
+    concrete = [value for value in values if value is not None]
+    if not concrete or not all(isinstance(value, (list, tuple, set)) for value in concrete):
+        return None
+    ordering = (
+        CollectionOrdering.UNORDERED if any(isinstance(value, set) for value in concrete) else CollectionOrdering.STABLE
+    )
+    elements = [element for value in concrete for element in value]
+    element_concrete = [element for element in elements if element is not None]
+    element_nullable = any(element is None for element in elements)
+    if element_concrete and all(isinstance(element, (list, tuple, set)) for element in element_concrete):
+        element_type = infer_collection_type(name, elements, nullable=element_nullable)
+        if element_type is None:
+            return None
+    elif any(isinstance(element, (dict, list, tuple, set)) for element in element_concrete):
+        return None
+    else:
+        element_type = QueryType.scalar(
+            infer_kind(name, elements) if elements else "unknown",
+            nullable=element_nullable,
+        )
+    return QueryType.collection(element_type, nullable=nullable, ordering=ordering)
+
+
 class QuerySchema:
     """Resolve known, aliased, dynamic, and raw nested metadata fields."""
 
@@ -102,7 +127,7 @@ class QuerySchema:
             for name, value in record.items():
                 if name.startswith("_"):
                     continue
-                if isinstance(value, SCALAR_TYPES):
+                if isinstance(value, SCALAR_TYPES + (list, tuple, set)):
                     observed.setdefault(name, []).append(value)
 
         for name, values in observed.items():
@@ -110,8 +135,12 @@ class QuerySchema:
             canonical = self._fields.get(key)
             if canonical is not None:
                 continue
-            kind = infer_kind(name, values)
             nullable = any(value is None for value in values) or len(values) < len(self.records)
+            collection_type = infer_collection_type(name, values, nullable=nullable)
+            if collection_type is not None:
+                self._fields[key] = FieldInfo(name, "collection", nullable, dynamic=True, resolved_type=collection_type)
+                continue
+            kind = infer_kind(name, values)
             self._fields[key] = FieldInfo(name, kind, nullable, dynamic=True)
 
         for alias, target in ALIASES.items():
@@ -145,8 +174,12 @@ class QuerySchema:
                 values.append(value)
             if present == 0:
                 return None
+            nullable = present < len(self.records) or any(v is None for v in values)
+            collection_type = infer_collection_type(path.split(".")[-1], values, nullable=nullable)
+            if collection_type is not None:
+                return FieldInfo(name, "collection", nullable, dynamic=True, resolved_type=collection_type)
             kind = "structured" if structured else infer_kind(path.split(".")[-1], values)
-            return FieldInfo(name, kind, present < len(self.records) or any(v is None for v in values), dynamic=True)
+            return FieldInfo(name, kind, nullable, dynamic=True)
         return self._fields.get(lowered)
 
     def available_fields(self) -> list[FieldInfo]:

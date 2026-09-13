@@ -104,6 +104,7 @@ class ScalarIndex:
     index: Any
     position: int = 0
     kind: str | None = None
+    resolved_type: Any | None = None
 
 
 @dataclass(frozen=True)
@@ -112,6 +113,7 @@ class ScalarFunction:
     args: tuple[Any, ...]
     position: int = 0
     kind: str | None = None
+    resolved_type: Any | None = None
 
 
 @dataclass(frozen=True)

@@ -25,6 +25,7 @@ from .query_model import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     TextPredicate,
@@ -366,6 +367,15 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
     if isinstance(expression, ScalarIsNull):
         child = analyse_expression(expression.expression, source=source)
         return _combine((child,), resolved_type="boolean", may_return_null=False)
+    if isinstance(expression, ScalarIndex):
+        collection = analyse_expression(expression.collection, source=source)
+        index = analyse_expression(expression.index, source=source)
+        return _combine(
+            (collection, index),
+            resolved_type=expression.kind,
+            null_sensitive=True,
+            may_return_null=True,
+        )
     if isinstance(expression, ScalarFunction):
         children = tuple(analyse_expression(arg, source=source) for arg in expression.args)
         if expression.name == "RANDOM":

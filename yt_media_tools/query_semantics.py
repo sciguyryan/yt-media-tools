@@ -25,6 +25,7 @@ from .query_model import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     SelectTerm,
@@ -45,6 +46,8 @@ def semantic_key(node: Any) -> Any:
         return ("scalar-comparison", node.operator, semantic_key(node.left), semantic_key(node.right))
     if isinstance(node, ScalarIsNull):
         return ("scalar-is-null", semantic_key(node.expression), node.negated)
+    if isinstance(node, ScalarIndex):
+        return ("scalar-index", semantic_key(node.collection), semantic_key(node.index), node.kind)
     if isinstance(node, ScalarFunction):
         return ("scalar-function", node.name, tuple(semantic_key(arg) for arg in node.args), node.kind)
     if isinstance(node, AggregateFunction):
@@ -134,6 +137,8 @@ def _contains_aggregate(expression: Any) -> bool:
         return _contains_aggregate(expression.operand)
     if isinstance(expression, ScalarBinary):
         return _contains_aggregate(expression.left) or _contains_aggregate(expression.right)
+    if isinstance(expression, ScalarIndex):
+        return _contains_aggregate(expression.collection) or _contains_aggregate(expression.index)
     if isinstance(expression, ScalarFunction):
         return any(_contains_aggregate(arg) for arg in expression.args)
     if isinstance(expression, ScalarCase):
@@ -169,6 +174,8 @@ def _having_contains_aggregate(node: Any) -> bool:
 def _contains_random(expression: Any) -> bool:
     if expression is None:
         return False
+    if isinstance(expression, ScalarIndex):
+        return _contains_random(expression.collection) or _contains_random(expression.index)
     if isinstance(expression, ScalarFunction):
         return expression.name == "RANDOM" or any(_contains_random(arg) for arg in expression.args)
     if isinstance(expression, AggregateFunction):

@@ -28,6 +28,7 @@ from .query_model import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     SelectTerm,
@@ -42,6 +43,7 @@ from .query_semantics import (
     _contains_random,
     _direct_from_sources,
 )
+from .query_types import QueryType
 from .schema import FieldInfo, QuerySchema
 from .units import load_default_unit_registry
 
@@ -226,6 +228,34 @@ def _scalar_kind(expression: Any) -> str | None:
     return None
 
 
+def _scalar_query_type(expression: Any, schema: QuerySchema) -> QueryType | None:
+    """Return the complete resolved yt-sql type when it is available."""
+    resolved_type = getattr(expression, "resolved_type", None)
+    if resolved_type is not None:
+        return resolved_type
+    if isinstance(expression, Field):
+        info = schema.resolve(expression.name)
+        return info.query_type if info is not None else None
+    kind = _scalar_kind(expression)
+    if kind is None:
+        return None
+    return QueryType.scalar(kind, nullable=True)
+
+
+def _collection_function_type(args: tuple[Any, ...], schema: QuerySchema) -> QueryType | None:
+    """Return a compatible collection result type for collection-preserving functions."""
+    types = [value for arg in args if (value := _scalar_query_type(arg, schema)) is not None]
+    collection_types = [value for value in types if value.is_collection]
+    if not collection_types:
+        return None
+    first = collection_types[0]
+    if any(value != first for value in collection_types[1:]):
+        return None
+    if any(not value.is_collection for value in types):
+        return None
+    return first.with_nullable(True)
+
+
 def _common_case_kind(expressions: Sequence[Any], source: str, position: int) -> str | None:
     """Return the compatible CASE result kind, ignoring NULL-only branches."""
     kinds = [kind for expression in expressions if (kind := _scalar_kind(expression)) is not None]
@@ -357,6 +387,41 @@ def _resolve_scalar_expression(
             results.append(else_result)
         kind = _common_case_kind(results, source, expression.position)
         return ScalarCase(tuple(resolved_whens), else_result, expression.position, kind)
+    if isinstance(expression, ScalarIndex):
+        collection = _resolve_scalar_expression(
+            expression.collection, schema, source, dates, aliases, select_context=select_context
+        )
+        index = _resolve_scalar_expression(
+            expression.index, schema, source, dates, aliases, select_context=select_context
+        )
+        collection_type = _scalar_query_type(collection, schema)
+        if collection_type is None or not collection_type.is_collection:
+            kind = _scalar_kind(collection) or "unknown"
+            raise QuerySyntaxError(
+                source,
+                f"Collection indexing requires a collection value; got {kind}.",
+                expression.position,
+            )
+        if not collection_type.supports_positional_indexing:
+            raise QuerySyntaxError(
+                source,
+                "Collection indexing requires a stable logical collection ordering.",
+                expression.position,
+            )
+
+        index_kind = _scalar_kind(index)
+        if _is_constant_scalar_expression(index):
+            index_value = evaluate_scalar_expression(index, {})
+            if index_value is not None:
+                if isinstance(index_value, bool) or not isinstance(index_value, int):
+                    raise QuerySyntaxError(source, "Collection index must be an integer value.", expression.position)
+                if index_value < 0:
+                    raise QuerySyntaxError(source, "Collection index must not be negative.", expression.position)
+        elif index_kind not in {"integer", "count", None}:
+            raise QuerySyntaxError(source, "Collection index must be an integer value.", expression.position)
+
+        result_type = collection_type.indexed_result_type()
+        return ScalarIndex(collection, index, expression.position, result_type.kind, result_type)
     if isinstance(expression, AggregateFunction):
         args = tuple(
             _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
@@ -429,7 +494,12 @@ def _resolve_scalar_expression(
             result_kind = (
                 non_null_kinds[0] if non_null_kinds and all(k == non_null_kinds[0] for k in non_null_kinds) else "mixed"
             )
-        return ScalarFunction(expression.name, args, expression.position, result_kind)
+        result_type = None
+        if expression.name in {"COALESCE", "NULLIF"}:
+            result_type = _collection_function_type(args, schema)
+        if result_type is None and result_kind is not None and result_kind != "collection":
+            result_type = QueryType.scalar(result_kind, nullable=True)
+        return ScalarFunction(expression.name, args, expression.position, result_kind, result_type)
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
 
 
@@ -443,6 +513,10 @@ def _is_constant_scalar_expression(expression: Any) -> bool:
         return _is_constant_scalar_expression(expression.left) and _is_constant_scalar_expression(expression.right)
     if isinstance(expression, ScalarFunction):
         return all(_is_constant_scalar_expression(arg) for arg in expression.args)
+    if isinstance(expression, ScalarIndex):
+        return _is_constant_scalar_expression(expression.collection) and _is_constant_scalar_expression(
+            expression.index
+        )
     return False
 
 
@@ -456,6 +530,8 @@ def _fields_outside_aggregates(expression: Any) -> set[str]:
         return _fields_outside_aggregates(expression.operand)
     if isinstance(expression, ScalarBinary):
         return _fields_outside_aggregates(expression.left) | _fields_outside_aggregates(expression.right)
+    if isinstance(expression, ScalarIndex):
+        return _fields_outside_aggregates(expression.collection) | _fields_outside_aggregates(expression.index)
     if isinstance(expression, ScalarFunction):
         fields: set[str] = set()
         for arg in expression.args:

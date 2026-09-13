@@ -26,6 +26,7 @@ from .query_model import (
     ScalarCase,
     ScalarComparison,
     ScalarFunction,
+    ScalarIndex,
     ScalarIsNull,
     ScalarUnary,
     SelectTerm,
@@ -118,6 +119,16 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
         except (TypeError, ValueError, OverflowError):
             return None
         raise AssertionError(f"Unsupported arithmetic operator {expression.operator}")
+    if isinstance(expression, ScalarIndex):
+        collection = evaluate_scalar_expression(expression.collection, record)
+        index = evaluate_scalar_expression(expression.index, record)
+        if collection is None or index is None:
+            return None
+        if isinstance(index, bool) or not isinstance(index, int) or index < 0:
+            return None
+        if not isinstance(collection, (list, tuple)):
+            return None
+        return collection[index] if index < len(collection) else None
     if isinstance(expression, ScalarCase):
         for branch in expression.whens:
             if evaluate(branch.condition, record) is True:
