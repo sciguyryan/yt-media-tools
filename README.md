@@ -22,7 +22,7 @@ profiles/                         Downloader output profiles
 yt_discover_tests/                Discover test suite
 yt_downloader_tests/              Downloader test suite
 yt_media_tools_tests/             Shared internal-package test suite
-docs/                              Project documentation
+docs/                             Project documentation
 docs/DISCOVER-README.md           Discover documentation
 docs/DOWNLOADER-README.md         Downloader documentation
 docs/DISCOVER-FUTURE-WORK.md      Planned Discover language and capability programme
@@ -84,4 +84,4 @@ GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. 
 
 ## Future work
 
-The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Completed Discover series are retained in release history and durable architecture documentation rather than the active roadmap directory. Discover 0.29.x reviews and settles language and parser architecture before the broader feature programme resumes in 0.30.x. Downloader 1.19.1 contains the current machine-interface foundation.
+The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Discover 0.27.x is the behaviour-preserving architectural refactor from the hardened 0.26.6 language baseline. Downloader 1.19.1 contains the current machine-interface foundation.

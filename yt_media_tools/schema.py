@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from .query_types import QueryType
+
 
 SCALAR_TYPES = (str, int, float, bool, type(None))
 
@@ -53,6 +55,22 @@ class FieldInfo:
     nullable: bool
     alias_of: str | None = None
     dynamic: bool = False
+    resolved_type: QueryType | None = None
+
+    def __post_init__(self) -> None:
+        if self.resolved_type is None:
+            return
+        if self.resolved_type.kind != self.kind:
+            raise ValueError("Field kind must match its resolved yt-sql type.")
+        if self.resolved_type.nullable != self.nullable:
+            raise ValueError("Field NULLability must match its resolved yt-sql type.")
+
+    @property
+    def query_type(self) -> QueryType:
+        """Return the complete resolved yt-sql type for this field."""
+        if self.resolved_type is not None:
+            return self.resolved_type
+        return QueryType.scalar(self.kind, nullable=self.nullable)
 
 
 class QuerySchema:

@@ -257,3 +257,9 @@ SELECT id FROM @whatdamath OF shorts
 ```
 
 Each source/facet request has its own resolved acquisition URL, query schema, record tag, cache/coverage identity and provenance entry. A media identifier appearing in two facets therefore does not cause the branches to share metadata accidentally. Plain `UNION` still deduplicates by the projected logical row, while `UNION ALL` preserves both branch rows.
+
+## Typed collection semantics
+
+yt-sql's resolved type model distinguishes scalar values from typed collections. Every collection has a declared element type, element NULLability through that element type, top-level collection NULLability, and an explicit logical ordering contract. Positional indexing is valid only when yt-sql can establish a stable logical order for the collection; incidental backend ordering is not sufficient.
+
+Collection indexing is zero-based. Indexing a SQL `NULL` collection produces SQL `NULL`, and an out-of-range index also produces SQL `NULL`. As a consequence, the resolved result of indexing is nullable even when the collection's declared element type is non-nullable. Negative indexing and string indexing are not part of the collection contract. Concrete indexing syntax and evaluation are introduced separately from this foundational type model.
