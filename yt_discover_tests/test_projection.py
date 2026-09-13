@@ -124,3 +124,24 @@ def test_order_by_explicit_select_alias() -> None:
     ]
     query = resolve("SELECT id, raw.extra.score AS score FROM @channel ORDER BY score DESC", records)
     assert [record["id"] for record in apply_query(records, query)] == ["b", "a"]
+
+
+def test_single_collection_output_uses_json_array_syntax() -> None:
+    records = [{"id": "a", "tags": ["alpha", "beta"]}]
+    query = resolve("SELECT tags FROM @channel", records)
+
+    assert capture(records, query) == '["alpha", "beta"]\n'
+
+
+def test_jsonl_collection_output_uses_nested_json_arrays() -> None:
+    records = [{"id": "a", "tags": ("alpha", "beta")}]
+    query = resolve("SELECT id, tags FROM @channel", records)
+
+    assert capture(records, query, "jsonl") == '{"id": "a", "tags": ["alpha", "beta"]}\n'
+
+
+def test_structured_collection_output_uses_json_array_of_objects() -> None:
+    records = [{"id": "a", "formats": [{"format_id": "18"}, {"format_id": "22"}]}]
+    query = resolve("SELECT formats FROM @channel", records)
+
+    assert capture(records, query) == '[{"format_id": "18"}, {"format_id": "22"}]\n'

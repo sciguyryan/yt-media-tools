@@ -280,3 +280,64 @@ def test_json_explain_reports_cte_dependency_propagation() -> None:
     assert payload["physical_metadata_requirements"][0]["required_fields"] == ["duration", "id"]
     assert payload["physical_metadata_requirements"][0]["enumeration_fields"] == ["id"]
     assert payload["physical_metadata_requirements"][0]["detailed_fields"] == ["duration"]
+
+
+def test_json_explain_exposes_collection_type_ordering_and_acquisition_contract() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain-format",
+        "json",
+        "--explain",
+        "SELECT tags[0] AS first_tag FROM @example",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    tags = next(item for item in payload["required_fields"] if item["field"] == "tags")
+
+    assert tags["type"] == "collection<string?>[stable]?"
+    assert tags["element_type"] == "string?"
+    assert tags["ordering"] == "stable"
+    assert tags["positional_indexing"] is True
+    assert tags["exact_indexed_acquisition"] is False
+    assert payload["metadata_requirements"]["indexed_requirements"] == [{"field": "tags", "index": 0}]
+    tags_stage = next(
+        stage for stage in payload["source_boundaries"][0]["acquisition_stages"] if stage["name"] == "tags"
+    )
+    assert tags_stage["fields"] == ["tags"]
+    assert tags_stage["indexed_fields"] == []
+
+
+def test_text_explain_exposes_collection_contract() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain",
+        "SELECT tags[0] AS first_tag FROM @example",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "type=collection<string?>[stable]?" in result.stdout
+    assert "element-type=string?" in result.stdout
+    assert "ordering=stable" in result.stdout
+    assert "positional-indexing=yes" in result.stdout
+    assert "exact-indexed-acquisition=no" in result.stdout
+
+
+def test_json_explain_marks_unknown_ordered_collection_as_non_positional() -> None:
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--explain-format",
+        "json",
+        "--explain",
+        "SELECT formats FROM @example",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    formats = next(item for item in payload["required_fields"] if item["field"] == "formats")
+
+    assert formats["type"] == "collection<structured?>[unknown]?"
+    assert formats["element_type"] == "structured?"
+    assert formats["ordering"] == "unknown"
+    assert formats["positional_indexing"] is False
+    assert formats["exact_indexed_acquisition"] is False

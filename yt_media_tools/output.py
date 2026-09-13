@@ -16,9 +16,15 @@ YOUTUBE_WATCH_PREFIX = "https://www.youtube.com/watch?v="
 
 
 def _serialisable(value: Any) -> Any:
-    """Convert typed query values into stable output-friendly scalar values."""
+    """Convert typed query values into stable output-friendly JSON values."""
     if isinstance(value, (date, datetime)):
         return value.isoformat()
+    if isinstance(value, tuple):
+        return [_serialisable(item) for item in value]
+    if isinstance(value, list):
+        return [_serialisable(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _serialisable(item) for key, item in value.items()}
     return value
 
 
@@ -33,6 +39,8 @@ def _line_value(record: dict[str, Any], term: SelectTerm) -> str:
         return ""
     if isinstance(value, bool):
         return "true" if value else "false"
+    if isinstance(value, (list, tuple, dict)):
+        return json.dumps(_serialisable(value), ensure_ascii=False, sort_keys=False)
     return str(value)
 
 

@@ -39,3 +39,9 @@ This file records meaningful changes during active development. It is not releas
 - Rejected mappings, sets, scalar values and inconsistent dynamic shapes conservatively and deterministically.
 - Preserved raw indexed requirements for planning while retaining local full-collection evaluation unless exact backend capability is proven.
 - Preserved the existing prohibition on directly selecting opaque structured raw values; indexing does not promote arrays of records into selectable structured values.
+
+### Phase 7 - Collection output and explain
+
+- Serialised collection values as JSON arrays, including stable JSON array syntax for single-field line output.
+- Exposed collection type, element type, logical ordering and positional-indexing capability in human and machine-readable explain output.
+- Kept acquisition details tied to the physical plan, including whether exact indexed acquisition is available or full collection acquisition is required.

@@ -39,8 +39,47 @@ from yt_media_tools.query import (
 )
 from yt_media_tools.staged_predicates import plan_predicate_stages
 from yt_media_tools.temporal_bounds import infer_temporal_bounds
+from yt_media_tools.source_capabilities import selected_facet_capabilities
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats, lower_acquisition_plan_to_ytdlp
+
+
+def _query_type_explain_payload(query_type: object | None) -> dict[str, object | None]:
+    """Return deterministic machine-readable type metadata for explain output."""
+    if query_type is None:
+        return {
+            "type": None,
+            "element_type": None,
+            "ordering": None,
+            "positional_indexing": None,
+        }
+    is_collection = bool(getattr(query_type, "is_collection", False))
+    element_type = getattr(query_type, "element_type", None)
+    ordering = getattr(query_type, "ordering", None)
+    return {
+        "type": query_type.describe(),
+        "element_type": element_type.describe() if element_type is not None else None,
+        "ordering": ordering.value if ordering is not None else None,
+        "positional_indexing": bool(getattr(query_type, "supports_positional_indexing", False))
+        if is_collection
+        else None,
+    }
+
+
+def _collection_explain_suffix(capability: object, *, exact_indexed: bool) -> str:
+    """Render collection type and ordering details for human explain output."""
+    query_type = getattr(capability, "logical_type", None)
+    if query_type is None or not query_type.is_collection:
+        return ""
+    assert query_type.element_type is not None
+    assert query_type.ordering is not None
+    positional = "yes" if query_type.supports_positional_indexing else "no"
+    exact = "yes" if exact_indexed else "no"
+    return (
+        f"; type={query_type.describe()}; element-type={query_type.element_type.describe()}; "
+        f"ordering={query_type.ordering.value}; positional-indexing={positional}; "
+        f"exact-indexed-acquisition={exact}"
+    )
 
 
 def _optimiser_explain_payload(
@@ -318,10 +357,15 @@ def explain_user_query(
 
     required = required_query_fields(query)
     lines.extend(["", "Logical required fields"])
+    selected_capabilities = selected_facet_capabilities(source)
     for capability in capabilities_for_fields(required):
         lines.append(
             f"  {capability.field}: YouTube.js={capability.youtubejs}; "
             f"yt-dlp-flat={capability.ytdlp_flat}; yt-dlp-detailed={capability.ytdlp_detailed}"
+            + _collection_explain_suffix(
+                capability,
+                exact_indexed=selected_capabilities.supports_exact_indexed_acquisition(capability.field),
+            )
         )
     metadata_requirements = plan_metadata_requirements(query, source=source)
     lines.extend(
@@ -779,6 +823,10 @@ def explain_user_query_json(
                 "youtubejs": capability.youtubejs,
                 "ytdlp_flat": capability.ytdlp_flat,
                 "ytdlp_detailed": capability.ytdlp_detailed,
+                **_query_type_explain_payload(capability.logical_type),
+                "exact_indexed_acquisition": selected_facet_capabilities(source).supports_exact_indexed_acquisition(
+                    capability.field
+                ),
             }
             for capability in capabilities_for_fields(required)
         ],
