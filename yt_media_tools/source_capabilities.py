@@ -87,6 +87,7 @@ class FacetCapabilities:
     trustworthy_order_field: str | None
     cheaply_enumerates_identities: bool
     field_overrides: tuple[FieldCapability, ...] = ()
+    exact_indexed_fields: frozenset[str] = frozenset()
 
     def field(self, name: str) -> FieldCapability:
         """Return the source/facet-specific acquisition declaration for a logical field."""
@@ -95,6 +96,10 @@ class FacetCapabilities:
             if capability.field.casefold() == key:
                 return capability
         return field_capability(name)
+
+    def supports_exact_indexed_acquisition(self, field: str) -> bool:
+        """Return whether the adapter can fetch one logical collection position exactly."""
+        return field.casefold() in self.exact_indexed_fields
 
 
 @dataclass(frozen=True)

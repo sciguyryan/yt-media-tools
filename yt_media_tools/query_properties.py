@@ -8,7 +8,7 @@ proofs rather than inferring safety from incidental execution behaviour.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -140,6 +140,14 @@ def knowledge_from_capability(
 
 
 @dataclass(frozen=True)
+class IndexedFieldRequirement:
+    """One direct positional collection access relevant to acquisition planning."""
+
+    field: str
+    index: int | None
+
+
+@dataclass(frozen=True)
 class ExpressionProperties:
     """Semantic properties of one resolved scalar or predicate expression."""
 
@@ -153,6 +161,8 @@ class ExpressionProperties:
     earliest_stage: str
     metadata_depth: str
     decidable_from_enumeration: bool
+    indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    whole_fields: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -184,6 +194,8 @@ class QueryProperties:
     predicate_stage: str = STAGE_CONSTANT
     predicate_decidable_from_enumeration: bool = True
     requires_complete_acquisition: bool = False
+    indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    whole_fields: frozenset[str] = frozenset()
 
     def field_capability(self, field: str) -> FieldCapability:
         """Return the selected source contract when available, otherwise the stable default."""
@@ -242,6 +254,8 @@ def _field_properties(field: Field, source: SourceSpec | None) -> ExpressionProp
         stage,
         metadata,
         enumeration,
+        (),
+        frozenset({field.name.casefold()}),
     )
 
 
@@ -268,6 +282,8 @@ def _combine(
     decidable = stage in {STAGE_CONSTANT, STAGE_ENUMERATION} and all(
         child.decidable_from_enumeration for child in children
     )
+    indexed = tuple(requirement for child in children for requirement in child.indexed_requirements)
+    whole_fields = frozenset().union(*(child.whole_fields for child in children)) if children else frozenset()
     return ExpressionProperties(
         fields,
         resolved_type,
@@ -279,7 +295,40 @@ def _combine(
         stage,
         depth,
         decidable,
+        indexed,
+        whole_fields,
     )
+
+
+def _constant_nonnegative_integer(expression: Any) -> int | None:
+    """Return a statically provable non-negative integer index, otherwise None."""
+    if isinstance(expression, Literal):
+        value = expression.value
+    elif isinstance(expression, ScalarUnary) and expression.operator in {"+", "-"}:
+        operand = _constant_nonnegative_integer(expression.operand)
+        if operand is None:
+            return None
+        value = operand if expression.operator == "+" else -operand
+    elif isinstance(expression, ScalarBinary) and expression.operator in {"+", "-", "*", "%"}:
+        left = _constant_nonnegative_integer(expression.left)
+        right = _constant_nonnegative_integer(expression.right)
+        if left is None or right is None:
+            return None
+        if expression.operator == "+":
+            value = left + right
+        elif expression.operator == "-":
+            value = left - right
+        elif expression.operator == "*":
+            value = left * right
+        else:
+            if right == 0:
+                return None
+            value = left % right
+    else:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
 
 
 def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> ExpressionProperties:
@@ -370,12 +419,22 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
     if isinstance(expression, ScalarIndex):
         collection = analyse_expression(expression.collection, source=source)
         index = analyse_expression(expression.index, source=source)
-        return _combine(
+        combined = _combine(
             (collection, index),
             resolved_type=expression.kind,
             null_sensitive=True,
             may_return_null=True,
         )
+        if isinstance(expression.collection, Field):
+            indexed_value = _constant_nonnegative_integer(expression.index) if index.constant else None
+            field_name = expression.collection.name.casefold()
+            requirement = IndexedFieldRequirement(field_name, indexed_value)
+            return replace(
+                combined,
+                indexed_requirements=combined.indexed_requirements + (requirement,),
+                whole_fields=combined.whole_fields - {field_name},
+            )
+        return combined
     if isinstance(expression, ScalarFunction):
         children = tuple(analyse_expression(arg, source=source) for arg in expression.args)
         if expression.name == "RANDOM":
@@ -575,6 +634,11 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
 
     complete = bool(aggregate or query.distinct or query.order_by or query.ctes or query.set_operations)
 
+    indexed_requirements = tuple(
+        dict.fromkeys(requirement for item in expression_properties for requirement in item.indexed_requirements)
+    )
+    whole_fields = frozenset().union(*(item.whole_fields for item in expression_properties))
+
     return QueryProperties(
         required_fields=frozenset(fields),
         dynamic_fields=dynamic,
@@ -593,4 +657,6 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
         predicate_stage=predicate_properties.earliest_stage,
         predicate_decidable_from_enumeration=predicate_properties.decidable_from_enumeration,
         requires_complete_acquisition=complete,
+        indexed_requirements=indexed_requirements,
+        whole_fields=whole_fields,
     )

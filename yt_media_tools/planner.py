@@ -13,6 +13,7 @@ from .planning_heuristics import AcquisitionHeuristicPlan, plan_acquisition_heur
 from .query_semantics import query_physical_source_requests
 from .relation_simplification import RelationSimplificationPlan, plan_relation_simplification
 from .query_properties import (
+    IndexedFieldRequirement,
     METADATA_DETAILED,
     METADATA_ENUMERATION,
     METADATA_NONE,
@@ -238,6 +239,8 @@ class MetadataRequirementPlan:
     predicate_enumeration_fields: frozenset[str]
     predicate_detailed_fields: frozenset[str]
     reason: str
+    indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    whole_fields: frozenset[str] = frozenset()
 
     @property
     def requires_detailed_metadata(self) -> bool:
@@ -283,6 +286,8 @@ def plan_metadata_requirements(query: Query, *, source: SourceSpec) -> MetadataR
         predicate_enumeration_fields=predicate_enumeration_fields,
         predicate_detailed_fields=predicate_detailed_fields,
         reason=reason,
+        indexed_requirements=properties.indexed_requirements,
+        whole_fields=properties.whole_fields,
     )
 
 
@@ -297,6 +302,7 @@ class PhysicalAcquisitionRequest:
     mode: str
     lower_date_bound: date | None
     stop_before: date | None
+    indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -444,19 +450,28 @@ def plan_source_boundaries(
             tuple(None if relation.where_redundant else use.predicate for use, _owner, relation in live_uses)
         )
         use_fields: list[frozenset[str]] = []
+        boundary_indexed_requirements: list[IndexedFieldRequirement] = []
+        boundary_whole_fields: set[str] = set()
         for use, owner, relation in live_uses:
             effective = replace(
                 use,
                 predicate=None if relation.where_redundant else use.predicate,
                 having=None if relation.having_redundant else use.having,
             )
-            required = frozenset(required_query_fields(effective))
+            use_properties = analyse_query(effective, source=source)
+            required = use_properties.required_fields
             dependency = cte_dependencies.for_cte(owner) if owner is not None else None
             if dependency is not None and dependency.pruning_applied and not use.set_operations:
                 required = required & dependency.input_fields
             use_fields.append(required)
+            boundary_indexed_requirements.extend(
+                requirement for requirement in use_properties.indexed_requirements if requirement.field in required
+            )
+            boundary_whole_fields.update(use_properties.whole_fields & required)
 
         fields = frozenset().union(*use_fields) if use_fields else frozenset()
+        boundary_indexed = tuple(dict.fromkeys(boundary_indexed_requirements))
+        boundary_whole = frozenset(boundary_whole_fields)
         synthetic_base = live_uses[0][0] if live_uses else uses[0][0]
         synthetic = replace(
             synthetic_base,
@@ -481,6 +496,14 @@ def plan_source_boundaries(
                 metadata.predicate_enumeration_fields,
                 metadata.predicate_detailed_fields,
                 "source-boundary requirements union only fields needed by non-empty logical uses after static relation simplification",
+                boundary_indexed,
+                boundary_whole,
+            )
+        else:
+            metadata = replace(
+                metadata,
+                indexed_requirements=boundary_indexed,
+                whole_fields=boundary_whole,
             )
 
         stages = plan_predicate_stages(synthetic, source=source)
@@ -537,6 +560,8 @@ def plan_source_boundaries(
             required_fields=fields,
             enumeration_fields=metadata.enumeration_fields,
             detailed_fields=metadata.detailed_fields,
+            indexed_requirements=metadata.indexed_requirements,
+            whole_fields=metadata.whole_fields,
             skip=empty,
         )
         heuristics = plan_acquisition_heuristics(
@@ -654,6 +679,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         mode=acquisition.mode,
         lower_date_bound=acquisition.lower_date_bound,
         stop_before=acquisition.stop_before,
+        indexed_requirements=metadata_requirements.indexed_requirements,
     )
     physical_acquisition = (
         boundary_override.physical_acquisition
@@ -663,6 +689,8 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
             required_fields=physical_required_fields,
             enumeration_fields=metadata_requirements.enumeration_fields,
             detailed_fields=metadata_requirements.detailed_fields,
+            indexed_requirements=metadata_requirements.indexed_requirements,
+            whole_fields=metadata_requirements.whole_fields,
             skip=eliminated,
         )
     )

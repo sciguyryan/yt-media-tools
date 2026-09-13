@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .query_properties import IndexedFieldRequirement
 from .source_capabilities import selected_facet_capabilities
 from .source_model import SourceSpec
 
@@ -50,6 +51,7 @@ class AcquisitionStage:
     required: bool
     fields: frozenset[str]
     reason: str
+    indexed_fields: tuple[IndexedFieldRequirement, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -83,6 +85,7 @@ class PhysicalAcquisitionPlan:
                 STAGE_CHAPTERS,
                 STAGE_THUMBNAILS,
                 STAGE_TAGS,
+                STAGE_CATEGORIES,
                 STAGE_DYNAMIC_RAW,
             }
             for stage in self.stages
@@ -113,6 +116,8 @@ def plan_physical_acquisition(
     required_fields: frozenset[str],
     enumeration_fields: frozenset[str],
     detailed_fields: frozenset[str],
+    indexed_requirements: tuple[IndexedFieldRequirement, ...] = (),
+    whole_fields: frozenset[str] | None = None,
     skip: bool = False,
 ) -> PhysicalAcquisitionPlan:
     """Build an ordered backend-neutral acquisition plan from physical field needs.
@@ -133,13 +138,30 @@ def plan_physical_acquisition(
 
     facet = selected_facet_capabilities(source)
     collection_fields: dict[str, set[str]] = {name: set() for name in _COLLECTION_STAGE.values()}
+    indexed_collection_fields: dict[str, list[IndexedFieldRequirement]] = {
+        name: [] for name in _COLLECTION_STAGE.values()
+    }
     dynamic_fields: set[str] = set()
     ordinary_detailed: set[str] = set()
+    indexed_by_field: dict[str, list[IndexedFieldRequirement]] = {}
+    for requirement in indexed_requirements:
+        indexed_by_field.setdefault(requirement.field, []).append(requirement)
+    full_fields = detailed_fields if whole_fields is None else whole_fields
 
     for field in detailed_fields:
         family = _collection_family(field)
         if family is not None:
-            collection_fields[_COLLECTION_STAGE[family]].add(field)
+            stage_name = _COLLECTION_STAGE[family]
+            indexed = indexed_by_field.get(field.casefold(), [])
+            if (
+                field.casefold() not in full_fields
+                and indexed
+                and all(item.index is not None for item in indexed)
+                and facet.supports_exact_indexed_acquisition(field)
+            ):
+                indexed_collection_fields[stage_name].extend(indexed)
+            else:
+                collection_fields[stage_name].add(field)
         elif _dynamic_raw(field):
             dynamic_fields.add(field)
         else:
@@ -195,16 +217,32 @@ def plan_physical_acquisition(
         STAGE_CATEGORIES,
     ):
         fields = frozenset(collection_fields[stage_name])
+        indexed_fields = tuple(
+            sorted(indexed_collection_fields[stage_name], key=lambda item: (item.field, item.index or 0))
+        )
+        required = bool(fields or indexed_fields)
+        if fields and indexed_fields:
+            reason = (
+                f"full {stage_name} metadata is required for: "
+                + ", ".join(sorted(fields))
+                + "; exact indexed acquisition is permitted for: "
+                + ", ".join(f"{item.field}[{item.index}]" for item in indexed_fields)
+            )
+        elif fields:
+            reason = f"full {stage_name} metadata is required for: " + ", ".join(sorted(fields))
+        elif indexed_fields:
+            reason = "exact indexed acquisition is permitted for: " + ", ".join(
+                f"{item.field}[{item.index}]" for item in indexed_fields
+            )
+        else:
+            reason = f"no {stage_name} metadata is required"
         stages.append(
             AcquisitionStage(
                 stage_name,
-                bool(fields),
+                required,
                 fields,
-                (
-                    f"nested {stage_name} metadata is required for: " + ", ".join(sorted(fields))
-                    if fields
-                    else f"no nested {stage_name} metadata is required"
-                ),
+                reason,
+                indexed_fields,
             )
         )
 

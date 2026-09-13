@@ -102,6 +102,7 @@ def _presentation_input(
                         "name": stage.name,
                         "required": stage.required,
                         "fields": sorted(stage.fields),
+                        "indexed_fields": [{"field": item.field, "index": item.index} for item in stage.indexed_fields],
                         "reason": stage.reason,
                     }
                     for stage in getattr(
@@ -332,6 +333,14 @@ def explain_user_query(
             "  Predicate enumeration: "
             + (", ".join(sorted(metadata_requirements.predicate_enumeration_fields)) or "none"),
             "  Predicate detailed: " + (", ".join(sorted(metadata_requirements.predicate_detailed_fields)) or "none"),
+            "  Indexed access: "
+            + (
+                ", ".join(
+                    f"{item.field}[{item.index}]" if item.index is not None else f"{item.field}[dynamic]"
+                    for item in metadata_requirements.indexed_requirements
+                )
+                or "none"
+            ),
             f"  Reason: {metadata_requirements.reason}",
         ]
     )
@@ -426,7 +435,8 @@ def explain_user_query(
             for stage in boundary.physical_acquisition.stages:
                 status = "required" if stage.required else "not required"
                 fields = ", ".join(sorted(stage.fields)) or "none"
-                lines.append(f"    {stage.name}: {status}; fields={fields}; {stage.reason}")
+                indexed = ", ".join(f"{item.field}[{item.index}]" for item in stage.indexed_fields) or "none"
+                lines.append(f"    {stage.name}: {status}; fields={fields}; indexed={indexed}; {stage.reason}")
             lines.append(f"    yt-dlp lowering: {lowering.reason}")
             if lowering.collapsed_detailed_stages:
                 lines.append(
@@ -777,6 +787,9 @@ def explain_user_query_json(
             "detailed_fields": sorted(metadata_requirements.detailed_fields),
             "predicate_enumeration_fields": sorted(metadata_requirements.predicate_enumeration_fields),
             "predicate_detailed_fields": sorted(metadata_requirements.predicate_detailed_fields),
+            "indexed_requirements": [
+                {"field": item.field, "index": item.index} for item in metadata_requirements.indexed_requirements
+            ],
             "requires_detailed_metadata": metadata_requirements.requires_detailed_metadata,
             "reason": metadata_requirements.reason,
         },
@@ -785,6 +798,9 @@ def explain_user_query_json(
             "detailed_fields": sorted(metadata_requirements.detailed_fields),
             "predicate_enumeration_fields": sorted(metadata_requirements.predicate_enumeration_fields),
             "predicate_detailed_fields": sorted(metadata_requirements.predicate_detailed_fields),
+            "indexed_requirements": [
+                {"field": item.field, "index": item.index} for item in metadata_requirements.indexed_requirements
+            ],
             "requires_detailed_metadata": metadata_requirements.requires_detailed_metadata,
             "reason": metadata_requirements.reason,
         },
@@ -863,6 +879,7 @@ def explain_user_query_json(
                         "name": stage.name,
                         "required": stage.required,
                         "fields": sorted(stage.fields),
+                        "indexed_fields": [{"field": item.field, "index": item.index} for item in stage.indexed_fields],
                         "reason": stage.reason,
                     }
                     for stage in branch.physical_acquisition.stages
