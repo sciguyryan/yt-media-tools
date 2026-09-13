@@ -45,3 +45,13 @@ This file records meaningful changes during active development. It is not releas
 - Serialised collection values as JSON arrays, including stable JSON array syntax for single-field line output.
 - Exposed collection type, element type, logical ordering and positional-indexing capability in human and machine-readable explain output.
 - Kept acquisition details tied to the physical plan, including whether exact indexed acquisition is available or full collection acquisition is required.
+
+### Phase 8 - Conformance, integration and documentation
+
+- Extended the deterministic conformance generator with typed taxonomy collections and backend-specific raw ordered sequences, advancing the generator contract to version 4.
+- Added independent oracle coverage for direct indexing, NULL and out-of-range behaviour, collection JSON output, raw indexing and CLI parameter binding against indexed expressions.
+- Reconciled WHERE parsing, resolution and evaluation so indexed scalar expressions can participate in comparisons and `IS NULL` predicates without weakening existing field-specific predicate semantics.
+- Restored the established `Expected a field name.` diagnostic for empty WHERE and aggregate FILTER predicates after general scalar predicate integration.
+- Preserved the scalar-only `SELECT *` contract by excluding dynamically inferred collection fields from star expansion.
+- Added parser, resolver, evaluator and parameter-binding regression tests for indexed WHERE expressions and parenthesised collection operands.
+- Expanded the yt-sql reference, test-coverage inventory, conformance documentation and CLI examples for collection indexing, ordering, output and acquisition semantics.

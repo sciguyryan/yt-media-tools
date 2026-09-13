@@ -691,16 +691,46 @@ class Parser:
 
     def parse_primary(self) -> Any:
         if self.current.kind == "LPAREN":
-            self.advance()
-            node = self.parse_or()
-            self.expect("RPAREN", "Expected ')' to close the expression.")
-            return node
+            # A parenthesised scalar expression may itself be the left operand of a
+            # comparison, including postfix indexing. Try that form before treating
+            # the parentheses as Boolean grouping.
+            start = self.index
+            try:
+                return self.parse_predicate()
+            except QuerySyntaxError:
+                self.index = start
+                self.advance()
+                node = self.parse_or()
+                self.expect("RPAREN", "Expected ')' to close the expression.")
+                return node
         return self.parse_predicate()
 
     def parse_predicate(self) -> Any:
-        field_token = self.expect("IDENT", "Expected a field name.")
-        field = Field(field_token.text, field_token.position)
+        # Preserve the established malformed-predicate diagnostic when no left
+        # operand is present. General scalar predicates still begin below, but
+        # an empty WHERE/FILTER predicate remains an "Expected a field name"
+        # error for compatibility with the deterministic diagnostic contract.
+        if self.current.kind in {"EOF", "RPAREN"}:
+            raise QuerySyntaxError(self.source, "Expected a field name.", self.current.position)
 
+        left = self.parse_scalar_expression()
+        if not isinstance(left, Field):
+            if self.consume_keyword("IS"):
+                negated = bool(self.consume_keyword("NOT"))
+                self.expect_keyword("NULL", "Expected NULL after IS.")
+                return ScalarIsNull(left, negated)
+            if self.current.kind == "OP":
+                operator = self.advance().text
+                if operator == "<>":
+                    operator = "!="
+                return ScalarComparison(operator, left, self.parse_scalar_expression())
+            raise QuerySyntaxError(
+                self.source,
+                "Scalar WHERE expressions must be followed by a comparison operator or IS NULL.",
+                self.current.position,
+            )
+
+        field = left
         negated = bool(self.consume_keyword("NOT"))
 
         if self.consume_keyword("BETWEEN"):

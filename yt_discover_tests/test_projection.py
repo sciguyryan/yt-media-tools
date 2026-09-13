@@ -68,12 +68,22 @@ def test_select_structured_value_rejected() -> None:
 
 
 def test_select_star_expands_deterministically() -> None:
-    records = [{"id": "a", "title": "First", "zeta": 9, "alpha": "A", "_raw": {"secret": "raw"}}]
+    records = [
+        {
+            "id": "a",
+            "title": "First",
+            "zeta": 9,
+            "alpha": "A",
+            "dynamic_collection": ["x", "y"],
+            "_raw": {"secret": "raw"},
+        }
+    ]
     query = resolve("SELECT * FROM @channel", records)
     names = [term.output_name for term in query.select]
     assert names[:3] == ["id", "title", "upload_date"]
     assert names[-2:] == ["alpha", "zeta"]
     assert "views" not in names
+    assert "dynamic_collection" not in names
     assert "raw.secret" not in names
     projected = capture(records, query)
     assert '"id": "a"' in projected and '"alpha": "A"' in projected and '"zeta": 9' in projected

@@ -156,3 +156,22 @@ def test_parameter_requires_name_value_separator() -> None:
     )
     assert proc.returncode != 0
     assert "--param requires NAME=VALUE" in proc.stderr
+
+
+def test_parameter_binding_composes_with_collection_index_predicate() -> None:
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--param",
+            "needle=alpha",
+            "--check-query",
+            "SELECT id FROM @x WHERE tags[0] = :needle",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "tags[0] = 'alpha'" in proc.stdout

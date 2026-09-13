@@ -8,6 +8,7 @@ from yt_media_tools.dates import DateContext
 from yt_media_tools.query import (
     QuerySyntaxError,
     ScalarIndex,
+    apply_query,
     evaluate_scalar_expression,
     parse_query,
     resolve_query,
@@ -99,3 +100,25 @@ def test_raw_collection_path_can_be_indexed_when_runtime_value_is_ordered() -> N
     records = [{"_raw": {"keywords": ["alpha", "beta"]}}]
     query = _resolve("SELECT raw.keywords[1] AS keyword", records)
     assert evaluate_scalar_expression(query.select[0].expression, records[0]) == "beta"
+
+
+def test_collection_index_can_filter_rows_in_where_predicate() -> None:
+    records = [
+        {"id": "a", "tags": ["alpha", "beta"]},
+        {"id": "b", "tags": ["gamma"]},
+        {"id": "c", "tags": None},
+    ]
+    query = _resolve("SELECT id WHERE tags[0] = 'alpha' ORDER BY id", records)
+
+    assert [record["id"] for record in apply_query(records, query)] == ["a"]
+
+
+def test_collection_index_where_null_semantics_are_three_valued() -> None:
+    records = [
+        {"id": "a", "tags": ["alpha"]},
+        {"id": "b", "tags": None},
+        {"id": "c", "tags": []},
+    ]
+    query = _resolve("SELECT id WHERE tags[0] IS NULL ORDER BY id", records)
+
+    assert [record["id"] for record in apply_query(records, query)] == ["b", "c"]

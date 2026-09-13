@@ -705,6 +705,87 @@ def _aggregate_empty(rows: Rows) -> list[Any]:
     return [{"n": 0, "total": None}]
 
 
+def _logical_taxonomy(value: Any) -> list[Any] | None:
+    """Return the backend-independent logical order used by yt-sql taxonomy collections."""
+    if value is None:
+        return None
+    return sorted(list(value), key=lambda item: (item is None, str(item) if item is not None else ""))
+
+
+def _index_or_null(value: Any, index: int | None) -> Any:
+    """Apply yt-sql's zero-based NULL/out-of-range collection indexing semantics."""
+    if value is None or index is None or index < 0:
+        return None
+    sequence = list(value)
+    return sequence[index] if index < len(sequence) else None
+
+
+def _collection_index_projection(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: r["source_index"])
+        .select(
+            lambda r: {
+                "id": r["id"],
+                "first_tag": _index_or_null(_logical_taxonomy(r.get("tags")), 0),
+                "missing_tag": _index_or_null(_logical_taxonomy(r.get("tags")), 99),
+                "null_index": _index_or_null(_logical_taxonomy(r.get("tags")), None),
+            }
+        )
+        .to_list()
+    )
+
+
+def _collection_output(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 6)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "tags": _logical_taxonomy(r.get("tags"))})
+        .to_list()
+    )
+
+
+def _raw_collection_index(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"id": r["id"], "raw_item": _index_or_null(r.get("fixture_raw", {}).get("sequence"), 1)})
+        .to_list()
+    )
+
+
+def _collection_parameter(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: _index_or_null(_logical_taxonomy(r.get("tags")), 0) == "group-1")
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .take(8)
+        .to_list()
+    )
+
+
+def _collection_cli_integration(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: _index_or_null(_logical_taxonomy(r.get("tags")), 0) == "group-1")
+        .order_by(lambda r: r["source_index"])
+        .select(
+            lambda r: {
+                "id": r["id"],
+                "tags": _logical_taxonomy(r.get("tags")),
+                "first_tag": _index_or_null(_logical_taxonomy(r.get("tags")), 0),
+                "raw_item": _index_or_null(r.get("fixture_raw", {}).get("sequence"), 1),
+            }
+        )
+        .take(5)
+        .to_list()
+    )
+
+
 LANGUAGE_FEATURES = frozenset(
     {
         "boolean.and",
@@ -735,6 +816,12 @@ LANGUAGE_FEATURES = frozenset(
         "boolean.or",
         "boolean.parentheses",
         "boolean.precedence",
+        "collection.index",
+        "collection.null",
+        "collection.bounds",
+        "collection.raw",
+        "collection.output",
+        "collection.parameter",
         "comparison.eq",
         "comparison.ge",
         "comparison.gt",
@@ -1029,6 +1116,54 @@ CASES = (
         _bound_parameters,
         params=("start=2026-08-20", "maximum=30m"),
         features=("parameter.binding",),
+        execution="cli",
+    ),
+    ConformanceCase(
+        "collection_index_null_and_bounds",
+        "SELECT id, tags[0] AS first_tag, tags[99] AS missing_tag, tags[NULL] AS null_index FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
+        _collection_index_projection,
+        ("id", "first_tag", "missing_tag", "null_index"),
+        "jsonl",
+        features=("collection.index", "collection.null", "collection.bounds"),
+    ),
+    ConformanceCase(
+        "collection_json_array_output",
+        "SELECT id, tags FROM @yt_sql_fixture WHERE source_index <= 6 ORDER BY source_index ASC",
+        _collection_output,
+        ("id", "tags"),
+        "jsonl",
+        features=("collection.output",),
+    ),
+    ConformanceCase(
+        "dynamic_raw_collection_index",
+        "SELECT id, raw.fixture_raw.sequence[1] AS raw_item FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
+        _raw_collection_index,
+        ("id", "raw_item"),
+        "jsonl",
+        features=("collection.raw",),
+    ),
+    ConformanceCase(
+        "collection_index_with_bound_parameter",
+        "SELECT id FROM @yt_sql_fixture WHERE tags[0] = :needle ORDER BY source_index ASC LIMIT 8",
+        _collection_parameter,
+        params=("needle=group-1",),
+        features=("collection.parameter", "parameter.binding"),
+        execution="cli",
+    ),
+    ConformanceCase(
+        "collection_cli_integration",
+        "SELECT id, tags, tags[0] AS first_tag, raw.fixture_raw.sequence[1] AS raw_item FROM @yt_sql_fixture WHERE tags[0] = :needle ORDER BY source_index ASC LIMIT 5",
+        _collection_cli_integration,
+        ("id", "tags", "first_tag", "raw_item"),
+        "jsonl",
+        params=("needle=group-1",),
+        features=(
+            "collection.index",
+            "collection.raw",
+            "collection.output",
+            "collection.parameter",
+            "parameter.binding",
+        ),
         execution="cli",
     ),
     ConformanceCase(

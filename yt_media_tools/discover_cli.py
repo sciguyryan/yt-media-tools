@@ -66,6 +66,11 @@ Examples:
   Bind reusable typed values without editing the query text:
     yt-discover.py --param start=2026-08-01 --param maximum=1h "SELECT id FROM @example WHERE upload_date >= :start AND duration < :maximum"
 
+  Index stable logical collections such as tags, or provider-specific ordered raw arrays:
+    yt-discover.py "SELECT id, tags[0] AS first_tag FROM @example ORDER BY first_tag ASC"
+    yt-discover.py --param needle=Astronomy "SELECT id FROM @example WHERE tags[0] = :needle"
+    yt-discover.py "SELECT id, raw.keywords[1] AS provider_keyword FROM @example"
+
   Write machine-readable provenance alongside normal query output:
     yt-discover.py --provenance ./query-provenance.json "SELECT id FROM @example WHERE duration < 1h"
 

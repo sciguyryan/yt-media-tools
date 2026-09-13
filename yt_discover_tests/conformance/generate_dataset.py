@@ -22,7 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from yt_media_tools.cache import MetadataCache  # noqa: E402
 
-GENERATOR_VERSION = 3
+GENERATOR_VERSION = 4
 DATASET_SEED = 31415926
 SOURCE_HANDLE = "@yt_sql_fixture"
 SOURCE_URL = "https://www.youtube.com/@yt_sql_fixture/videos"
@@ -138,6 +138,9 @@ def _anchor_records(seed: int) -> list[dict[str, object]]:
                 "webpage_url": f"https://fixture.invalid/watch/{media_id}",
                 "fixture_group": index % 4,
                 "fixture_nullable": None if index % 5 == 0 else f"g{index % 3}",
+                "tags": None if index % 10 == 0 else [f"topic-{index % 5}", f"group-{index % 3}"],
+                "categories": None if index % 12 == 0 else [f"Category {index % 4}", "Fixture"],
+                "fixture_raw": {"sequence": None if index % 11 == 0 else [f"raw-{index}-b", f"raw-{index}-a"]},
             }
         )
     return rows
@@ -211,6 +214,9 @@ def _generated_record(index: int, rng: random.Random) -> dict[str, object]:
         "webpage_url": f"https://fixture.invalid/watch/{media_id}",
         "fixture_group": index % 17,
         "fixture_nullable": None if index % 19 == 0 else f"g{index % 13}",
+        "tags": None if index % 23 == 0 else [f"topic-{index % 8}", f"group-{index % 5}"],
+        "categories": None if index % 29 == 0 else [f"Category {index % 6}", "Fixture"],
+        "fixture_raw": {"sequence": None if index % 31 == 0 else [f"raw-{index}-b", f"raw-{index}-a"]},
     }
 
 

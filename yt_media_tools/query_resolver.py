@@ -608,6 +608,22 @@ def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: Dat
             _resolve_predicate(node.left, schema, source, context),
             _resolve_predicate(node.right, schema, source, context),
         )
+    if isinstance(node, ScalarComparison):
+        left = _resolve_scalar_expression(node.left, schema, source, context)
+        right = _resolve_scalar_expression(node.right, schema, source, context)
+        left_kind = _scalar_kind(left)
+        right_kind = _scalar_kind(right)
+        if (
+            left_kind is not None
+            and right_kind is not None
+            and left_kind != right_kind
+            and not (_is_numeric_kind(left_kind) and _is_numeric_kind(right_kind))
+            and "mixed" not in {left_kind, right_kind}
+        ):
+            raise QuerySyntaxError(source, "WHERE comparison expressions must have compatible types.", 0)
+        return ScalarComparison(node.operator, left, right)
+    if isinstance(node, ScalarIsNull):
+        return ScalarIsNull(_resolve_scalar_expression(node.expression, schema, source, context), node.negated)
     if isinstance(node, Binary):
         field = _resolve_field(node.left, schema, source)
         if field.kind == "structured":

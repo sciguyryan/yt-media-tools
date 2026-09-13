@@ -264,6 +264,17 @@ yt-sql's resolved type model distinguishes scalar values from typed collections.
 
 Collection indexing uses postfix `[index]` syntax and is zero-based. The collection operand may be a field, a parenthesised collection expression, or a collection-valued function result such as `COALESCE(tags, NULL)[0]`. Index expressions must resolve to integer values. Negative and string indexes are rejected. Indexing a SQL `NULL` collection or using a SQL `NULL` index produces SQL `NULL`, and an out-of-range index also produces SQL `NULL`. As a consequence, the resolved result of indexing is nullable even when the collection's declared element type is non-nullable.
 
+Indexed expressions are ordinary scalar expressions after resolution, so they may be projected, ordered and used in scalar WHERE comparisons or `IS NULL` predicates. For example:
+
+```text
+SELECT id, tags[0] AS first_tag FROM @example ORDER BY first_tag ASC
+SELECT id FROM @example WHERE tags[0] = 'Astronomy'
+SELECT id FROM @example WHERE tags[0] IS NULL
+SELECT id, raw.keywords[1] AS provider_keyword FROM @example
+```
+
+CLI parameters compose with indexed expressions in the same way as other scalar predicates, for example `--param needle=Astronomy "SELECT id FROM @example WHERE tags[0] = :needle"`. The current CLI parameter boundary substitutes safely quoted values before parsing, so parameters are suitable as comparison values here; index positions themselves must still resolve as integer scalar expressions.
+
 Discover models `tags`, `categories`, `formats`, `chapters` and `thumbnails` as first-class collection fields. `tags` and `categories` are collections of nullable strings and use a yt-sql-defined lexical order, so their positional meaning does not depend on extractor return order. `formats`, `chapters` and `thumbnails` are collections of structured records whose logical ordering remains unknown until yt-sql defines an ordering contract for those record families; backend list order alone never makes them positionally indexable. Dynamic scalar list and tuple metadata may still be inferred as stable positional collections when it is not one of these declared fields, while set-valued metadata is unordered.
 
 The `raw.*` namespace is deliberately backend-specific. A raw value may be indexed when the observed runtime value is an ordered list or tuple, including a list of opaque structured records or nested ordered collections. In that namespace `[index]` addresses the provider sequence exactly as supplied; it does not promote that order into a portable yt-sql ordering guarantee for the corresponding first-class metadata field. SQL `NULL` and out-of-range behaviour remain unchanged. Mappings, sets, scalar values and dynamically inconsistent values are not made indexable merely because they are iterable or happen to contain collection data in some rows. Raw indexed requirements therefore remain backend-specific and require local collection evaluation unless a backend capability explicitly proves an equivalent indexed acquisition. Structured member access remains separate work.

@@ -38,7 +38,7 @@ from yt_media_tools.schema import QuerySchema
 ROOT = Path(__file__).resolve().parents[1]
 CONF = ROOT / "yt_discover_tests" / "conformance"
 GENERATOR = CONF / "generate_dataset.py"
-SPEC = CONF / "dataset-spec-v3.json"
+SPEC = CONF / "dataset-spec-v4.json"
 CLI = ROOT / "yt-discover.py"
 
 

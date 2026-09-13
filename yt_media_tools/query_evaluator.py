@@ -316,6 +316,30 @@ def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
         if left is None or right is None:
             return None
         return False
+    if isinstance(node, ScalarIsNull):
+        result = evaluate_scalar_expression(node.expression, record) is None
+        return not result if node.negated else result
+    if isinstance(node, ScalarComparison):
+        left = evaluate_scalar_expression(node.left, record)
+        right = evaluate_scalar_expression(node.right, record)
+        if left is None or right is None:
+            return None
+        try:
+            if node.operator == "=":
+                return left == right
+            if node.operator == "!=":
+                return left != right
+            if node.operator == "<":
+                return left < right
+            if node.operator == "<=":
+                return left <= right
+            if node.operator == ">":
+                return left > right
+            if node.operator == ">=":
+                return left >= right
+        except TypeError:
+            return False
+        raise AssertionError(f"Unsupported operator {node.operator}")
     if isinstance(node, Binary):
         left = canonical_record_value(record, node.left)
         right = node.right.value

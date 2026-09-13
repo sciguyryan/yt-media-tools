@@ -79,3 +79,24 @@ def test_collection_index_canonical_format_round_trip() -> None:
     canonical = format_query(parse_query(source))
     assert canonical == source
     assert format_query(parse_query(canonical)) == canonical
+
+
+def test_collection_index_can_be_left_operand_of_where_comparison() -> None:
+    query = parse_query("SELECT id WHERE tags[0] = 'alpha'")
+    assert format_query(query) == "SELECT id WHERE tags[0] = 'alpha'"
+    assert format_query(parse_query(format_query(query))) == format_query(query)
+
+
+def test_parenthesised_collection_index_can_be_used_in_where_predicate() -> None:
+    query = parse_query("SELECT id WHERE (tags)[0] IS NOT NULL")
+    assert format_query(query) == "SELECT id WHERE tags[0] IS NOT NULL"
+
+
+def test_general_where_expression_preserves_empty_predicate_diagnostic() -> None:
+    for source in (
+        "SELECT id FROM @fixture WHERE NOT NOT",
+        "SELECT COUNT(*) FILTER (WHERE) FROM @fixture",
+    ):
+        with pytest.raises(QuerySyntaxError) as exc_info:
+            parse_query(source)
+        assert exc_info.value.message == "Expected a field name."

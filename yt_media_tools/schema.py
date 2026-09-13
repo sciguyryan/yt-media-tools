@@ -301,7 +301,10 @@ class QuerySchema:
             (
                 info
                 for info in self._fields.values()
-                if info.dynamic and info.alias_of is None and info.name.casefold() not in builtin_keys
+                if info.dynamic
+                and info.kind != "collection"
+                and info.alias_of is None
+                and info.name.casefold() not in builtin_keys
             ),
             key=lambda item: item.name.casefold(),
         )

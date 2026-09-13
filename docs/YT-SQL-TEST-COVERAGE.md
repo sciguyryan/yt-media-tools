@@ -14,6 +14,14 @@ Current dedicated coverage includes SELECT projection, aliases, SELECT *, arithm
 
 Torture coverage additionally combines deeply parenthesised scalar and Boolean expressions, hostile whitespace, CASE with nested functions and mixed-base literals, malformed CASE boundaries, malformed function argument lists, and parse-format-parse stability.
 
+## Typed collections and indexing
+
+Current dedicated coverage includes collection type descriptors, element NULLability, stable versus unknown ordering, postfix parsing and chaining, canonical formatting, resolver type checks, zero-based evaluation, NULL and out-of-range results, integer and negative-index diagnostics, collection-valued functions and parentheses, raw ordered sequences, structured-value regression boundaries, scalar WHERE comparisons, `IS NULL`, output serialisation, explain metadata and acquisition-stage planning.
+
+The deterministic conformance generator includes first-class taxonomy collections and backend-specific raw ordered sequences. Independent oracle cases cover logical ordering, direct indexing, NULL collections, NULL indexes, out-of-range access, JSON array output, raw indexing and CLI parameter binding against indexed results. Routine conformance continues to compare optimised and unoptimised execution and enforce canonical parse-format-parse stability for directly parsed collection cases.
+
+Acquisition tests require whole-collection fallback unless an explicit backend capability proves that partial indexed acquisition is semantically identical to local indexing of the complete yt-sql logical collection. Unknown backend ordering must never become a positional language guarantee.
+
 ## Predicates and three-valued logic
 
 Current dedicated coverage includes comparisons, BETWEEN, IN, IS NULL, Boolean IS forms, CONTAINS, MATCHES, LIKE, ILIKE, negated forms, AND, OR and NOT. Unicode-sensitive LIKE/ILIKE and normalisation distinctions have dedicated tests.
