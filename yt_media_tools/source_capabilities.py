@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .schema import KNOWN_FIELD_TYPES
+from .query_types import QueryType
+from .schema import KNOWN_COLLECTION_TYPES, KNOWN_FIELD_TYPES
 from .source_model import LogicalSourceIdentity, PhysicalSourceIdentity, SourceSpec
 
 
@@ -35,6 +36,7 @@ class FieldCapability:
     logical_kind: str | None = None
     nullable: bool = True
     structural_support: str = STRUCTURALLY_SUPPORTED
+    logical_type: QueryType | None = None
 
     @property
     def enumeration_available(self) -> bool:
@@ -66,6 +68,13 @@ class LogicalField:
     name: str
     kind: str
     nullable: bool = True
+    resolved_type: QueryType | None = None
+
+    @property
+    def query_type(self) -> QueryType:
+        if self.resolved_type is not None:
+            return self.resolved_type.with_nullable(self.nullable)
+        return QueryType.scalar(self.kind, nullable=self.nullable)
 
 
 @dataclass(frozen=True)
@@ -113,6 +122,9 @@ class SourceCapabilities:
 
 _STABLE_SCHEMA = tuple(
     LogicalField(name, kind, nullable=name not in {"id", "source_index"}) for name, kind in KNOWN_FIELD_TYPES.items()
+) + tuple(
+    LogicalField(name, "collection", True, resolved_type=value_type)
+    for name, value_type in KNOWN_COLLECTION_TYPES.items()
 )
 
 
@@ -173,6 +185,15 @@ def field_capability(field: str) -> FieldCapability:
     kind = KNOWN_FIELD_TYPES.get(key)
     if kind is not None:
         return FieldCapability(field, UNAVAILABLE, UNAVAILABLE, EXACT, logical_kind=kind)
+    if key in KNOWN_COLLECTION_TYPES:
+        return FieldCapability(
+            field,
+            UNAVAILABLE,
+            UNAVAILABLE,
+            EXACT,
+            logical_kind="collection",
+            logical_type=KNOWN_COLLECTION_TYPES[key],
+        )
     # Dynamic/raw fields are not part of the stable logical schema. Detailed yt-dlp
     # metadata may expose them, but no source adapter promises that they exist.
     return FieldCapability(

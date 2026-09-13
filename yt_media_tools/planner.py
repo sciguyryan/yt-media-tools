@@ -383,9 +383,8 @@ def _collection_requirements(fields: frozenset[str]) -> frozenset[str]:
     families = {
         field.split(".", 1)[0].casefold()
         for field in fields
-        if "." in field
-        and field.split(".", 1)[0].casefold()
-        in {"formats", "chapters", "subtitles", "automatic_captions", "thumbnails", "tags"}
+        if field.split(".", 1)[0].casefold()
+        in {"formats", "chapters", "subtitles", "automatic_captions", "thumbnails", "tags", "categories"}
     }
     return frozenset(families)
 

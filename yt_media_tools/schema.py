@@ -37,6 +37,33 @@ KNOWN_FIELD_TYPES = {
     "modified_timestamp": "datetime",
 }
 
+
+KNOWN_COLLECTION_TYPES = {
+    # Scalar collections receive an explicit yt-sql order independent of backend
+    # return order. Structured collections remain non-positional until a logical
+    # ordering contract is established for their record semantics.
+    "tags": QueryType.collection(
+        QueryType.scalar("string", nullable=True),
+        ordering=CollectionOrdering.STABLE,
+    ),
+    "categories": QueryType.collection(
+        QueryType.scalar("string", nullable=True),
+        ordering=CollectionOrdering.STABLE,
+    ),
+    "formats": QueryType.collection(
+        QueryType.scalar("structured", nullable=True),
+        ordering=CollectionOrdering.UNKNOWN,
+    ),
+    "chapters": QueryType.collection(
+        QueryType.scalar("structured", nullable=True),
+        ordering=CollectionOrdering.UNKNOWN,
+    ),
+    "thumbnails": QueryType.collection(
+        QueryType.scalar("structured", nullable=True),
+        ordering=CollectionOrdering.UNKNOWN,
+    ),
+}
+
 ALIASES = {
     "views": "view_count",
     "likes": "like_count",
@@ -121,6 +148,13 @@ class QuerySchema:
         for name, kind in KNOWN_FIELD_TYPES.items():
             nullable = any(record.get(name) is None for record in self.records) or not self.records
             self._fields[name.casefold()] = FieldInfo(name, kind, nullable, dynamic=False)
+
+        for name, declared_type in KNOWN_COLLECTION_TYPES.items():
+            nullable = any(record.get(name) is None for record in self.records) or not self.records
+            resolved_type = declared_type.with_nullable(nullable)
+            self._fields[name.casefold()] = FieldInfo(
+                name, "collection", nullable, dynamic=False, resolved_type=resolved_type
+            )
 
         observed: dict[str, list[Any]] = {}
         for record in self.records:
@@ -243,6 +277,8 @@ def infer_kind(name: str, values: Iterable[Any]) -> str:
     lowered = name.casefold()
     if lowered in KNOWN_FIELD_TYPES:
         return KNOWN_FIELD_TYPES[lowered]
+    if lowered in KNOWN_COLLECTION_TYPES:
+        return "collection"
     if lowered.endswith("_timestamp") or lowered == "timestamp":
         return "datetime"
     if lowered.endswith("_date"):

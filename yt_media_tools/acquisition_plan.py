@@ -15,6 +15,7 @@ STAGE_SUBTITLES = "subtitles"
 STAGE_CHAPTERS = "chapters"
 STAGE_THUMBNAILS = "thumbnails"
 STAGE_TAGS = "tags"
+STAGE_CATEGORIES = "categories"
 STAGE_DYNAMIC_RAW = "dynamic-raw"
 
 _STAGE_ORDER = (
@@ -26,6 +27,7 @@ _STAGE_ORDER = (
     STAGE_CHAPTERS,
     STAGE_THUMBNAILS,
     STAGE_TAGS,
+    STAGE_CATEGORIES,
     STAGE_DYNAMIC_RAW,
 )
 
@@ -36,6 +38,7 @@ _COLLECTION_STAGE = {
     "chapters": STAGE_CHAPTERS,
     "thumbnails": STAGE_THUMBNAILS,
     "tags": STAGE_TAGS,
+    "categories": STAGE_CATEGORIES,
 }
 
 
@@ -94,9 +97,7 @@ class PhysicalAcquisitionPlan:
 
 
 def _collection_family(field: str) -> str | None:
-    """Return the supported nested metadata collection family for one field."""
-    if "." not in field:
-        return None
+    """Return the supported first-class or nested metadata collection family."""
     family = field.split(".", 1)[0].casefold()
     return family if family in _COLLECTION_STAGE else None
 
@@ -191,6 +192,7 @@ def plan_physical_acquisition(
         STAGE_CHAPTERS,
         STAGE_THUMBNAILS,
         STAGE_TAGS,
+        STAGE_CATEGORIES,
     ):
         fields = frozenset(collection_fields[stage_name])
         stages.append(
