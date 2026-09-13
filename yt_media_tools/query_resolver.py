@@ -235,6 +235,8 @@ def _scalar_query_type(expression: Any, schema: QuerySchema) -> QueryType | None
         return resolved_type
     if isinstance(expression, Field):
         info = schema.resolve(expression.name)
+        if expression.kind == "collection" and (info is None or info.kind != "collection"):
+            info = schema.resolve_index_operand(expression.name)
         return info.query_type if info is not None else None
     kind = _scalar_kind(expression)
     if kind is None:
@@ -388,9 +390,25 @@ def _resolve_scalar_expression(
         kind = _common_case_kind(results, source, expression.position)
         return ScalarCase(tuple(resolved_whens), else_result, expression.position, kind)
     if isinstance(expression, ScalarIndex):
-        collection = _resolve_scalar_expression(
-            expression.collection, schema, source, dates, aliases, select_context=select_context
-        )
+        if isinstance(expression.collection, Field) and not (
+            aliases is not None and expression.collection.name.casefold() in aliases
+        ):
+            # Resolve a direct field without applying the standalone structured-value
+            # selection restriction first. Indexing owns the diagnostic for whether
+            # that field is a valid collection operand.
+            index_field = schema.resolve_index_operand(expression.collection.name)
+            if index_field is None:
+                collection = _resolve_field(expression.collection, schema, source)
+            else:
+                collection = Field(
+                    index_field.name,
+                    expression.collection.position,
+                    index_field.kind,
+                )
+        else:
+            collection = _resolve_scalar_expression(
+                expression.collection, schema, source, dates, aliases, select_context=select_context
+            )
         index = _resolve_scalar_expression(
             expression.index, schema, source, dates, aliases, select_context=select_context
         )
@@ -776,6 +794,12 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             )
             field_text = format_scalar_expression(expression)
             kind = _scalar_kind(expression)
+            if kind == "structured":
+                raise QuerySyntaxError(
+                    source,
+                    "Cannot SELECT structured expression; select a scalar nested path instead.",
+                    original_term.position,
+                )
             if isinstance(expression, Field):
                 field_text = expression.name
         else:

@@ -100,8 +100,19 @@ class FieldInfo:
         return QueryType.scalar(self.kind, nullable=self.nullable)
 
 
-def infer_collection_type(name: str, values: Iterable[Any], *, nullable: bool) -> QueryType | None:
-    """Infer a nested collection type without treating structured records as scalar elements."""
+def infer_collection_type(
+    name: str,
+    values: Iterable[Any],
+    *,
+    nullable: bool,
+    allow_structured_elements: bool = False,
+) -> QueryType | None:
+    """Infer a collection type conservatively from observed runtime values.
+
+    Opaque structured elements are admitted only for dynamic ``raw.*`` paths. Ordinary
+    dynamic fields retain the earlier scalar-collection boundary until structured
+    values become first-class outside the raw namespace.
+    """
     concrete = [value for value in values if value is not None]
     if not concrete or not all(isinstance(value, (list, tuple, set)) for value in concrete):
         return None
@@ -112,10 +123,28 @@ def infer_collection_type(name: str, values: Iterable[Any], *, nullable: bool) -
     element_concrete = [element for element in elements if element is not None]
     element_nullable = any(element is None for element in elements)
     if element_concrete and all(isinstance(element, (list, tuple, set)) for element in element_concrete):
-        element_type = infer_collection_type(name, elements, nullable=element_nullable)
+        element_type = infer_collection_type(
+            name,
+            elements,
+            nullable=element_nullable,
+            allow_structured_elements=allow_structured_elements,
+        )
         if element_type is None:
             return None
-    elif any(isinstance(element, (dict, list, tuple, set)) for element in element_concrete):
+    elif any(isinstance(element, (list, tuple, set)) for element in element_concrete):
+        # Heterogeneous nested containers cannot be given one trustworthy collection
+        # element contract. Keep them unresolved rather than guessing from Python types.
+        return None
+    elif (
+        allow_structured_elements
+        and element_concrete
+        and all(isinstance(element, dict) for element in element_concrete)
+    ):
+        # raw.* may expose provider-defined arrays of records before structured member
+        # access exists. Indexing the array is still meaningful even though the record
+        # itself remains an opaque structured value at this stage.
+        element_type = QueryType.scalar("structured", nullable=element_nullable)
+    elif any(isinstance(element, dict) for element in element_concrete):
         return None
     else:
         element_type = QueryType.scalar(
@@ -215,6 +244,39 @@ class QuerySchema:
             kind = "structured" if structured else infer_kind(path.split(".")[-1], values)
             return FieldInfo(name, kind, nullable, dynamic=True)
         return self._fields.get(lowered)
+
+    def resolve_index_operand(self, name: str) -> FieldInfo | None:
+        """Resolve a field specifically for collection indexing.
+
+        Ordinary ``raw.*`` resolution keeps arrays of records opaque and structured so
+        they cannot become directly selectable values before structured member access
+        is implemented. Indexing may still recognise such an array as an ordered raw
+        collection because the provider sequence itself is an explicit runtime value.
+        """
+        field = self.resolve(name)
+        if field is None or field.kind != "structured" or not name.casefold().startswith("raw."):
+            return field
+        path = name[4:]
+        values: list[Any] = []
+        present = 0
+        for record in self.records:
+            found, value = raw_path_value(record, path)
+            if not found:
+                continue
+            present += 1
+            values.append(value)
+        if present == 0:
+            return field
+        nullable = present < len(self.records) or any(value is None for value in values)
+        collection_type = infer_collection_type(
+            path.split(".")[-1],
+            values,
+            nullable=nullable,
+            allow_structured_elements=True,
+        )
+        if collection_type is None:
+            return field
+        return FieldInfo(name, "collection", nullable, dynamic=True, resolved_type=collection_type)
 
     def available_fields(self) -> list[FieldInfo]:
         """Return non-raw fields in deterministic display order."""

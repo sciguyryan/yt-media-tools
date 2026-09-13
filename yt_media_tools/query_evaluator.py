@@ -86,6 +86,24 @@ def _evaluate_random(function: ScalarFunction, record: dict[str, Any]) -> float:
     return float(cache[key])
 
 
+def _runtime_indexed_value(collection: Any, index: Any) -> Any:
+    """Return one zero-based sequence element using yt-sql NULL semantics.
+
+    Resolved collection expressions guarantee the static operation is valid. Dynamic
+    ``raw.*`` values still need a runtime guard because provider data may be absent or
+    vary between records. Only ordered sequence containers are indexable: mappings,
+    sets, strings and arbitrary iterables are never treated as collections merely
+    because Python can iterate over them.
+    """
+    if collection is None or index is None:
+        return None
+    if isinstance(index, bool) or not isinstance(index, int) or index < 0:
+        return None
+    if not isinstance(collection, (list, tuple)):
+        return None
+    return collection[index] if index < len(collection) else None
+
+
 def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
     """Evaluate a resolved scalar expression against one metadata record."""
     if isinstance(expression, Field):
@@ -122,13 +140,7 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
     if isinstance(expression, ScalarIndex):
         collection = evaluate_scalar_expression(expression.collection, record)
         index = evaluate_scalar_expression(expression.index, record)
-        if collection is None or index is None:
-            return None
-        if isinstance(index, bool) or not isinstance(index, int) or index < 0:
-            return None
-        if not isinstance(collection, (list, tuple)):
-            return None
-        return collection[index] if index < len(collection) else None
+        return _runtime_indexed_value(collection, index)
     if isinstance(expression, ScalarCase):
         for branch in expression.whens:
             if evaluate(branch.condition, record) is True:

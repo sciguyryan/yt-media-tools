@@ -156,6 +156,18 @@ Floating-point reassociation is not performed. Reordering arithmetic could chang
 
 Safe identity elimination may be introduced selectively where the operand's resolved type and NULL behaviour prove equivalence. Constant-expression canonicalisation may also be useful for query caching or a future compiled representation.
 
+## Dynamic raw collection indexing
+
+### Implemented
+
+Direct indexes on ordered `raw.*` list or tuple values are retained as precise indexed requirements for analysis and explainability, including constant positions where available. The raw namespace remains backend-specific: its sequence order is the provider's explicit raw array order and is not promoted into the logical ordering contract of a first-class yt-sql collection field.
+
+Physical planning remains conservative. Raw indexed access is evaluated locally unless a backend capability explicitly proves that a partial indexed acquisition is semantically identical to indexing the complete raw sequence. Dynamic indexes, inconsistent raw value shapes and non-sequence values never justify partial acquisition.
+
+### Deliberately not implemented
+
+Mappings, sets, strings and arbitrary iterables are not treated as indexable raw collections. The planner does not infer stable first-class collection ordering from raw extractor array order, and it does not assume that an indexed raw record can be lowered merely because the provider exposes a list-like Python value.
+
 ## Scalar functions
 
 ### Implemented
