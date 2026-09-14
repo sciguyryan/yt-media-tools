@@ -28,3 +28,11 @@ This file records meaningful changes during active development. It is not releas
 - Reject non-structured operands and unknown structured members with deterministic semantic diagnostics while keeping bare dotted fields semantically distinct from postfix member access.
 - Extend semantic identity, aggregate/random traversal, optimiser traversal and expression-property analysis to recognise resolved structured member expressions without adding runtime evaluation.
 - Add focused semantic-resolution coverage for direct, nested, indexed, function-valued, dynamic, opaque, invalid and dotted-field cases.
+
+### Structured member access - Phase 4
+
+- Evaluate resolved structured member expressions against metadata dictionaries while preserving the semantic type boundary established by resolution.
+- Propagate SQL NULL from nullable structured bases and missing runtime members, including nested member chains and indexed structured elements.
+- Support structure-preserving function results such as `COALESCE` during runtime member evaluation.
+- Reject arbitrary Python objects and non-dictionary runtime values at the evaluator boundary rather than using attribute access or generic mapping protocols.
+- Extend focused runtime coverage across direct, nested, indexed, function-valued, dynamic, NULL and predicate member access.

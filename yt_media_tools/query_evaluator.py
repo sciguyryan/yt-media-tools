@@ -27,6 +27,7 @@ from .query_model import (
     ScalarComparison,
     ScalarFunction,
     ScalarIndex,
+    ScalarMember,
     ScalarIsNull,
     ScalarUnary,
     SelectTerm,
@@ -104,6 +105,23 @@ def _runtime_indexed_value(collection: Any, index: Any) -> Any:
     return collection[index] if index < len(collection) else None
 
 
+def _runtime_member_value(value: Any, member: str) -> Any:
+    """Return one structured member using yt-sql NULL semantics.
+
+    Semantic resolution has already proved that the expression has a structured type
+    and that ``member`` belongs to its declared schema. Runtime metadata can still be
+    absent, NULL or inconsistent, especially for provider-derived dynamic values. Keep
+    that boundary conservative: only ordinary metadata dictionaries are structured
+    values, and missing members evaluate to SQL NULL rather than falling through to
+    Python attribute or arbitrary mapping behaviour.
+    """
+    if value is None or not isinstance(value, dict):
+        return None
+    if member not in value:
+        return None
+    return value[member]
+
+
 def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
     """Evaluate a resolved scalar expression against one metadata record."""
     if isinstance(expression, Field):
@@ -141,6 +159,9 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
         collection = evaluate_scalar_expression(expression.collection, record)
         index = evaluate_scalar_expression(expression.index, record)
         return _runtime_indexed_value(collection, index)
+    if isinstance(expression, ScalarMember):
+        value = evaluate_scalar_expression(expression.value, record)
+        return _runtime_member_value(value, expression.member)
     if isinstance(expression, ScalarCase):
         for branch in expression.whens:
             if evaluate(branch.condition, record) is True:
