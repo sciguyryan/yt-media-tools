@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.29.2 - Collection Querying Beyond Indexing
+
+- Add lexical collection-element bindings with deterministic nested scope and outer-reference semantics.
+- Add `ANY` and `ALL` collection predicates with exact SQL three-valued behaviour for NULL, empty and nullable collections.
+- Add `CARDINALITY` and scoped collection `COUNT` while preserving existing aggregate `COUNT` semantics.
+- Add typed `FILTER` and `MAP` collection expressions that preserve collection NULLability and logical ordering without inventing positional guarantees.
+- Carry collection-query requirements and correlations through acquisition planning, permitting backend pushdown only when an adapter explicitly proves exact yt-sql-equivalent semantics.
+- Extend the deterministic conformance generator to version 6 with independent-oracle, optimiser, formatter and offline CLI coverage for collection querying, including structured and dynamic raw collections.
+- Document collection binding, three-valued quantifiers, counting, filtering, projection and conservative acquisition fallback semantics across the Discover and yt-sql documentation.
+
 ## Discover 0.29.1 - Structured Member Access
 
 - Add first-class structured value types with opaque, declared and dynamic member schemas, preserving NULLability through nested structured expressions.
