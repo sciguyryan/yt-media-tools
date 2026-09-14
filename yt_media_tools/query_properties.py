@@ -17,6 +17,7 @@ from .query_model import (
     Between,
     Binary,
     CollectionCount,
+    CollectionFilter,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -415,6 +416,15 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
         return _combine(
             (collection, predicate),
             resolved_type="integer",
+            null_sensitive=True,
+            may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
+        )
+    if isinstance(expression, CollectionFilter):
+        collection = analyse_expression(expression.collection, source=source)
+        predicate = analyse_expression(expression.predicate, source=source)
+        return _combine(
+            (collection, predicate),
+            resolved_type="collection",
             null_sensitive=True,
             may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
         )

@@ -17,6 +17,7 @@ from .query_model import (
     AggregateFunction,
     Between,
     CollectionCount,
+    CollectionFilter,
     CollectionElementReference,
     CollectionPredicate,
     Binary,
@@ -181,6 +182,17 @@ def evaluate_scalar_expression(
             if evaluate(expression.predicate, record, collection_bindings + (element,)) is True:
                 count += 1
         return count
+    if isinstance(expression, CollectionFilter):
+        collection = evaluate_scalar_expression(expression.collection, record, collection_bindings)
+        if collection is None:
+            return None
+        if not isinstance(collection, (list, tuple)):
+            return None
+        return [
+            element
+            for element in collection
+            if evaluate(expression.predicate, record, collection_bindings + (element,)) is True
+        ]
     if isinstance(expression, ScalarMember):
         value = evaluate_scalar_expression(expression.value, record, collection_bindings)
         return _runtime_member_value(value, expression.member)

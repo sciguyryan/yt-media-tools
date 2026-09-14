@@ -11,6 +11,7 @@ from .query import (
     Binary,
     CaseWhen,
     CollectionCount,
+    CollectionFilter,
     InList,
     IsNull,
     Literal,
@@ -252,6 +253,19 @@ def _optimise_scalar_expression(
         decisions = collection_decisions + [
             OptimisationDecision(
                 f"collection-count-{decision.rule}",
+                decision.before,
+                decision.after,
+                decision.proofs,
+            )
+            for decision in predicate_decisions
+        ]
+        return replace(expression, collection=collection, predicate=predicate), decisions
+    if isinstance(expression, CollectionFilter):
+        collection, collection_decisions = _optimise_scalar_expression(expression.collection, source=source)
+        predicate, predicate_decisions = _optimise_predicate_fixed_point(expression.predicate, source=source)
+        decisions = collection_decisions + [
+            OptimisationDecision(
+                f"collection-filter-{decision.rule}",
                 decision.before,
                 decision.after,
                 decision.proofs,

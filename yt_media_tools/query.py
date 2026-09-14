@@ -25,6 +25,7 @@ from .query_model import (
     CaseWhen as CaseWhen,
     CommonTableExpression as CommonTableExpression,
     CollectionCount as CollectionCount,
+    CollectionFilter as CollectionFilter,
     CollectionElementReference as CollectionElementReference,
     CollectionPredicate as CollectionPredicate,
     Field as Field,

@@ -13,6 +13,7 @@ from .query_model import (
     CaseWhen,
     CommonTableExpression,
     CollectionCount,
+    CollectionFilter,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -577,6 +578,7 @@ class Parser:
             "UPPER",
             "LENGTH",
             "CARDINALITY",
+            "FILTER",
             "COALESCE",
             "CHAR",
             "NULLIF",
@@ -633,6 +635,27 @@ class Parser:
                 filter_predicate = self.parse_or()
                 self.expect("RPAREN", "Expected ')' after aggregate FILTER predicate.")
             return AggregateFunction(name, tuple(args), count_star, filter_predicate, name_token.position)
+        if name == "FILTER":
+            if self.current.kind == "RPAREN":
+                raise QuerySyntaxError(self.source, "FILTER requires a collection expression.", name_token.position)
+            collection = self.parse_scalar_expression()
+            self.expect_keyword("AS", "Expected AS after the FILTER collection expression.")
+            binding_token = self.expect("IDENT", "Expected an element binding name after AS in FILTER.")
+            if "." in binding_token.text:
+                raise QuerySyntaxError(
+                    self.source,
+                    "Collection element bindings must be simple identifiers.",
+                    binding_token.position,
+                )
+            self.expect_keyword("WHERE", "Expected WHERE after the FILTER element binding.")
+            self.collection_bindings.append(binding_token.text)
+            try:
+                predicate = self.parse_or()
+            finally:
+                self.collection_bindings.pop()
+            self.expect("RPAREN", "Expected ')' to close the FILTER expression.")
+            return CollectionFilter(collection, binding_token.text, predicate, name_token.position)
+
         args: list[Any] = []
         if self.current.kind != "RPAREN":
             while True:

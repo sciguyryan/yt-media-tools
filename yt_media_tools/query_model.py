@@ -138,6 +138,18 @@ class CollectionCount:
 
 
 @dataclass(frozen=True)
+class CollectionFilter:
+    """Collection containing elements whose scoped predicate is TRUE."""
+
+    collection: Any
+    binding: str
+    predicate: Any
+    position: int = 0
+    kind: str | None = None
+    resolved_type: Any | None = None
+
+
+@dataclass(frozen=True)
 class ScalarIndex:
     """Postfix positional indexing of a collection-valued scalar expression."""
 

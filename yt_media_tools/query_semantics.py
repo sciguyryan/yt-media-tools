@@ -16,6 +16,7 @@ from .query_model import (
     CaseWhen,
     CommonTableExpression,
     CollectionCount,
+    CollectionFilter,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -55,6 +56,14 @@ def semantic_key(node: Any) -> Any:
     if isinstance(node, CollectionCount):
         return (
             "collection-count",
+            semantic_key(node.collection),
+            node.binding,
+            semantic_key(node.predicate),
+            node.kind,
+        )
+    if isinstance(node, CollectionFilter):
+        return (
+            "collection-filter",
             semantic_key(node.collection),
             node.binding,
             semantic_key(node.predicate),
@@ -161,7 +170,7 @@ def _contains_aggregate(expression: Any) -> bool:
         return False
     if isinstance(expression, CollectionPredicate):
         return _contains_aggregate(expression.collection) or _having_contains_aggregate(expression.predicate)
-    if isinstance(expression, CollectionCount):
+    if isinstance(expression, (CollectionCount, CollectionFilter)):
         return _contains_aggregate(expression.collection) or _having_contains_aggregate(expression.predicate)
     if isinstance(expression, ScalarUnary):
         return _contains_aggregate(expression.operand)
@@ -210,7 +219,7 @@ def _contains_random(expression: Any) -> bool:
         return False
     if isinstance(expression, CollectionPredicate):
         return _contains_random(expression.collection) or _contains_random(expression.predicate)
-    if isinstance(expression, CollectionCount):
+    if isinstance(expression, (CollectionCount, CollectionFilter)):
         return _contains_random(expression.collection) or _contains_random(expression.predicate)
     if isinstance(expression, ScalarIndex):
         return _contains_random(expression.collection) or _contains_random(expression.index)

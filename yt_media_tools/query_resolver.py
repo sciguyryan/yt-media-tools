@@ -18,6 +18,7 @@ from .query_model import (
     CaseWhen,
     CommonTableExpression,
     CollectionCount,
+    CollectionFilter,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -573,6 +574,41 @@ def _resolve_scalar_expression(
             "integer",
             result_type,
         )
+    if isinstance(expression, CollectionFilter):
+        collection = _resolve_scalar_expression(
+            expression.collection,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            allow_structured=True,
+            collection_scopes=collection_scopes,
+        )
+        collection_type = _scalar_query_type(collection, schema)
+        if collection_type is None or not collection_type.is_collection:
+            kind = _scalar_kind(collection) or "unknown"
+            raise QuerySyntaxError(
+                source,
+                f"FILTER requires a collection value; got {kind}.",
+                expression.position,
+            )
+        assert collection_type.element_type is not None
+        predicate = _resolve_predicate(
+            expression.predicate,
+            schema,
+            source,
+            dates,
+            collection_scopes=collection_scopes + (collection_type.element_type,),
+        )
+        return CollectionFilter(
+            collection,
+            expression.binding,
+            predicate,
+            expression.position,
+            "collection",
+            collection_type,
+        )
     if isinstance(expression, AggregateFunction):
         args = tuple(
             _resolve_scalar_expression(
@@ -715,7 +751,7 @@ def _fields_outside_aggregates(expression: Any) -> set[str]:
         return _fields_outside_aggregates(expression.left) | _fields_outside_aggregates(expression.right)
     if isinstance(expression, ScalarIndex):
         return _fields_outside_aggregates(expression.collection) | _fields_outside_aggregates(expression.index)
-    if isinstance(expression, CollectionCount):
+    if isinstance(expression, (CollectionCount, CollectionFilter)):
         return _fields_outside_aggregates(expression.collection) | _fields_in_predicate(expression.predicate)
     if isinstance(expression, ScalarFunction):
         fields: set[str] = set()

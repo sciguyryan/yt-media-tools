@@ -35,3 +35,12 @@ This file records meaningful changes during active development. It is not releas
 - Propagate exact integer result NULLability from the collection operand and preserve empty collections as a deterministic zero count.
 - Integrate collection counts with lexical binding, semantic identity, optimiser traversal and expression-property analysis so source requirements remain accurate.
 - Add focused coverage for NULL and empty collections, nullable elements, outer-row references, aggregate-count compatibility, canonical formatting and deterministic invalid-operand diagnostics.
+
+### Collection querying beyond indexing - Phase 5
+
+- Add `FILTER(collection AS binding WHERE predicate)` as a collection-valued scoped expression using the established lexical element-binding model.
+- Preserve the input collection's exact element type, top-level NULLability and logical ordering contract in the filtered result.
+- Keep only elements whose predicate evaluates to TRUE, excluding FALSE and UNKNOWN while allowing explicit NULL predicates to retain nullable elements.
+- Preserve SQL NULL for NULL collections and return an empty collection for empty inputs without manufacturing ordering guarantees.
+- Integrate filtered collections with semantic identity, optimiser traversal and expression-property analysis so source requirements and outer-row references remain visible.
+- Add focused coverage for order preservation, NULL and empty collections, nullable elements, structured/nested predicates, postfix indexing, canonical formatting and deterministic invalid operands.
