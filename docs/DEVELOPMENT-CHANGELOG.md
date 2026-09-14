@@ -19,3 +19,12 @@ This file records meaningful changes during active development. It is not releas
 - Preserve established bare dotted field paths such as `raw.extra.score` while adding explicit postfix member syntax for structured-producing expressions.
 - Extend canonical scalar formatting and parse-format-parse coverage for structured member expressions.
 - Add deterministic diagnostics for missing or malformed postfix member names.
+
+### Structured member access - Phase 3
+
+- Resolve postfix member access against declared and known dynamic structured-value schemas while preserving opaque structured values as inaccessible until a member schema exists.
+- Propagate declared member types and nullable structured bases through resolved member expressions, including nested member chains and indexed structured elements.
+- Preserve structured types through `COALESCE` and `NULLIF` where compatible so function-valued structured expressions can participate in member access.
+- Reject non-structured operands and unknown structured members with deterministic semantic diagnostics while keeping bare dotted fields semantically distinct from postfix member access.
+- Extend semantic identity, aggregate/random traversal, optimiser traversal and expression-property analysis to recognise resolved structured member expressions without adding runtime evaluation.
+- Add focused semantic-resolution coverage for direct, nested, indexed, function-valued, dynamic, opaque, invalid and dotted-field cases.

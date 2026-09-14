@@ -19,6 +19,7 @@ from .query import (
     ScalarComparison,
     ScalarFunction,
     ScalarIndex,
+    ScalarMember,
     ScalarIsNull,
     ScalarUnary,
     TextPredicate,
@@ -241,6 +242,9 @@ def _optimise_scalar_expression(
         collection, collection_decisions = _optimise_scalar_expression(expression.collection, source=source)
         index, index_decisions = _optimise_scalar_expression(expression.index, source=source)
         return replace(expression, collection=collection, index=index), collection_decisions + index_decisions
+    if isinstance(expression, ScalarMember):
+        value, decisions = _optimise_scalar_expression(expression.value, source=source)
+        return replace(expression, value=value), decisions
     if isinstance(expression, AggregateFunction):
         args = []
         decisions: list[OptimisationDecision] = []

@@ -29,6 +29,7 @@ from .query_model import (
     ScalarComparison,
     ScalarFunction,
     ScalarIndex,
+    ScalarMember,
     ScalarIsNull,
     ScalarUnary,
     SelectTerm,
@@ -244,16 +245,16 @@ def _scalar_query_type(expression: Any, schema: QuerySchema) -> QueryType | None
     return QueryType.scalar(kind, nullable=True)
 
 
-def _collection_function_type(args: tuple[Any, ...], schema: QuerySchema) -> QueryType | None:
-    """Return a compatible collection result type for collection-preserving functions."""
+def _value_preserving_function_type(args: tuple[Any, ...], schema: QuerySchema) -> QueryType | None:
+    """Return a compatible collection or structured result type for preserving functions."""
     types = [value for arg in args if (value := _scalar_query_type(arg, schema)) is not None]
-    collection_types = [value for value in types if value.is_collection]
-    if not collection_types:
+    complex_types = [value for value in types if value.is_collection or value.is_structured]
+    if not complex_types:
         return None
-    first = collection_types[0]
-    if any(value != first for value in collection_types[1:]):
+    first = complex_types[0]
+    if any(value != first for value in complex_types[1:]):
         return None
-    if any(not value.is_collection for value in types):
+    if any(not (value.is_collection or value.is_structured) for value in types):
         return None
     return first.with_nullable(True)
 
@@ -308,6 +309,7 @@ def _resolve_scalar_expression(
     aliases: dict[str, "SelectTerm"] | None = None,
     *,
     select_context: bool = False,
+    allow_structured: bool = False,
 ) -> Any:
     """Resolve fields, aliases and types for a scalar expression."""
     if isinstance(expression, Field):
@@ -320,7 +322,7 @@ def _resolve_scalar_expression(
                     else Field(alias.field, expression.position, alias.kind)
                 )
         field = _resolve_field(expression, schema, source)
-        if field.kind == "structured":
+        if field.kind == "structured" and not allow_structured:
             if select_context:
                 message = f"Cannot SELECT structured field {field.name!r}; select a scalar nested path instead."
             else:
@@ -389,6 +391,38 @@ def _resolve_scalar_expression(
             results.append(else_result)
         kind = _common_case_kind(results, source, expression.position)
         return ScalarCase(tuple(resolved_whens), else_result, expression.position, kind)
+    if isinstance(expression, ScalarMember):
+        value = _resolve_scalar_expression(
+            expression.value,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            allow_structured=True,
+        )
+        value_type = _scalar_query_type(value, schema)
+        if value_type is None or not value_type.is_structured:
+            kind = _scalar_kind(value) or "unknown"
+            raise QuerySyntaxError(
+                source,
+                f"Structured member access requires a structured value; got {kind}.",
+                expression.position,
+            )
+        if not value_type.has_declared_members:
+            raise QuerySyntaxError(
+                source,
+                "Structured member access requires a declared member schema; got opaque structured value.",
+                expression.position,
+            )
+        result_type = value_type.member_result_type(expression.member)
+        if result_type is None:
+            raise QuerySyntaxError(
+                source,
+                f"Structured value has no member {expression.member!r}.",
+                expression.position,
+            )
+        return ScalarMember(value, expression.member, expression.position, result_type.kind, result_type)
     if isinstance(expression, ScalarIndex):
         if isinstance(expression.collection, Field) and not (
             aliases is not None and expression.collection.name.casefold() in aliases
@@ -466,8 +500,17 @@ def _resolve_scalar_expression(
             expression.name, args, expression.count_star, filter_predicate, expression.position, result_kind
         )
     if isinstance(expression, ScalarFunction):
+        preserve_structured = allow_structured and expression.name in {"COALESCE", "NULLIF"}
         args = tuple(
-            _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
+            _resolve_scalar_expression(
+                arg,
+                schema,
+                source,
+                dates,
+                aliases,
+                select_context=select_context,
+                allow_structured=preserve_structured,
+            )
             for arg in expression.args
         )
         if expression.name in {"LOWER", "UPPER"}:
@@ -514,7 +557,7 @@ def _resolve_scalar_expression(
             )
         result_type = None
         if expression.name in {"COALESCE", "NULLIF"}:
-            result_type = _collection_function_type(args, schema)
+            result_type = _value_preserving_function_type(args, schema)
         if result_type is None and result_kind is not None and result_kind != "collection":
             result_type = QueryType.scalar(result_kind, nullable=True)
         return ScalarFunction(expression.name, args, expression.position, result_kind, result_type)

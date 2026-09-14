@@ -26,6 +26,7 @@ from .query_model import (
     ScalarComparison,
     ScalarFunction,
     ScalarIndex,
+    ScalarMember,
     ScalarIsNull,
     ScalarUnary,
     TextPredicate,
@@ -416,6 +417,14 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
     if isinstance(expression, ScalarIsNull):
         child = analyse_expression(expression.expression, source=source)
         return _combine((child,), resolved_type="boolean", may_return_null=False)
+    if isinstance(expression, ScalarMember):
+        value = analyse_expression(expression.value, source=source)
+        return _combine(
+            (value,),
+            resolved_type=expression.kind,
+            null_sensitive=True,
+            may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
+        )
     if isinstance(expression, ScalarIndex):
         collection = analyse_expression(expression.collection, source=source)
         index = analyse_expression(expression.index, source=source)
