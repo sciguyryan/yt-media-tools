@@ -52,3 +52,13 @@ This file records meaningful changes during active development. It is not releas
 - Support scalar, structured and nested collection projection results, including composition with FILTER and nested collection scopes.
 - Keep MAP contextual and preserve conservative positional-indexing rules after projection.
 - Add focused coverage for exact projected results, NULL and empty collections, nested scopes, ordering, typing, formatting, optimiser traversal and invalid operands.
+
+### Collection querying beyond indexing - Phase 7
+
+- Add explicit collection-query acquisition requirements for `ANY`, `ALL`, `CARDINALITY`, scoped `COUNT`, `FILTER` and `MAP`, rooted at their physical metadata collection.
+- Record outer-row dependencies separately from bound element references so correlated collection expressions cannot be mistaken for self-contained backend operations.
+- Propagate collection-query requirements through query properties, metadata requirements, source-boundary unioning and physical acquisition requests.
+- Add operation-specific exact collection-query capability declarations as a strong adapter contract covering yt-sql NULL handling, three-valued predicates, ordering and result typing.
+- Permit collection-query pushdown only when every required operation for the collection is explicitly exact and uncorrelated, otherwise acquire the complete containing collection for exact local evaluation.
+- Preserve current adapter behaviour by advertising no collection-query pushdown capabilities by default.
+- Add focused acquisition-planning coverage for operation requirements, composed FILTER/MAP pipelines, current-backend fallback, capability-gated pushdown, correlated expressions and whole-collection conflicts.

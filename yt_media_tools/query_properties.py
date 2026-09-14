@@ -164,6 +164,26 @@ class StructuredMemberRequirement:
 
 
 @dataclass(frozen=True)
+class CollectionQueryRequirement:
+    """One collection operation rooted at a physical metadata field.
+
+    ``outer_fields`` records row-level dependencies referenced by the scoped
+    predicate or projection. Exact backend pushdown is permitted only when the
+    adapter explicitly supports the operation and no such correlated fields are
+    required.
+    """
+
+    field: str
+    operation: str
+    outer_fields: tuple[str, ...] = ()
+
+    @property
+    def correlated(self) -> bool:
+        """Return whether the scoped expression depends on outer row metadata."""
+        return bool(self.outer_fields)
+
+
+@dataclass(frozen=True)
 class ExpressionProperties:
     """Semantic properties of one resolved scalar or predicate expression."""
 
@@ -179,6 +199,7 @@ class ExpressionProperties:
     decidable_from_enumeration: bool
     indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
     member_requirements: tuple[StructuredMemberRequirement, ...] = ()
+    collection_query_requirements: tuple[CollectionQueryRequirement, ...] = ()
     whole_fields: frozenset[str] = frozenset()
 
 
@@ -213,6 +234,7 @@ class QueryProperties:
     requires_complete_acquisition: bool = False
     indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
     member_requirements: tuple[StructuredMemberRequirement, ...] = ()
+    collection_query_requirements: tuple[CollectionQueryRequirement, ...] = ()
     whole_fields: frozenset[str] = frozenset()
 
     def field_capability(self, field: str) -> FieldCapability:
@@ -274,6 +296,7 @@ def _field_properties(field: Field, source: SourceSpec | None) -> ExpressionProp
         enumeration,
         (),
         (),
+        (),
         frozenset({field.name.casefold()}),
     )
 
@@ -303,6 +326,7 @@ def _combine(
     )
     indexed = tuple(requirement for child in children for requirement in child.indexed_requirements)
     members = tuple(requirement for child in children for requirement in child.member_requirements)
+    collection_queries = tuple(requirement for child in children for requirement in child.collection_query_requirements)
     whole_fields = frozenset().union(*(child.whole_fields for child in children)) if children else frozenset()
     return ExpressionProperties(
         fields,
@@ -317,6 +341,7 @@ def _combine(
         decidable,
         indexed,
         members,
+        collection_queries,
         whole_fields,
     )
 
@@ -373,6 +398,29 @@ def _structured_member_requirement(expression: ScalarMember) -> StructuredMember
     return None
 
 
+def _collection_root_field(expression: Any) -> str | None:
+    """Return the physical field at the root of a composable collection expression."""
+    node = expression
+    while isinstance(node, (CollectionFilter, CollectionProjection)):
+        node = node.collection
+    if isinstance(node, Field):
+        return node.name.casefold()
+    return None
+
+
+def _collection_query_requirement(
+    collection: Any,
+    operation: str,
+    scoped: ExpressionProperties | None = None,
+) -> CollectionQueryRequirement | None:
+    """Build one conservative backend-pushdown requirement for a collection operation."""
+    field = _collection_root_field(collection)
+    if field is None:
+        return None
+    outer_fields = tuple(sorted(scoped.required_fields)) if scoped is not None else ()
+    return CollectionQueryRequirement(field, operation, outer_fields)
+
+
 def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> ExpressionProperties:
     """Return deterministic semantic properties for a resolved expression tree."""
     if expression is None:
@@ -405,38 +453,70 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
     if isinstance(expression, CollectionPredicate):
         collection = analyse_expression(expression.collection, source=source)
         predicate = analyse_expression(expression.predicate, source=source)
-        return _combine(
+        combined = _combine(
             (collection, predicate),
             resolved_type="boolean",
             null_sensitive=True,
             may_return_null=collection.may_return_null or predicate.may_return_null,
         )
+        requirement = _collection_query_requirement(expression.collection, expression.quantifier.casefold(), predicate)
+        if requirement is None:
+            return combined
+        return replace(
+            combined,
+            collection_query_requirements=combined.collection_query_requirements + (requirement,),
+            whole_fields=combined.whole_fields - {requirement.field},
+        )
     if isinstance(expression, CollectionCount):
         collection = analyse_expression(expression.collection, source=source)
         predicate = analyse_expression(expression.predicate, source=source)
-        return _combine(
+        combined = _combine(
             (collection, predicate),
             resolved_type="integer",
             null_sensitive=True,
             may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
         )
+        requirement = _collection_query_requirement(expression.collection, "count", predicate)
+        if requirement is None:
+            return combined
+        return replace(
+            combined,
+            collection_query_requirements=combined.collection_query_requirements + (requirement,),
+            whole_fields=combined.whole_fields - {requirement.field},
+        )
     if isinstance(expression, CollectionFilter):
         collection = analyse_expression(expression.collection, source=source)
         predicate = analyse_expression(expression.predicate, source=source)
-        return _combine(
+        combined = _combine(
             (collection, predicate),
             resolved_type="collection",
             null_sensitive=True,
             may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
         )
+        requirement = _collection_query_requirement(expression.collection, "filter", predicate)
+        if requirement is None:
+            return combined
+        return replace(
+            combined,
+            collection_query_requirements=combined.collection_query_requirements + (requirement,),
+            whole_fields=combined.whole_fields - {requirement.field},
+        )
     if isinstance(expression, CollectionProjection):
         collection = analyse_expression(expression.collection, source=source)
         projection = analyse_expression(expression.projection, source=source)
-        return _combine(
+        combined = _combine(
             (collection, projection),
             resolved_type="collection",
             null_sensitive=True,
             may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
+        )
+        requirement = _collection_query_requirement(expression.collection, "map", projection)
+        if requirement is None:
+            return combined
+        return replace(
+            combined,
+            collection_query_requirements=combined.collection_query_requirements + (requirement,),
+            whole_fields=combined.whole_fields - {requirement.field},
         )
     if isinstance(expression, Field):
         return _field_properties(expression, source)
@@ -556,6 +636,16 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
         return combined
     if isinstance(expression, ScalarFunction):
         children = tuple(analyse_expression(arg, source=source) for arg in expression.args)
+        if expression.name == "CARDINALITY" and expression.args:
+            combined = _combine(children, resolved_type=expression.kind, null_sensitive=True)
+            requirement = _collection_query_requirement(expression.args[0], "cardinality")
+            if requirement is None:
+                return combined
+            return replace(
+                combined,
+                collection_query_requirements=combined.collection_query_requirements + (requirement,),
+                whole_fields=combined.whole_fields - {requirement.field},
+            )
         if expression.name == "RANDOM":
             # RANDOM(seed) is reproducible for a stable row identity, but neither seeded
             # nor unseeded RANDOM is a constant expression because both depend on the row.
@@ -759,6 +849,11 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
     member_requirements = tuple(
         dict.fromkeys(requirement for item in expression_properties for requirement in item.member_requirements)
     )
+    collection_query_requirements = tuple(
+        dict.fromkeys(
+            requirement for item in expression_properties for requirement in item.collection_query_requirements
+        )
+    )
     whole_fields = frozenset().union(*(item.whole_fields for item in expression_properties))
 
     return QueryProperties(
@@ -781,5 +876,6 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
         requires_complete_acquisition=complete,
         indexed_requirements=indexed_requirements,
         member_requirements=member_requirements,
+        collection_query_requirements=collection_query_requirements,
         whole_fields=whole_fields,
     )

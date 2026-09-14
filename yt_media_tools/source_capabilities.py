@@ -89,6 +89,7 @@ class FacetCapabilities:
     field_overrides: tuple[FieldCapability, ...] = ()
     exact_indexed_fields: frozenset[str] = frozenset()
     exact_member_fields: frozenset[str] = frozenset()
+    exact_collection_query_fields: frozenset[str] = frozenset()
 
     def field(self, name: str) -> FieldCapability:
         """Return the source/facet-specific acquisition declaration for a logical field."""
@@ -108,6 +109,16 @@ class FacetCapabilities:
             return False
         path = ".".join((field, *members)).casefold()
         return path in self.exact_member_fields
+
+    def supports_exact_collection_query(self, field: str, operation: str) -> bool:
+        """Return whether the adapter can execute one yt-sql collection operation exactly.
+
+        The capability is intentionally operation-specific. Advertising an entry is
+        a strong semantic promise that NULL handling, three-valued predicates,
+        element ordering and result typing match yt-sql for the named operation.
+        """
+        key = f"{field}:{operation}".casefold()
+        return key in self.exact_collection_query_fields
 
 
 @dataclass(frozen=True)
