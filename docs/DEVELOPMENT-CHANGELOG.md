@@ -4,4 +4,10 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
-No unreleased changes yet.
+### Structured member access - Phase 1
+
+- Add first-class structured type metadata with opaque, declared and dynamic schema shapes.
+- Add named structured member contracts with independent member and top-level NULLability.
+- Preserve `QueryType.scalar("structured")` as the existing opaque structured-value boundary while enabling declared schemas for later member access.
+- Add deterministic member type lookup and nullable-base result propagation without introducing new query syntax or runtime member evaluation.
+- Add focused type-model coverage for declared, dynamic, opaque, nested and collection-composed structured values.
