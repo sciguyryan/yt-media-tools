@@ -54,3 +54,12 @@ This file records meaningful changes during active development. It is not releas
 - Permit member-specific acquisition only when the selected adapter proves exact member semantics and, for indexed member access, exact positional acquisition semantics as well.
 - Fall back to exact indexed containing-record acquisition or full containing-structure acquisition whenever member-level equivalence cannot be proven, and never partially acquire a dynamically indexed member path.
 - Add focused acquisition-planning coverage for nested member requirements, indexed/member composition, whole-structure conflicts, current-backend fallback and capability-gated precise acquisition.
+
+### Structured member access - Phase 7
+
+- Infer conservative dynamic member schemas for genuinely structured `raw.*` dictionaries and ordered raw record collections.
+- Support postfix member access through direct raw records, indexed raw structured collections and recursively nested dynamic structures while preserving SQL NULL propagation.
+- Expose only string-keyed members whose observed runtime values have one compatible yt-sql shape, treating missing members as nullable and omitting incompatible members from the dynamic schema.
+- Preserve opaque structured typing when provider records cannot be described safely, including non-string-keyed shapes, rather than coercing uncertain values into ordinary scalars.
+- Keep whole raw structured values non-selectable so dynamic member inference does not weaken the existing structured-value boundary.
+- Add focused coverage for direct, indexed, nested, nullable, incompatible, opaque and predicate dynamic raw member access.

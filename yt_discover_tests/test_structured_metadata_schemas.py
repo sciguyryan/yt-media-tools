@@ -103,14 +103,15 @@ def test_structured_metadata_schema_does_not_promote_backend_specific_members() 
     assert element_type.declared_member_type("provider_private_flag") is None
 
 
-def test_raw_structured_collection_elements_remain_opaque() -> None:
+def test_raw_structured_collection_elements_use_separate_dynamic_schema() -> None:
     schema = QuerySchema([normalise_record({"formats": [{"format_id": "18"}]})])
     raw_formats = schema.resolve_index_operand("raw.formats")
 
     assert raw_formats is not None
     assert raw_formats.query_type.is_collection
     assert raw_formats.query_type.element_type is not None
-    assert raw_formats.query_type.element_type.structured_shape is StructuredShape.OPAQUE
+    assert raw_formats.query_type.element_type.structured_shape is StructuredShape.DYNAMIC
+    assert raw_formats.query_type.element_type.declared_member_type("format_id") is not None
 
 
 def test_declared_member_schema_does_not_change_structured_collection_ordering() -> None:

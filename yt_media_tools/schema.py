@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
-from .query_types import CollectionOrdering, QueryType, StructuredMember
+from .query_types import CollectionOrdering, QueryType, StructuredMember, StructuredShape
 
 
 SCALAR_TYPES = (str, int, float, bool, type(None))
@@ -152,6 +152,83 @@ class FieldInfo:
         return QueryType.scalar(self.kind, nullable=self.nullable)
 
 
+def _infer_dynamic_value_type(
+    name: str,
+    values: Iterable[Any],
+    *,
+    nullable: bool,
+) -> QueryType | None:
+    """Infer one provider-derived value type without weakening yt-sql boundaries.
+
+    Dynamic ``raw.*`` structure is inferred only when every observed non-NULL value has
+    one compatible runtime shape. Mixed scalar/container shapes and heterogeneous
+    container kinds remain unresolved rather than being coerced into a portable type.
+    """
+    values = tuple(values)
+    concrete = [value for value in values if value is not None]
+    if not concrete:
+        return QueryType.scalar("unknown", nullable=True)
+    if all(isinstance(value, dict) for value in concrete):
+        return infer_dynamic_structured_type(concrete, nullable=nullable)
+    if any(isinstance(value, dict) for value in concrete):
+        return None
+    if all(isinstance(value, (list, tuple, set)) for value in concrete):
+        return infer_collection_type(
+            name,
+            values,
+            nullable=nullable,
+            allow_structured_elements=True,
+        )
+    if any(isinstance(value, (list, tuple, set)) for value in concrete):
+        return None
+    if not all(isinstance(value, SCALAR_TYPES) for value in concrete):
+        return None
+    kind = infer_kind(name, values)
+    if kind in {"mixed", "structured"}:
+        return None
+    return QueryType.scalar(kind, nullable=nullable)
+
+
+def infer_dynamic_structured_type(
+    values: Iterable[dict[str, Any]],
+    *,
+    nullable: bool,
+) -> QueryType:
+    """Infer a conservative dynamic member schema from provider dictionaries.
+
+    Only string-keyed members with one compatible observed value shape are exposed. A
+    member missing from some records is nullable. Incompatible members are deliberately
+    omitted, so attempts to use them fail during semantic resolution instead of silently
+    becoming ``mixed`` scalar values. If no member can be typed safely, the structure
+    remains opaque.
+    """
+    records = tuple(values)
+    if not records or any(not all(isinstance(key, str) for key in record) for record in records):
+        return QueryType.structured_opaque(nullable=nullable)
+
+    members: list[StructuredMember] = []
+    names = sorted({key for record in records for key in record})
+    for member_name in names:
+        present_values = [record[member_name] for record in records if member_name in record]
+        member_nullable = len(present_values) < len(records) or any(value is None for value in present_values)
+        member_type = _infer_dynamic_value_type(
+            member_name,
+            present_values,
+            nullable=member_nullable,
+        )
+        if member_type is None:
+            continue
+        members.append(StructuredMember(member_name, member_type))
+
+    if not members:
+        return QueryType.structured_opaque(nullable=nullable)
+    return QueryType.structured(
+        members,
+        nullable=nullable,
+        shape=StructuredShape.DYNAMIC,
+    )
+
+
 def infer_collection_type(
     name: str,
     values: Iterable[Any],
@@ -161,9 +238,10 @@ def infer_collection_type(
 ) -> QueryType | None:
     """Infer a collection type conservatively from observed runtime values.
 
-    Opaque structured elements are admitted only for dynamic ``raw.*`` paths. Ordinary
-    dynamic fields retain the earlier scalar-collection boundary until structured
-    values become first-class outside the raw namespace.
+    Provider-derived structured elements are admitted only for dynamic ``raw.*`` paths.
+    Their members are inferred recursively when all observed records have compatible
+    shapes; otherwise the element stays opaque rather than gaining accidental scalar
+    semantics.
     """
     concrete = [value for value in values if value is not None]
     if not concrete or not all(isinstance(value, (list, tuple, set)) for value in concrete):
@@ -184,18 +262,16 @@ def infer_collection_type(
         if element_type is None:
             return None
     elif any(isinstance(element, (list, tuple, set)) for element in element_concrete):
-        # Heterogeneous nested containers cannot be given one trustworthy collection
-        # element contract. Keep them unresolved rather than guessing from Python types.
         return None
     elif (
         allow_structured_elements
         and element_concrete
         and all(isinstance(element, dict) for element in element_concrete)
     ):
-        # raw.* may expose provider-defined arrays of records before structured member
-        # access exists. Indexing the array is still meaningful even though the record
-        # itself remains an opaque structured value at this stage.
-        element_type = QueryType.scalar("structured", nullable=element_nullable)
+        element_type = infer_dynamic_structured_type(
+            element_concrete,
+            nullable=element_nullable,
+        )
     elif any(isinstance(element, dict) for element in element_concrete):
         return None
     else:
@@ -293,6 +369,16 @@ class QuerySchema:
             collection_type = infer_collection_type(path.split(".")[-1], values, nullable=nullable)
             if collection_type is not None:
                 return FieldInfo(name, "collection", nullable, dynamic=True, resolved_type=collection_type)
+            concrete = [value for value in values if value is not None]
+            if concrete and all(isinstance(value, dict) for value in concrete):
+                structured_type = infer_dynamic_structured_type(concrete, nullable=nullable)
+                return FieldInfo(
+                    name,
+                    "structured",
+                    nullable,
+                    dynamic=True,
+                    resolved_type=structured_type,
+                )
             kind = "structured" if structured else infer_kind(path.split(".")[-1], values)
             return FieldInfo(name, kind, nullable, dynamic=True)
         return self._fields.get(lowered)
@@ -300,10 +386,9 @@ class QuerySchema:
     def resolve_index_operand(self, name: str) -> FieldInfo | None:
         """Resolve a field specifically for collection indexing.
 
-        Ordinary ``raw.*`` resolution keeps arrays of records opaque and structured so
-        they cannot become directly selectable values before structured member access
-        is implemented. Indexing may still recognise such an array as an ordered raw
-        collection because the provider sequence itself is an explicit runtime value.
+        Ordinary ``raw.*`` resolution keeps arrays of records non-selectable as whole
+        structured values. Indexing may recognise such an array as an ordered provider
+        sequence and infer a conservative dynamic member schema for compatible records.
         """
         field = self.resolve(name)
         if field is None or field.kind != "structured" or not name.casefold().startswith("raw."):
