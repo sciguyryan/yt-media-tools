@@ -108,6 +108,17 @@ class ScalarIndex:
 
 
 @dataclass(frozen=True)
+class ScalarMember:
+    """Postfix member access over a structured-valued scalar expression."""
+
+    value: Any
+    member: str
+    position: int = 0
+    kind: str | None = None
+    resolved_type: Any | None = None
+
+
+@dataclass(frozen=True)
 class ScalarFunction:
     name: str
     args: tuple[Any, ...]

@@ -25,6 +25,7 @@ from .query_model import (
     ScalarFunction,
     ScalarIndex,
     ScalarIsNull,
+    ScalarMember,
     ScalarUnary,
     SelectTerm,
     SetOperation,
@@ -42,6 +43,7 @@ _TOKEN_RE = re.compile(
   | (?P<LPAREN>\()
   | (?P<LBRACKET>\[)
   | (?P<RBRACKET>\])
+  | (?P<DOT>\.)
   | (?P<ATIDENT>@[A-Za-z0-9_.-]+)
   | (?P<RPAREN>\))
   | (?P<STRING>'(?:''|\\.|[^'\\])*'|\"(?:\"\"|\\.|[^\"\\])*\")
@@ -67,6 +69,8 @@ _DECIMAL_INTEGER_RE = re.compile(r"[+-]?\d+(?:_\d+)*")
 _DECIMAL_NUMBER_RE = re.compile(r"[+-]?\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*))?")
 
 _BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Za-z]+(?:_[0-9A-Za-z]+)*)")
+
+_MEMBER_TERMINATOR_KEYWORDS = {"AS", "FROM", "WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "OFFSET", "UNION"}
 
 
 def _unescape_string(text: str) -> str:
@@ -435,17 +439,33 @@ class Parser:
         return self.parse_scalar_postfix()
 
     def parse_scalar_postfix(self) -> Any:
-        """Parse tightly binding postfix operations over a scalar atom."""
+        """Parse tightly binding postfix indexing and structured member access."""
         node = self.parse_scalar_atom()
-        while self.current.kind == "LBRACKET":
-            bracket = self.advance()
-            if self.current.kind == "RBRACKET":
-                raise QuerySyntaxError(
-                    self.source, "Collection indexing requires an index expression.", bracket.position
-                )
-            index = self.parse_scalar_expression()
-            self.expect("RBRACKET", "Expected ']' to close the collection index.")
-            node = ScalarIndex(node, index, bracket.position)
+        while self.current.kind in {"LBRACKET", "DOT"}:
+            if self.current.kind == "LBRACKET":
+                bracket = self.advance()
+                if self.current.kind == "RBRACKET":
+                    raise QuerySyntaxError(
+                        self.source, "Collection indexing requires an index expression.", bracket.position
+                    )
+                index = self.parse_scalar_expression()
+                self.expect("RBRACKET", "Expected ']' to close the collection index.")
+                node = ScalarIndex(node, index, bracket.position)
+                continue
+
+            dot = self.advance()
+            if self.current.kind != "IDENT" or self.current.text.upper() in _MEMBER_TERMINATOR_KEYWORDS:
+                raise QuerySyntaxError(self.source, "Expected a member name after '.'.", self.current.position)
+            member_token = self.advance()
+            # IDENT deliberately retains legacy dotted field paths such as raw.extra.score.
+            # After an explicit postfix dot, split any dotted token into successive member
+            # operations so expressions such as formats[0].video.height remain composable
+            # without changing the established parsing of bare dotted fields.
+            offset = 0
+            for member in member_token.text.split("."):
+                position = dot.position if offset == 0 else member_token.position + offset - 1
+                node = ScalarMember(node, member, position)
+                offset += len(member) + 1
         return node
 
     def parse_scalar_atom(self) -> Any:

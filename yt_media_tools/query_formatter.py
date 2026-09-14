@@ -20,6 +20,7 @@ from .query_model import (
     ScalarFunction,
     ScalarIndex,
     ScalarIsNull,
+    ScalarMember,
     ScalarUnary,
     TextPredicate,
     Unary,
@@ -48,6 +49,14 @@ def format_scalar_expression(expression: Any) -> str:
         )
     if isinstance(expression, ScalarIndex):
         return f"{format_scalar_expression(expression.collection)}[{format_scalar_expression(expression.index)}]"
+    if isinstance(expression, ScalarMember):
+        value = format_scalar_expression(expression.value)
+        # Bare dotted identifiers are an established field-path syntax. Preserve the
+        # explicit postfix-member AST when formatting a member whose base would
+        # otherwise be re-tokenised as part of that legacy dotted field name.
+        if isinstance(expression.value, (Field, Literal, ScalarUnary, ScalarCase)):
+            value = f"({value})"
+        return f"{value}.{expression.member}"
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
     if isinstance(expression, AggregateFunction):
