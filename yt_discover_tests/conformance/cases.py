@@ -720,6 +720,209 @@ def _index_or_null(value: Any, index: int | None) -> Any:
     return sequence[index] if index < len(sequence) else None
 
 
+def _sql_eq(left: Any, right: Any) -> bool | None:
+    """Return SQL equality without importing production three-valued helpers."""
+    if left is None or right is None:
+        return None
+    return left == right
+
+
+def _sql_ne(left: Any, right: Any) -> bool | None:
+    """Return SQL inequality without importing production three-valued helpers."""
+    equal = _sql_eq(left, right)
+    return None if equal is None else not equal
+
+
+def _collection_any(value: Any, predicate: Callable[[Any], bool | None]) -> bool | None:
+    """Apply independent existential SQL three-valued collection semantics."""
+    if value is None:
+        return None
+    saw_unknown = False
+    for item in value:
+        result = predicate(item)
+        if result is True:
+            return True
+        if result is None:
+            saw_unknown = True
+    return None if saw_unknown else False
+
+
+def _collection_all(value: Any, predicate: Callable[[Any], bool | None]) -> bool | None:
+    """Apply independent universal SQL three-valued collection semantics."""
+    if value is None:
+        return None
+    saw_unknown = False
+    for item in value:
+        result = predicate(item)
+        if result is False:
+            return False
+        if result is None:
+            saw_unknown = True
+    return None if saw_unknown else True
+
+
+def _collection_count(value: Any, predicate: Callable[[Any], bool | None]) -> int | None:
+    """Count only TRUE predicate outcomes, preserving a NULL collection as NULL."""
+    if value is None:
+        return None
+    return sum(predicate(item) is True for item in value)
+
+
+def _collection_filter(value: Any, predicate: Callable[[Any], bool | None]) -> list[Any] | None:
+    """Keep only TRUE predicate outcomes while preserving logical element order."""
+    if value is None:
+        return None
+    return [item for item in value if predicate(item) is True]
+
+
+def _collection_map(value: Any, projector: Callable[[Any], Any]) -> list[Any] | None:
+    """Project each element independently while preserving logical element order."""
+    if value is None:
+        return None
+    return [projector(item) for item in value]
+
+
+def _collection_query_semantics(rows: Rows) -> list[Any]:
+    """Exercise cardinality, scoped count, filtering and projection independently."""
+
+    def projected(row: dict[str, Any]) -> dict[str, Any]:
+        tags = _logical_taxonomy(row.get("tags"))
+        return {
+            "id": row["id"],
+            "cardinality": None if tags is None else len(tags),
+            "kept_count": _collection_count(tags, lambda tag: _sql_ne(tag, "skip")),
+            "kept": _collection_filter(tags, lambda tag: _sql_ne(tag, "skip")),
+            "upper": _collection_map(tags, lambda tag: None if tag is None else str(tag).upper()),
+        }
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: r["source_index"])
+        .select(projected)
+        .to_list()
+    )
+
+
+def _collection_any_group_1(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: _collection_any(_logical_taxonomy(r.get("tags")), lambda tag: _sql_eq(tag, "group-1")) is True)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .take(12)
+        .to_list()
+    )
+
+
+def _collection_not_any_group_1(rows: Rows) -> list[Any]:
+    def matches(row: dict[str, Any]) -> bool:
+        value = _collection_any(_logical_taxonomy(row.get("tags")), lambda tag: _sql_eq(tag, "group-1"))
+        return value is False
+
+    return (
+        OracleQuery(rows)
+        .where(matches)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .take(12)
+        .to_list()
+    )
+
+
+def _collection_all_known(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: _collection_all(_logical_taxonomy(r.get("tags")), lambda tag: tag is not None) is True)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .take(12)
+        .to_list()
+    )
+
+
+def _collection_filter_map_composition(rows: Rows) -> list[Any]:
+    """Exercise composed FILTER then MAP semantics over deterministic taxonomy collections."""
+
+    def projected(row: dict[str, Any]) -> dict[str, Any]:
+        tags = _logical_taxonomy(row.get("tags"))
+        kept = _collection_filter(tags, lambda tag: _sql_ne(tag, "skip"))
+        upper = _collection_map(kept, lambda tag: None if tag is None else str(tag).upper())
+        return {"id": row["id"], "kept_upper": upper}
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: r["source_index"])
+        .select(projected)
+        .to_list()
+    )
+
+
+def _structured_collection_count(rows: Rows) -> list[Any]:
+    """Exercise declared structured collection members through scoped COUNT."""
+
+    def projected(row: dict[str, Any]) -> dict[str, Any]:
+        formats = row.get("formats")
+        count = _collection_count(
+            formats,
+            lambda format_record: (
+                None
+                if _structured_member_or_null(format_record, "height") is None
+                else int(_structured_member_or_null(format_record, "height")) >= 700
+            ),
+        )
+        return {"id": row["id"], "tall_formats": count}
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 18)
+        .order_by(lambda r: r["source_index"])
+        .select(projected)
+        .to_list()
+    )
+
+
+def _dynamic_raw_filter_map(rows: Rows) -> list[Any]:
+    """Exercise FILTER and MAP over backend-specific ordered raw scalar collections."""
+
+    def projected(row: dict[str, Any]) -> dict[str, Any]:
+        sequence = _structured_member_or_null(row.get("fixture_raw"), "sequence")
+        kept = _collection_filter(sequence, lambda item: _sql_ne(item, "skip"))
+        upper = _collection_map(kept, lambda item: None if item is None else str(item).upper())
+        return {"id": row["id"], "raw_upper": upper}
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: r["source_index"])
+        .select(projected)
+        .to_list()
+    )
+
+
+def _nested_collection_scope(rows: Rows) -> list[Any]:
+    """Exercise nested collection bindings with an inner reference to the outer element."""
+
+    def matches(row: dict[str, Any]) -> bool:
+        tags = _logical_taxonomy(row.get("tags"))
+        sequence = _structured_member_or_null(row.get("fixture_raw"), "sequence")
+        result = _collection_any(
+            sequence,
+            lambda raw_item: _collection_any(tags, lambda tag: _sql_eq(tag, raw_item)),
+        )
+        return result is True
+
+    return (
+        OracleQuery(rows)
+        .where(matches)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .take(8)
+        .to_list()
+    )
+
+
 def _collection_index_projection(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -872,6 +1075,20 @@ LANGUAGE_FEATURES = frozenset(
         "collection.raw",
         "collection.output",
         "collection.parameter",
+        "collection.quantifier.any",
+        "collection.quantifier.all",
+        "collection.cardinality",
+        "collection.count",
+        "collection.filter",
+        "collection.map",
+        "collection.scope.nested",
+        "collection.scope.outer",
+        "collection.three_valued",
+        "collection.empty",
+        "collection.null_element",
+        "collection.composition",
+        "collection.raw_dynamic",
+        "collection.structured",
         "structured.member",
         "structured.member.indexed",
         "structured.member.nested",
@@ -1220,6 +1437,86 @@ CASES = (
             "parameter.binding",
         ),
         execution="cli",
+    ),
+    ConformanceCase(
+        "collection_query_semantics",
+        "SELECT id, CARDINALITY(tags) AS cardinality, COUNT(tags AS tag WHERE tag != 'skip') AS kept_count, FILTER(tags AS tag WHERE tag != 'skip') AS kept, MAP(tags AS tag SELECT UPPER(tag)) AS upper FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
+        _collection_query_semantics,
+        ("id", "cardinality", "kept_count", "kept", "upper"),
+        "jsonl",
+        features=(
+            "collection.cardinality",
+            "collection.count",
+            "collection.filter",
+            "collection.map",
+            "collection.three_valued",
+            "collection.empty",
+            "collection.null_element",
+        ),
+    ),
+    ConformanceCase(
+        "collection_any_predicate",
+        "SELECT id FROM @yt_sql_fixture WHERE ANY(tags AS tag WHERE tag = 'group-1') ORDER BY source_index ASC LIMIT 12",
+        _collection_any_group_1,
+        features=("collection.quantifier.any", "collection.three_valued", "collection.empty"),
+    ),
+    ConformanceCase(
+        "collection_not_any_predicate",
+        "SELECT id FROM @yt_sql_fixture WHERE NOT ANY(tags AS tag WHERE tag = 'group-1') ORDER BY source_index ASC LIMIT 12",
+        _collection_not_any_group_1,
+        features=("collection.quantifier.any", "collection.three_valued", "collection.empty"),
+    ),
+    ConformanceCase(
+        "collection_all_predicate",
+        "SELECT id FROM @yt_sql_fixture WHERE ALL(tags AS tag WHERE tag IS NOT NULL) ORDER BY source_index ASC LIMIT 12",
+        _collection_all_known,
+        features=(
+            "collection.quantifier.all",
+            "collection.three_valued",
+            "collection.empty",
+            "collection.null_element",
+        ),
+    ),
+    ConformanceCase(
+        "collection_filter_map_composition",
+        "SELECT id, MAP(FILTER(tags AS tag WHERE tag != 'skip') AS kept SELECT UPPER(kept)) AS kept_upper FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
+        _collection_filter_map_composition,
+        ("id", "kept_upper"),
+        "jsonl",
+        features=("collection.filter", "collection.map", "collection.composition"),
+        execution="cli",
+    ),
+    ConformanceCase(
+        "structured_collection_count",
+        "SELECT id, COUNT(formats AS format WHERE format.height >= 700) AS tall_formats FROM @yt_sql_fixture WHERE source_index <= 18 ORDER BY source_index ASC",
+        _structured_collection_count,
+        ("id", "tall_formats"),
+        "jsonl",
+        features=("collection.count", "collection.structured", "structured.member"),
+    ),
+    ConformanceCase(
+        "dynamic_raw_filter_map",
+        "SELECT id, MAP(FILTER(raw.fixture_raw.sequence AS item WHERE item != 'skip') AS kept SELECT UPPER(kept)) AS raw_upper FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
+        _dynamic_raw_filter_map,
+        ("id", "raw_upper"),
+        "jsonl",
+        features=(
+            "collection.filter",
+            "collection.map",
+            "collection.composition",
+            "collection.raw_dynamic",
+        ),
+    ),
+    ConformanceCase(
+        "nested_collection_scope_outer_reference",
+        "SELECT id FROM @yt_sql_fixture WHERE ANY(raw.fixture_raw.sequence AS raw_item WHERE ANY(tags AS tag WHERE tag = raw_item)) ORDER BY source_index ASC LIMIT 8",
+        _nested_collection_scope,
+        features=(
+            "collection.quantifier.any",
+            "collection.scope.nested",
+            "collection.scope.outer",
+            "collection.raw_dynamic",
+        ),
     ),
     ConformanceCase(
         "dynamic_raw_structured_members",

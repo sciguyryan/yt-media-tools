@@ -283,6 +283,28 @@ Indexed access is also represented explicitly in metadata planning. A direct acc
 
 Collection values serialise as JSON arrays in JSONL output. When a single collection field is emitted through line output, the line itself uses JSON array syntax rather than Python container notation, preserving a stable machine-readable representation. Explain output exposes known collection fields with their resolved collection type, element type, logical ordering contract, positional-indexing support and exact indexed-acquisition capability alongside the existing metadata requirement and acquisition-stage details. Dynamic raw collection types remain deferred until metadata is available.
 
+## Collection querying beyond indexing
+
+yt-sql can quantify, count, filter and project collection elements through explicit lexical bindings. `ANY(collection AS item WHERE predicate)` is an existential predicate and `ALL(...)` is universal. `CARDINALITY(collection)` returns the total element count, including NULL elements. `COUNT(collection AS item WHERE predicate)` counts only elements whose predicate evaluates TRUE and is distinct from aggregate `COUNT(expr)` and `COUNT(*)`. `FILTER(collection AS item WHERE predicate)` retains only TRUE matches, while `MAP(collection AS item SELECT expression)` projects each element into a new collection.
+
+```text
+SELECT id FROM @example WHERE ANY(tags AS tag WHERE tag = 'Astronomy')
+SELECT id FROM @example WHERE ALL(tags AS tag WHERE tag IS NOT NULL)
+SELECT id, CARDINALITY(tags) AS tag_count FROM @example
+SELECT id, COUNT(tags AS tag WHERE tag != 'skip') AS kept_count FROM @example
+SELECT id, FILTER(tags AS tag WHERE tag != 'skip') AS kept FROM @example
+SELECT id, MAP(tags AS tag SELECT UPPER(tag)) AS upper_tags FROM @example
+SELECT id, MAP(FILTER(tags AS tag WHERE tag != 'skip') AS kept SELECT UPPER(kept)) AS kept_upper FROM @example
+```
+
+Collection bindings are lexical and case-sensitive. Nested collection expressions may reference differently named outer bindings, while an inner binding shadows an outer binding of the same name. Unbound identifiers remain ordinary row-field references. `ANY` and `ALL` are predicate forms rather than selectable Boolean scalar expressions; the other collection operations are scalar or collection-valued expressions as shown above.
+
+Quantifier semantics use SQL three-valued logic. `ANY` returns TRUE if any element predicate is TRUE, otherwise UNKNOWN if at least one result is UNKNOWN, otherwise FALSE; an empty collection therefore yields FALSE. `ALL` returns FALSE if any element predicate is FALSE, otherwise UNKNOWN if at least one result is UNKNOWN, otherwise TRUE; an empty collection therefore yields vacuous TRUE. A NULL collection yields UNKNOWN for either quantifier. `FILTER` keeps only TRUE outcomes, so FALSE and UNKNOWN are both excluded unless the predicate explicitly tests for NULL. Scoped `COUNT` likewise counts only TRUE outcomes. `CARDINALITY`, scoped `COUNT`, `FILTER` and `MAP` preserve a NULL collection as SQL NULL, while an empty non-NULL collection produces zero or an empty collection as appropriate.
+
+`FILTER` preserves the input collection's element type, top-level NULLability and logical ordering contract. `MAP` derives its element type from the projection expression while preserving the source collection's top-level NULLability and logical ordering contract. Neither operation invents positional guarantees, so filtering or mapping a collection with unknown or unordered logical order does not make it indexable. Structured members, nested collection expressions, outer-row fields and backend-specific ordered `raw.*` scalar collections compose with the same binding model when their resolved types permit it.
+
+Collection-query acquisition requirements are retained separately from whole-field and indexed requirements. A backend may push down `ANY`, `ALL`, `CARDINALITY`, scoped `COUNT`, `FILTER` or `MAP` only when its capability contract explicitly guarantees exact yt-sql-equivalent semantics for every required operation and the expression is uncorrelated with outer-row values. Otherwise the planner acquires the complete containing collection and evaluates the operation locally. Current adapters advertise no exact collection-query pushdown capabilities, so present execution remains conservative.
+
 ## Structured value and member semantics
 
 yt-sql models structured metadata as typed record values rather than generic Python objects or unrestricted backend dictionaries. Postfix `.member` access composes with any expression whose resolved result is structured, including indexed collection elements, structure-preserving functions and parenthesised expressions. A nullable structured base propagates SQL `NULL` to the member result, and missing members of a dynamic raw structure also evaluate to `NULL`. Unknown members of a declared schema and member access on non-structured values are semantic errors.

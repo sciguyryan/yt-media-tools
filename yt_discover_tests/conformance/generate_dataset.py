@@ -22,7 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from yt_media_tools.cache import MetadataCache  # noqa: E402
 
-GENERATOR_VERSION = 5
+GENERATOR_VERSION = 6
 DATASET_SEED = 31415926
 SOURCE_HANDLE = "@yt_sql_fixture"
 SOURCE_URL = "https://www.youtube.com/@yt_sql_fixture/videos"
@@ -138,8 +138,30 @@ def _anchor_records(seed: int) -> list[dict[str, object]]:
                 "webpage_url": f"https://fixture.invalid/watch/{media_id}",
                 "fixture_group": index % 4,
                 "fixture_nullable": None if index % 5 == 0 else f"g{index % 3}",
-                "tags": None if index % 10 == 0 else [f"topic-{index % 5}", f"group-{index % 3}"],
+                "tags": (
+                    None
+                    if index % 10 == 0
+                    else []
+                    if index == 2
+                    else [f"topic-{index % 5}", None, f"group-{index % 3}"]
+                    if index % 9 == 0
+                    else [f"topic-{index % 5}", "skip", f"group-{index % 3}"]
+                    if index % 7 == 0
+                    else [f"topic-{index % 5}", f"raw-{index}-a", f"group-{index % 3}"]
+                    if index % 8 == 0
+                    else [f"topic-{index % 5}", f"group-{index % 3}"]
+                ),
                 "categories": None if index % 12 == 0 else [f"Category {index % 4}", "Fixture"],
+                "formats": (
+                    None
+                    if index % 15 == 0
+                    else []
+                    if index == 3
+                    else [
+                        {"format_id": f"low-{index}", "height": 360, "width": 640},
+                        {"format_id": f"high-{index}", "height": None if index % 6 == 0 else 720, "width": 1280},
+                    ]
+                ),
                 "fixture_raw": {
                     "sequence": None if index % 11 == 0 else [f"raw-{index}-b", f"raw-{index}-a"],
                     "record": None
@@ -235,8 +257,30 @@ def _generated_record(index: int, rng: random.Random) -> dict[str, object]:
         "webpage_url": f"https://fixture.invalid/watch/{media_id}",
         "fixture_group": index % 17,
         "fixture_nullable": None if index % 19 == 0 else f"g{index % 13}",
-        "tags": None if index % 23 == 0 else [f"topic-{index % 8}", f"group-{index % 5}"],
+        "tags": (
+            None
+            if index % 23 == 0
+            else []
+            if index % 31 == 0
+            else [f"topic-{index % 8}", None, f"group-{index % 5}"]
+            if index % 37 == 0
+            else [f"topic-{index % 8}", "skip", f"group-{index % 5}"]
+            if index % 41 == 0
+            else [f"topic-{index % 8}", f"raw-{index}-a", f"group-{index % 5}"]
+            if index % 43 == 0
+            else [f"topic-{index % 8}", f"group-{index % 5}"]
+        ),
         "categories": None if index % 29 == 0 else [f"Category {index % 6}", "Fixture"],
+        "formats": (
+            None
+            if index % 59 == 0
+            else []
+            if index % 61 == 0
+            else [
+                {"format_id": f"low-{index}", "height": 360, "width": 640},
+                {"format_id": f"high-{index}", "height": None if index % 67 == 0 else 720, "width": 1280},
+            ]
+        ),
         "fixture_raw": {
             "sequence": None if index % 31 == 0 else [f"raw-{index}-b", f"raw-{index}-a"],
             "record": None

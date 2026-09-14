@@ -38,7 +38,7 @@ from yt_media_tools.schema import QuerySchema
 ROOT = Path(__file__).resolve().parents[1]
 CONF = ROOT / "yt_discover_tests" / "conformance"
 GENERATOR = CONF / "generate_dataset.py"
-SPEC = CONF / "dataset-spec-v5.json"
+SPEC = CONF / "dataset-spec-v6.json"
 CLI = ROOT / "yt-discover.py"
 
 
@@ -285,6 +285,21 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
     assert any(row["live_status"] == "was_live" for row in rows)
     assert any(row["upload_date"] is None for row in rows)
     assert any(row["fixture_nullable"] is None for row in rows)
+    assert any(row["tags"] is None for row in rows)
+    assert any(row["tags"] == [] for row in rows)
+    assert any(isinstance(row["tags"], list) and None in row["tags"] for row in rows)
+    assert any(isinstance(row["tags"], list) and "skip" in row["tags"] for row in rows)
+    assert any(
+        isinstance(row["tags"], list) and any(isinstance(tag, str) and tag.startswith("raw-") for tag in row["tags"])
+        for row in rows
+    )
+    assert any(row["formats"] is None for row in rows)
+    assert any(row["formats"] == [] for row in rows)
+    assert any(
+        isinstance(row["formats"], list)
+        and any(format_record.get("height") is None for format_record in row["formats"])
+        for row in rows
+    )
     structured = [row["fixture_raw"]["record"] for row in rows if row["fixture_raw"]["record"] is not None]
     assert structured
     assert any(record.get("label") is None for record in structured)

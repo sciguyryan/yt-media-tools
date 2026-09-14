@@ -22,6 +22,14 @@ The deterministic conformance generator includes first-class taxonomy collection
 
 Acquisition tests require whole-collection fallback unless an explicit backend capability proves that partial indexed acquisition is semantically identical to local indexing of the complete yt-sql logical collection. Unknown backend ordering must never become a positional language guarantee.
 
+## Collection querying beyond indexing
+
+Dedicated coverage now includes lexical collection-element scopes, nested outer references and shadowing, exact existential/universal three-valued truth tables, NULL and empty collections, nullable elements, `CARDINALITY`, scoped `COUNT`, `FILTER`, `MAP`, structured members, raw ordered collections, exact filtered/projected outputs, ordering-contract preservation, optimiser traversal, canonical formatting and deterministic invalid-operand diagnostics. Aggregate `COUNT` and aggregate `FILTER (WHERE ...)` have explicit regression checks so the new scoped forms remain semantically distinct.
+
+The deterministic conformance generator version 6 adds empty collections, nullable collection elements, explicit filtered-value anchors, structured format collections and dynamic raw sequences suitable for nested collection scopes. Independent oracle cases cover `ANY`, `ALL`, empty-versus-NULL quantifier behaviour, cardinality, scoped count, exact filtering, projection, FILTER/MAP composition, structured member predicates, dynamic raw collection pipelines, nested bindings with outer references, optimiser equivalence, canonical parse-format-parse stability and real offline CLI execution. The oracle expresses these operations directly over ordinary Python lists and dictionaries without importing production collection semantics, resolver or evaluator code.
+
+Acquisition-planning coverage records each collection operation separately, tracks correlated outer-row dependencies, requires every composed operation to have an explicit exact backend capability before pushdown, and verifies whole-collection fallback for current adapters. Synthetic exact-capability tests prove the optimisation path without changing default backend behaviour.
+
 ## Structured values and member access
 
 Current dedicated coverage includes opaque, declared and dynamic structured type shapes, member NULLability, postfix parsing and chaining, distinction from legacy dotted field paths, canonical formatting, direct/nested/indexed/function-valued resolution, deterministic unknown-member and invalid-operand diagnostics, runtime dictionary-only evaluation, SQL NULL propagation, predicate participation, closed format/chapter/thumbnail schemas, dynamic raw schema inference, incompatible-shape rejection and acquisition requirement propagation.

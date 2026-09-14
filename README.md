@@ -22,7 +22,7 @@ profiles/                         Downloader output profiles
 yt_discover_tests/                Discover test suite
 yt_downloader_tests/              Downloader test suite
 yt_media_tools_tests/             Shared internal-package test suite
-docs/                              Project documentation
+docs/                             Project documentation
 docs/DISCOVER-README.md           Discover documentation
 docs/DOWNLOADER-README.md         Downloader documentation
 docs/DISCOVER-FUTURE-WORK.md      Planned Discover language and capability programme

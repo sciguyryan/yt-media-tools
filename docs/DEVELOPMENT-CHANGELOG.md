@@ -62,3 +62,11 @@ This file records meaningful changes during active development. It is not releas
 - Permit collection-query pushdown only when every required operation for the collection is explicitly exact and uncorrelated, otherwise acquire the complete containing collection for exact local evaluation.
 - Preserve current adapter behaviour by advertising no collection-query pushdown capabilities by default.
 - Add focused acquisition-planning coverage for operation requirements, composed FILTER/MAP pipelines, current-backend fallback, capability-gated pushdown, correlated expressions and whole-collection conflicts.
+
+### Collection querying beyond indexing - Phase 8
+
+- Extend the deterministic conformance generator to version 6 with empty collections, nullable elements, explicit filter anchors, declared structured format collections and dynamic raw sequences for nested scope coverage.
+- Add independent-oracle conformance cases for `ANY`, `ALL`, `CARDINALITY`, scoped `COUNT`, exact `FILTER` and `MAP` results, FILTER/MAP composition, structured collections, dynamic raw collections and nested outer binding references.
+- Exercise collection-query semantics through canonical formatting, optimiser equivalence and real offline CLI execution while preserving focused evaluator truth-table coverage for exact TRUE, FALSE and UNKNOWN quantifier results.
+- Document lexical binding, three-valued semantics, NULL and empty collection behaviour, filtering and projection typing/order preservation, and conservative acquisition pushdown requirements.
+- Reconcile Discover usage, optimisation, test-coverage and conformance architecture documentation with the implemented collection-query language.
