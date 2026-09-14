@@ -18,3 +18,11 @@ This file records meaningful changes during active development. It is not releas
 - Resolve binding references lexically during parsing, including nested outer references and innermost shadowing, while preserving ordinary row-field lookup for unbound identifiers.
 - Support structured-member and postfix expression composition from bound collection elements without changing established bare dotted field-path parsing.
 - Add canonical formatting, round-trip coverage and deterministic malformed-binding diagnostics for collection predicate syntax.
+
+### Collection querying beyond indexing - Phase 3
+
+- Resolve `ANY` and `ALL` collection operands against the yt-sql type model and retain exact bound element types through lexical scopes.
+- Evaluate existential and universal predicates with the Phase 1 SQL three-valued reducers, including NULL collections, nullable elements, UNKNOWN predicate results and empty-collection identities.
+- Support nested quantifiers, outer element references, ordinary outer-row fields and structured member access during runtime collection predicate evaluation.
+- Carry collection predicates through semantic identity and expression-property analysis so required source fields remain visible to acquisition planning while bound elements remain local values.
+- Reject non-collection quantifier operands deterministically without introducing count, filtering or projection semantics.

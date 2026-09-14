@@ -17,6 +17,8 @@ from .query_model import (
     Binary,
     CaseWhen,
     CommonTableExpression,
+    CollectionElementReference,
+    CollectionPredicate,
     Field,
     InList,
     IsNull,
@@ -310,8 +312,25 @@ def _resolve_scalar_expression(
     *,
     select_context: bool = False,
     allow_structured: bool = False,
+    collection_scopes: tuple[QueryType, ...] = (),
 ) -> Any:
     """Resolve fields, aliases and types for a scalar expression."""
+    if isinstance(expression, CollectionElementReference):
+        index = len(collection_scopes) - 1 - expression.scope_distance
+        if index < 0 or index >= len(collection_scopes):
+            raise QuerySyntaxError(
+                source,
+                f"Collection binding {expression.binding!r} is outside its lexical scope.",
+                expression.position,
+            )
+        result_type = collection_scopes[index]
+        return CollectionElementReference(
+            expression.binding,
+            expression.scope_distance,
+            expression.position,
+            result_type.kind,
+            result_type,
+        )
     if isinstance(expression, Field):
         if aliases is not None:
             alias = aliases.get(expression.name.casefold())
@@ -339,7 +358,13 @@ def _resolve_scalar_expression(
         return replace(expression, value=_generic_literal(str(expression.value), expression.quoted))
     if isinstance(expression, ScalarUnary):
         operand = _resolve_scalar_expression(
-            expression.operand, schema, source, dates, aliases, select_context=select_context
+            expression.operand,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            collection_scopes=collection_scopes,
         )
         kind = _scalar_kind(operand)
         if not _is_numeric_kind(kind) and not isinstance(operand, Literal):
@@ -353,10 +378,22 @@ def _resolve_scalar_expression(
         return ScalarUnary(expression.operator, operand, expression.position, kind or "number")
     if isinstance(expression, ScalarBinary):
         left = _resolve_scalar_expression(
-            expression.left, schema, source, dates, aliases, select_context=select_context
+            expression.left,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            collection_scopes=collection_scopes,
         )
         right = _resolve_scalar_expression(
-            expression.right, schema, source, dates, aliases, select_context=select_context
+            expression.right,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            collection_scopes=collection_scopes,
         )
         for operand in (left, right):
             kind = _scalar_kind(operand)
@@ -377,16 +414,28 @@ def _resolve_scalar_expression(
         resolved_whens: list[CaseWhen] = []
         results: list[Any] = []
         for branch in expression.whens:
-            condition = _resolve_predicate(branch.condition, schema, source, dates)
+            condition = _resolve_predicate(branch.condition, schema, source, dates, collection_scopes=collection_scopes)
             result = _resolve_scalar_expression(
-                branch.result, schema, source, dates, aliases, select_context=select_context
+                branch.result,
+                schema,
+                source,
+                dates,
+                aliases,
+                select_context=select_context,
+                collection_scopes=collection_scopes,
             )
             resolved_whens.append(CaseWhen(condition, result, branch.position))
             results.append(result)
         else_result = None
         if expression.else_result is not None:
             else_result = _resolve_scalar_expression(
-                expression.else_result, schema, source, dates, aliases, select_context=select_context
+                expression.else_result,
+                schema,
+                source,
+                dates,
+                aliases,
+                select_context=select_context,
+                collection_scopes=collection_scopes,
             )
             results.append(else_result)
         kind = _common_case_kind(results, source, expression.position)
@@ -400,6 +449,7 @@ def _resolve_scalar_expression(
             aliases,
             select_context=select_context,
             allow_structured=True,
+            collection_scopes=collection_scopes,
         )
         value_type = _scalar_query_type(value, schema)
         if value_type is None or not value_type.is_structured:
@@ -441,10 +491,22 @@ def _resolve_scalar_expression(
                 )
         else:
             collection = _resolve_scalar_expression(
-                expression.collection, schema, source, dates, aliases, select_context=select_context
+                expression.collection,
+                schema,
+                source,
+                dates,
+                aliases,
+                select_context=select_context,
+                collection_scopes=collection_scopes,
             )
         index = _resolve_scalar_expression(
-            expression.index, schema, source, dates, aliases, select_context=select_context
+            expression.index,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            collection_scopes=collection_scopes,
         )
         collection_type = _scalar_query_type(collection, schema)
         if collection_type is None or not collection_type.is_collection:
@@ -476,7 +538,15 @@ def _resolve_scalar_expression(
         return ScalarIndex(collection, index, expression.position, result_type.kind, result_type)
     if isinstance(expression, AggregateFunction):
         args = tuple(
-            _resolve_scalar_expression(arg, schema, source, dates, aliases, select_context=select_context)
+            _resolve_scalar_expression(
+                arg,
+                schema,
+                source,
+                dates,
+                aliases,
+                select_context=select_context,
+                collection_scopes=collection_scopes,
+            )
             for arg in expression.args
         )
         if any(_contains_aggregate(arg) for arg in args):
@@ -510,6 +580,7 @@ def _resolve_scalar_expression(
                 aliases,
                 select_context=select_context,
                 allow_structured=preserve_structured,
+                collection_scopes=collection_scopes,
             )
             for arg in expression.args
         )
@@ -639,21 +710,52 @@ def _validate_char_codepoint(value: Any, source: str, position: int) -> int:
         raise QuerySyntaxError(source, "CHAR requires integer code-point values.", position) from exc
 
 
-def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: DateContext) -> Any:
+def _resolve_predicate(
+    node: Any,
+    schema: QuerySchema,
+    source: str,
+    context: DateContext,
+    *,
+    collection_scopes: tuple[QueryType, ...] = (),
+) -> Any:
     """Resolve one Boolean predicate tree against the established query schema."""
     if node is None:
         return None
     if isinstance(node, Unary):
-        return Unary(node.operator, _resolve_predicate(node.operand, schema, source, context))
+        return Unary(
+            node.operator,
+            _resolve_predicate(node.operand, schema, source, context, collection_scopes=collection_scopes),
+        )
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
         return Binary(
             node.operator,
-            _resolve_predicate(node.left, schema, source, context),
-            _resolve_predicate(node.right, schema, source, context),
+            _resolve_predicate(node.left, schema, source, context, collection_scopes=collection_scopes),
+            _resolve_predicate(node.right, schema, source, context, collection_scopes=collection_scopes),
         )
+    if isinstance(node, CollectionPredicate):
+        collection = _resolve_scalar_expression(
+            node.collection, schema, source, context, allow_structured=True, collection_scopes=collection_scopes
+        )
+        collection_type = _scalar_query_type(collection, schema)
+        if collection_type is None or not collection_type.is_collection:
+            kind = _scalar_kind(collection) or "unknown"
+            raise QuerySyntaxError(
+                source,
+                f"{node.quantifier} requires a collection value; got {kind}.",
+                node.position,
+            )
+        assert collection_type.element_type is not None
+        predicate = _resolve_predicate(
+            node.predicate,
+            schema,
+            source,
+            context,
+            collection_scopes=collection_scopes + (collection_type.element_type,),
+        )
+        return CollectionPredicate(node.quantifier, collection, node.binding, predicate, node.position)
     if isinstance(node, ScalarComparison):
-        left = _resolve_scalar_expression(node.left, schema, source, context)
-        right = _resolve_scalar_expression(node.right, schema, source, context)
+        left = _resolve_scalar_expression(node.left, schema, source, context, collection_scopes=collection_scopes)
+        right = _resolve_scalar_expression(node.right, schema, source, context, collection_scopes=collection_scopes)
         left_kind = _scalar_kind(left)
         right_kind = _scalar_kind(right)
         if (
@@ -666,7 +768,10 @@ def _resolve_predicate(node: Any, schema: QuerySchema, source: str, context: Dat
             raise QuerySyntaxError(source, "WHERE comparison expressions must have compatible types.", 0)
         return ScalarComparison(node.operator, left, right)
     if isinstance(node, ScalarIsNull):
-        return ScalarIsNull(_resolve_scalar_expression(node.expression, schema, source, context), node.negated)
+        return ScalarIsNull(
+            _resolve_scalar_expression(node.expression, schema, source, context, collection_scopes=collection_scopes),
+            node.negated,
+        )
     if isinstance(node, Binary):
         field = _resolve_field(node.left, schema, source)
         if field.kind == "structured":

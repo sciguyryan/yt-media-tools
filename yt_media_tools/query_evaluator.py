@@ -11,10 +11,13 @@ from datetime import date, datetime
 from functools import lru_cache
 from typing import Any, Sequence
 
+from .collection_semantics import existential_truth, universal_truth
 from .dates import DateContext, parse_date_literal, timestamp_to_datetime
 from .query_model import (
     AggregateFunction,
     Between,
+    CollectionElementReference,
+    CollectionPredicate,
     Binary,
     Field,
     InList,
@@ -122,14 +125,21 @@ def _runtime_member_value(value: Any, member: str) -> Any:
     return value[member]
 
 
-def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
+def evaluate_scalar_expression(
+    expression: Any,
+    record: dict[str, Any],
+    collection_bindings: tuple[Any, ...] = (),
+) -> Any:
     """Evaluate a resolved scalar expression against one metadata record."""
+    if isinstance(expression, CollectionElementReference):
+        index = len(collection_bindings) - 1 - expression.scope_distance
+        return collection_bindings[index] if 0 <= index < len(collection_bindings) else None
     if isinstance(expression, Field):
         return canonical_record_value(record, expression)
     if isinstance(expression, Literal):
         return expression.value
     if isinstance(expression, ScalarUnary):
-        value = evaluate_scalar_expression(expression.operand, record)
+        value = evaluate_scalar_expression(expression.operand, record, collection_bindings)
         if value is None:
             return None
         try:
@@ -137,8 +147,8 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
         except TypeError:
             return None
     if isinstance(expression, ScalarBinary):
-        left = evaluate_scalar_expression(expression.left, record)
-        right = evaluate_scalar_expression(expression.right, record)
+        left = evaluate_scalar_expression(expression.left, record, collection_bindings)
+        right = evaluate_scalar_expression(expression.right, record, collection_bindings)
         if left is None or right is None:
             return None
         try:
@@ -156,21 +166,21 @@ def evaluate_scalar_expression(expression: Any, record: dict[str, Any]) -> Any:
             return None
         raise AssertionError(f"Unsupported arithmetic operator {expression.operator}")
     if isinstance(expression, ScalarIndex):
-        collection = evaluate_scalar_expression(expression.collection, record)
-        index = evaluate_scalar_expression(expression.index, record)
+        collection = evaluate_scalar_expression(expression.collection, record, collection_bindings)
+        index = evaluate_scalar_expression(expression.index, record, collection_bindings)
         return _runtime_indexed_value(collection, index)
     if isinstance(expression, ScalarMember):
-        value = evaluate_scalar_expression(expression.value, record)
+        value = evaluate_scalar_expression(expression.value, record, collection_bindings)
         return _runtime_member_value(value, expression.member)
     if isinstance(expression, ScalarCase):
         for branch in expression.whens:
-            if evaluate(branch.condition, record) is True:
-                return evaluate_scalar_expression(branch.result, record)
+            if evaluate(branch.condition, record, collection_bindings) is True:
+                return evaluate_scalar_expression(branch.result, record, collection_bindings)
         if expression.else_result is not None:
-            return evaluate_scalar_expression(expression.else_result, record)
+            return evaluate_scalar_expression(expression.else_result, record, collection_bindings)
         return None
     if isinstance(expression, ScalarFunction):
-        values = [evaluate_scalar_expression(arg, record) for arg in expression.args]
+        values = [evaluate_scalar_expression(arg, record, collection_bindings) for arg in expression.args]
         if expression.name == "LOWER":
             return values[0].lower() if isinstance(values[0], str) else None
         if expression.name == "UPPER":
@@ -314,18 +324,18 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
     return re.compile("".join(pieces), flags)
 
 
-def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
+def evaluate(node: Any, record: dict[str, Any], collection_bindings: tuple[Any, ...] = ()) -> bool | None:
     """Evaluate a resolved AST using SQL-like three-valued Boolean logic."""
     if node is None:
         return True
     if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):
         return node.value
     if isinstance(node, Unary):
-        value = evaluate(node.operand, record)
+        value = evaluate(node.operand, record, collection_bindings)
         return None if value is None else not value
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        left = evaluate(node.left, record)
-        right = evaluate(node.right, record)
+        left = evaluate(node.left, record, collection_bindings)
+        right = evaluate(node.right, record, collection_bindings)
         if node.operator == "AND":
             if left is False or right is False:
                 return False
@@ -337,12 +347,28 @@ def evaluate(node: Any, record: dict[str, Any]) -> bool | None:
         if left is None or right is None:
             return None
         return False
+    if isinstance(node, CollectionPredicate):
+        collection = evaluate_scalar_expression(node.collection, record, collection_bindings)
+        if collection is None:
+            return (
+                existential_truth((), collection_is_null=True)
+                if node.quantifier == "ANY"
+                else universal_truth((), collection_is_null=True)
+            )
+        if not isinstance(collection, (list, tuple)):
+            return None
+        results = (evaluate(node.predicate, record, collection_bindings + (element,)) for element in collection)
+        if node.quantifier == "ANY":
+            return existential_truth(results)
+        if node.quantifier == "ALL":
+            return universal_truth(results)
+        raise AssertionError(f"Unsupported collection quantifier {node.quantifier}")
     if isinstance(node, ScalarIsNull):
-        result = evaluate_scalar_expression(node.expression, record) is None
+        result = evaluate_scalar_expression(node.expression, record, collection_bindings) is None
         return not result if node.negated else result
     if isinstance(node, ScalarComparison):
-        left = evaluate_scalar_expression(node.left, record)
-        right = evaluate_scalar_expression(node.right, record)
+        left = evaluate_scalar_expression(node.left, record, collection_bindings)
+        right = evaluate_scalar_expression(node.right, record, collection_bindings)
         if left is None or right is None:
             return None
         try:

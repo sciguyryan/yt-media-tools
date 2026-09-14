@@ -15,6 +15,8 @@ from .query_model import (
     Binary,
     CaseWhen,
     CommonTableExpression,
+    CollectionElementReference,
+    CollectionPredicate,
     Field,
     InList,
     IsNull,
@@ -39,6 +41,16 @@ from .query_model import (
 
 def semantic_key(node: Any) -> Any:
     """Return semantic identity while ignoring non-semantic source positions."""
+    if isinstance(node, CollectionElementReference):
+        return ("collection-element", node.binding, node.scope_distance, node.kind)
+    if isinstance(node, CollectionPredicate):
+        return (
+            "collection-predicate",
+            node.quantifier,
+            semantic_key(node.collection),
+            node.binding,
+            semantic_key(node.predicate),
+        )
     if isinstance(node, ScalarUnary):
         return ("scalar-unary", node.operator, semantic_key(node.operand), node.kind)
     if isinstance(node, ScalarBinary):
@@ -136,6 +148,10 @@ def _contains_aggregate(expression: Any) -> bool:
     """Return whether a scalar expression contains an aggregate function."""
     if isinstance(expression, AggregateFunction):
         return True
+    if isinstance(expression, CollectionElementReference):
+        return False
+    if isinstance(expression, CollectionPredicate):
+        return _contains_aggregate(expression.collection) or _having_contains_aggregate(expression.predicate)
     if isinstance(expression, ScalarUnary):
         return _contains_aggregate(expression.operand)
     if isinstance(expression, ScalarBinary):
@@ -179,6 +195,10 @@ def _having_contains_aggregate(node: Any) -> bool:
 def _contains_random(expression: Any) -> bool:
     if expression is None:
         return False
+    if isinstance(expression, CollectionElementReference):
+        return False
+    if isinstance(expression, CollectionPredicate):
+        return _contains_random(expression.collection) or _contains_random(expression.predicate)
     if isinstance(expression, ScalarIndex):
         return _contains_random(expression.collection) or _contains_random(expression.index)
     if isinstance(expression, ScalarMember):

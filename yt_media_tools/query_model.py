@@ -102,12 +102,16 @@ class CollectionElementReference:
 
     ``scope_distance`` is zero for the innermost matching binding and increases
     by one for each enclosing collection predicate scope. The original binding
-    name is retained for canonical formatting and diagnostics.
+    name is retained for canonical formatting and diagnostics. Resolved element
+    references retain their complete yt-sql type so postfix member/index
+    operations can compose without consulting row-field schema.
     """
 
     binding: str
     scope_distance: int = 0
     position: int = 0
+    kind: str | None = None
+    resolved_type: Any | None = None
 
 
 @dataclass(frozen=True)

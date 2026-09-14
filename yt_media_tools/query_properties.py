@@ -16,6 +16,8 @@ from .query_model import (
     AggregateFunction,
     Between,
     Binary,
+    CollectionElementReference,
+    CollectionPredicate,
     Field,
     InList,
     IsNull,
@@ -382,6 +384,29 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
             STAGE_CONSTANT,
             METADATA_NONE,
             True,
+        )
+    if isinstance(expression, CollectionElementReference):
+        resolved_type = expression.resolved_type
+        return ExpressionProperties(
+            frozenset(),
+            expression.kind,
+            False,
+            True,
+            bool(resolved_type is None or resolved_type.nullable),
+            bool(resolved_type is None or resolved_type.nullable),
+            False,
+            STAGE_DETAILED,
+            METADATA_NONE,
+            True,
+        )
+    if isinstance(expression, CollectionPredicate):
+        collection = analyse_expression(expression.collection, source=source)
+        predicate = analyse_expression(expression.predicate, source=source)
+        return _combine(
+            (collection, predicate),
+            resolved_type="boolean",
+            null_sensitive=True,
+            may_return_null=collection.may_return_null or predicate.may_return_null,
         )
     if isinstance(expression, Field):
         return _field_properties(expression, source)
