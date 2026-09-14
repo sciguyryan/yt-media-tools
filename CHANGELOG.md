@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.29.1 - Structured Member Access
+
+- Add first-class structured value types with opaque, declared and dynamic member schemas, preserving NULLability through nested structured expressions.
+- Add composable postfix `.member` syntax after indexed, function-valued and parenthesised expressions while preserving established dotted field paths and canonical round trips.
+- Resolve and evaluate structured members with deterministic errors for invalid operands or unknown members, SQL NULL propagation and conservative runtime dictionary boundaries.
+- Define closed yt-sql member schemas for formats, chapters and thumbnails without exposing arbitrary backend dictionaries or changing their existing ordering contracts.
+- Carry precise nested and indexed member requirements through source-boundary and physical acquisition planning, using member-level acquisition only when a backend proves exact equivalence and otherwise falling back conservatively.
+- Support dynamic `raw.*` structured member access through compatible runtime dictionaries and ordered raw record collections while keeping unsafe, inconsistent and whole structured raw values opaque or non-selectable.
+- Extend the deterministic conformance generator to version 5 and add independent-oracle, optimiser, formatter and offline CLI coverage for direct, nested, indexed, nullable and predicate member access.
+- Document structured-value semantics, member schemas, dynamic raw inference and acquisition fallback behaviour across the yt-sql reference and Discover testing documentation.
+
 ## Discover 0.29.0 - Typed Collections and Indexing
 
 - Add first-class typed collection values with declared element types, NULLability and explicit logical ordering contracts.
