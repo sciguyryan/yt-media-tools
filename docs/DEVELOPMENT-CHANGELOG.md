@@ -45,3 +45,12 @@ This file records meaningful changes during active development. It is not releas
 - Preserve the existing unknown logical ordering contract for structured collections, so declaring members does not make positional indexing valid.
 - Keep dynamic `raw.*` structured collection elements opaque and separate from the stable first-class metadata schemas.
 - Add focused schema and explain coverage for declared members, NULLability, backend-specific exclusions, raw opacity and unchanged ordering semantics.
+
+### Structured member access - Phase 6
+
+- Add precise structured member acquisition requirements that preserve the physical root field, nested member path and direct indexed-access context.
+- Propagate structured member requirements through query properties, metadata requirement planning, source-boundary unioning and physical acquisition requests without treating member access as whole-structure consumption.
+- Add explicit source capability declarations for exact structured member acquisition while keeping all current adapters conservative by default.
+- Permit member-specific acquisition only when the selected adapter proves exact member semantics and, for indexed member access, exact positional acquisition semantics as well.
+- Fall back to exact indexed containing-record acquisition or full containing-structure acquisition whenever member-level equivalence cannot be proven, and never partially acquire a dynamically indexed member path.
+- Add focused acquisition-planning coverage for nested member requirements, indexed/member composition, whole-structure conflicts, current-backend fallback and capability-gated precise acquisition.

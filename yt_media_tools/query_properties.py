@@ -149,6 +149,16 @@ class IndexedFieldRequirement:
 
 
 @dataclass(frozen=True)
+class StructuredMemberRequirement:
+    """One structured member path rooted at a physical metadata field."""
+
+    field: str
+    members: tuple[str, ...]
+    index: int | None = None
+    indexed: bool = False
+
+
+@dataclass(frozen=True)
 class ExpressionProperties:
     """Semantic properties of one resolved scalar or predicate expression."""
 
@@ -163,6 +173,7 @@ class ExpressionProperties:
     metadata_depth: str
     decidable_from_enumeration: bool
     indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    member_requirements: tuple[StructuredMemberRequirement, ...] = ()
     whole_fields: frozenset[str] = frozenset()
 
 
@@ -196,6 +207,7 @@ class QueryProperties:
     predicate_decidable_from_enumeration: bool = True
     requires_complete_acquisition: bool = False
     indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    member_requirements: tuple[StructuredMemberRequirement, ...] = ()
     whole_fields: frozenset[str] = frozenset()
 
     def field_capability(self, field: str) -> FieldCapability:
@@ -256,6 +268,7 @@ def _field_properties(field: Field, source: SourceSpec | None) -> ExpressionProp
         metadata,
         enumeration,
         (),
+        (),
         frozenset({field.name.casefold()}),
     )
 
@@ -284,6 +297,7 @@ def _combine(
         child.decidable_from_enumeration for child in children
     )
     indexed = tuple(requirement for child in children for requirement in child.indexed_requirements)
+    members = tuple(requirement for child in children for requirement in child.member_requirements)
     whole_fields = frozenset().union(*(child.whole_fields for child in children)) if children else frozenset()
     return ExpressionProperties(
         fields,
@@ -297,6 +311,7 @@ def _combine(
         depth,
         decidable,
         indexed,
+        members,
         whole_fields,
     )
 
@@ -330,6 +345,27 @@ def _constant_nonnegative_integer(expression: Any) -> int | None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         return None
     return value
+
+
+def _structured_member_requirement(expression: ScalarMember) -> StructuredMemberRequirement | None:
+    """Return one precise field/member path when the postfix chain has a physical-field root."""
+    members: list[str] = []
+    node: Any = expression
+    while isinstance(node, ScalarMember):
+        members.append(node.member)
+        node = node.value
+    members.reverse()
+
+    index: int | None = None
+    if isinstance(node, ScalarIndex) and isinstance(node.collection, Field):
+        index_properties = analyse_expression(node.index)
+        if not index_properties.constant:
+            return StructuredMemberRequirement(node.collection.name.casefold(), tuple(members), None, True)
+        index = _constant_nonnegative_integer(node.index)
+        return StructuredMemberRequirement(node.collection.name.casefold(), tuple(members), index, True)
+    if isinstance(node, Field):
+        return StructuredMemberRequirement(node.name.casefold(), tuple(members), None, False)
+    return None
 
 
 def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> ExpressionProperties:
@@ -419,11 +455,30 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
         return _combine((child,), resolved_type="boolean", may_return_null=False)
     if isinstance(expression, ScalarMember):
         value = analyse_expression(expression.value, source=source)
-        return _combine(
+        combined = _combine(
             (value,),
             resolved_type=expression.kind,
             null_sensitive=True,
             may_return_null=bool(expression.resolved_type is None or expression.resolved_type.nullable),
+        )
+        requirement = _structured_member_requirement(expression)
+        if requirement is None:
+            return combined
+        member_requirements = tuple(
+            item
+            for item in combined.member_requirements
+            if not (
+                item.field == requirement.field
+                and item.index == requirement.index
+                and item.indexed == requirement.indexed
+                and len(item.members) < len(requirement.members)
+                and requirement.members[: len(item.members)] == item.members
+            )
+        )
+        return replace(
+            combined,
+            member_requirements=member_requirements + (requirement,),
+            whole_fields=combined.whole_fields - {requirement.field},
         )
     if isinstance(expression, ScalarIndex):
         collection = analyse_expression(expression.collection, source=source)
@@ -646,6 +701,9 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
     indexed_requirements = tuple(
         dict.fromkeys(requirement for item in expression_properties for requirement in item.indexed_requirements)
     )
+    member_requirements = tuple(
+        dict.fromkeys(requirement for item in expression_properties for requirement in item.member_requirements)
+    )
     whole_fields = frozenset().union(*(item.whole_fields for item in expression_properties))
 
     return QueryProperties(
@@ -667,5 +725,6 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
         predicate_decidable_from_enumeration=predicate_properties.decidable_from_enumeration,
         requires_complete_acquisition=complete,
         indexed_requirements=indexed_requirements,
+        member_requirements=member_requirements,
         whole_fields=whole_fields,
     )

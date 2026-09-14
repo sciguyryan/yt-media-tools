@@ -88,6 +88,7 @@ class FacetCapabilities:
     cheaply_enumerates_identities: bool
     field_overrides: tuple[FieldCapability, ...] = ()
     exact_indexed_fields: frozenset[str] = frozenset()
+    exact_member_fields: frozenset[str] = frozenset()
 
     def field(self, name: str) -> FieldCapability:
         """Return the source/facet-specific acquisition declaration for a logical field."""
@@ -100,6 +101,13 @@ class FacetCapabilities:
     def supports_exact_indexed_acquisition(self, field: str) -> bool:
         """Return whether the adapter can fetch one logical collection position exactly."""
         return field.casefold() in self.exact_indexed_fields
+
+    def supports_exact_member_acquisition(self, field: str, members: tuple[str, ...]) -> bool:
+        """Return whether the adapter can fetch one structured member path exactly."""
+        if not members:
+            return False
+        path = ".".join((field, *members)).casefold()
+        return path in self.exact_member_fields
 
 
 @dataclass(frozen=True)

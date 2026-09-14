@@ -14,6 +14,7 @@ from .query_semantics import query_physical_source_requests
 from .relation_simplification import RelationSimplificationPlan, plan_relation_simplification
 from .query_properties import (
     IndexedFieldRequirement,
+    StructuredMemberRequirement,
     METADATA_DETAILED,
     METADATA_ENUMERATION,
     METADATA_NONE,
@@ -240,6 +241,7 @@ class MetadataRequirementPlan:
     predicate_detailed_fields: frozenset[str]
     reason: str
     indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    member_requirements: tuple[StructuredMemberRequirement, ...] = ()
     whole_fields: frozenset[str] = frozenset()
 
     @property
@@ -287,6 +289,7 @@ def plan_metadata_requirements(query: Query, *, source: SourceSpec) -> MetadataR
         predicate_detailed_fields=predicate_detailed_fields,
         reason=reason,
         indexed_requirements=properties.indexed_requirements,
+        member_requirements=properties.member_requirements,
         whole_fields=properties.whole_fields,
     )
 
@@ -303,6 +306,7 @@ class PhysicalAcquisitionRequest:
     lower_date_bound: date | None
     stop_before: date | None
     indexed_requirements: tuple[IndexedFieldRequirement, ...] = ()
+    member_requirements: tuple[StructuredMemberRequirement, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -451,6 +455,7 @@ def plan_source_boundaries(
         )
         use_fields: list[frozenset[str]] = []
         boundary_indexed_requirements: list[IndexedFieldRequirement] = []
+        boundary_member_requirements: list[StructuredMemberRequirement] = []
         boundary_whole_fields: set[str] = set()
         for use, owner, relation in live_uses:
             effective = replace(
@@ -467,10 +472,14 @@ def plan_source_boundaries(
             boundary_indexed_requirements.extend(
                 requirement for requirement in use_properties.indexed_requirements if requirement.field in required
             )
+            boundary_member_requirements.extend(
+                requirement for requirement in use_properties.member_requirements if requirement.field in required
+            )
             boundary_whole_fields.update(use_properties.whole_fields & required)
 
         fields = frozenset().union(*use_fields) if use_fields else frozenset()
         boundary_indexed = tuple(dict.fromkeys(boundary_indexed_requirements))
+        boundary_members = tuple(dict.fromkeys(boundary_member_requirements))
         boundary_whole = frozenset(boundary_whole_fields)
         synthetic_base = live_uses[0][0] if live_uses else uses[0][0]
         synthetic = replace(
@@ -497,12 +506,14 @@ def plan_source_boundaries(
                 metadata.predicate_detailed_fields,
                 "source-boundary requirements union only fields needed by non-empty logical uses after static relation simplification",
                 boundary_indexed,
+                boundary_members,
                 boundary_whole,
             )
         else:
             metadata = replace(
                 metadata,
                 indexed_requirements=boundary_indexed,
+                member_requirements=boundary_members,
                 whole_fields=boundary_whole,
             )
 
@@ -561,6 +572,7 @@ def plan_source_boundaries(
             enumeration_fields=metadata.enumeration_fields,
             detailed_fields=metadata.detailed_fields,
             indexed_requirements=metadata.indexed_requirements,
+            member_requirements=metadata.member_requirements,
             whole_fields=metadata.whole_fields,
             skip=empty,
         )
@@ -680,6 +692,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
         lower_date_bound=acquisition.lower_date_bound,
         stop_before=acquisition.stop_before,
         indexed_requirements=metadata_requirements.indexed_requirements,
+        member_requirements=metadata_requirements.member_requirements,
     )
     physical_acquisition = (
         boundary_override.physical_acquisition
@@ -690,6 +703,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
             enumeration_fields=metadata_requirements.enumeration_fields,
             detailed_fields=metadata_requirements.detailed_fields,
             indexed_requirements=metadata_requirements.indexed_requirements,
+            member_requirements=metadata_requirements.member_requirements,
             whole_fields=metadata_requirements.whole_fields,
             skip=eliminated,
         )
