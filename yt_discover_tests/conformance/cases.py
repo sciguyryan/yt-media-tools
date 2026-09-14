@@ -786,6 +786,56 @@ def _collection_cli_integration(rows: Rows) -> list[Any]:
     )
 
 
+def _structured_member_or_null(value: Any, *members: str) -> Any:
+    """Apply yt-sql's NULL-propagating structured member semantics independently."""
+    current = value
+    for member in members:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(member)
+    return current
+
+
+def _raw_structured_members(rows: Rows) -> list[Any]:
+    def projected(row: dict[str, Any]) -> dict[str, Any]:
+        fixture = row.get("fixture_raw")
+        record = _structured_member_or_null(fixture, "record")
+        records = _structured_member_or_null(fixture, "records")
+        second = _index_or_null(records, 1)
+        return {
+            "id": row["id"],
+            "provider_id": _structured_member_or_null(record, "provider_id"),
+            "label": _structured_member_or_null(record, "label"),
+            "nested_height": _structured_member_or_null(record, "dimensions", "height"),
+            "second_provider": _structured_member_or_null(second, "provider_id"),
+            "second_height": _structured_member_or_null(second, "height"),
+        }
+
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 12)
+        .order_by(lambda r: r["source_index"])
+        .select(projected)
+        .to_list()
+    )
+
+
+def _raw_structured_member_predicate(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(
+            lambda r: (
+                _structured_member_or_null(_structured_member_or_null(r.get("fixture_raw"), "record"), "provider_id")
+                == "provider-1"
+            )
+        )
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: r["id"])
+        .take(8)
+        .to_list()
+    )
+
+
 LANGUAGE_FEATURES = frozenset(
     {
         "boolean.and",
@@ -822,6 +872,11 @@ LANGUAGE_FEATURES = frozenset(
         "collection.raw",
         "collection.output",
         "collection.parameter",
+        "structured.member",
+        "structured.member.indexed",
+        "structured.member.nested",
+        "structured.member.null",
+        "structured.member.raw_dynamic",
         "comparison.eq",
         "comparison.ge",
         "comparison.gt",
@@ -1164,6 +1219,27 @@ CASES = (
             "collection.parameter",
             "parameter.binding",
         ),
+        execution="cli",
+    ),
+    ConformanceCase(
+        "dynamic_raw_structured_members",
+        "SELECT id, (raw.fixture_raw.record).provider_id AS provider_id, (raw.fixture_raw.record).label AS label, (raw.fixture_raw.record).dimensions.height AS nested_height, raw.fixture_raw.records[1].provider_id AS second_provider, raw.fixture_raw.records[1].height AS second_height FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
+        _raw_structured_members,
+        ("id", "provider_id", "label", "nested_height", "second_provider", "second_height"),
+        "jsonl",
+        features=(
+            "structured.member",
+            "structured.member.indexed",
+            "structured.member.nested",
+            "structured.member.null",
+            "structured.member.raw_dynamic",
+        ),
+    ),
+    ConformanceCase(
+        "dynamic_raw_structured_member_predicate",
+        "SELECT id FROM @yt_sql_fixture WHERE (raw.fixture_raw.record).provider_id = 'provider-1' ORDER BY source_index ASC LIMIT 8",
+        _raw_structured_member_predicate,
+        features=("structured.member", "structured.member.raw_dynamic"),
         execution="cli",
     ),
     ConformanceCase(

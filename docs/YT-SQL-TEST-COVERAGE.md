@@ -22,6 +22,14 @@ The deterministic conformance generator includes first-class taxonomy collection
 
 Acquisition tests require whole-collection fallback unless an explicit backend capability proves that partial indexed acquisition is semantically identical to local indexing of the complete yt-sql logical collection. Unknown backend ordering must never become a positional language guarantee.
 
+## Structured values and member access
+
+Current dedicated coverage includes opaque, declared and dynamic structured type shapes, member NULLability, postfix parsing and chaining, distinction from legacy dotted field paths, canonical formatting, direct/nested/indexed/function-valued resolution, deterministic unknown-member and invalid-operand diagnostics, runtime dictionary-only evaluation, SQL NULL propagation, predicate participation, closed format/chapter/thumbnail schemas, dynamic raw schema inference, incompatible-shape rejection and acquisition requirement propagation.
+
+Structured acquisition tests separately cover exact member capability, indexed-member capability composition, dynamic-index rejection, indexed-record fallback and complete containing-structure fallback. Current adapters are expected to remain on the conservative fallback path unless they explicitly prove stronger semantics.
+
+The deterministic conformance generator version 5 adds compatible dynamic raw structured records, nested structured members and ordered raw record sequences. Independent oracle cases cover direct member access, nested member access, indexed record members, missing and NULL members, predicate use, optimiser equivalence, canonical formatting and real offline CLI execution. The oracle expresses member lookup and NULL propagation directly over ordinary Python dictionaries and does not import the production type, schema, resolver or evaluator implementation.
+
 ## Predicates and three-valued logic
 
 Current dedicated coverage includes comparisons, BETWEEN, IN, IS NULL, Boolean IS forms, CONTAINS, MATCHES, LIKE, ILIKE, negated forms, AND, OR and NOT. Unicode-sensitive LIKE/ILIKE and normalisation distinctions have dedicated tests.

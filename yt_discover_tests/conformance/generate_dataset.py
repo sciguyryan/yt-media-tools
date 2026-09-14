@@ -22,7 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from yt_media_tools.cache import MetadataCache  # noqa: E402
 
-GENERATOR_VERSION = 4
+GENERATOR_VERSION = 5
 DATASET_SEED = 31415926
 SOURCE_HANDLE = "@yt_sql_fixture"
 SOURCE_URL = "https://www.youtube.com/@yt_sql_fixture/videos"
@@ -140,7 +140,28 @@ def _anchor_records(seed: int) -> list[dict[str, object]]:
                 "fixture_nullable": None if index % 5 == 0 else f"g{index % 3}",
                 "tags": None if index % 10 == 0 else [f"topic-{index % 5}", f"group-{index % 3}"],
                 "categories": None if index % 12 == 0 else [f"Category {index % 4}", "Fixture"],
-                "fixture_raw": {"sequence": None if index % 11 == 0 else [f"raw-{index}-b", f"raw-{index}-a"]},
+                "fixture_raw": {
+                    "sequence": None if index % 11 == 0 else [f"raw-{index}-b", f"raw-{index}-a"],
+                    "record": None
+                    if index % 13 == 0
+                    else {
+                        "provider_id": f"provider-{index % 4}",
+                        "label": None if index % 7 == 0 else f"record-{index}",
+                        "dimensions": {
+                            "width": 640 + (index % 4) * 320,
+                            **({} if index % 6 == 0 else {"height": 360 + (index % 3) * 180}),
+                        },
+                    },
+                    "records": None
+                    if index % 17 == 0
+                    else [
+                        {"provider_id": f"provider-{index % 4}-a", "height": 360},
+                        {
+                            "provider_id": f"provider-{index % 4}-b",
+                            **({} if index % 8 == 0 else {"height": 720}),
+                        },
+                    ],
+                },
             }
         )
     return rows
@@ -216,7 +237,28 @@ def _generated_record(index: int, rng: random.Random) -> dict[str, object]:
         "fixture_nullable": None if index % 19 == 0 else f"g{index % 13}",
         "tags": None if index % 23 == 0 else [f"topic-{index % 8}", f"group-{index % 5}"],
         "categories": None if index % 29 == 0 else [f"Category {index % 6}", "Fixture"],
-        "fixture_raw": {"sequence": None if index % 31 == 0 else [f"raw-{index}-b", f"raw-{index}-a"]},
+        "fixture_raw": {
+            "sequence": None if index % 31 == 0 else [f"raw-{index}-b", f"raw-{index}-a"],
+            "record": None
+            if index % 37 == 0
+            else {
+                "provider_id": f"provider-{index % 11}",
+                "label": None if index % 41 == 0 else f"record-{index}",
+                "dimensions": {
+                    "width": 640 + (index % 5) * 320,
+                    **({} if index % 43 == 0 else {"height": 360 + (index % 4) * 180}),
+                },
+            },
+            "records": None
+            if index % 47 == 0
+            else [
+                {"provider_id": f"provider-{index % 11}-a", "height": 360},
+                {
+                    "provider_id": f"provider-{index % 11}-b",
+                    **({} if index % 53 == 0 else {"height": 720}),
+                },
+            ],
+        },
     }
 
 

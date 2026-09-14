@@ -590,7 +590,7 @@ They may also be selected:
 SELECT id, raw.some_object.some_value AS score
 ```
 
-Objects and arrays themselves are deliberately not given invented scalar semantics. Collection functions remain reserved until a real use case justifies them.
+Objects and arrays themselves are deliberately not given invented scalar semantics. Compatible structured `raw.*` dictionaries can instead expose conservative typed members through postfix access. Use parentheses for a direct raw structured record, for example `(raw.provider_record).provider_id` or `(raw.provider_record).dimensions.height`; an ordered raw record sequence can combine indexing and member access, for example `raw.provider_formats[1].height`. Missing dynamic members propagate SQL `NULL`, incompatible members are not exposed, and unsafe structures remain opaque. First-class format, chapter and thumbnail records have closed yt-sql member schemas, but their collections remain non-positional while their logical ordering is unknown. Collection functions remain reserved until a real use case justifies them.
 
 Use introspection to inspect actual metadata:
 

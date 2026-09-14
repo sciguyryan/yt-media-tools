@@ -38,7 +38,7 @@ from yt_media_tools.schema import QuerySchema
 ROOT = Path(__file__).resolve().parents[1]
 CONF = ROOT / "yt_discover_tests" / "conformance"
 GENERATOR = CONF / "generate_dataset.py"
-SPEC = CONF / "dataset-spec-v4.json"
+SPEC = CONF / "dataset-spec-v5.json"
 CLI = ROOT / "yt-discover.py"
 
 
@@ -285,6 +285,16 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
     assert any(row["live_status"] == "was_live" for row in rows)
     assert any(row["upload_date"] is None for row in rows)
     assert any(row["fixture_nullable"] is None for row in rows)
+    structured = [row["fixture_raw"]["record"] for row in rows if row["fixture_raw"]["record"] is not None]
+    assert structured
+    assert any(record.get("label") is None for record in structured)
+    assert any("height" not in record["dimensions"] for record in structured)
+    assert any(row["fixture_raw"]["record"] is None for row in rows)
+    assert any(row["fixture_raw"]["records"] is None for row in rows)
+    assert any(
+        isinstance(row["fixture_raw"]["records"], list) and "height" not in row["fixture_raw"]["records"][1]
+        for row in rows
+    )
 
 
 @pytest.mark.scale

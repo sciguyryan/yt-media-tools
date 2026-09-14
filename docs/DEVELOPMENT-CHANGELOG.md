@@ -63,3 +63,10 @@ This file records meaningful changes during active development. It is not releas
 - Preserve opaque structured typing when provider records cannot be described safely, including non-string-keyed shapes, rather than coercing uncertain values into ordinary scalars.
 - Keep whole raw structured values non-selectable so dynamic member inference does not weaken the existing structured-value boundary.
 - Add focused coverage for direct, indexed, nested, nullable, incompatible, opaque and predicate dynamic raw member access.
+
+### Structured member access - Phase 8
+
+- Extend the deterministic conformance generator to version 5 with dynamic raw structured records, nested records, nullable members and ordered raw record sequences.
+- Add independent-oracle conformance cases for direct, nested and indexed structured member access, NULL propagation, predicate use, optimiser equivalence, canonical formatting and offline CLI execution.
+- Expand the yt-sql reference with structured value semantics, closed first-class metadata schemas, dynamic raw inference boundaries, member-access examples and acquisition fallback rules.
+- Expand Discover usage and durable test-coverage documentation for structured member access without changing the root release changelog or Discover version.
