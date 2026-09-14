@@ -336,8 +336,14 @@ def test_json_explain_marks_unknown_ordered_collection_as_non_positional() -> No
     payload = json.loads(result.stdout)
     formats = next(item for item in payload["required_fields"] if item["field"] == "formats")
 
-    assert formats["type"] == "collection<structured?>[unknown]?"
-    assert formats["element_type"] == "structured?"
+    assert formats["type"].startswith("collection<structured<declared>{")
+    assert "format_id:string?" in formats["type"]
+    assert "height:count?" in formats["type"]
+    assert formats["type"].endswith("}?>[unknown]?")
+    assert formats["element_type"].startswith("structured<declared>{")
+    assert "format_id:string?" in formats["element_type"]
+    assert "height:count?" in formats["element_type"]
+    assert formats["element_type"].endswith("}?")
     assert formats["ordering"] == "unknown"
     assert formats["positional_indexing"] is False
     assert formats["exact_indexed_acquisition"] is False

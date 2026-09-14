@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
-from .query_types import CollectionOrdering, QueryType
+from .query_types import CollectionOrdering, QueryType, StructuredMember
 
 
 SCALAR_TYPES = (str, int, float, bool, type(None))
@@ -38,6 +38,58 @@ KNOWN_FIELD_TYPES = {
 }
 
 
+def _structured_member(name: str, kind: str, *, nullable: bool = True) -> StructuredMember:
+    """Construct one member of a stable logical metadata record."""
+    return StructuredMember(name, QueryType.scalar(kind, nullable=nullable))
+
+
+FORMAT_RECORD_TYPE = QueryType.structured(
+    (
+        _structured_member("format_id", "string"),
+        _structured_member("ext", "string"),
+        _structured_member("width", "count"),
+        _structured_member("height", "count"),
+        _structured_member("resolution", "string"),
+        _structured_member("fps", "number"),
+        _structured_member("aspect_ratio", "number"),
+        _structured_member("vcodec", "string"),
+        _structured_member("acodec", "string"),
+        _structured_member("container", "string"),
+        _structured_member("protocol", "string"),
+        _structured_member("dynamic_range", "string"),
+        _structured_member("tbr", "number"),
+        _structured_member("vbr", "number"),
+        _structured_member("abr", "number"),
+        _structured_member("asr", "number"),
+        _structured_member("audio_channels", "count"),
+        _structured_member("filesize", "count"),
+        _structured_member("filesize_approx", "count"),
+        _structured_member("language", "string"),
+        _structured_member("format_note", "string"),
+    ),
+    nullable=True,
+)
+
+CHAPTER_RECORD_TYPE = QueryType.structured(
+    (
+        _structured_member("title", "string"),
+        _structured_member("start_time", "duration"),
+        _structured_member("end_time", "duration"),
+    ),
+    nullable=True,
+)
+
+THUMBNAIL_RECORD_TYPE = QueryType.structured(
+    (
+        _structured_member("id", "string"),
+        _structured_member("url", "string"),
+        _structured_member("width", "count"),
+        _structured_member("height", "count"),
+    ),
+    nullable=True,
+)
+
+
 KNOWN_COLLECTION_TYPES = {
     # Scalar collections receive an explicit yt-sql order independent of backend
     # return order. Structured collections remain non-positional until a logical
@@ -51,15 +103,15 @@ KNOWN_COLLECTION_TYPES = {
         ordering=CollectionOrdering.STABLE,
     ),
     "formats": QueryType.collection(
-        QueryType.scalar("structured", nullable=True),
+        FORMAT_RECORD_TYPE,
         ordering=CollectionOrdering.UNKNOWN,
     ),
     "chapters": QueryType.collection(
-        QueryType.scalar("structured", nullable=True),
+        CHAPTER_RECORD_TYPE,
         ordering=CollectionOrdering.UNKNOWN,
     ),
     "thumbnails": QueryType.collection(
-        QueryType.scalar("structured", nullable=True),
+        THUMBNAIL_RECORD_TYPE,
         ordering=CollectionOrdering.UNKNOWN,
     ),
 }

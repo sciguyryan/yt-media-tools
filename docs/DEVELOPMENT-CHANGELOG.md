@@ -36,3 +36,12 @@ This file records meaningful changes during active development. It is not releas
 - Support structure-preserving function results such as `COALESCE` during runtime member evaluation.
 - Reject arbitrary Python objects and non-dictionary runtime values at the evaluator boundary rather than using attribute access or generic mapping protocols.
 - Extend focused runtime coverage across direct, nested, indexed, function-valued, dynamic, NULL and predicate member access.
+
+### Structured member access - Phase 5
+
+- Define closed yt-sql member schemas for first-class format, chapter and thumbnail records without mirroring arbitrary backend dictionaries.
+- Type format members for identifiers, dimensions, codecs, rates, sizes, language and related stable metadata, with extractor-dependent values remaining nullable.
+- Type chapter title and temporal bounds plus thumbnail identity, URL and dimensions as nullable structured members.
+- Preserve the existing unknown logical ordering contract for structured collections, so declaring members does not make positional indexing valid.
+- Keep dynamic `raw.*` structured collection elements opaque and separate from the stable first-class metadata schemas.
+- Add focused schema and explain coverage for declared members, NULLability, backend-specific exclusions, raw opacity and unchanged ordering semantics.
