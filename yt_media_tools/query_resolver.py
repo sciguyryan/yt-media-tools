@@ -19,6 +19,7 @@ from .query_model import (
     CommonTableExpression,
     CollectionCount,
     CollectionFilter,
+    CollectionProjection,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -609,6 +610,58 @@ def _resolve_scalar_expression(
             "collection",
             collection_type,
         )
+    if isinstance(expression, CollectionProjection):
+        collection = _resolve_scalar_expression(
+            expression.collection,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            allow_structured=True,
+            collection_scopes=collection_scopes,
+        )
+        collection_type = _scalar_query_type(collection, schema)
+        if collection_type is None or not collection_type.is_collection:
+            kind = _scalar_kind(collection) or "unknown"
+            raise QuerySyntaxError(
+                source,
+                f"MAP requires a collection value; got {kind}.",
+                expression.position,
+            )
+        assert collection_type.element_type is not None
+        projection = _resolve_scalar_expression(
+            expression.projection,
+            schema,
+            source,
+            dates,
+            aliases,
+            allow_structured=True,
+            collection_scopes=collection_scopes + (collection_type.element_type,),
+        )
+        if _contains_aggregate(projection):
+            raise QuerySyntaxError(
+                source,
+                "MAP projection cannot contain aggregate functions.",
+                expression.position,
+            )
+        projection_type = _scalar_query_type(projection, schema)
+        if projection_type is None:
+            kind = _scalar_kind(projection) or "unknown"
+            projection_type = QueryType.scalar(kind, nullable=True)
+        result_type = QueryType.collection(
+            projection_type,
+            nullable=collection_type.nullable,
+            ordering=collection_type.ordering,
+        )
+        return CollectionProjection(
+            collection,
+            expression.binding,
+            projection,
+            expression.position,
+            "collection",
+            result_type,
+        )
     if isinstance(expression, AggregateFunction):
         args = tuple(
             _resolve_scalar_expression(
@@ -753,6 +806,8 @@ def _fields_outside_aggregates(expression: Any) -> set[str]:
         return _fields_outside_aggregates(expression.collection) | _fields_outside_aggregates(expression.index)
     if isinstance(expression, (CollectionCount, CollectionFilter)):
         return _fields_outside_aggregates(expression.collection) | _fields_in_predicate(expression.predicate)
+    if isinstance(expression, CollectionProjection):
+        return _fields_outside_aggregates(expression.collection) | _fields_outside_aggregates(expression.projection)
     if isinstance(expression, ScalarFunction):
         fields: set[str] = set()
         for arg in expression.args:

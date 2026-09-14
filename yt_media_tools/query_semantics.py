@@ -17,6 +17,7 @@ from .query_model import (
     CommonTableExpression,
     CollectionCount,
     CollectionFilter,
+    CollectionProjection,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -67,6 +68,14 @@ def semantic_key(node: Any) -> Any:
             semantic_key(node.collection),
             node.binding,
             semantic_key(node.predicate),
+            node.kind,
+        )
+    if isinstance(node, CollectionProjection):
+        return (
+            "collection-projection",
+            semantic_key(node.collection),
+            node.binding,
+            semantic_key(node.projection),
             node.kind,
         )
     if isinstance(node, ScalarUnary):
@@ -172,6 +181,8 @@ def _contains_aggregate(expression: Any) -> bool:
         return _contains_aggregate(expression.collection) or _having_contains_aggregate(expression.predicate)
     if isinstance(expression, (CollectionCount, CollectionFilter)):
         return _contains_aggregate(expression.collection) or _having_contains_aggregate(expression.predicate)
+    if isinstance(expression, CollectionProjection):
+        return _contains_aggregate(expression.collection) or _contains_aggregate(expression.projection)
     if isinstance(expression, ScalarUnary):
         return _contains_aggregate(expression.operand)
     if isinstance(expression, ScalarBinary):
@@ -221,6 +232,8 @@ def _contains_random(expression: Any) -> bool:
         return _contains_random(expression.collection) or _contains_random(expression.predicate)
     if isinstance(expression, (CollectionCount, CollectionFilter)):
         return _contains_random(expression.collection) or _contains_random(expression.predicate)
+    if isinstance(expression, CollectionProjection):
+        return _contains_random(expression.collection) or _contains_random(expression.projection)
     if isinstance(expression, ScalarIndex):
         return _contains_random(expression.collection) or _contains_random(expression.index)
     if isinstance(expression, ScalarMember):

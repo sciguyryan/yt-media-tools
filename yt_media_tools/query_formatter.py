@@ -11,6 +11,7 @@ from .query_model import (
     Binary,
     CollectionCount,
     CollectionFilter,
+    CollectionProjection,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -72,6 +73,11 @@ def format_scalar_expression(expression: Any) -> str:
         return (
             f"FILTER({format_scalar_expression(expression.collection)} AS {expression.binding} "
             f"WHERE {format_expression(expression.predicate)})"
+        )
+    if isinstance(expression, CollectionProjection):
+        return (
+            f"MAP({format_scalar_expression(expression.collection)} AS {expression.binding} "
+            f"SELECT {format_scalar_expression(expression.projection)})"
         )
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"

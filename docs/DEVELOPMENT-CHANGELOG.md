@@ -44,3 +44,11 @@ This file records meaningful changes during active development. It is not releas
 - Preserve SQL NULL for NULL collections and return an empty collection for empty inputs without manufacturing ordering guarantees.
 - Integrate filtered collections with semantic identity, optimiser traversal and expression-property analysis so source requirements and outer-row references remain visible.
 - Add focused coverage for order preservation, NULL and empty collections, nullable elements, structured/nested predicates, postfix indexing, canonical formatting and deterministic invalid operands.
+
+### Collection querying beyond indexing - Phase 6
+
+- Add MAP collection projection using the established lexical element-binding model.
+- Derive projected collection element types from the projection expression while preserving source collection NULLability and logical ordering.
+- Support scalar, structured and nested collection projection results, including composition with FILTER and nested collection scopes.
+- Keep MAP contextual and preserve conservative positional-indexing rules after projection.
+- Add focused coverage for exact projected results, NULL and empty collections, nested scopes, ordering, typing, formatting, optimiser traversal and invalid operands.

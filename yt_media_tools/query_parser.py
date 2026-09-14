@@ -14,6 +14,7 @@ from .query_model import (
     CommonTableExpression,
     CollectionCount,
     CollectionFilter,
+    CollectionProjection,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -579,6 +580,7 @@ class Parser:
             "LENGTH",
             "CARDINALITY",
             "FILTER",
+            "MAP",
             "COALESCE",
             "CHAR",
             "NULLIF",
@@ -655,6 +657,27 @@ class Parser:
                 self.collection_bindings.pop()
             self.expect("RPAREN", "Expected ')' to close the FILTER expression.")
             return CollectionFilter(collection, binding_token.text, predicate, name_token.position)
+
+        if name == "MAP":
+            if self.current.kind == "RPAREN":
+                raise QuerySyntaxError(self.source, "MAP requires a collection expression.", name_token.position)
+            collection = self.parse_scalar_expression()
+            self.expect_keyword("AS", "Expected AS after the MAP collection expression.")
+            binding_token = self.expect("IDENT", "Expected an element binding name after AS in MAP.")
+            if "." in binding_token.text:
+                raise QuerySyntaxError(
+                    self.source,
+                    "Collection element bindings must be simple identifiers.",
+                    binding_token.position,
+                )
+            self.expect_keyword("SELECT", "Expected SELECT after the MAP element binding.")
+            self.collection_bindings.append(binding_token.text)
+            try:
+                projection = self.parse_scalar_expression()
+            finally:
+                self.collection_bindings.pop()
+            self.expect("RPAREN", "Expected ')' to close the MAP expression.")
+            return CollectionProjection(collection, binding_token.text, projection, name_token.position)
 
         args: list[Any] = []
         if self.current.kind != "RPAREN":

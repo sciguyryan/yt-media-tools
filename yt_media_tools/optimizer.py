@@ -12,6 +12,7 @@ from .query import (
     CaseWhen,
     CollectionCount,
     CollectionFilter,
+    CollectionProjection,
     InList,
     IsNull,
     Literal,
@@ -273,6 +274,13 @@ def _optimise_scalar_expression(
             for decision in predicate_decisions
         ]
         return replace(expression, collection=collection, predicate=predicate), decisions
+    if isinstance(expression, CollectionProjection):
+        collection, collection_decisions = _optimise_scalar_expression(expression.collection, source=source)
+        projection, projection_decisions = _optimise_scalar_expression(expression.projection, source=source)
+        return (
+            replace(expression, collection=collection, projection=projection),
+            collection_decisions + projection_decisions,
+        )
     if isinstance(expression, AggregateFunction):
         args = []
         decisions: list[OptimisationDecision] = []

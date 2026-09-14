@@ -26,6 +26,7 @@ from .query_model import (
     CommonTableExpression as CommonTableExpression,
     CollectionCount as CollectionCount,
     CollectionFilter as CollectionFilter,
+    CollectionProjection as CollectionProjection,
     CollectionElementReference as CollectionElementReference,
     CollectionPredicate as CollectionPredicate,
     Field as Field,

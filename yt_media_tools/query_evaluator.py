@@ -18,6 +18,7 @@ from .query_model import (
     Between,
     CollectionCount,
     CollectionFilter,
+    CollectionProjection,
     CollectionElementReference,
     CollectionPredicate,
     Binary,
@@ -192,6 +193,16 @@ def evaluate_scalar_expression(
             element
             for element in collection
             if evaluate(expression.predicate, record, collection_bindings + (element,)) is True
+        ]
+    if isinstance(expression, CollectionProjection):
+        collection = evaluate_scalar_expression(expression.collection, record, collection_bindings)
+        if collection is None:
+            return None
+        if not isinstance(collection, (list, tuple)):
+            return None
+        return [
+            evaluate_scalar_expression(expression.projection, record, collection_bindings + (element,))
+            for element in collection
         ]
     if isinstance(expression, ScalarMember):
         value = evaluate_scalar_expression(expression.value, record, collection_bindings)
