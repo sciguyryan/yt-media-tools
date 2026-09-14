@@ -12,6 +12,8 @@ from .query_model import (
     Binary,
     CaseWhen,
     CommonTableExpression,
+    CollectionElementReference,
+    CollectionPredicate,
     Field,
     InList,
     IsNull,
@@ -170,6 +172,7 @@ class Parser:
         self.source = source
         self.tokens = tokenise(source)
         self.index = 0
+        self.collection_bindings: list[str] = []
 
     @property
     def current(self) -> Token:
@@ -468,6 +471,27 @@ class Parser:
                 offset += len(member) + 1
         return node
 
+    def _bound_collection_reference(self, token: Token) -> Any | None:
+        """Return a scoped element reference when ``token`` begins with a binding.
+
+        Bindings are lexical and may shadow outer bindings. A dotted identifier whose
+        first component matches a visible binding is lowered into an element reference
+        followed by ordinary structured-member postfix nodes. Unmatched identifiers
+        retain their established field-path meaning.
+        """
+        parts = token.text.split(".")
+        head = parts[0]
+        for distance, binding in enumerate(reversed(self.collection_bindings)):
+            if head != binding:
+                continue
+            node: Any = CollectionElementReference(binding, distance, token.position)
+            offset = len(binding)
+            for member in parts[1:]:
+                node = ScalarMember(node, member, token.position + offset)
+                offset += len(member) + 1
+            return node
+        return None
+
     def parse_scalar_atom(self) -> Any:
         token = self.current
         if self.keyword("CASE"):
@@ -488,7 +512,8 @@ class Parser:
                 return Literal(True, token.text, token.position)
             if lowered == "false":
                 return Literal(False, token.text, token.position)
-            return Field(token.text, token.position)
+            bound = self._bound_collection_reference(token)
+            return bound if bound is not None else Field(token.text, token.position)
         if token.kind == "STRING":
             self.advance()
             return Literal(token.value, token.text, token.position, True)
@@ -709,7 +734,38 @@ class Parser:
             return Unary("NOT", self.parse_not())
         return self.parse_primary()
 
+    def parse_collection_predicate(self) -> CollectionPredicate:
+        """Parse ``ANY/ALL(collection AS binding WHERE predicate)`` syntax.
+
+        This is deliberately a contained collection-predicate scope rather than a
+        general lambda syntax. Runtime quantifier semantics are introduced separately.
+        """
+        quantifier_token = self.advance()
+        quantifier = quantifier_token.text.upper()
+        self.expect("LPAREN", f"Expected '(' after {quantifier}.")
+        collection = self.parse_scalar_expression()
+        self.expect_keyword("AS", f"Expected AS to name the {quantifier} element binding.")
+        binding_token = self.expect("IDENT", f"Expected an element binding name after AS in {quantifier}.")
+        if "." in binding_token.text:
+            raise QuerySyntaxError(
+                self.source, "Collection element bindings must be simple identifiers.", binding_token.position
+            )
+        self.expect_keyword("WHERE", f"Expected WHERE after the {quantifier} element binding.")
+        self.collection_bindings.append(binding_token.text)
+        try:
+            predicate = self.parse_or()
+        finally:
+            self.collection_bindings.pop()
+        self.expect("RPAREN", f"Expected ')' to close the {quantifier} collection predicate.")
+        return CollectionPredicate(quantifier, collection, binding_token.text, predicate, quantifier_token.position)
+
     def parse_primary(self) -> Any:
+        if (
+            self.current.kind == "IDENT"
+            and self.current.text.upper() in {"ANY", "ALL"}
+            and self.tokens[self.index + 1].kind == "LPAREN"
+        ):
+            return self.parse_collection_predicate()
         if self.current.kind == "LPAREN":
             # A parenthesised scalar expression may itself be the left operand of a
             # comparison, including postfix indexing. Try that form before treating

@@ -97,6 +97,31 @@ class TextPredicate:
 
 
 @dataclass(frozen=True)
+class CollectionElementReference:
+    """Reference to a lexically bound collection element.
+
+    ``scope_distance`` is zero for the innermost matching binding and increases
+    by one for each enclosing collection predicate scope. The original binding
+    name is retained for canonical formatting and diagnostics.
+    """
+
+    binding: str
+    scope_distance: int = 0
+    position: int = 0
+
+
+@dataclass(frozen=True)
+class CollectionPredicate:
+    """Syntax-level existential or universal predicate over collection elements."""
+
+    quantifier: str
+    collection: Any
+    binding: str
+    predicate: Any
+    position: int = 0
+
+
+@dataclass(frozen=True)
 class ScalarIndex:
     """Postfix positional indexing of a collection-valued scalar expression."""
 

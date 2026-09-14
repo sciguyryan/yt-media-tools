@@ -9,6 +9,8 @@ from .query_model import (
     AggregateFunction,
     Between,
     Binary,
+    CollectionElementReference,
+    CollectionPredicate,
     Field,
     InList,
     IsNull,
@@ -31,6 +33,8 @@ def format_scalar_expression(expression: Any) -> str:
     """Render a scalar expression in canonical yt-sql form."""
     if isinstance(expression, Field):
         return expression.name
+    if isinstance(expression, CollectionElementReference):
+        return expression.binding
     if isinstance(expression, Literal):
         if expression.value is None:
             return "NULL"
@@ -105,6 +109,11 @@ def format_expression(node: Any) -> str:
     if isinstance(node, TextPredicate):
         not_part = " NOT" if node.negated else ""
         return f"{node.field.name}{not_part} {node.operator} {format_expression(node.value)}"
+    if isinstance(node, CollectionPredicate):
+        return (
+            f"{node.quantifier}({format_scalar_expression(node.collection)} AS {node.binding} "
+            f"WHERE {format_expression(node.predicate)})"
+        )
     if isinstance(node, ScalarComparison):
         return f"{format_scalar_expression(node.left)} {node.operator} {format_scalar_expression(node.right)}"
     if isinstance(node, ScalarIsNull):

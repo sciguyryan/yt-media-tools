@@ -10,3 +10,11 @@ This file records meaningful changes during active development. It is not releas
 - Define collection-level and element-level NULLability as distinct semantic concerns without changing collection ordering contracts.
 - Define existential and universal collection predicate reduction using exact SQL three-valued logic, including NULL collections, nullable predicate results and empty-collection identities.
 - Keep user-facing binding syntax deliberately undecided so later parser work can lower into the semantic scope model without changing its contracts.
+
+### Collection querying beyond indexing - Phase 2
+
+- Add contained `ANY(collection AS binding WHERE predicate)` and `ALL(...)` syntax for collection predicates without introducing a general lambda language.
+- Add explicit syntax-level collection predicate and lexically bound element-reference nodes with deterministic scope-distance tracking.
+- Resolve binding references lexically during parsing, including nested outer references and innermost shadowing, while preserving ordinary row-field lookup for unbound identifiers.
+- Support structured-member and postfix expression composition from bound collection elements without changing established bare dotted field-path parsing.
+- Add canonical formatting, round-trip coverage and deterministic malformed-binding diagnostics for collection predicate syntax.
