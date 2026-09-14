@@ -16,6 +16,7 @@ from .dates import DateContext, parse_date_literal, timestamp_to_datetime
 from .query_model import (
     AggregateFunction,
     Between,
+    CollectionCount,
     CollectionElementReference,
     CollectionPredicate,
     Binary,
@@ -169,6 +170,17 @@ def evaluate_scalar_expression(
         collection = evaluate_scalar_expression(expression.collection, record, collection_bindings)
         index = evaluate_scalar_expression(expression.index, record, collection_bindings)
         return _runtime_indexed_value(collection, index)
+    if isinstance(expression, CollectionCount):
+        collection = evaluate_scalar_expression(expression.collection, record, collection_bindings)
+        if collection is None:
+            return None
+        if not isinstance(collection, (list, tuple)):
+            return None
+        count = 0
+        for element in collection:
+            if evaluate(expression.predicate, record, collection_bindings + (element,)) is True:
+                count += 1
+        return count
     if isinstance(expression, ScalarMember):
         value = evaluate_scalar_expression(expression.value, record, collection_bindings)
         return _runtime_member_value(value, expression.member)
@@ -187,6 +199,11 @@ def evaluate_scalar_expression(
             return values[0].upper() if isinstance(values[0], str) else None
         if expression.name == "LENGTH":
             return len(values[0]) if isinstance(values[0], str) else None
+        if expression.name == "CARDINALITY":
+            collection = values[0]
+            if collection is None:
+                return None
+            return len(collection) if isinstance(collection, (list, tuple)) else None
         if expression.name == "COALESCE":
             return next((value for value in values if value is not None), None)
         if expression.name == "CHAR":

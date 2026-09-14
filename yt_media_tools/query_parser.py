@@ -12,6 +12,7 @@ from .query_model import (
     Binary,
     CaseWhen,
     CommonTableExpression,
+    CollectionCount,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -571,7 +572,18 @@ class Parser:
     def parse_scalar_function(self, name_token: Token) -> Any:
         name = name_token.text.upper()
         aggregate_names = {"COUNT", "SUM", "MIN", "MAX", "AVG"}
-        scalar_names = {"LOWER", "UPPER", "LENGTH", "COALESCE", "CHAR", "NULLIF", "GREATEST", "LEAST", "RANDOM"}
+        scalar_names = {
+            "LOWER",
+            "UPPER",
+            "LENGTH",
+            "CARDINALITY",
+            "COALESCE",
+            "CHAR",
+            "NULLIF",
+            "GREATEST",
+            "LEAST",
+            "RANDOM",
+        }
         if name not in scalar_names | aggregate_names:
             raise QuerySyntaxError(
                 self.source, f"Unsupported scalar function {name_token.text!r}.", name_token.position
@@ -584,7 +596,26 @@ class Parser:
                 self.advance()
                 count_star = True
             elif self.current.kind != "RPAREN":
-                args.append(self.parse_scalar_expression())
+                first_arg = self.parse_scalar_expression()
+                if name == "COUNT" and self.consume_keyword("AS"):
+                    binding_token = self.expect(
+                        "IDENT", "Expected an element binding name after AS in collection COUNT."
+                    )
+                    if "." in binding_token.text:
+                        raise QuerySyntaxError(
+                            self.source,
+                            "Collection element bindings must be simple identifiers.",
+                            binding_token.position,
+                        )
+                    self.expect_keyword("WHERE", "Expected WHERE after the collection COUNT element binding.")
+                    self.collection_bindings.append(binding_token.text)
+                    try:
+                        predicate = self.parse_or()
+                    finally:
+                        self.collection_bindings.pop()
+                    self.expect("RPAREN", "Expected ')' to close the collection COUNT expression.")
+                    return CollectionCount(first_arg, binding_token.text, predicate, name_token.position)
+                args.append(first_arg)
                 if self.current.kind == "COMMA":
                     raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", self.current.position)
             self.expect("RPAREN", "Expected ')' after aggregate arguments.")
@@ -610,7 +641,7 @@ class Parser:
                     break
                 self.advance()
         self.expect("RPAREN", "Expected ')' after function arguments.")
-        if name in {"LOWER", "UPPER", "LENGTH"} and len(args) != 1:
+        if name in {"LOWER", "UPPER", "LENGTH", "CARDINALITY"} and len(args) != 1:
             raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", name_token.position)
         if name == "COALESCE" and len(args) < 2:
             raise QuerySyntaxError(self.source, "COALESCE requires at least two arguments.", name_token.position)

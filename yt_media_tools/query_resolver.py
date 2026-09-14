@@ -17,6 +17,7 @@ from .query_model import (
     Binary,
     CaseWhen,
     CommonTableExpression,
+    CollectionCount,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -536,6 +537,42 @@ def _resolve_scalar_expression(
 
         result_type = collection_type.indexed_result_type()
         return ScalarIndex(collection, index, expression.position, result_type.kind, result_type)
+    if isinstance(expression, CollectionCount):
+        collection = _resolve_scalar_expression(
+            expression.collection,
+            schema,
+            source,
+            dates,
+            aliases,
+            select_context=select_context,
+            allow_structured=True,
+            collection_scopes=collection_scopes,
+        )
+        collection_type = _scalar_query_type(collection, schema)
+        if collection_type is None or not collection_type.is_collection:
+            kind = _scalar_kind(collection) or "unknown"
+            raise QuerySyntaxError(
+                source,
+                f"Collection COUNT requires a collection value; got {kind}.",
+                expression.position,
+            )
+        assert collection_type.element_type is not None
+        predicate = _resolve_predicate(
+            expression.predicate,
+            schema,
+            source,
+            dates,
+            collection_scopes=collection_scopes + (collection_type.element_type,),
+        )
+        result_type = QueryType.scalar("integer", nullable=collection_type.nullable)
+        return CollectionCount(
+            collection,
+            expression.binding,
+            predicate,
+            expression.position,
+            "integer",
+            result_type,
+        )
     if isinstance(expression, AggregateFunction):
         args = tuple(
             _resolve_scalar_expression(
@@ -594,6 +631,16 @@ def _resolve_scalar_expression(
             if kind not in {"string", "mixed", "unknown", None}:
                 raise QuerySyntaxError(source, "LENGTH requires a text value.", expression.position)
             result_kind = "integer"
+        elif expression.name == "CARDINALITY":
+            collection_type = _scalar_query_type(args[0], schema)
+            if collection_type is None or not collection_type.is_collection:
+                kind = _scalar_kind(args[0]) or "unknown"
+                raise QuerySyntaxError(
+                    source,
+                    f"CARDINALITY requires a collection value; got {kind}.",
+                    expression.position,
+                )
+            result_kind = "integer"
         elif expression.name == "CHAR":
             for arg in args:
                 kind = _scalar_kind(arg)
@@ -629,6 +676,10 @@ def _resolve_scalar_expression(
         result_type = None
         if expression.name in {"COALESCE", "NULLIF"}:
             result_type = _value_preserving_function_type(args, schema)
+        elif expression.name == "CARDINALITY":
+            collection_type = _scalar_query_type(args[0], schema)
+            assert collection_type is not None and collection_type.is_collection
+            result_type = QueryType.scalar("integer", nullable=collection_type.nullable)
         if result_type is None and result_kind is not None and result_kind != "collection":
             result_type = QueryType.scalar(result_kind, nullable=True)
         return ScalarFunction(expression.name, args, expression.position, result_kind, result_type)
@@ -664,6 +715,8 @@ def _fields_outside_aggregates(expression: Any) -> set[str]:
         return _fields_outside_aggregates(expression.left) | _fields_outside_aggregates(expression.right)
     if isinstance(expression, ScalarIndex):
         return _fields_outside_aggregates(expression.collection) | _fields_outside_aggregates(expression.index)
+    if isinstance(expression, CollectionCount):
+        return _fields_outside_aggregates(expression.collection) | _fields_in_predicate(expression.predicate)
     if isinstance(expression, ScalarFunction):
         fields: set[str] = set()
         for arg in expression.args:
@@ -686,6 +739,12 @@ def _fields_in_predicate(node: Any) -> set[str]:
         return _fields_in_predicate(node.operand)
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
         return _fields_in_predicate(node.left) | _fields_in_predicate(node.right)
+    if isinstance(node, ScalarComparison):
+        return _fields_outside_aggregates(node.left) | _fields_outside_aggregates(node.right)
+    if isinstance(node, ScalarIsNull):
+        return _fields_outside_aggregates(node.expression)
+    if isinstance(node, CollectionPredicate):
+        return _fields_outside_aggregates(node.collection) | _fields_in_predicate(node.predicate)
     field = getattr(node, "field", None)
     if isinstance(field, Field):
         return {field.name.casefold()}

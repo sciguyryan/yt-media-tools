@@ -24,6 +24,7 @@ from .query_model import (
     Binary as Binary,
     CaseWhen as CaseWhen,
     CommonTableExpression as CommonTableExpression,
+    CollectionCount as CollectionCount,
     CollectionElementReference as CollectionElementReference,
     CollectionPredicate as CollectionPredicate,
     Field as Field,

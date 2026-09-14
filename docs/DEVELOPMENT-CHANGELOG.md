@@ -26,3 +26,12 @@ This file records meaningful changes during active development. It is not releas
 - Support nested quantifiers, outer element references, ordinary outer-row fields and structured member access during runtime collection predicate evaluation.
 - Carry collection predicates through semantic identity and expression-property analysis so required source fields remain visible to acquisition planning while bound elements remain local values.
 - Reject non-collection quantifier operands deterministically without introducing count, filtering or projection semantics.
+
+### Collection querying beyond indexing - Phase 4
+
+- Add `CARDINALITY(collection)` for total collection size, counting NULL elements while preserving NULL collections as SQL NULL.
+- Add scoped `COUNT(collection AS binding WHERE predicate)` without changing established aggregate `COUNT(expr)` or `COUNT(*)` semantics.
+- Count only TRUE element-predicate results so FALSE and UNKNOWN remain excluded unless the predicate explicitly tests for NULL.
+- Propagate exact integer result NULLability from the collection operand and preserve empty collections as a deterministic zero count.
+- Integrate collection counts with lexical binding, semantic identity, optimiser traversal and expression-property analysis so source requirements remain accurate.
+- Add focused coverage for NULL and empty collections, nullable elements, outer-row references, aggregate-count compatibility, canonical formatting and deterministic invalid-operand diagnostics.

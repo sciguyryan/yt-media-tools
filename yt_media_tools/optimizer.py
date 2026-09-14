@@ -10,6 +10,7 @@ from .query import (
     Between,
     Binary,
     CaseWhen,
+    CollectionCount,
     InList,
     IsNull,
     Literal,
@@ -245,6 +246,19 @@ def _optimise_scalar_expression(
     if isinstance(expression, ScalarMember):
         value, decisions = _optimise_scalar_expression(expression.value, source=source)
         return replace(expression, value=value), decisions
+    if isinstance(expression, CollectionCount):
+        collection, collection_decisions = _optimise_scalar_expression(expression.collection, source=source)
+        predicate, predicate_decisions = _optimise_predicate_fixed_point(expression.predicate, source=source)
+        decisions = collection_decisions + [
+            OptimisationDecision(
+                f"collection-count-{decision.rule}",
+                decision.before,
+                decision.after,
+                decision.proofs,
+            )
+            for decision in predicate_decisions
+        ]
+        return replace(expression, collection=collection, predicate=predicate), decisions
     if isinstance(expression, AggregateFunction):
         args = []
         decisions: list[OptimisationDecision] = []

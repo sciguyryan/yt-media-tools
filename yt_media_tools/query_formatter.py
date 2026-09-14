@@ -9,6 +9,7 @@ from .query_model import (
     AggregateFunction,
     Between,
     Binary,
+    CollectionCount,
     CollectionElementReference,
     CollectionPredicate,
     Field,
@@ -61,6 +62,11 @@ def format_scalar_expression(expression: Any) -> str:
         if isinstance(expression.value, (Field, Literal, ScalarUnary, ScalarCase)):
             value = f"({value})"
         return f"{value}.{expression.member}"
+    if isinstance(expression, CollectionCount):
+        return (
+            f"COUNT({format_scalar_expression(expression.collection)} AS {expression.binding} "
+            f"WHERE {format_expression(expression.predicate)})"
+        )
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
     if isinstance(expression, AggregateFunction):
