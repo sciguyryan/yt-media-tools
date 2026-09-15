@@ -10,6 +10,10 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Introduce explicit semantic relation scope, field ownership and logical row identity foundations without changing the current single-relation query grammar.
+- [maintenance] Route query-body source and CTE schema selection through relation bindings so future relational resolution does not depend on anonymous schema selection.
+- [test] Add focused coverage for relation identity, CTE binding, field ownership, ambiguity and logical row identity.
+
 - [maintenance] Batch source-scoped detailed metadata cache reads into bounded set-oriented SQLite queries instead of issuing one query per candidate ID.
 - [test] Add deterministic cache batching coverage, including source isolation, bounded query counts and malformed or missing records.
 - [maintenance] Reuse one top-level query property analysis across metadata, LIMIT and cost planning instead of deriving the same semantic facts repeatedly.

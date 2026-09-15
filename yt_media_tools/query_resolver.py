@@ -43,6 +43,7 @@ from .query_model import (
     Unary,
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
+from .query_scope import relation_binding
 from .query_semantics import (
     _aggregate_query,
     _contains_aggregate,
@@ -1222,21 +1223,6 @@ def _query_result_schema(query: Query) -> QuerySchema:
     return QuerySchema.from_field_infos(fields)
 
 
-def _source_schema(
-    source_name: str | None,
-    source_facet: str | None,
-    physical_schema: QuerySchema,
-    cte_schemas: dict[str, QuerySchema],
-    source_schemas: dict[tuple[str, str | None], QuerySchema],
-) -> QuerySchema:
-    if source_name is None:
-        return physical_schema
-    logical = cte_schemas.get(source_name.casefold())
-    if logical is not None:
-        return logical
-    return source_schemas.get((source_name, source_facet), physical_schema)
-
-
 def _resolve_union_order(
     order_by: tuple[OrderTerm, ...], schema: QuerySchema, source: str, context: DateContext
 ) -> tuple[OrderTerm, ...]:
@@ -1261,14 +1247,16 @@ def _resolve_composed_query(
 ) -> Query:
     """Resolve one query body and its positional set-composition branches."""
     if not query.set_operations:
-        schema = _source_schema(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas)
+        schema = relation_binding(
+            query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas
+        ).schema
         return _resolve_query_body(replace(query, ctes=(), set_operations=()), schema, context)
 
     # ORDER BY/LIMIT/OFFSET belong to the complete set result, not the first branch.
     left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
     left = _resolve_query_body(
         left_body,
-        _source_schema(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas),
+        relation_binding(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas).schema,
         context,
     )
     common_terms = list(left.select)
@@ -1276,9 +1264,9 @@ def _resolve_composed_query(
     for operation in query.set_operations:
         branch = _resolve_query_body(
             replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0),
-            _source_schema(
+            relation_binding(
                 operation.query.from_source, operation.query.from_facet, physical_schema, cte_schemas, source_schemas
-            ),
+            ).schema,
             context,
         )
         if len(branch.select) != len(common_terms):
