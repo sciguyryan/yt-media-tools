@@ -10,6 +10,9 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Introduce an explicit expression evaluation context that owns the current metadata record and lexical collection-element bindings.
+- [maintenance] Route recursive scalar and Boolean evaluation through immutable child contexts while preserving the established evaluator entry points and yt-sql semantics.
+- [test] Add focused coverage for context immutability, lexical collection binding distance and direct scalar and Boolean evaluation through explicit contexts.
 - [maintenance] Introduce explicit semantic relation scope, field ownership and logical row identity foundations without changing the current single-relation query grammar.
 - [maintenance] Route query-body source and CTE schema selection through relation bindings so future relational resolution does not depend on anonymous schema selection.
 - [test] Add focused coverage for relation identity, CTE binding, field ownership, ambiguity and logical row identity.
