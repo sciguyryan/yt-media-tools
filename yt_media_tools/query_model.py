@@ -11,14 +11,47 @@ from dataclasses import dataclass
 from typing import Any
 
 
+@dataclass(frozen=True, slots=True)
+class QuerySourceLocation:
+    """One deterministic source location for a query diagnostic."""
+
+    position: int
+    line: int
+    column: int
+
+
+@dataclass(frozen=True, slots=True)
+class QueryDiagnosticContext:
+    """Structured context shared by syntax and semantic query diagnostics."""
+
+    category: str
+    location: QuerySourceLocation
+
+
 class QuerySyntaxError(ValueError):
     """Raised when a query cannot be parsed or semantically resolved."""
 
-    def __init__(self, source: str, message: str, position: int = 0) -> None:
+    diagnostic_category = "syntax"
+
+    def __init__(
+        self,
+        source: str,
+        message: str,
+        position: int = 0,
+        *,
+        category: str | None = None,
+    ) -> None:
         super().__init__(message)
         self.source = source
         self.message = message
         self.position = max(0, min(position, len(source)))
+        line_start = self.source.rfind("\n", 0, self.position) + 1
+        self.location = QuerySourceLocation(
+            self.position,
+            self.source.count("\n", 0, self.position) + 1,
+            self.position - line_start + 1,
+        )
+        self.context = QueryDiagnosticContext(category or self.diagnostic_category, self.location)
 
     def format(self) -> str:
         line_start = self.source.rfind("\n", 0, self.position) + 1
@@ -26,9 +59,14 @@ class QuerySyntaxError(ValueError):
         if line_end < 0:
             line_end = len(self.source)
         line = self.source[line_start:line_end]
-        column = self.position - line_start
-        line_number = self.source.count("\n", 0, self.position) + 1
-        return f"{self.message} (line {line_number}, column {column + 1})\n  {line}\n  {' ' * column}^"
+        column = self.location.column - 1
+        return f"{self.message} (line {self.location.line}, column {self.location.column})\n  {line}\n  {' ' * column}^"
+
+
+class QuerySemanticError(QuerySyntaxError):
+    """Raised when parsed yt-sql is invalid in its semantic context."""
+
+    diagnostic_category = "semantic"
 
 
 @dataclass(frozen=True)

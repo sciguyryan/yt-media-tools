@@ -10,6 +10,9 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Add structured syntax and semantic diagnostic context with deterministic source locations while preserving the established query-error compatibility boundary.
+- [maintenance] Anchor semantic comparison, RANDOM-placement and HAVING diagnostics to the offending expression instead of the start of the query where source information is available.
+- [test] Add focused coverage for diagnostic categories, multiline source locations and semantic expression anchoring.
 - [maintenance] Keep evaluator hot-path record access internal while retaining the read-only public evaluation-context interface.
 - [maintenance] Replace frozen-dataclass evaluation contexts with a compact slots-based read-only representation to reduce hot-path construction and collection-binding overhead without changing evaluator semantics.
 - [test] Verify evaluation-context public state remains read-only alongside existing lexical binding and evaluator coverage.

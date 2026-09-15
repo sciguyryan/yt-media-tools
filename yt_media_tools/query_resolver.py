@@ -28,6 +28,7 @@ from .query_model import (
     Literal,
     OrderTerm,
     Query,
+    QuerySemanticError,
     QuerySyntaxError,
     ScalarBinary,
     ScalarCase,
@@ -44,6 +45,7 @@ from .query_model import (
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
 from .query_scope import relation_binding
+from .query_traversal import walk_ast
 from .query_semantics import (
     _aggregate_query,
     _contains_aggregate,
@@ -61,6 +63,24 @@ _DURATION_PART_RE = re.compile(
 )
 
 
+def _diagnostic_position(node: Any, default: int = 0) -> int:
+    """Return the earliest useful source position owned by an AST subtree."""
+    positions = [
+        position
+        for item in walk_ast(node)
+        if isinstance((position := getattr(item, "position", None)), int) and position >= 0
+    ]
+    return min(positions) if positions else default
+
+
+def _random_position(node: Any, default: int = 0) -> int:
+    """Return the source position of the first RANDOM expression in a subtree."""
+    for item in walk_ast(node):
+        if isinstance(item, ScalarFunction) and item.name == "RANDOM":
+            return item.position
+    return _diagnostic_position(node, default)
+
+
 def _parse_duration_text(text: str, source: str, position: int) -> int:
     value = " ".join(text.strip().split())
     if re.fullmatch(r"\d+(?::\d{1,2}){1,2}", value):
@@ -68,15 +88,15 @@ def _parse_duration_text(text: str, source: str, position: int) -> int:
         if len(parts) == 2:
             minutes, seconds = parts
             if seconds >= 60:
-                raise QuerySyntaxError(source, "Duration seconds must be below 60.", position)
+                raise QuerySemanticError(source, "Duration seconds must be below 60.", position)
             return minutes * 60 + seconds
         hours, minutes, seconds = parts
         if minutes >= 60 or seconds >= 60:
-            raise QuerySyntaxError(source, "Duration minutes and seconds must be below 60.", position)
+            raise QuerySemanticError(source, "Duration minutes and seconds must be below 60.", position)
         return hours * 3600 + minutes * 60 + seconds
 
     if re.fullmatch(r"\d+(?:\.\d+)?", value):
-        raise QuerySyntaxError(
+        raise QuerySemanticError(
             source,
             "A duration needs a unit, for example 30s, 10m, 2h, or 1h30m.",
             position,
@@ -92,17 +112,17 @@ def _parse_duration_text(text: str, source: str, position: int) -> int:
     registry = load_default_unit_registry()
     for match in _DURATION_PART_RE.finditer(value):
         if value[cursor : match.start()].strip():
-            raise QuerySyntaxError(source, f"Could not understand duration {text!r}.", position + cursor)
+            raise QuerySemanticError(source, f"Could not understand duration {text!r}.", position + cursor)
         try:
             unit = registry.resolve(match.group("unit"))
         except ValueError as exc:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Unknown duration unit {match.group('unit')!r}.",
                 position + match.start("unit"),
             ) from exc
         if unit.kind != "fixed":
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Calendar unit {match.group('unit')!r} cannot be used for a duration.",
                 position + match.start("unit"),
@@ -111,7 +131,7 @@ def _parse_duration_text(text: str, source: str, position: int) -> int:
         total += float(match.group("number")) * unit.amount
         cursor = match.end()
     if not matched or value[cursor:].strip():
-        raise QuerySyntaxError(source, f"Could not understand duration {text!r}.", position + cursor)
+        raise QuerySemanticError(source, f"Could not understand duration {text!r}.", position + cursor)
     return round(total)
 
 
@@ -122,7 +142,7 @@ def _parse_count_text(text: str, source: str, position: int) -> int:
 
     match = re.fullmatch(r"(\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?)([kKmMbB]?)", compact)
     if not match:
-        raise QuerySyntaxError(source, f"Could not understand count {text!r}.", position)
+        raise QuerySemanticError(source, f"Could not understand count {text!r}.", position)
     multiplier = {"": 1, "k": 1_000, "m": 1_000_000, "b": 1_000_000_000}[match.group(2).lower()]
     number = match.group(1).replace("_", "")
     return round(float(number) * multiplier)
@@ -138,7 +158,7 @@ def _resolve_field(field: Field, schema: QuerySchema, source: str) -> Field:
         message = f"Unknown field {field.name!r}."
         if suggestion:
             message += f" Did you mean {suggestion[0]!r}?"
-        raise QuerySyntaxError(source, message, field.position)
+        raise QuerySemanticError(source, message, field.position)
     canonical = info.alias_of or info.name
     return Field(canonical, field.position, info.kind)
 
@@ -149,7 +169,7 @@ def _resolve_literal(literal: Literal, field: Field, source: str, dates: DateCon
     text = str(literal.value)
     kind = field.kind or "unknown"
     if parse_temporal_infinity(text, expected="date") is not None and kind not in {"date", "datetime"}:
-        raise QuerySyntaxError(
+        raise QuerySemanticError(
             source,
             "INFINITY() and -INFINITY() are valid only for date or datetime fields.",
             literal.position,
@@ -170,16 +190,16 @@ def _resolve_literal(literal: Literal, field: Field, source: str, dates: DateCon
         elif kind in {"integer"}:
             value = _parse_number_text(text, source, literal.position)
             if not isinstance(value, int):
-                raise QuerySyntaxError(source, f"Field {field.name!r} requires an integer.", literal.position)
+                raise QuerySemanticError(source, f"Field {field.name!r} requires an integer.", literal.position)
         elif kind in {"number"}:
             value = _parse_number_text(text, source, literal.position)
         elif kind == "boolean":
             lowered = text.casefold()
             if lowered not in {"true", "false"}:
-                raise QuerySyntaxError(source, f"Field {field.name!r} requires TRUE or FALSE.", literal.position)
+                raise QuerySemanticError(source, f"Field {field.name!r} requires TRUE or FALSE.", literal.position)
             value = lowered == "true"
         elif kind == "structured":
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Field {field.name!r} is an object or array and cannot be used as a scalar value.",
                 field.position,
@@ -191,7 +211,7 @@ def _resolve_literal(literal: Literal, field: Field, source: str, dates: DateCon
         else:
             value = _generic_literal(text, literal.quoted)
     except ValueError as exc:
-        raise QuerySyntaxError(source, str(exc), literal.position) from exc
+        raise QuerySemanticError(source, str(exc), literal.position) from exc
     return replace(literal, value=value)
 
 
@@ -277,7 +297,7 @@ def _common_case_kind(expressions: Sequence[Any], source: str, position: int) ->
         return "number"
     if "mixed" in unique or "unknown" in unique:
         return "mixed"
-    raise QuerySyntaxError(
+    raise QuerySemanticError(
         source,
         "CASE result expressions must have compatible types; got " + ", ".join(sorted(unique)) + ".",
         position,
@@ -296,7 +316,7 @@ def _common_scalar_kind(expressions: Sequence[Any], source: str, position: int, 
         return "number"
     if "mixed" in unique or "unknown" in unique:
         return "mixed"
-    raise QuerySyntaxError(
+    raise QuerySemanticError(
         source,
         f"{function_name} arguments must have compatible types; got " + ", ".join(sorted(unique)) + ".",
         position,
@@ -322,7 +342,7 @@ def _resolve_scalar_expression(
     if isinstance(expression, CollectionElementReference):
         index = len(collection_scopes) - 1 - expression.scope_distance
         if index < 0 or index >= len(collection_scopes):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Collection binding {expression.binding!r} is outside its lexical scope.",
                 expression.position,
@@ -350,7 +370,7 @@ def _resolve_scalar_expression(
                 message = f"Cannot SELECT structured field {field.name!r}; select a scalar nested path instead."
             else:
                 message = f"Field {field.name!r} is structured; use a scalar nested path instead."
-            raise QuerySyntaxError(source, message, field.position)
+            raise QuerySemanticError(source, message, field.position)
         return field
     if isinstance(expression, Literal):
         if expression.value is None:
@@ -372,11 +392,11 @@ def _resolve_scalar_expression(
         )
         kind = _scalar_kind(operand)
         if not _is_numeric_kind(kind) and not isinstance(operand, Literal):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, f"Unary {expression.operator} requires a numeric value.", expression.position
             )
         if isinstance(operand, Literal) and operand.value is not None and not isinstance(operand.value, (int, float)):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, f"Unary {expression.operator} requires a numeric value.", expression.position
             )
         return ScalarUnary(expression.operator, operand, expression.position, kind or "number")
@@ -402,7 +422,7 @@ def _resolve_scalar_expression(
         for operand in (left, right):
             kind = _scalar_kind(operand)
             if kind is not None and not _is_numeric_kind(kind):
-                raise QuerySyntaxError(
+                raise QuerySemanticError(
                     source, f"Arithmetic operator {expression.operator!r} requires numeric values.", expression.position
                 )
             if (
@@ -410,7 +430,7 @@ def _resolve_scalar_expression(
                 and operand.value is not None
                 and not isinstance(operand.value, (int, float))
             ):
-                raise QuerySyntaxError(
+                raise QuerySemanticError(
                     source, f"Arithmetic operator {expression.operator!r} requires numeric values.", expression.position
                 )
         return ScalarBinary(expression.operator, left, right, expression.position, "number")
@@ -458,20 +478,20 @@ def _resolve_scalar_expression(
         value_type = _scalar_query_type(value, schema)
         if value_type is None or not value_type.is_structured:
             kind = _scalar_kind(value) or "unknown"
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Structured member access requires a structured value; got {kind}.",
                 expression.position,
             )
         if not value_type.has_declared_members:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 "Structured member access requires a declared member schema; got opaque structured value.",
                 expression.position,
             )
         result_type = value_type.member_result_type(expression.member)
         if result_type is None:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Structured value has no member {expression.member!r}.",
                 expression.position,
@@ -515,13 +535,13 @@ def _resolve_scalar_expression(
         collection_type = _scalar_query_type(collection, schema)
         if collection_type is None or not collection_type.is_collection:
             kind = _scalar_kind(collection) or "unknown"
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Collection indexing requires a collection value; got {kind}.",
                 expression.position,
             )
         if not collection_type.supports_positional_indexing:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 "Collection indexing requires a stable logical collection ordering.",
                 expression.position,
@@ -532,11 +552,11 @@ def _resolve_scalar_expression(
             index_value = evaluate_scalar_expression(index, {})
             if index_value is not None:
                 if isinstance(index_value, bool) or not isinstance(index_value, int):
-                    raise QuerySyntaxError(source, "Collection index must be an integer value.", expression.position)
+                    raise QuerySemanticError(source, "Collection index must be an integer value.", expression.position)
                 if index_value < 0:
-                    raise QuerySyntaxError(source, "Collection index must not be negative.", expression.position)
+                    raise QuerySemanticError(source, "Collection index must not be negative.", expression.position)
         elif index_kind not in {"integer", "count", None}:
-            raise QuerySyntaxError(source, "Collection index must be an integer value.", expression.position)
+            raise QuerySemanticError(source, "Collection index must be an integer value.", expression.position)
 
         result_type = collection_type.indexed_result_type()
         return ScalarIndex(collection, index, expression.position, result_type.kind, result_type)
@@ -554,7 +574,7 @@ def _resolve_scalar_expression(
         collection_type = _scalar_query_type(collection, schema)
         if collection_type is None or not collection_type.is_collection:
             kind = _scalar_kind(collection) or "unknown"
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Collection COUNT requires a collection value; got {kind}.",
                 expression.position,
@@ -590,7 +610,7 @@ def _resolve_scalar_expression(
         collection_type = _scalar_query_type(collection, schema)
         if collection_type is None or not collection_type.is_collection:
             kind = _scalar_kind(collection) or "unknown"
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"FILTER requires a collection value; got {kind}.",
                 expression.position,
@@ -625,7 +645,7 @@ def _resolve_scalar_expression(
         collection_type = _scalar_query_type(collection, schema)
         if collection_type is None or not collection_type.is_collection:
             kind = _scalar_kind(collection) or "unknown"
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"MAP requires a collection value; got {kind}.",
                 expression.position,
@@ -641,7 +661,7 @@ def _resolve_scalar_expression(
             collection_scopes=collection_scopes + (collection_type.element_type,),
         )
         if _contains_aggregate(projection):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 "MAP projection cannot contain aggregate functions.",
                 expression.position,
@@ -677,19 +697,19 @@ def _resolve_scalar_expression(
             for arg in expression.args
         )
         if any(_contains_aggregate(arg) for arg in args):
-            raise QuerySyntaxError(source, "Aggregate functions cannot be nested.", expression.position)
+            raise QuerySemanticError(source, "Aggregate functions cannot be nested.", expression.position)
         filter_predicate = _resolve_predicate(expression.filter_predicate, schema, source, dates)
         if expression.name == "COUNT":
             result_kind = "integer"
         elif expression.name == "AVG":
             arg_kind = _scalar_kind(args[0])
             if arg_kind is not None and not _is_numeric_kind(arg_kind):
-                raise QuerySyntaxError(source, "AVG requires a numeric value.", expression.position)
+                raise QuerySemanticError(source, "AVG requires a numeric value.", expression.position)
             result_kind = "number"
         elif expression.name == "SUM":
             arg_kind = _scalar_kind(args[0])
             if arg_kind is not None and not _is_numeric_kind(arg_kind):
-                raise QuerySyntaxError(source, "SUM requires a numeric value.", expression.position)
+                raise QuerySemanticError(source, "SUM requires a numeric value.", expression.position)
             result_kind = "number" if arg_kind == "number" else arg_kind or "number"
         else:
             result_kind = _scalar_kind(args[0])
@@ -714,18 +734,18 @@ def _resolve_scalar_expression(
         if expression.name in {"LOWER", "UPPER"}:
             kind = _scalar_kind(args[0])
             if kind not in {"string", "mixed", "unknown", None}:
-                raise QuerySyntaxError(source, f"{expression.name} requires a text field.", expression.position)
+                raise QuerySemanticError(source, f"{expression.name} requires a text field.", expression.position)
             result_kind = "string"
         elif expression.name == "LENGTH":
             kind = _scalar_kind(args[0])
             if kind not in {"string", "mixed", "unknown", None}:
-                raise QuerySyntaxError(source, "LENGTH requires a text value.", expression.position)
+                raise QuerySemanticError(source, "LENGTH requires a text value.", expression.position)
             result_kind = "integer"
         elif expression.name == "CARDINALITY":
             collection_type = _scalar_query_type(args[0], schema)
             if collection_type is None or not collection_type.is_collection:
                 kind = _scalar_kind(args[0]) or "unknown"
-                raise QuerySyntaxError(
+                raise QuerySemanticError(
                     source,
                     f"CARDINALITY requires a collection value; got {kind}.",
                     expression.position,
@@ -735,13 +755,13 @@ def _resolve_scalar_expression(
             for arg in args:
                 kind = _scalar_kind(arg)
                 if kind not in {"string", "mixed", "unknown", None}:
-                    raise QuerySyntaxError(source, "CONCAT requires text values.", expression.position)
+                    raise QuerySemanticError(source, "CONCAT requires text values.", expression.position)
             result_kind = "string"
         elif expression.name == "CHAR":
             for arg in args:
                 kind = _scalar_kind(arg)
                 if kind is not None and not _is_numeric_kind(kind):
-                    raise QuerySyntaxError(source, "CHAR requires integer code-point values.", expression.position)
+                    raise QuerySemanticError(source, "CHAR requires integer code-point values.", expression.position)
                 if _is_constant_scalar_expression(arg):
                     value = evaluate_scalar_expression(arg, {})
                     if value is not None:
@@ -760,7 +780,7 @@ def _resolve_scalar_expression(
             if args:
                 seed = args[0]
                 if not isinstance(seed, Literal) or isinstance(seed.value, bool) or not isinstance(seed.value, int):
-                    raise QuerySyntaxError(
+                    raise QuerySemanticError(
                         source, "RANDOM seed must be a constant integer literal.", expression.position
                     )
             result_kind = "number"
@@ -856,15 +876,15 @@ def _validate_char_codepoint(value: Any, source: str, position: int) -> int:
     try:
         return _coerce_char_codepoint(value)
     except TypeError as exc:
-        raise QuerySyntaxError(source, "CHAR requires integer code-point values.", position) from exc
+        raise QuerySemanticError(source, "CHAR requires integer code-point values.", position) from exc
     except ValueError as exc:
         if isinstance(value, (int, float)) and not isinstance(value, bool) and float(value).is_integer():
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 "CHAR code points must be Unicode scalar values from 0 to 1114111, excluding surrogates.",
                 position,
             ) from exc
-        raise QuerySyntaxError(source, "CHAR requires integer code-point values.", position) from exc
+        raise QuerySemanticError(source, "CHAR requires integer code-point values.", position) from exc
 
 
 def _resolve_predicate(
@@ -896,7 +916,7 @@ def _resolve_predicate(
         collection_type = _scalar_query_type(collection, schema)
         if collection_type is None or not collection_type.is_collection:
             kind = _scalar_kind(collection) or "unknown"
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"{node.quantifier} requires a collection value; got {kind}.",
                 node.position,
@@ -922,7 +942,11 @@ def _resolve_predicate(
             and not (_is_numeric_kind(left_kind) and _is_numeric_kind(right_kind))
             and "mixed" not in {left_kind, right_kind}
         ):
-            raise QuerySyntaxError(source, "WHERE comparison expressions must have compatible types.", 0)
+            raise QuerySemanticError(
+                source,
+                "WHERE comparison expressions must have compatible types.",
+                _diagnostic_position(node),
+            )
         return ScalarComparison(node.operator, left, right)
     if isinstance(node, ScalarIsNull):
         return ScalarIsNull(
@@ -932,17 +956,17 @@ def _resolve_predicate(
     if isinstance(node, Binary):
         field = _resolve_field(node.left, schema, source)
         if field.kind == "structured":
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
             )
         literal = _resolve_literal(node.right, field, source, context)
         if literal.value is None:
-            raise QuerySyntaxError(source, "Use IS NULL or IS NOT NULL for NULL tests.", literal.position)
+            raise QuerySemanticError(source, "Use IS NULL or IS NOT NULL for NULL tests.", literal.position)
         return Binary(node.operator, field, literal)
     if isinstance(node, Between):
         field = _resolve_field(node.field, schema, source)
         if field.kind == "structured":
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
             )
         return Between(
@@ -954,7 +978,7 @@ def _resolve_predicate(
     if isinstance(node, InList):
         field = _resolve_field(node.field, schema, source)
         if field.kind == "structured":
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
             )
         return InList(
@@ -967,11 +991,13 @@ def _resolve_predicate(
     if isinstance(node, TextPredicate):
         field = _resolve_field(node.field, schema, source)
         if field.kind == "structured":
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, f"Field {field.name!r} is structured; use a scalar nested path instead.", field.position
             )
         if field.kind not in {"string", "mixed", "unknown"}:
-            raise QuerySyntaxError(source, f"{node.operator} requires a text field, not {field.kind}.", field.position)
+            raise QuerySemanticError(
+                source, f"{node.operator} requires a text field, not {field.kind}.", field.position
+            )
         if node.operator in {"LIKE", "ILIKE"}:
             _validate_like_pattern(str(node.value.value), source, node.value.position)
             # Populate the pattern cache during resolution so row evaluation does not
@@ -1010,7 +1036,11 @@ def _resolve_having(
             and not (_is_numeric_kind(left_kind) and _is_numeric_kind(right_kind))
             and "mixed" not in {left_kind, right_kind}
         ):
-            raise QuerySyntaxError(source, "HAVING comparison expressions must have compatible types.", 0)
+            raise QuerySemanticError(
+                source,
+                "HAVING comparison expressions must have compatible types.",
+                _diagnostic_position(node),
+            )
         return ScalarComparison(node.operator, left, right)
     if isinstance(node, ScalarIsNull):
         return ScalarIsNull(_resolve_scalar_expression(node.expression, schema, source, dates, aliases), node.negated)
@@ -1024,7 +1054,7 @@ def _validate_group_compatibility(expression: Any, group_by: tuple[Any, ...], so
     canonical_groups = {format_scalar_expression(item) for item in group_by}
     if not _contains_aggregate(expression) and format_scalar_expression(expression) in canonical_groups:
         return
-    raise QuerySyntaxError(
+    raise QuerySemanticError(
         source,
         "Non-aggregate SELECT/ORDER BY expressions in an aggregate query must match a GROUP BY expression.",
         position,
@@ -1052,7 +1082,7 @@ def _validate_having_group_compatibility(node: Any, group_by: tuple[Any, ...], s
             continue
         if not _contains_aggregate(expression) and format_scalar_expression(expression) in canonical_groups:
             continue
-        raise QuerySyntaxError(
+        raise QuerySemanticError(
             source,
             "Non-aggregate HAVING expressions must match a GROUP BY expression or selected aggregate alias.",
             getattr(expression, "position", 0),
@@ -1062,15 +1092,23 @@ def _validate_having_group_compatibility(node: Any, group_by: tuple[Any, ...], s
 def _validate_random_placement(query: Query) -> None:
     """Keep volatile randomness out of row-selection and grouping semantics."""
     if _contains_random(query.predicate):
-        raise QuerySyntaxError(query.source, "RANDOM is not allowed in WHERE predicates.", 0)
+        raise QuerySemanticError(
+            query.source, "RANDOM is not allowed in WHERE predicates.", _random_position(query.predicate)
+        )
     if any(_contains_random(expression) for expression in query.group_by):
-        raise QuerySyntaxError(query.source, "RANDOM is not allowed in GROUP BY expressions.", 0)
+        raise QuerySemanticError(
+            query.source,
+            "RANDOM is not allowed in GROUP BY expressions.",
+            min(_random_position(expression) for expression in query.group_by if _contains_random(expression)),
+        )
     if _contains_random(query.having):
-        raise QuerySyntaxError(query.source, "RANDOM is not allowed in HAVING predicates.", 0)
+        raise QuerySemanticError(
+            query.source, "RANDOM is not allowed in HAVING predicates.", _random_position(query.having)
+        )
     for term in query.select:
         expression = term.expression
         if isinstance(expression, AggregateFunction) and _contains_random(expression.filter_predicate):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 query.source, "RANDOM is not allowed in aggregate FILTER predicates.", expression.position
             )
 
@@ -1085,7 +1123,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
     group_by = tuple(_resolve_scalar_expression(item, schema, source, context) for item in query.group_by)
     for item in group_by:
         if _contains_aggregate(item):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source, "GROUP BY expressions cannot contain aggregate functions.", getattr(item, "position", 0)
             )
 
@@ -1097,7 +1135,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
         and effective_select[0].expression is None
         and (query.group_by or query.having is not None)
     ):
-        raise QuerySyntaxError(
+        raise QuerySemanticError(
             source,
             "SELECT * is not supported in aggregate queries; select grouped and aggregate expressions explicitly.",
             effective_select[0].position,
@@ -1116,7 +1154,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             field_text = format_scalar_expression(expression)
             kind = _scalar_kind(expression)
             if kind == "structured":
-                raise QuerySyntaxError(
+                raise QuerySemanticError(
                     source,
                     "Cannot SELECT structured expression; select a scalar nested path instead.",
                     original_term.position,
@@ -1127,7 +1165,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             expression = None
             field = _resolve_field(Field(original_term.field, original_term.position), schema, source)
             if field.kind == "structured":
-                raise QuerySyntaxError(
+                raise QuerySemanticError(
                     source,
                     f"Cannot SELECT structured field {field.name!r}; select a scalar nested path instead.",
                     original_term.position,
@@ -1137,7 +1175,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
         output_name = original_term.alias or original_term.field
         key = output_name.casefold()
         if key in output_names:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 source,
                 f"Duplicate SELECT output name {output_name!r}; use AS to give fields unique names.",
                 original_term.position,
@@ -1170,7 +1208,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             continue
         field = _resolve_field(Field(term.field, term.position), schema, source)
         if field.kind == "structured":
-            raise QuerySyntaxError(source, f"Cannot ORDER BY structured field {field.name!r}.", term.position)
+            raise QuerySemanticError(source, f"Cannot ORDER BY structured field {field.name!r}.", term.position)
         order_terms.append(OrderTerm(field.name, term.descending, term.position, field.kind))
 
     resolved = Query(
@@ -1195,7 +1233,11 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             _validate_group_compatibility(term.expression, group_by, source, term.position)
         _validate_having_group_compatibility(having, group_by, source)
     elif having is not None:
-        raise QuerySyntaxError(source, "HAVING requires GROUP BY or an aggregate expression.", 0)
+        raise QuerySemanticError(
+            source,
+            "HAVING requires GROUP BY or an aggregate expression.",
+            _diagnostic_position(having),
+        )
     return resolved
 
 
@@ -1270,7 +1312,7 @@ def _resolve_composed_query(
             context,
         )
         if len(branch.select) != len(common_terms):
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 query.source,
                 f"UNION branches must project the same number of columns; expected {len(common_terms)}, got {len(branch.select)}.",
                 operation.position,
@@ -1280,7 +1322,7 @@ def _resolve_composed_query(
             try:
                 kind = _union_common_kind(left_term.kind, right_term.kind)
             except ValueError:
-                raise QuerySyntaxError(
+                raise QuerySemanticError(
                     query.source,
                     f"UNION column {index} has incompatible kinds {left_term.kind or 'unknown'} and {right_term.kind or 'unknown'}.",
                     operation.position,
@@ -1318,12 +1360,12 @@ def resolve_query(
     for cte in query.ctes:
         referenced = [name.casefold() for name in _direct_from_sources(cte.query)]
         if cte.name.casefold() in referenced:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 query.source, f"Recursive reference to CTE {cte.name!r} is not supported.", cte.position
             )
         later = [name for name in referenced if name in cte_names and name not in cte_schemas]
         if later:
-            raise QuerySyntaxError(
+            raise QuerySemanticError(
                 query.source,
                 f"CTE {cte.name!r} cannot reference later CTE {later[0]!r}; forward references are not supported.",
                 cte.position,

@@ -38,7 +38,7 @@ from .query_model import (
     SetOperation,
     TextPredicate,
     Unary,
-    QuerySyntaxError,
+    QuerySemanticError,
 )
 from .query_traversal import walk_ast
 
@@ -256,7 +256,7 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
         for source_name, facet in direct:
             if source_name.casefold() in cte_names:
                 if facet is not None:
-                    raise QuerySyntaxError(
+                    raise QuerySemanticError(
                         query.source,
                         "OF applies only to physical sources, not CTE result relations.",
                         0,
@@ -290,7 +290,7 @@ def query_single_physical_source(query: Query) -> str | None:
     """Return the sole physical source, rejecting genuinely multi-source composition."""
     sources = query_physical_sources(query)
     if len(sources) > 1:
-        raise QuerySyntaxError(
+        raise QuerySemanticError(
             query.source,
             "This operation requires a single physical source; the query contains UNION composition across multiple sources.",
             0,
