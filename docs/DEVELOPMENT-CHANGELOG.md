@@ -10,6 +10,8 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Keep compatibility coercion at the public expression-evaluator boundary so recursive scalar and Boolean evaluation stays on the normalised explicit-context fast path.
+- [test] Preserve explicit evaluation-context semantics while preparing the evaluator hot path for direct Phase 5 performance comparison.
 - [maintenance] Introduce an explicit expression evaluation context that owns the current metadata record and lexical collection-element bindings.
 - [maintenance] Route recursive scalar and Boolean evaluation through immutable child contexts while preserving the established evaluator entry points and yt-sql semantics.
 - [test] Add focused coverage for context immutability, lexical collection binding distance and direct scalar and Boolean evaluation through explicit contexts.

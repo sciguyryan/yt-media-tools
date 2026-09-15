@@ -129,7 +129,7 @@ def _runtime_member_value(value: Any, member: str) -> Any:
     return value[member]
 
 
-def evaluate_scalar_expression(
+def _evaluate_scalar_expression(
     expression: Any,
     record: dict[str, Any] | EvaluationContext,
     collection_bindings: tuple[Any, ...] = (),
@@ -153,7 +153,7 @@ def evaluate_scalar_expression(
     if isinstance(expression, Literal):
         return expression.value
     if isinstance(expression, ScalarUnary):
-        value = evaluate_scalar_expression(expression.operand, context)
+        value = _evaluate_scalar_expression(expression.operand, context)
         if value is None:
             return None
         try:
@@ -161,8 +161,8 @@ def evaluate_scalar_expression(
         except TypeError:
             return None
     if isinstance(expression, ScalarBinary):
-        left = evaluate_scalar_expression(expression.left, context)
-        right = evaluate_scalar_expression(expression.right, context)
+        left = _evaluate_scalar_expression(expression.left, context)
+        right = _evaluate_scalar_expression(expression.right, context)
         if left is None or right is None:
             return None
         try:
@@ -180,22 +180,22 @@ def evaluate_scalar_expression(
             return None
         raise AssertionError(f"Unsupported arithmetic operator {expression.operator}")
     if isinstance(expression, ScalarIndex):
-        collection = evaluate_scalar_expression(expression.collection, context)
-        index = evaluate_scalar_expression(expression.index, context)
+        collection = _evaluate_scalar_expression(expression.collection, context)
+        index = _evaluate_scalar_expression(expression.index, context)
         return _runtime_indexed_value(collection, index)
     if isinstance(expression, CollectionCount):
-        collection = evaluate_scalar_expression(expression.collection, context)
+        collection = _evaluate_scalar_expression(expression.collection, context)
         if collection is None:
             return None
         if not isinstance(collection, (list, tuple)):
             return None
         count = 0
         for element in collection:
-            if evaluate(expression.predicate, context.bind_collection_element(element)) is True:
+            if _evaluate_boolean_expression(expression.predicate, context.bind_collection_element(element)) is True:
                 count += 1
         return count
     if isinstance(expression, CollectionFilter):
-        collection = evaluate_scalar_expression(expression.collection, context)
+        collection = _evaluate_scalar_expression(expression.collection, context)
         if collection is None:
             return None
         if not isinstance(collection, (list, tuple)):
@@ -203,30 +203,30 @@ def evaluate_scalar_expression(
         return [
             element
             for element in collection
-            if evaluate(expression.predicate, context.bind_collection_element(element)) is True
+            if _evaluate_boolean_expression(expression.predicate, context.bind_collection_element(element)) is True
         ]
     if isinstance(expression, CollectionProjection):
-        collection = evaluate_scalar_expression(expression.collection, context)
+        collection = _evaluate_scalar_expression(expression.collection, context)
         if collection is None:
             return None
         if not isinstance(collection, (list, tuple)):
             return None
         return [
-            evaluate_scalar_expression(expression.projection, context.bind_collection_element(element))
+            _evaluate_scalar_expression(expression.projection, context.bind_collection_element(element))
             for element in collection
         ]
     if isinstance(expression, ScalarMember):
-        value = evaluate_scalar_expression(expression.value, context)
+        value = _evaluate_scalar_expression(expression.value, context)
         return _runtime_member_value(value, expression.member)
     if isinstance(expression, ScalarCase):
         for branch in expression.whens:
-            if evaluate(branch.condition, context) is True:
-                return evaluate_scalar_expression(branch.result, context)
+            if _evaluate_boolean_expression(branch.condition, context) is True:
+                return _evaluate_scalar_expression(branch.result, context)
         if expression.else_result is not None:
-            return evaluate_scalar_expression(expression.else_result, context)
+            return _evaluate_scalar_expression(expression.else_result, context)
         return None
     if isinstance(expression, ScalarFunction):
-        values = [evaluate_scalar_expression(arg, context) for arg in expression.args]
+        values = [_evaluate_scalar_expression(arg, context) for arg in expression.args]
         if expression.name == "LOWER":
             return values[0].lower() if isinstance(values[0], str) else None
         if expression.name == "UPPER":
@@ -273,6 +273,25 @@ def evaluate_scalar_expression(
             return _evaluate_random(expression, record)
         raise AssertionError(f"Unsupported scalar function {expression.name}")
     raise AssertionError(f"Unsupported scalar expression {expression!r}")
+
+
+def evaluate_scalar_expression(
+    expression: Any,
+    record: dict[str, Any] | EvaluationContext,
+    collection_bindings: tuple[Any, ...] = (),
+) -> Any:
+    """Evaluate a resolved scalar expression in an explicit runtime context.
+
+    Compatibility coercion is intentionally confined to this public boundary. Internal
+    recursion receives a normalised ``EvaluationContext`` directly, avoiding repeated
+    type checks and context normalisation for every expression node.
+    """
+    context = (
+        record
+        if isinstance(record, EvaluationContext)
+        else EvaluationContext(record=record, collection_bindings=collection_bindings)
+    )
+    return _evaluate_scalar_expression(expression, context)
 
 
 def canonical_record_value(
@@ -379,28 +398,19 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
     return re.compile("".join(pieces), flags)
 
 
-def evaluate(
-    node: Any,
-    record: dict[str, Any] | EvaluationContext,
-    collection_bindings: tuple[Any, ...] = (),
-) -> bool | None:
-    """Evaluate a resolved AST using SQL-like three-valued Boolean logic."""
-    context = (
-        record
-        if isinstance(record, EvaluationContext)
-        else EvaluationContext(record=record, collection_bindings=collection_bindings)
-    )
+def _evaluate_boolean_expression(node: Any, context: EvaluationContext) -> bool | None:
+    """Evaluate a Boolean expression using an already-normalised runtime context."""
     record = context.record
     if node is None:
         return True
     if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):
         return node.value
     if isinstance(node, Unary):
-        value = evaluate(node.operand, context)
+        value = _evaluate_boolean_expression(node.operand, context)
         return None if value is None else not value
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        left = evaluate(node.left, context)
-        right = evaluate(node.right, context)
+        left = _evaluate_boolean_expression(node.left, context)
+        right = _evaluate_boolean_expression(node.right, context)
         if node.operator == "AND":
             if left is False or right is False:
                 return False
@@ -413,7 +423,7 @@ def evaluate(
             return None
         return False
     if isinstance(node, CollectionPredicate):
-        collection = evaluate_scalar_expression(node.collection, context)
+        collection = _evaluate_scalar_expression(node.collection, context)
         if collection is None:
             return (
                 existential_truth((), collection_is_null=True)
@@ -422,18 +432,21 @@ def evaluate(
             )
         if not isinstance(collection, (list, tuple)):
             return None
-        results = (evaluate(node.predicate, context.bind_collection_element(element)) for element in collection)
+        results = (
+            _evaluate_boolean_expression(node.predicate, context.bind_collection_element(element))
+            for element in collection
+        )
         if node.quantifier == "ANY":
             return existential_truth(results)
         if node.quantifier == "ALL":
             return universal_truth(results)
         raise AssertionError(f"Unsupported collection quantifier {node.quantifier}")
     if isinstance(node, ScalarIsNull):
-        result = evaluate_scalar_expression(node.expression, context) is None
+        result = _evaluate_scalar_expression(node.expression, context) is None
         return not result if node.negated else result
     if isinstance(node, ScalarComparison):
-        left = evaluate_scalar_expression(node.left, context)
-        right = evaluate_scalar_expression(node.right, context)
+        left = _evaluate_scalar_expression(node.left, context)
+        right = _evaluate_scalar_expression(node.right, context)
         if left is None or right is None:
             return None
         try:
@@ -918,3 +931,21 @@ def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[st
     # CTEs and set operations. They must never escape through the public query API.
     execution_only_keys = {"_yt_sql_result_row", "_yt_sql_aggregate_result", "_yt_sql_random_cache"}
     return [{key: value for key, value in row.items() if key not in execution_only_keys} for row in result]
+
+
+def evaluate(
+    node: Any,
+    record: dict[str, Any] | EvaluationContext,
+    collection_bindings: tuple[Any, ...] = (),
+) -> bool | None:
+    """Evaluate a resolved AST using SQL-like three-valued Boolean logic.
+
+    Compatibility coercion occurs once at the public boundary; recursive evaluation
+    stays on the explicit context fast path.
+    """
+    context = (
+        record
+        if isinstance(record, EvaluationContext)
+        else EvaluationContext(record=record, collection_bindings=collection_bindings)
+    )
+    return _evaluate_boolean_expression(node, context)

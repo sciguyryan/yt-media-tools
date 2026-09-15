@@ -9,6 +9,7 @@
 - Evaluate property-based, mutation and focused fuzz testing where they materially improve deterministic coverage.
 - Evaluate optional external-tool integrations only where they add clear utility behind an existing typed policy boundary.
 - Consider the low-impact `El Psy Kongroo` easter egg only if it cannot affect scripting, help, errors or machine-readable output.
+- Investigate optional playback-aware rate limiting that derives an approximate download rate from the actually selected media formats, applies configurable headroom for variable bitrate and network jitter, degrades gracefully when reliable bitrate information is unavailable, and exposes the calculation through planning and explain output. Keep existing download-speed behaviour unchanged by default; the goal is considerate bandwidth and server-load behaviour resembling ordinary real-time playback.
 
 # Discover TODO
 
