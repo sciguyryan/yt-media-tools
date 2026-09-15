@@ -129,22 +129,8 @@ def _runtime_member_value(value: Any, member: str) -> Any:
     return value[member]
 
 
-def _evaluate_scalar_expression(
-    expression: Any,
-    record: dict[str, Any] | EvaluationContext,
-    collection_bindings: tuple[Any, ...] = (),
-) -> Any:
-    """Evaluate a resolved scalar expression in an explicit runtime context.
-
-    ``record`` continues to accept a metadata dictionary for compatibility with the
-    established evaluator API. Recursive evaluation passes ``EvaluationContext``
-    directly so runtime state is no longer threaded as parallel positional values.
-    """
-    context = (
-        record
-        if isinstance(record, EvaluationContext)
-        else EvaluationContext(record=record, collection_bindings=collection_bindings)
-    )
+def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> Any:
+    """Evaluate a scalar expression using an already-normalised runtime context."""
     record = context.record
     if isinstance(expression, CollectionElementReference):
         return context.collection_element(expression.scope_distance)
