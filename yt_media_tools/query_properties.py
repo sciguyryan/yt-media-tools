@@ -801,22 +801,33 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
         or query.having is not None
         or any(_contains_aggregate(term.expression) for term in query.select + query.order_by)
     )
-    expression_properties = tuple(
-        analyse_expression(expression, source=source) for expression in _query_expressions(query)
-    )
+    # Keep one analysis result per expression object for this query analysis. Select,
+    # ordering and predicate derivations often refer to nodes already present in the
+    # complete expression walk, so recomputing them adds work without adding facts.
+    expression_cache: dict[int, ExpressionProperties] = {}
+
+    def properties_for(expression: Any) -> ExpressionProperties:
+        key = id(expression)
+        cached = expression_cache.get(key)
+        if cached is None:
+            cached = analyse_expression(expression, source=source)
+            expression_cache[key] = cached
+        return cached
+
+    expression_properties = tuple(properties_for(expression) for expression in _query_expressions(query))
     deterministic = all(item.deterministic for item in expression_properties)
-    predicate_properties = analyse_expression(query.predicate, source=source)
+    predicate_properties = properties_for(query.predicate)
 
     select_terms = query.select or ()
     output_types = tuple(
-        analyse_expression(term.expression, source=source).resolved_type if term.expression is not None else term.kind
+        properties_for(term.expression).resolved_type if term.expression is not None else term.kind
         for term in select_terms
     )
     order_fields = frozenset(
         field
         for term in query.order_by
         for field in (
-            analyse_expression(term.expression, source=source).required_fields
+            properties_for(term.expression).required_fields
             if term.expression is not None
             else frozenset({term.field.casefold()})
         )

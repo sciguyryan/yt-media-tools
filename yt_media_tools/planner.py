@@ -78,6 +78,7 @@ def plan_limit_termination(
     *,
     source: SourceSpec | None = None,
     predicate_stages: PredicateStagePlan | None = None,
+    properties: QueryProperties | None = None,
 ) -> LimitTerminationPlan:
     """Return the earliest stage where OFFSET + LIMIT is proven complete.
 
@@ -106,7 +107,7 @@ def plan_limit_termination(
         )
     if query.set_operations:
         return blocked("UNION composition requires complete branch results before global LIMIT can be applied")
-    properties = analyse_query(query, source=source)
+    properties = properties or analyse_query(query, source=source)
     if properties.requires_aggregation:
         return blocked(
             "aggregation requires complete input groups before LIMIT can be applied; HAVING is evaluated only after those groups are complete"
@@ -190,6 +191,7 @@ def assess_cost(
     *,
     source: SourceSpec | None = None,
     limit_termination: LimitTerminationPlan | None = None,
+    properties: QueryProperties | None = None,
 ) -> tuple[str, str]:
     """Classify the actual acquisition plan using explicit capability and LIMIT proofs."""
     if limit_termination is not None and limit_termination.eligible and limit_termination.stops_enumeration:
@@ -197,8 +199,8 @@ def assess_cost(
             "low",
             f"source enumeration may stop after {limit_termination.required_matches} authoritative match(es) satisfy OFFSET + LIMIT",
         )
-    fields = required_query_fields(query)
-    properties = analyse_query(query, source=source)
+    properties = properties or analyse_query(query, source=source)
+    fields = properties.required_fields
     detailed_only = sorted(field for field in fields if properties.field_capability(field).ytdlp_flat != EXACT)
     if plan.targeted:
         if detailed_only:
@@ -252,14 +254,19 @@ class MetadataRequirementPlan:
         return bool(self.detailed_fields)
 
 
-def plan_metadata_requirements(query: Query, *, source: SourceSpec) -> MetadataRequirementPlan:
+def plan_metadata_requirements(
+    query: Query,
+    *,
+    source: SourceSpec,
+    properties: QueryProperties | None = None,
+) -> MetadataRequirementPlan:
     """Partition physical fields by the earliest authoritative metadata stage.
 
     Approximate flat metadata is intentionally not classified as authoritative. Such
     fields remain detailed requirements even when a lightweight value happens to be
     available and may still be useful for one-sided conservative rejection.
     """
-    properties = analyse_query(query, source=source)
+    properties = properties or analyse_query(query, source=source)
     facet = selected_facet_capabilities(source)
 
     enumeration_fields = frozenset(
@@ -504,7 +511,7 @@ def plan_source_boundaries(
         )
 
         properties = analyse_query(synthetic, source=source)
-        metadata = plan_metadata_requirements(synthetic, source=source)
+        metadata = plan_metadata_requirements(synthetic, source=source, properties=properties)
         if fields != properties.required_fields:
             enum = frozenset(
                 field for field in fields if selected_facet_capabilities(source).field(field).ytdlp_flat == EXACT
@@ -642,7 +649,7 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
     """
     properties = analyse_query(query, source=source)
     facet = selected_facet_capabilities(source)
-    metadata_requirements = plan_metadata_requirements(query, source=source)
+    metadata_requirements = plan_metadata_requirements(query, source=source, properties=properties)
     predicate_stages = plan_predicate_stages(query, source=source)
     temporal_bounds = infer_temporal_bounds(query.predicate, dates)
     acquisition = plan_acquisition(
@@ -692,11 +699,13 @@ def plan_query(query: Query, *, source: SourceSpec, dates: DateContext) -> Query
                 else "source/facet capabilities prove the WHERE predicate cannot evaluate TRUE"
             ),
         )
-    limit = plan_limit_termination(query, source=source, predicate_stages=predicate_stages)
+    limit = plan_limit_termination(query, source=source, predicate_stages=predicate_stages, properties=properties)
     if eliminated:
         cost_class, cost_reason = "none", "the source branch is proven empty before acquisition"
     else:
-        cost_class, cost_reason = assess_cost(query, acquisition, source=source, limit_termination=limit)
+        cost_class, cost_reason = assess_cost(
+            query, acquisition, source=source, limit_termination=limit, properties=properties
+        )
     request = PhysicalAcquisitionRequest(
         source=source,
         required_fields=physical_required_fields,

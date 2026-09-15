@@ -10,6 +10,9 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Reuse one top-level query property analysis across metadata, LIMIT and cost planning instead of deriving the same semantic facts repeatedly.
+- [maintenance] Reuse expression-property results within one query analysis for projection, ordering and predicate derivations.
+- [test] Add focused planning-analysis reuse coverage while preserving the existing public planning helper behaviour.
 - [feature] Add typed variadic `CONCAT()` scalar expressions with NULL propagation, constant folding and deterministic conformance coverage.
 - [docs] Document `CONCAT()` semantics and optimisation behaviour for constructed textual projections.
 - [cli] Add compact Rich benchmark result and baseline-comparison tables with stable benchmark names, Unicode presentation, ASCII and no-colour fallbacks, and terminal-width-aware rendering.
