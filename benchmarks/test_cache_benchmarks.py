@@ -23,10 +23,10 @@ def test_cache_lookup_known_ids(benchmark, count: int, tmp_path: Path) -> None:
     with MetadataCache(path) as cache:
         assert cache.put_many("benchmark-source", records, fetched_at=CACHE_TIME) == count
 
-        def lookup_all() -> list[object]:
-            return [cache.get("benchmark-source", video_id) for video_id in ids]
+        def lookup_all() -> dict[str, object]:
+            return cache.get_many("benchmark-source", ids)
 
         benchmark.extra_info["benchmark_id"] = f"cache.lookup.{count}"
         result = benchmark(lookup_all)
         assert len(result) == count
-        assert all(item is not None for item in result)
+        assert all(video_id in result for video_id in ids)

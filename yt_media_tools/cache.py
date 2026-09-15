@@ -270,6 +270,31 @@ class MetadataCache:
             return None
         return self._decode_item(video_id, row[0], row[1])
 
+    def get_many(self, source_url: str, video_ids: Iterable[str]) -> dict[str, CachedMetadata]:
+        """Return decodable source-scoped records for a set of video IDs using bounded queries."""
+        unique_ids = tuple(dict.fromkeys(video_ids))
+        if not unique_ids:
+            return {}
+
+        # Stay below SQLite builds with the historical 999-variable default while leaving
+        # one bind parameter available for the source URL.
+        max_ids_per_query = 900
+        items: dict[str, CachedMetadata] = {}
+        db = self._db()
+        for start in range(0, len(unique_ids), max_ids_per_query):
+            chunk = unique_ids[start : start + max_ids_per_query]
+            placeholders = ",".join("?" for _ in chunk)
+            rows = db.execute(
+                f"SELECT video_id, fetched_at, raw_json FROM metadata_records "
+                f"WHERE source_url = ? AND video_id IN ({placeholders})",
+                (source_url, *chunk),
+            ).fetchall()
+            for video_id, fetched_at, raw_json in rows:
+                item = self._decode_item(video_id, fetched_at, raw_json)
+                if item is not None:
+                    items[video_id] = item
+        return items
+
     def _decode_item(self, video_id: str, fetched_at_text: str, raw_json: str) -> CachedMetadata | None:
         try:
             fetched_at = datetime.fromisoformat(fetched_at_text)

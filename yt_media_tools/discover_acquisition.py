@@ -112,11 +112,12 @@ def _cached_or_refresh_metadata(
     hits = stale = misses = 0
     cache_fields = {field for field in required_fields if field.casefold() != "source_index"}
 
+    cached_items = cache.get_many(source_url, video_ids) if cache is not None else {}
     for video_id in video_ids:
         if cache is None:
             refresh_ids.append(video_id)
             continue
-        item = cache.get(source_url, video_id)
+        item = cached_items.get(video_id)
         if item is None:
             misses += 1
             refresh_ids.append(video_id)

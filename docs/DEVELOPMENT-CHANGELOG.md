@@ -10,6 +10,8 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Batch source-scoped detailed metadata cache reads into bounded set-oriented SQLite queries instead of issuing one query per candidate ID.
+- [test] Add deterministic cache batching coverage, including source isolation, bounded query counts and malformed or missing records.
 - [maintenance] Reuse one top-level query property analysis across metadata, LIMIT and cost planning instead of deriving the same semantic facts repeatedly.
 - [maintenance] Reuse expression-property results within one query analysis for projection, ordering and predicate derivations.
 - [test] Add focused planning-analysis reuse coverage while preserving the existing public planning helper behaviour.

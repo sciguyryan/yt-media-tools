@@ -81,3 +81,38 @@ def test_unknown_schema_version_fails_closed(tmp_path: Path):
 def test_aliases_share_canonical_freshness_policy():
     assert field_max_age("views") == field_max_age("view_count")
     assert field_max_age("date") == field_max_age("upload_date")
+
+
+def test_cache_get_many_batches_known_ids_and_preserves_source_scope(tmp_path: Path) -> None:
+    path = tmp_path / "metadata.sqlite3"
+    records = [{"id": f"video-{index:04d}", "title": f"Video {index}"} for index in range(1_001)]
+    ids = [record["id"] for record in records]
+    with MetadataCache(path) as cache:
+        assert cache.put_many("source-a", records) == len(records)
+        assert cache.put_many("source-b", [{"id": ids[0], "title": "Other source"}]) == 1
+        statements: list[str] = []
+        cache._db().set_trace_callback(statements.append)
+        items = cache.get_many("source-a", [*ids, ids[0]])
+        cache._db().set_trace_callback(None)
+
+    assert len(items) == len(records)
+    assert items[ids[0]].record["title"] == "Video 0"
+    lookup_statements = [
+        statement
+        for statement in statements
+        if "SELECT video_id, fetched_at, raw_json FROM metadata_records" in statement
+    ]
+    assert len(lookup_statements) == 2
+
+
+def test_cache_get_many_ignores_missing_and_undecodable_rows(tmp_path: Path) -> None:
+    path = tmp_path / "metadata.sqlite3"
+    with MetadataCache(path) as cache:
+        assert cache.put_many("source", [{"id": "good", "title": "Good"}]) == 1
+        cache._db().execute(
+            "INSERT INTO metadata_records(source_url, video_id, fetched_at, raw_json) VALUES(?, ?, ?, ?)",
+            ("source", "bad", "not-a-time", "{}"),
+        )
+        items = cache.get_many("source", ["good", "bad", "missing"])
+
+    assert set(items) == {"good"}

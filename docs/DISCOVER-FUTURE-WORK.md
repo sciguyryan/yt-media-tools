@@ -289,6 +289,10 @@ The investigation should compare channel/video enumeration, continuation behavio
 
 Provider choice belongs behind the source/capability planner. A query must not change meaning because a different provider supplied the data. Extractor agnosticism remains a core design goal.
 
+### Rust performance investigation
+
+Evaluate whether a Rust implementation or selective Rust acceleration could provide worthwhile performance benefits after the Python architecture and benchmark programme is mature. Treat this as a design investigation rather than a planned rewrite. Compare end-to-end and subsystem performance, Python/Rust boundary costs, packaging and portability, development complexity, maintainability and testability. Any prototype must preserve yt-sql semantics, deterministic behaviour, diagnostics, source/facet identity and the existing conformance contract exactly. The Python implementation remains authoritative unless evidence demonstrates that a Rust approach provides sufficient practical benefit to justify the additional implementation and maintenance cost.
+
 ### Third-party SQL parsers
 
 Do not adopt a third-party SQL parser as yt-sql's grammar authority. Other parsers and dialects remain useful design references, but yt-sql now has enough deliberate non-standard behaviour that forcing it through a general SQL parser would work against the language rather than simplify it.
