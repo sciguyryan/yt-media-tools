@@ -41,3 +41,20 @@ def test_boolean_evaluator_accepts_explicit_context() -> None:
         right=Literal("value", "'value'", position=0),
     )
     assert evaluate(expression, context) is True
+
+
+def test_context_public_state_is_read_only() -> None:
+    context = EvaluationContext({"id": "example"})
+    try:
+        context.record = {"id": "replacement"}  # type: ignore[misc]
+    except AttributeError:
+        pass
+    else:
+        raise AssertionError("EvaluationContext.record must be read-only")
+
+    try:
+        context.collection_bindings = ("replacement",)  # type: ignore[misc]
+    except AttributeError:
+        pass
+    else:
+        raise AssertionError("EvaluationContext.collection_bindings must be read-only")
