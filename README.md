@@ -29,9 +29,11 @@ docs/DISCOVER-FUTURE-WORK.md      Planned Discover language and capability progr
 docs/DOWNLOADER-FUTURE-WORK.md    Planned Downloader architecture and capability programme
 docs/YT-SQL.md                    yt-sql language reference
 docs/YT-SQL-OPTIMISATION.md       yt-sql optimisation strategy
+docs/PERFORMANCE.md               Performance testing and regression policy
 docs/TODO.md                      Accepted future work and design directions
 docs/roadmap/                     Living Discover version-series roadmaps
 pytest.ini                        Combined test discovery configuration
+benchmarks/                        Opt-in deterministic performance benchmarks
 ```
 
 The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained. Common low-level yt-dlp runtime mechanics are shared by both applications without merging their higher-level acquisition and download policies.
@@ -68,7 +70,7 @@ Run both non-routine tiers explicitly with:
 python -m pytest -m "scale or stress"
 ```
 
-Ruff is configured for repository linting and formatting, and both checks run in GitHub Actions.
+Ruff is configured for repository linting and formatting, and both checks run in GitHub Actions. Performance benchmarks are opt-in and documented in `docs/PERFORMANCE.md`; CI runs only a small non-comparative benchmark smoke check because shared runners are not treated as stable performance targets.
 
 ## Versioning
 
