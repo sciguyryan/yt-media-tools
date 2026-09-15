@@ -4,6 +4,8 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [feature] Add typed variadic `CONCAT()` scalar expressions with NULL propagation, constant folding and deterministic conformance coverage.
+- [docs] Document `CONCAT()` semantics and optimisation behaviour for constructed textual projections.
 - [cli] Add compact Rich benchmark result and baseline-comparison tables with stable benchmark names, Unicode presentation, ASCII and no-colour fallbacks, and terminal-width-aware rendering.
 - [cli] Add `benchmark.py --compare` baseline lookup and actionable benchmark-dependency diagnostics while retaining pytest-benchmark as the measurement engine.
 - [docs] Document the benchmark presentation, comparison and fallback conventions.

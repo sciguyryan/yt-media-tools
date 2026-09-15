@@ -10,7 +10,7 @@ Optimiser tests must compare the complete observable result of optimised and uno
 
 ## Grammar and scalar expressions
 
-Current dedicated coverage includes SELECT projection, aliases, SELECT *, arithmetic and precedence, parenthesised expressions, CASE, LOWER, UPPER, LENGTH, COALESCE, NULLIF, GREATEST, LEAST, CHAR, RANDOM, decimal and non-decimal integer literals, query parameters, and malformed scalar-function calls.
+Current dedicated coverage includes SELECT projection, aliases, SELECT *, arithmetic and precedence, parenthesised expressions, CASE, LOWER, UPPER, LENGTH, COALESCE, CONCAT, NULLIF, GREATEST, LEAST, CHAR, RANDOM, decimal and non-decimal integer literals, query parameters, and malformed scalar-function calls.
 
 Torture coverage additionally combines deeply parenthesised scalar and Boolean expressions, hostile whitespace, CASE with nested functions and mixed-base literals, malformed CASE boundaries, malformed function argument lists, and parse-format-parse stability.
 

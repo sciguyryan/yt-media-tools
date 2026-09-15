@@ -582,6 +582,7 @@ class Parser:
             "FILTER",
             "MAP",
             "COALESCE",
+            "CONCAT",
             "CHAR",
             "NULLIF",
             "GREATEST",
@@ -691,6 +692,8 @@ class Parser:
             raise QuerySyntaxError(self.source, f"{name} requires exactly one argument.", name_token.position)
         if name == "COALESCE" and len(args) < 2:
             raise QuerySyntaxError(self.source, "COALESCE requires at least two arguments.", name_token.position)
+        if name == "CONCAT" and len(args) < 2:
+            raise QuerySyntaxError(self.source, "CONCAT requires at least two arguments.", name_token.position)
         if name == "CHAR" and not args:
             raise QuerySyntaxError(self.source, "CHAR requires at least one argument.", name_token.position)
         if name == "NULLIF" and len(args) != 2:

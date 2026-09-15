@@ -254,6 +254,16 @@ def _least_projection(rows: Rows) -> list[Any]:
     )
 
 
+def _concat_projection(rows: Rows) -> list[Any]:
+    return (
+        OracleQuery(rows)
+        .where(lambda r: int(r["source_index"]) <= 4)
+        .order_by(lambda r: r["source_index"])
+        .select(lambda r: {"annotated": None if r["title"] is None else f"{r['id']} # {r['title']}"})
+        .to_list()
+    )
+
+
 def _char_projection(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -1180,6 +1190,7 @@ LANGUAGE_FEATURES = frozenset(
         "scalar.arithmetic.parentheses",
         "scalar.function_nested",
         "scalar.char",
+        "scalar.concat",
         "scalar.nullif",
         "scalar.greatest",
         "scalar.least",
@@ -2306,6 +2317,14 @@ CASES = (
         ("id", "numeric", "unicode"),
         "jsonl",
         features=("scalar.least",),
+    ),
+    ConformanceCase(
+        "concat_text_projection",
+        "SELECT CONCAT(id, ' # ', title) AS annotated FROM @yt_sql_fixture WHERE source_index <= 4 ORDER BY source_index",
+        _concat_projection,
+        ("annotated",),
+        "lines",
+        features=("scalar.concat",),
     ),
     ConformanceCase(
         "char_unicode_projection",

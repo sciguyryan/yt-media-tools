@@ -229,6 +229,10 @@ def evaluate_scalar_expression(
             return len(collection) if isinstance(collection, (list, tuple)) else None
         if expression.name == "COALESCE":
             return next((value for value in values if value is not None), None)
+        if expression.name == "CONCAT":
+            if any(value is None for value in values):
+                return None
+            return "".join(values) if all(isinstance(value, str) for value in values) else None
         if expression.name == "CHAR":
             if any(value is None for value in values):
                 return None
@@ -498,6 +502,10 @@ def _apply_scalar_function_values(name: str, values: list[Any]) -> Any:
         return len(values[0]) if isinstance(values[0], str) else None
     if name == "COALESCE":
         return next((value for value in values if value is not None), None)
+    if name == "CONCAT":
+        if any(value is None for value in values):
+            return None
+        return "".join(values) if all(isinstance(value, str) for value in values) else None
     if name == "CHAR":
         if any(value is None for value in values):
             return None

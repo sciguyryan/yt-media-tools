@@ -172,7 +172,7 @@ Mappings, sets, strings and arbitrary iterables are not treated as indexable raw
 
 ### Implemented
 
-A deterministic scalar function is folded when all of its arguments have already become literals. This currently applies to `LOWER`, `UPPER`, `LENGTH`, `COALESCE`, `CHAR`, `NULLIF`, `GREATEST`, and `LEAST`.
+A deterministic scalar function is folded when all of its arguments have already become literals. This currently applies to `LOWER`, `UPPER`, `LENGTH`, `COALESCE`, `CONCAT`, `CHAR`, `NULLIF`, `GREATEST`, and `LEAST`.
 
 Nested functions and arithmetic are folded from the leaves upwards. For example, a literal arithmetic argument may fold before the containing function is considered.
 

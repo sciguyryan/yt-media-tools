@@ -730,6 +730,12 @@ def _resolve_scalar_expression(
                     expression.position,
                 )
             result_kind = "integer"
+        elif expression.name == "CONCAT":
+            for arg in args:
+                kind = _scalar_kind(arg)
+                if kind not in {"string", "mixed", "unknown", None}:
+                    raise QuerySyntaxError(source, "CONCAT requires text values.", expression.position)
+            result_kind = "string"
         elif expression.name == "CHAR":
             for arg in args:
                 kind = _scalar_kind(arg)
