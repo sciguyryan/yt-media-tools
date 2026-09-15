@@ -40,6 +40,7 @@ from .query_model import (
     Unary,
     QuerySyntaxError,
 )
+from .query_traversal import walk_ast
 
 
 def semantic_key(node: Any) -> Any:
@@ -224,47 +225,8 @@ def _having_contains_aggregate(node: Any) -> bool:
 
 
 def _contains_random(expression: Any) -> bool:
-    if expression is None:
-        return False
-    if isinstance(expression, CollectionElementReference):
-        return False
-    if isinstance(expression, CollectionPredicate):
-        return _contains_random(expression.collection) or _contains_random(expression.predicate)
-    if isinstance(expression, (CollectionCount, CollectionFilter)):
-        return _contains_random(expression.collection) or _contains_random(expression.predicate)
-    if isinstance(expression, CollectionProjection):
-        return _contains_random(expression.collection) or _contains_random(expression.projection)
-    if isinstance(expression, ScalarIndex):
-        return _contains_random(expression.collection) or _contains_random(expression.index)
-    if isinstance(expression, ScalarMember):
-        return _contains_random(expression.value)
-    if isinstance(expression, ScalarFunction):
-        return expression.name == "RANDOM" or any(_contains_random(arg) for arg in expression.args)
-    if isinstance(expression, AggregateFunction):
-        return any(_contains_random(arg) for arg in expression.args) or _contains_random(expression.filter_predicate)
-    if isinstance(expression, (ScalarUnary, Unary)):
-        return _contains_random(expression.operand)
-    if isinstance(expression, (ScalarBinary, Binary, ScalarComparison)):
-        return _contains_random(expression.left) or _contains_random(expression.right)
-    if isinstance(expression, ScalarIsNull):
-        return _contains_random(expression.expression)
-    if isinstance(expression, ScalarCase):
-        return any(
-            _contains_random(branch.condition) or _contains_random(branch.result) for branch in expression.whens
-        ) or _contains_random(expression.else_result)
-    if isinstance(expression, Between):
-        return (
-            _contains_random(expression.field)
-            or _contains_random(expression.lower)
-            or _contains_random(expression.upper)
-        )
-    if isinstance(expression, InList):
-        return _contains_random(expression.field) or any(_contains_random(value) for value in expression.values)
-    if isinstance(expression, IsNull):
-        return _contains_random(expression.field)
-    if isinstance(expression, TextPredicate):
-        return _contains_random(expression.field) or _contains_random(expression.value)
-    return False
+    """Return whether an expression contains a volatile or seeded RANDOM call."""
+    return any(isinstance(node, ScalarFunction) and node.name == "RANDOM" for node in walk_ast(expression))
 
 
 def _direct_from_sources(query: Query) -> tuple[str, ...]:

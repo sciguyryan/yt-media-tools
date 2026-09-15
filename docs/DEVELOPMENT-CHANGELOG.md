@@ -4,6 +4,8 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Add shared yt-sql AST child discovery and depth-first traversal infrastructure, and use it for structural randomness discovery.
+- [test] Add focused traversal tests covering stable child order, query traversal, semantic boundaries and scoped/case expressions.
 - [test] Add the Phase 0 deterministic performance benchmark foundation using pytest-benchmark for statistical timing and separate tracemalloc allocation measurements.
 - [test] Add parser, resolution, analysis, optimiser, scalar and collection evaluation, offline execution and scaling benchmark workloads based on deterministic generated data.
 - [cli] Add a single `benchmark.py` entry point with named benchmark and group selection, `--list`, `--smoke` and `--all` execution.
