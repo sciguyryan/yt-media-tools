@@ -159,6 +159,17 @@ Remove exact completed IDs from a file-backed queue after successful processing,
 ./yt-download.py --remove-completed-ids ids/batch.txt
 ```
 
+For human-readable queues, `--remove-completed-rows` treats the first whitespace-delimited field of each non-comment row as the download target and preserves the remaining text as annotation until that target completes. The complete physical row is then removed atomically. This allows queues such as `VIDEO_ID # Video title` without changing the exact-line semantics of `--remove-completed-ids`:
+
+```text
+dQw4w9WgXcQ # Example title
+abcdefghijk # Another title
+```
+
+```bash
+./yt-download.py --remove-completed-rows ids/annotated.txt
+```
+
 The mode requires file-backed input. Failed, skipped, interrupted or partially processed entries remain in the file. Generated queue rewrites are atomic and preserve unrelated lines. After execution, Downloader prints a concise queue summary derived from the durable queue and archive state.
 
 Write the same outcome information as deterministic JSON with:

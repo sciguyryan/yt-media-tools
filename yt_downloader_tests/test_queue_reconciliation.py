@@ -105,10 +105,15 @@ def test_write_queue_report_is_deterministic_json(downloader, tmp_path: Path) ->
     )
 
 
-def test_queue_outputs_require_remove_completed_ids(downloader) -> None:
-    args = argparse.Namespace(remove_completed_ids=False, queue_report=Path("report.json"), failed_targets=None)
+def test_queue_outputs_require_completed_queue_removal_mode(downloader) -> None:
+    args = argparse.Namespace(
+        remove_completed_ids=False,
+        remove_completed_rows=False,
+        queue_report=Path("report.json"),
+        failed_targets=None,
+    )
     source = downloader.InputSource(batch_file=Path("ids.txt"))
-    with pytest.raises(ValueError, match="require --remove-completed-ids"):
+    with pytest.raises(ValueError, match="require a completed-queue removal mode"):
         downloader.validate_remove_completed_ids(args, source)
 
 
@@ -340,3 +345,34 @@ def test_run_reports_process_start_failure_without_raising(downloader, monkeypat
 
     monkeypatch.setattr(downloader.subprocess, "run", fail_to_start)
     assert downloader.run(["yt-dlp", "abc"], dry_run=False) == 1
+
+
+def test_remove_completed_row_removes_whole_annotated_row(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "annotated.txt"
+    queue.write_bytes(b"# note\nabc # First title\r\ndef # Second title\n\n")
+    assert downloader.remove_completed_row(queue, "abc") is True
+    assert queue.read_bytes() == b"# note\ndef # Second title\n\n"
+
+
+def test_queue_row_targets_uses_first_field_and_preserves_order(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "annotated.txt"
+    queue.write_text("# note\nabc # First title\n\ndef\tSecond title\nabc duplicate annotation\n", encoding="utf-8")
+    assert downloader.queue_row_targets(queue) == ("abc", "def")
+
+
+def test_remove_archived_rows_reconciles_annotated_queue(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "annotated.txt"
+    archive = tmp_path / "archive.txt"
+    queue.write_text("abc # First\ndef # Second\nghi # Third\n", encoding="utf-8")
+    archive.write_text("youtube abc\nyoutube ghi\n", encoding="utf-8")
+    assert downloader.remove_archived_rows(queue, archive) == 2
+    assert queue.read_text(encoding="utf-8") == "def # Second\n"
+
+
+def test_remove_completed_rows_requires_file_input(downloader) -> None:
+    args = argparse.Namespace(
+        remove_completed_ids=False, remove_completed_rows=True, queue_report=None, failed_targets=None
+    )
+    source = downloader.InputSource(direct_targets=("abc",))
+    with pytest.raises(ValueError, match="--remove-completed-rows requires file input"):
+        downloader.validate_remove_completed_ids(args, source)

@@ -63,3 +63,15 @@ def test_build_command_adds_browser_cookies(downloader) -> None:
     cookie_index = command.index("--cookies-from-browser")
     assert command[cookie_index + 1] == "firefox"
     assert "--cookies" not in command
+
+
+def test_build_command_uses_annotated_row_targets_and_row_callback(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "annotated.txt"
+    queue.write_text("abc # First title\ndef # Second title\n", encoding="utf-8")
+    source = downloader.InputSource(batch_file=queue)
+    policy = downloader.DownloadPolicy(resolution="1440", format_selector="bv+ba/best", reverse_playlist=False)
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None, remove_completed_rows=True)
+    exec_index = command.index("--exec")
+    assert "--_remove-completed-row" in command[exec_index + 1]
+    assert "--batch-file" not in command
+    assert command[-2:] == ["abc", "def"]

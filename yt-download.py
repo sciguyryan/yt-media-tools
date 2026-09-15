@@ -569,6 +569,7 @@ class DownloadPlan:
     defaults_file: Path
     parameter_profile: ParameterProfile | None
     parameter_sources: dict[str, str]
+    remove_completed_rows: bool = False
 
     def command(self, *, output_event_file: Path | None = None) -> list[str]:
         """Return the exact yt-dlp command represented by this plan."""
@@ -580,6 +581,7 @@ class DownloadPlan:
             cookies_file=self.cookies_file,
             cookies_from_browser=self.cookies_from_browser,
             remove_completed_ids=self.remove_completed_ids,
+            remove_completed_rows=self.remove_completed_rows,
             output_event_file=output_event_file,
         )
 
@@ -1217,7 +1219,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the resolved yt-dlp command without running it.",
     )
-    parser.add_argument(
+    removal_group = parser.add_mutually_exclusive_group()
+    removal_group.add_argument(
         "--remove-completed-ids",
         action="store_true",
         help=(
@@ -1226,11 +1229,22 @@ def build_parser() -> argparse.ArgumentParser:
             "already recorded in the configured download archive."
         ),
     )
+    removal_group.add_argument(
+        "--remove-completed-rows",
+        action="store_true",
+        help=(
+            "When input comes from a file, treat the first whitespace-delimited field "
+            "of each data row as the download target and remove the complete physical "
+            "row when that target completes or is already recorded in the archive."
+        ),
+    )
     parser.add_argument(
         "--queue-report",
         type=Path,
         metavar="FILE",
-        help=("Write a JSON queue outcome report to FILE. Requires --remove-completed-ids and file-backed input."),
+        help=(
+            "Write a JSON queue outcome report to FILE. Requires a completed-queue removal mode and file-backed input."
+        ),
     )
     parser.add_argument(
         "--failed-targets",
@@ -1238,7 +1252,7 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help=(
             "After a queue run, atomically write targets whose successful completion "
-            "was not established to FILE. Requires --remove-completed-ids."
+            "was not established to FILE. Requires a completed-queue removal mode."
         ),
     )
     parser.add_argument(
@@ -1254,6 +1268,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--_remove-completed-id",
+        nargs=2,
+        metavar=("FILE", "VIDEO_ID"),
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--_remove-completed-row",
         nargs=2,
         metavar=("FILE", "VIDEO_ID"),
         help=argparse.SUPPRESS,
@@ -2755,6 +2775,65 @@ def remove_completed_id(path: Path, video_id: str) -> bool:
     return True
 
 
+def row_target(line: str) -> str | None:
+    """Return the first target field from one annotated queue row."""
+    stripped = line.strip()
+    if not stripped or stripped.startswith(("#", ";", "]")):
+        return None
+    return stripped.split(None, 1)[0]
+
+
+def remove_completed_row(path: Path, video_id: str) -> bool:
+    """Atomically remove rows whose first field is the completed video ID."""
+    resolved = path.expanduser().resolve()
+    try:
+        original = resolved.read_bytes()
+        metadata = resolved.stat()
+    except OSError as exc:
+        raise RuntimeError(f"unable to read completed-row input file {resolved}: {exc}") from exc
+
+    lines = original.splitlines(keepends=True)
+    retained: list[bytes] = []
+    removed = False
+    for line in lines:
+        try:
+            text = line.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise RuntimeError(f"unable to decode completed-row input file {resolved}: {exc}") from exc
+        if row_target(text) == video_id:
+            removed = True
+        else:
+            retained.append(line)
+    if not removed:
+        return False
+
+    replacement = b"".join(retained)
+    temporary = resolved.with_name(f".{resolved.name}.tmp-{os.getpid()}")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(replacement)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, metadata.st_mode)
+        os.replace(temporary, resolved)
+        try:
+            directory_fd = os.open(resolved.parent, os.O_RDONLY)
+        except OSError:
+            directory_fd = None
+        if directory_fd is not None:
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+    except OSError as exc:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise RuntimeError(f"unable to update completed-row input file {resolved}: {exc}") from exc
+    return True
+
+
 def archived_video_ids(path: Path) -> set[str]:
     """Return video IDs recorded in yt-dlp's configured download archive.
 
@@ -2791,6 +2870,27 @@ def remove_archived_ids(input_file: Path, archive_file: Path) -> int:
         if remove_completed_id(input_file, video_id):
             removed += 1
     return removed
+
+
+def remove_archived_rows(input_file: Path, archive_file: Path) -> int:
+    """Remove annotated queue rows whose target IDs are already archived."""
+    removed = 0
+    for video_id in archived_video_ids(archive_file):
+        if remove_completed_row(input_file, video_id):
+            removed += 1
+    return removed
+
+
+def completion_row_exec_command(input_file: Path) -> str:
+    """Return the yt-dlp callback used for durable annotated-row removal."""
+    command = [
+        shlex.quote(sys.executable),
+        shlex.quote(str(Path(__file__).resolve())),
+        "--_remove-completed-row",
+        shlex.quote(str(input_file.expanduser().resolve())),
+        "%(id)q",
+    ]
+    return " ".join(command)
 
 
 def completion_exec_command(input_file: Path) -> str:
@@ -2838,14 +2938,16 @@ def validate_remove_completed_ids(args: argparse.Namespace, input_source: InputS
     queue_outputs_requested = (
         getattr(args, "queue_report", None) is not None or getattr(args, "failed_targets", None) is not None
     )
-    if queue_outputs_requested and not args.remove_completed_ids:
-        raise ValueError("--queue-report and --failed-targets require --remove-completed-ids")
-    if not args.remove_completed_ids:
+    row_mode = bool(getattr(args, "remove_completed_rows", False))
+    removal_requested = bool(args.remove_completed_ids or row_mode)
+    if queue_outputs_requested and not removal_requested:
+        raise ValueError("--queue-report and --failed-targets require a completed-queue removal mode")
+    if not removal_requested:
         return
     if input_source.batch_file is None:
+        option = "--remove-completed-rows" if row_mode else "--remove-completed-ids"
         raise ValueError(
-            "--remove-completed-ids requires file input; use --input-file FILE, "
-            "a positional batch file, or the default ./ids.txt"
+            f"{option} requires file input; use --input-file FILE, a positional batch file, or the default ./ids.txt"
         )
 
 
@@ -2861,6 +2963,24 @@ def queue_targets(path: Path) -> tuple[str, ...]:
     for line in lines:
         target = line.strip()
         if not target or target.startswith("#") or target in seen:
+            continue
+        targets.append(target)
+        seen.add(target)
+    return tuple(targets)
+
+
+def queue_row_targets(path: Path) -> tuple[str, ...]:
+    """Return first-field targets from annotated queue rows in stable order."""
+    try:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RuntimeError(f"unable to read queue file {path}: {exc}") from exc
+
+    targets: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        target = row_target(line)
+        if target is None or target in seen:
             continue
         targets.append(target)
         seen.add(target)
@@ -3117,15 +3237,17 @@ def create_download_plan(
     defaults_file: Path,
     parameter_profile: ParameterProfile | None,
     remove_completed_ids: bool,
+    remove_completed_rows: bool = False,
 ) -> DownloadPlan:
     """Resolve one complete download plan without mutating queues or launching yt-dlp."""
     policy, cookies_file, cookies_from_browser = resolve_parameter_policy(resolved_parameters.settings)
-    if remove_completed_ids and policy.playlist_items:
+    removal_requested = remove_completed_ids or remove_completed_rows
+    if removal_requested and policy.playlist_items:
         raise ValueError(
             "playlist item selection cannot be combined with --remove-completed-ids; "
             "queue removal tracks completed target IDs, not completion of a playlist container target"
         )
-    if remove_completed_ids and policy.partial_media:
+    if removal_requested and policy.partial_media:
         raise ValueError(
             "partial-media selection cannot be combined with --remove-completed-ids; "
             "a derivative section does not establish completion of the source target"
@@ -3142,6 +3264,7 @@ def create_download_plan(
         defaults_file=defaults_file,
         parameter_profile=parameter_profile,
         parameter_sources=dict(resolved_parameters.sources),
+        remove_completed_rows=remove_completed_rows,
     )
 
 
@@ -3293,7 +3416,10 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
         },
         "queue": {
             "remove_completed_ids": plan.remove_completed_ids,
-            "archive_reconciliation": bool(plan.remove_completed_ids and plan.input_source.batch_file is not None),
+            "remove_completed_rows": plan.remove_completed_rows,
+            "archive_reconciliation": bool(
+                (plan.remove_completed_ids or plan.remove_completed_rows) and plan.input_source.batch_file is not None
+            ),
         },
         "yt_dlp": {
             "executable": plan.executable,
@@ -3386,7 +3512,7 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"Extractor retries: {policy['extractor_retries'] or 'yt-dlp default'}",
         f"Archive:           {plan.policy.archive_file}",
         f"Temporary path:    {plan.policy.temp_path}",
-        f"Queue removal:     {queue['remove_completed_ids']}",
+        f"Queue removal:     {'rows' if queue['remove_completed_rows'] else ('ids' if queue['remove_completed_ids'] else 'disabled')}",
         "",
         "Resolved yt-dlp command:",
         f"  {format_command(payload['yt_dlp']['command'])}",
@@ -3407,6 +3533,7 @@ def build_yt_dlp_command(
     cookies_file: Path | None = None,
     cookies_from_browser: str | None = None,
     remove_completed_ids: bool = False,
+    remove_completed_rows: bool = False,
     output_event_file: Path | None = None,
 ) -> list[str]:
     """Build the complete yt-dlp command without invoking a shell."""
@@ -3538,14 +3665,16 @@ def build_yt_dlp_command(
 
     if remove_completed_ids:
         assert input_source.batch_file is not None
-        command.extend(
-            (
-                "--exec",
-                f"after_move:{completion_exec_command(input_source.batch_file)}",
-            )
-        )
+        command.extend(("--exec", f"after_move:{completion_exec_command(input_source.batch_file)}"))
+    elif remove_completed_rows:
+        assert input_source.batch_file is not None
+        command.extend(("--exec", f"after_move:{completion_row_exec_command(input_source.batch_file)}"))
 
-    input_source.append_to(command)
+    if remove_completed_rows:
+        assert input_source.batch_file is not None
+        InputSource(direct_targets=queue_row_targets(input_source.batch_file)).append_to(command)
+    else:
+        input_source.append_to(command)
     return command
 
 
@@ -3586,6 +3715,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
         if removed:
             print(f"Removed completed ID {video_id} from {input_file}", file=sys.stderr)
+        return 0
+
+    if args._remove_completed_row is not None:
+        input_file, video_id = args._remove_completed_row
+        try:
+            removed = remove_completed_row(Path(input_file), video_id)
+        except RuntimeError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+        if removed:
+            print(f"Removed completed row for {video_id} from {input_file}", file=sys.stderr)
         return 0
 
     if args._record_output is not None:
@@ -3715,6 +3855,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             defaults_file=resolved_defaults,
             parameter_profile=selected_parameters,
             remove_completed_ids=args.remove_completed_ids,
+            remove_completed_rows=args.remove_completed_rows,
         )
     except (ValueError, RuntimeError) as exc:
         parser.error(str(exc))
@@ -3740,12 +3881,15 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     queue_requested: tuple[str, ...] = ()
     archive_before: set[str] = set()
-    if args.remove_completed_ids and not args.dry_run:
+    if (args.remove_completed_ids or args.remove_completed_rows) and not args.dry_run:
         assert input_source.batch_file is not None
         try:
-            queue_requested = queue_targets(input_source.batch_file)
+            queue_reader = queue_row_targets if args.remove_completed_rows else queue_targets
+            queue_requested = queue_reader(input_source.batch_file)
             archive_before = archived_video_ids(plan.policy.archive_file)
-            removed = remove_archived_ids(input_source.batch_file, plan.policy.archive_file)
+            removed = (remove_archived_rows if args.remove_completed_rows else remove_archived_ids)(
+                input_source.batch_file, plan.policy.archive_file
+            )
         except RuntimeError as exc:
             parser.error(str(exc))
         if removed:
@@ -3763,10 +3907,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
 
     queue_report_payload: dict[str, object] | None = None
-    if args.remove_completed_ids and not args.dry_run:
+    if (args.remove_completed_ids or args.remove_completed_rows) and not args.dry_run:
         assert input_source.batch_file is not None
         try:
-            remaining = queue_targets(input_source.batch_file)
+            queue_reader = queue_row_targets if args.remove_completed_rows else queue_targets
+            remaining = queue_reader(input_source.batch_file)
             report = queue_run_report(
                 queue_file=input_source.batch_file,
                 archive_file=plan.policy.archive_file,
