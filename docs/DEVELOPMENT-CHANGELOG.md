@@ -6,4 +6,5 @@ This file records meaningful changes during active development. It is not releas
 
 - [test] Add the Phase 0 deterministic performance benchmark foundation using pytest-benchmark for statistical timing and separate tracemalloc allocation measurements.
 - [test] Add parser, resolution, analysis, optimiser, scalar and collection evaluation, offline execution and scaling benchmark workloads based on deterministic generated data.
+- [cli] Add a single `benchmark.py` entry point with named benchmark and group selection, `--list`, `--smoke` and `--all` execution.
 - [docs] Add the performance testing and regression policy covering benchmark methodology, required execution, immutable baselines, CI boundaries and acceptance guidance.

@@ -33,7 +33,8 @@ docs/PERFORMANCE.md               Performance testing and regression policy
 docs/TODO.md                      Accepted future work and design directions
 docs/roadmap/                     Living Discover version-series roadmaps
 pytest.ini                        Combined test discovery configuration
-benchmarks/                        Opt-in deterministic performance benchmarks
+benchmark.py                      Performance benchmark entry point
+benchmarks/                       Deterministic performance benchmark implementation
 ```
 
 The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained. Common low-level yt-dlp runtime mechanics are shared by both applications without merging their higher-level acquisition and download policies.

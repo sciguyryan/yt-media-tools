@@ -144,6 +144,12 @@ Benchmark results must record enough environmental information to make later com
 
 Results from materially different environments should not be treated as directly interchangeable without considering the environmental difference.
 
+## Benchmark entry point
+
+The benchmark suite is exposed through the repository-level `benchmark.py` entry point. Benchmark implementation modules are internal organisation rather than part of the developer interface. The entry point accepts stable individual benchmark names and broader benchmark groups, lists the registered suite, and provides a single `--all` option for explicitly running every registered timing, scaling, memory and stress workload. Running it without names executes the normal practical suite and excludes the heavier opt-in workloads.
+
+CI and developer documentation should use this entry point rather than depending on the internal pytest module layout. Statistical timing continues to be provided by `pytest-benchmark`; the entry point is a command dispatcher and must not duplicate the timing, calibration or statistical machinery supplied by the benchmarking library.
+
 ## Machine-readable results
 
 The benchmark runner should support a stable machine-readable result format in addition to human-readable console output.

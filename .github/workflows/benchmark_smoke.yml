@@ -25,4 +25,4 @@ jobs:
         run: python -m pip install --upgrade pytest -r requirements-benchmark.txt
 
       - name: Run benchmark smoke checks
-        run: python -m pytest benchmarks/test_query_pipeline_benchmarks.py --benchmark-only --benchmark-min-rounds=1 --benchmark-max-time=0.05
+        run: python benchmark.py --smoke

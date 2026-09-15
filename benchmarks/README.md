@@ -8,30 +8,42 @@ Install the benchmark dependency alongside the normal test tooling:
 python -m pip install pytest pytest-benchmark
 ```
 
-Run the routine statistical benchmark set with:
+`benchmark.py` is the public entry point for the suite. With no benchmark names it runs the normal timing suite and excludes the heavier scaling and memory workloads:
 
 ```bash
-python -m pytest benchmarks/test_query_pipeline_benchmarks.py --benchmark-only
+python benchmark.py
 ```
 
-Save a named baseline and full JSON result with:
+List the available groups and stable benchmark names with:
 
 ```bash
-python -m pytest benchmarks/test_query_pipeline_benchmarks.py --benchmark-only --benchmark-save=discover-baseline --benchmark-json=benchmark-results.json
+python benchmark.py --list
+python benchmark.py --list --verbose
 ```
 
-Compare a later run with a saved result using `--benchmark-compare` or the `pytest-benchmark compare` command. Timing comparisons are advisory and must be interpreted according to `docs/PERFORMANCE.md`; shared CI timing is not an acceptance gate.
-
-Scaling benchmarks are opt-in:
+Run a complete group, several groups or an individual benchmark by name:
 
 ```bash
-python -m pytest benchmarks/test_scaling_benchmarks.py -m scale --benchmark-only
+python benchmark.py parser
+python benchmark.py parser analysis optimiser
+python benchmark.py parser.simple
+python benchmark.py cache.lookup.1000
 ```
 
-Python allocation benchmarks are also opt-in and intentionally do not use the timing fixture:
+Run the entire registered suite, including scaling, memory and stress benchmarks, with:
 
 ```bash
-python -m pytest benchmarks/test_memory_benchmarks.py -m memory
+python benchmark.py --all
 ```
+
+Save a named pytest-benchmark timing baseline and optional JSON result with:
+
+```bash
+python benchmark.py --save-baseline discover-baseline --benchmark-json benchmark-results.json
+```
+
+The baseline options apply to statistical timing benchmarks. Memory benchmarks remain separately instrumented because allocation tracing would distort canonical timing results. Timing comparisons are advisory and must be interpreted according to `docs/PERFORMANCE.md`; shared CI timing is not an acceptance gate.
+
+CI uses the same public entry point with `python benchmark.py --smoke`. This verifies the normal benchmark machinery with minimal timing rounds without treating shared-runner timings as performance evidence.
 
 Benchmark JSON and local `.benchmarks/` storage are generated artefacts and must not be committed as canonical source. Release or programme baselines should be retained explicitly as benchmark artefacts when required rather than being silently replaced by later runs.
