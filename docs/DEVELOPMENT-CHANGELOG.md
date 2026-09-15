@@ -4,6 +4,9 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [cli] Add compact Rich benchmark result and baseline-comparison tables with stable benchmark names, Unicode presentation, ASCII and no-colour fallbacks, and terminal-width-aware rendering.
+- [cli] Add `benchmark.py --compare` baseline lookup and actionable benchmark-dependency diagnostics while retaining pytest-benchmark as the measurement engine.
+- [docs] Document the benchmark presentation, comparison and fallback conventions.
 - [maintenance] Add shared yt-sql AST child discovery and depth-first traversal infrastructure, and use it for structural randomness discovery.
 - [test] Add focused traversal tests covering stable child order, query traversal, semantic boundaries and scoped/case expressions.
 - [test] Add the Phase 0 deterministic performance benchmark foundation using pytest-benchmark for statistical timing and separate tracemalloc allocation measurements.

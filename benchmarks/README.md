@@ -5,7 +5,7 @@ The benchmark suite measures deterministic local yt-sql and yt-discover executio
 Install the benchmark dependency alongside the normal test tooling:
 
 ```bash
-python -m pip install pytest pytest-benchmark
+python -m pip install -r requirements-benchmark.txt
 ```
 
 `benchmark.py` is the public entry point for the suite. With no benchmark names it runs the normal timing suite and excludes the heavier scaling and memory workloads:
@@ -43,6 +43,14 @@ python benchmark.py --save-baseline discover-baseline --benchmark-json benchmark
 ```
 
 The baseline options apply to statistical timing benchmarks. Memory benchmarks remain separately instrumented because allocation tracing would distort canonical timing results. Timing comparisons are advisory and must be interpreted according to `docs/PERFORMANCE.md`; shared CI timing is not an acceptance gate.
+
+Compare the current timing results with a saved baseline through the same entry point:
+
+```bash
+python benchmark.py --compare discover-baseline
+```
+
+The default console output is a compact terminal-width-aware Rich table using Unicode box drawing and restrained colour. Use `--ascii` for ASCII borders, `--no-colour` to disable colour, and `--verbose` for additional timing statistics. The complete pytest-benchmark data remains available through saved baselines and `--benchmark-json`.
 
 CI uses the same public entry point with `python benchmark.py --smoke`. This verifies the normal benchmark machinery with minimal timing rounds without treating shared-runner timings as performance evidence.
 

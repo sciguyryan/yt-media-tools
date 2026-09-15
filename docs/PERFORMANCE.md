@@ -150,6 +150,10 @@ The benchmark suite is exposed through the repository-level `benchmark.py` entry
 
 CI and developer documentation should use this entry point rather than depending on the internal pytest module layout. Statistical timing continues to be provided by `pytest-benchmark`; the entry point is a command dispatcher and must not duplicate the timing, calibration or statistical machinery supplied by the benchmarking library.
 
+Human-readable timing results should be presented by the benchmark entry point as compact terminal-width-aware tables rather than exposing the wide internal pytest-benchmark table as the normal developer interface. Unicode box drawing and restrained colour may improve scanability where supported, but textual assessments and numeric values must carry the complete meaning. An ASCII border mode and a no-colour mode must remain available. Comparison output should prioritise the stable benchmark identifier, baseline median, current median, percentage change and regression-policy assessment; additional statistics remain available in verbose or machine-readable output.
+
+Saved baseline comparison should be available directly through `benchmark.py --compare`, so developers and CI tooling do not need to depend on pytest-benchmark storage paths or internal test node names. The presentation layer may classify median changes using the regression guidance below, but those classifications remain advisory and do not replace repeat measurements, absolute-cost judgement or scaling analysis.
+
 ## Machine-readable results
 
 The benchmark runner should support a stable machine-readable result format in addition to human-readable console output.
