@@ -131,7 +131,7 @@ def _runtime_member_value(value: Any, member: str) -> Any:
 
 def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> Any:
     """Evaluate a scalar expression using an already-normalised runtime context."""
-    record = context.record
+    record = context._record
     if isinstance(expression, CollectionElementReference):
         return context.collection_element(expression.scope_distance)
     if isinstance(expression, Field):
@@ -386,7 +386,7 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
 
 def _evaluate_boolean_expression(node: Any, context: EvaluationContext) -> bool | None:
     """Evaluate a Boolean expression using an already-normalised runtime context."""
-    record = context.record
+    record = context._record
     if node is None:
         return True
     if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):

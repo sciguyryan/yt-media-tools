@@ -10,6 +10,7 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Keep evaluator hot-path record access internal while retaining the read-only public evaluation-context interface.
 - [maintenance] Replace frozen-dataclass evaluation contexts with a compact slots-based read-only representation to reduce hot-path construction and collection-binding overhead without changing evaluator semantics.
 - [test] Verify evaluation-context public state remains read-only alongside existing lexical binding and evaluator coverage.
 - [maintenance] Keep compatibility coercion at the public expression-evaluator boundary so recursive scalar and Boolean evaluation stays on the normalised explicit-context fast path.
