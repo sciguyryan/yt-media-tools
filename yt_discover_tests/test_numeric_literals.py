@@ -6,7 +6,8 @@ from datetime import datetime
 
 import pytest
 
-from yt_discover_tests.conformance.generate_dataset import GENERATED_AT, PROFILE_SIZES, build_records
+from yt_discover_tests.conformance.generate_dataset import GENERATED_AT
+from yt_discover_tests.conformance.test_records import cached_records
 from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.optimizer import optimise_query
@@ -16,7 +17,7 @@ from yt_media_tools.schema import QuerySchema
 
 def _records() -> list[dict[str, object]]:
     records = []
-    for source_index, raw in enumerate(build_records(PROFILE_SIZES["small"]), start=1):
+    for source_index, raw in enumerate(cached_records("small"), start=1):
         record = normalise_record(dict(raw))
         record["source_index"] = source_index
         records.append(record)

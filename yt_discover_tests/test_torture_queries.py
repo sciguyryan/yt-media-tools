@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from yt_discover_tests.conformance.generate_dataset import PROFILE_SIZES, build_records
+from yt_discover_tests.conformance.test_records import cached_records
 from yt_discover_tests.test_cross_facet_composition import SOURCE, SHORTS, VIDEOS, _records as cross_facet_records
 from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
@@ -21,7 +21,7 @@ CONTEXT = DateContext(date_order="dmy", now=datetime(2026, 9, 8, 12, 0, tzinfo=t
 
 def _fixture_records() -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    for index, raw in enumerate(build_records(PROFILE_SIZES["small"]), start=1):
+    for index, raw in enumerate(cached_records("small"), start=1):
         record = normalise_record(raw)
         record["source_index"] = index
         record["_yt_sql_source"] = "@yt_sql_fixture"

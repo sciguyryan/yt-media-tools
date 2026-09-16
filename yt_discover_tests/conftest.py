@@ -13,10 +13,10 @@ from yt_discover_tests.conformance.generate_dataset import (
     DATASET_SEED,
     GENERATOR_VERSION,
     PROFILE_SIZES,
-    build_records,
     dataset_digest,
     write_cache,
 )
+from yt_discover_tests.conformance.test_records import cached_records
 
 
 @dataclass(frozen=True)
@@ -49,9 +49,14 @@ def _build_dataset(
 ) -> ConformanceDataset:
     _announce(config, f"[yt-sql] Generating {name} conformance dataset ({size:,} records, seed {seed})...")
     started = time.perf_counter()
-    records = build_records(size, seed=seed)
+    if name in PROFILE_SIZES and PROFILE_SIZES[name] == size:
+        records = [dict(record) for record in cached_records(name, seed=seed)]
+    else:
+        from yt_discover_tests.conformance.generate_dataset import build_records
+
+        records = build_records(size, seed=seed)
     cache_path = root / f"{name}.sqlite3"
-    write_cache(cache_path, size=size, seed=seed)
+    write_cache(cache_path, size=size, seed=seed, records=records)
     elapsed = time.perf_counter() - started
     digest = dataset_digest(records)
     _announce(

@@ -3,27 +3,15 @@
 from __future__ import annotations
 
 import os
-import subprocess
-import sys
 from pathlib import Path
+
+from yt_discover_tests.cli_harness import run_cli
 
 from yt_media_tools.cache import MetadataCache
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "yt-discover.py"
 SOURCE = "https://www.youtube.com/@example/videos"
-
-
-def run_cli(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
 
 
 def test_frontier_round_trip_preserves_source_order(tmp_path: Path) -> None:

@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from yt_discover_tests.conformance.generate_dataset import PROFILE_SIZES, build_records
+from yt_discover_tests.conformance.test_records import cached_records
 from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.query import QuerySyntaxError, parse_query, resolve_query
@@ -16,7 +16,7 @@ from yt_media_tools.schema import QuerySchema
 
 def _dataset_schema() -> QuerySchema:
     records = []
-    for index, raw in enumerate(build_records(PROFILE_SIZES["small"]), start=1):
+    for index, raw in enumerate(cached_records("small"), start=1):
         record = normalise_record(raw)
         record["source_index"] = index
         records.append(record)

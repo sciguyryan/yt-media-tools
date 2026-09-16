@@ -365,10 +365,20 @@ def write_json(path: Path, *, size: int, seed: int = DATASET_SEED, profile: str 
     )
 
 
-def write_cache(path: Path, *, size: int, seed: int = DATASET_SEED) -> None:
+def write_cache(
+    path: Path,
+    *,
+    size: int,
+    seed: int = DATASET_SEED,
+    records: list[dict[str, object]] | None = None,
+) -> None:
+    """Write a cache, reusing an already generated population when supplied."""
     if path.exists():
         path.unlink()
-    records = build_records(size, seed=seed)
+    if records is None:
+        records = build_records(size, seed=seed)
+    elif len(records) != size:
+        raise ValueError("supplied record population does not match requested cache size")
     fetched_at = datetime.fromisoformat(GENERATED_AT)
     with MetadataCache(path) as cache:
         cache.put_many(SOURCE_URL, records, fetched_at=fetched_at)

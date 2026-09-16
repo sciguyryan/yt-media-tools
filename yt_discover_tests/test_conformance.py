@@ -135,12 +135,17 @@ def test_optimizer_preserves_all_routine_semantic_cases(profile: str) -> None:
         if case.params or case.execution == "cli":
             continue
         production_records, parsed, original, optimised = _engine_case_queries(records, case)
-        assert apply_query(production_records, original) == apply_query(production_records, optimised), case.name
+        original_rows = apply_query(production_records, original)
+        optimised_rows = apply_query(production_records, optimised)
+        assert original_rows == optimised_rows, case.name
 
+        # Reuse the exact result populations already compared above. Re-running both
+        # queries merely to exercise output serialisation doubled the dominant
+        # normal-profile conformance workload without adding semantic coverage.
         original_stream = io.StringIO()
         with redirect_stdout(original_stream):
             write_records(
-                apply_query(production_records, original),
+                original_rows,
                 original,
                 case.output_format,
                 None,
@@ -149,7 +154,7 @@ def test_optimizer_preserves_all_routine_semantic_cases(profile: str) -> None:
         optimised_stream = io.StringIO()
         with redirect_stdout(optimised_stream):
             write_records(
-                apply_query(production_records, optimised),
+                optimised_rows,
                 optimised,
                 case.output_format,
                 None,
@@ -512,3 +517,22 @@ def test_ephemeral_cache_exercises_field_aware_freshness(conformance_small: Any)
         reference_now = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
         assert cache.is_fresh(item, {"upload_date", "release_timestamp", "duration"}, now=reference_now)
         assert not cache.is_fresh(item, {"view_count"}, now=reference_now)
+
+
+def test_write_cache_can_reuse_an_existing_generated_population(tmp_path: Path) -> None:
+    """Test infrastructure may avoid regenerating records when constructing its SQLite cache."""
+    rows = build_records(PROFILE_SIZES["small"])
+    cache_path = tmp_path / "reused-records.sqlite3"
+    from yt_discover_tests.conformance.generate_dataset import write_cache
+
+    write_cache(cache_path, size=len(rows), records=rows)
+    assert cache_path.exists()
+
+
+def test_write_cache_rejects_mismatched_reused_population(tmp_path: Path) -> None:
+    """A reused population must retain the requested deterministic cardinality."""
+    rows = build_records(PROFILE_SIZES["small"])
+    from yt_discover_tests.conformance.generate_dataset import write_cache
+
+    with pytest.raises(ValueError, match="does not match requested cache size"):
+        write_cache(tmp_path / "invalid.sqlite3", size=len(rows) + 1, records=rows)

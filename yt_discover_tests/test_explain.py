@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from yt_discover_tests.cli_harness import run_cli
+
 from yt_media_tools.cache import MetadataCache
 from yt_media_tools.discover_constants import PROGRAM_VERSION
 
@@ -16,17 +18,6 @@ from yt_media_tools.discover_constants import PROGRAM_VERSION
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "yt-discover.py"
 SOURCE = "https://www.youtube.com/@example/videos"
-
-
-def run_cli(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
 
 
 def offline_env() -> dict[str, str]:

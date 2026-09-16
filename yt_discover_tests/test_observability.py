@@ -1,24 +1,12 @@
 from __future__ import annotations
 
 import os
-import subprocess
-import sys
 from pathlib import Path
+
+from yt_discover_tests.cli_harness import run_cli
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "yt-discover.py"
-
-
-def run_cli(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
 
 
 def fake_ytdlp_env(tmp_path: Path, *, with_error: bool = False, count: int = 2) -> dict[str, str]:
