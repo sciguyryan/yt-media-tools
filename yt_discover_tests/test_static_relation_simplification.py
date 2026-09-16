@@ -3,8 +3,6 @@
 from dataclasses import replace
 import json
 import os
-import subprocess
-import sys
 from pathlib import Path
 
 from yt_media_tools.dates import DateContext
@@ -17,24 +15,11 @@ from yt_media_tools.source_capabilities import (
     selected_facet_capabilities,
 )
 from yt_media_tools.sources import resolve_source_request
+from yt_discover_tests.cli_harness import run_cli
 
 
 def _source(name: str = "@example"):
     return resolve_source_request(name, facet="videos")
-
-
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "yt-discover.py"
-
-
-def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
 
 
 def _unsupported_duration_facet():
@@ -162,7 +147,7 @@ def test_false_having_skips_single_source_acquisition() -> None:
 
 
 def test_json_explain_reports_static_having_elimination_consistently() -> None:
-    result = _run_cli(
+    result = run_cli(
         "--explain-format",
         "json",
         "--explain",
@@ -182,7 +167,7 @@ def test_json_explain_reports_static_having_elimination_consistently() -> None:
 
 
 def test_human_explain_reports_relation_simplification_reason() -> None:
-    result = _run_cli(
+    result = run_cli(
         "--explain",
         "SELECT id FROM @example WHERE view_count >= 10 AND view_count < 10",
     )
@@ -214,18 +199,10 @@ exit 99
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
     env["YT_DISCOVER_ACQUISITION_MARKER"] = str(marker)
 
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "-v",
-            ("SELECT id FROM @example WHERE view_count >= 10 AND view_count < 10"),
-        ],
-        cwd=ROOT,
+    result = run_cli(
+        "-v",
+        ("SELECT id FROM @example WHERE view_count >= 10 AND view_count < 10"),
         env=env,
-        text=True,
-        capture_output=True,
-        check=False,
     )
 
     assert result.returncode == 0, result.stderr
