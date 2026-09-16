@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from yt_media_tools.dates import DateContext
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.query import (
@@ -220,3 +222,60 @@ def test_map_projection_is_optimiser_traversable() -> None:
     expression = optimised.select[0].expression
     assert isinstance(expression, CollectionProjection)
     assert evaluate_scalar_expression(expression, {"tags": ["a", "b"]}) == ["a", "b"]
+
+
+def test_map_filter_pipeline_preserves_filter_then_projection_semantics() -> None:
+    expression = _projection_expression(
+        "SELECT MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT UPPER(tag)) AS mapped"
+    )
+    assert expression.evaluation_fusion_safe is True
+    assert evaluate_scalar_expression(expression, {"tags": ["a", None, "b"]}) == ["A", "B"]
+
+
+def test_map_filter_pipeline_preserves_outer_row_references() -> None:
+    expression = _projection_expression(
+        "SELECT MAP(FILTER(tags AS tag WHERE tag = title) AS tag SELECT UPPER(tag)) AS mapped"
+    )
+    assert evaluate_scalar_expression(expression, {"title": "x", "tags": ["x", "y", "x"]}) == ["X", "X"]
+
+
+def test_map_filter_pipeline_preserves_nested_lexical_scope() -> None:
+    expression = _projection_expression(
+        "SELECT MAP(FILTER(groups AS group WHERE "
+        "ANY(group.items AS item WHERE item.value = group.target)) "
+        "AS group SELECT group.target) AS mapped"
+    )
+    groups = [
+        {"target": 2, "items": [{"value": 1}, {"value": 2}]},
+        {"target": 8, "items": [{"value": 3}]},
+        {"target": 4, "items": None},
+    ]
+    assert evaluate_scalar_expression(expression, {"groups": groups}) == [2]
+
+
+def test_map_filter_pipeline_with_random_remains_on_unfused_semantic_path() -> None:
+    sources = (
+        "SELECT MAP(FILTER(tags AS tag WHERE RANDOM(1) >= 0) AS tag SELECT UPPER(tag)) AS mapped",
+        "SELECT MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT CONCAT(tag, CHAR(65 + RANDOM(1) * 0))) AS mapped",
+    )
+    for source in sources:
+        expression = _projection_expression(source)
+        assert expression.evaluation_fusion_safe is False
+
+
+def test_map_filter_fusion_matches_materialised_evaluation() -> None:
+    expression = _projection_expression(
+        "SELECT MAP(FILTER(tags AS tag WHERE tag != title) AS tag SELECT UPPER(tag)) AS mapped"
+    )
+    assert expression.evaluation_fusion_safe is True
+    materialised = replace(expression, evaluation_fusion_safe=False)
+    records = (
+        {"title": "skip", "tags": ["a", None, "skip", "b"]},
+        {"title": "x", "tags": []},
+        {"title": "x", "tags": None},
+        {"title": None, "tags": ["a", None]},
+    )
+    for record in records:
+        assert evaluate_scalar_expression(expression, record.copy()) == evaluate_scalar_expression(
+            materialised, record.copy()
+        )

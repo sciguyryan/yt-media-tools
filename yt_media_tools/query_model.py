@@ -189,7 +189,12 @@ class CollectionFilter:
 
 @dataclass(frozen=True)
 class CollectionProjection:
-    """Collection produced by projecting each element through a scoped expression."""
+    """Collection produced by projecting each element through a scoped expression.
+
+    ``evaluation_fusion_safe`` is resolver-owned execution metadata. It permits the
+    evaluator to stream an immediately nested FILTER into MAP only after resolution
+    has proved that doing so does not cross a RANDOM evaluation-order boundary.
+    """
 
     collection: Any
     binding: str
@@ -197,6 +202,7 @@ class CollectionProjection:
     position: int = 0
     kind: str | None = None
     resolved_type: Any | None = None
+    evaluation_fusion_safe: bool = False
 
 
 @dataclass(frozen=True)

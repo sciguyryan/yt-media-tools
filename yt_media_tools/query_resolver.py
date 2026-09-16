@@ -675,6 +675,11 @@ def _resolve_scalar_expression(
             nullable=collection_type.nullable,
             ordering=collection_type.ordering,
         )
+        evaluation_fusion_safe = (
+            isinstance(collection, CollectionFilter)
+            and not _contains_random(collection.predicate)
+            and not _contains_random(projection)
+        )
         return CollectionProjection(
             collection,
             expression.binding,
@@ -682,6 +687,7 @@ def _resolve_scalar_expression(
             expression.position,
             "collection",
             result_type,
+            evaluation_fusion_safe,
         )
     if isinstance(expression, AggregateFunction):
         args = tuple(

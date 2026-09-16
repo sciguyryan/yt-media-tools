@@ -10,6 +10,9 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [maintenance] Fuse deterministic MAP-over-FILTER collection evaluation locally to avoid materialising the intermediate filtered collection and duplicate child-context construction while preserving filter-first element semantics.
+- [maintenance] Keep collection pipelines containing RANDOM on the established unfused path so optimisation does not reorder volatile or seeded-random expression evaluation.
+- [test] Add focused fusion coverage for NULL filtering, outer-row references, nested lexical collection scopes and the conservative RANDOM boundary.
 - [test] Add independent relation-oriented conformance primitives for relation identity, qualification, ambiguity, field ownership and logical row identity.
 - [test] Add deterministic heterogeneous-relation coverage that keeps equal row values distinct across relation identities and checks the production row-identity contract against an independently expressed oracle.
 - [docs] Document the relation-oriented independent-oracle boundary for future relational conformance without introducing future relational syntax.

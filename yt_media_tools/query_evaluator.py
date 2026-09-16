@@ -192,6 +192,20 @@ def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> 
             if _evaluate_boolean_expression(expression.predicate, context.bind_collection_element(element)) is True
         ]
     if isinstance(expression, CollectionProjection):
+        if expression.evaluation_fusion_safe:
+            source_filter = expression.collection
+            assert isinstance(source_filter, CollectionFilter)
+            collection = _evaluate_scalar_expression(source_filter.collection, context)
+            if collection is None:
+                return None
+            if not isinstance(collection, (list, tuple)):
+                return None
+            projected: list[Any] = []
+            for element in collection:
+                element_context = context.bind_collection_element(element)
+                if _evaluate_boolean_expression(source_filter.predicate, element_context) is True:
+                    projected.append(_evaluate_scalar_expression(expression.projection, element_context))
+            return projected
         collection = _evaluate_scalar_expression(expression.collection, context)
         if collection is None:
             return None
