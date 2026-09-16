@@ -30,7 +30,7 @@ if '--flat-playlist' in sys.argv:
         with open(os.environ['YT_DISCOVER_ENUM_LOG'], 'a', encoding='utf-8') as fh:
             fh.write(vid + '\\n')
         print(json.dumps({{'id': vid, 'title': vid}}), flush=True)
-        time.sleep(0.01)
+        time.sleep(0.001)
 else:
     for arg in sys.argv:
         if 'watch?v=' in arg:
