@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import subprocess
-import sys
 
+from yt_discover_tests.cli_harness import run_cli
 from yt_media_tools.discover_constants import PROGRAM_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "yt-discover.py"
 
 
 def test_offline_provenance_sidecar_records_query_and_execution(tmp_path: Path) -> None:
@@ -30,25 +28,17 @@ def test_offline_provenance_sidecar_records_query_and_execution(tmp_path: Path) 
     provenance = tmp_path / "provenance.json"
     env = dict(**__import__("os").environ)
     env["PATH"] = ""
-    proc = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "--offline",
-            "--cache",
-            str(cache_path),
-            "--tab",
-            "videos",
-            "--provenance",
-            str(provenance),
-            "--param",
-            "needle=Alpha",
-            "SELECT id FROM @example WHERE title = :needle",
-        ],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
+    proc = run_cli(
+        "--offline",
+        "--cache",
+        str(cache_path),
+        "--tab",
+        "videos",
+        "--provenance",
+        str(provenance),
+        "--param",
+        "needle=Alpha",
+        "SELECT id FROM @example WHERE title = :needle",
         env=env,
     )
     assert proc.returncode == 0, proc.stderr
@@ -75,18 +65,10 @@ def test_composed_provenance_records_per_source_acquisition_counts(tmp_path: Pat
     provenance = tmp_path / "composed-provenance.json"
     env = os.environ.copy()
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
-    proc = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "--provenance",
-            str(provenance),
-            "SELECT id FROM @example UNION ALL SELECT id FROM 'https://www.twitch.tv/example/videos'",
-        ],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
+    proc = run_cli(
+        "--provenance",
+        str(provenance),
+        "SELECT id FROM @example UNION ALL SELECT id FROM 'https://www.twitch.tv/example/videos'",
         env=env,
     )
     assert proc.returncode == 0, proc.stderr
@@ -113,18 +95,10 @@ def test_of_provenance_records_logical_facet_and_adapter(tmp_path: Path) -> None
     provenance = tmp_path / "facet-provenance.json"
     env = os.environ.copy()
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
-    proc = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "--provenance",
-            str(provenance),
-            "SELECT id FROM @example OF shorts",
-        ],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
+    proc = run_cli(
+        "--provenance",
+        str(provenance),
+        "SELECT id FROM @example OF shorts",
         env=env,
     )
     assert proc.returncode == 0, proc.stderr
@@ -155,21 +129,10 @@ def test_same_source_cross_facet_provenance_keeps_requests_independent(tmp_path:
     provenance = tmp_path / "cross-facet-provenance.json"
     env = os.environ.copy()
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
-    proc = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "--provenance",
-            str(provenance),
-            (
-                "SELECT id, title FROM @example OF videos UNION ALL "
-                "SELECT id, title FROM @example OF shorts ORDER BY title"
-            ),
-        ],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
+    proc = run_cli(
+        "--provenance",
+        str(provenance),
+        ("SELECT id, title FROM @example OF videos UNION ALL SELECT id, title FROM @example OF shorts ORDER BY title"),
         env=env,
     )
     assert proc.returncode == 0, proc.stderr
