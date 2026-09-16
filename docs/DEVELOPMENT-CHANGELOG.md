@@ -16,3 +16,4 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Keep tests that intentionally verify generator freshness, determinism, seed behaviour or mutation isolation on the uncached generator path.
 - [test] Add an in-process Discover CLI harness for tests whose contract does not depend on operating-system process isolation.
 - [test] Migrate high-frequency CLI behaviour tests to the shared harness while retaining explicit subprocess coverage for process-boundary contracts.
+- [test] Add an opt-in pinned pytest-xdist dependency and documented worker-count measurements for evaluating parallel routine test execution without changing the authoritative serial path.

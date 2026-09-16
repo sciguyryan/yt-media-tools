@@ -14,6 +14,19 @@ Run only the routine yt-sql conformance suite with:
 python -m pytest yt_discover_tests/test_conformance.py
 ```
 
+### Optional parallel test execution
+
+Parallel routine testing is currently an opt-in performance experiment. Install the pinned parallel-test dependency with `python -m pip install -r requirements-test-parallel.txt`, then compare the unchanged serial suite with explicit worker counts:
+
+```bash
+python -m pytest --durations=25
+python -m pytest -n 2 --dist loadfile --durations=25
+python -m pytest -n 4 --dist loadfile --durations=25
+python -m pytest -n auto --dist loadfile --durations=25
+```
+
+`loadfile` is the initial candidate distribution policy because it keeps each test module on one worker. In particular, this avoids distributing parametrised conformance cases across workers that would each need to construct their own session-scoped deterministic conformance datasets. The serial invocation remains the authoritative routine path while worker counts and distribution policy are measured. Do not infer a suitable CI worker count from the host CPU count alone; shared runners should use an explicitly measured configuration.
+
 Large and huge datasets are deliberately opt-in. Run selected large-dataset checks with `python -m pytest -m scale`, huge torture checks with `python -m pytest -m stress`, or both with `python -m pytest -m "scale or stress"`. Dataset generation is automatic and visible. `yt_discover_tests/conformance/README.md` documents the tiering, reproducibility contract, oracle independence, semantic anchors, and manual generation.
 
 ## yt-sql oracle and conformance architecture
