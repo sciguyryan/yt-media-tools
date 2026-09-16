@@ -33,6 +33,7 @@ docs/PERFORMANCE.md               Performance testing and regression policy
 docs/TODO.md                      Accepted future work and design directions
 docs/roadmap/                     Living Discover version-series roadmaps
 pytest.ini                        Combined test discovery configuration
+run-tests.py                      Routine test-suite entry point
 benchmark.py                      Performance benchmark entry point
 benchmarks/                       Deterministic performance benchmark implementation
 ```
@@ -47,11 +48,25 @@ See `docs/DISCOVER-README.md` and `docs/DOWNLOADER-README.md` for tool-specific 
 
 ## Testing
 
-Run the routine suites from the repository root:
+Run the routine suites from the repository root using the project test entry point:
 
 ```bash
-python -m pytest
+./run-tests.py
 ```
+
+The routine entry point uses three pytest-xdist workers with dynamic load scheduling. Install the test dependency before running it:
+
+```bash
+python -m pip install -r requirements-test.txt
+```
+
+For serial execution when debugging or measuring the serial baseline, use:
+
+```bash
+./run-tests.py --serial
+```
+
+Additional pytest arguments are passed through unchanged, for example `./run-tests.py --durations=25`.
 
 Routine testing excludes the `scale` and `stress` tiers. Run selected large-dataset tests with:
 

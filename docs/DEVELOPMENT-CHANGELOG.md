@@ -16,4 +16,6 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Keep tests that intentionally verify generator freshness, determinism, seed behaviour or mutation isolation on the uncached generator path.
 - [test] Add an in-process Discover CLI harness for tests whose contract does not depend on operating-system process isolation.
 - [test] Migrate high-frequency CLI behaviour tests to the shared harness while retaining explicit subprocess coverage for process-boundary contracts.
-- [test] Add an opt-in pinned pytest-xdist dependency and documented worker-count measurements for evaluating parallel routine test execution without changing the authoritative serial path.
+- [test] Add a pinned pytest-xdist dependency and a project-owned `run-tests.py` entry point using the measured three-worker dynamic-load policy for routine test execution.
+- [test] Preserve explicit serial execution through `./run-tests.py --serial` and pass additional pytest arguments through unchanged.
+- [maintenance] Use the project-owned routine test entry point in GitHub Actions so local and CI execution share one parallel test policy.
