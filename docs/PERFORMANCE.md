@@ -172,6 +172,8 @@ A previous-phase or previous-change baseline may additionally be retained during
 
 A new result must not silently replace the release baseline merely because development has progressed. When a new release becomes the basis for subsequent work, its benchmark results may become the release baseline for that later programme while older baselines remain historical evidence.
 
+An anomalous historical measurement must remain immutable with the baseline that recorded it. When a result cannot be reproduced by matched repeated measurements, document that individual datum as anomalous or non-comparable rather than rewriting the baseline or presenting the apparent change as an optimisation or regression.
+
 ## Regression guidance
 
 Performance acceptance is evidence-based. The following ranges provide default guidance for sufficiently stable timing benchmarks rather than absolute pass or fail thresholds.

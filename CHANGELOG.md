@@ -1,5 +1,19 @@
 # Changelog
 
+## Discover 0.29.3 - Groundwork Complete
+
+- Add deterministic performance benchmarking with immutable and per-phase baselines, compact terminal comparison output, machine-readable results and documented regression guidance.
+- Add shared yt-sql AST traversal and consolidated query analysis so planning and semantic-property derivation can reuse established structural work.
+- Batch detailed metadata cache reads into bounded source-scoped SQLite queries, substantially reducing repeated lookup work for realistic candidate sets.
+- Add explicit semantic relation scope, relation identity, field ownership and logical row identity foundations without introducing relational query syntax.
+- Add an explicit read-only expression evaluation context for metadata records and lexical collection bindings while preserving established evaluator entry points and semantics.
+- Strengthen syntax and semantic diagnostics with deterministic source positions, line and column information and expression-level anchoring.
+- Add independent relation-oriented conformance infrastructure for qualification, ambiguity, field ownership and logical row identity without depending on production resolution as the oracle.
+- Fuse deterministic MAP-over-FILTER collection evaluation where volatility analysis proves the transformation safe, while retaining the established path for RANDOM-sensitive pipelines.
+- Add typed variadic `CONCAT()` with textual arguments, NULL propagation, deterministic evaluation and constant folding.
+- Preserve SQL NULL and three-valued logic, lexical collection semantics, source and facet identity, volatility boundaries and conservative optimisation guarantees throughout the preparatory architecture work.
+- Reconcile cumulative performance evidence, retaining the collection-pipeline and batched-cache improvements while recording remaining explicit evaluation-context overhead for focused future investigation.
+
 ## Discover 0.29.2 - Collection Querying Beyond Indexing
 
 - Add lexical collection-element bindings with deterministic nested scope and outer-reference semantics.
