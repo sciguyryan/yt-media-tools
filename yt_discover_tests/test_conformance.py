@@ -90,32 +90,21 @@ def _engine_case_output(records: list[dict[str, object]], case: ConformanceCase)
     return stream.getvalue()
 
 
-def _prepare_production_records(
-    records: list[dict[str, object]],
-) -> tuple[list[dict[str, Any]], QuerySchema]:
-    """Normalise one immutable conformance population once for repeated query checks."""
-    production_records: list[dict[str, Any]] = []
-    for source_index, raw in enumerate(records, start=1):
-        record = normalise_record(dict(raw))
-        record["source_index"] = source_index
-        production_records.append(record)
-    return production_records, QuerySchema(production_records)
-
-
-def _engine_case_queries(
-    production_records: list[dict[str, Any]],
-    schema: QuerySchema,
-    case: ConformanceCase,
-):
-    """Resolve one semantic case against an already prepared conformance population."""
+def _engine_case_queries(records: list[dict[str, object]], case: ConformanceCase):
+    """Resolve one semantic case and return both original and optimised production queries."""
     date_format = "dmy"
     for index, arg in enumerate(case.cli_args):
         if arg == "--date-format" and index + 1 < len(case.cli_args):
             date_format = case.cli_args[index + 1]
     context = DateContext(date_order=date_format, now=datetime.fromisoformat(GENERATED_AT))
+    production_records = []
+    for source_index, raw in enumerate(records, start=1):
+        record = normalise_record(dict(raw))
+        record["source_index"] = source_index
+        production_records.append(record)
     parsed = parse_query(case.query)
-    resolved = resolve_query(parsed, schema, context)
-    return parsed, resolved, optimise_query(resolved).query
+    resolved = resolve_query(parsed, QuerySchema(production_records), context)
+    return production_records, parsed, resolved, optimise_query(resolved).query
 
 
 def _assert_case(dataset: Any, case: ConformanceCase) -> None:
@@ -142,11 +131,10 @@ def _assert_case(dataset: Any, case: ConformanceCase) -> None:
 def test_optimizer_preserves_all_routine_semantic_cases(profile: str) -> None:
     """Every current semantic query must behave identically before and after optimisation."""
     records = build_records(PROFILE_SIZES[profile])
-    production_records, schema = _prepare_production_records(records)
     for case in CASES:
         if case.params or case.execution == "cli":
             continue
-        parsed, original, optimised = _engine_case_queries(production_records, schema, case)
+        production_records, parsed, original, optimised = _engine_case_queries(records, case)
         original_rows = apply_query(production_records, original)
         optimised_rows = apply_query(production_records, optimised)
         assert original_rows == optimised_rows, case.name
@@ -189,11 +177,10 @@ def test_all_direct_conformance_queries_have_stable_canonical_formatting() -> No
 def test_optimizer_is_idempotent_for_all_routine_semantic_cases() -> None:
     """A second optimiser pass must not change any routine resolved semantic query."""
     records = build_records(PROFILE_SIZES["small"])
-    production_records, schema = _prepare_production_records(records)
     for case in CASES:
         if case.params or case.execution == "cli":
             continue
-        _, original, _ = _engine_case_queries(production_records, schema, case)
+        _, _, original, _ = _engine_case_queries(records, case)
         first = optimise_query(original)
         second = optimise_query(first.query)
         assert second.query == first.query, case.name
