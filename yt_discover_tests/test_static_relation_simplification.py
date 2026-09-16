@@ -15,7 +15,7 @@ from yt_media_tools.source_capabilities import (
     selected_facet_capabilities,
 )
 from yt_media_tools.sources import resolve_source_request
-from yt_discover_tests.cli_harness import run_cli
+from yt_discover_tests.cli_harness import isolated_tool_path, run_cli
 
 
 def _source(name: str = "@example"):
@@ -196,7 +196,7 @@ exit 99
     )
     fake.chmod(0o755)
     env = os.environ.copy()
-    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
+    env["PATH"] = isolated_tool_path(fake_bin)
     env["YT_DISCOVER_ACQUISITION_MARKER"] = str(marker)
 
     result = run_cli(

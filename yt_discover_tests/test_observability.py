@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from yt_discover_tests.cli_harness import run_cli
+from yt_discover_tests.cli_harness import isolated_tool_path, run_cli
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +42,7 @@ def fake_ytdlp_env(tmp_path: Path, *, with_error: bool = False, count: int = 2) 
     fake_ytdlp.write_text("\n".join(lines) + "\n", encoding="utf-8")
     fake_ytdlp.chmod(0o755)
     env = os.environ.copy()
-    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
+    env["PATH"] = isolated_tool_path(fake_bin)
     return env
 
 
