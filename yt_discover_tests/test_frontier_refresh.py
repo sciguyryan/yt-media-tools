@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from yt_discover_tests.cli_harness import isolated_tool_path, run_cli
+from yt_discover_tests.cli_harness import run_cli
 
 from yt_media_tools.cache import MetadataCache
 
@@ -50,7 +50,7 @@ else:
     )
     fake.chmod(0o755)
     env = os.environ.copy()
-    env["PATH"] = isolated_tool_path(fake_bin)
+    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
     return env
 
 
@@ -107,7 +107,7 @@ else:
     )
     fake.chmod(0o755)
     env = os.environ.copy()
-    env["PATH"] = isolated_tool_path(fake_bin)
+    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
     return env
 
 

@@ -10,7 +10,6 @@ from __future__ import annotations
 import io
 import os
 import subprocess
-import sys
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
@@ -18,16 +17,6 @@ from unittest.mock import patch
 from yt_media_tools.discover_application import main
 
 ROOT = Path(__file__).resolve().parents[1]
-
-
-def isolated_tool_path(fake_bin: Path) -> str:
-    """Return a PATH containing test tools and the running Python interpreter only.
-
-    Acquisition fixtures should not accidentally probe unrelated host tools such as
-    Node.js. Tests that exercise tool discovery should construct PATH explicitly.
-    """
-
-    return os.pathsep.join((str(fake_bin), str(Path(sys.executable).resolve().parent)))
 
 
 def run_cli(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
