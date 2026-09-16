@@ -393,7 +393,7 @@ def test_oracle_module_does_not_import_production_query_engine() -> None:
         "yt_media_tools.metadata",
         "yt_media_tools.schema",
     }
-    for path in (CONF / "oracle.py", CONF / "cases.py"):
+    for path in (CONF / "oracle.py", CONF / "relation_oracle.py", CONF / "cases.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         imported: set[str] = set()
         for node in ast.walk(tree):

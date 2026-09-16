@@ -10,6 +10,9 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover 0.29.x - Unreleased
 
+- [test] Add independent relation-oriented conformance primitives for relation identity, qualification, ambiguity, field ownership and logical row identity.
+- [test] Add deterministic heterogeneous-relation coverage that keeps equal row values distinct across relation identities and checks the production row-identity contract against an independently expressed oracle.
+- [docs] Document the relation-oriented independent-oracle boundary for future relational conformance without introducing future relational syntax.
 - [maintenance] Add structured syntax and semantic diagnostic context with deterministic source locations while preserving the established query-error compatibility boundary.
 - [maintenance] Anchor semantic comparison, RANDOM-placement and HAVING diagnostics to the offending expression instead of the start of the query where source information is available.
 - [test] Add focused coverage for diagnostic categories, multiline source locations and semantic expression anchoring.
