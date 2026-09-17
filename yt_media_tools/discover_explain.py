@@ -28,6 +28,9 @@ from yt_media_tools.query import (
     Query,
     QuerySchema,
     QuerySyntaxError,
+    Field,
+    RelationField,
+    ScalarComparison,
     SelectTerm,
     explain_expression,
     format_expression,
@@ -113,6 +116,97 @@ def _optimiser_explain_payload(
     }
 
 
+def _join_predicate_dependencies(value: object) -> list[str]:
+    """Return deterministic relation-qualified field dependencies for JOIN explain."""
+    dependencies: set[str] = set()
+
+    def visit(item: object) -> None:
+        if isinstance(item, RelationField):
+            dependencies.add(f"{item.qualifier}.{item.name}")
+            return
+        if isinstance(item, Field):
+            dependencies.add(item.name)
+            return
+        if isinstance(item, (tuple, list)):
+            for child in item:
+                visit(child)
+            return
+        fields = getattr(item, "__dataclass_fields__", None)
+        if fields:
+            for name in fields:
+                child = getattr(item, name)
+                if hasattr(child, "__dataclass_fields__") or isinstance(child, (tuple, list, Field, RelationField)):
+                    visit(child)
+
+    visit(value)
+    return sorted(dependencies, key=str.casefold)
+
+
+def _join_execution_strategy(query: Query, join_index: int) -> tuple[str, str]:
+    """Explain the execution strategy selected by the current relational executor."""
+    if len(query.joins) != 1:
+        return (
+            "unsupported-multi-way",
+            "multi-way JOIN execution is rejected by the current semantic execution boundary",
+        )
+    join = query.joins[join_index]
+    predicate = join.predicate
+    if isinstance(predicate, ScalarComparison) and predicate.operator == "=":
+        left = predicate.left
+        right = predicate.right
+        if isinstance(left, (Field, RelationField)) and isinstance(right, (Field, RelationField)):
+            left_name = left.name if isinstance(left, Field) else f"{left.qualifier}.{left.name}"
+            right_name = right.name if isinstance(right, Field) else f"{right.qualifier}.{right.name}"
+            aliases = {query.from_alias or "", join.relation.alias or ""}
+            qualifiers = {name.split(".", 1)[0] for name in (left_name, right_name) if "." in name}
+            if aliases and qualifiers == aliases:
+                return (
+                    "stable-right-hash-with-reference-fallback",
+                    "simple cross-relation equality can use the proof-limited hash path; NULL or unhashable values retain reference semantics",
+                )
+    return (
+        "nested-loop-reference",
+        "predicate shape has no proven specialised relational execution strategy",
+    )
+
+
+def _join_explain_payload(query: Query, source_boundaries: tuple[object, ...]) -> list[dict[str, object]]:
+    """Project JOIN semantics and physical requirements into stable explain data."""
+    requirements: dict[tuple[str | None, str | None], list[str]] = {}
+    for boundary in source_boundaries:
+        key = (getattr(boundary, "source_name", None), getattr(boundary, "facet", None))
+        requirements[key] = sorted(getattr(boundary, "required_fields", ()))
+
+    result: list[dict[str, object]] = []
+    for index, join in enumerate(query.joins):
+        strategy, reason = _join_execution_strategy(query, index)
+        result.append(
+            {
+                "index": index,
+                "kind": join.kind.value,
+                "left_relation": {
+                    "source": query.from_source,
+                    "facet": query.from_facet,
+                    "alias": query.from_alias,
+                    "identity": f"{query.from_source}{' OF ' + query.from_facet if query.from_facet else ''} AS {query.from_alias or '?'}",
+                    "acquisition_requirements": requirements.get((query.from_source, query.from_facet), []),
+                },
+                "right_relation": {
+                    "source": join.relation.source,
+                    "facet": join.relation.facet,
+                    "alias": join.relation.alias,
+                    "identity": f"{join.relation.source}{' OF ' + join.relation.facet if join.relation.facet else ''} AS {join.relation.alias or '?'}",
+                    "acquisition_requirements": requirements.get((join.relation.source, join.relation.facet), []),
+                },
+                "predicate": format_expression(join.predicate),
+                "predicate_dependencies": _join_predicate_dependencies(join.predicate),
+                "execution_strategy": strategy,
+                "strategy_reason": reason,
+            }
+        )
+    return result
+
+
 def _presentation_input(
     *,
     query: Query,
@@ -185,6 +279,7 @@ def _presentation_input(
             ),
             "mode": "none" if offline else getattr(limit_plan, "mode"),
         },
+        "relational_joins": _join_explain_payload(query, source_boundaries),
         "cte_dependencies": [
             {
                 "name": dependency.name,
@@ -903,6 +998,7 @@ def explain_user_query_json(
             }
             for boundary in source_boundaries
         ],
+        "relational_joins": _join_explain_payload(query, source_boundaries),
         "cte_dependencies": [
             {
                 "name": dependency.name,

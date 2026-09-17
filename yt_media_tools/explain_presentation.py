@@ -159,6 +159,30 @@ def build_explain_graph(payload: dict[str, Any]) -> ExplainGraph:
         for offset, stage in enumerate(later_stages, start=len(early_stages)):
             append_stage(stage, offset)
 
+    joins = payload.get("relational_joins", [])
+    if isinstance(joins, list):
+        for index, join in enumerate(joins):
+            if not isinstance(join, dict):
+                continue
+            join_id = f"join_{index}"
+            strategy = str(join.get("execution_strategy") or "unknown")
+            detail = (
+                f"{join.get('left_relation', {}).get('identity', '?')} -> "
+                f"{join.get('right_relation', {}).get('identity', '?')}; "
+                f"predicate={join.get('predicate', '')}; strategy={strategy}"
+            )
+            status = STATUS_REJECTED if strategy == "unsupported-multi-way" else STATUS_APPLIED
+            nodes.append(
+                ExplainNode(
+                    join_id,
+                    f"{join.get('kind', 'JOIN')} JOIN",
+                    detail,
+                    status,
+                    "diamond",
+                )
+            )
+            edges.append(ExplainEdge("query", join_id, "relation"))
+
     limit = payload.get("limit_aware_termination")
     if isinstance(limit, dict) and limit.get("applicable"):
         eligible = bool(limit.get("eligible"))
@@ -331,6 +355,19 @@ def explain_decisions(payload: dict[str, Any]) -> list[dict[str, str]]:
                     "reason": str(heuristics.get("reason") or ""),
                 }
             )
+
+    for join in payload.get("relational_joins", []) or []:
+        if not isinstance(join, dict):
+            continue
+        strategy = str(join.get("execution_strategy") or "unknown")
+        decisions.append(
+            {
+                "category": "relational execution",
+                "status": STATUS_REJECTED if strategy == "unsupported-multi-way" else STATUS_APPLIED,
+                "decision": f"{join.get('kind', 'JOIN')} JOIN: {strategy}",
+                "reason": str(join.get("strategy_reason") or ""),
+            }
+        )
 
     limit = payload.get("limit_aware_termination")
     if isinstance(limit, dict) and limit.get("applicable"):

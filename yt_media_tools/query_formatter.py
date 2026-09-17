@@ -105,6 +105,8 @@ def format_scalar_expression(expression: Any) -> str:
 def format_expression(node: Any) -> str:
     if isinstance(node, Field):
         return node.name
+    if isinstance(node, RelationField):
+        return f"{node.qualifier}.{node.name}"
     if isinstance(node, Literal):
         if node.value is None:
             return "NULL"

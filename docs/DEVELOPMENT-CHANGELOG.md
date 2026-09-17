@@ -10,6 +10,15 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [maintenance] Expose relation identity, JOIN kind, predicate dependencies, relation-owned acquisition requirements and selected relational execution strategy through the existing explain model.
+- [fix] Format resolved relation-owned fields consistently in optimiser diagnostics and explain output.
+- [test] Expand adversarial JOIN conformance for duplicate keys, NULL keys, overlapping schemas, alias collisions, multi-way execution boundaries and console/JSON/Graphviz explainability.
+- [docs] Document JOIN explainability and deterministic diagnostic coverage for issue #65.
+
+- [maintenance] Add proof-limited hash execution for simple equality joins across SEMI, ANTI, INNER and LEFT while retaining the nested-loop reference executor.
+- [test] Differentially compare optimised and reference JOIN execution across equality, non-equality, NULL, empty, CTE and set-composed relations.
+- [docs] Document conservative relational execution optimisation and its explicit semantic boundaries for issue #64.
+
 - [feature] Integrate JOIN execution with CTE-produced relations and UNION/UNION ALL branches so each branch applies its relation operator before set reconciliation.
 - [maintenance] Attribute JOIN acquisition requirements from ON, projection, filtering and downstream expressions to the owning physical source/facet relation.
 - [maintenance] Use deterministic false JOIN predicates to suppress acquisition that cannot affect INNER, LEFT, SEMI or ANTI results without introducing cost-based join reordering.

@@ -388,6 +388,12 @@ This is exploratory rather than committed work. Any design must justify its comp
 
 Relational optimisation must remain differentially testable. Every new fast path should have a straightforward unoptimised counterpart over the same resolved query so correctness can be checked independently of the optimisation itself.
 
+### Explainability and diagnostics
+
+JOIN planning is exposed through the existing machine-readable explain model and derived console and Graphviz renderers. Explain data records the participating relation identities, join kind, formatted ON predicate, relation-qualified predicate dependencies, relation-owned acquisition requirements, and the selected execution strategy. The hash equality strategy is reported as a proof-limited fast path with reference fallback; predicates without that proof report the nested-loop reference strategy. Presentation remains derived from planner/explain data and does not become semantic state.
+
+Deterministic semantic diagnostics remain authoritative before execution optimisation. Ambiguous fields, duplicate aliases, invalid relation ownership and the current multi-way JOIN execution boundary are rejected rather than reinterpreted as optimisation opportunities.
+
 ## Common table expressions
 
 ### Implemented strategies
