@@ -89,6 +89,8 @@ The grammar is deliberately staged ahead of execution. Parser recognition does n
 
 Projection semantics are now defined for staged JOIN queries. Plain `*` expands only the primary/left relation and retains its established stand-alone rule. `alias.*` expands only the explicitly named relation and may be combined with other projections. Right-side fields are never flattened implicitly, and duplicate projected output names are rejected unless explicit `AS` aliases make them unique. These rules are resolved before the continuing fail-closed JOIN execution boundary.
 
+JOIN predicate semantics are also resolved before execution. Each `ON` expression sees the primary relation, previously joined relations and the right relation introduced by that join edge, but cannot refer forward to a later relation. `ON` remains an ordinary row-level yt-sql Boolean expression; aggregate functions and volatile `RANDOM` expressions are rejected because join matching must be deterministic for individual relation rows. Field ownership and ambiguity rules are the same as elsewhere in joined scope.
+
 ### Collection predicates, quantifiers and media-native operations
 
 **Status: Under review**

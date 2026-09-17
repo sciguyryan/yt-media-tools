@@ -11,7 +11,9 @@ from dataclasses import fields, is_dataclass, replace
 from typing import Any
 
 from .query_model import (
+    AggregateFunction,
     Field,
+    ScalarFunction,
     Query,
     QuerySemanticError,
     RelationField,
@@ -19,6 +21,7 @@ from .query_model import (
     SelectTerm,
 )
 from .query_scope import SemanticScope, relation_binding
+from .query_traversal import walk_ast
 from .schema import QuerySchema
 
 
@@ -114,6 +117,32 @@ def _scope_for_query(
     return SemanticScope(tuple(bindings))
 
 
+def _scope_through_join(scope: SemanticScope, join_index: int) -> SemanticScope:
+    """Return the relations visible to one JOIN edge, including its right side."""
+    return SemanticScope(scope.relations[: join_index + 2])
+
+
+def _validate_join_predicate(predicate: Any, source: str) -> None:
+    """Reject row-unsafe expressions from a JOIN ON predicate.
+
+    JOIN matching is defined over individual relation rows. Aggregate evaluation
+    and volatile randomness therefore cannot participate in ON semantics.
+    """
+    for node in walk_ast(predicate):
+        if isinstance(node, AggregateFunction):
+            raise QuerySemanticError(
+                source,
+                "Aggregate functions are not allowed in JOIN ON predicates.",
+                node.position,
+            )
+        if isinstance(node, ScalarFunction) and node.name == "RANDOM":
+            raise QuerySemanticError(
+                source,
+                "RANDOM is not allowed in JOIN ON predicates.",
+                node.position,
+            )
+
+
 def _projection_output_name(term: SelectTerm) -> str:
     """Return the externally visible name of one resolved projection term."""
     if term.alias is not None:
@@ -194,7 +223,13 @@ def resolve_join_references(
         return query
     scope = _scope_for_query(query, physical_schema, cte_schemas or {}, source_schemas or {})
 
-    joins = tuple(replace(join, predicate=_rewrite_value(join.predicate, scope, query.source)) for join in query.joins)
+    resolved_joins = []
+    for index, join in enumerate(query.joins):
+        join_scope = _scope_through_join(scope, index)
+        predicate = _rewrite_value(join.predicate, join_scope, query.source)
+        _validate_join_predicate(predicate, query.source)
+        resolved_joins.append(replace(join, predicate=predicate))
+    joins = tuple(resolved_joins)
     select = tuple(_rewrite_value(term, scope, query.source) for term in query.select)
     projection_query = replace(query, select=select)
     select = _expand_join_projection(projection_query, scope)

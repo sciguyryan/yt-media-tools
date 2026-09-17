@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Resolve each `JOIN ... ON` predicate against only the relations visible at that join edge, including the newly joined right relation.
+- [maintenance] Reject forward relation references, aggregate functions and volatile `RANDOM` expressions from JOIN predicates before the execution boundary.
+- [test] Add staged JOIN predicate coverage for relation ownership, prior-relation references, forward-reference rejection, ambiguity and row-safe expression restrictions.
+- [docs] Document incremental JOIN predicate scope and row-level deterministic `ON` semantics.
+
 - [feature] Define joined-relation projection semantics: plain `*` expands only the primary relation, while `alias.*` expands only the explicitly named relation.
 - [maintenance] Require joined projections to expose unique output names and reject overlapping wildcard or explicit projections unless `AS` disambiguates them.
 - [test] Add staged JOIN projection coverage for primary and qualified wildcard expansion, explicit right-side projection, duplicate names and the continuing execution guard.

@@ -137,7 +137,7 @@ yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM
 
 Plain `UNION` removes duplicate logical rows; `UNION ALL` preserves them. Global `ORDER BY`, `OFFSET` and `LIMIT` apply after the complete set expression. A query may reference several physical sources. Discover resolves and acquires those sources independently through yt-dlp, preserves their source identity internally, and only then evaluates each branch and reconciles its projected rows. This allows extractor families with different metadata availability to compose naturally: unavailable fields remain NULL where the logical field exists, while genuinely incompatible dynamic field types fail schema reconciliation.
 
-`UNION` remains deliberately positional. The parser now reserves selected JOIN syntax and AST structure, but JOIN execution is not implemented and semantic resolution rejects JOIN queries deterministically. Source/facet selection continues to use the extractor-agnostic `OF` model described below.
+`UNION` remains deliberately positional. The parser now reserves selected JOIN syntax and AST structure, but JOIN execution is not implemented and semantic resolution rejects JOIN queries deterministically. Staged JOIN resolution validates each `ON` predicate against only the relations visible at that join edge and rejects aggregate or volatile `RANDOM` expressions from row-level join matching. Source/facet selection continues to use the extractor-agnostic `OF` model described below.
 
 ## yt-sql optimiser
 

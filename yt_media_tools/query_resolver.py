@@ -1373,9 +1373,9 @@ def resolve_query(
 
     physical_source_schemas = source_schemas or {}
     if query.joins:
-        # Phase 2 resolves relation scope before retaining the fail-closed execution
-        # boundary. This makes alias and ambiguity diagnostics authoritative now,
-        # without allowing a JOIN to reach acquisition or evaluation.
+        # Staged JOIN resolution validates relation scope, projection and ON predicates
+        # before retaining the fail-closed execution boundary. This keeps semantic
+        # diagnostics authoritative without allowing JOIN to reach evaluation.
         resolve_join_references(query, schema, source_schemas=physical_source_schemas)
     reject_unimplemented_joins(query)
     context = dates or DateContext()
