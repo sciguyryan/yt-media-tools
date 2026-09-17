@@ -8,6 +8,7 @@ evaluator layers may share these types without depending on one another.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 
@@ -337,6 +338,35 @@ class SetOperation:
     position: int = 0
 
 
+class JoinKind(str, Enum):
+    """Parser-stable join kinds reserved by the yt-sql relational grammar."""
+
+    INNER = "INNER"
+    LEFT = "LEFT"
+    SEMI = "SEMI"
+    ANTI = "ANTI"
+
+
+@dataclass(frozen=True)
+class RelationReference:
+    """One source/facet relation participating in relational composition."""
+
+    source: str
+    facet: str | None = None
+    alias: str | None = None
+    position: int = 0
+
+
+@dataclass(frozen=True)
+class JoinClause:
+    """One parser-level JOIN edge whose executable semantics are resolved later."""
+
+    kind: JoinKind
+    relation: RelationReference
+    predicate: Any
+    position: int = 0
+
+
 @dataclass(frozen=True)
 class Query:
     predicate: Any | None = None
@@ -352,3 +382,5 @@ class Query:
     ctes: tuple[CommonTableExpression, ...] = ()
     set_operations: tuple[SetOperation, ...] = ()
     from_facet: str | None = None
+    from_alias: str | None = None
+    joins: tuple[JoinClause, ...] = ()

@@ -237,7 +237,7 @@ The torture corpus should deliberately combine format predicates, set compositio
 
 Only after the preceding programme is hardened should the language reopen for another broad survey. Revisit PostgreSQL, SQLite, DuckDB, BigQuery, ClickHouse, LINQ, jq-like transformation ideas, yt-dlp's current metadata surface and the real queries accumulated during use.
 
-Additional syntax should still have to justify itself against Discover's own model. Recursive CTEs, DDL, DML, transactions, stored procedures, database schemas and JOINs remain outside the intended language.
+Additional syntax should still have to justify itself against Discover's own model. Recursive CTEs, DDL, DML, transactions, stored procedures and database schemas remain outside the intended language. Selected JOIN forms are the deliberate exception: their grammar is staged separately and their execution must continue to justify itself through concrete media-relation use cases rather than SQL completeness.
 
 ## Tooling and external integration investigations
 
@@ -301,7 +301,7 @@ Do not adopt a third-party SQL parser as yt-sql's grammar authority. Other parse
 
 The following are not planned unless the project's purpose changes substantially:
 
-- JOINs of any kind;
+- Cartesian, `RIGHT`, `FULL`, `CROSS` or `NATURAL` joins without a separately accepted concrete media-query justification;
 - recursive CTEs;
 - DDL or DML;
 - transactions;

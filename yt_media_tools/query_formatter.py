@@ -16,6 +16,7 @@ from .query_model import (
     CollectionPredicate,
     Field,
     InList,
+    JoinClause,
     IsNull,
     Literal,
     Query,
@@ -139,6 +140,27 @@ def format_expression(node: Any) -> str:
     raise AssertionError(f"Unsupported query node {node!r}")
 
 
+def _format_relation_source(source: str, facet: str | None = None, alias: str | None = None) -> str:
+    """Render one relation reference without changing source identity."""
+    if re.fullmatch(r"@[A-Za-z0-9_.-]+|[A-Za-z_][A-Za-z0-9_.-]*", source):
+        text = source
+    else:
+        escaped = source.replace("'", "''")
+        text = f"'{escaped}'"
+    if facet is not None:
+        text += f" OF {facet}"
+    if alias is not None:
+        text += f" AS {alias}"
+    return text
+
+
+def _format_join(join: JoinClause) -> str:
+    """Render one parser-level JOIN clause canonically."""
+    keyword = "JOIN" if join.kind.value == "INNER" else f"{join.kind.value} JOIN"
+    relation = _format_relation_source(join.relation.source, join.relation.facet, join.relation.alias)
+    return f"{keyword} {relation} ON {format_expression(join.predicate)}"
+
+
 def format_query(query: Query) -> str:
     parts: list[str] = []
     if query.ctes:
@@ -153,14 +175,8 @@ def format_query(query: Query) -> str:
             )
         )
     if query.from_source is not None:
-        source = query.from_source
-        if re.fullmatch(r"@[A-Za-z0-9_.-]+|[A-Za-z_][A-Za-z0-9_.-]*", source):
-            parts.append(f"FROM {source}")
-        else:
-            escaped = source.replace("'", "''")
-            parts.append(f"FROM '{escaped}'")
-        if query.from_facet is not None:
-            parts.append(f"OF {query.from_facet}")
+        parts.append(f"FROM {_format_relation_source(query.from_source, query.from_facet, query.from_alias)}")
+        parts.extend(_format_join(join) for join in query.joins)
     if query.predicate is not None:
         parts.append(f"WHERE {format_expression(query.predicate)}")
     if query.group_by:

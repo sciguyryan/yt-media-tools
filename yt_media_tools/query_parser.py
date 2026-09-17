@@ -19,11 +19,14 @@ from .query_model import (
     CollectionPredicate,
     Field,
     InList,
+    JoinClause,
+    JoinKind,
     IsNull,
     Literal,
     OrderTerm,
     Query,
     QuerySyntaxError,
+    RelationReference,
     ScalarBinary,
     ScalarCase,
     ScalarComparison,
@@ -75,7 +78,24 @@ _DECIMAL_NUMBER_RE = re.compile(r"[+-]?\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*))?")
 
 _BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Za-z]+(?:_[0-9A-Za-z]+)*)")
 
-_MEMBER_TERMINATOR_KEYWORDS = {"AS", "FROM", "WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "OFFSET", "UNION"}
+_MEMBER_TERMINATOR_KEYWORDS = {
+    "AS",
+    "FROM",
+    "WHERE",
+    "GROUP",
+    "HAVING",
+    "ORDER",
+    "LIMIT",
+    "OFFSET",
+    "UNION",
+    "JOIN",
+    "INNER",
+    "LEFT",
+    "OUTER",
+    "SEMI",
+    "ANTI",
+    "ON",
+}
 
 
 def _unescape_string(text: str) -> str:
@@ -220,6 +240,8 @@ class Parser:
         select: tuple[SelectTerm, ...] = ()
         from_source: str | None = None
         from_facet: str | None = None
+        from_alias: str | None = None
+        joins: list[JoinClause] = []
         distinct = False
         offset = 0
         group_by: tuple[Any, ...] = ()
@@ -267,13 +289,12 @@ class Parser:
                 select = self.parse_select_list()
 
             if self.consume_keyword("FROM"):
-                from_source = self.parse_from_source()
-                if self.consume_keyword("OF"):
-                    facet = self.current
-                    if facet.kind != "IDENT":
-                        raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet.position)
-                    from_facet = facet.text.casefold()
-                    self.advance()
+                relation = self.parse_relation_reference()
+                from_source = relation.source
+                from_facet = relation.facet
+                from_alias = relation.alias
+                while self._join_starts_here():
+                    joins.append(self.parse_join_clause())
 
             if self.consume_keyword("WHERE"):
                 if (
@@ -340,6 +361,8 @@ class Parser:
                 tuple(ctes),
                 (),
                 from_facet,
+                from_alias,
+                tuple(joins),
             )
 
         if not where_only and not set_branch:
@@ -393,6 +416,8 @@ class Parser:
             tuple(ctes),
             tuple(set_operations),
             from_facet,
+            from_alias,
+            tuple(joins),
         )
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
@@ -705,6 +730,7 @@ class Parser:
         return ScalarFunction(name, tuple(args), name_token.position)
 
     def parse_from_source(self) -> str:
+        """Parse one physical or logical relation source token."""
         token = self.current
         if token.kind == "ATIDENT":
             self.advance()
@@ -717,9 +743,67 @@ class Parser:
             return str(token.value)
         raise QuerySyntaxError(
             self.source,
-            "Expected a channel/playlist identifier after FROM. Quote full URLs.",
+            "Expected a channel/playlist identifier after FROM or JOIN. Quote full URLs.",
             token.position,
         )
+
+    def parse_relation_reference(self) -> RelationReference:
+        """Parse a source/facet relation and its optional explicit alias."""
+        position = self.current.position
+        source = self.parse_from_source()
+        facet = None
+        if self.consume_keyword("OF"):
+            facet_token = self.current
+            if facet_token.kind != "IDENT":
+                raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
+            facet = facet_token.text.casefold()
+            self.advance()
+        alias = None
+        if self.consume_keyword("AS"):
+            alias_token = self.expect("IDENT", "Expected a relation alias after AS.")
+            alias = alias_token.text
+        return RelationReference(source, facet, alias, position)
+
+    def _join_starts_here(self) -> bool:
+        return any(
+            self.keyword(word)
+            for word in ("JOIN", "INNER", "LEFT", "SEMI", "ANTI", "RIGHT", "FULL", "CROSS", "NATURAL")
+        )
+
+    def parse_join_clause(self) -> JoinClause:
+        """Parse one supported JOIN form without assigning executable semantics."""
+        position = self.current.position
+        if (
+            self.consume_keyword("RIGHT")
+            or self.consume_keyword("FULL")
+            or self.consume_keyword("CROSS")
+            or self.consume_keyword("NATURAL")
+        ):
+            raise QuerySyntaxError(self.source, "RIGHT, FULL, CROSS and NATURAL JOIN are not supported.", position)
+
+        kind = JoinKind.INNER
+        if self.consume_keyword("INNER"):
+            kind = JoinKind.INNER
+        elif self.consume_keyword("LEFT"):
+            kind = JoinKind.LEFT
+            self.consume_keyword("OUTER")
+        elif self.consume_keyword("SEMI"):
+            kind = JoinKind.SEMI
+        elif self.consume_keyword("ANTI"):
+            kind = JoinKind.ANTI
+        self.expect_keyword("JOIN", "Expected JOIN after join kind.")
+
+        relation = self.parse_relation_reference()
+        self.expect_keyword("ON", "JOIN requires an ON predicate.")
+        if (
+            self.current.kind == "EOF"
+            or self.current.kind == "RPAREN"
+            or self._join_starts_here()
+            or any(self.keyword(word) for word in ("WHERE", "GROUP", "HAVING", "UNION", "ORDER", "LIMIT", "OFFSET"))
+        ):
+            raise QuerySyntaxError(self.source, "JOIN ON requires an expression.", self.current.position)
+        predicate = self.parse_having_or()
+        return JoinClause(kind, relation, predicate, position)
 
     def parse_group_by(self) -> tuple[Any, ...]:
         """Parse the deterministic scalar expressions that define aggregate groups."""

@@ -338,7 +338,7 @@ Each new syntax feature must add a section to this document when it is implement
 
 - `SELECT *` is expanded during semantic resolution into the deterministic scalar schema. The optimiser sees the resulting ordinary projection terms rather than a wildcard. Star expansion itself is not an optimisation and cannot omit fields merely because they appear unused; acquisition planning must account for the complete expanded projection.
 - Aggregates and `GROUP BY` are implemented; future work may add grouping-key analysis, stronger HAVING simplification, common aggregate reuse and exact partial aggregation only where equivalence is proved.
-- CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. `JOIN` remains intentionally outside yt-sql.
+- CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. JOIN optimisation remains deferred until executable relational semantics exist; parser-level JOIN structure must not trigger acquisition or optimisation work.
 
 ## Audit conclusions for symbolic scalar rewrites
 

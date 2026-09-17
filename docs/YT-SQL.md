@@ -156,7 +156,7 @@ The optimiser intentionally does not fold contradictory field predicates to a Bo
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, relative calendar expressions, and source forms such as `@handle`.
 
-`JOIN` is out of scope by design. yt-discover queries media-source metadata rather than exposing its internal persistence tables as a relational database. Multi-source composition uses CTEs plus positional `UNION`/`UNION ALL`; it does not expose implementation tables or relational join semantics.
+`JOIN` grammar is now reserved for selected relational composition between independent media relations. The parser recognises the staged JOIN family, but semantic resolution currently rejects JOIN queries because relational execution is not implemented yet. This does not expose internal persistence tables or turn yt-sql into a general relational database.
 
 Database mutation and administration statements such as `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, transactions, indexes, triggers, stored procedures, and database permissions are also outside the purpose of yt-sql.
 
@@ -244,7 +244,7 @@ All branches must project the same number of columns. The first branch defines t
 
 Physical sources are acquired independently. In automatic source mode, a quoted non-YouTube URL is preserved as a generic yt-dlp extractor source, while YouTube handles, channel URLs and playlist URLs retain their existing specialised classification. Source identity remains attached internally through normalisation so each branch sees only the records belonging to its declared `FROM` source. A missing value from one extractor is NULL when the field is otherwise part of the logical schema. Dynamic fields are resolved per physical source so incompatible extractor-specific types are detected before composition.
 
-`JOIN` remains intentionally unsupported. yt-sql uses set composition and CTEs rather than relational join semantics.
+`JOIN` execution remains intentionally unsupported at this stage. Its accepted grammar and AST are present so later relational phases can add semantics without parser churn; CTE and set composition continue to provide the currently executable multi-source composition model.
 
 ## Cross-facet composition
 

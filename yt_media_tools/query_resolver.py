@@ -1357,6 +1357,20 @@ def resolve_query(
     source_schemas: dict[tuple[str, str | None], QuerySchema] | None = None,
 ) -> Query:
     """Resolve CTEs and positional set composition against logical and per-source schemas."""
+
+    def reject_unimplemented_joins(candidate: Query) -> None:
+        if candidate.joins:
+            raise QuerySemanticError(
+                query.source,
+                "JOIN syntax is recognised, but JOIN execution is not implemented yet.",
+                candidate.joins[0].position,
+            )
+        for cte in candidate.ctes:
+            reject_unimplemented_joins(cte.query)
+        for operation in candidate.set_operations:
+            reject_unimplemented_joins(operation.query)
+
+    reject_unimplemented_joins(query)
     context = dates or DateContext()
     physical_source_schemas = source_schemas or {}
     resolved_ctes: list[CommonTableExpression] = []

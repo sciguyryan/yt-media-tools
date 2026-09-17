@@ -79,15 +79,15 @@ Decide whether structured collection elements or metadata objects support member
 
 ### Future relational composition and JOIN grammar
 
-**Status: Under review**
+**Status: Accepted**
 
-Decide whether JOIN belongs in yt-sql's long-term language and, if accepted, settle the parser-facing relational syntax during 0.29.x while deferring full relational execution semantics to the later 0.31.x Relational Reconsideration programme. The parser review must consider JOIN kinds, relation aliases, qualified field references, `ON` predicates, source/facet participation, interaction with CTEs and set operations, `*` expansion, ambiguity handling and the relationship between qualified names and structured member access.
+JOIN belongs in yt-sql where independently acquired media relations need correlation, exclusion or composition. The accepted parser-facing family is `JOIN` as shorthand for `INNER JOIN`, explicit `INNER JOIN`, `LEFT [OUTER] JOIN`, `SEMI JOIN` and `ANTI JOIN`. `RIGHT`, `FULL`, `CROSS` and `NATURAL` joins remain unsupported. The AST uses an explicit join-kind enum so later review can add another justified kind without redesigning the existing representation.
 
-This question is coupled to expression hierarchy, postfix syntax and structured metadata. Syntax such as `a.title` may represent relation qualification while syntax such as `formats[0].height` may represent structured member access. The grammar and AST must preserve enough structure for semantic resolution to distinguish these cases without making provider-specific object layouts part of yt-sql semantics.
+Relations may carry an explicit `AS` alias and retain source/facet identity. Joined relations are represented separately from the primary `FROM` relation, in source order, with each join carrying its own `ON` predicate. Qualified names such as `a.title` remain syntactically compatible with existing dotted field syntax at the parser boundary; semantic resolution, rather than token spelling, must distinguish relation qualification from structured member access. Alias ownership, ambiguity and qualified-field resolution belong to the next JOIN phase.
 
-If JOIN is accepted as a future language capability, 0.29.x may introduce its stable grammar and AST representation before relational execution exists. In that case, semantic validation must reject executable JOIN queries clearly and deterministically until the later relational programme implements and validates acquisition, cardinality, NULL-extension, provenance, optimisation, evaluation and other relational semantics. Parser recognition must not imply executable feature support.
+The grammar is deliberately staged ahead of execution. Parser recognition does not imply executable JOIN support: semantic validation must reject a query containing a JOIN clearly and deterministically until the execution phases implement and validate acquisition, cardinality, NULL extension, provenance, optimisation and evaluation. This fail-closed boundary prevents partially parsed JOIN syntax from silently behaving as a single-relation query.
 
-The review must also decide which relational forms should remain possible later. It must not assume that accepting a JOIN grammar commits yt-sql to general SQL JOIN completeness. Constrained forms such as SEMI and ANTI joins remain especially relevant to media-discovery use cases, but their eventual execution semantics belong to 0.31.x unless the living roadmap is deliberately revised again.
+Projection semantics remain downstream of this grammar phase. In particular, plain `*`, `alias.*`, duplicate output names and right-relation projection are not implemented by the parser-only JOIN work. The accepted design direction is that plain `*` denotes the primary/left relation in a multi-relation query and right-side projection is explicit; the projection phase will implement and test that contract.
 
 ### Collection predicates, quantifiers and media-native operations
 

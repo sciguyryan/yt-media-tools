@@ -31,10 +31,13 @@ from .query_model import (
     CollectionPredicate as CollectionPredicate,
     Field as Field,
     InList as InList,
+    JoinClause as JoinClause,
+    JoinKind as JoinKind,
     IsNull as IsNull,
     Literal as Literal,
     OrderTerm as OrderTerm,
     Query as Query,
+    RelationReference as RelationReference,
     QueryDiagnosticContext as QueryDiagnosticContext,
     QuerySemanticError as QuerySemanticError,
     QuerySourceLocation as QuerySourceLocation,
@@ -98,6 +101,8 @@ def merge_queries(base: Query, extra: Query) -> Query:
         extra.ctes or base.ctes,
         extra.set_operations or base.set_operations,
         from_facet,
+        extra.from_alias or base.from_alias,
+        extra.joins or base.joins,
     )
 
 

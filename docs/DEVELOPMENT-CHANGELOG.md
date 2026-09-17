@@ -8,6 +8,12 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Preserve the exact-line semantics of `--remove-completed-ids` while sharing archive reconciliation and queue reporting with annotated-row removal.
 - [test] Add deterministic annotated-row parsing, atomic removal, archive reconciliation and command-planning coverage.
 
+## Discover JOIN grammar - Unreleased
+
+- [feature] Add parser-level `JOIN`, `INNER JOIN`, `LEFT [OUTER] JOIN`, `SEMI JOIN` and `ANTI JOIN` grammar with explicit relation, alias, facet and `ON` predicate AST structures.
+- [maintenance] Keep `RIGHT`, `FULL`, `CROSS` and `NATURAL` joins unsupported and fail closed during semantic resolution until JOIN execution is implemented.
+- [test] Add deterministic parser, formatter, composition, malformed-input and semantic-rejection coverage for the staged JOIN grammar.
+
 ## Discover test infrastructure - Unreleased
 
 - [test] Cache deterministic small and normal conformance populations within the pytest process for read-only semantic fixtures instead of regenerating identical records repeatedly.
