@@ -217,3 +217,37 @@ def test_source_field_type_facts_do_not_turn_dynamic_runtime_shape_into_contract
     assert dynamic.query_type is None
     assert dynamic.collection_ordering is None
     assert dynamic.structurally_supported is None
+
+
+def test_result_field_facts_lift_only_proven_identity_projection() -> None:
+    from yt_media_tools.query_resolver import resolve_query
+    from yt_media_tools.schema import QuerySchema
+    from yt_media_tools.semantic_provability import prove_result_field_facts
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("channel", "@x", "https://www.youtube.com/@x", "x", "videos")
+    schema = QuerySchema([{"id": "abc", "title": "Example"}])
+    query = resolve_query(parse_query("SELECT id AS identifier, title FROM @x"), schema)
+
+    identifier = prove_result_field_facts(query, "identifier", source=source)
+    title = prove_result_field_facts(query, "title", source=source)
+
+    assert identifier.known_logical_field and identifier.nullable is False
+    assert identifier.query_type is not None and identifier.query_type.describe() == "string"
+    assert identifier.proof is not None and identifier.proof.claim == "result-field-identity-projection"
+    assert title.known_logical_field and title.nullable is True
+
+
+def test_result_field_facts_refuse_computed_and_relational_boundaries() -> None:
+    from yt_media_tools.query_resolver import resolve_query
+    from yt_media_tools.schema import QuerySchema
+    from yt_media_tools.semantic_provability import prove_result_field_facts
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("channel", "@x", "https://www.youtube.com/@x", "x", "videos")
+    schema = QuerySchema([{"id": "abc", "title": "Example"}])
+    computed = resolve_query(parse_query("SELECT LOWER(id) AS identifier FROM @x"), schema)
+    cte = resolve_query(parse_query("WITH q AS (SELECT id FROM @x) SELECT id FROM q"), schema)
+
+    assert not prove_result_field_facts(computed, "identifier", source=source).known_logical_field
+    assert not prove_result_field_facts(cte, "id", source=source).known_logical_field

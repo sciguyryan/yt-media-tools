@@ -13,7 +13,8 @@
 - Add typed variadic `CONCAT()` with textual arguments, NULL propagation, deterministic evaluation and constant folding.
 - Preserve SQL NULL and three-valued logic, lexical collection semantics, source and facet identity, volatility boundaries and conservative optimisation guarantees throughout the preparatory architecture work.
 - Define left-to-right AND/OR short-circuit semantics, including identical HAVING behaviour, and distinguish proven final truth from proven evaluation reachability in the shared semantic proof model.
-- Add conservative relation-level provability for explicit cardinality bounds and proven emptiness propagation through CTEs, single JOIN semantics and UNION composition, consuming authoritative stable source-field type, NULLability, structural-support and collection-ordering contracts while refusing unsupported result-column facts and physical-source cardinality inference.
+- Add conservative relation-level provability for explicit cardinality bounds and proven emptiness propagation through CTEs, single JOIN semantics and UNION composition, consuming authoritative stable source-field type, nullability, structural-support and collection-ordering contracts while refusing unsupported result-column facts and physical-source cardinality inference.
+- Lift authoritative source-field facts through proven single-source identity projections while keeping computed, CTE, set, grouped and JOIN result propagation explicitly unknown.
 - Reconcile cumulative performance evidence, retaining the collection-pipeline and batched-cache improvements while recording remaining explicit evaluation-context overhead for focused future investigation.
 
 ## Discover 0.29.2 - Collection Querying Beyond Indexing
@@ -21,14 +22,14 @@
 - Add lexical collection-element bindings with deterministic nested scope and outer-reference semantics.
 - Add `ANY` and `ALL` collection predicates with exact SQL three-valued behaviour for NULL, empty and nullable collections.
 - Add `CARDINALITY` and scoped collection `COUNT` while preserving existing aggregate `COUNT` semantics.
-- Add typed `FILTER` and `MAP` collection expressions that preserve collection NULLability and logical ordering without inventing positional guarantees.
+- Add typed `FILTER` and `MAP` collection expressions that preserve collection nullability and logical ordering without inventing positional guarantees.
 - Carry collection-query requirements and correlations through acquisition planning, permitting backend pushdown only when an adapter explicitly proves exact yt-sql-equivalent semantics.
 - Extend the deterministic conformance generator to version 6 with independent-oracle, optimiser, formatter and offline CLI coverage for collection querying, including structured and dynamic raw collections.
 - Document collection binding, three-valued quantifiers, counting, filtering, projection and conservative acquisition fallback semantics across the Discover and yt-sql documentation.
 
 ## Discover 0.29.1 - Structured Member Access
 
-- Add first-class structured value types with opaque, declared and dynamic member schemas, preserving NULLability through nested structured expressions.
+- Add first-class structured value types with opaque, declared and dynamic member schemas, preserving nullability through nested structured expressions.
 - Add composable postfix `.member` syntax after indexed, function-valued and parenthesised expressions while preserving established dotted field paths and canonical round trips.
 - Resolve and evaluate structured members with deterministic errors for invalid operands or unknown members, SQL NULL propagation and conservative runtime dictionary boundaries.
 - Define closed yt-sql member schemas for formats, chapters and thumbnails without exposing arbitrary backend dictionaries or changing their existing ordering contracts.
@@ -39,7 +40,7 @@
 
 ## Discover 0.29.0 - Typed Collections and Indexing
 
-- Add first-class typed collection values with declared element types, NULLability and explicit logical ordering contracts.
+- Add first-class typed collection values with declared element types, nullability and explicit logical ordering contracts.
 - Add composable zero-based postfix indexing with deterministic NULL, out-of-range and invalid-index semantics across projection, ordering and predicates.
 - Model tags, categories, formats, chapters and thumbnails as collection metadata while preserving conservative ordering for structured collections.
 - Support ordered dynamic `raw.*` sequence indexing without promoting backend-specific order or opaque structured values into portable yt-sql semantics.

@@ -116,6 +116,45 @@ def prove_source_field_facts(source: SourceSpec, field: str) -> FieldFacts:
     )
 
 
+def prove_result_field_facts(query: Query, output_name: str, *, source: SourceSpec | None) -> FieldFacts:
+    """Lift source facts through one proven identity projection only.
+
+    The current resolved AST retains enough provenance for a deliberately small
+    case: a single-source query projecting a direct ``Field`` expression, with
+    or without an output alias. JOIN-owned fields, CTE inputs, set composition,
+    aggregate/grouped results and computed expressions require stronger result
+    provenance than the current model records and therefore remain unknown.
+    """
+    boundary = ("result field is not a proven identity projection from the supplied physical source",)
+    if source is None or query.joins or query.set_operations or query.ctes or query.group_by:
+        return FieldFacts(False, None, None, None, None, None, None, boundary)
+    for term in query.select:
+        if term.output_name.casefold() != output_name.casefold():
+            continue
+        if not isinstance(term.expression, Field) or term.kind is None:
+            return FieldFacts(False, None, None, None, None, None, None, boundary)
+        source_facts = prove_source_field_facts(source, term.expression.name)
+        if not source_facts.known_logical_field:
+            return FieldFacts(False, None, None, None, None, None, None, boundary)
+        proof = OptimisationProof(
+            claim="result-field-identity-projection",
+            status=PROVEN,
+            provenance=source_facts.proof.provenance if source_facts.proof else (PROVENANCE_SEMANTIC_PROPERTIES,),
+            reasons=(f"result field {term.output_name} is a direct identity projection of {term.expression.name}",),
+            premises=(source_facts.proof,) if source_facts.proof else (),
+        )
+        return FieldFacts(
+            True,
+            source_facts.logical_kind,
+            source_facts.nullable,
+            source_facts.query_type,
+            source_facts.collection_ordering,
+            source_facts.structurally_supported,
+            proof,
+        )
+    return FieldFacts(False, None, None, None, None, None, None, ("result field is not projected by this query",))
+
+
 @dataclass(frozen=True)
 class JoinProvability:
     """Proven relational consequences of one validated JOIN predicate."""
@@ -538,7 +577,7 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
 
     max_rows = 0 if final_empty else query.limit
     boundaries = (
-        "output-field nullability is not authoritative in the current resolved query model",
+        "arbitrary result-field nullability is unknown beyond proven identity projections",
         "direct physical-source cardinality is unknown unless constrained by explicit query semantics",
         "multi-way JOIN execution remains a guarded boundary and is not used for relation proofs",
     )

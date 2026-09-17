@@ -16,7 +16,7 @@ Torture coverage additionally combines deeply parenthesised scalar and Boolean e
 
 ## Typed collections and indexing
 
-Current dedicated coverage includes collection type descriptors, element NULLability, stable versus unknown ordering, postfix parsing and chaining, canonical formatting, resolver type checks, zero-based evaluation, NULL and out-of-range results, integer and negative-index diagnostics, collection-valued functions and parentheses, raw ordered sequences, structured-value regression boundaries, scalar WHERE comparisons, `IS NULL`, output serialisation, explain metadata and acquisition-stage planning.
+Current dedicated coverage includes collection type descriptors, element nullability, stable versus unknown ordering, postfix parsing and chaining, canonical formatting, resolver type checks, zero-based evaluation, NULL and out-of-range results, integer and negative-index diagnostics, collection-valued functions and parentheses, raw ordered sequences, structured-value regression boundaries, scalar WHERE comparisons, `IS NULL`, output serialisation, explain metadata and acquisition-stage planning.
 
 The deterministic conformance generator includes first-class taxonomy collections and backend-specific raw ordered sequences. Independent oracle cases cover logical ordering, direct indexing, NULL collections, NULL indexes, out-of-range access, JSON array output, raw indexing and CLI parameter binding against indexed results. Routine conformance continues to compare optimised and unoptimised execution and enforce canonical parse-format-parse stability for directly parsed collection cases.
 
@@ -32,7 +32,7 @@ Acquisition-planning coverage records each collection operation separately, trac
 
 ## Structured values and member access
 
-Current dedicated coverage includes opaque, declared and dynamic structured type shapes, member NULLability, postfix parsing and chaining, distinction from legacy dotted field paths, canonical formatting, direct/nested/indexed/function-valued resolution, deterministic unknown-member and invalid-operand diagnostics, runtime dictionary-only evaluation, SQL NULL propagation, predicate participation, closed format/chapter/thumbnail schemas, dynamic raw schema inference, incompatible-shape rejection and acquisition requirement propagation.
+Current dedicated coverage includes opaque, declared and dynamic structured type shapes, member nullability, postfix parsing and chaining, distinction from legacy dotted field paths, canonical formatting, direct/nested/indexed/function-valued resolution, deterministic unknown-member and invalid-operand diagnostics, runtime dictionary-only evaluation, SQL NULL propagation, predicate participation, closed format/chapter/thumbnail schemas, dynamic raw schema inference, incompatible-shape rejection and acquisition requirement propagation.
 
 Structured acquisition tests separately cover exact member capability, indexed-member capability composition, dynamic-index rejection, indexed-record fallback and complete containing-structure fallback. Current adapters are expected to remain on the conservative fallback path unless they explicitly prove stronger semantics.
 
