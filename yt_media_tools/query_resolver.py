@@ -44,6 +44,7 @@ from .query_model import (
     Unary,
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
+from .join_resolution import resolve_join_references
 from .query_scope import relation_binding
 from .query_traversal import walk_ast
 from .query_semantics import (
@@ -1370,9 +1371,14 @@ def resolve_query(
         for operation in candidate.set_operations:
             reject_unimplemented_joins(operation.query)
 
+    physical_source_schemas = source_schemas or {}
+    if query.joins:
+        # Phase 2 resolves relation scope before retaining the fail-closed execution
+        # boundary. This makes alias and ambiguity diagnostics authoritative now,
+        # without allowing a JOIN to reach acquisition or evaluation.
+        resolve_join_references(query, schema, source_schemas=physical_source_schemas)
     reject_unimplemented_joins(query)
     context = dates or DateContext()
-    physical_source_schemas = source_schemas or {}
     resolved_ctes: list[CommonTableExpression] = []
     cte_schemas: dict[str, QuerySchema] = {}
     cte_names = {cte.name.casefold() for cte in query.ctes}

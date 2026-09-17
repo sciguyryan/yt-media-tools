@@ -86,6 +86,17 @@ class Field:
 
 
 @dataclass(frozen=True)
+class RelationField:
+    """Field resolved to one relation in a multi-relation semantic scope."""
+
+    qualifier: str
+    name: str
+    position: int = 0
+    kind: str | None = None
+    relation_key: tuple[str, str | None, str | None] | None = None
+
+
+@dataclass(frozen=True)
 class Literal:
     value: Any
     raw: str

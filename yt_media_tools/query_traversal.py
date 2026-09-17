@@ -22,6 +22,7 @@ from .query_model import (
     CollectionProjection,
     CollectionPredicate,
     InList,
+    JoinClause,
     IsNull,
     OrderTerm,
     Query,
@@ -85,6 +86,8 @@ def ast_children(node: Any) -> tuple[Any, ...]:
         return (node.query,)
     if isinstance(node, SetOperation):
         return (node.query,)
+    if isinstance(node, JoinClause):
+        return (node.predicate,)
     if isinstance(node, Query):
         children: list[Any] = []
         if node.predicate is not None:
@@ -94,6 +97,7 @@ def ast_children(node: Any) -> tuple[Any, ...]:
         children.extend(node.group_by)
         if node.having is not None:
             children.append(node.having)
+        children.extend(node.joins)
         children.extend(node.ctes)
         children.extend(node.set_operations)
         return tuple(children)

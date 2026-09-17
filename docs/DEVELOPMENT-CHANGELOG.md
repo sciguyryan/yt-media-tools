@@ -10,6 +10,10 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Resolve explicit relation aliases and qualified fields across staged JOIN scopes while keeping relation qualification distinct from structured member access.
+- [maintenance] Reject missing or duplicate relation aliases, ambiguous unqualified fields, unknown qualifiers and unknown qualified fields before the JOIN execution boundary.
+- [test] Add deterministic scope-resolution coverage for qualified ownership, ambiguity, alias diagnostics and structured-member composition.
+
 - [feature] Add parser-level `JOIN`, `INNER JOIN`, `LEFT [OUTER] JOIN`, `SEMI JOIN` and `ANTI JOIN` grammar with explicit relation, alias, facet and `ON` predicate AST structures.
 - [maintenance] Keep `RIGHT`, `FULL`, `CROSS` and `NATURAL` joins unsupported and fail closed during semantic resolution until JOIN execution is implemented.
 - [test] Add deterministic parser, formatter, composition, malformed-input and semantic-rejection coverage for the staged JOIN grammar.

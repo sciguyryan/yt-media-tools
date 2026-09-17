@@ -20,6 +20,7 @@ from .query_model import (
     IsNull,
     Literal,
     Query,
+    RelationField,
     ScalarBinary,
     ScalarCase,
     ScalarComparison,
@@ -37,6 +38,8 @@ def format_scalar_expression(expression: Any) -> str:
     """Render a scalar expression in canonical yt-sql form."""
     if isinstance(expression, Field):
         return expression.name
+    if isinstance(expression, RelationField):
+        return f"{expression.qualifier}.{expression.name}"
     if isinstance(expression, CollectionElementReference):
         return expression.binding
     if isinstance(expression, Literal):

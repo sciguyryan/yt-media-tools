@@ -244,7 +244,7 @@ All branches must project the same number of columns. The first branch defines t
 
 Physical sources are acquired independently. In automatic source mode, a quoted non-YouTube URL is preserved as a generic yt-dlp extractor source, while YouTube handles, channel URLs and playlist URLs retain their existing specialised classification. Source identity remains attached internally through normalisation so each branch sees only the records belonging to its declared `FROM` source. A missing value from one extractor is NULL when the field is otherwise part of the logical schema. Dynamic fields are resolved per physical source so incompatible extractor-specific types are detected before composition.
 
-`JOIN` execution remains intentionally unsupported at this stage. Its accepted grammar and AST are present so later relational phases can add semantics without parser churn; CTE and set composition continue to provide the currently executable multi-source composition model.
+`JOIN` execution remains intentionally unsupported at this stage. Its accepted grammar and AST are present so later relational phases can add semantics without parser churn. Semantic scope resolution now requires explicit aliases for every participating relation, resolves `alias.field` to a relation-owned field, and rejects ambiguous unqualified fields or invalid aliases before reaching the fail-closed execution boundary. Relation qualification remains semantically distinct from structured postfix member access. CTE and set composition continue to provide the currently executable multi-source composition model.
 
 ## Cross-facet composition
 

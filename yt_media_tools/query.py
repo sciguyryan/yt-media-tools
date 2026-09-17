@@ -38,6 +38,7 @@ from .query_model import (
     OrderTerm as OrderTerm,
     Query as Query,
     RelationReference as RelationReference,
+    RelationField as RelationField,
     QueryDiagnosticContext as QueryDiagnosticContext,
     QuerySemanticError as QuerySemanticError,
     QuerySourceLocation as QuerySourceLocation,
@@ -64,6 +65,7 @@ from .query_parser import (
 )
 from .query_resolver import _parse_duration_text as _parse_duration_text
 from .query_resolver import resolve_query as resolve_query
+from .join_resolution import resolve_join_references as resolve_join_references
 from .query_semantics import (
     query_physical_source_requests as query_physical_source_requests,
     query_physical_sources as query_physical_sources,

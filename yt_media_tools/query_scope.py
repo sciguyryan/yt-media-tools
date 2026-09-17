@@ -28,10 +28,11 @@ class RelationIdentity:
 
 @dataclass(frozen=True)
 class RelationBinding:
-    """One relation identity paired with the schema visible through it."""
+    """One relation identity paired with the schema and visible qualifier."""
 
     identity: RelationIdentity
     schema: QuerySchema
+    qualifier: str | None = None
 
 
 @dataclass(frozen=True)
@@ -69,16 +70,26 @@ class SemanticScope:
     def single(cls, binding: RelationBinding) -> "SemanticScope":
         return cls((binding,))
 
-    def resolve_unqualified_field(self, name: str) -> ResolvedFieldIdentity | None:
-        """Resolve an unqualified field, refusing ambiguous multi-relation matches."""
+    def field_matches(self, name: str) -> tuple[ResolvedFieldIdentity, ...]:
+        """Return all relation-owned matches for an unqualified field name."""
         matches: list[ResolvedFieldIdentity] = []
         for binding in self.relations:
             field = binding.schema.resolve(name)
             if field is not None:
                 matches.append(ResolvedFieldIdentity(binding.identity, field))
-        if len(matches) == 1:
-            return matches[0]
-        return None
+        return tuple(matches)
+
+    def resolve_unqualified_field(self, name: str) -> ResolvedFieldIdentity | None:
+        """Resolve an unqualified field, refusing ambiguous multi-relation matches."""
+        matches = self.field_matches(name)
+        return matches[0] if len(matches) == 1 else None
+
+    def binding_for_qualifier(self, qualifier: str) -> RelationBinding | None:
+        """Return the uniquely visible relation bound to ``qualifier``."""
+        matches = tuple(
+            binding for binding in self.relations if binding.qualifier is not None and binding.qualifier == qualifier
+        )
+        return matches[0] if len(matches) == 1 else None
 
 
 def relation_binding(
@@ -90,9 +101,9 @@ def relation_binding(
 ) -> RelationBinding:
     """Resolve the single relation used by the current query-body grammar."""
     if source_name is None:
-        return RelationBinding(RelationIdentity(None, source_facet, "implicit"), physical_schema)
+        return RelationBinding(RelationIdentity(None, source_facet, "implicit"), physical_schema, None)
     logical = cte_schemas.get(source_name.casefold())
     if logical is not None:
-        return RelationBinding(RelationIdentity(source_name, None, "cte"), logical)
+        return RelationBinding(RelationIdentity(source_name, None, "cte"), logical, source_name)
     schema = source_schemas.get((source_name, source_facet), physical_schema)
-    return RelationBinding(RelationIdentity(source_name, source_facet, "physical"), schema)
+    return RelationBinding(RelationIdentity(source_name, source_facet, "physical"), schema, source_name)
