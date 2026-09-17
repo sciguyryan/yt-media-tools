@@ -96,9 +96,46 @@ def _comparison_constraint(term: Any) -> tuple[tuple[str | None, str], str, Any]
         return None
     field = _field_key(term.left)
     value = _literal_value(term.right)
-    if field is None or value is NotImplemented or value is None:
+    operator = term.operator
+    if field is None:
+        field = _field_key(term.right)
+        value = _literal_value(term.left)
+        operator = {"<": ">", "<=": ">=", ">": "<", ">=": "<=", "=": "=", "!=": "!="}.get(operator)
+    if field is None or operator is None or value is NotImplemented or value is None:
         return None
-    return field, term.operator, value
+    return field, operator, value
+
+
+def _positive_in_constraint(term: Any) -> tuple[tuple[str | None, str], frozenset[Any]] | None:
+    """Return a finite positive IN domain when every non-NULL value is safely hashable."""
+    if not isinstance(term, InList) or term.negated:
+        return None
+    field = _field_key(term.field)
+    if field is None:
+        return None
+    values: set[Any] = set()
+    try:
+        for item in term.values:
+            value = _literal_value(item)
+            if value is NotImplemented:
+                return None
+            if value is not None:
+                values.add(value)
+    except TypeError:
+        return None
+    return field, frozenset(values)
+
+
+def _between_constraints(term: Any) -> tuple[tuple[str | None, str], tuple[Any, bool], tuple[Any, bool]] | None:
+    """Return inclusive bounds for an ordinary positive BETWEEN predicate."""
+    if not isinstance(term, Between) or term.negated:
+        return None
+    field = _field_key(term.field)
+    lower = _literal_value(term.lower)
+    upper = _literal_value(term.upper)
+    if field is None or lower is NotImplemented or lower is None or upper is NotImplemented or upper is None:
+        return None
+    return field, (lower, True), (upper, True)
 
 
 def _null_constraint(term: Any) -> tuple[tuple[str | None, str], bool] | None:
@@ -156,6 +193,7 @@ def _prove_and_contradiction(node: Any) -> OptimisationProof | None:
     """Prove a deliberately bounded family of same-field AND contradictions."""
     terms = _flatten_and(node)
     by_field: dict[tuple[str | None, str], list[tuple[str, Any]]] = {}
+    finite_domains: dict[tuple[str | None, str], list[frozenset[Any]]] = {}
     null_requirements: dict[tuple[str | None, str], set[bool]] = {}
     null_rejecting: set[tuple[str | None, str]] = set()
 
@@ -164,6 +202,14 @@ def _prove_and_contradiction(node: Any) -> OptimisationProof | None:
         if comparison is not None:
             field, operator, value = comparison
             by_field.setdefault(field, []).append((operator, value))
+        finite = _positive_in_constraint(term)
+        if finite is not None:
+            field, values = finite
+            finite_domains.setdefault(field, []).append(values)
+        between = _between_constraints(term)
+        if between is not None:
+            field, lower, upper = between
+            by_field.setdefault(field, []).extend(((">=", lower[0]), ("<=", upper[0])))
         null_constraint = _null_constraint(term)
         if null_constraint is not None:
             field, requires_null = null_constraint
@@ -178,10 +224,23 @@ def _prove_and_contradiction(node: Any) -> OptimisationProof | None:
         if True in requirements and field in null_rejecting:
             return _proof(f"{_label(field)} IS NULL cannot be TRUE with a predicate that rejects NULL")
 
-    for field, constraints in by_field.items():
+    for field in by_field.keys() | finite_domains.keys():
+        constraints = by_field.get(field, [])
         equalities = [value for operator, value in constraints if operator == "="]
+        exclusions = [value for operator, value in constraints if operator == "!="]
         if equalities and any(value != equalities[0] for value in equalities[1:]):
             return _proof(f"{_label(field)} has incompatible equality requirements")
+        if equalities and any(value == equalities[0] for value in exclusions):
+            return _proof(f"{_label(field)} cannot equal and differ from the same value")
+        domains = finite_domains.get(field, [])
+        if domains:
+            allowed = set(domains[0])
+            for domain in domains[1:]:
+                allowed.intersection_update(domain)
+            if not allowed:
+                return _proof(f"{_label(field)} has disjoint finite IN requirements")
+            if equalities and equalities[0] not in allowed:
+                return _proof(f"{_label(field)} equality is outside its finite IN requirements")
         lower: tuple[Any, bool] | None = None
         upper: tuple[Any, bool] | None = None
         for operator, value in constraints:
@@ -226,6 +285,17 @@ def prove_predicate_never_true(node: Any, *, source: SourceSpec | None) -> Optim
         if right is not None:
             return compose_proofs("predicate-never-true", right)
         return _prove_and_contradiction(node)
+    if isinstance(node, Binary) and node.operator == "OR":
+        left = prove_predicate_never_true(node.left, source=source)
+        right = prove_predicate_never_true(node.right, source=source)
+        if left is not None and right is not None:
+            return OptimisationProof(
+                claim="predicate-never-true",
+                status=PROVEN,
+                provenance=tuple(dict.fromkeys(left.provenance + right.provenance)),
+                reasons=("both OR branches are independently proven never TRUE",),
+                premises=(left, right),
+            )
     return None
 
 

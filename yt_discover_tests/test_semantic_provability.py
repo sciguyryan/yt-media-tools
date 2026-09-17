@@ -56,3 +56,41 @@ def test_boolean_reachability_requires_a_dominating_left_operand() -> None:
     assert prove_boolean_right_unreachable(right_false, source=None) is None
     assert prove_boolean_right_unreachable(right_true, source=None) is None
     assert prove_boolean_right_unreachable(unknown_and, source=None) is None
+
+
+def test_shared_predicate_prover_composes_never_true_or_branches() -> None:
+    predicate = parse_query(
+        "SELECT id FROM @x WHERE (view_count = 5 AND view_count > 10) OR (duration < 1 AND duration >= 1)"
+    ).predicate
+    proof = prove_predicate_never_true(predicate, source=None)
+    assert proof is not None and proof.proven
+    assert "both OR branches" in proof.reasons[0]
+    assert len(proof.premises) == 2
+
+
+def test_shared_predicate_prover_refuses_or_with_one_live_branch() -> None:
+    predicate = parse_query("SELECT id FROM @x WHERE (view_count = 5 AND view_count > 10) OR duration > 1").predicate
+    assert prove_predicate_never_true(predicate, source=None) is None
+
+
+def test_shared_predicate_prover_handles_reversed_and_exclusion_constraints() -> None:
+    reversed_bounds = parse_query("SELECT id FROM @x WHERE 10 < view_count AND view_count <= 10").predicate
+    excluded_equality = parse_query("SELECT id FROM @x WHERE view_count = 5 AND view_count != 5").predicate
+    assert prove_predicate_never_true(reversed_bounds, source=None) is not None
+    assert prove_predicate_never_true(excluded_equality, source=None) is not None
+
+
+def test_shared_predicate_prover_handles_finite_in_domains_conservatively() -> None:
+    outside = parse_query("SELECT id FROM @x WHERE view_count = 5 AND view_count IN (1, 2, 3)").predicate
+    disjoint = parse_query("SELECT id FROM @x WHERE view_count IN (1, 2) AND view_count IN (3, 4)").predicate
+    overlap = parse_query("SELECT id FROM @x WHERE view_count IN (1, 2) AND view_count IN (2, 3)").predicate
+    assert prove_predicate_never_true(outside, source=None) is not None
+    assert prove_predicate_never_true(disjoint, source=None) is not None
+    assert prove_predicate_never_true(overlap, source=None) is None
+
+
+def test_shared_predicate_prover_handles_positive_between_bounds() -> None:
+    predicate = parse_query("SELECT id FROM @x WHERE view_count BETWEEN 1 AND 5 AND view_count > 5").predicate
+    compatible = parse_query("SELECT id FROM @x WHERE view_count BETWEEN 1 AND 5 AND view_count >= 5").predicate
+    assert prove_predicate_never_true(predicate, source=None) is not None
+    assert prove_predicate_never_true(compatible, source=None) is None
