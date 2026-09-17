@@ -89,9 +89,7 @@ def test_unknown_relation_wildcard_alias_is_rejected() -> None:
         resolve_query(query, _schema({"id": "x"}))
 
 
-def test_valid_join_projection_still_stops_at_execution_boundary() -> None:
+def test_valid_left_join_projection_reaches_execution() -> None:
     query = parse_query("SELECT l.id, r.title AS right_title FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
-    with pytest.raises(
-        QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
-    ):
-        resolve_query(query, _schema({"id": "x", "title": "Title"}))
+    resolved = resolve_query(query, _schema({"id": "x", "title": "Title"}))
+    assert resolved.select[-1].output_name == "right_title"

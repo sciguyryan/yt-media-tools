@@ -257,10 +257,10 @@ def prepare_join_query(
 ) -> Query:
     """Prepare one executable single JOIN after relation-scope resolution.
 
-    Phase 6 adds INNER JOIN to the Phase 5 SEMI/ANTI execution boundary. Existence
-    joins still expose only the primary relation, while INNER JOIN retains both
-    relation bindings for downstream filtering, ordering and projection. LEFT and
-    multi-way JOIN execution remain deterministic future boundaries.
+    Phase 7 completes issue #62 by adding LEFT JOIN to the existing INNER, SEMI
+    and ANTI execution boundary. Row-producing joins retain explicit relation
+    bindings for downstream filtering, ordering and projection. Multi-way JOIN
+    execution remains a deterministic future boundary.
     """
     resolved = resolve_join_references(
         query,
@@ -275,14 +275,14 @@ def prepare_join_query(
             resolved.joins[1].position if len(resolved.joins) > 1 else 0,
         )
     join = resolved.joins[0]
-    if join.kind.value not in {"SEMI", "ANTI", "INNER"}:
+    if join.kind.value not in {"SEMI", "ANTI", "INNER", "LEFT"}:
         raise QuerySemanticError(
             query.source,
             "JOIN syntax is recognised, but JOIN execution is not implemented yet.",
             join.position,
         )
 
-    if join.kind.value == "INNER":
+    if join.kind.value in {"INNER", "LEFT"}:
         return resolved
 
     primary_alias = resolved.from_alias or ""

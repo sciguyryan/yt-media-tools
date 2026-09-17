@@ -893,13 +893,20 @@ def _apply_existence_join(
     return selected
 
 
-def _apply_inner_join(
+def _apply_row_producing_join(
     records: Sequence[dict[str, Any]],
     query: Query,
     relations: dict[str, list[dict[str, Any]]],
     physical_requests: tuple[tuple[str, str | None], ...],
 ) -> list[dict[str, Any]]:
-    """Apply one INNER JOIN, preserving duplicate multiplication and relation ownership."""
+    """Apply one INNER or LEFT JOIN while preserving explicit relation ownership.
+
+    A LEFT JOIN emits the ordinary TRUE-matching row pairs when any exist. If no
+    right row makes the ON predicate TRUE, it emits exactly one left row with an
+    empty right-relation binding. Field lookup over that binding yields SQL NULL,
+    including for dynamically observed right-side fields, without fabricating a
+    physical metadata record or losing the relation boundary.
+    """
     join = query.joins[0]
     left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
     right_records = _records_for_source(
@@ -909,16 +916,22 @@ def _apply_inner_join(
     right_alias = join.relation.alias or ""
     joined: list[dict[str, Any]] = []
     for left_record in left_records:
+        matched = False
         for right_record in right_records:
             relation_records = {left_alias: left_record, right_alias: right_record}
             context = EvaluationContext(left_record, relation_records=relation_records)
             if evaluate(join.predicate, context) is not True:
                 continue
+            matched = True
             row = dict(left_record)
             # Keep relation bindings as internal execution state. Projection and other
             # expression evaluation consume them through EvaluationContext, so same-
             # named fields from independent relations never overwrite one another.
             row["_yt_sql_relation_records"] = relation_records
+            joined.append(row)
+        if join.kind is JoinKind.LEFT and not matched:
+            row = dict(left_record)
+            row["_yt_sql_relation_records"] = {left_alias: left_record, right_alias: {}}
             joined.append(row)
     return joined
 
@@ -931,8 +944,8 @@ def _apply_composed_query(
 ) -> list[dict[str, Any]]:
     if not query.set_operations:
         if query.joins:
-            if query.joins[0].kind is JoinKind.INNER:
-                input_records = _apply_inner_join(records, query, relations, physical_requests)
+            if query.joins[0].kind in {JoinKind.INNER, JoinKind.LEFT}:
+                input_records = _apply_row_producing_join(records, query, relations, physical_requests)
             else:
                 input_records = _apply_existence_join(records, query, relations, physical_requests)
         else:

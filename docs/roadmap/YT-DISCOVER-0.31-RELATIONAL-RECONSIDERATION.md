@@ -132,6 +132,8 @@ Plan materialised versus streamed sides, minimum fields, duplicate multiplicatio
 
 ## 0.31.5 - LEFT JOIN
 
+**Implemented in JOIN Phase 7 part 2, completing issue #62.**
+
 Add left outer join where retaining every row from the primary media relation is useful.
 
 Define NULL extension precisely.

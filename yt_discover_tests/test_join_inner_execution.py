@@ -65,9 +65,9 @@ def test_inner_join_qualified_wildcard_exposes_right_relation() -> None:
     assert [[row[id_index], row[tag_index]] for row in projected] == [["b", "first"], ["b", "second"]]
 
 
-def test_left_join_remains_behind_execution_guard() -> None:
-    with pytest.raises(QuerySemanticError, match="JOIN execution is not implemented yet"):
-        _resolve("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
+def test_left_join_preserves_inner_matches_and_unmatched_left_rows() -> None:
+    records, query = _resolve("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
+    assert _project(apply_query(records, query), query) == [["a"], ["b"], ["b"], [None]]
 
 
 def test_multi_way_inner_join_remains_behind_execution_guard() -> None:

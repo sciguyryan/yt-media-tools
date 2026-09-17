@@ -97,12 +97,10 @@ def test_join_requires_on_expression() -> None:
         parse_query("SELECT id FROM @left AS l JOIN @right AS r ON WHERE l.id = 'x'")
 
 
-def test_join_syntax_fails_closed_before_semantic_execution() -> None:
+def test_left_join_syntax_reaches_semantic_execution() -> None:
     query = parse_query("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
-    with pytest.raises(
-        QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
-    ):
-        resolve_query(query, QuerySchema([{"id": "x"}]))
+    resolved = resolve_query(query, QuerySchema([{"id": "x"}]))
+    assert resolved.joins[0].kind is JoinKind.LEFT
 
 
 def test_join_reference_resolution_distinguishes_relation_fields_from_structured_members() -> None:
@@ -157,12 +155,10 @@ def test_join_duplicate_relation_alias_is_rejected() -> None:
         resolve_query(query, QuerySchema([{"id": "x"}]))
 
 
-def test_valid_qualified_join_still_fails_closed_at_execution_boundary() -> None:
+def test_valid_qualified_left_join_resolves_for_execution() -> None:
     query = parse_query("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
-    with pytest.raises(
-        QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
-    ):
-        resolve_query(query, QuerySchema([{"id": "x"}]))
+    resolved = resolve_query(query, QuerySchema([{"id": "x"}]))
+    assert resolved.joins[0].kind is JoinKind.LEFT
 
 
 def test_join_parser_accepts_relation_wildcards_in_projection() -> None:

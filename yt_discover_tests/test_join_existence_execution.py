@@ -58,6 +58,6 @@ def test_semi_join_does_not_expose_right_relation_projection() -> None:
         _resolve("SELECT r.id FROM @left AS l SEMI JOIN @right AS r ON l.id = r.id")
 
 
-def test_left_join_remains_behind_execution_guard() -> None:
-    with pytest.raises(QuerySemanticError, match="JOIN execution is not implemented yet"):
-        _resolve("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
+def test_left_join_is_available_after_existence_join_groundwork() -> None:
+    records, query = _resolve("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
+    assert [row["id"] for row in apply_query(records, query)] == ["a", "b", "b", None]

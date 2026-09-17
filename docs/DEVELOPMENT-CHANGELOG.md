@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Complete issue #62 with executable `LEFT [OUTER] JOIN`, preserving unmatched primary rows through explicit NULL-extended right-relation bindings.
+- [maintenance] Share row-producing JOIN execution between `INNER` and `LEFT` while preserving relation ownership and the deterministic multi-way execution guard.
+- [test] Add LEFT JOIN coverage for duplicate matches, NULL/UNKNOWN keys, empty relations, right-side filtering, qualified projection and CTE-backed relations.
+- [docs] Document completed single INNER/LEFT execution semantics and precise LEFT JOIN NULL extension.
+
 - [feature] Execute one `INNER JOIN` over independently acquired relations, exposing fields from both sides and preserving duplicate row-pair multiplication.
 - [maintenance] Carry relation-owned runtime row bindings through ordinary WHERE, ORDER BY, LIMIT and projection evaluation without flattening same-named fields.
 - [test] Add executable INNER JOIN coverage for shorthand syntax, duplicate matches, SQL NULL behaviour, right-side filtering/ordering, qualified wildcard projection and remaining execution guards.
