@@ -94,3 +94,57 @@ def test_shared_predicate_prover_handles_positive_between_bounds() -> None:
     compatible = parse_query("SELECT id FROM @x WHERE view_count BETWEEN 1 AND 5 AND view_count >= 5").predicate
     assert prove_predicate_never_true(predicate, source=None) is not None
     assert prove_predicate_never_true(compatible, source=None) is None
+
+
+def test_relation_facts_propagate_empty_cte_into_primary_relation() -> None:
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    query = parse_query(
+        "WITH empty AS (SELECT id FROM @x WHERE view_count = 5 AND view_count > 10) SELECT id FROM empty"
+    )
+    facts = prove_query_relation_facts(query)
+    assert facts.empty and facts.max_rows == 0
+    assert facts.proof is not None and facts.proof.premises
+
+
+def test_relation_facts_require_every_union_branch_to_be_empty() -> None:
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    empty = parse_query(
+        "SELECT id FROM @x WHERE 1 = 0 UNION ALL SELECT id FROM @y WHERE duration < 1 AND duration >= 1"
+    )
+    live = parse_query("SELECT id FROM @x WHERE 1 = 0 UNION ALL SELECT id FROM @y WHERE duration > 1")
+    assert prove_query_relation_facts(empty).empty
+    assert not prove_query_relation_facts(live).empty
+
+
+def test_relation_facts_propagate_empty_right_cte_by_join_semantics() -> None:
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    inner = parse_query(
+        "WITH empty AS (SELECT id FROM @right WHERE 1 = 0) SELECT l.id FROM @left AS l JOIN empty AS r ON l.id = r.id"
+    )
+    left = parse_query(
+        "WITH empty AS (SELECT id FROM @right WHERE 1 = 0) "
+        "SELECT l.id FROM @left AS l LEFT JOIN empty AS r ON l.id = r.id"
+    )
+    assert prove_query_relation_facts(inner).empty
+    assert not prove_query_relation_facts(left).empty
+
+
+def test_relation_facts_use_only_explicit_cardinality_bounds() -> None:
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    limited = prove_query_relation_facts(parse_query("SELECT id FROM @x LIMIT 7"))
+    unknown = prove_query_relation_facts(parse_query("SELECT id FROM @x"))
+    assert limited.max_rows == 7 and not limited.empty
+    assert unknown.max_rows is None and not unknown.empty
+
+
+def test_relation_facts_state_current_nullability_and_cardinality_boundaries() -> None:
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    facts = prove_query_relation_facts(parse_query("SELECT id, title FROM @x"))
+    assert not facts.empty
+    assert any("nullability" in boundary for boundary in facts.boundaries)
+    assert any("physical-source cardinality" in boundary for boundary in facts.boundaries)

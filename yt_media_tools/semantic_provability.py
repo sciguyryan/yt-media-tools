@@ -28,6 +28,7 @@ from .query_model import (
     IsNull,
     Literal,
     RelationField,
+    Query,
     ScalarComparison,
     ScalarIsNull,
     TextPredicate,
@@ -339,3 +340,124 @@ def prove_boolean_right_unreachable(node: Any, *, source: SourceSpec | None) -> 
         reasons=(f"left-to-right {node.operator} semantics make the right operand unreachable",),
         premises=(left.proof,),
     )
+
+
+@dataclass(frozen=True)
+class RelationFacts:
+    """Conservative facts proven about one complete logical query result.
+
+    ``max_rows`` is present only when an explicit language construct proves an
+    upper bound. ``nullable_fields`` is intentionally absent: the current
+    resolved query model does not carry authoritative output nullability, so
+    this layer must not manufacture it from field names or extractor habits.
+    """
+
+    empty: bool
+    max_rows: int | None
+    proof: OptimisationProof | None
+    boundaries: tuple[str, ...] = ()
+
+
+def _relation_fact_proof(claim: str, reason: str, *premises: OptimisationProof) -> OptimisationProof:
+    provenance: tuple[str, ...] = tuple(dict.fromkeys(item for premise in premises for item in premise.provenance))
+    return OptimisationProof(
+        claim=claim,
+        status=PROVEN,
+        provenance=provenance or (PROVENANCE_SEMANTIC_PROPERTIES,),
+        reasons=(reason,),
+        premises=tuple(premises),
+    )
+
+
+def prove_query_relation_facts(query: Query) -> RelationFacts:
+    """Prove bounded relation-level facts from the validated query structure.
+
+    The proof deliberately uses only facts represented authoritatively by the
+    current query model. In particular, direct physical sources have unknown
+    cardinality and output-field nullability is not inferred. CTE emptiness is
+    propagated by name, JOIN consequences are applied by JOIN kind, UNION is
+    empty only when every branch is proven empty, and an explicit LIMIT is an
+    unconditional result-cardinality upper bound.
+    """
+    # Local import avoids making the semantic proof module part of the query
+    # model's import cycle.
+    from .query_model import Query
+
+    if not isinstance(query, Query):
+        raise TypeError("query must be a resolved Query")
+
+    cte_facts: dict[str, RelationFacts] = {}
+    for cte in query.ctes:
+        cte_facts[cte.name.casefold()] = prove_query_relation_facts(cte.query)
+
+    premises: list[OptimisationProof] = []
+    reasons: list[str] = []
+    body_empty = False
+
+    source_name = (query.from_source or "").casefold()
+    source_fact = cte_facts.get(source_name)
+    if source_fact is not None and source_fact.empty:
+        body_empty = True
+        if source_fact.proof is not None:
+            premises.append(source_fact.proof)
+        reasons.append(f"CTE {query.from_source} is proven empty")
+
+    where_proof = prove_predicate_never_true(query.predicate, source=None)
+    if query.predicate is not None and where_proof is not None:
+        body_empty = True
+        premises.append(where_proof)
+        reasons.append("WHERE is proven never TRUE")
+
+    having_proof = prove_predicate_never_true(query.having, source=None)
+    if query.having is not None and having_proof is not None:
+        body_empty = True
+        premises.append(having_proof)
+        reasons.append("HAVING is proven never TRUE")
+
+    # Apply only the currently executable single-JOIN semantics. Multi-way JOIN
+    # remains a guarded execution boundary and is therefore not used as a proof
+    # source here.
+    if len(query.joins) == 1 and not body_empty:
+        join = query.joins[0]
+        right_fact = cte_facts.get(join.relation.source.casefold())
+        kind = join.kind.value.upper()
+        join_consequence = prove_join_consequences(kind, join.predicate)
+        if join_consequence.result_empty:
+            body_empty = True
+            if join_consequence.proof is not None:
+                premises.append(join_consequence.proof)
+            reasons.append(f"{kind} JOIN predicate is proven unable to match")
+        elif right_fact is not None and right_fact.empty and kind in {"INNER", "SEMI"}:
+            body_empty = True
+            if right_fact.proof is not None:
+                premises.append(right_fact.proof)
+            reasons.append(f"{kind} JOIN right CTE is proven empty")
+
+    body_proof = _relation_fact_proof("relation-empty", "; ".join(reasons), *premises) if body_empty else None
+
+    # A UNION result is empty iff its left body and every branch are empty.
+    # The branches are complete logical relations; UNION versus UNION ALL does
+    # not change this emptiness law.
+    final_empty = body_empty
+    final_proof = body_proof
+    if query.set_operations:
+        branch_facts = [prove_query_relation_facts(operation.query) for operation in query.set_operations]
+        if body_empty and all(fact.empty for fact in branch_facts):
+            union_premises = [proof for proof in [body_proof, *(fact.proof for fact in branch_facts)] if proof]
+            final_empty = True
+            final_proof = _relation_fact_proof(
+                "relation-empty",
+                "every UNION branch is independently proven empty",
+                *union_premises,
+            )
+        else:
+            final_empty = False
+            final_proof = None
+
+    max_rows = 0 if final_empty else query.limit
+    boundaries = (
+        "output-field nullability is not authoritative in the current resolved query model",
+        "direct physical-source cardinality is unknown unless constrained by explicit query semantics",
+        "multi-way JOIN execution remains a guarded boundary and is not used for relation proofs",
+    )
+    return RelationFacts(final_empty, max_rows, final_proof, boundaries)

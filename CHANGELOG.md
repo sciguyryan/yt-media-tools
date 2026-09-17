@@ -13,6 +13,7 @@
 - Add typed variadic `CONCAT()` with textual arguments, NULL propagation, deterministic evaluation and constant folding.
 - Preserve SQL NULL and three-valued logic, lexical collection semantics, source and facet identity, volatility boundaries and conservative optimisation guarantees throughout the preparatory architecture work.
 - Define left-to-right AND/OR short-circuit semantics, including identical HAVING behaviour, and distinguish proven final truth from proven evaluation reachability in the shared semantic proof model.
+- Add conservative relation-level provability for explicit cardinality bounds and proven emptiness propagation through CTEs, single JOIN semantics and UNION composition, while explicitly refusing unsupported nullability and physical-source cardinality inference.
 - Reconcile cumulative performance evidence, retaining the collection-pipeline and batched-cache improvements while recording remaining explicit evaluation-context overhead for focused future investigation.
 
 ## Discover 0.29.2 - Collection Querying Beyond Indexing
