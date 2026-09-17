@@ -69,3 +69,11 @@ def test_duplicate_predicate_decision_retains_determinism_proof():
     decision = next(item for item in result.decisions if item.rule == "deduplicate-and")
     assert decision.proofs
     assert all(proof.proven for proof in decision.proofs)
+
+
+def test_composed_proof_retains_structured_premises():
+    deterministic = prove_expression_deterministic(_resolved("SELECT 1 FROM @x").select[0].expression)
+    constant = prove_expression_constant(_resolved("SELECT 1 FROM @x").select[0].expression)
+    proof = compose_proofs("safe-composite", deterministic, constant)
+    assert proof.proven
+    assert proof.premises == (deterministic, constant)

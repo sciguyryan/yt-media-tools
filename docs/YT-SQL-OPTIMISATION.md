@@ -370,6 +370,16 @@ A future design investigation may evaluate a compact compiled yt-sql representat
 
 This is exploratory rather than committed work. Any design must justify its complexity with measurements and address language/schema versioning, cache invalidation, validation of untrusted compiled input, portability, deterministic behaviour, explainability and compatibility with future language evolution. A compiled form must never become an undocumented second language with semantics that can drift from textual yt-sql.
 
+## Shared semantic and relational provability
+
+yt-sql uses a shared conservative proof layer for semantic facts that are useful to more than one optimiser or planner. Proof results are explicit objects with a claim, status, provenance, reasons and prerequisite proof nodes. Composite proofs retain their premises so explain and diagnostic consumers can inspect the reasoning tree rather than reconstructing semantic decisions from prose. A missing proof is a normal outcome and never grants permission to optimise.
+
+The shared predicate prover currently establishes resolved constant truth and a deliberately bounded family of never-TRUE filtering contradictions, including incompatible equality/range constraints and incompatible NULL requirements. Relation simplification consumes that proof for WHERE and HAVING. JOIN planning consumes the same never-TRUE proof and separately applies JOIN semantics: INNER and SEMI are then proven empty, while LEFT and ANTI retain the primary relation but prove the joined relation irrelevant. Acquisition planning consumes only those derived relational consequences. This separation keeps semantic facts, relational consequences and physical acquisition policy distinct.
+
+Proofs are derived only after the relevant syntax and semantic resolution rules have succeeded. Unknown fields, ambiguous relation ownership, invalid aliases and other semantic errors remain errors and are never reinterpreted as NULL, FALSE, emptiness or an optimisation opportunity. Supported metadata that has not been acquired remains distinct from SQL NULL and structural unavailability. Early rejection is therefore permitted only when it can preserve the established deterministic diagnostic contract exactly; this phase deliberately adds no speculative early-error rules merely because later work could be avoided.
+
+The proof model is intentionally incomplete. OR reasoning, general algebraic equivalence, inferred functional dependencies, speculative type/domain assumptions, volatile expressions and cross-relation transformations remain unproven unless a dedicated rule establishes their full yt-sql semantics. Optimiser/reference differential tests and explicit non-proof tests are required as the proof surface expands.
+
 ## JOIN execution
 
 ### Implemented strategies

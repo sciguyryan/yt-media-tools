@@ -45,6 +45,7 @@ class OptimisationProof:
     status: str
     provenance: tuple[str, ...]
     reasons: tuple[str, ...]
+    premises: tuple["OptimisationProof", ...] = ()
 
     @property
     def proven(self) -> bool:
@@ -58,12 +59,14 @@ def _proof(
     *,
     provenance: tuple[str, ...],
     reasons: tuple[str, ...],
+    premises: tuple[OptimisationProof, ...] = (),
 ) -> OptimisationProof:
     return OptimisationProof(
         claim=claim,
         status=PROVEN if proven else NOT_PROVEN,
         provenance=provenance,
         reasons=reasons,
+        premises=premises,
     )
 
 
@@ -187,7 +190,24 @@ def compose_proofs(claim: str, *proofs: OptimisationProof) -> OptimisationProof:
     proven = all(proof.proven for proof in proofs)
     provenance = tuple(dict.fromkeys(item for proof in proofs for item in proof.provenance))
     reasons = tuple(reason for proof in proofs for reason in proof.reasons)
-    return _proof(claim, proven, provenance=provenance, reasons=reasons)
+    return _proof(
+        claim,
+        proven,
+        provenance=provenance,
+        reasons=reasons,
+        premises=tuple(proofs),
+    )
+
+
+def proof_to_dict(proof: OptimisationProof) -> dict[str, object]:
+    """Serialise one proof tree without reconstructing reasoning from prose."""
+    return {
+        "claim": proof.claim,
+        "status": proof.status,
+        "provenance": list(proof.provenance),
+        "reasons": list(proof.reasons),
+        "premises": [proof_to_dict(item) for item in proof.premises],
+    }
 
 
 TRUTH_TRUE = "true"

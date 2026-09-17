@@ -124,3 +124,34 @@ def test_console_and_graphviz_explain_derive_relational_nodes_from_machine_plan(
     assert any(node.node_id == "join_0" and node.label == "ANTI JOIN" for node in graph.nodes)
     assert "ANTI JOIN" in dot
     assert "stable-right-hash-with-reference-fallback" in dot
+
+
+def test_json_explain_exposes_structured_join_provability() -> None:
+    payload = explain_user_query_json(
+        "SELECT l.id FROM @left AS l INNER JOIN @right AS r ON 1 = 0",
+        source_type="auto",
+        tab="all",
+        date_format="YMD",
+    )
+    proof = payload["relational_joins"][0]["provability"]
+    assert proof["predicate_never_true"] is True
+    assert proof["result_empty"] is True
+    assert proof["right_relation_irrelevant"] is True
+    assert proof["proof"]["claim"] == "join-consequence"
+    assert proof["proof"]["premises"]
+
+
+def test_json_explain_records_explicit_non_proof_for_dynamic_join() -> None:
+    payload = explain_user_query_json(
+        "SELECT l.id FROM @left AS l INNER JOIN @right AS r ON l.id = r.id",
+        source_type="auto",
+        tab="all",
+        date_format="YMD",
+    )
+    proof = payload["relational_joins"][0]["provability"]
+    assert proof == {
+        "predicate_never_true": False,
+        "result_empty": False,
+        "right_relation_irrelevant": False,
+        "proof": None,
+    }

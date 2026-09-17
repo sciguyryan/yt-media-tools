@@ -10,6 +10,7 @@ from .dates import DateContext
 from .query_model import Binary, Field, Query, SelectTerm
 from .query_traversal import walk_ast
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
+from .semantic_provability import prove_join_consequences
 from .planning_heuristics import AcquisitionHeuristicPlan, plan_acquisition_heuristics
 from .query_semantics import query_physical_source_requests
 from .relation_simplification import RelationSimplificationPlan, plan_relation_simplification
@@ -701,8 +702,12 @@ def plan_source_boundaries(
     # no rows from the joined side.
     if len(query.joins) == 1:
         join = query.joins[0]
-        truth = prove_predicate_truth(join.predicate, source=sources[0] if sources else None)
-        if truth.proven and truth.truth != TRUTH_TRUE:
+        join_proof = prove_join_consequences(
+            join.kind.value,
+            join.predicate,
+            source=sources[0] if sources else None,
+        )
+        if join_proof.predicate_never_true:
             right_request = (join.relation.source, join.relation.facet)
             primary_request = (query.from_source, query.from_facet)
             eliminate = {right_request}
@@ -736,7 +741,7 @@ def plan_source_boundaries(
                         cost_class="none",
                         cost_reason="JOIN semantics prove acquisition cannot affect the result",
                         branch_empty=True,
-                        elimination_proof=truth.proof,
+                        elimination_proof=join_proof.proof,
                         physical_acquisition=physical,
                         heuristics=plan_acquisition_heuristics(
                             physical_acquisition=physical,

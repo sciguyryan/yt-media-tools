@@ -92,3 +92,14 @@ def test_union_branch_join_inputs_participate_in_physical_acquisition_discovery(
         ("@other", None),
         ("@tags", None),
     )
+
+
+def test_contradictory_inner_join_predicate_eliminates_both_acquisitions() -> None:
+    query = parse_query(
+        "SELECT l.id FROM @left OF videos AS l JOIN @right OF videos AS r ON l.view_count = 5 AND l.view_count > 10"
+    )
+    requests = (("@left", "videos"), ("@right", "videos"))
+    sources = tuple(resolve_source_request(name, facet=facet) for name, facet in requests)
+    plans = plan_source_boundaries(query, requests=requests, sources=sources, dates=DateContext())
+    assert {plan.source_name: plan.acquisition.mode for plan in plans} == {"@left": "skip", "@right": "skip"}
+    assert all(plan.elimination_proof is not None for plan in plans)

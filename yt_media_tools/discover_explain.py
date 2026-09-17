@@ -24,6 +24,8 @@ from yt_media_tools.planner import (
     required_query_fields,
 )
 from yt_media_tools.optimizer import optimise_query
+from yt_media_tools.optimizer_proofs import proof_to_dict
+from yt_media_tools.semantic_provability import prove_join_consequences
 from yt_media_tools.query import (
     Query,
     QuerySchema,
@@ -180,6 +182,7 @@ def _join_explain_payload(query: Query, source_boundaries: tuple[object, ...]) -
     result: list[dict[str, object]] = []
     for index, join in enumerate(query.joins):
         strategy, reason = _join_execution_strategy(query, index)
+        provability = prove_join_consequences(join.kind.value, join.predicate)
         result.append(
             {
                 "index": index,
@@ -202,6 +205,12 @@ def _join_explain_payload(query: Query, source_boundaries: tuple[object, ...]) -
                 "predicate_dependencies": _join_predicate_dependencies(join.predicate),
                 "execution_strategy": strategy,
                 "strategy_reason": reason,
+                "provability": {
+                    "predicate_never_true": provability.predicate_never_true,
+                    "result_empty": provability.result_empty,
+                    "right_relation_irrelevant": provability.right_relation_irrelevant,
+                    "proof": proof_to_dict(provability.proof) if provability.proof is not None else None,
+                },
             }
         )
     return result
@@ -1083,6 +1092,7 @@ def explain_user_query_json(
                         "where_redundant": relation.where_redundant,
                         "having_redundant": relation.having_redundant,
                         "reason": relation.reason,
+                        "proofs": [proof_to_dict(proof) for proof in relation.proofs],
                     }
                     for relation in branch.relation_simplifications
                 ],
