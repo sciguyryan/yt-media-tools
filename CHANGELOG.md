@@ -1,5 +1,19 @@
 # Changelog
 
+## Discover 0.29.4 - Relations Resolved
+
+- Add first-class single-relation JOIN grammar, resolution and execution for `INNER`, `LEFT`, `SEMI` and `ANTI`, with explicit relation aliases, qualified field ownership, deterministic ambiguity diagnostics and conservative unsupported-form guards.
+- Define joined projection semantics, including primary-relation `*`, explicit `alias.*`, unique output-name requirements and precise LEFT JOIN NULL extension.
+- Integrate JOIN execution with CTEs, UNION and UNION ALL while preserving relation identity, source/facet provenance, acquisition ownership and deterministic set-composition semantics.
+- Add proof-limited hash execution for simple and compound cross-relation equality keys across supported JOIN families while retaining an independent nested-loop reference executor and exact NULL/three-valued matching behaviour.
+- Expose JOIN identity, kind, predicate dependencies, acquisition requirements and selected execution strategy through the shared explain model and console, JSON and Graphviz presentations.
+- Extend shared semantic provability with bounded Boolean constraints, authoritative source-field type and nullability facts, proven relation emptiness/cardinality consequences and deliberately conservative result-provenance boundaries.
+- Add deterministic JOIN conformance, independent-oracle, optimiser-differential and torture coverage spanning duplicates, NULLs, empty relations, aliases, overlapping schemas, CTEs, set composition, functions and unsupported multi-way execution.
+- Add stable relational performance benchmarks for one-to-one, one-to-many, no-match, asymmetric, compound-equality, SEMI and acquisition-planning workloads.
+- Reconcile relational performance against the 0.29.2 release baseline, removing unnecessary composed-resolution and eager evaluation-context overhead while retaining established semantics and improving the representative offline end-to-end benchmark.
+- Improve routine test infrastructure with reusable deterministic conformance populations, an in-process CLI harness where process isolation is not part of the contract, and a project-owned parallel test runner with an explicit serial mode.
+- Complete the 0.29.x language and parser architecture programme, leaving the accepted hand-written parser and formalised language contracts as the stable foundation for the 0.30.x feature programme.
+
 ## Discover 0.29.3 - Groundwork Complete
 
 - Add deterministic performance benchmarking with immutable and per-phase baselines, compact terminal comparison output, machine-readable results and documented regression guidance.
