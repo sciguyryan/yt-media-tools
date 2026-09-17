@@ -370,6 +370,24 @@ A future design investigation may evaluate a compact compiled yt-sql representat
 
 This is exploratory rather than committed work. Any design must justify its complexity with measurements and address language/schema versioning, cache invalidation, validation of untrusted compiled input, portability, deterministic behaviour, explainability and compatibility with future language evolution. A compiled form must never become an undocumented second language with semantics that can drift from textual yt-sql.
 
+## JOIN execution
+
+### Implemented strategies
+
+- Preserve the deliberately simple nested-loop executor as the semantic reference route for every executable JOIN family. Tests can disable relational execution optimisation explicitly and compare the resulting rows with the production path.
+- Use a right-side hash index for a single resolved equality predicate of the exact form `left.field = right.field` (or its operand-reversed equivalent). `SEMI` and `ANTI` use the index as a membership set; `INNER` and `LEFT` use the indexed right rows while preserving their original order and ordinary duplicate-match multiplicity.
+- Exclude SQL NULL keys from the equality index because `NULL = value`, including `NULL = NULL`, is UNKNOWN rather than TRUE.
+- Fall back to the reference executor for non-equality predicates and values that cannot safely participate in the hash index. Failure to prove the narrow hash strategy applicable is never permission to broaden it.
+- Retain the relation-aware field acquisition and deterministic never-TRUE acquisition elimination established by the preceding relational integration work.
+
+### Deliberately not implemented
+
+- No JOIN reordering, cost-based side selection, predicate movement across relation boundaries or speculative predicate pushdown.
+- No hash strategy for compound predicates, computed keys or non-equality comparisons. These remain on reference execution until an explicit equivalence proof and differential coverage justify a wider strategy.
+- No transformation may cross volatility, NULL/three-valued logic, ordering, `LIMIT`/`OFFSET`, aggregation, `DISTINCT`, source/facet identity or acquisition-side-effect boundaries without a specific proof.
+
+Relational optimisation must remain differentially testable. Every new fast path should have a straightforward unoptimised counterpart over the same resolved query so correctness can be checked independently of the optimisation itself.
+
 ## Common table expressions
 
 ### Implemented strategies

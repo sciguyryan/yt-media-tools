@@ -863,21 +863,98 @@ def _union_row_key(row: dict[str, Any], output_names: tuple[str, ...]) -> tuple[
     return tuple(values)
 
 
+def _equality_join_fields(query: Query) -> tuple[RelationField, RelationField] | None:
+    """Return left/right fields for a safely hashable equality JOIN shape.
+
+    This recognises only the narrow resolved form whose equivalence is immediate:
+    one equality comparison between fields owned by the two participating relations.
+    Every other predicate remains on the deliberately simple nested-loop route.
+    """
+    join = query.joins[0]
+    predicate = join.predicate
+    if not isinstance(predicate, ScalarComparison) or predicate.operator != "=":
+        return None
+    if not isinstance(predicate.left, RelationField) or not isinstance(predicate.right, RelationField):
+        return None
+    left_alias = query.from_alias or ""
+    right_alias = join.relation.alias or ""
+    if predicate.left.qualifier == left_alias and predicate.right.qualifier == right_alias:
+        return predicate.left, predicate.right
+    if predicate.right.qualifier == left_alias and predicate.left.qualifier == right_alias:
+        return predicate.right, predicate.left
+    return None
+
+
+def _hash_join_index(
+    right_records: Sequence[dict[str, Any]], right_field: RelationField
+) -> dict[Any, list[dict[str, Any]]] | None:
+    """Build a stable right-side equality index, or decline unsafe values.
+
+    SQL NULL never equality-matches. Unhashable values fall back to reference
+    execution rather than acquiring a bespoke equality model in the optimiser.
+    Lists preserve source order so INNER/LEFT multiplicity and ordering are unchanged.
+    """
+    index: dict[Any, list[dict[str, Any]]] = {}
+    for record in right_records:
+        value = canonical_record_value(record, right_field.name, right_field.kind)
+        if value is None:
+            continue
+        try:
+            hash(value)
+        except TypeError:
+            return None
+        index.setdefault(value, []).append(record)
+    return index
+
+
+def _hash_join_matches(
+    left_record: dict[str, Any], left_field: RelationField, index: dict[Any, list[dict[str, Any]]]
+) -> list[dict[str, Any]] | None:
+    value = canonical_record_value(left_record, left_field.name, left_field.kind)
+    if value is None:
+        return []
+    try:
+        hash(value)
+    except TypeError:
+        return None
+    return index.get(value, [])
+
+
 def _apply_existence_join(
     records: Sequence[dict[str, Any]],
     query: Query,
     relations: dict[str, list[dict[str, Any]]],
     physical_requests: tuple[tuple[str, str | None], ...],
+    *,
+    relational_optimisation: bool = True,
 ) -> list[dict[str, Any]]:
-    """Apply one executable SEMI or ANTI join without multiplying left rows."""
+    """Apply one SEMI or ANTI join, with a proof-limited membership fast path."""
     join = query.joins[0]
     left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
     right_records = _records_for_source(
         records, join.relation.source, join.relation.facet, relations, physical_requests
     )
+    equality_fields = _equality_join_fields(query) if relational_optimisation else None
+    if equality_fields is not None:
+        left_field, right_field = equality_fields
+        index = _hash_join_index(right_records, right_field)
+        if index is not None:
+            selected: list[dict[str, Any]] = []
+            for left_record in left_records:
+                matches = _hash_join_matches(left_record, left_field, index)
+                if matches is None:
+                    break
+                matched = bool(matches)
+                if (join.kind is JoinKind.SEMI and matched) or (join.kind is JoinKind.ANTI and not matched):
+                    selected.append(left_record)
+            else:
+                return selected
+
+    # Reference execution route. Keep this intentionally straightforward so tests
+    # can differentially compare every relational optimisation against it.
     left_alias = query.from_alias or ""
     right_alias = join.relation.alias or ""
-    selected: list[dict[str, Any]] = []
+    selected = []
     for left_record in left_records:
         matched = False
         for right_record in right_records:
@@ -898,15 +975,10 @@ def _apply_row_producing_join(
     query: Query,
     relations: dict[str, list[dict[str, Any]]],
     physical_requests: tuple[tuple[str, str | None], ...],
+    *,
+    relational_optimisation: bool = True,
 ) -> list[dict[str, Any]]:
-    """Apply one INNER or LEFT JOIN while preserving explicit relation ownership.
-
-    A LEFT JOIN emits the ordinary TRUE-matching row pairs when any exist. If no
-    right row makes the ON predicate TRUE, it emits exactly one left row with an
-    empty right-relation binding. Field lookup over that binding yields SQL NULL,
-    including for dynamically observed right-side fields, without fabricating a
-    physical metadata record or losing the relation boundary.
-    """
+    """Apply one INNER or LEFT JOIN while preserving explicit relation ownership."""
     join = query.joins[0]
     left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
     right_records = _records_for_source(
@@ -914,19 +986,33 @@ def _apply_row_producing_join(
     )
     left_alias = query.from_alias or ""
     right_alias = join.relation.alias or ""
+
+    equality_fields = _equality_join_fields(query) if relational_optimisation else None
+    index = None
+    left_field = None
+    if equality_fields is not None:
+        left_field, right_field = equality_fields
+        index = _hash_join_index(right_records, right_field)
+
     joined: list[dict[str, Any]] = []
     for left_record in left_records:
+        candidate_records: Sequence[dict[str, Any]] = right_records
+        if index is not None and left_field is not None:
+            indexed = _hash_join_matches(left_record, left_field, index)
+            if indexed is None:
+                # One unhashable left value invalidates the fast path for this row;
+                # reference evaluation retains exact established semantics.
+                candidate_records = right_records
+            else:
+                candidate_records = indexed
         matched = False
-        for right_record in right_records:
+        for right_record in candidate_records:
             relation_records = {left_alias: left_record, right_alias: right_record}
             context = EvaluationContext(left_record, relation_records=relation_records)
             if evaluate(join.predicate, context) is not True:
                 continue
             matched = True
             row = dict(left_record)
-            # Keep relation bindings as internal execution state. Projection and other
-            # expression evaluation consume them through EvaluationContext, so same-
-            # named fields from independent relations never overwrite one another.
             row["_yt_sql_relation_records"] = relation_records
             joined.append(row)
         if join.kind is JoinKind.LEFT and not matched:
@@ -941,13 +1027,19 @@ def _apply_composed_query(
     query: Query,
     relations: dict[str, list[dict[str, Any]]],
     physical_requests: tuple[tuple[str, str | None], ...],
+    *,
+    relational_optimisation: bool = True,
 ) -> list[dict[str, Any]]:
     if not query.set_operations:
         if query.joins:
             if query.joins[0].kind in {JoinKind.INNER, JoinKind.LEFT}:
-                input_records = _apply_row_producing_join(records, query, relations, physical_requests)
+                input_records = _apply_row_producing_join(
+                    records, query, relations, physical_requests, relational_optimisation=relational_optimisation
+                )
             else:
-                input_records = _apply_existence_join(records, query, relations, physical_requests)
+                input_records = _apply_existence_join(
+                    records, query, relations, physical_requests, relational_optimisation=relational_optimisation
+                )
         else:
             input_records = _records_for_source(
                 records, query.from_source, query.from_facet, relations, physical_requests
@@ -958,14 +1050,18 @@ def _apply_composed_query(
     # A UNION branch is a complete relational query body. Apply its JOIN before
     # projection just as we do for a standalone query rather than bypassing the
     # relation operator through the older single-relation UNION path.
-    left_rows = _apply_composed_query(records, left_body, relations, physical_requests)
+    left_rows = _apply_composed_query(
+        records, left_body, relations, physical_requests, relational_optimisation=relational_optimisation
+    )
     rows = _project_result_rows(left_rows, left_body)
     output_names = tuple(term.output_name for term in query.select)
 
     for operation in query.set_operations:
         branch = operation.query
         branch_body = replace(branch, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
-        branch_result = _apply_composed_query(records, branch_body, relations, physical_requests)
+        branch_result = _apply_composed_query(
+            records, branch_body, relations, physical_requests, relational_optimisation=relational_optimisation
+        )
         branch_rows = _project_result_rows(branch_result, branch_body)
         branch_names = tuple(term.output_name for term in branch.select)
         remapped = [
@@ -1006,23 +1102,35 @@ def _apply_composed_query(
     return rows
 
 
-def apply_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+def apply_query(
+    records: Sequence[dict[str, Any]], query: Query, *, relational_optimisation: bool = True
+) -> list[dict[str, Any]]:
     """Apply a resolved query, materialising CTEs and set-composed relations."""
     for record in records:
         record.pop("_yt_sql_random_cache", None)
     physical_requests = query_physical_source_requests(query)
     if not query.ctes:
-        result = _apply_composed_query(records, query, {}, physical_requests)
+        result = _apply_composed_query(
+            records, query, {}, physical_requests, relational_optimisation=relational_optimisation
+        )
     else:
         relations: dict[str, list[dict[str, Any]]] = {}
         for cte in query.ctes:
-            cte_result = _apply_composed_query(records, cte.query, relations, physical_requests)
+            cte_result = _apply_composed_query(
+                records, cte.query, relations, physical_requests, relational_optimisation=relational_optimisation
+            )
             relations[cte.name.casefold()] = (
                 _project_result_rows(cte_result, cte.query)
                 if not cte.query.set_operations
                 else [dict(row) for row in cte_result]
             )
-        result = _apply_composed_query(records, replace(query, ctes=()), relations, physical_requests)
+        result = _apply_composed_query(
+            records,
+            replace(query, ctes=()),
+            relations,
+            physical_requests,
+            relational_optimisation=relational_optimisation,
+        )
 
     # Result-row markers are an internal execution detail used while materialising
     # CTEs and set operations. They must never escape through the public query API.
