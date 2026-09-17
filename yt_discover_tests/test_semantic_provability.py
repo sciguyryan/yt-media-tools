@@ -161,8 +161,12 @@ def test_source_field_facts_use_authoritative_capability_nullability() -> None:
 
     assert identifier.known_logical_field and identifier.logical_kind == "string"
     assert identifier.nullable is False and identifier.proof is not None
+    assert identifier.query_type is not None and identifier.query_type.describe() == "string"
+    assert identifier.structurally_supported is True
     assert title.known_logical_field and title.nullable is True
-    assert dynamic.nullable is None and dynamic.proof is None
+    assert title.query_type is not None and title.query_type.describe() == "string?"
+    assert dynamic.nullable is None and dynamic.query_type is None and dynamic.proof is None
+    assert dynamic.structurally_supported is None
     assert any("dynamic field" in boundary for boundary in dynamic.boundaries)
 
 
@@ -181,3 +185,35 @@ def test_non_null_capability_can_prove_is_null_filter_never_true() -> None:
 def test_non_null_capability_proof_refuses_without_source_contract() -> None:
     identifier_is_null = parse_query("SELECT id FROM @x WHERE id IS NULL").predicate
     assert prove_predicate_never_true(identifier_is_null, source=None) is None
+
+
+def test_source_field_facts_preserve_declared_collection_type_and_ordering() -> None:
+    from yt_media_tools.query_types import CollectionOrdering
+    from yt_media_tools.semantic_provability import prove_source_field_facts
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("channel", "@x", "https://www.youtube.com/@x", "x", "videos")
+    tags = prove_source_field_facts(source, "tags")
+    formats = prove_source_field_facts(source, "formats")
+
+    assert tags.query_type is not None and tags.query_type.is_collection
+    assert tags.collection_ordering is CollectionOrdering.STABLE
+    assert tags.query_type.element_type is not None
+    assert tags.query_type.element_type.describe() == "string?"
+    assert formats.query_type is not None and formats.query_type.is_collection
+    assert formats.collection_ordering is CollectionOrdering.UNKNOWN
+    assert formats.query_type.element_type is not None
+    assert formats.query_type.element_type.is_structured
+
+
+def test_source_field_type_facts_do_not_turn_dynamic_runtime_shape_into_contract() -> None:
+    from yt_media_tools.semantic_provability import prove_source_field_facts
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("extractor", "https://example.invalid/item", "https://example.invalid/item", None, None)
+    dynamic = prove_source_field_facts(source, "raw.provider_specific")
+
+    assert not dynamic.known_logical_field
+    assert dynamic.query_type is None
+    assert dynamic.collection_ordering is None
+    assert dynamic.structurally_supported is None

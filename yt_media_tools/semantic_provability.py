@@ -34,17 +34,30 @@ from .query_model import (
     ScalarIsNull,
     TextPredicate,
 )
-from .source_capabilities import selected_facet_capabilities
+from .query_types import CollectionOrdering, QueryType
+from .source_capabilities import (
+    STRUCTURALLY_SUPPORTED,
+    STRUCTURALLY_UNSUPPORTED,
+    selected_facet_capabilities,
+)
 from .source_model import SourceSpec
 
 
 @dataclass(frozen=True)
 class FieldFacts:
-    """Authoritative facts available for one stable logical source field."""
+    """Authoritative facts available for one stable logical source field.
+
+    ``query_type`` carries the complete stable yt-sql type where the selected
+    source/facet contract declares one. ``collection_ordering`` is copied only
+    from that type contract and is never inferred from provider return order.
+    """
 
     known_logical_field: bool
     logical_kind: str | None
     nullable: bool | None
+    query_type: QueryType | None
+    collection_ordering: CollectionOrdering | None
+    structurally_supported: bool | None
     proof: OptimisationProof | None
     boundaries: tuple[str, ...] = ()
 
@@ -63,7 +76,10 @@ def prove_source_field_facts(source: SourceSpec, field: str) -> FieldFacts:
             None,
             None,
             None,
-            ("dynamic field has no stable logical-schema type or nullability contract",),
+            None,
+            None,
+            None,
+            ("dynamic field has no stable logical-schema type, nullability, or structural-support contract",),
         )
     non_null = prove_field_non_null(field, source=source)
     proof = (
@@ -76,7 +92,28 @@ def prove_source_field_facts(source: SourceSpec, field: str) -> FieldFacts:
             reasons=(f"{field.casefold()} has a stable logical field declaration",),
         )
     )
-    return FieldFacts(True, capability.logical_kind, capability.nullable, proof)
+    query_type = capability.logical_type
+    if query_type is None:
+        query_type = QueryType.scalar(capability.logical_kind, nullable=capability.nullable)
+    else:
+        query_type = query_type.with_nullable(capability.nullable)
+    ordering = query_type.ordering if query_type.is_collection else None
+    structurally_supported = (
+        True
+        if capability.structural_support == STRUCTURALLY_SUPPORTED
+        else False
+        if capability.structural_support == STRUCTURALLY_UNSUPPORTED
+        else None
+    )
+    return FieldFacts(
+        True,
+        capability.logical_kind,
+        capability.nullable,
+        query_type,
+        ordering,
+        structurally_supported,
+        proof,
+    )
 
 
 @dataclass(frozen=True)
