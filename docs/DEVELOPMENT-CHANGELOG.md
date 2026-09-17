@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [test] Complete issue #61 conformance by extending the independent relation oracle with SEMI/ANTI existence semantics.
+- [test] Check production SEMI/ANTI execution against the independent oracle across direct facet relations and CTE-backed left and right relations.
+- [test] Verify same-source facet identity, duplicate-match cardinality, SQL UNKNOWN behaviour and retained left-side acquisition provenance.
+- [docs] Reconcile Phase 6 acceptance against the complete issue #61 requirements without regressing the subsequently implemented INNER/LEFT work.
+
 - [feature] Complete issue #62 with executable `LEFT [OUTER] JOIN`, preserving unmatched primary rows through explicit NULL-extended right-relation bindings.
 - [maintenance] Share row-producing JOIN execution between `INNER` and `LEFT` while preserving relation ownership and the deterministic multi-way execution guard.
 - [test] Add LEFT JOIN coverage for duplicate matches, NULL/UNKNOWN keys, empty relations, right-side filtering, qualified projection and CTE-backed relations.

@@ -8,7 +8,7 @@ for testing future multi-relation syntax rather than an implementation of that s
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
 
 @dataclass(frozen=True)
@@ -96,3 +96,25 @@ class OracleRelationScope:
         if len(matches) != 1:
             return None
         return OracleFieldIdentity(matches[0].identity, name)
+
+
+def oracle_existence_join(
+    left: OracleRelation,
+    right: OracleRelation,
+    predicate: Callable[[Mapping[str, Any], Mapping[str, Any]], bool | None],
+    *,
+    anti: bool = False,
+) -> tuple[Mapping[str, Any], ...]:
+    """Evaluate independent SEMI/ANTI existence semantics over two relations.
+
+    The oracle deliberately accepts a plain Python predicate instead of production
+    AST or evaluator objects. Only the literal Boolean value ``True`` constitutes a
+    match. ``False`` and ``None`` therefore model SQL FALSE and UNKNOWN uniformly.
+    Right-side multiplicity can establish existence but can never multiply a left row.
+    """
+    selected: list[Mapping[str, Any]] = []
+    for left_row in left.rows:
+        matched = any(predicate(left_row, right_row) is True for right_row in right.rows)
+        if matched != anti:
+            selected.append(left_row)
+    return tuple(selected)
