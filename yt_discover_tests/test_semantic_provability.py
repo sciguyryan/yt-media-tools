@@ -148,3 +148,36 @@ def test_relation_facts_state_current_nullability_and_cardinality_boundaries() -
     assert not facts.empty
     assert any("nullability" in boundary for boundary in facts.boundaries)
     assert any("physical-source cardinality" in boundary for boundary in facts.boundaries)
+
+
+def test_source_field_facts_use_authoritative_capability_nullability() -> None:
+    from yt_media_tools.semantic_provability import prove_source_field_facts
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("channel", "@x", "https://www.youtube.com/@x", "x", "videos")
+    identifier = prove_source_field_facts(source, "id")
+    title = prove_source_field_facts(source, "title")
+    dynamic = prove_source_field_facts(source, "future_dynamic_field")
+
+    assert identifier.known_logical_field and identifier.logical_kind == "string"
+    assert identifier.nullable is False and identifier.proof is not None
+    assert title.known_logical_field and title.nullable is True
+    assert dynamic.nullable is None and dynamic.proof is None
+    assert any("dynamic field" in boundary for boundary in dynamic.boundaries)
+
+
+def test_non_null_capability_can_prove_is_null_filter_never_true() -> None:
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("channel", "@x", "https://www.youtube.com/@x", "x", "videos")
+    identifier_is_null = parse_query("SELECT id FROM @x WHERE id IS NULL").predicate
+    title_is_null = parse_query("SELECT id FROM @x WHERE title IS NULL").predicate
+
+    proof = prove_predicate_never_true(identifier_is_null, source=source)
+    assert proof is not None and proof.proven
+    assert prove_predicate_never_true(title_is_null, source=source) is None
+
+
+def test_non_null_capability_proof_refuses_without_source_contract() -> None:
+    identifier_is_null = parse_query("SELECT id FROM @x WHERE id IS NULL").predicate
+    assert prove_predicate_never_true(identifier_is_null, source=None) is None

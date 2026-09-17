@@ -18,6 +18,7 @@ from .optimizer_proofs import (
     OptimisationProof,
     PredicateTruthProof,
     compose_proofs,
+    prove_field_non_null,
     prove_predicate_truth,
 )
 from .query_model import (
@@ -33,7 +34,49 @@ from .query_model import (
     ScalarIsNull,
     TextPredicate,
 )
+from .source_capabilities import selected_facet_capabilities
 from .source_model import SourceSpec
+
+
+@dataclass(frozen=True)
+class FieldFacts:
+    """Authoritative facts available for one stable logical source field."""
+
+    known_logical_field: bool
+    logical_kind: str | None
+    nullable: bool | None
+    proof: OptimisationProof | None
+    boundaries: tuple[str, ...] = ()
+
+
+def prove_source_field_facts(source: SourceSpec, field: str) -> FieldFacts:
+    """Expose only field facts promised by the selected source/facet contract.
+
+    ``nullable`` is ``None`` for dynamic fields because detailed metadata may
+    expose them without any stable logical-schema promise. This deliberately
+    distinguishes unavailable knowledge from a nullable declaration.
+    """
+    capability = selected_facet_capabilities(source).field(field)
+    if capability.logical_kind is None:
+        return FieldFacts(
+            False,
+            None,
+            None,
+            None,
+            ("dynamic field has no stable logical-schema type or nullability contract",),
+        )
+    non_null = prove_field_non_null(field, source=source)
+    proof = (
+        non_null
+        if non_null.proven
+        else OptimisationProof(
+            claim="field-capability-facts",
+            status=PROVEN,
+            provenance=("source-capability",),
+            reasons=(f"{field.casefold()} has a stable logical field declaration",),
+        )
+    )
+    return FieldFacts(True, capability.logical_kind, capability.nullable, proof)
 
 
 @dataclass(frozen=True)
@@ -347,9 +390,10 @@ class RelationFacts:
     """Conservative facts proven about one complete logical query result.
 
     ``max_rows`` is present only when an explicit language construct proves an
-    upper bound. ``nullable_fields`` is intentionally absent: the current
-    resolved query model does not carry authoritative output nullability, so
-    this layer must not manufacture it from field names or extractor habits.
+    upper bound. Output nullability is intentionally absent here: stable
+    source/facet contracts do carry field nullability, but the complete query
+    result model does not yet preserve enough projection and LEFT-extension
+    information to lift those declarations safely to arbitrary result columns.
     """
 
     empty: bool
@@ -374,7 +418,8 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
 
     The proof deliberately uses only facts represented authoritatively by the
     current query model. In particular, direct physical sources have unknown
-    cardinality and output-field nullability is not inferred. CTE emptiness is
+    cardinality. Stable source contracts may prove input-field nullability, but
+    arbitrary result-column nullability is not inferred here. CTE emptiness is
     propagated by name, JOIN consequences are applied by JOIN kind, UNION is
     empty only when every branch is proven empty, and an explicit LIMIT is an
     unconditional result-cardinality upper bound.

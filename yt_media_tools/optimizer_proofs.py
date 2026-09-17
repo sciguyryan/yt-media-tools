@@ -153,6 +153,48 @@ def prove_field_structurally_unavailable(
     )
 
 
+def prove_field_non_null(
+    field: Field | str,
+    *,
+    source: SourceSpec | None,
+) -> OptimisationProof:
+    """Prove that a stable logical field cannot be SQL NULL for one source/facet.
+
+    This proof consumes only the selected source/facet capability contract. A
+    missing contract, a dynamic field, or a capability declared nullable is a
+    refusal rather than evidence.
+    """
+    name = field.name if isinstance(field, Field) else field
+    if source is None:
+        return _proof(
+            "field-non-null",
+            False,
+            provenance=(PROVENANCE_SOURCE_CAPABILITY,),
+            reasons=("no source/facet capability contract is available",),
+        )
+    capability = selected_facet_capabilities(source).field(name)
+    if capability.structural_support == STRUCTURALLY_UNSUPPORTED:
+        return _proof(
+            "field-non-null",
+            False,
+            provenance=(PROVENANCE_SOURCE_CAPABILITY,),
+            reasons=(f"{name.casefold()} is structurally unavailable and therefore SQL NULL",),
+        )
+    if capability.logical_kind is not None and not capability.nullable:
+        return _proof(
+            "field-non-null",
+            True,
+            provenance=(PROVENANCE_SOURCE_CAPABILITY,),
+            reasons=(f"{name.casefold()} is declared non-null by the selected source/facet capability contract",),
+        )
+    return _proof(
+        "field-non-null",
+        False,
+        provenance=(PROVENANCE_SOURCE_CAPABILITY,),
+        reasons=("the capability contract does not prove the field non-null",),
+    )
+
+
 def prove_query_independent_of_fields(
     query: Query,
     discarded_fields: set[str] | frozenset[str],
@@ -315,22 +357,38 @@ def prove_predicate_truth(node: Any, *, source: SourceSpec | None) -> PredicateT
                 proven=False,
             )
         field = prove_field_structurally_unavailable(target, source=source)
-        if not field.proven:
-            return PredicateTruthProof(None, field)
-        truth = TRUTH_FALSE if node.negated else TRUTH_TRUE
-        return PredicateTruthProof(
-            truth,
-            compose_proofs(
-                "predicate-truth",
-                field,
-                _proof(
-                    "structural-null-test",
-                    True,
-                    provenance=(PROVENANCE_SEMANTIC_PROPERTIES,),
-                    reasons=("a structurally unavailable field is SQL NULL, so IS NULL/IS NOT NULL is constant",),
+        if field.proven:
+            truth = TRUTH_FALSE if node.negated else TRUTH_TRUE
+            return PredicateTruthProof(
+                truth,
+                compose_proofs(
+                    "predicate-truth",
+                    field,
+                    _proof(
+                        "structural-null-test",
+                        True,
+                        provenance=(PROVENANCE_SEMANTIC_PROPERTIES,),
+                        reasons=("a structurally unavailable field is SQL NULL, so IS NULL/IS NOT NULL is constant",),
+                    ),
                 ),
-            ),
-        )
+            )
+        non_null = prove_field_non_null(target, source=source)
+        if non_null.proven:
+            truth = TRUTH_TRUE if node.negated else TRUTH_FALSE
+            return PredicateTruthProof(
+                truth,
+                compose_proofs(
+                    "predicate-truth",
+                    non_null,
+                    _proof(
+                        "non-null-test",
+                        True,
+                        provenance=(PROVENANCE_SEMANTIC_PROPERTIES,),
+                        reasons=("a field proven non-null makes IS NULL/IS NOT NULL constant",),
+                    ),
+                ),
+            )
+        return PredicateTruthProof(None, non_null)
 
     if isinstance(node, (Between, InList, TextPredicate)):
         field = prove_field_structurally_unavailable(node.field, source=source)
