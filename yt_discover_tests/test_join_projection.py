@@ -14,7 +14,7 @@ def _schema(*records: dict[str, object]) -> QuerySchema:
 
 def test_plain_star_expands_only_primary_relation() -> None:
     left = _schema({"id": "left", "title": "Left"})
-    right = _schema({"id": "right", "channel": "Right"})
+    right = _schema({"id": "right", "right_only_marker": "Right"})
     query = parse_query("SELECT * FROM @left AS l JOIN @right AS r ON l.id = r.id")
     resolved = resolve_join_references(
         query,
@@ -27,7 +27,7 @@ def test_plain_star_expands_only_primary_relation() -> None:
     assert resolved.select
     assert all(isinstance(term.expression, RelationField) for term in resolved.select)
     assert {term.expression.qualifier for term in resolved.select} == {"l"}
-    assert "channel" not in {term.output_name for term in resolved.select}
+    assert "right_only_marker" not in {term.output_name for term in resolved.select}
 
 
 def test_relation_wildcard_expands_only_named_relation() -> None:
