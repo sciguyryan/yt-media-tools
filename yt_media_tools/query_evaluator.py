@@ -878,61 +878,84 @@ def _union_row_key(row: dict[str, Any], output_names: tuple[str, ...]) -> tuple[
     return tuple(values)
 
 
-def _equality_join_fields(query: Query) -> tuple[RelationField, RelationField] | None:
-    """Return left/right fields for a safely hashable equality JOIN shape.
+def _equality_join_key_fields(query: Query) -> tuple[tuple[RelationField, RelationField], ...] | None:
+    """Return left/right fields for a safely hashable equality JOIN key.
 
-    This recognises only the narrow resolved form whose equivalence is immediate:
-    one equality comparison between fields owned by the two participating relations.
-    Every other predicate remains on the deliberately simple nested-loop route.
+    A key may contain one equality or an AND-only conjunction of equalities,
+    provided every comparison directly relates one field from each participating
+    relation. The conjunction is not reordered and no algebraic equivalence is
+    inferred. Other predicate shapes retain reference execution.
     """
     join = query.joins[0]
-    predicate = join.predicate
-    if not isinstance(predicate, ScalarComparison) or predicate.operator != "=":
-        return None
-    if not isinstance(predicate.left, RelationField) or not isinstance(predicate.right, RelationField):
-        return None
     left_alias = query.from_alias or ""
     right_alias = join.relation.alias or ""
-    if predicate.left.qualifier == left_alias and predicate.right.qualifier == right_alias:
-        return predicate.left, predicate.right
-    if predicate.right.qualifier == left_alias and predicate.left.qualifier == right_alias:
-        return predicate.right, predicate.left
-    return None
+
+    def collect(node: Any) -> list[tuple[RelationField, RelationField]] | None:
+        if isinstance(node, Binary) and node.operator == "AND":
+            left = collect(node.left)
+            right = collect(node.right)
+            if left is None or right is None:
+                return None
+            return [*left, *right]
+        if not isinstance(node, ScalarComparison) or node.operator != "=":
+            return None
+        if not isinstance(node.left, RelationField) or not isinstance(node.right, RelationField):
+            return None
+        if node.left.qualifier == left_alias and node.right.qualifier == right_alias:
+            return [(node.left, node.right)]
+        if node.right.qualifier == left_alias and node.left.qualifier == right_alias:
+            return [(node.right, node.left)]
+        return None
+
+    fields = collect(join.predicate)
+    return tuple(fields) if fields else None
+
+
+def _equality_join_fields(query: Query) -> tuple[RelationField, RelationField] | None:
+    """Return the historical single-field equality key when applicable."""
+    fields = _equality_join_key_fields(query)
+    return fields[0] if fields is not None and len(fields) == 1 else None
+
+
+def _join_key(record: dict[str, Any], fields: Sequence[RelationField]) -> Any | None:
+    values = tuple(canonical_record_value(record, field.name, field.kind) for field in fields)
+    if any(value is None for value in values):
+        return None
+    key: Any = values[0] if len(values) == 1 else values
+    try:
+        hash(key)
+    except TypeError:
+        return _UNHASHABLE_JOIN_KEY
+    return key
+
+
+_UNHASHABLE_JOIN_KEY = object()
 
 
 def _hash_join_index(
-    right_records: Sequence[dict[str, Any]], right_field: RelationField
+    right_records: Sequence[dict[str, Any]], right_fields: Sequence[RelationField]
 ) -> dict[Any, list[dict[str, Any]]] | None:
-    """Build a stable right-side equality index, or decline unsafe values.
-
-    SQL NULL never equality-matches. Unhashable values fall back to reference
-    execution rather than acquiring a bespoke equality model in the optimiser.
-    Lists preserve source order so INNER/LEFT multiplicity and ordering are unchanged.
-    """
+    """Build a stable right-side equality index, or decline unsafe values."""
     index: dict[Any, list[dict[str, Any]]] = {}
     for record in right_records:
-        value = canonical_record_value(record, right_field.name, right_field.kind)
-        if value is None:
+        key = _join_key(record, right_fields)
+        if key is None:
             continue
-        try:
-            hash(value)
-        except TypeError:
+        if key is _UNHASHABLE_JOIN_KEY:
             return None
-        index.setdefault(value, []).append(record)
+        index.setdefault(key, []).append(record)
     return index
 
 
 def _hash_join_matches(
-    left_record: dict[str, Any], left_field: RelationField, index: dict[Any, list[dict[str, Any]]]
+    left_record: dict[str, Any], left_fields: Sequence[RelationField], index: dict[Any, list[dict[str, Any]]]
 ) -> list[dict[str, Any]] | None:
-    value = canonical_record_value(left_record, left_field.name, left_field.kind)
-    if value is None:
+    key = _join_key(left_record, left_fields)
+    if key is None:
         return []
-    try:
-        hash(value)
-    except TypeError:
+    if key is _UNHASHABLE_JOIN_KEY:
         return None
-    return index.get(value, [])
+    return index.get(key, [])
 
 
 def _apply_existence_join(
@@ -949,14 +972,22 @@ def _apply_existence_join(
     right_records = _records_for_source(
         records, join.relation.source, join.relation.facet, relations, physical_requests
     )
-    equality_fields = _equality_join_fields(query) if relational_optimisation else None
+    equality_fields = _equality_join_key_fields(query) if relational_optimisation else None
+    if not left_records:
+        return []
+    if not right_records:
+        if join.kind is JoinKind.SEMI:
+            return []
+        if join.kind is JoinKind.ANTI:
+            return list(left_records)
     if equality_fields is not None:
-        left_field, right_field = equality_fields
-        index = _hash_join_index(right_records, right_field)
+        left_fields = tuple(pair[0] for pair in equality_fields)
+        right_fields = tuple(pair[1] for pair in equality_fields)
+        index = _hash_join_index(right_records, right_fields)
         if index is not None:
             selected: list[dict[str, Any]] = []
             for left_record in left_records:
-                matches = _hash_join_matches(left_record, left_field, index)
+                matches = _hash_join_matches(left_record, left_fields, index)
                 if matches is None:
                     break
                 matched = bool(matches)
@@ -1002,18 +1033,23 @@ def _apply_row_producing_join(
     left_alias = query.from_alias or ""
     right_alias = join.relation.alias or ""
 
-    equality_fields = _equality_join_fields(query) if relational_optimisation else None
+    equality_fields = _equality_join_key_fields(query) if relational_optimisation else None
+    if not left_records:
+        return []
+    if join.kind is JoinKind.INNER and not right_records:
+        return []
     index = None
-    left_field = None
+    left_fields = None
     if equality_fields is not None:
-        left_field, right_field = equality_fields
-        index = _hash_join_index(right_records, right_field)
+        left_fields = tuple(pair[0] for pair in equality_fields)
+        right_fields = tuple(pair[1] for pair in equality_fields)
+        index = _hash_join_index(right_records, right_fields)
 
     joined: list[dict[str, Any]] = []
     for left_record in left_records:
         candidate_records: Sequence[dict[str, Any]] = right_records
-        if index is not None and left_field is not None:
-            indexed = _hash_join_matches(left_record, left_field, index)
+        if index is not None and left_fields is not None:
+            indexed = _hash_join_matches(left_record, left_fields, index)
             if indexed is None:
                 # One unhashable left value invalidates the fast path for this row;
                 # reference evaluation retains exact established semantics.

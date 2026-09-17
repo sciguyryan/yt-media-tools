@@ -89,3 +89,34 @@ def test_equality_join_shape_is_recognised_for_hash_execution() -> None:
     assert fields is not None
     assert (fields[0].qualifier, fields[0].name) == ("l", "id")
     assert (fields[1].qualifier, fields[1].name) == ("r", "id")
+
+
+def test_compound_equality_join_matches_reference_execution() -> None:
+    records, query = _resolve(
+        "SELECT l.id, r.tag FROM @left AS l INNER JOIN @right AS r ON l.id = r.id AND l.score = r.score"
+    )
+    assert apply_query(records, query, relational_optimisation=True) == apply_query(
+        records, query, relational_optimisation=False
+    )
+
+
+def test_mixed_compound_predicate_declines_hash_key_extraction() -> None:
+    from yt_media_tools.query_evaluator import _equality_join_key_fields
+
+    _records_value, query = _resolve(
+        "SELECT l.id, r.tag FROM @left AS l INNER JOIN @right AS r ON l.id = r.id AND l.score < r.score"
+    )
+    assert _equality_join_key_fields(query) is None
+
+
+def test_empty_existence_join_inputs_preserve_reference_results() -> None:
+    records, semi = _resolve("SELECT l.id FROM @left AS l SEMI JOIN @right AS r ON l.id = r.id")
+    _records_value, anti = _resolve("SELECT l.id FROM @left AS l ANTI JOIN @right AS r ON l.id = r.id")
+    left_only = [row for row in records if row["_yt_sql_source"] == "@left"]
+    for query in (semi, anti):
+        assert apply_query(left_only, query, relational_optimisation=True) == apply_query(
+            left_only, query, relational_optimisation=False
+        )
+        assert apply_query([], query, relational_optimisation=True) == apply_query(
+            [], query, relational_optimisation=False
+        )

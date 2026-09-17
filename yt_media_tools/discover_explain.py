@@ -33,6 +33,7 @@ from yt_media_tools.query import (
     Field,
     RelationField,
     ScalarComparison,
+    Binary,
     SelectTerm,
     explain_expression,
     format_expression,
@@ -145,27 +146,40 @@ def _join_predicate_dependencies(value: object) -> list[str]:
 
 
 def _join_execution_strategy(query: Query, join_index: int) -> tuple[str, str]:
-    """Explain the execution strategy selected by the current relational executor."""
+    """Explain the strategy selected from the resolved JOIN predicate shape."""
     if len(query.joins) != 1:
         return (
             "unsupported-multi-way",
             "multi-way JOIN execution is rejected by the current semantic execution boundary",
         )
     join = query.joins[join_index]
-    predicate = join.predicate
-    if isinstance(predicate, ScalarComparison) and predicate.operator == "=":
-        left = predicate.left
-        right = predicate.right
-        if isinstance(left, (Field, RelationField)) and isinstance(right, (Field, RelationField)):
-            left_name = left.name if isinstance(left, Field) else f"{left.qualifier}.{left.name}"
-            right_name = right.name if isinstance(right, Field) else f"{right.qualifier}.{right.name}"
-            aliases = {query.from_alias or "", join.relation.alias or ""}
-            qualifiers = {name.split(".", 1)[0] for name in (left_name, right_name) if "." in name}
-            if aliases and qualifiers == aliases:
-                return (
-                    "stable-right-hash-with-reference-fallback",
-                    "simple cross-relation equality can use the proof-limited hash path; NULL or unhashable values retain reference semantics",
-                )
+    aliases = {query.from_alias or "", join.relation.alias or ""}
+
+    def equality_count(node: object) -> int | None:
+        if isinstance(node, Binary) and node.operator == "AND":
+            left = equality_count(node.left)
+            right = equality_count(node.right)
+            return None if left is None or right is None else left + right
+        if not isinstance(node, ScalarComparison) or node.operator != "=":
+            return None
+        left = node.left
+        right = node.right
+        if not isinstance(left, (Field, RelationField)) or not isinstance(right, (Field, RelationField)):
+            return None
+        names = [item.name if isinstance(item, Field) else f"{item.qualifier}.{item.name}" for item in (left, right)]
+        qualifiers = {name.split(".", 1)[0] for name in names if "." in name}
+        return 1 if aliases and qualifiers == aliases else None
+
+    count = equality_count(join.predicate)
+    if count is not None:
+        description = "simple" if count == 1 else "compound"
+        return (
+            "stable-right-hash-with-reference-fallback",
+            (
+                f"{description} cross-relation equality key can use the proof-limited hash path; "
+                "NULL or unhashable values retain reference semantics"
+            ),
+        )
     return (
         "nested-loop-reference",
         "predicate shape has no proven specialised relational execution strategy",

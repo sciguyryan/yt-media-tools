@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [maintenance] Reconcile JOIN execution around shared provability, explicit relation ownership and a deliberately retained nested-loop reference path.
+- [maintenance] Extend proof-limited hash execution to AND-only compound cross-relation equality keys and avoid unnecessary index work for provably empty runtime inputs.
+- [test] Add stable relational benchmarks for one-to-one, one-to-many, no-match, asymmetric, compound-equality and SEMI workloads with differential reference checks.
+- [docs] Reconcile JOIN optimisation, performance, language-roadmap and CLI example documentation for issue #66.
+
 - [maintenance] Expose relation identity, JOIN kind, predicate dependencies, relation-owned acquisition requirements and selected relational execution strategy through the existing explain model.
 - [fix] Format resolved relation-owned fields consistently in optimiser diagnostics and explain output.
 - [test] Expand adversarial JOIN conformance for duplicate keys, NULL keys, overlapping schemas, alias collisions, multi-way execution boundaries and console/JSON/Graphviz explainability.

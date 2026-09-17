@@ -264,3 +264,9 @@ yt-sql optimisation is governed by semantic equivalence. Performance work must p
 When an optimisation changes query or expression execution, differential tests should compare optimised and deliberately unoptimised behaviour wherever deterministic semantics permit it. Performance evidence supplements those tests and never replaces them.
 
 When semantic equivalence cannot be established safely, the transformation must not be applied regardless of its measured performance benefit.
+
+## Relational reconciliation benchmarks
+
+The JOIN reconciliation suite includes stable local benchmark surfaces for one-to-one, one-to-many, no-match and highly asymmetric relation sizes, together with compound equality, SEMI execution and relation-owned acquisition planning. These workloads use deterministic in-memory relations and do not perform network acquisition. They expose physical relational scaling and regressions independently of remote-service variability.
+
+The production path must remain differentially equivalent to the deliberately unoptimised nested-loop reference executor. Benchmark improvements are accepted only after that semantic comparison. Acquisition-oriented relational behaviour remains protected primarily by deterministic planning tests because remote timing is not a stable correctness or performance oracle.

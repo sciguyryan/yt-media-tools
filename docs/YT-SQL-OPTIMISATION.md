@@ -338,7 +338,7 @@ Each new syntax feature must add a section to this document when it is implement
 
 - `SELECT *` is expanded during semantic resolution into the deterministic scalar schema. The optimiser sees the resulting ordinary projection terms rather than a wildcard. Star expansion itself is not an optimisation and cannot omit fields merely because they appear unused; acquisition planning must account for the complete expanded projection.
 - Aggregates and `GROUP BY` are implemented; future work may add grouping-key analysis, stronger HAVING simplification, common aggregate reuse and exact partial aggregation only where equivalence is proved.
-- CTEs and set operations: reusable resolved subplans, common-subexpression opportunities and source acquisition sharing. JOIN optimisation remains deferred until executable relational semantics exist; parser-level JOIN structure must not trigger acquisition or optimisation work.
+- CTEs and set operations retain conservative relation boundaries. Reusable resolved subplans, common-subexpression opportunities and source acquisition sharing remain future candidates where provenance and ordering are preserved. Executable JOINs use proof-limited equality indexing and shared semantic provability; unsupported relational shapes must not trigger speculative acquisition or optimisation work.
 
 ## Audit conclusions for symbolic scalar rewrites
 
@@ -393,18 +393,26 @@ Result-column fact propagation is deliberately narrower than source-field provab
 ### Implemented strategies
 
 - Preserve the deliberately simple nested-loop executor as the semantic reference route for every executable JOIN family. Tests can disable relational execution optimisation explicitly and compare the resulting rows with the production path.
-- Use a right-side hash index for a single resolved equality predicate of the exact form `left.field = right.field` (or its operand-reversed equivalent). `SEMI` and `ANTI` use the index as a membership set; `INNER` and `LEFT` use the indexed right rows while preserving their original order and ordinary duplicate-match multiplicity.
-- Exclude SQL NULL keys from the equality index because `NULL = value`, including `NULL = NULL`, is UNKNOWN rather than TRUE.
-- Fall back to the reference executor for non-equality predicates and values that cannot safely participate in the hash index. Failure to prove the narrow hash strategy applicable is never permission to broaden it.
+- Use a right-side hash index for a resolved equality predicate or an AND-only conjunction of direct cross-relation equality predicates. Either operand order is accepted after relation ownership is resolved. `SEMI` and `ANTI` use indexed membership; `INNER` and `LEFT` use indexed right rows while preserving their original order and ordinary duplicate-match multiplicity.
+- Exclude a row from the equality index when any key component is SQL NULL because `NULL = value`, including `NULL = NULL`, is UNKNOWN rather than TRUE. Compound keys therefore preserve the same three-valued matching rule as a single equality.
+- Fall back to the reference executor for mixed/non-equality predicate shapes and values that cannot safely participate in the hash index. Failure to prove the narrow hash strategy applicable is never permission to broaden it. Empty primary relations terminate before index construction; SEMI/ANTI resolve an empty right relation directly, and INNER resolves an empty right relation directly.
 - Retain the relation-aware field acquisition and deterministic never-TRUE acquisition elimination established by the preceding relational integration work.
 
 ### Deliberately not implemented
 
 - No JOIN reordering, cost-based side selection, predicate movement across relation boundaries or speculative predicate pushdown.
-- No hash strategy for compound predicates, computed keys or non-equality comparisons. These remain on reference execution until an explicit equivalence proof and differential coverage justify a wider strategy.
+- No hash strategy for computed keys, OR-composed keys or non-equality comparisons. Compound hashing is limited to an AND-only conjunction of direct cross-relation equalities with differential coverage.
 - No transformation may cross volatility, NULL/three-valued logic, ordering, `LIMIT`/`OFFSET`, aggregation, `DISTINCT`, source/facet identity or acquisition-side-effect boundaries without a specific proof.
 
 Relational optimisation must remain differentially testable. Every new fast path should have a straightforward unoptimised counterpart over the same resolved query so correctness can be checked independently of the optimisation itself.
+
+### Relational reconciliation and performance audit
+
+The final JOIN reconciliation adds stable benchmark surfaces for one-to-one, one-to-many, no-match and highly asymmetric relation sizes, plus compound equality and SEMI execution. The benchmark suite measures the production optimised path; differential tests continue to compare it with deliberately unoptimised reference execution so timing evidence cannot substitute for semantic equivalence.
+
+The audit found the proof-limited right-side equality index to be the appropriate default physical strategy for the currently executable single-JOIN model. Local matched measurements showed large improvements over nested-loop reference execution across all required relation shapes, including both directions of highly asymmetric inputs. More ambitious build-side selection, JOIN reordering, common-subplan materialisation and cross-boundary predicate movement remain unjustified by the current execution/provenance model and are not introduced merely because they could improve a synthetic workload.
+
+The deliberately simple nested-loop route remains as the semantic reference executor. This is intentional duplication at the physical execution boundary rather than accidental architecture: it provides an independent differential control for every relational fast path.
 
 ### Explainability and diagnostics
 

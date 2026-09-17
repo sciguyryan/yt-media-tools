@@ -155,3 +155,15 @@ def test_json_explain_records_explicit_non_proof_for_dynamic_join() -> None:
         "right_relation_irrelevant": False,
         "proof": None,
     }
+
+
+def test_json_explain_reports_hash_strategy_for_compound_equality_join() -> None:
+    payload = explain_user_query_json(
+        "SELECT l.id FROM @left AS l INNER JOIN @right AS r ON l.id = r.id AND l.duration = r.duration",
+        source_type="auto",
+        tab="all",
+        date_format="YMD",
+    )
+    [join] = payload["relational_joins"]
+    assert join["execution_strategy"] == "stable-right-hash-with-reference-fallback"
+    assert "compound" in join["strategy_reason"]

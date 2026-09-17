@@ -90,6 +90,12 @@ Examples:
   preserves them:
     yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM @channel_b ORDER BY title"
 
+  Correlate independently acquired relations with an explicit JOIN alias:
+    yt-discover.py "SELECT l.id, r.title AS related_title FROM @channel_a AS l INNER JOIN @channel_b AS r ON l.id = r.id"
+
+  Use SEMI JOIN when the right relation should filter rather than multiply output rows:
+    yt-discover.py "SELECT l.id FROM @channel_a AS l SEMI JOIN @channel_b AS r ON l.id = r.id"
+
   yt-dlp-supported non-YouTube collection URLs can participate in set composition
   when source classification is automatic:
     yt-discover.py "SELECT id, title FROM @channel_a UNION ALL SELECT id, title FROM 'https://www.twitch.tv/example/videos'"
@@ -378,7 +384,8 @@ Query language summary:
 
   Clauses:
     [SELECT <field> [AS <name>] [, ...]]
-    [FROM <source>]
+    [FROM <source> [AS <alias>]]
+    [INNER|LEFT [OUTER]|SEMI|ANTI JOIN <source> AS <alias> ON <expression>]
     [WHERE <expression>]
     [ORDER BY <field> [ASC|DESC] [, ...]]
     [LIMIT <positive integer>]
