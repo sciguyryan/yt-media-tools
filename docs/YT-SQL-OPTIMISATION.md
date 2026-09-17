@@ -378,7 +378,9 @@ The shared predicate prover currently establishes resolved constant truth and a 
 
 Proofs are derived only after the relevant syntax and semantic resolution rules have succeeded. Unknown fields, ambiguous relation ownership, invalid aliases and other semantic errors remain errors and are never reinterpreted as NULL, FALSE, emptiness or an optimisation opportunity. Supported metadata that has not been acquired remains distinct from SQL NULL and structural unavailability. Early rejection is therefore permitted only when it can preserve the established deterministic diagnostic contract exactly; this phase deliberately adds no speculative early-error rules merely because later work could be avoided.
 
-The proof model is intentionally incomplete. OR reasoning, general algebraic equivalence, inferred functional dependencies, speculative type/domain assumptions, volatile expressions and cross-relation transformations remain unproven unless a dedicated rule establishes their full yt-sql semantics. Optimiser/reference differential tests and explicit non-proof tests are required as the proof surface expands.
+Boolean provability distinguishes final truth from evaluation reachability. Under yt-sql's left-to-right Boolean contract, a proven FALSE left operand of AND or a proven TRUE left operand of OR proves the right operand unreachable. UNKNOWN never establishes that proof. A dominating right operand may contribute to a proof of the final truth value but cannot justify suppressing earlier left-side evaluation. This distinction prevents the optimiser from turning semantic equivalence into an unsafe change to volatile or failing expression evaluation. HAVING uses the same evaluation contract.
+
+The proof model is intentionally incomplete. General OR algebra, arbitrary algebraic equivalence, inferred functional dependencies, speculative type/domain assumptions, volatile-expression equivalence and cross-relation transformations remain unproven unless a dedicated rule establishes their full yt-sql semantics. Optimiser/reference differential tests and explicit non-proof tests are required as the proof surface expands.
 
 ## JOIN execution
 

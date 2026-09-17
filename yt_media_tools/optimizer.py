@@ -157,7 +157,7 @@ def _optimise_having(node: Any, *, source: SourceSpec | None = None) -> tuple[An
     """Optimise scalar subexpressions in HAVING without changing its Boolean semantics."""
     if node is None:
         return None, []
-    if source is not None:
+    if source is not None and not (isinstance(node, Binary) and node.operator in {"AND", "OR"}):
         truth = prove_predicate_truth(node, source=source)
         if truth.proven and truth.truth is not None:
             value = {TRUTH_TRUE: True, TRUTH_FALSE: False, TRUTH_UNKNOWN: None}[truth.truth]
@@ -180,8 +180,16 @@ def _optimise_having(node: Any, *, source: SourceSpec | None = None) -> tuple[An
         return optimised, decisions
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
         left, left_decisions = _optimise_having(node.left, source=source)
+        decisions = list(left_decisions)
+        if isinstance(left, Literal) and (left.value is None or isinstance(left.value, bool)):
+            if node.operator == "AND" and left.value is False:
+                decisions.append(_decision("having-constant-and-false", replace(node, left=left), left))
+                return left, decisions
+            if node.operator == "OR" and left.value is True:
+                decisions.append(_decision("having-constant-or-true", replace(node, left=left), left))
+                return left, decisions
         right, right_decisions = _optimise_having(node.right, source=source)
-        decisions = left_decisions + right_decisions
+        decisions.extend(right_decisions)
         optimised = replace(node, left=left, right=right)
         if _semantic_key(left) == _semantic_key(right):
             decisions.append(_decision(f"having-duplicate-{node.operator.lower()}", optimised, left))
@@ -368,7 +376,7 @@ def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any,
     if node is None:
         return None, decisions
 
-    if source is not None:
+    if source is not None and not (isinstance(node, Binary) and node.operator in {"AND", "OR"}):
         truth = prove_predicate_truth(node, source=source)
         if truth.proven and truth.truth is not None:
             value = {TRUTH_TRUE: True, TRUTH_FALSE: False, TRUTH_UNKNOWN: None}[truth.truth]
@@ -394,18 +402,22 @@ def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any,
         return Unary("NOT", operand), decisions
 
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        left, left_decisions = _optimise_node(node.left, source=source)
-        right, right_decisions = _optimise_node(node.right, source=source)
-        decisions.extend(left_decisions)
-        decisions.extend(right_decisions)
         operator = node.operator
+        left, left_decisions = _optimise_node(node.left, source=source)
+        decisions.extend(left_decisions)
+        # Left-to-right short-circuiting is observable. If the optimised left
+        # operand dominates the result, the right operand is unreachable and
+        # must not itself be optimised or inspected for execution purposes.
         if isinstance(left, Literal) and (left.value is None or isinstance(left.value, bool)):
             if operator == "AND" and left.value is False:
-                decisions.append(_decision("constant-and-false", Binary(operator, left, right), left))
+                decisions.append(_decision("constant-and-false", Binary(operator, left, node.right), left))
                 return left, decisions
             if operator == "OR" and left.value is True:
-                decisions.append(_decision("constant-or-true", Binary(operator, left, right), left))
+                decisions.append(_decision("constant-or-true", Binary(operator, left, node.right), left))
                 return left, decisions
+        right, right_decisions = _optimise_node(node.right, source=source)
+        decisions.extend(right_decisions)
+        if isinstance(left, Literal) and (left.value is None or isinstance(left.value, bool)):
             if left.value is True and operator == "AND":
                 decisions.append(_decision("constant-and-true", Binary(operator, left, right), right))
                 return right, decisions
@@ -413,12 +425,9 @@ def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any,
                 decisions.append(_decision("constant-or-false", Binary(operator, left, right), right))
                 return right, decisions
         if isinstance(right, Literal) and (right.value is None or isinstance(right.value, bool)):
-            if operator == "AND" and right.value is False:
-                decisions.append(_decision("constant-and-false", Binary(operator, left, right), right))
-                return right, decisions
-            if operator == "OR" and right.value is True:
-                decisions.append(_decision("constant-or-true", Binary(operator, left, right), right))
-                return right, decisions
+            # Non-dominating right identities are safe because the left operand
+            # remains evaluated. Dominating right constants cannot replace the
+            # whole expression: doing so could suppress observable left work.
             if right.value is True and operator == "AND":
                 decisions.append(_decision("constant-and-true", Binary(operator, left, right), left))
                 return left, decisions

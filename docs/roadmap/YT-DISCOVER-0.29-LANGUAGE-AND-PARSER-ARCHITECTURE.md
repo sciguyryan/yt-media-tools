@@ -105,9 +105,9 @@ Review a universal scalar `??` operator such as `title ?? "Missing Title"`. The 
 
 ### Boolean short-circuit evaluation
 
-**Status: Under review**
+**Status: Decision reached; implementation integrated with semantic provability**
 
-Decide whether AND and OR gain left-to-right short-circuit evaluation while preserving SQL three-valued logic. Evaluation order and optimiser predicate reordering are separate concerns and must remain separately specified. The decision must account for volatile expressions, errors, NULL/UNKNOWN semantics and observable evaluation behaviour.
+AND and OR use left-to-right short-circuit evaluation while preserving SQL three-valued logic. FALSE on the left of AND and TRUE on the left of OR make the right operand unreachable; UNKNOWN does not short-circuit. HAVING follows the same contract. Evaluation reachability is distinct from proving a final truth value: a dominating right operand cannot justify skipping an observable left operand. Optimiser predicate reordering remains a separate transformation and requires an explicit proof that changing evaluation order is observationally safe, including with volatility and errors. This answers the semantic question tracked by issue #7; that issue remains open until its implementation and conformance coverage are accepted.
 
 ### Operators and comparison semantics
 

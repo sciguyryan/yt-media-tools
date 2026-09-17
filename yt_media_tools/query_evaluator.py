@@ -421,15 +421,23 @@ def _evaluate_boolean_expression(node: Any, context: EvaluationContext) -> bool 
         value = _evaluate_boolean_expression(node.operand, context)
         return None if value is None else not value
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        # Boolean evaluation is deliberately left-to-right. A dominating left
+        # value makes the right operand unreachable; UNKNOWN does not. This is
+        # part of yt-sql semantics rather than an optimiser convenience.
         left = _evaluate_boolean_expression(node.left, context)
-        right = _evaluate_boolean_expression(node.right, context)
         if node.operator == "AND":
-            if left is False or right is False:
+            if left is False:
+                return False
+            right = _evaluate_boolean_expression(node.right, context)
+            if right is False:
                 return False
             if left is None or right is None:
                 return None
             return True
-        if left is True or right is True:
+        if left is True:
+            return True
+        right = _evaluate_boolean_expression(node.right, context)
+        if right is True:
             return True
         if left is None or right is None:
             return None
@@ -663,15 +671,22 @@ def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
         value = _evaluate_having(node.operand, group)
         return None if value is None else not value
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
+        # HAVING follows the same observable left-to-right Boolean contract as
+        # row predicates, including the UNKNOWN cases.
         left = _evaluate_having(node.left, group)
-        right = _evaluate_having(node.right, group)
         if node.operator == "AND":
-            if left is False or right is False:
+            if left is False:
+                return False
+            right = _evaluate_having(node.right, group)
+            if right is False:
                 return False
             if left is None or right is None:
                 return None
             return True
-        if left is True or right is True:
+        if left is True:
+            return True
+        right = _evaluate_having(node.right, group)
+        if right is True:
             return True
         if left is None or right is None:
             return None

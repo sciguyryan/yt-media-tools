@@ -244,3 +244,28 @@ def prove_join_consequences(kind: str, predicate: Any, *, source: SourceSpec | N
         premises=(proof,),
     )
     return JoinProvability(True, result_empty, True, consequence)
+
+
+def prove_boolean_right_unreachable(node: Any, *, source: SourceSpec | None) -> OptimisationProof | None:
+    """Prove that left-to-right Boolean semantics make the right operand unreachable.
+
+    This is deliberately stronger than proving the final truth value. Only a
+    dominating left operand establishes reachability: FALSE for AND and TRUE
+    for OR. A dominating right operand can prove a final value but cannot make
+    earlier left-side evaluation disappear.
+    """
+    if not isinstance(node, Binary) or node.operator not in {"AND", "OR"}:
+        return None
+    left = prove_predicate_truth(node.left, source=source)
+    if not left.proven:
+        return None
+    dominating = (node.operator == "AND" and left.truth == "false") or (node.operator == "OR" and left.truth == "true")
+    if not dominating:
+        return None
+    return OptimisationProof(
+        claim="boolean-right-unreachable",
+        status=PROVEN,
+        provenance=left.proof.provenance,
+        reasons=(f"left-to-right {node.operator} semantics make the right operand unreachable",),
+        premises=(left.proof,),
+    )

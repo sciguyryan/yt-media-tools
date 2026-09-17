@@ -12,6 +12,7 @@
 - Fuse deterministic MAP-over-FILTER collection evaluation where volatility analysis proves the transformation safe, while retaining the established path for RANDOM-sensitive pipelines.
 - Add typed variadic `CONCAT()` with textual arguments, NULL propagation, deterministic evaluation and constant folding.
 - Preserve SQL NULL and three-valued logic, lexical collection semantics, source and facet identity, volatility boundaries and conservative optimisation guarantees throughout the preparatory architecture work.
+- Define left-to-right AND/OR short-circuit semantics, including identical HAVING behaviour, and distinguish proven final truth from proven evaluation reachability in the shared semantic proof model.
 - Reconcile cumulative performance evidence, retaining the collection-pipeline and batched-cache improvements while recording remaining explicit evaluation-context overhead for focused future investigation.
 
 ## Discover 0.29.2 - Collection Querying Beyond Indexing
