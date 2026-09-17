@@ -87,7 +87,7 @@ Relations retain source/facet identity and, once a JOIN is present, semantic res
 
 The grammar is deliberately staged ahead of execution. Parser recognition does not imply executable JOIN support: semantic validation must reject a query containing a JOIN clearly and deterministically until the execution phases implement and validate acquisition, cardinality, NULL extension, provenance, optimisation and evaluation. This fail-closed boundary prevents partially parsed JOIN syntax from silently behaving as a single-relation query.
 
-Projection semantics remain downstream of this grammar phase. In particular, plain `*`, `alias.*`, duplicate output names and right-relation projection are not implemented by the parser-only JOIN work. The accepted design direction is that plain `*` denotes the primary/left relation in a multi-relation query and right-side projection is explicit; the projection phase will implement and test that contract.
+Projection semantics are now defined for staged JOIN queries. Plain `*` expands only the primary/left relation and retains its established stand-alone rule. `alias.*` expands only the explicitly named relation and may be combined with other projections. Right-side fields are never flattened implicitly, and duplicate projected output names are rejected unless explicit `AS` aliases make them unique. These rules are resolved before the continuing fail-closed JOIN execution boundary.
 
 ### Collection predicates, quantifiers and media-native operations
 

@@ -163,3 +163,15 @@ def test_valid_qualified_join_still_fails_closed_at_execution_boundary() -> None
         QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
     ):
         resolve_query(query, QuerySchema([{"id": "x"}]))
+
+
+def test_join_parser_accepts_relation_wildcards_in_projection() -> None:
+    query = parse_query("SELECT l.*, r.title AS right_title FROM @left AS l JOIN @right AS r ON l.id = r.id")
+    assert query.select[0].field == "l.*"
+    assert query.select[0].expression.qualifier == "l"
+    assert format_query(query) == ("SELECT l.*, r.title AS right_title FROM @left AS l JOIN @right AS r ON l.id = r.id")
+
+
+def test_relation_wildcard_cannot_have_output_alias() -> None:
+    with pytest.raises(QuerySyntaxError, match="relation wildcard cannot have an AS alias"):
+        parse_query("SELECT r.* AS right FROM @left AS l JOIN @right AS r ON l.id = r.id")

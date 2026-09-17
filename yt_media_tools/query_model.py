@@ -86,6 +86,14 @@ class Field:
 
 
 @dataclass(frozen=True)
+class RelationWildcard:
+    """Projection wildcard owned by one explicitly aliased relation."""
+
+    qualifier: str
+    position: int = 0
+
+
+@dataclass(frozen=True)
 class RelationField:
     """Field resolved to one relation in a multi-relation semantic scope."""
 

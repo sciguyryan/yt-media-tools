@@ -39,6 +39,7 @@ from .query_model import (
     Query as Query,
     RelationReference as RelationReference,
     RelationField as RelationField,
+    RelationWildcard as RelationWildcard,
     QueryDiagnosticContext as QueryDiagnosticContext,
     QuerySemanticError as QuerySemanticError,
     QuerySourceLocation as QuerySourceLocation,

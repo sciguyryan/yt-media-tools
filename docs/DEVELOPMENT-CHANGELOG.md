@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Define joined-relation projection semantics: plain `*` expands only the primary relation, while `alias.*` expands only the explicitly named relation.
+- [maintenance] Require joined projections to expose unique output names and reject overlapping wildcard or explicit projections unless `AS` disambiguates them.
+- [test] Add staged JOIN projection coverage for primary and qualified wildcard expansion, explicit right-side projection, duplicate names and the continuing execution guard.
+- [docs] Document primary-relation star semantics, explicit right-side projection and deterministic duplicate-output rejection.
+
 - [feature] Resolve explicit relation aliases and qualified fields across staged JOIN scopes while keeping relation qualification distinct from structured member access.
 - [maintenance] Reject missing or duplicate relation aliases, ambiguous unqualified fields, unknown qualifiers and unknown qualified fields before the JOIN execution boundary.
 - [test] Add deterministic scope-resolution coverage for qualified ownership, ambiguity, alias diagnostics and structured-member composition.

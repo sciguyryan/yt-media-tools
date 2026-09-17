@@ -27,6 +27,7 @@ from .query_model import (
     Query,
     QuerySyntaxError,
     RelationReference,
+    RelationWildcard,
     ScalarBinary,
     ScalarCase,
     ScalarComparison,
@@ -433,8 +434,26 @@ class Parser:
                     )
                 return (SelectTerm("*", position=star.position),)
             position = self.current.position
-            expression = self.parse_scalar_expression()
-            field_text = format_scalar_expression(expression)
+            if (
+                self.current.kind == "IDENT"
+                and self.index + 2 < len(self.tokens)
+                and self.tokens[self.index + 1].kind == "DOT"
+                and self.tokens[self.index + 2].kind == "STAR"
+            ):
+                qualifier = self.advance().text
+                self.advance()
+                self.advance()
+                expression = RelationWildcard(qualifier, position)
+                field_text = f"{qualifier}.*"
+                if self.keyword("AS"):
+                    raise QuerySyntaxError(
+                        self.source,
+                        "A relation wildcard cannot have an AS alias.",
+                        self.current.position,
+                    )
+            else:
+                expression = self.parse_scalar_expression()
+                field_text = format_scalar_expression(expression)
             alias = None
             if self.consume_keyword("AS"):
                 alias_token = self.expect("IDENT", "Expected an alias name after AS.")

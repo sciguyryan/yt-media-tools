@@ -10,7 +10,14 @@ from __future__ import annotations
 from dataclasses import fields, is_dataclass, replace
 from typing import Any
 
-from .query_model import Field, Query, QuerySemanticError, RelationField
+from .query_model import (
+    Field,
+    Query,
+    QuerySemanticError,
+    RelationField,
+    RelationWildcard,
+    SelectTerm,
+)
 from .query_scope import SemanticScope, relation_binding
 from .schema import QuerySchema
 
@@ -107,6 +114,70 @@ def _scope_for_query(
     return SemanticScope(tuple(bindings))
 
 
+def _projection_output_name(term: SelectTerm) -> str:
+    """Return the externally visible name of one resolved projection term."""
+    if term.alias is not None:
+        return term.alias
+    if isinstance(term.expression, RelationField):
+        return term.expression.name
+    return term.field
+
+
+def _expand_join_projection(query: Query, scope: SemanticScope) -> tuple[SelectTerm, ...]:
+    """Expand relation wildcards and enforce unique joined projection names."""
+    selected = query.select or (SelectTerm("id"),)
+    expanded: list[SelectTerm] = []
+
+    if len(selected) == 1 and selected[0].field == "*" and selected[0].expression is None:
+        primary = scope.relations[0]
+        for info in primary.schema.select_star_fields():
+            canonical = info.alias_of or info.name
+            expression = RelationField(
+                primary.qualifier or "",
+                canonical,
+                selected[0].position,
+                info.kind,
+                primary.identity.key,
+            )
+            expanded.append(SelectTerm(canonical, canonical, selected[0].position, info.kind, expression))
+    else:
+        for term in selected:
+            if isinstance(term.expression, RelationWildcard):
+                binding = scope.binding_for_qualifier(term.expression.qualifier)
+                if binding is None:
+                    raise QuerySemanticError(
+                        query.source,
+                        f"Unknown relation alias {term.expression.qualifier!r}.",
+                        term.position,
+                    )
+                for info in binding.schema.select_star_fields():
+                    canonical = info.alias_of or info.name
+                    expression = RelationField(
+                        binding.qualifier or "",
+                        canonical,
+                        term.position,
+                        info.kind,
+                        binding.identity.key,
+                    )
+                    expanded.append(SelectTerm(canonical, canonical, term.position, info.kind, expression))
+            else:
+                output_name = _projection_output_name(term)
+                expanded.append(replace(term, alias=output_name))
+
+    names: set[str] = set()
+    for term in expanded:
+        output_name = _projection_output_name(term)
+        key = output_name.casefold()
+        if key in names:
+            raise QuerySemanticError(
+                query.source,
+                f"Duplicate SELECT output name {output_name!r}; use AS to give fields unique names.",
+                term.position,
+            )
+        names.add(key)
+    return tuple(expanded)
+
+
 def resolve_join_references(
     query: Query,
     physical_schema: QuerySchema,
@@ -125,6 +196,8 @@ def resolve_join_references(
 
     joins = tuple(replace(join, predicate=_rewrite_value(join.predicate, scope, query.source)) for join in query.joins)
     select = tuple(_rewrite_value(term, scope, query.source) for term in query.select)
+    projection_query = replace(query, select=select)
+    select = _expand_join_projection(projection_query, scope)
     order_by = tuple(_rewrite_value(term, scope, query.source) for term in query.order_by)
     group_by = tuple(_rewrite_value(item, scope, query.source) for item in query.group_by)
     predicate = _rewrite_value(query.predicate, scope, query.source) if query.predicate is not None else None
