@@ -98,7 +98,7 @@ def test_join_requires_on_expression() -> None:
 
 
 def test_join_syntax_fails_closed_before_semantic_execution() -> None:
-    query = parse_query("SELECT l.id FROM @left AS l JOIN @right AS r ON l.id = r.id")
+    query = parse_query("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
     with pytest.raises(
         QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
     ):
@@ -158,7 +158,7 @@ def test_join_duplicate_relation_alias_is_rejected() -> None:
 
 
 def test_valid_qualified_join_still_fails_closed_at_execution_boundary() -> None:
-    query = parse_query("SELECT l.id FROM @left AS l JOIN @right AS r ON l.id = r.id")
+    query = parse_query("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
     with pytest.raises(
         QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
     ):

@@ -28,7 +28,10 @@ class EvaluationContext:
     ) -> None:
         self._record = record
         self._collection_bindings = collection_bindings
-        self._relation_records = relation_records or {}
+        if relation_records is None:
+            embedded = record.get("_yt_sql_relation_records")
+            relation_records = embedded if isinstance(embedded, dict) else {}
+        self._relation_records = relation_records
 
     @property
     def record(self) -> dict[str, Any]:

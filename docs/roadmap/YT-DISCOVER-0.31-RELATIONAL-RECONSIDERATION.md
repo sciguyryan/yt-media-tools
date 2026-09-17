@@ -120,6 +120,8 @@ Prefer plans that acquire only right-side keys, materialise compact membership s
 
 ## 0.31.4 - INNER JOIN
 
+**Implemented in JOIN Phase 6.**
+
 Add inner join where fields from both independently acquired relations are required.
 
 Support equality joins first. Require qualification for ambiguous fields.

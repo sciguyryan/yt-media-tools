@@ -302,8 +302,13 @@ def evaluate_scalar_expression(
 
 
 def canonical_record_value(
-    record: dict[str, Any], field: Field | OrderTerm | SelectTerm | str, kind: str | None = None
+    record: dict[str, Any], field: Field | RelationField | OrderTerm | SelectTerm | str, kind: str | None = None
 ) -> Any:
+    if isinstance(field, RelationField):
+        relation_record = EvaluationContext(record).relation_record(field.qualifier)
+        if relation_record is None:
+            return None
+        return canonical_record_value(relation_record, field.name, field.kind)
     if isinstance(field, Field):
         name, field_kind = field.name, field.kind
     elif isinstance(field, OrderTerm):
@@ -607,7 +612,7 @@ def _evaluate_group_expression(expression: Any, group: Sequence[dict[str, Any]])
                 return None
         raise AssertionError(f"Unsupported aggregate function {expression.name}")
     representative = group[0] if group else {}
-    if isinstance(expression, (Field, Literal)):
+    if isinstance(expression, (Field, RelationField, Literal)):
         return evaluate_scalar_expression(expression, representative)
     if isinstance(expression, ScalarUnary):
         value = _evaluate_group_expression(expression.operand, group)
@@ -888,6 +893,36 @@ def _apply_existence_join(
     return selected
 
 
+def _apply_inner_join(
+    records: Sequence[dict[str, Any]],
+    query: Query,
+    relations: dict[str, list[dict[str, Any]]],
+    physical_requests: tuple[tuple[str, str | None], ...],
+) -> list[dict[str, Any]]:
+    """Apply one INNER JOIN, preserving duplicate multiplication and relation ownership."""
+    join = query.joins[0]
+    left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
+    right_records = _records_for_source(
+        records, join.relation.source, join.relation.facet, relations, physical_requests
+    )
+    left_alias = query.from_alias or ""
+    right_alias = join.relation.alias or ""
+    joined: list[dict[str, Any]] = []
+    for left_record in left_records:
+        for right_record in right_records:
+            relation_records = {left_alias: left_record, right_alias: right_record}
+            context = EvaluationContext(left_record, relation_records=relation_records)
+            if evaluate(join.predicate, context) is not True:
+                continue
+            row = dict(left_record)
+            # Keep relation bindings as internal execution state. Projection and other
+            # expression evaluation consume them through EvaluationContext, so same-
+            # named fields from independent relations never overwrite one another.
+            row["_yt_sql_relation_records"] = relation_records
+            joined.append(row)
+    return joined
+
+
 def _apply_composed_query(
     records: Sequence[dict[str, Any]],
     query: Query,
@@ -896,7 +931,10 @@ def _apply_composed_query(
 ) -> list[dict[str, Any]]:
     if not query.set_operations:
         if query.joins:
-            input_records = _apply_existence_join(records, query, relations, physical_requests)
+            if query.joins[0].kind is JoinKind.INNER:
+                input_records = _apply_inner_join(records, query, relations, physical_requests)
+            else:
+                input_records = _apply_existence_join(records, query, relations, physical_requests)
         else:
             input_records = _records_for_source(
                 records, query.from_source, query.from_facet, relations, physical_requests

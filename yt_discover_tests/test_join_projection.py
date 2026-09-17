@@ -90,7 +90,7 @@ def test_unknown_relation_wildcard_alias_is_rejected() -> None:
 
 
 def test_valid_join_projection_still_stops_at_execution_boundary() -> None:
-    query = parse_query("SELECT l.id, r.title AS right_title FROM @left AS l JOIN @right AS r ON l.id = r.id")
+    query = parse_query("SELECT l.id, r.title AS right_title FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
     with pytest.raises(
         QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
     ):

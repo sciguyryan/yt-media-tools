@@ -248,18 +248,19 @@ def resolve_join_references(
     )
 
 
-def prepare_existence_join_query(
+def prepare_join_query(
     query: Query,
     physical_schema: QuerySchema,
     *,
     cte_schemas: dict[str, QuerySchema] | None = None,
     source_schemas: dict[tuple[str, str | None], QuerySchema] | None = None,
 ) -> Query:
-    """Prepare one SEMI or ANTI join for left-row existence evaluation.
+    """Prepare one executable single JOIN after relation-scope resolution.
 
-    Phase 5 deliberately enables only the existence joins whose result relation is
-    the primary relation. INNER/LEFT execution and multi-way composition remain
-    behind deterministic execution guards for later phases.
+    Phase 6 adds INNER JOIN to the Phase 5 SEMI/ANTI execution boundary. Existence
+    joins still expose only the primary relation, while INNER JOIN retains both
+    relation bindings for downstream filtering, ordering and projection. LEFT and
+    multi-way JOIN execution remain deterministic future boundaries.
     """
     resolved = resolve_join_references(
         query,
@@ -274,12 +275,15 @@ def prepare_existence_join_query(
             resolved.joins[1].position if len(resolved.joins) > 1 else 0,
         )
     join = resolved.joins[0]
-    if join.kind.value not in {"SEMI", "ANTI"}:
+    if join.kind.value not in {"SEMI", "ANTI", "INNER"}:
         raise QuerySemanticError(
             query.source,
             "JOIN syntax is recognised, but JOIN execution is not implemented yet.",
             join.position,
         )
+
+    if join.kind.value == "INNER":
+        return resolved
 
     primary_alias = resolved.from_alias or ""
 

@@ -66,7 +66,7 @@ def test_join_predicate_rejects_random() -> None:
 
 def test_validated_join_still_fails_closed_before_execution() -> None:
     left, schemas = _schemas()
-    query = parse_query("SELECT l.id FROM @left AS l JOIN @right AS r ON l.id = r.id")
+    query = parse_query("SELECT l.id FROM @left AS l LEFT JOIN @right AS r ON l.id = r.id")
     with pytest.raises(
         QuerySemanticError, match="JOIN syntax is recognised, but JOIN execution is not implemented yet"
     ):

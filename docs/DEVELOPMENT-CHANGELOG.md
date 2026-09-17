@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Execute one `INNER JOIN` over independently acquired relations, exposing fields from both sides and preserving duplicate row-pair multiplication.
+- [maintenance] Carry relation-owned runtime row bindings through ordinary WHERE, ORDER BY, LIMIT and projection evaluation without flattening same-named fields.
+- [test] Add executable INNER JOIN coverage for shorthand syntax, duplicate matches, SQL NULL behaviour, right-side filtering/ordering, qualified wildcard projection and remaining execution guards.
+- [docs] Document the executable INNER JOIN boundary while retaining `LEFT JOIN` and multi-way JOIN as later work.
+
 - [feature] Execute one `SEMI JOIN` or `ANTI JOIN` as an existence filter over independently acquired relations without multiplying primary-relation rows.
 - [maintenance] Include joined physical sources in acquisition discovery while keeping `INNER JOIN`, `LEFT JOIN` and multi-way JOIN execution behind deterministic guards.
 - [test] Add executable SEMI/ANTI coverage for duplicate keys, SQL NULL matching, left-side filtering, physical-source discovery and unsupported execution boundaries.

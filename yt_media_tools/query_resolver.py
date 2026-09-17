@@ -28,6 +28,7 @@ from .query_model import (
     Literal,
     OrderTerm,
     Query,
+    RelationField,
     QuerySemanticError,
     QuerySyntaxError,
     ScalarBinary,
@@ -44,7 +45,7 @@ from .query_model import (
     Unary,
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
-from .join_resolution import prepare_existence_join_query
+from .join_resolution import prepare_join_query
 from .query_scope import relation_binding
 from .query_traversal import walk_ast
 from .query_semantics import (
@@ -149,7 +150,9 @@ def _parse_count_text(text: str, source: str, position: int) -> int:
     return round(float(number) * multiplier)
 
 
-def _resolve_field(field: Field, schema: QuerySchema, source: str) -> Field:
+def _resolve_field(field: Field | RelationField, schema: QuerySchema, source: str) -> Field | RelationField:
+    if isinstance(field, RelationField):
+        return field
     info = schema.resolve(field.name)
     if info is None:
         candidates = [item.name for item in schema.available_fields()]
@@ -164,7 +167,7 @@ def _resolve_field(field: Field, schema: QuerySchema, source: str) -> Field:
     return Field(canonical, field.position, info.kind)
 
 
-def _resolve_literal(literal: Literal, field: Field, source: str, dates: DateContext) -> Literal:
+def _resolve_literal(literal: Literal, field: Field | RelationField, source: str, dates: DateContext) -> Literal:
     if literal.value is None or isinstance(literal.value, bool):
         return literal
     text = str(literal.value)
@@ -340,6 +343,11 @@ def _resolve_scalar_expression(
     collection_scopes: tuple[QueryType, ...] = (),
 ) -> Any:
     """Resolve fields, aliases and types for a scalar expression."""
+    if isinstance(expression, RelationField):
+        # JOIN scope resolution has already established relation ownership and the
+        # field kind. Preserve that binding while the ordinary scalar resolver
+        # resolves surrounding literals, operators and functions.
+        return expression
     if isinstance(expression, CollectionElementReference):
         index = len(collection_scopes) - 1 - expression.scope_distance
         if index < 0 or index >= len(collection_scopes):
@@ -1301,7 +1309,7 @@ def _resolve_composed_query(
         ).schema
         body = replace(query, ctes=(), set_operations=())
         if body.joins:
-            prepared = prepare_existence_join_query(
+            prepared = prepare_join_query(
                 body,
                 physical_schema,
                 cte_schemas=cte_schemas,
