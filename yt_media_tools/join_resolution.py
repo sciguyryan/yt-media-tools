@@ -246,3 +246,72 @@ def resolve_join_references(
         predicate=predicate,
         having=having,
     )
+
+
+def prepare_existence_join_query(
+    query: Query,
+    physical_schema: QuerySchema,
+    *,
+    cte_schemas: dict[str, QuerySchema] | None = None,
+    source_schemas: dict[tuple[str, str | None], QuerySchema] | None = None,
+) -> Query:
+    """Prepare one SEMI or ANTI join for left-row existence evaluation.
+
+    Phase 5 deliberately enables only the existence joins whose result relation is
+    the primary relation. INNER/LEFT execution and multi-way composition remain
+    behind deterministic execution guards for later phases.
+    """
+    resolved = resolve_join_references(
+        query,
+        physical_schema,
+        cte_schemas=cte_schemas,
+        source_schemas=source_schemas,
+    )
+    if len(resolved.joins) != 1:
+        raise QuerySemanticError(
+            query.source,
+            "Multi-way JOIN execution is not implemented yet.",
+            resolved.joins[1].position if len(resolved.joins) > 1 else 0,
+        )
+    join = resolved.joins[0]
+    if join.kind.value not in {"SEMI", "ANTI"}:
+        raise QuerySemanticError(
+            query.source,
+            "JOIN syntax is recognised, but JOIN execution is not implemented yet.",
+            join.position,
+        )
+
+    primary_alias = resolved.from_alias or ""
+
+    def left_only(value: Any) -> Any:
+        if isinstance(value, RelationField):
+            if value.qualifier != primary_alias:
+                raise QuerySemanticError(
+                    query.source,
+                    f"{join.kind.value} JOIN does not expose fields from relation {value.qualifier!r}.",
+                    value.position,
+                )
+            return Field(value.name, value.position, value.kind)
+        if isinstance(value, tuple):
+            return tuple(left_only(item) for item in value)
+        if isinstance(value, list):
+            return [left_only(item) for item in value]
+        if is_dataclass(value):
+            changes: dict[str, Any] = {}
+            for field_info in fields(value):
+                current = getattr(value, field_info.name)
+                if is_dataclass(current) or isinstance(current, (tuple, list)):
+                    rewritten = left_only(current)
+                    if rewritten != current:
+                        changes[field_info.name] = rewritten
+            return replace(value, **changes) if changes else value
+        return value
+
+    return replace(
+        resolved,
+        select=left_only(resolved.select),
+        order_by=left_only(resolved.order_by),
+        group_by=left_only(resolved.group_by),
+        predicate=left_only(resolved.predicate),
+        having=left_only(resolved.having),
+    )

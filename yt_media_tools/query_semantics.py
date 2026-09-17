@@ -234,6 +234,8 @@ def _direct_from_sources(query: Query) -> tuple[str, ...]:
     result: list[str] = []
     if query.from_source is not None:
         result.append(query.from_source)
+    for join in query.joins:
+        result.append(join.relation.source)
     for operation in query.set_operations:
         if operation.query.from_source is not None:
             result.append(operation.query.from_source)
@@ -250,6 +252,8 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
         direct: list[tuple[str, str | None]] = []
         if candidate.from_source is not None:
             direct.append((candidate.from_source, candidate.from_facet))
+        for join in candidate.joins:
+            direct.append((join.relation.source, join.relation.facet))
         for operation in candidate.set_operations:
             if operation.query.from_source is not None:
                 direct.append((operation.query.from_source, operation.query.from_facet))

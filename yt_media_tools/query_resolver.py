@@ -44,7 +44,7 @@ from .query_model import (
     Unary,
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
-from .join_resolution import resolve_join_references
+from .join_resolution import prepare_existence_join_query
 from .query_scope import relation_binding
 from .query_traversal import walk_ast
 from .query_semantics import (
@@ -1299,7 +1299,21 @@ def _resolve_composed_query(
         schema = relation_binding(
             query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas
         ).schema
-        return _resolve_query_body(replace(query, ctes=(), set_operations=()), schema, context)
+        body = replace(query, ctes=(), set_operations=())
+        if body.joins:
+            prepared = prepare_existence_join_query(
+                body,
+                physical_schema,
+                cte_schemas=cte_schemas,
+                source_schemas=source_schemas,
+            )
+            resolved_body = _resolve_query_body(replace(prepared, joins=()), schema, context)
+            return replace(
+                resolved_body,
+                from_alias=prepared.from_alias,
+                joins=prepared.joins,
+            )
+        return _resolve_query_body(body, schema, context)
 
     # ORDER BY/LIMIT/OFFSET belong to the complete set result, not the first branch.
     left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
@@ -1358,26 +1372,7 @@ def resolve_query(
     source_schemas: dict[tuple[str, str | None], QuerySchema] | None = None,
 ) -> Query:
     """Resolve CTEs and positional set composition against logical and per-source schemas."""
-
-    def reject_unimplemented_joins(candidate: Query) -> None:
-        if candidate.joins:
-            raise QuerySemanticError(
-                query.source,
-                "JOIN syntax is recognised, but JOIN execution is not implemented yet.",
-                candidate.joins[0].position,
-            )
-        for cte in candidate.ctes:
-            reject_unimplemented_joins(cte.query)
-        for operation in candidate.set_operations:
-            reject_unimplemented_joins(operation.query)
-
     physical_source_schemas = source_schemas or {}
-    if query.joins:
-        # Staged JOIN resolution validates relation scope, projection and ON predicates
-        # before retaining the fail-closed execution boundary. This keeps semantic
-        # diagnostics authoritative without allowing JOIN to reach evaluation.
-        resolve_join_references(query, schema, source_schemas=physical_source_schemas)
-    reject_unimplemented_joins(query)
     context = dates or DateContext()
     resolved_ctes: list[CommonTableExpression] = []
     cte_schemas: dict[str, QuerySchema] = {}

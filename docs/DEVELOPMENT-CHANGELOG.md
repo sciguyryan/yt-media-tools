@@ -10,6 +10,11 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Execute one `SEMI JOIN` or `ANTI JOIN` as an existence filter over independently acquired relations without multiplying primary-relation rows.
+- [maintenance] Include joined physical sources in acquisition discovery while keeping `INNER JOIN`, `LEFT JOIN` and multi-way JOIN execution behind deterministic guards.
+- [test] Add executable SEMI/ANTI coverage for duplicate keys, SQL NULL matching, left-side filtering, physical-source discovery and unsupported execution boundaries.
+- [docs] Document the initial executable existence-join boundary and the continuing restrictions on right-side projection and other join forms.
+
 - [feature] Resolve each `JOIN ... ON` predicate against only the relations visible at that join edge, including the newly joined right relation.
 - [maintenance] Reject forward relation references, aggregate functions and volatile `RANDOM` expressions from JOIN predicates before the execution boundary.
 - [test] Add staged JOIN predicate coverage for relation ownership, prior-relation references, forward-reference rejection, ambiguity and row-safe expression restrictions.

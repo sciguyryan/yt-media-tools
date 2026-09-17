@@ -29,6 +29,8 @@ from .query_model import (
     Literal,
     OrderTerm,
     Query,
+    JoinKind,
+    RelationField,
     ScalarBinary,
     ScalarCase,
     ScalarComparison,
@@ -134,6 +136,11 @@ def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> 
     record = context._record
     if isinstance(expression, CollectionElementReference):
         return context.collection_element(expression.scope_distance)
+    if isinstance(expression, RelationField):
+        relation_record = context.relation_record(expression.qualifier)
+        if relation_record is None:
+            return None
+        return canonical_record_value(relation_record, expression.name, expression.kind)
     if isinstance(expression, Field):
         return canonical_record_value(record, expression)
     if isinstance(expression, Literal):
@@ -851,6 +858,36 @@ def _union_row_key(row: dict[str, Any], output_names: tuple[str, ...]) -> tuple[
     return tuple(values)
 
 
+def _apply_existence_join(
+    records: Sequence[dict[str, Any]],
+    query: Query,
+    relations: dict[str, list[dict[str, Any]]],
+    physical_requests: tuple[tuple[str, str | None], ...],
+) -> list[dict[str, Any]]:
+    """Apply one executable SEMI or ANTI join without multiplying left rows."""
+    join = query.joins[0]
+    left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
+    right_records = _records_for_source(
+        records, join.relation.source, join.relation.facet, relations, physical_requests
+    )
+    left_alias = query.from_alias or ""
+    right_alias = join.relation.alias or ""
+    selected: list[dict[str, Any]] = []
+    for left_record in left_records:
+        matched = False
+        for right_record in right_records:
+            context = EvaluationContext(
+                left_record,
+                relation_records={left_alias: left_record, right_alias: right_record},
+            )
+            if evaluate(join.predicate, context) is True:
+                matched = True
+                break
+        if (join.kind is JoinKind.SEMI and matched) or (join.kind is JoinKind.ANTI and not matched):
+            selected.append(left_record)
+    return selected
+
+
 def _apply_composed_query(
     records: Sequence[dict[str, Any]],
     query: Query,
@@ -858,7 +895,12 @@ def _apply_composed_query(
     physical_requests: tuple[tuple[str, str | None], ...],
 ) -> list[dict[str, Any]]:
     if not query.set_operations:
-        input_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
+        if query.joins:
+            input_records = _apply_existence_join(records, query, relations, physical_requests)
+        else:
+            input_records = _records_for_source(
+                records, query.from_source, query.from_facet, relations, physical_requests
+            )
         return _apply_query_body(input_records, query)
 
     left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
