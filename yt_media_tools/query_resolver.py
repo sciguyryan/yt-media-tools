@@ -1303,11 +1303,11 @@ def _resolve_composed_query(
     source_schemas: dict[tuple[str, str | None], QuerySchema],
 ) -> Query:
     """Resolve one query body and its positional set-composition branches."""
-    if not query.set_operations:
+
+    def resolve_body(body: Query) -> Query:
         schema = relation_binding(
-            query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas
+            body.from_source, body.from_facet, physical_schema, cte_schemas, source_schemas
         ).schema
-        body = replace(query, ctes=(), set_operations=())
         if body.joins:
             prepared = prepare_join_query(
                 body,
@@ -1316,30 +1316,19 @@ def _resolve_composed_query(
                 source_schemas=source_schemas,
             )
             resolved_body = _resolve_query_body(replace(prepared, joins=()), schema, context)
-            return replace(
-                resolved_body,
-                from_alias=prepared.from_alias,
-                joins=prepared.joins,
-            )
+            return replace(resolved_body, from_alias=prepared.from_alias, joins=prepared.joins)
         return _resolve_query_body(body, schema, context)
+
+    if not query.set_operations:
+        return resolve_body(replace(query, ctes=(), set_operations=()))
 
     # ORDER BY/LIMIT/OFFSET belong to the complete set result, not the first branch.
     left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
-    left = _resolve_query_body(
-        left_body,
-        relation_binding(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas).schema,
-        context,
-    )
+    left = resolve_body(left_body)
     common_terms = list(left.select)
     resolved_ops: list[SetOperation] = []
     for operation in query.set_operations:
-        branch = _resolve_query_body(
-            replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0),
-            relation_binding(
-                operation.query.from_source, operation.query.from_facet, physical_schema, cte_schemas, source_schemas
-            ).schema,
-            context,
-        )
+        branch = resolve_body(replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0))
         if len(branch.select) != len(common_terms):
             raise QuerySemanticError(
                 query.source,

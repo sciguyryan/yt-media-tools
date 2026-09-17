@@ -418,7 +418,7 @@ Plausible future work:
 
 Each resolved set-operation branch is optimised independently and branch decisions are prefixed in optimiser diagnostics. Reconciliation itself is not rewritten. The optimiser must preserve branch order for `UNION ALL`, duplicate-elimination boundaries for `UNION`, first-branch output naming, NULL values and exact Unicode values.
 
-Current acquisition planning does not push predicates across UNION boundaries and does not permit source-order early LIMIT termination for a composed result. Future source-boundary planning may optimise branches independently only where equivalence can be proven. Transformations such as replacing `UNION` with `UNION ALL`, reordering branches where observable ordering would change, or coercing incompatible extractor-specific field kinds are unsafe and must not be performed.
+Acquisition planning does not push predicates across UNION boundaries and does not permit source-order early LIMIT termination for a composed result. JOIN inputs are planned as independent relation boundaries: qualified field requirements from ON, projection, filtering and downstream expressions are assigned to their owning source/facet. A deterministic ON predicate proven never TRUE may suppress acquisition of the joined side; for INNER and SEMI joins it may suppress both sides because no result row can exist. LEFT and ANTI retain the primary side. More aggressive branch or cost-based join optimisation remains future work and requires an explicit equivalence proof. Transformations such as replacing `UNION` with `UNION ALL`, reordering branches where observable ordering would change, or coercing incompatible extractor-specific field kinds are unsafe and must not be performed.
 
 ## Source facets with OF
 

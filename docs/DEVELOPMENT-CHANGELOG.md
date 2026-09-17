@@ -10,6 +10,12 @@ This file records meaningful changes during active development. It is not releas
 
 ## Discover JOIN grammar - Unreleased
 
+- [feature] Integrate JOIN execution with CTE-produced relations and UNION/UNION ALL branches so each branch applies its relation operator before set reconciliation.
+- [maintenance] Attribute JOIN acquisition requirements from ON, projection, filtering and downstream expressions to the owning physical source/facet relation.
+- [maintenance] Use deterministic false JOIN predicates to suppress acquisition that cannot affect INNER, LEFT, SEMI or ANTI results without introducing cost-based join reordering.
+- [test] Add JOIN/CTE/UNION execution, relation-specific acquisition, safe acquisition-elimination and function-heavy torture coverage for issue #63.
+- [docs] Document JOIN composition and conservative relational acquisition planning.
+
 - [test] Complete issue #61 conformance by extending the independent relation oracle with SEMI/ANTI existence semantics.
 - [test] Check production SEMI/ANTI execution against the independent oracle across direct facet relations and CTE-backed left and right relations.
 - [test] Verify same-source facet identity, duplicate-match cardinality, SQL UNKNOWN behaviour and retained left-side acquisition provenance.

@@ -955,14 +955,18 @@ def _apply_composed_query(
         return _apply_query_body(input_records, query)
 
     left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
-    left_input = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
-    rows = _project_result_rows(_apply_query_body(left_input, left_body), left_body)
+    # A UNION branch is a complete relational query body. Apply its JOIN before
+    # projection just as we do for a standalone query rather than bypassing the
+    # relation operator through the older single-relation UNION path.
+    left_rows = _apply_composed_query(records, left_body, relations, physical_requests)
+    rows = _project_result_rows(left_rows, left_body)
     output_names = tuple(term.output_name for term in query.select)
 
     for operation in query.set_operations:
         branch = operation.query
-        branch_input = _records_for_source(records, branch.from_source, branch.from_facet, relations, physical_requests)
-        branch_rows = _project_result_rows(_apply_query_body(branch_input, branch), branch)
+        branch_body = replace(branch, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+        branch_result = _apply_composed_query(records, branch_body, relations, physical_requests)
+        branch_rows = _project_result_rows(branch_result, branch_body)
         branch_names = tuple(term.output_name for term in branch.select)
         remapped = [
             {

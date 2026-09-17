@@ -7,7 +7,8 @@ from datetime import date, timedelta
 from .acquisition_plan import PhysicalAcquisitionPlan, plan_physical_acquisition
 from .cte_dependencies import plan_cte_dependencies
 from .dates import DateContext
-from .query_model import Binary, Query
+from .query_model import Binary, Field, Query, SelectTerm
+from .query_traversal import walk_ast
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .planning_heuristics import AcquisitionHeuristicPlan, plan_acquisition_heuristics
 from .query_semantics import query_physical_source_requests
@@ -371,15 +372,71 @@ class SourceBoundaryPlan:
     relation_simplifications: tuple[RelationSimplificationPlan, ...] = ()
 
 
+def _relation_fields(candidate: Query, alias: str, *, include_unqualified: bool = False) -> frozenset[str]:
+    """Return physical fields consumed from one relation in a JOIN query body."""
+    prefix = alias.casefold() + "."
+    fields: set[str] = set()
+    for node in walk_ast(candidate, descend=lambda item: not isinstance(item, Query) or item is candidate):
+        if not isinstance(node, Field):
+            continue
+        name = node.name.casefold()
+        if name.startswith(prefix):
+            fields.add(name[len(prefix) :])
+        elif include_unqualified and "." not in name:
+            fields.add(name)
+    return frozenset(fields)
+
+
+def _relation_use(candidate: Query, source: str, facet: str | None, alias: str, *, primary: bool) -> Query:
+    """Build a conservative single-relation planning view of a JOIN query body."""
+    fields = _relation_fields(candidate, alias, include_unqualified=primary)
+    select = tuple(SelectTerm(field=name, expression=Field(name)) for name in sorted(fields))
+    return replace(
+        candidate,
+        from_source=source,
+        from_facet=facet,
+        from_alias=None,
+        joins=(),
+        ctes=(),
+        set_operations=(),
+        predicate=None,
+        having=None,
+        group_by=(),
+        order_by=(),
+        select=select,
+        limit=None,
+        offset=0,
+    )
+
+
 def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, str | None], ...]:
-    """Return logical physical-source uses with their owning CTE, where applicable."""
+    """Return logical physical-source uses with their owning CTE, where applicable.
+
+    JOIN relations are independent physical uses. Their planning views contain only
+    fields owned by that relation, preventing qualified requirements from leaking
+    onto another source/facet boundary.
+    """
     cte_names = {cte.name.casefold() for cte in query.ctes}
     uses: list[tuple[str, str | None, Query, str | None]] = []
 
     def visit(candidate: Query, owner_cte: str | None = None) -> None:
         if candidate.from_source is not None and candidate.from_source.casefold() not in cte_names:
-            local = replace(candidate, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+            if candidate.joins and candidate.from_alias is not None:
+                local = _relation_use(
+                    candidate, candidate.from_source, candidate.from_facet, candidate.from_alias, primary=True
+                )
+            else:
+                local = replace(candidate, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
             uses.append((candidate.from_source, candidate.from_facet, local, owner_cte))
+        for join in candidate.joins:
+            if join.relation.source.casefold() in cte_names:
+                continue
+            if join.relation.alias is None:
+                continue
+            local = _relation_use(
+                candidate, join.relation.source, join.relation.facet, join.relation.alias, primary=False
+            )
+            uses.append((join.relation.source, join.relation.facet, local, owner_cte))
         for operation in candidate.set_operations:
             visit(operation.query, owner_cte)
 
@@ -638,6 +695,57 @@ def plan_source_boundaries(
                 tuple(relation for _use, _owner, relation in analysed_uses),
             )
         )
+    # Constant-false JOIN predicates are relational proofs, not merely row-level
+    # filters. They can eliminate acquisition safely before any cost-based JOIN
+    # optimisation: INNER/SEMI cannot produce rows at all, while LEFT/ANTI need
+    # no rows from the joined side.
+    if len(query.joins) == 1:
+        join = query.joins[0]
+        truth = prove_predicate_truth(join.predicate, source=sources[0] if sources else None)
+        if truth.proven and truth.truth != TRUTH_TRUE:
+            right_request = (join.relation.source, join.relation.facet)
+            primary_request = (query.from_source, query.from_facet)
+            eliminate = {right_request}
+            if join.kind.value in {"INNER", "SEMI"}:
+                eliminate.add(primary_request)
+            rewritten: list[SourceBoundaryPlan] = []
+            for boundary in result:
+                request = (boundary.source_name, boundary.facet)
+                if request not in eliminate:
+                    rewritten.append(boundary)
+                    continue
+                acquisition = AcquisitionPlan(
+                    "skip",
+                    "a deterministic JOIN predicate proves this relation cannot contribute a TRUE match",
+                )
+                physical = plan_physical_acquisition(
+                    source=boundary.source,
+                    required_fields=boundary.required_fields,
+                    enumeration_fields=boundary.metadata_requirements.enumeration_fields,
+                    detailed_fields=boundary.metadata_requirements.detailed_fields,
+                    indexed_requirements=boundary.metadata_requirements.indexed_requirements,
+                    member_requirements=boundary.metadata_requirements.member_requirements,
+                    collection_query_requirements=boundary.metadata_requirements.collection_query_requirements,
+                    whole_fields=boundary.metadata_requirements.whole_fields,
+                    skip=True,
+                )
+                rewritten.append(
+                    replace(
+                        boundary,
+                        acquisition=acquisition,
+                        cost_class="none",
+                        cost_reason="JOIN semantics prove acquisition cannot affect the result",
+                        branch_empty=True,
+                        elimination_proof=truth.proof,
+                        physical_acquisition=physical,
+                        heuristics=plan_acquisition_heuristics(
+                            physical_acquisition=physical,
+                            predicate_heuristics=boundary.predicate_stages.enumeration_heuristics,
+                            bounded=False,
+                        ),
+                    )
+                )
+            result = rewritten
     return tuple(result)
 
 

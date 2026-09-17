@@ -254,9 +254,6 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
             direct.append((candidate.from_source, candidate.from_facet))
         for join in candidate.joins:
             direct.append((join.relation.source, join.relation.facet))
-        for operation in candidate.set_operations:
-            if operation.query.from_source is not None:
-                direct.append((operation.query.from_source, operation.query.from_facet))
         for source_name, facet in direct:
             if source_name.casefold() in cte_names:
                 if facet is not None:
@@ -271,6 +268,10 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
                 continue
             seen.add(key)
             result.append(key)
+        # Set branches are complete relation expressions in their own right. Recurse
+        # so JOIN inputs inside a later UNION branch participate in acquisition.
+        for operation in candidate.set_operations:
+            visit(operation.query)
 
     for cte in query.ctes:
         visit(cte.query)

@@ -164,3 +164,33 @@ def test_sadness_query_crosses_facets_ctes_unicode_random_and_aggregation() -> N
 def test_malformed_torture_inputs_fail_deterministically(source: str, message: str) -> None:
     with pytest.raises(QuerySyntaxError, match=re.escape(message)):
         _resolve_fixture(source)
+
+
+def test_join_function_composition_tortures_parser_execution_and_optimiser() -> None:
+    rows, query = _resolve_cross_facet(
+        "WITH joined AS ("
+        "SELECT v.id AS id, CONCAT(UPPER(v.title), ':', LOWER(s.title)) AS label, "
+        "GREATEST(COALESCE(v.duration, 0), COALESCE(s.duration, 0)) AS longest, "
+        "LEAST(COALESCE(v.duration, 0), COALESCE(s.duration, 0)) AS shortest, "
+        "LENGTH(NULLIF(s.title, '')) AS short_chars, RANDOM(271828) AS seeded "
+        "FROM @whatdamath OF videos AS v INNER JOIN @whatdamath OF shorts AS s "
+        "ON LOWER(v.id) = LOWER(s.id) WHERE COALESCE(v.duration, 0) >= 0x10"
+        ") SELECT id, label, longest, shortest, short_chars, COUNT(*) AS n, SUM(longest) AS total "
+        "FROM joined GROUP BY id, label, longest, shortest, short_chars "
+        "HAVING COUNT(*) >= 0b1 ORDER BY label DESC, id"
+    )
+    expected = [
+        {
+            "id": "shared",
+            "label": "LONG FORM:short form",
+            "longest": 600,
+            "shortest": 45,
+            "short_chars": 10,
+            "n": 1,
+            "total": 600,
+        }
+    ]
+    assert apply_query(rows, query) == expected
+    optimised = optimise_query(query)
+    assert apply_query(rows, optimised.query) == expected
+    assert optimise_query(optimised.query).query == optimised.query

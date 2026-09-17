@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .query_model import Query, SelectTerm
+from .query_model import Field, Query, SelectTerm
+from .query_traversal import walk_ast
 from .query_properties import analyse_expression
 
 
@@ -67,6 +68,16 @@ def _non_projection_fields(query: Query) -> set[str]:
     return fields
 
 
+def _relation_fields(query: Query, alias: str) -> set[str]:
+    """Return fields consumed from one explicitly aliased relation."""
+    prefix = alias.casefold() + "."
+    fields: set[str] = set()
+    for node in walk_ast(query, descend=lambda item: not isinstance(item, Query) or item is query):
+        if isinstance(node, Field) and node.name.casefold().startswith(prefix):
+            fields.add(node.name[len(prefix) :].casefold())
+    return fields
+
+
 def _query_relation_references(query: Query, relation: str) -> set[str]:
     """Return output fields consumed from one logical relation by this composed query."""
     key = relation.casefold()
@@ -79,6 +90,11 @@ def _query_relation_references(query: Query, relation: str) -> set[str]:
                 fields.update(_select_fields(term))
             if not candidate.select:
                 fields.add("id")
+        # JOIN inputs are consumers too. The ON predicate and downstream query
+        # expressions may require outputs from a CTE used on the joined side.
+        for join in candidate.joins:
+            if join.relation.source.casefold() == key and join.relation.alias is not None:
+                fields.update(_relation_fields(candidate, join.relation.alias))
         for operation in candidate.set_operations:
             visit(operation.query)
 
