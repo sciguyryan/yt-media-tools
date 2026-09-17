@@ -58,3 +58,32 @@ def test_context_public_state_is_read_only() -> None:
         pass
     else:
         raise AssertionError("EvaluationContext.collection_bindings must be read-only")
+
+
+def test_plain_record_scalar_fast_path_matches_explicit_context() -> None:
+    """Plain scalar evaluation must remain equivalent to explicit context evaluation."""
+    from yt_media_tools.query import evaluate_scalar_expression, parse_query, resolve_query
+    from yt_media_tools.schema import QuerySchema
+
+    record = {"view_count": 7}
+    resolved = resolve_query(parse_query("SELECT COALESCE(view_count, 0) + 10 AS adjusted"), QuerySchema([record]))
+    expression = resolved.select[0].expression
+    assert expression is not None
+    assert evaluate_scalar_expression(expression, record) == evaluate_scalar_expression(
+        expression, EvaluationContext(record)
+    )
+
+
+def test_plain_record_collection_fast_path_matches_explicit_context() -> None:
+    """Collection binding must create context lazily without changing semantics."""
+    from yt_media_tools.query import evaluate_scalar_expression, parse_query, resolve_query
+    from yt_media_tools.schema import QuerySchema
+
+    record = {"tags": ["one", None, "two"]}
+    source = "SELECT MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT UPPER(tag)) AS tags"
+    resolved = resolve_query(parse_query(source), QuerySchema([record]))
+    expression = resolved.select[0].expression
+    assert expression is not None
+    assert evaluate_scalar_expression(expression, record) == evaluate_scalar_expression(
+        expression, EvaluationContext(record)
+    )

@@ -1371,6 +1371,13 @@ def resolve_query(
     """Resolve CTEs and positional set composition against logical and per-source schemas."""
     physical_source_schemas = source_schemas or {}
     context = dates or DateContext()
+
+    # Preserve the historical direct resolver path for the overwhelmingly common
+    # uncomposed query shape. Relational preparation is semantically unnecessary
+    # when there is no source relation, CTE, JOIN or set composition.
+    if not query.ctes and not query.joins and not query.set_operations and query.from_source is None:
+        return _resolve_query_body(query, schema, context)
+
     resolved_ctes: list[CommonTableExpression] = []
     cte_schemas: dict[str, QuerySchema] = {}
     cte_names = {cte.name.casefold() for cte in query.ctes}

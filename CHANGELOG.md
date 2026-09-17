@@ -15,7 +15,7 @@
 - Define left-to-right AND/OR short-circuit semantics, including identical HAVING behaviour, and distinguish proven final truth from proven evaluation reachability in the shared semantic proof model.
 - Add conservative relation-level provability for explicit cardinality bounds and proven emptiness propagation through CTEs, single JOIN semantics and UNION composition, consuming authoritative stable source-field type, nullability, structural-support and collection-ordering contracts while refusing unsupported result-column facts and physical-source cardinality inference.
 - Lift authoritative source-field facts through proven single-source identity projections while keeping computed, CTE, set, grouped and JOIN result propagation explicitly unknown.
-- Reconcile cumulative performance evidence, retaining the collection-pipeline and batched-cache improvements while recording remaining explicit evaluation-context overhead for focused future investigation.
+- Reconcile cumulative performance evidence, retaining the collection-pipeline and batched-cache improvements while removing unnecessary simple-resolution composition and eager evaluation-context overhead from ordinary hot paths.
 
 ## Discover 0.29.2 - Collection Querying Beyond Indexing
 

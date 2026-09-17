@@ -131,13 +131,24 @@ def _runtime_member_value(value: Any, member: str) -> Any:
     return value[member]
 
 
-def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> Any:
-    """Evaluate a scalar expression using an already-normalised runtime context."""
-    record = context._record
+def _bind_collection_element(context: dict[str, Any] | EvaluationContext, element: Any) -> EvaluationContext:
+    """Bind a collection element, creating explicit context only when required."""
+    if isinstance(context, EvaluationContext):
+        return context.bind_collection_element(element)
+    return EvaluationContext(context, (element,), {})
+
+
+def _evaluate_scalar_expression(expression: Any, context: dict[str, Any] | EvaluationContext) -> Any:
+    """Evaluate a scalar expression, retaining the plain-record fast path."""
+    record = context._record if isinstance(context, EvaluationContext) else context
     if isinstance(expression, CollectionElementReference):
-        return context.collection_element(expression.scope_distance)
+        return context.collection_element(expression.scope_distance) if isinstance(context, EvaluationContext) else None
     if isinstance(expression, RelationField):
-        relation_record = context.relation_record(expression.qualifier)
+        relation_record = (
+            context.relation_record(expression.qualifier)
+            if isinstance(context, EvaluationContext)
+            else EvaluationContext(context).relation_record(expression.qualifier)
+        )
         if relation_record is None:
             return None
         return canonical_record_value(relation_record, expression.name, expression.kind)
@@ -184,7 +195,7 @@ def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> 
             return None
         count = 0
         for element in collection:
-            if _evaluate_boolean_expression(expression.predicate, context.bind_collection_element(element)) is True:
+            if _evaluate_boolean_expression(expression.predicate, _bind_collection_element(context, element)) is True:
                 count += 1
         return count
     if isinstance(expression, CollectionFilter):
@@ -196,7 +207,7 @@ def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> 
         return [
             element
             for element in collection
-            if _evaluate_boolean_expression(expression.predicate, context.bind_collection_element(element)) is True
+            if _evaluate_boolean_expression(expression.predicate, _bind_collection_element(context, element)) is True
         ]
     if isinstance(expression, CollectionProjection):
         if expression.evaluation_fusion_safe:
@@ -209,7 +220,7 @@ def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> 
                 return None
             projected: list[Any] = []
             for element in collection:
-                element_context = context.bind_collection_element(element)
+                element_context = _bind_collection_element(context, element)
                 if _evaluate_boolean_expression(source_filter.predicate, element_context) is True:
                     projected.append(_evaluate_scalar_expression(expression.projection, element_context))
             return projected
@@ -219,7 +230,7 @@ def _evaluate_scalar_expression(expression: Any, context: EvaluationContext) -> 
         if not isinstance(collection, (list, tuple)):
             return None
         return [
-            _evaluate_scalar_expression(expression.projection, context.bind_collection_element(element))
+            _evaluate_scalar_expression(expression.projection, _bind_collection_element(context, element))
             for element in collection
         ]
     if isinstance(expression, ScalarMember):
@@ -293,12 +304,11 @@ def evaluate_scalar_expression(
     recursion receives a normalised ``EvaluationContext`` directly, avoiding repeated
     type checks and context normalisation for every expression node.
     """
-    context = (
-        record
-        if isinstance(record, EvaluationContext)
-        else EvaluationContext(record=record, collection_bindings=collection_bindings)
-    )
-    return _evaluate_scalar_expression(expression, context)
+    if isinstance(record, EvaluationContext):
+        return _evaluate_scalar_expression(expression, record)
+    if collection_bindings:
+        return _evaluate_scalar_expression(expression, EvaluationContext(record, collection_bindings, {}))
+    return _evaluate_scalar_expression(expression, record)
 
 
 def canonical_record_value(
@@ -410,9 +420,9 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
     return re.compile("".join(pieces), flags)
 
 
-def _evaluate_boolean_expression(node: Any, context: EvaluationContext) -> bool | None:
-    """Evaluate a Boolean expression using an already-normalised runtime context."""
-    record = context._record
+def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | EvaluationContext) -> bool | None:
+    """Evaluate a Boolean expression while preserving the plain-record fast path."""
+    record = context._record if isinstance(context, EvaluationContext) else context
     if node is None:
         return True
     if isinstance(node, Literal) and (node.value is None or isinstance(node.value, bool)):
@@ -453,7 +463,7 @@ def _evaluate_boolean_expression(node: Any, context: EvaluationContext) -> bool 
         if not isinstance(collection, (list, tuple)):
             return None
         results = (
-            _evaluate_boolean_expression(node.predicate, context.bind_collection_element(element))
+            _evaluate_boolean_expression(node.predicate, _bind_collection_element(context, element))
             for element in collection
         )
         if node.quantifier == "ANY":
@@ -1199,9 +1209,8 @@ def evaluate(
     Compatibility coercion occurs once at the public boundary; recursive evaluation
     stays on the explicit context fast path.
     """
-    context = (
-        record
-        if isinstance(record, EvaluationContext)
-        else EvaluationContext(record=record, collection_bindings=collection_bindings)
-    )
-    return _evaluate_boolean_expression(node, context)
+    if isinstance(record, EvaluationContext):
+        return _evaluate_boolean_expression(node, record)
+    if collection_bindings:
+        return _evaluate_boolean_expression(node, EvaluationContext(record, collection_bindings, {}))
+    return _evaluate_boolean_expression(node, record)

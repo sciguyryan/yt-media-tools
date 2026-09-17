@@ -45,3 +45,14 @@ def test_evaluator_consumes_an_already_resolved_query() -> None:
     parsed = parse_query("SELECT id WHERE view_count >= 10 ORDER BY id")
     resolved = resolver.resolve_query(parsed, QuerySchema(records), DateContext())
     assert evaluator.apply_query(records, resolved) == [records[0]]
+
+
+def test_simple_uncomposed_resolution_matches_general_body_resolution() -> None:
+    """The direct simple-query path must preserve ordinary body resolution semantics."""
+    records = [{"id": "a", "view_count": 20}]
+    schema = QuerySchema(records)
+    parsed = parse_query("SELECT id WHERE view_count >= 10")
+    context = DateContext()
+    direct = resolver.resolve_query(parsed, schema, context)
+    general = resolver._resolve_query_body(parsed, schema, context)
+    assert semantics.semantic_key(direct) == semantics.semantic_key(general)

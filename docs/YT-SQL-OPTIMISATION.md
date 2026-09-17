@@ -414,6 +414,10 @@ The audit found the proof-limited right-side equality index to be the appropriat
 
 The deliberately simple nested-loop route remains as the semantic reference executor. This is intentional duplication at the physical execution boundary rather than accidental architecture: it provides an independent differential control for every relational fast path.
 
+The historical benchmark reconciliation also identified fixed overhead outside JOIN execution. Simple resolution was still entering the composed-relation resolver despite having no CTE, JOIN, set operation or source relation, and ordinary scalar/Boolean evaluation eagerly allocated an explicit `EvaluationContext` even when no relation or collection binding could be observed. Both costs are now avoided by narrow semantic fast paths: simple uncomposed resolution uses the ordinary query-body resolver directly, while evaluation retains a plain-record path and creates explicit context lazily when relational or lexical collection state is actually required. Differential boundary tests require these paths to remain equivalent to their general counterparts.
+
+The audit does not chase percentage-only movements whose absolute cost is negligible without evidence of a structural problem. Formatting remains presentation-only and is not given semantic shortcuts merely to recover fractions of a microsecond. Historical end-to-end movement is treated as a downstream execution signal and should be remeasured after the evaluator hot-path correction rather than optimised independently.
+
 ### Explainability and diagnostics
 
 JOIN planning is exposed through the existing machine-readable explain model and derived console and Graphviz renderers. Explain data records the participating relation identities, join kind, formatted ON predicate, relation-qualified predicate dependencies, relation-owned acquisition requirements, and the selected execution strategy. The hash equality strategy is reported as a proof-limited fast path with reference fallback; predicates without that proof report the nested-loop reference strategy. Presentation remains derived from planner/explain data and does not become semantic state.
