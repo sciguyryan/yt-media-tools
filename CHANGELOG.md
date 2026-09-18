@@ -1,5 +1,15 @@
 # Changelog
 
+## Discover 0.29.5 - Boolean Boundaries
+
+- Define left-to-right `AND` and `OR` evaluation as observable yt-sql language semantics, including exact TRUE, FALSE and UNKNOWN reachability behaviour.
+- Unify ordinary row predicates and `HAVING` behind one lazy three-valued Boolean connective implementation while preserving relation-aware and collection predicate semantics.
+- Constrain Boolean optimisation by evaluation reachability so a known final truth value cannot suppress or reorder an earlier observable operand without a proof of observational equivalence.
+- Carry proven short-circuit reachability through optimiser decisions and explain output separately from Boolean truth and textual predicate simplification.
+- Add comprehensive deterministic and adversarial conformance coverage for nested Boolean expressions, NULL and three-valued logic, reachable failures, volatile expressions, `HAVING`, JOIN predicates and collection quantifiers.
+- Remove avoidable per-row callback allocation from the shared lazy Boolean evaluator, restoring representative end-to-end performance to the 0.29.3 baseline while preserving the completed language contract.
+- Reconcile the yt-sql language and optimisation documentation around the completed short-circuit decision, including the corrected language-reference heading hierarchy and explicit proof requirements for any future Boolean operand reordering.
+
 ## Discover 0.29.4 - Relations Resolved
 
 - Add first-class single-relation JOIN grammar, resolution and execution for `INNER`, `LEFT`, `SEMI` and `ANTI`, with explicit relation aliases, qualified field ownership, deterministic ambiguity diagnostics and conservative unsupported-form guards.
