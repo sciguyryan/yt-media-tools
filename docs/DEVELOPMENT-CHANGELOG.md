@@ -23,6 +23,7 @@ This file records meaningful changes during active development. It is not releas
 - [test] Pin optimiser behaviour for nested volatile expressions so truth simplification cannot suppress an observable left operand.
 - [docs] Record completion of the cross-surface Boolean conformance and adversarial coverage pass.
 - [docs] Reconcile the completed short-circuit language decision, optimiser proof boundary and explain contract, including the final Markdown heading-hierarchy correction.
+- [maintenance] Avoid per-row Boolean callback allocation while preserving the shared lazy short-circuit evaluator and identical observable semantics.
 
 ## Downloader 1.19.x - Unreleased
 

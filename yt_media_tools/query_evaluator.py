@@ -422,20 +422,22 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
 
 def _evaluate_boolean_binary(
     operator: str,
-    evaluate_left: Callable[[], bool | None],
-    evaluate_right: Callable[[], bool | None],
+    left_node: Any,
+    right_node: Any,
+    evaluator: Callable[[Any, Any], bool | None],
+    context: Any,
 ) -> bool | None:
     """Evaluate one Boolean connective using the observable yt-sql contract.
 
-    The callbacks are deliberately lazy. Keeping the truth-table and reachability
-    rules here gives row predicates and HAVING one semantic implementation while
-    allowing each surface to retain its own leaf-expression evaluator.
+    Operand nodes are passed unevaluated so this helper owns reachability without
+    allocating per-row callbacks. Row predicates and HAVING therefore share one
+    truth-table implementation while retaining their own leaf evaluators.
     """
-    left = evaluate_left()
+    left = evaluator(left_node, context)
     if operator == "AND":
         if left is False:
             return False
-        right = evaluate_right()
+        right = evaluator(right_node, context)
         if right is False:
             return False
         if left is None or right is None:
@@ -444,7 +446,7 @@ def _evaluate_boolean_binary(
     if operator == "OR":
         if left is True:
             return True
-        right = evaluate_right()
+        right = evaluator(right_node, context)
         if right is True:
             return True
         if left is None or right is None:
@@ -466,8 +468,10 @@ def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | Evaluation
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
         return _evaluate_boolean_binary(
             node.operator,
-            lambda: _evaluate_boolean_expression(node.left, context),
-            lambda: _evaluate_boolean_expression(node.right, context),
+            node.left,
+            node.right,
+            _evaluate_boolean_expression,
+            context,
         )
     if isinstance(node, CollectionPredicate):
         collection = _evaluate_scalar_expression(node.collection, context)
@@ -700,8 +704,10 @@ def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
         return _evaluate_boolean_binary(
             node.operator,
-            lambda: _evaluate_having(node.left, group),
-            lambda: _evaluate_having(node.right, group),
+            node.left,
+            node.right,
+            _evaluate_having,
+            group,
         )
     if isinstance(node, ScalarIsNull):
         result = _evaluate_group_expression(node.expression, group) is None
