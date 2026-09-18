@@ -65,6 +65,7 @@ class OptimisationDecision:
     before: str
     after: str
     proofs: tuple[OptimisationProof, ...] = ()
+    evaluation_effect: str | None = None
 
 
 @dataclass(frozen=True)
@@ -93,7 +94,13 @@ def optimise_query(query: Query, *, source: SourceSpec | None = None) -> Optimis
         cte_result = optimise_query(cte.query)
         optimised_ctes.append(replace(cte, query=cte_result.query))
         decisions.extend(
-            OptimisationDecision(f"cte-{cte.name}-{item.rule}", item.before, item.after, item.proofs)
+            OptimisationDecision(
+                f"cte-{cte.name}-{item.rule}",
+                item.before,
+                item.after,
+                item.proofs,
+                item.evaluation_effect,
+            )
             for item in cte_result.decisions
         )
 
@@ -102,7 +109,13 @@ def optimise_query(query: Query, *, source: SourceSpec | None = None) -> Optimis
         branch_result = optimise_query(operation.query)
         optimised_set_operations.append(replace(operation, query=branch_result.query))
         decisions.extend(
-            OptimisationDecision(f"union-{index}-{item.rule}", item.before, item.after, item.proofs)
+            OptimisationDecision(
+                f"union-{index}-{item.rule}",
+                item.before,
+                item.after,
+                item.proofs,
+                item.evaluation_effect,
+            )
             for item in branch_result.decisions
         )
 
@@ -426,6 +439,9 @@ def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any,
                     "constant-and-false" if operator == "AND" else "constant-or-true",
                     Binary(operator, left, node.right),
                     left,
+                    evaluation_effect=(
+                        "right operand proven unreachable after the left operand determines the Boolean result"
+                    ),
                 )
             )
             return left, decisions
@@ -724,5 +740,12 @@ def _decision(
     after: Any,
     *,
     proofs: tuple[OptimisationProof, ...] = (),
+    evaluation_effect: str | None = None,
 ) -> OptimisationDecision:
-    return OptimisationDecision(rule, format_expression(before), format_expression(after), proofs)
+    return OptimisationDecision(
+        rule,
+        format_expression(before),
+        format_expression(after),
+        proofs,
+        evaluation_effect,
+    )

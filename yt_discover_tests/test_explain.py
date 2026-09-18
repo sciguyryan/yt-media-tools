@@ -338,3 +338,46 @@ def test_json_explain_marks_unknown_ordered_collection_as_non_positional() -> No
     assert formats["ordering"] == "unknown"
     assert formats["positional_indexing"] is False
     assert formats["exact_indexed_acquisition"] is False
+
+
+def test_optimizer_explain_preserves_boolean_evaluation_effect() -> None:
+    from yt_media_tools.discover_explain import _optimiser_explain_payload
+    from yt_media_tools.optimizer import optimise_query
+    from yt_media_tools.query import Binary, Field, Literal, Query
+
+    predicate = Binary("AND", Literal(False, "FALSE"), Binary("=", Field("id"), Literal("x", "'x'")))
+    payload = _optimiser_explain_payload(optimise_query(Query(predicate=predicate)))
+    assert payload["rewrites"] == [
+        {
+            "rule": "constant-and-false",
+            "before": "(FALSE AND id = 'x')",
+            "after": "FALSE",
+            "evaluation_effect": (
+                "right operand proven unreachable after the left operand determines the Boolean result"
+            ),
+        }
+    ]
+
+
+def test_explain_decisions_reports_boolean_evaluation_effect() -> None:
+    from yt_media_tools.explain_presentation import explain_decisions
+
+    payload = {
+        "predicate_optimiser": {
+            "status": "active",
+            "changed": True,
+            "rewrites": [
+                {
+                    "rule": "constant-or-true",
+                    "before": "(TRUE OR id = 'x')",
+                    "after": "TRUE",
+                    "evaluation_effect": (
+                        "right operand proven unreachable after the left operand determines the Boolean result"
+                    ),
+                }
+            ],
+        }
+    }
+    decisions = explain_decisions(payload)
+    assert decisions[0]["status"] == "applied"
+    assert "right operand proven unreachable" in decisions[0]["reason"]

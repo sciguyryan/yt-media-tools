@@ -15,6 +15,10 @@ This file records meaningful changes during active development. It is not releas
 - [test] Cover dominating-left reachability, dominating-right non-suppression and safe non-dominating right identities at the optimiser boundary.
 - [docs] Document the distinction between Boolean truth provability and permission to suppress or reorder evaluation.
 
+- [maintenance] Carry Boolean evaluation reachability into optimiser decisions and machine-readable explain data so skipped operands are reported explicitly rather than inferred from algebraic simplification.
+- [test] Verify reachability effects survive optimiser-to-explain projection and diagnostic decision rendering.
+- [docs] Document short-circuit planning and explainability as a distinction between truth, reachability and reordering permission.
+
 ## Downloader 1.19.x - Unreleased
 
 - [feature] Add `--remove-completed-rows` for annotated file-backed queues whose first whitespace-delimited field is the download target.

@@ -499,3 +499,9 @@ Human console presentation labels applied, rejected, deferred and eliminated dec
 Rendered plans use Graphviz to emit SVG from the same explanation graph. Graphviz is an optional presentation dependency; unavailable Graphviz support must never alter optimiser, acquisition or execution behaviour. JSON remains the machine-readable structural form and is kept free of terminal escape sequences.
 
 Rejection reporting is conservative. A potential optimisation is reported as rejected only when the planner already has an explicit reason for choosing a less aggressive path, such as an ineligible bounded acquisition or a LIMIT termination barrier. Explain output must not invent speculative alternatives merely to populate a diagnostic section.
+
+### Evaluation reachability in explain output
+
+Boolean rewrites that suppress evaluation expose that effect explicitly in explain data. A dominating left `FALSE` for `AND`, or left `TRUE` for `OR`, may make the right operand unreachable under the language's left-to-right evaluation contract. The optimiser records that evaluation effect separately from the textual before-and-after rewrite so explain consumers do not have to infer reachability from Boolean equivalence.
+
+Rewrites that preserve evaluation of the surviving operand do not claim an unreachable operand. In particular, a dominating constant on the right is not reported as permission to suppress the observable left operand. Explain output therefore describes the optimiser decision actually justified by evaluation semantics rather than a more aggressive algebraic simplification that yt-sql does not perform.

@@ -112,6 +112,7 @@ def _optimiser_explain_payload(
                 "rule": item.rule,
                 "before": item.before,
                 "after": item.after,
+                **({"evaluation_effect": item.evaluation_effect} if item.evaluation_effect is not None else {}),
             }
             for item in decisions
         ],
@@ -446,6 +447,8 @@ def explain_user_query(
         lines.append(f"  Applied {len(optimisation.decisions)} semantics-preserving rewrite(s):")
         for decision in optimisation.decisions:
             lines.append(f"  [{decision.rule}] {decision.before} -> {decision.after}")
+            if decision.evaluation_effect is not None:
+                lines.append(f"    Evaluation: {decision.evaluation_effect}")
         if optimisation.query.predicate is not None:
             lines.append(f"  Optimised filter: {explain_expression(optimisation.query.predicate)}")
         else:

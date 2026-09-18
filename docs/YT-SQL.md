@@ -339,3 +339,7 @@ SELECT id FROM @example WHERE (raw.provider_record).provider_id = 'primary'
 ```
 
 Structured member requirements are retained separately during acquisition planning. A backend may satisfy a member request partially only when its capability contract proves that member-specific acquisition is semantically equivalent to acquiring the containing structured value. Indexed member access additionally requires exact positional semantics. Without those guarantees the planner falls back conservatively to the indexed containing record or complete containing structure needed for local evaluation. Current adapters do not advertise exact member acquisition.
+
+#### Short-circuit planning and explainability
+
+When optimisation makes an operand unreachable under the observable left-to-right Boolean contract, explain output records that evaluation effect explicitly. This is distinct from reporting the simplified Boolean expression: a known final truth value alone does not imply that an earlier observable operand may be skipped. Optimiser and explain consumers therefore treat truth, reachability and reordering permission as separate facts.

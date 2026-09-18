@@ -269,12 +269,20 @@ def explain_decisions(payload: dict[str, Any]) -> list[dict[str, str]]:
         elif optimiser.get("changed"):
             rewrites = optimiser.get("rewrites") or []
             rules = ", ".join(str(item.get("rule")) for item in rewrites if isinstance(item, dict) and item.get("rule"))
+            effects = [
+                str(item.get("evaluation_effect"))
+                for item in rewrites
+                if isinstance(item, dict) and item.get("evaluation_effect")
+            ]
+            reason = "one or more semantics-preserving optimiser rewrites were applied"
+            if effects:
+                reason += "; " + "; ".join(effects)
             decisions.append(
                 {
                     "category": "predicate optimisation",
                     "status": STATUS_APPLIED,
                     "decision": rules or "safe rewrite",
-                    "reason": "one or more semantics-preserving optimiser rewrites were applied",
+                    "reason": reason,
                 }
             )
 
