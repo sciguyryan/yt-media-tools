@@ -9,7 +9,7 @@ import re
 from dataclasses import replace
 from datetime import date, datetime
 from functools import lru_cache
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from .collection_semantics import existential_truth, universal_truth
 from .dates import DateContext, parse_date_literal, timestamp_to_datetime
@@ -420,6 +420,39 @@ def _compile_like_pattern(pattern: str, case_insensitive: bool) -> re.Pattern[st
     return re.compile("".join(pieces), flags)
 
 
+def _evaluate_boolean_binary(
+    operator: str,
+    evaluate_left: Callable[[], bool | None],
+    evaluate_right: Callable[[], bool | None],
+) -> bool | None:
+    """Evaluate one Boolean connective using the observable yt-sql contract.
+
+    The callbacks are deliberately lazy. Keeping the truth-table and reachability
+    rules here gives row predicates and HAVING one semantic implementation while
+    allowing each surface to retain its own leaf-expression evaluator.
+    """
+    left = evaluate_left()
+    if operator == "AND":
+        if left is False:
+            return False
+        right = evaluate_right()
+        if right is False:
+            return False
+        if left is None or right is None:
+            return None
+        return True
+    if operator == "OR":
+        if left is True:
+            return True
+        right = evaluate_right()
+        if right is True:
+            return True
+        if left is None or right is None:
+            return None
+        return False
+    raise AssertionError(f"Unsupported Boolean operator {operator}")
+
+
 def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | EvaluationContext) -> bool | None:
     """Evaluate a Boolean expression while preserving the plain-record fast path."""
     record = context._record if isinstance(context, EvaluationContext) else context
@@ -431,27 +464,11 @@ def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | Evaluation
         value = _evaluate_boolean_expression(node.operand, context)
         return None if value is None else not value
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        # Boolean evaluation is deliberately left-to-right. A dominating left
-        # value makes the right operand unreachable; UNKNOWN does not. This is
-        # part of yt-sql semantics rather than an optimiser convenience.
-        left = _evaluate_boolean_expression(node.left, context)
-        if node.operator == "AND":
-            if left is False:
-                return False
-            right = _evaluate_boolean_expression(node.right, context)
-            if right is False:
-                return False
-            if left is None or right is None:
-                return None
-            return True
-        if left is True:
-            return True
-        right = _evaluate_boolean_expression(node.right, context)
-        if right is True:
-            return True
-        if left is None or right is None:
-            return None
-        return False
+        return _evaluate_boolean_binary(
+            node.operator,
+            lambda: _evaluate_boolean_expression(node.left, context),
+            lambda: _evaluate_boolean_expression(node.right, context),
+        )
     if isinstance(node, CollectionPredicate):
         collection = _evaluate_scalar_expression(node.collection, context)
         if collection is None:
@@ -681,26 +698,11 @@ def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
         value = _evaluate_having(node.operand, group)
         return None if value is None else not value
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:
-        # HAVING follows the same observable left-to-right Boolean contract as
-        # row predicates, including the UNKNOWN cases.
-        left = _evaluate_having(node.left, group)
-        if node.operator == "AND":
-            if left is False:
-                return False
-            right = _evaluate_having(node.right, group)
-            if right is False:
-                return False
-            if left is None or right is None:
-                return None
-            return True
-        if left is True:
-            return True
-        right = _evaluate_having(node.right, group)
-        if right is True:
-            return True
-        if left is None or right is None:
-            return None
-        return False
+        return _evaluate_boolean_binary(
+            node.operator,
+            lambda: _evaluate_having(node.left, group),
+            lambda: _evaluate_having(node.right, group),
+        )
     if isinstance(node, ScalarIsNull):
         result = _evaluate_group_expression(node.expression, group) is None
         return not result if node.negated else result

@@ -6,7 +6,15 @@ import pytest
 
 from yt_media_tools.optimizer import _optimise_node
 from yt_media_tools.query_evaluator import EvaluationContext, _evaluate_boolean_expression, _evaluate_having
-from yt_media_tools.query_model import Binary, Literal, ScalarComparison, ScalarFunction
+from yt_media_tools.query_model import (
+    Binary,
+    CollectionElementReference,
+    CollectionPredicate,
+    Literal,
+    RelationField,
+    ScalarComparison,
+    ScalarFunction,
+)
 
 
 class _MustNotEvaluate:
@@ -76,6 +84,79 @@ def test_or_non_dominating_left_operand_still_evaluates_right(left: bool | None)
 def test_having_uses_the_same_short_circuit_contract() -> None:
     assert _evaluate_having(Binary("AND", Literal(False, "FALSE"), _MustNotEvaluate()), ({},)) is False
     assert _evaluate_having(Binary("OR", Literal(True, "TRUE"), _MustNotEvaluate()), ({},)) is True
+
+
+@pytest.mark.parametrize(
+    ("operator", "left", "right", "expected"),
+    [
+        ("AND", True, True, True),
+        ("AND", True, False, False),
+        ("AND", True, None, None),
+        ("AND", False, True, False),
+        ("AND", False, False, False),
+        ("AND", False, None, False),
+        ("AND", None, True, None),
+        ("AND", None, False, False),
+        ("AND", None, None, None),
+        ("OR", True, True, True),
+        ("OR", True, False, True),
+        ("OR", True, None, True),
+        ("OR", False, True, True),
+        ("OR", False, False, False),
+        ("OR", False, None, None),
+        ("OR", None, True, True),
+        ("OR", None, False, None),
+        ("OR", None, None, None),
+    ],
+)
+def test_having_boolean_truth_table(
+    operator: str, left: bool | None, right: bool | None, expected: bool | None
+) -> None:
+    node = Binary(operator, _literal(left), _literal(right))
+    assert _evaluate_having(node, ({},)) is expected
+
+
+def test_join_relation_context_uses_the_same_short_circuit_contract() -> None:
+    predicate = Binary(
+        "OR",
+        ScalarComparison("=", RelationField("right", "id"), Literal("match", "'match'")),
+        _MustNotEvaluate(),
+    )
+    context = EvaluationContext(
+        {"id": "left"},
+        relation_records={"left": {"id": "left"}, "right": {"id": "match"}},
+    )
+    assert _evaluate_boolean_expression(predicate, context) is True
+
+
+def test_any_stops_after_first_true_element_without_evaluating_later_elements() -> None:
+    element = CollectionElementReference("item")
+    predicate = CollectionPredicate(
+        "ANY",
+        Literal([1, 2], "[1, 2]"),
+        "item",
+        Binary(
+            "OR",
+            ScalarComparison("=", element, Literal(1, "1")),
+            _MustNotEvaluate(),
+        ),
+    )
+    assert _evaluate_boolean_expression(predicate, {}) is True
+
+
+def test_all_stops_after_first_false_element_without_evaluating_later_elements() -> None:
+    element = CollectionElementReference("item")
+    predicate = CollectionPredicate(
+        "ALL",
+        Literal([1, 2], "[1, 2]"),
+        "item",
+        Binary(
+            "AND",
+            ScalarComparison("!=", element, Literal(1, "1")),
+            _MustNotEvaluate(),
+        ),
+    )
+    assert _evaluate_boolean_expression(predicate, {}) is False
 
 
 def test_optimizer_may_eliminate_only_a_dominating_left_branch() -> None:

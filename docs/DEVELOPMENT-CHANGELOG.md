@@ -7,6 +7,9 @@ This file records meaningful changes during active development. It is not releas
 - [feature] Define left-to-right `AND` and `OR` evaluation, SQL three-valued results and dominating-left short-circuit reachability as observable yt-sql language semantics.
 - [test] Cover the complete Boolean truth table together with skipped and necessarily reachable right operands.
 - [docs] Document Boolean evaluation order, UNKNOWN behaviour and the boundary between final truth and permission to suppress evaluation.
+- [maintenance] Unify row and HAVING Boolean connectives behind one lazy three-valued evaluator while retaining surface-specific leaf evaluation.
+- [test] Verify the shared Boolean contract across HAVING, relation-aware JOIN predicates and collection quantifiers, including quantifier early termination.
+- [docs] Document the common predicate-evaluation contract and the distinct `ANY`/`ALL` reduction rules layered on top of it.
 
 ## Downloader 1.19.x - Unreleased
 
