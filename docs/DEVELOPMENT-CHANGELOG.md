@@ -19,6 +19,10 @@ This file records meaningful changes during active development. It is not releas
 - [test] Verify reachability effects survive optimiser-to-explain projection and diagnostic decision rendering.
 - [docs] Document short-circuit planning and explainability as a distinction between truth, reachability and reordering permission.
 
+- [test] Add adversarial nested Boolean coverage across ordinary predicates, HAVING, relation contexts and collection quantifiers, including reachable failures and unreachable branches.
+- [test] Pin optimiser behaviour for nested volatile expressions so truth simplification cannot suppress an observable left operand.
+- [docs] Record completion of the cross-surface Boolean conformance and adversarial coverage pass.
+
 ## Downloader 1.19.x - Unreleased
 
 - [feature] Add `--remove-completed-rows` for annotated file-backed queues whose first whitespace-delimited field is the download target.

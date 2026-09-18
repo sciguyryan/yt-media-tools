@@ -171,3 +171,85 @@ def test_optimizer_does_not_use_a_dominating_right_value_to_skip_left() -> None:
     observable_left = ScalarComparison(">", ScalarFunction("RANDOM", ()), Literal(0.5, "0.5"))
     result, _ = _optimise_node(Binary("OR", observable_left, Literal(True, "TRUE")))
     assert isinstance(result, Binary) and result.left == observable_left
+
+
+@pytest.mark.parametrize(
+    ("node", "expected"),
+    [
+        (Binary("OR", Binary("AND", Literal(False, "FALSE"), _MustNotEvaluate()), Literal(True, "TRUE")), True),
+        (Binary("AND", Binary("OR", Literal(True, "TRUE"), _MustNotEvaluate()), Literal(False, "FALSE")), False),
+        (Binary("AND", Literal(None, "NULL"), Binary("OR", Literal(True, "TRUE"), _MustNotEvaluate())), None),
+        (Binary("OR", Literal(None, "NULL"), Binary("AND", Literal(False, "FALSE"), _MustNotEvaluate())), None),
+    ],
+)
+def test_nested_boolean_reachability_is_compositional(node: Binary, expected: bool | None) -> None:
+    assert _evaluate_boolean_expression(node, EvaluationContext({})) is expected
+
+
+@pytest.mark.parametrize(
+    "node",
+    [
+        Binary("AND", Literal(True, "TRUE"), _MustNotEvaluate()),
+        Binary("OR", Literal(False, "FALSE"), _MustNotEvaluate()),
+        Binary("AND", Literal(None, "NULL"), _MustNotEvaluate()),
+        Binary("OR", Literal(None, "NULL"), _MustNotEvaluate()),
+    ],
+)
+def test_nested_contract_does_not_hide_reachable_failures(node: Binary) -> None:
+    wrapped = Binary("AND", Literal(True, "TRUE"), node)
+    with pytest.raises(AssertionError):
+        _evaluate_boolean_expression(wrapped, EvaluationContext({}))
+
+
+def test_having_nested_short_circuit_skips_unreachable_failure() -> None:
+    node = Binary(
+        "OR",
+        Binary("AND", Literal(False, "FALSE"), _MustNotEvaluate()),
+        Literal(True, "TRUE"),
+    )
+    assert _evaluate_having(node, ({},)) is True
+
+
+def test_join_context_nested_short_circuit_skips_unreachable_failure() -> None:
+    predicate = Binary(
+        "AND",
+        ScalarComparison("=", RelationField("left", "id"), Literal("keep", "'keep'")),
+        Binary("OR", Literal(True, "TRUE"), _MustNotEvaluate()),
+    )
+    context = EvaluationContext(
+        {"id": "keep"},
+        relation_records={"left": {"id": "keep"}, "right": {"id": "other"}},
+    )
+    assert _evaluate_boolean_expression(predicate, context) is True
+
+
+def test_collection_predicate_nested_short_circuit_skips_unreachable_failure() -> None:
+    element = CollectionElementReference("item")
+    predicate = CollectionPredicate(
+        "ANY",
+        Literal([1, 2], "[1, 2]"),
+        "item",
+        Binary(
+            "AND",
+            ScalarComparison("=", element, Literal(1, "1")),
+            Binary("OR", Literal(True, "TRUE"), _MustNotEvaluate()),
+        ),
+    )
+    assert _evaluate_boolean_expression(predicate, {}) is True
+
+
+def test_optimiser_preserves_nested_reachable_volatile_left_operand() -> None:
+    volatile = ScalarComparison(">", ScalarFunction("RANDOM", ()), Literal(0.5, "0.5"))
+    node = Binary("OR", Binary("AND", volatile, Literal(False, "FALSE")), Literal(True, "TRUE"))
+    result, _ = _optimise_node(node)
+    assert isinstance(result, Binary)
+    assert result.operator == "OR"
+    assert isinstance(result.left, Binary)
+    assert result.left.left == volatile
+
+
+def test_optimiser_can_drop_nested_unreachable_volatile_right_operand() -> None:
+    volatile = ScalarComparison(">", ScalarFunction("RANDOM", ()), Literal(0.5, "0.5"))
+    node = Binary("OR", Binary("AND", Literal(False, "FALSE"), volatile), Literal(True, "TRUE"))
+    result, _ = _optimise_node(node)
+    assert result == Literal(True, "TRUE")
