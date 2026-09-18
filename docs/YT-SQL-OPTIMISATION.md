@@ -35,7 +35,7 @@ General Boolean constant propagation and contradiction folding are not implement
 
 ### Future candidates
 
-Safe De Morgan normalisation, common-subexpression extraction and canonical Boolean ordering may be considered if they produce measurable planning or execution benefits. Each would require differential coverage for NULL-heavy inputs and nested negation.
+Safe De Morgan normalisation and common-subexpression extraction may be considered if they produce measurable planning or execution benefits. Boolean operand reordering is not permitted merely to obtain a simpler or faster expression: because left-to-right evaluation is observable, any future reordering would require a proof of observational equivalence covering truth, evaluation reachability, volatility and established failure behaviour. Differential coverage would also be required for NULL-heavy inputs and nested negation.
 
 ## Comparisons and bounds
 

@@ -152,6 +152,10 @@ yt-sql resolves a query's schema and typed literals before running a dedicated p
 
 Boolean optimisation is constrained by observable evaluation reachability. A dominating left operand such as `FALSE AND x` or `TRUE OR x` proves that `x` is unreachable, so the optimiser may omit that subtree without inspecting or transforming it for execution. A dominating right operand does not grant the same permission: `x AND FALSE` and `x OR TRUE` must retain evaluation of `x`. Non-dominating right identities such as `x AND TRUE` and `x OR FALSE` may be removed because `x` remains evaluated. Boolean truth provability therefore does not imply operand reordering or evaluation suppression.
 
+### Short-circuit planning and explainability
+
+When optimisation makes an operand unreachable under the observable left-to-right Boolean contract, explain output records that evaluation effect explicitly. This is distinct from reporting the simplified Boolean expression: a known final truth value alone does not imply that an earlier observable operand may be skipped. Optimiser and explain consumers therefore treat truth, reachability and reordering permission as separate facts.
+
 The optimiser performs conservative reductions that make later language growth easier to reason about. Predicate subtrees embedded in searched CASE conditions are optimised with the same fixed-point rules as top-level WHERE predicates:
 
 - normalise `NOT` around comparisons and negatable predicates, including double negation;
@@ -339,7 +343,3 @@ SELECT id FROM @example WHERE (raw.provider_record).provider_id = 'primary'
 ```
 
 Structured member requirements are retained separately during acquisition planning. A backend may satisfy a member request partially only when its capability contract proves that member-specific acquisition is semantically equivalent to acquiring the containing structured value. Indexed member access additionally requires exact positional semantics. Without those guarantees the planner falls back conservatively to the indexed containing record or complete containing structure needed for local evaluation. Current adapters do not advertise exact member acquisition.
-
-### Short-circuit planning and explainability
-
-When optimisation makes an operand unreachable under the observable left-to-right Boolean contract, explain output records that evaluation effect explicitly. This is distinct from reporting the simplified Boolean expression: a known final truth value alone does not imply that an earlier observable operand may be skipped. Optimiser and explain consumers therefore treat truth, reachability and reordering permission as separate facts.

@@ -22,6 +22,7 @@ This file records meaningful changes during active development. It is not releas
 - [test] Add adversarial nested Boolean coverage across ordinary predicates, HAVING, relation contexts and collection quantifiers, including reachable failures and unreachable branches.
 - [test] Pin optimiser behaviour for nested volatile expressions so truth simplification cannot suppress an observable left operand.
 - [docs] Record completion of the cross-surface Boolean conformance and adversarial coverage pass.
+- [docs] Reconcile the completed short-circuit language decision, optimiser proof boundary and explain contract, including the final Markdown heading-hierarchy correction.
 
 ## Downloader 1.19.x - Unreleased
 
