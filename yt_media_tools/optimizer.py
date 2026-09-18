@@ -348,6 +348,18 @@ def _fold_constant_scalar(expression: Any) -> Literal:
     return Literal(value, _literal_raw(value), position, isinstance(value, str))
 
 
+def _left_boolean_operand_dominates(operator: str, operand: Any) -> bool:
+    """Return whether the evaluated left operand makes the right unreachable.
+
+    This is deliberately directional. A dominating constant on the right can prove
+    the final truth value, but it cannot suppress evaluation of the observable left
+    operand under yt-sql's left-to-right Boolean contract.
+    """
+    if not isinstance(operand, Literal) or not isinstance(operand.value, bool):
+        return False
+    return (operator == "AND" and operand.value is False) or (operator == "OR" and operand.value is True)
+
+
 def _literal_raw(value: Any) -> str:
     """Return canonical yt-sql source text for a folded literal value."""
     if value is None:
@@ -408,13 +420,15 @@ def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any,
         # Left-to-right short-circuiting is observable. If the optimised left
         # operand dominates the result, the right operand is unreachable and
         # must not itself be optimised or inspected for execution purposes.
-        if isinstance(left, Literal) and (left.value is None or isinstance(left.value, bool)):
-            if operator == "AND" and left.value is False:
-                decisions.append(_decision("constant-and-false", Binary(operator, left, node.right), left))
-                return left, decisions
-            if operator == "OR" and left.value is True:
-                decisions.append(_decision("constant-or-true", Binary(operator, left, node.right), left))
-                return left, decisions
+        if _left_boolean_operand_dominates(operator, left):
+            decisions.append(
+                _decision(
+                    "constant-and-false" if operator == "AND" else "constant-or-true",
+                    Binary(operator, left, node.right),
+                    left,
+                )
+            )
+            return left, decisions
         right, right_decisions = _optimise_node(node.right, source=source)
         decisions.extend(right_decisions)
         if isinstance(left, Literal) and (left.value is None or isinstance(left.value, bool)):

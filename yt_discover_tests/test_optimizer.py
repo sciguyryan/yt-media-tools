@@ -9,7 +9,11 @@ import pytest
 from yt_media_tools.dates import DateContext
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.query import (
+    Binary,
+    Field,
     Literal,
+    Query,
+    Unary,
     apply_query,
     evaluate,
     evaluate_scalar_expression,
@@ -34,6 +38,30 @@ def _assert_equivalent(source: str, records: list[dict[str, object]]) -> None:
         evaluate(optimised.predicate, record) for record in records
     ]
     assert apply_query(records, original) == apply_query(records, optimised)
+
+
+def test_dominating_left_boolean_operand_skips_right_optimisation() -> None:
+    right = Unary("NOT", Unary("NOT", Binary(">=", Field("view_count", kind="number"), Literal(10, "10"))))
+    query = Query(predicate=Binary("AND", Literal(False, "FALSE"), right))
+    result = optimise_query(query)
+    assert result.query.predicate == Literal(False, "FALSE")
+    assert [decision.rule for decision in result.decisions] == ["constant-and-false"]
+
+
+def test_dominating_right_boolean_operand_does_not_suppress_left_evaluation() -> None:
+    left = Binary(">=", Field("view_count", kind="number"), Literal(10, "10"))
+    and_query = Query(predicate=Binary("AND", left, Literal(False, "FALSE")))
+    or_query = Query(predicate=Binary("OR", left, Literal(True, "TRUE")))
+    assert optimise_query(and_query).query.predicate == and_query.predicate
+    assert optimise_query(or_query).query.predicate == or_query.predicate
+
+
+def test_non_dominating_right_identity_may_be_removed_without_suppressing_left() -> None:
+    left = Binary(">=", Field("view_count", kind="number"), Literal(10, "10"))
+    and_result = optimise_query(Query(predicate=Binary("AND", left, Literal(True, "TRUE"))))
+    or_result = optimise_query(Query(predicate=Binary("OR", left, Literal(False, "FALSE"))))
+    assert and_result.query.predicate == left
+    assert or_result.query.predicate == left
 
 
 @pytest.mark.parametrize(

@@ -150,6 +150,8 @@ ASCII `%`, `_` and backslash retain their LIKE meanings. Visually similar fullwi
 
 yt-sql resolves a query's schema and typed literals before running a dedicated predicate optimiser. The optimiser is deliberately semantics-preserving: executing the resolved query before optimisation and executing the optimised query must produce identical predicate truth values, selected rows and output. This includes SQL-like three-valued NULL behaviour, so an expression that evaluates to UNKNOWN for a NULL value must not be rewritten into one that evaluates to FALSE merely because both would currently be rejected by `WHERE`.
 
+Boolean optimisation is constrained by observable evaluation reachability. A dominating left operand such as `FALSE AND x` or `TRUE OR x` proves that `x` is unreachable, so the optimiser may omit that subtree without inspecting or transforming it for execution. A dominating right operand does not grant the same permission: `x AND FALSE` and `x OR TRUE` must retain evaluation of `x`. Non-dominating right identities such as `x AND TRUE` and `x OR FALSE` may be removed because `x` remains evaluated. Boolean truth provability therefore does not imply operand reordering or evaluation suppression.
+
 The optimiser performs conservative reductions that make later language growth easier to reason about. Predicate subtrees embedded in searched CASE conditions are optimised with the same fixed-point rules as top-level WHERE predicates:
 
 - normalise `NOT` around comparisons and negatable predicates, including double negation;

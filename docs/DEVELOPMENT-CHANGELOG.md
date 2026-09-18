@@ -11,6 +11,10 @@ This file records meaningful changes during active development. It is not releas
 - [test] Verify the shared Boolean contract across HAVING, relation-aware JOIN predicates and collection quantifiers, including quantifier early termination.
 - [docs] Document the common predicate-evaluation contract and the distinct `ANY`/`ALL` reduction rules layered on top of it.
 
+- [maintenance] Constrain Boolean optimisation explicitly by left-to-right evaluation reachability, keeping dominating-right constants from suppressing observable left operands.
+- [test] Cover dominating-left reachability, dominating-right non-suppression and safe non-dominating right identities at the optimiser boundary.
+- [docs] Document the distinction between Boolean truth provability and permission to suppress or reorder evaluation.
+
 ## Downloader 1.19.x - Unreleased
 
 - [feature] Add `--remove-completed-rows` for annotated file-backed queues whose first whitespace-delimited field is the download target.

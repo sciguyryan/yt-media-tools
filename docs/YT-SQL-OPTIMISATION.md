@@ -25,6 +25,8 @@ The optimiser records material rewrites deterministically. Applicable rewrites a
 
 Repeated terms in the same flattened `AND` or `OR` chain are removed using semantic AST identity rather than source positions.
 
+Boolean constant identities are directional because evaluation order is observable. `FALSE AND x` and `TRUE OR x` may remove the unreachable right operand without optimising it. `x AND FALSE` and `x OR TRUE` do not collapse to the right-side constant because doing so would suppress evaluation of `x`. The non-dominating identities `x AND TRUE` and `x OR FALSE` may reduce to `x` because the left operand remains evaluated. These rules are evaluation-reachability decisions, not consequences of Boolean truth alone.
+
 The predicate optimiser runs to a deterministic fixed point with a bounded pass count. CASE `WHEN` predicates use the same fixed-point optimiser as top-level `WHERE` predicates.
 
 ### Deliberately not implemented
