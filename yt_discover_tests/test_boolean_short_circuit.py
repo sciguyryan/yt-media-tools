@@ -1,4 +1,4 @@
-"""Left-to-right Boolean short-circuit semantics."""
+"""Observable left-to-right Boolean evaluation semantics."""
 
 from __future__ import annotations
 
@@ -10,7 +10,43 @@ from yt_media_tools.query_model import Binary, Literal, ScalarComparison, Scalar
 
 
 class _MustNotEvaluate:
-    """Sentinel expression whose evaluation would hit the evaluator's unsupported-node assertion."""
+    """Sentinel expression whose evaluation reaches the unsupported-node assertion."""
+
+
+def _literal(value: bool | None) -> Literal:
+    """Build a Boolean/UNKNOWN literal for direct evaluator contract tests."""
+    if value is None:
+        return Literal(None, "NULL")
+    return Literal(value, "TRUE" if value else "FALSE")
+
+
+@pytest.mark.parametrize(
+    ("operator", "left", "right", "expected"),
+    [
+        ("AND", True, True, True),
+        ("AND", True, False, False),
+        ("AND", True, None, None),
+        ("AND", False, True, False),
+        ("AND", False, False, False),
+        ("AND", False, None, False),
+        ("AND", None, True, None),
+        ("AND", None, False, False),
+        ("AND", None, None, None),
+        ("OR", True, True, True),
+        ("OR", True, False, True),
+        ("OR", True, None, True),
+        ("OR", False, True, True),
+        ("OR", False, False, False),
+        ("OR", False, None, None),
+        ("OR", None, True, True),
+        ("OR", None, False, None),
+        ("OR", None, None, None),
+    ],
+)
+def test_boolean_truth_table(operator: str, left: bool | None, right: bool | None, expected: bool | None) -> None:
+    node = Binary(operator, _literal(left), _literal(right))
+    assert _evaluate_boolean_expression(node, {}) is expected
+    assert _evaluate_boolean_expression(node, EvaluationContext({})) is expected
 
 
 def test_and_false_does_not_evaluate_right_operand() -> None:
@@ -25,14 +61,14 @@ def test_or_true_does_not_evaluate_right_operand() -> None:
 
 @pytest.mark.parametrize("left", [True, None])
 def test_and_non_dominating_left_operand_still_evaluates_right(left: bool | None) -> None:
-    node = Binary("AND", Literal(left, "NULL" if left is None else "TRUE"), _MustNotEvaluate())
+    node = Binary("AND", _literal(left), _MustNotEvaluate())
     with pytest.raises(AssertionError):
         _evaluate_boolean_expression(node, EvaluationContext({}))
 
 
 @pytest.mark.parametrize("left", [False, None])
 def test_or_non_dominating_left_operand_still_evaluates_right(left: bool | None) -> None:
-    node = Binary("OR", Literal(left, "NULL" if left is None else "FALSE"), _MustNotEvaluate())
+    node = Binary("OR", _literal(left), _MustNotEvaluate())
     with pytest.raises(AssertionError):
         _evaluate_boolean_expression(node, EvaluationContext({}))
 

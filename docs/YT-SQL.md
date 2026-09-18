@@ -21,6 +21,18 @@ If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been reque
 
 Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
 
+### Observable Boolean evaluation
+
+yt-sql evaluates `AND` and `OR` from left to right. This evaluation order is part of the language contract because evaluating an operand may itself be observable, for example through a volatile function or an expression that raises an established runtime error. The right operand is skipped only when the left operand already determines the result.
+
+For `AND`, a FALSE left operand returns FALSE without evaluating the right operand. TRUE evaluates the right operand and returns its truth value. UNKNOWN also evaluates the right operand: a FALSE right operand makes the result FALSE, while TRUE or UNKNOWN makes the result UNKNOWN.
+
+For `OR`, a TRUE left operand returns TRUE without evaluating the right operand. FALSE evaluates the right operand and returns its truth value. UNKNOWN also evaluates the right operand: a TRUE right operand makes the result TRUE, while FALSE or UNKNOWN makes the result UNKNOWN.
+
+Consequently, `FALSE AND expression` and `TRUE OR expression` make `expression` unreachable, but `expression AND FALSE` and `expression OR TRUE` do not make the earlier expression unreachable. Knowing the eventual Boolean result is not by itself permission to reorder operands or suppress evaluation. Optimisation must preserve this observable left-to-right contract.
+
+`NOT` evaluates its operand normally and maps TRUE to FALSE, FALSE to TRUE, and UNKNOWN to UNKNOWN. Filtering contexts retain a row only when the final predicate is TRUE; FALSE and UNKNOWN do not pass the filter.
+
 Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Scalar functions `LOWER`, `UPPER`, `LENGTH`, `COALESCE`, `CONCAT`, `CHAR`, `NULLIF`, `GREATEST`, `LEAST`, and `RANDOM` may be nested and may accept scalar expressions as arguments. `CONCAT(text, text [, ...])` concatenates two or more textual expressions in argument order; NULL in any argument yields NULL and non-text arguments are rejected. `CHAR(codepoint [, ...])` constructs text from one or more Unicode scalar values; NULL in any argument yields NULL, and constant surrogate or out-of-range code points are rejected. `NULLIF(a, b)` returns NULL only when `a = b` is TRUE. `GREATEST` and `LEAST` require at least two compatible arguments and return NULL if any argument is NULL; textual extrema use exact normalisation-sensitive Unicode ordering. Projection aliases may be referenced by later `ORDER BY` expressions. Searched `CASE WHEN <predicate> THEN <scalar-expression> ... [ELSE <scalar-expression>] END` is also supported wherever scalar expressions are accepted. CASE conditions use the ordinary yt-sql Boolean predicate language; only TRUE selects a branch, while FALSE and UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL.
 
 Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
