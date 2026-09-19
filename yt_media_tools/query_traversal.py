@@ -37,6 +37,7 @@ from .query_model import (
     SelectTerm,
     SetOperation,
     TextPredicate,
+    TruthTest,
     Unary,
 )
 
@@ -48,7 +49,7 @@ from .query_model import (
 
 def ast_children(node: Any) -> tuple[Any, ...]:
     """Return direct AST children in stable source/semantic order."""
-    if isinstance(node, (Unary, ScalarUnary)):
+    if isinstance(node, (Unary, ScalarUnary, TruthTest)):
         return (node.operand,)
     if isinstance(node, (Binary, ScalarBinary, ScalarComparison)):
         return (node.left, node.right)

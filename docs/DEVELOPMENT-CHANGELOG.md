@@ -13,6 +13,10 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Preserve ordinary comparison three-valued logic while making NULL-safe comparisons total TRUE/FALSE predicates.
 - [test] Add deterministic NULL-safe comparison coverage for NULL combinations, scalar expressions, HAVING, formatting, type compatibility and optimisation.
 - [docs] Reconcile the operator audit and language reference after resolving the NULL-safe comparison gap in issue #77.
+- [feature] Generalise `IS TRUE`, `IS NOT TRUE`, `IS FALSE` and `IS NOT FALSE` to predicate expressions and add `IS UNKNOWN` and `IS NOT UNKNOWN`.
+- [maintenance] Keep truth-value inspection total while preserving ordinary three-valued evaluation, short-circuit reachability and volatility semantics.
+- [test] Add deterministic truth-value inspection coverage across Boolean fields, arbitrary and compound predicates, HAVING, formatting and optimisation.
+- [docs] Reconcile the operator audit and language reference after resolving the truth-value inspection gap in issue #78.
 
 ## Downloader 1.19.x - Unreleased
 

@@ -286,6 +286,15 @@ class ScalarIsNull:
 
 
 @dataclass(frozen=True)
+class TruthTest:
+    """Total TRUE/FALSE inspection of a three-valued Boolean predicate."""
+
+    operand: Any
+    truth: str
+    negated: bool = False
+
+
+@dataclass(frozen=True)
 class ScalarUnary:
     operator: str
     operand: Any

@@ -31,6 +31,7 @@ from .query import (
     format_expression,
     format_scalar_expression,
 )
+from .query_model import TruthTest
 from .optimizer_proofs import (
     TRUTH_FALSE,
     TRUTH_TRUE,
@@ -184,6 +185,9 @@ def _optimise_having(node: Any, *, source: SourceSpec | None = None) -> tuple[An
                         proofs=(truth.proof,),
                     )
                 ]
+    if isinstance(node, TruthTest):
+        operand, decisions = _optimise_having(node.operand, source=source)
+        return replace(node, operand=operand), decisions
     if isinstance(node, Unary):
         operand, decisions = _optimise_having(node.operand, source=source)
         optimised = replace(node, operand=operand)
@@ -417,6 +421,11 @@ def _optimise_node(node: Any, *, source: SourceSpec | None = None) -> tuple[Any,
                 )
                 return literal, decisions
 
+    if isinstance(node, TruthTest):
+        operand, child_decisions = _optimise_node(node.operand, source=source)
+        decisions.extend(child_decisions)
+        return replace(node, operand=operand), decisions
+
     if isinstance(node, Unary) and node.operator == "NOT":
         operand, child_decisions = _optimise_node(node.operand, source=source)
         decisions.extend(child_decisions)
@@ -511,6 +520,8 @@ def _normalise_not(node: Any) -> Any:
     if isinstance(node, InList):
         return replace(node, negated=not node.negated)
     if isinstance(node, IsNull):
+        return replace(node, negated=not node.negated)
+    if isinstance(node, TruthTest):
         return replace(node, negated=not node.negated)
     if isinstance(node, TextPredicate):
         return replace(node, negated=not node.negated)

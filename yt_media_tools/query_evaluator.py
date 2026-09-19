@@ -41,6 +41,7 @@ from .query_model import (
     ScalarUnary,
     SelectTerm,
     TextPredicate,
+    TruthTest,
     Unary,
 )
 from .query_semantics import (
@@ -522,6 +523,10 @@ def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | Evaluation
         if node.quantifier == "ALL":
             return universal_truth(results)
         raise AssertionError(f"Unsupported collection quantifier {node.quantifier}")
+    if isinstance(node, TruthTest):
+        value = _evaluate_boolean_expression(node.operand, context)
+        result = {"TRUE": value is True, "FALSE": value is False, "UNKNOWN": value is None}[node.truth]
+        return not result if node.negated else result
     if isinstance(node, ScalarIsNull):
         result = _evaluate_scalar_expression(node.expression, context) is None
         return not result if node.negated else result
@@ -722,6 +727,10 @@ def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
             _evaluate_having,
             group,
         )
+    if isinstance(node, TruthTest):
+        value = _evaluate_having(node.operand, group)
+        result = {"TRUE": value is True, "FALSE": value is False, "UNKNOWN": value is None}[node.truth]
+        return not result if node.negated else result
     if isinstance(node, ScalarIsNull):
         result = _evaluate_group_expression(node.expression, group) is None
         return not result if node.negated else result

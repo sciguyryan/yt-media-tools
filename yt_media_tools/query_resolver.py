@@ -42,6 +42,7 @@ from .query_model import (
     SelectTerm,
     SetOperation,
     TextPredicate,
+    TruthTest,
     Unary,
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
@@ -874,6 +875,8 @@ def _fields_in_predicate(node: Any) -> set[str]:
         return _fields_in_predicate(node.left) | _fields_in_predicate(node.right)
     if isinstance(node, ScalarComparison):
         return _fields_outside_aggregates(node.left) | _fields_outside_aggregates(node.right)
+    if isinstance(node, TruthTest):
+        return _fields_in_predicate(node.operand)
     if isinstance(node, ScalarIsNull):
         return _fields_outside_aggregates(node.expression)
     if isinstance(node, CollectionPredicate):
@@ -913,6 +916,12 @@ def _resolve_predicate(
     """Resolve one Boolean predicate tree against the established query schema."""
     if node is None:
         return None
+    if isinstance(node, TruthTest):
+        return TruthTest(
+            _resolve_predicate(node.operand, schema, source, context, collection_scopes=collection_scopes),
+            node.truth,
+            node.negated,
+        )
     if isinstance(node, Unary):
         return Unary(
             node.operator,
@@ -1031,6 +1040,12 @@ def _resolve_having(
 ) -> Any:
     if node is None:
         return None
+    if isinstance(node, TruthTest):
+        return TruthTest(
+            _resolve_having(node.operand, schema, source, dates, aliases),
+            node.truth,
+            node.negated,
+        )
     if isinstance(node, Unary):
         return Unary(node.operator, _resolve_having(node.operand, schema, source, dates, aliases))
     if isinstance(node, Binary) and node.operator in {"AND", "OR"}:

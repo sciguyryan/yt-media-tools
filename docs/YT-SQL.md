@@ -19,7 +19,7 @@ A complete yt-sql query has the following broad form:
 
 If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested.
 
-Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `IS DISTINCT FROM`, `IS NOT DISTINCT FROM`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons. `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` are NULL-safe comparisons and always return TRUE or FALSE: two NULL operands are not distinct, while exactly one NULL operand is distinct.
+Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `IS DISTINCT FROM`, `IS NOT DISTINCT FROM`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS NOT TRUE`, `IS FALSE`, `IS NOT FALSE`, `IS UNKNOWN`, `IS NOT UNKNOWN`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons. `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` are NULL-safe comparisons and always return TRUE or FALSE: two NULL operands are not distinct, while exactly one NULL operand is distinct.
 
 ### Observable Boolean evaluation
 
@@ -32,6 +32,8 @@ For `OR`, a TRUE left operand returns TRUE without evaluating the right operand.
 Consequently, `FALSE AND expression` and `TRUE OR expression` make `expression` unreachable, but `expression AND FALSE` and `expression OR TRUE` do not make the earlier expression unreachable. Knowing the eventual Boolean result is not by itself permission to reorder operands or suppress evaluation. Optimisation must preserve this observable left-to-right contract.
 
 The same Boolean connective implementation governs ordinary row predicates, relation-aware `JOIN ... ON` predicates, collection-element predicates and `HAVING`. Collection quantifiers retain their own three-valued reduction rules on top of that shared predicate contract: `ANY` stops once an element is TRUE, while `ALL` stops once an element is FALSE. A NULL collection still yields UNKNOWN, and an empty collection remains FALSE for `ANY` and TRUE for `ALL`.
+
+Truth-value inspection is total: `<predicate> IS TRUE`, `IS FALSE`, `IS UNKNOWN` and their `IS NOT` forms always return TRUE or FALSE. The operators may inspect general predicate expressions, not only Boolean fields. For example, `(view_count > 1000) IS UNKNOWN` is TRUE when the comparison itself evaluates to UNKNOWN. Inspection evaluates its operand normally and therefore preserves the established left-to-right reachability and volatility rules.
 
 `NOT` evaluates its operand normally and maps TRUE to FALSE, FALSE to TRUE, and UNKNOWN to UNKNOWN. Filtering contexts retain a row only when the final predicate is TRUE; FALSE and UNKNOWN do not pass the filter.
 

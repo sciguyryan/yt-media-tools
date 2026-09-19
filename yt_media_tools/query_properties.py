@@ -35,6 +35,7 @@ from .query_model import (
     ScalarIsNull,
     ScalarUnary,
     TextPredicate,
+    TruthTest,
     Unary,
 )
 from .query_semantics import _contains_aggregate, query_physical_source_requests
@@ -573,6 +574,9 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
             null_sensitive=True,
             may_return_null=any(child.may_return_null for child in children),
         )
+    if isinstance(expression, TruthTest):
+        child = analyse_expression(expression.operand, source=source)
+        return _combine((child,), resolved_type="boolean", may_return_null=False)
     if isinstance(expression, IsNull):
         child = analyse_expression(expression.field, source=source)
         return _combine((child,), resolved_type="boolean", may_return_null=False)

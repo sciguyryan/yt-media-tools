@@ -39,6 +39,7 @@ from .query_model import (
     SelectTerm,
     SetOperation,
     TextPredicate,
+    TruthTest,
     Token,
     Unary,
 )
@@ -848,6 +849,16 @@ class Parser:
             node = Binary("AND", node, self.parse_having_not())
         return node
 
+    def _parse_having_truth_test_suffix(self, node: Any) -> Any:
+        if not self.consume_keyword("IS"):
+            return node
+        negated = bool(self.consume_keyword("NOT"))
+        for truth in ("TRUE", "FALSE", "UNKNOWN"):
+            if self.consume_keyword(truth):
+                return TruthTest(node, truth, negated)
+        self.index -= 2 if negated else 1
+        return node
+
     def parse_having_not(self) -> Any:
         if self.consume_keyword("NOT"):
             return Unary("NOT", self.parse_having_not())
@@ -864,8 +875,8 @@ class Parser:
                 self.advance()
                 node = self.parse_having_or()
                 self.expect("RPAREN", "Expected ')' to close HAVING expression.")
-                return node
-        return self.parse_having_predicate()
+                return self._parse_having_truth_test_suffix(node)
+        return self._parse_having_truth_test_suffix(self.parse_having_predicate())
 
     def parse_having_predicate(self) -> Any:
         """Parse aggregate-aware HAVING comparisons without changing WHERE grammar."""
@@ -876,8 +887,16 @@ class Parser:
                 self.expect_keyword("FROM", "Expected FROM after IS DISTINCT in HAVING.")
                 operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
                 return ScalarComparison(operator, left, self.parse_scalar_expression())
-            self.expect_keyword("NULL", "Expected NULL or DISTINCT FROM after IS in HAVING.")
-            return ScalarIsNull(left, negated)
+            if self.consume_keyword("NULL"):
+                return ScalarIsNull(left, negated)
+            for truth in ("TRUE", "FALSE", "UNKNOWN"):
+                if self.consume_keyword(truth):
+                    return TruthTest(left, truth, negated)
+            raise QuerySyntaxError(
+                self.source,
+                "Expected NULL, TRUE, FALSE, UNKNOWN, or DISTINCT FROM after IS in HAVING.",
+                self.current.position,
+            )
         if self.current.kind != "OP":
             raise QuerySyntaxError(
                 self.source, "HAVING requires a comparison operator or IS NULL.", self.current.position
@@ -946,13 +965,23 @@ class Parser:
         self.expect("RPAREN", f"Expected ')' to close the {quantifier} collection predicate.")
         return CollectionPredicate(quantifier, collection, binding_token.text, predicate, quantifier_token.position)
 
+    def _parse_truth_test_suffix(self, node: Any) -> Any:
+        if not self.consume_keyword("IS"):
+            return node
+        negated = bool(self.consume_keyword("NOT"))
+        for truth in ("TRUE", "FALSE", "UNKNOWN"):
+            if self.consume_keyword(truth):
+                return TruthTest(node, truth, negated)
+        self.index -= 2 if negated else 1
+        return node
+
     def parse_primary(self) -> Any:
         if (
             self.current.kind == "IDENT"
             and self.current.text.upper() in {"ANY", "ALL"}
             and self.tokens[self.index + 1].kind == "LPAREN"
         ):
-            return self.parse_collection_predicate()
+            return self._parse_truth_test_suffix(self.parse_collection_predicate())
         if self.current.kind == "LPAREN":
             # A parenthesised scalar expression may itself be the left operand of a
             # comparison, including postfix indexing. Try that form before treating
@@ -965,8 +994,8 @@ class Parser:
                 self.advance()
                 node = self.parse_or()
                 self.expect("RPAREN", "Expected ')' to close the expression.")
-                return node
-        return self.parse_predicate()
+                return self._parse_truth_test_suffix(node)
+        return self._parse_truth_test_suffix(self.parse_predicate())
 
     def parse_predicate(self) -> Any:
         # Preserve the established malformed-predicate diagnostic when no left
@@ -984,8 +1013,16 @@ class Parser:
                     self.expect_keyword("FROM", "Expected FROM after IS DISTINCT.")
                     operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
                     return ScalarComparison(operator, left, self.parse_scalar_expression())
-                self.expect_keyword("NULL", "Expected NULL or DISTINCT FROM after IS.")
-                return ScalarIsNull(left, negated)
+                if self.consume_keyword("NULL"):
+                    return ScalarIsNull(left, negated)
+                for truth in ("TRUE", "FALSE", "UNKNOWN"):
+                    if self.consume_keyword(truth):
+                        return TruthTest(left, truth, negated)
+                raise QuerySyntaxError(
+                    self.source,
+                    "Expected NULL, TRUE, FALSE, UNKNOWN, or DISTINCT FROM after IS.",
+                    self.current.position,
+                )
             if self.current.kind == "OP":
                 operator = self.advance().text
                 if operator == "<>":
@@ -1034,13 +1071,13 @@ class Parser:
             if self.consume_keyword("NULL"):
                 return IsNull(field, negated)
             if self.consume_keyword("TRUE"):
-                node = Binary("=", field, Literal(True, "TRUE", self.current.position))
-                return Unary("NOT", node) if negated else node
+                return TruthTest(Binary("=", field, Literal(True, "TRUE", field.position)), "TRUE", negated)
             if self.consume_keyword("FALSE"):
-                node = Binary("=", field, Literal(False, "FALSE", self.current.position))
-                return Unary("NOT", node) if negated else node
+                return TruthTest(Binary("=", field, Literal(True, "TRUE", field.position)), "FALSE", negated)
+            if self.consume_keyword("UNKNOWN"):
+                return TruthTest(Binary("=", field, Literal(True, "TRUE", field.position)), "UNKNOWN", negated)
             raise QuerySyntaxError(
-                self.source, "Expected NULL, TRUE, FALSE, or DISTINCT FROM after IS.", self.current.position
+                self.source, "Expected NULL, TRUE, FALSE, UNKNOWN, or DISTINCT FROM after IS.", self.current.position
             )
 
         if self.consume_keyword("DOES"):

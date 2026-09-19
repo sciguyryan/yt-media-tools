@@ -14,7 +14,7 @@ The current expression and predicate surface is coherent across the main establi
 - ordinary comparison: `=`, `!=`, `<>`, `<`, `<=`, `>` and `>=`, plus the documented readable aliases;
 - Boolean composition: `AND`, `OR` and unary `NOT` with observable left-to-right short-circuit semantics;
 - range and membership: `BETWEEN`, `NOT BETWEEN`, `IN` and `NOT IN`;
-- NULL and Boolean tests: `IS NULL`, `IS NOT NULL`, `IS TRUE`, `IS NOT TRUE`, `IS FALSE` and `IS NOT FALSE` on the currently supported field form;
+- NULL and Boolean tests: `IS NULL`, `IS NOT NULL`, plus total `IS [NOT] TRUE`, `IS [NOT] FALSE` and `IS [NOT] UNKNOWN` truth-value inspection over predicate expressions;
 - text predicates: `CONTAINS`, `MATCHES`, `LIKE` and `ILIKE`, including their negated forms;
 - collection scope: `ANY` and `ALL` forms whose grammar exposes the element scope they introduce;
 - relation and set structure: `JOIN`, `UNION`, grouping, ordering and related query grammar whose structural effects are intentionally visible.
@@ -27,11 +27,11 @@ The established families generally have their expected negated counterparts. Ari
 
 These forms therefore satisfy the operator-design criteria: they complete an existing comparison family, make materially different NULL semantics explicit at the point of comparison and improve readability without hiding evaluation scope. Issue #77 implements both forms over arbitrary compatible scalar operands as part of 0.29.6. They always return TRUE or FALSE, including when either or both operands are NULL.
 
-## Genuine gap: general truth-value tests
+## Resolved gap: general truth-value tests
 
-The current `IS TRUE`, `IS NOT TRUE`, `IS FALSE` and `IS NOT FALSE` forms are limited to the field-oriented predicate grammar. yt-sql now has a substantial Boolean expression language whose results may be TRUE, FALSE or UNKNOWN, but it has no general operator for testing the truth value of an arbitrary predicate expression and no `IS UNKNOWN` / `IS NOT UNKNOWN` form.
+The field-oriented `IS TRUE`, `IS NOT TRUE`, `IS FALSE` and `IS NOT FALSE` forms left a coherence gap once yt-sql gained a substantial Boolean expression language whose results may be TRUE, FALSE or UNKNOWN. Issue #78 resolves that gap by making truth-value inspection available over general predicate expressions and completing the family with `IS UNKNOWN` and `IS NOT UNKNOWN`.
 
-This is a genuine coherence gap rather than a request for a new function. A separate 0.29.6 implementation issue should generalise truth-value tests over Boolean predicate expressions and complete the family with UNKNOWN. The design must preserve the distinction between three-valued Boolean evaluation and truth-value inspection: every `IS [NOT] TRUE|FALSE|UNKNOWN` test itself returns TRUE or FALSE, including when its operand is UNKNOWN.
+Truth-value inspection remains distinct from ordinary three-valued Boolean evaluation: every `IS [NOT] TRUE|FALSE|UNKNOWN` test itself returns TRUE or FALSE, including when its operand is UNKNOWN. The inspected predicate is still evaluated normally, so the established left-to-right short-circuit, reachability and volatility contract remains unchanged.
 
 ## Deliberate omissions
 
@@ -50,6 +50,6 @@ The audit does not use SQL completeness as a target. An operator present in anot
 The audit identified two implementation defects before final reconciliation of issue #10:
 
 1. NULL-safe comparison needed `IS DISTINCT FROM` and `IS NOT DISTINCT FROM`; issue #77 resolves this gap.
-2. Truth-value inspection still needs to apply to general Boolean predicate expressions and include `IS UNKNOWN` and `IS NOT UNKNOWN`; issue #78 remains the outstanding implementation dependency.
+2. General truth-value inspection needed to apply to Boolean predicate expressions and include `IS UNKNOWN` and `IS NOT UNKNOWN`; issue #78 resolves this gap.
 
-Both were split into separate implementation issues before the final operator-design reconciliation. No other operator-level defect was identified by this audit, and missing functions are explicitly outside its scope.
+Both were split into separate implementation issues before the final operator-design reconciliation and are now implemented. No other operator-level defect was identified by this audit, and missing functions are explicitly outside its scope.

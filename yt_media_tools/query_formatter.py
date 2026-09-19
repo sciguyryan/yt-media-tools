@@ -30,6 +30,7 @@ from .query_model import (
     ScalarMember,
     ScalarUnary,
     TextPredicate,
+    TruthTest,
     Unary,
 )
 
@@ -140,6 +141,20 @@ def format_expression(node: Any) -> str:
         )
     if isinstance(node, ScalarComparison):
         return f"{format_scalar_expression(node.left)} {node.operator} {format_scalar_expression(node.right)}"
+    if isinstance(node, TruthTest):
+        # Preserve the established compact Boolean-field spelling while making
+        # general predicate inspection unambiguous in canonical output.
+        if (
+            isinstance(node.operand, Binary)
+            and node.operand.operator == "="
+            and isinstance(node.operand.left, (Field, RelationField))
+            and isinstance(node.operand.right, Literal)
+            and node.operand.right.value is True
+        ):
+            operand = format_expression(node.operand.left)
+        else:
+            operand = f"({format_expression(node.operand)})"
+        return f"{operand} IS {'NOT ' if node.negated else ''}{node.truth}"
     if isinstance(node, ScalarIsNull):
         return f"{format_scalar_expression(node.expression)} IS {'NOT ' if node.negated else ''}NULL"
     raise AssertionError(f"Unsupported query node {node!r}")

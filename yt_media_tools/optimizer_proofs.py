@@ -22,6 +22,7 @@ from .query_model import (
     ScalarComparison,
     ScalarIsNull,
     TextPredicate,
+    TruthTest,
     Unary,
 )
 from .query_evaluator import evaluate, evaluate_scalar_expression
@@ -448,6 +449,27 @@ def prove_predicate_truth(node: Any, *, source: SourceSpec | None) -> PredicateT
                         ),
                     ),
                 )
+
+    if isinstance(node, TruthTest):
+        child = prove_predicate_truth(node.operand, source=source)
+        if not child.proven:
+            return child
+        matches = child.truth == {"TRUE": TRUTH_TRUE, "FALSE": TRUTH_FALSE, "UNKNOWN": TRUTH_UNKNOWN}[node.truth]
+        if node.negated:
+            matches = not matches
+        return PredicateTruthProof(
+            TRUTH_TRUE if matches else TRUTH_FALSE,
+            compose_proofs(
+                "predicate-truth",
+                child.proof,
+                _proof(
+                    "truth-value-inspection",
+                    True,
+                    provenance=(PROVENANCE_SEMANTIC_PROPERTIES,),
+                    reasons=("truth-value inspection is a total TRUE/FALSE predicate",),
+                ),
+            ),
+        )
 
     if isinstance(node, Unary) and node.operator == "NOT":
         child = prove_predicate_truth(node.operand, source=source)

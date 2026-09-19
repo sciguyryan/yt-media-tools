@@ -37,6 +37,7 @@ from .query_model import (
     SelectTerm,
     SetOperation,
     TextPredicate,
+    TruthTest,
     Unary,
     QuerySemanticError,
 )
@@ -85,6 +86,8 @@ def semantic_key(node: Any) -> Any:
         return ("scalar-binary", node.operator, semantic_key(node.left), semantic_key(node.right), node.kind)
     if isinstance(node, ScalarComparison):
         return ("scalar-comparison", node.operator, semantic_key(node.left), semantic_key(node.right))
+    if isinstance(node, TruthTest):
+        return ("truth-test", semantic_key(node.operand), node.truth, node.negated)
     if isinstance(node, ScalarIsNull):
         return ("scalar-is-null", semantic_key(node.expression), node.negated)
     if isinstance(node, ScalarIndex):

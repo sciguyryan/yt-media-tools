@@ -402,7 +402,8 @@ Query language summary:
     IN (...)
     NOT IN (...)
     IS NULL / IS NOT NULL
-    IS TRUE / IS FALSE
+    IS TRUE / IS NOT TRUE / IS FALSE / IS NOT FALSE
+    IS UNKNOWN / IS NOT UNKNOWN
     CONTAINS / NOT CONTAINS
     MATCHES / NOT MATCHES
     LIKE / NOT LIKE
