@@ -174,11 +174,11 @@ The optimiser intentionally does not fold contradictory field predicates to a Bo
 
 `YT-SQL-OPTIMISATION.md` is the living optimisation reference. It records the current and prospective strategy for each language feature, including transformations that are deliberately not implemented because their equivalence has not been proved.
 
-## Operator design policy
+## Language design policy
 
-Dedicated yt-sql operator syntax is reserved for operations where grammar provides semantic or structural clarity rather than merely a shorter spelling. Scope-changing and relation-shaping operations generally belong in grammar, while ordinary value transformations, aggregation over an established group or collection, and media-specific value operations generally remain functions unless dedicated syntax has a stronger language-design justification.
+Dedicated yt-sql grammar is reserved for operations where syntax provides semantic or structural clarity rather than merely a shorter spelling. Scope-changing and relation-shaping operations generally belong in grammar, while ordinary value transformations, aggregation over an established group or collection, and media-specific value operations generally remain functions unless dedicated syntax has a stronger language-design justification.
 
-`YT-SQL-OPERATOR-DESIGN.md` is the living operator-design reference. It defines the review criteria for proposed operators, including readability, discoverability, composition, precedence and parser complexity, and records null-coalescing `??` as a deliberate negative example because `COALESCE(...)` already expresses the operation clearly without adding grammar.
+`YT-SQL-LANGUAGE-DESIGN.md` is the living language-design reference. It defines the review criteria for dedicated grammar, scalar functions, aggregate functions and media-specific functions, including readability, discoverability, composition and parser complexity. It also records null-coalescing `??` as a deliberate negative example because `COALESCE(...)` already expresses the operation clearly without adding grammar.
 
 ## Intentional dialect behaviour
 
