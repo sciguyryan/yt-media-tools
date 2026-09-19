@@ -29,10 +29,6 @@ No feature should be added solely because another SQL dialect contains it.
 
 ## 0.30.0 - Comparison and Conversion Syntax
 
-### Statements and operators
-
-NULL-safe comparison and the truth-value inspection review moved into the final 0.29.x language-and-parser work. They are no longer 0.30.0 scope.
-
 ### Conversion
 
 Add:

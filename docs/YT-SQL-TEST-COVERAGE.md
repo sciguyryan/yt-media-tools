@@ -40,7 +40,7 @@ The deterministic conformance generator version 5 adds compatible dynamic raw st
 
 ## Predicates and three-valued logic
 
-Current dedicated coverage includes comparisons, BETWEEN, IN, IS NULL, Boolean IS forms, CONTAINS, MATCHES, LIKE, ILIKE, negated forms, AND, OR and NOT. Unicode-sensitive LIKE/ILIKE and normalisation distinctions have dedicated tests.
+Current dedicated coverage includes ordinary and NULL-safe comparisons, BETWEEN, IN, IS NULL, total TRUE/FALSE/UNKNOWN truth-value inspection over predicate expressions, CONTAINS, MATCHES, LIKE, ILIKE, negated forms, AND, OR and NOT. Unicode-sensitive LIKE/ILIKE and normalisation distinctions have dedicated tests.
 
 Torture coverage combines duplicate IN members, nested NOT, NULL-sensitive predicates, exact LIKE optimisation paths, Boolean precedence, malformed BETWEEN/IN/LIKE forms, and deterministic failures at clause boundaries.
 

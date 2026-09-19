@@ -468,6 +468,8 @@ Supported predicates include:
 
 ```text
 =  !=  <>  <  <=  >  >=
+IS DISTINCT FROM
+IS NOT DISTINCT FROM
 BETWEEN ... AND ...
 NOT BETWEEN ... AND ...
 IN (...)

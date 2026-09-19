@@ -20,7 +20,7 @@ General relational composition is no longer rejected categorically. The dedicate
 
 ## Phase 1 - ordering completion
 
-Complete the remaining explicit ordering gap with `NULLS FIRST` and `NULLS LAST` on individual `ORDER BY` terms. NULL-safe comparison moved into the final 0.29.x language-and-parser work and is implemented by issue #77.
+Complete the remaining explicit ordering gap with `NULLS FIRST` and `NULLS LAST` on individual `ORDER BY` terms.
 
 The release must document both explicit and default NULL ordering. Tests should cover scalar and temporal values, aliases, CTEs, set composition, aggregation, malformed placement and stable ordering.
 

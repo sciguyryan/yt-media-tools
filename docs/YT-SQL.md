@@ -180,8 +180,6 @@ Dedicated yt-sql operator syntax is reserved for operations where grammar provid
 
 `YT-SQL-OPERATOR-DESIGN.md` is the living operator-design reference. It defines the review criteria for proposed operators, including readability, discoverability, composition, precedence and parser complexity, and records null-coalescing `??` as a deliberate negative example because `COALESCE(...)` already expresses the operation clearly without adding grammar.
 
-`YT-SQL-OPERATOR-AUDIT.md` applies that policy to the current language surface and records the operator-level gaps that must be resolved before the language and parser programme is considered complete.
-
 ## Intentional dialect behaviour
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, relative calendar expressions, and source forms such as `@handle`.

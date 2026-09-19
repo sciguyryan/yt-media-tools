@@ -17,6 +17,8 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Keep truth-value inspection total while preserving ordinary three-valued evaluation, short-circuit reachability and volatility semantics.
 - [test] Add deterministic truth-value inspection coverage across Boolean fields, arbitrary and compound predicates, HAVING, formatting and optimisation.
 - [docs] Reconcile the operator audit and language reference after resolving the truth-value inspection gap in issue #78.
+- [docs] Retire the completed operator-surface audit and consolidate enduring operator semantics into the canonical language, design and test references.
+- [docs] Remove completed 0.29.x operator-work narration from future-work and 0.30.x roadmap documentation.
 
 ## Downloader 1.19.x - Unreleased
 
