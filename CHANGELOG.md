@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.29.6 - Operator Principles
+
+- Define durable criteria for deciding when an operation deserves dedicated yt-sql operator syntax, favouring grammar for structural and scope-changing semantics while keeping ordinary value transformations in functions where appropriate.
+- Record readability, discoverability, composition and parser complexity as explicit operator-design considerations, and retain `COALESCE(...)` rather than adding a dedicated null-coalescing `??` operator.
+- Audit the established operator surface and resolve the two identified language gaps through NULL-safe comparison and complete truth-value inspection.
+- Add `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` as total NULL-safe comparisons over compatible scalar expressions while preserving ordinary comparison three-valued logic.
+- Generalise `IS TRUE`, `IS NOT TRUE`, `IS FALSE` and `IS NOT FALSE` to predicate expressions and add `IS UNKNOWN` and `IS NOT UNKNOWN` as total truth-value inspection operators.
+- Preserve left-to-right Boolean reachability, volatility, NULL semantics and conservative optimisation across the new predicate forms.
+- Add deterministic conformance coverage for NULL-safe comparison and truth-value inspection across ordinary predicates, HAVING, JOIN contexts, formatting, diagnostics and optimisation.
+- Retire the completed operator-surface audit after reconciling its enduring semantics into the canonical language, operator-design and test documentation.
+
 ## Discover 0.29.5 - Boolean Boundaries
 
 - Define left-to-right `AND` and `OR` evaluation as observable yt-sql language semantics, including exact TRUE, FALSE and UNKNOWN reachability behaviour.
