@@ -7,6 +7,8 @@ This file records meaningful changes during active development. It is not releas
 - [docs] Define reusable criteria for deciding when an operation deserves dedicated yt-sql operator syntax.
 - [docs] Distinguish structural and scope-changing grammar from ordinary scalar, aggregate and media-specific value operations.
 - [docs] Record null-coalescing `??` as deliberately unplanned because `COALESCE(...)` already expresses the value transformation without additional grammar.
+- [docs] Audit the current operator surface and identify NULL-safe comparison and general truth-value inspection as the remaining operator-level language gaps.
+- [docs] Keep missing functions and speculative future structural forms outside the operator audit.
 
 ## Downloader 1.19.x - Unreleased
 

@@ -61,3 +61,5 @@ The operation does not change scope, name resolution, relation shape or evaluati
 The policy should be applied to new operator proposals before implementation work begins. A proposal may still be rejected when it passes one criterion if its overall benefit does not justify the additional language surface, and existing coherent syntax should not be rewritten merely because this policy might have produced a different design if it had existed earlier.
 
 When a review identifies a genuine missing operator, implementation should be tracked separately with its syntax, precedence, typing, NULL behaviour, evaluation semantics, optimiser implications, diagnostics and conformance requirements made explicit. Operator-design reviews should not silently grow into implementation work.
+
+The current operator-surface audit is recorded in `YT-SQL-OPERATOR-AUDIT.md`.
