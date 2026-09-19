@@ -22,7 +22,7 @@
 - Add stable relational performance benchmarks for one-to-one, one-to-many, no-match, asymmetric, compound-equality, SEMI and acquisition-planning workloads.
 - Reconcile relational performance against the 0.29.2 release baseline, removing unnecessary composed-resolution and eager evaluation-context overhead while retaining established semantics and improving the representative offline end-to-end benchmark.
 - Improve routine test infrastructure with reusable deterministic conformance populations, an in-process CLI harness where process isolation is not part of the contract, and a project-owned parallel test runner with an explicit serial mode.
-- Complete the 0.29.x language and parser architecture programme, leaving the accepted hand-written parser and formalised language contracts as the stable foundation for the 0.30.x feature programme.
+- Complete the planned 0.29.4 relational architecture work, leaving the accepted hand-written parser and formalised language contracts as the foundation for the remaining 0.29.x language and parser reconciliation.
 
 ## Discover 0.29.3 - Groundwork Complete
 

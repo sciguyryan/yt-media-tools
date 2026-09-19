@@ -172,6 +172,12 @@ The optimiser intentionally does not fold contradictory field predicates to a Bo
 
 `YT-SQL-OPTIMISATION.md` is the living optimisation reference. It records the current and prospective strategy for each language feature, including transformations that are deliberately not implemented because their equivalence has not been proved.
 
+## Operator design policy
+
+Dedicated yt-sql operator syntax is reserved for operations where grammar provides semantic or structural clarity rather than merely a shorter spelling. Scope-changing and relation-shaping operations generally belong in grammar, while ordinary value transformations, aggregation over an established group or collection, and media-specific value operations generally remain functions unless dedicated syntax has a stronger language-design justification.
+
+`YT-SQL-OPERATOR-DESIGN.md` is the living operator-design reference. It defines the review criteria for proposed operators, including readability, discoverability, composition, precedence and parser complexity, and records null-coalescing `??` as a deliberate negative example because `COALESCE(...)` already expresses the operation clearly without adding grammar.
+
 ## Intentional dialect behaviour
 
 yt-sql includes syntax that is useful for media metadata but is not intended to be portable SQL. Examples include duration literals such as `1h`, readable comparison aliases, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, relative calendar expressions, and source forms such as `@handle`.
