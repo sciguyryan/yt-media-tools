@@ -308,7 +308,11 @@ def prove_predicate_truth(node: Any, *, source: SourceSpec | None) -> PredicateT
             if isinstance(node, ScalarComparison):
                 left = evaluate_scalar_expression(node.left, {})
                 right = evaluate_scalar_expression(node.right, {})
-                if left is None or right is None:
+                if node.operator == "IS DISTINCT FROM":
+                    value = (left is None) != (right is None) if left is None or right is None else left != right
+                elif node.operator == "IS NOT DISTINCT FROM":
+                    value = (left is None) == (right is None) if left is None or right is None else left == right
+                elif left is None or right is None:
                     value = None
                 elif node.operator == "=":
                     value = left == right
@@ -426,7 +430,7 @@ def prove_predicate_truth(node: Any, *, source: SourceSpec | None) -> PredicateT
             ),
         )
 
-    if isinstance(node, ScalarComparison):
+    if isinstance(node, ScalarComparison) and node.operator not in {"IS DISTINCT FROM", "IS NOT DISTINCT FROM"}:
         target = node.left if isinstance(node.left, Field) else node.right if isinstance(node.right, Field) else None
         if target is not None:
             field = prove_field_structurally_unavailable(target, source=source)

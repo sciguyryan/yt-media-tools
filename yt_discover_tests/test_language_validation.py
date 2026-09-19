@@ -63,7 +63,10 @@ def _resolve(text: str) -> None:
         ("SELECT id FROM @yt_sql_fixture WHERE duration BETWEEN 1m 2m", "Expected AND"),
         ("SELECT id FROM @yt_sql_fixture WHERE availability IN ()", "IN requires at least one value"),
         ("SELECT id FROM @yt_sql_fixture WHERE availability IN ('public'", "Expected ')' after IN values"),
-        ("SELECT id FROM @yt_sql_fixture WHERE is_live IS MAYBE", "Expected NULL, TRUE, or FALSE after IS"),
+        (
+            "SELECT id FROM @yt_sql_fixture WHERE is_live IS MAYBE",
+            "Expected NULL, TRUE, FALSE, or DISTINCT FROM after IS",
+        ),
         ("SELECT id FROM @yt_sql_fixture WHERE title DOES CONTAIN 'Mars'", "Expected NOT after DOES"),
         ("SELECT id FROM @yt_sql_fixture WHERE title DOES NOT EQUAL 'Mars'", "Expected CONTAIN, MATCH, LIKE, or ILIKE"),
         ("SELECT id FROM @yt_sql_fixture WHERE title NOT = 'Mars'", "NOT must be followed"),

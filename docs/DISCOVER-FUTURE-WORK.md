@@ -18,14 +18,11 @@ The deterministic conformance corpus remains the semantic authority for routine 
 
 General relational composition is no longer rejected categorically. The dedicated 0.31.x roadmap evaluates selected JOIN forms where independently acquired media relations create compelling Discover use cases, particularly SEMI and ANTI joins. SQL completeness remains a non-goal, and unsupported relational forms should remain unsupported unless concrete media-query value justifies them.
 
-## Phase 1 - comparison and ordering completion
+## Phase 1 - ordering completion
 
-Complete two small but important gaps in the existing expression and ordering model:
+Complete the remaining explicit ordering gap with `NULLS FIRST` and `NULLS LAST` on individual `ORDER BY` terms. NULL-safe comparison moved into the final 0.29.x language-and-parser work and is implemented by issue #77.
 
-- `NULLS FIRST` and `NULLS LAST` on individual `ORDER BY` terms.
-- `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` as NULL-safe comparisons.
-
-The release must document both explicit and default NULL ordering. Tests should cover scalar and temporal values, aliases, CTEs, set composition, aggregation, malformed placement and stable ordering. The optimiser may reason more strongly about NULL-safe comparison only where equivalence is proven.
+The release must document both explicit and default NULL ordering. Tests should cover scalar and temporal values, aliases, CTEs, set composition, aggregation, malformed placement and stable ordering.
 
 ## Phase 2 - text and Unicode functions
 

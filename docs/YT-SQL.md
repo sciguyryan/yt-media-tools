@@ -19,7 +19,7 @@ A complete yt-sql query has the following broad form:
 
 If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested.
 
-Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons.
+Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `IS DISTINCT FROM`, `IS NOT DISTINCT FROM`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS FALSE`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons. `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` are NULL-safe comparisons and always return TRUE or FALSE: two NULL operands are not distinct, while exactly one NULL operand is distinct.
 
 ### Observable Boolean evaluation
 
@@ -222,7 +222,7 @@ yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`
 
 `GROUP BY` accepts non-aggregate scalar expressions. NULL keys group together, text keys are not normalised or case-folded, and groups retain first-source-occurrence order unless an explicit `ORDER BY` is present. Non-aggregate projected or ordered expressions in an aggregate query must match a grouping expression. Nested aggregates and `SELECT *` in aggregate queries are rejected.
 
-`HAVING` provides aggregate-aware comparisons after grouping, including explicit SELECT aggregate aliases, Boolean `AND`/`OR`/`NOT`, parentheses, and `IS NULL`/`IS NOT NULL`. Aggregate `FILTER (WHERE predicate)` uses the ordinary row-predicate language and applies only to its aggregate after the query-level WHERE filter.
+`HAVING` provides aggregate-aware comparisons after grouping, including explicit SELECT aggregate aliases, NULL-safe `IS DISTINCT FROM` / `IS NOT DISTINCT FROM`, Boolean `AND`/`OR`/`NOT`, parentheses, and `IS NULL`/`IS NOT NULL`. Aggregate `FILTER (WHERE predicate)` uses the ordinary row-predicate language and applies only to its aggregate after the query-level WHERE filter.
 
 yt-sql does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arguments. Those may be considered separately if they fit the language cleanly. Aggregate queries require complete input groups, so the source-order early-LIMIT acquisition optimisation is disabled for them.
 

@@ -455,6 +455,36 @@ def _evaluate_boolean_binary(
     raise AssertionError(f"Unsupported Boolean operator {operator}")
 
 
+def _evaluate_comparison(operator: str, left: Any, right: Any) -> bool | None:
+    """Evaluate one scalar comparison, including NULL-safe comparison operators."""
+    if operator == "IS DISTINCT FROM":
+        if left is None or right is None:
+            return (left is None) != (right is None)
+        return left != right
+    if operator == "IS NOT DISTINCT FROM":
+        if left is None or right is None:
+            return (left is None) == (right is None)
+        return left == right
+    if left is None or right is None:
+        return None
+    try:
+        if operator == "=":
+            return left == right
+        if operator == "!=":
+            return left != right
+        if operator == "<":
+            return left < right
+        if operator == "<=":
+            return left <= right
+        if operator == ">":
+            return left > right
+        if operator == ">=":
+            return left >= right
+    except TypeError:
+        return False
+    raise AssertionError(f"Unsupported operator {operator}")
+
+
 def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | EvaluationContext) -> bool | None:
     """Evaluate a Boolean expression while preserving the plain-record fast path."""
     record = context._record if isinstance(context, EvaluationContext) else context
@@ -498,24 +528,7 @@ def _evaluate_boolean_expression(node: Any, context: dict[str, Any] | Evaluation
     if isinstance(node, ScalarComparison):
         left = _evaluate_scalar_expression(node.left, context)
         right = _evaluate_scalar_expression(node.right, context)
-        if left is None or right is None:
-            return None
-        try:
-            if node.operator == "=":
-                return left == right
-            if node.operator == "!=":
-                return left != right
-            if node.operator == "<":
-                return left < right
-            if node.operator == "<=":
-                return left <= right
-            if node.operator == ">":
-                return left > right
-            if node.operator == ">=":
-                return left >= right
-        except TypeError:
-            return False
-        raise AssertionError(f"Unsupported operator {node.operator}")
+        return _evaluate_comparison(node.operator, left, right)
     if isinstance(node, Binary):
         left = canonical_record_value(record, node.left)
         right = node.right.value
@@ -715,23 +728,7 @@ def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
     if isinstance(node, ScalarComparison):
         left = _evaluate_group_expression(node.left, group)
         right = _evaluate_group_expression(node.right, group)
-        if left is None or right is None:
-            return None
-        try:
-            if node.operator == "=":
-                return left == right
-            if node.operator == "!=":
-                return left != right
-            if node.operator == "<":
-                return left < right
-            if node.operator == "<=":
-                return left <= right
-            if node.operator == ">":
-                return left > right
-            if node.operator == ">=":
-                return left >= right
-        except TypeError:
-            return False
+        return _evaluate_comparison(node.operator, left, right)
     raise AssertionError(f"Unsupported HAVING node {node!r}")
 
 

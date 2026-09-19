@@ -396,6 +396,7 @@ Query language summary:
 
   Predicates:
     =  !=  <>  <  <=  >  >=
+    IS DISTINCT FROM / IS NOT DISTINCT FROM
     BETWEEN ... AND ...
     NOT BETWEEN ... AND ...
     IN (...)

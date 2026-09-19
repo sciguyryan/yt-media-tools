@@ -872,7 +872,11 @@ class Parser:
         left = self.parse_scalar_expression()
         if self.consume_keyword("IS"):
             negated = bool(self.consume_keyword("NOT"))
-            self.expect_keyword("NULL", "Expected NULL after IS in HAVING.")
+            if self.consume_keyword("DISTINCT"):
+                self.expect_keyword("FROM", "Expected FROM after IS DISTINCT in HAVING.")
+                operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
+                return ScalarComparison(operator, left, self.parse_scalar_expression())
+            self.expect_keyword("NULL", "Expected NULL or DISTINCT FROM after IS in HAVING.")
             return ScalarIsNull(left, negated)
         if self.current.kind != "OP":
             raise QuerySyntaxError(
@@ -976,7 +980,11 @@ class Parser:
         if not isinstance(left, Field):
             if self.consume_keyword("IS"):
                 negated = bool(self.consume_keyword("NOT"))
-                self.expect_keyword("NULL", "Expected NULL after IS.")
+                if self.consume_keyword("DISTINCT"):
+                    self.expect_keyword("FROM", "Expected FROM after IS DISTINCT.")
+                    operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
+                    return ScalarComparison(operator, left, self.parse_scalar_expression())
+                self.expect_keyword("NULL", "Expected NULL or DISTINCT FROM after IS.")
                 return ScalarIsNull(left, negated)
             if self.current.kind == "OP":
                 operator = self.advance().text
@@ -1019,6 +1027,10 @@ class Parser:
         if self.consume_keyword("IS"):
             if self.consume_keyword("NOT"):
                 negated = not negated
+            if self.consume_keyword("DISTINCT"):
+                self.expect_keyword("FROM", "Expected FROM after IS DISTINCT.")
+                operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
+                return ScalarComparison(operator, field, self.parse_scalar_expression())
             if self.consume_keyword("NULL"):
                 return IsNull(field, negated)
             if self.consume_keyword("TRUE"):
@@ -1027,7 +1039,9 @@ class Parser:
             if self.consume_keyword("FALSE"):
                 node = Binary("=", field, Literal(False, "FALSE", self.current.position))
                 return Unary("NOT", node) if negated else node
-            raise QuerySyntaxError(self.source, "Expected NULL, TRUE, or FALSE after IS.", self.current.position)
+            raise QuerySyntaxError(
+                self.source, "Expected NULL, TRUE, FALSE, or DISTINCT FROM after IS.", self.current.position
+            )
 
         if self.consume_keyword("DOES"):
             self.expect_keyword("NOT", "Expected NOT after DOES.")

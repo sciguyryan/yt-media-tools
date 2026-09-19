@@ -31,16 +31,7 @@ No feature should be added solely because another SQL dialect contains it.
 
 ### Statements and operators
 
-Add NULL-safe comparison:
-
-``` sql
-a IS DISTINCT FROM b
-a IS NOT DISTINCT FROM b
-```
-
-These always produce a Boolean and must not collapse ordinary comparison semantics.
-
-Review and add `IS UNKNOWN` / `IS NOT UNKNOWN` if it materially improves explicit three-valued-logic queries.
+NULL-safe comparison and the truth-value inspection review moved into the final 0.29.x language-and-parser work. They are no longer 0.30.0 scope.
 
 ### Conversion
 

@@ -9,6 +9,10 @@ This file records meaningful changes during active development. It is not releas
 - [docs] Record null-coalescing `??` as deliberately unplanned because `COALESCE(...)` already expresses the value transformation without additional grammar.
 - [docs] Audit the current operator surface and identify NULL-safe comparison and general truth-value inspection as the remaining operator-level language gaps.
 - [docs] Keep missing functions and speculative future structural forms outside the operator audit.
+- [feature] Add `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` as NULL-safe comparisons over compatible scalar expressions, including aggregate-aware HAVING expressions.
+- [maintenance] Preserve ordinary comparison three-valued logic while making NULL-safe comparisons total TRUE/FALSE predicates.
+- [test] Add deterministic NULL-safe comparison coverage for NULL combinations, scalar expressions, HAVING, formatting, type compatibility and optimisation.
+- [docs] Reconcile the operator audit and language reference after resolving the NULL-safe comparison gap in issue #77.
 
 ## Downloader 1.19.x - Unreleased
 
