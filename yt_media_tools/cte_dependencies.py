@@ -31,8 +31,8 @@ class CteDependencyPlan:
 
     def for_cte(self, name: str) -> CteDependency | None:
         """Return the dependency record for one CTE name."""
-        key = name.casefold()
-        return next((item for item in self.dependencies if item.name.casefold() == key), None)
+        key = name
+        return next((item for item in self.dependencies if item.name == key), None)
 
 
 def _expression_fields(node: Any) -> set[str]:
@@ -44,7 +44,7 @@ def _expression_fields(node: Any) -> set[str]:
 def _select_fields(term: SelectTerm) -> set[str]:
     if term.expression is not None:
         return _expression_fields(term.expression)
-    return {term.field.casefold()}
+    return {term.field}
 
 
 def _non_projection_fields(query: Query) -> set[str]:
@@ -54,37 +54,37 @@ def _non_projection_fields(query: Query) -> set[str]:
     for expression in query.group_by:
         fields.update(_expression_fields(expression))
 
-    aliases = {term.output_name.casefold(): term for term in query.select}
+    aliases = {term.output_name: term for term in query.select}
     for term in query.order_by:
         if term.expression is not None:
-            if getattr(term.expression, "name", "").casefold() in aliases:
-                fields.update(_select_fields(aliases[term.expression.name.casefold()]))
+            if getattr(term.expression, "name", "") in aliases:
+                fields.update(_select_fields(aliases[term.expression.name]))
             else:
                 fields.update(_expression_fields(term.expression))
-        elif term.field.casefold() in aliases:
-            fields.update(_select_fields(aliases[term.field.casefold()]))
+        elif term.field in aliases:
+            fields.update(_select_fields(aliases[term.field]))
         else:
-            fields.add(term.field.casefold())
+            fields.add(term.field)
     return fields
 
 
 def _relation_fields(query: Query, alias: str) -> set[str]:
     """Return fields consumed from one explicitly aliased relation."""
-    prefix = alias.casefold() + "."
+    prefix = alias + "."
     fields: set[str] = set()
     for node in walk_ast(query, descend=lambda item: not isinstance(item, Query) or item is query):
-        if isinstance(node, Field) and node.name.casefold().startswith(prefix):
-            fields.add(node.name[len(prefix) :].casefold())
+        if isinstance(node, Field) and node.name.startswith(prefix):
+            fields.add(node.name[len(prefix) :])
     return fields
 
 
 def _query_relation_references(query: Query, relation: str) -> set[str]:
     """Return output fields consumed from one logical relation by this composed query."""
-    key = relation.casefold()
+    key = relation
     fields: set[str] = set()
 
     def visit(candidate: Query) -> None:
-        if (candidate.from_source or "").casefold() == key:
+        if (candidate.from_source or "") == key:
             fields.update(_non_projection_fields(candidate))
             for term in candidate.select:
                 fields.update(_select_fields(term))
@@ -93,7 +93,7 @@ def _query_relation_references(query: Query, relation: str) -> set[str]:
         # JOIN inputs are consumers too. The ON predicate and downstream query
         # expressions may require outputs from a CTE used on the joined side.
         for join in candidate.joins:
-            if join.relation.source.casefold() == key and join.relation.alias is not None:
+            if join.relation.source == key and join.relation.alias is not None:
                 fields.update(_relation_fields(candidate, join.relation.alias))
         for operation in candidate.set_operations:
             visit(operation.query)
@@ -119,7 +119,7 @@ def _producer_input_fields(
     The query tree itself is not rewritten, so volatile output expressions keep their normal
     materialisation/evaluation count.
     """
-    outputs = {term.output_name.casefold(): term for term in query.select}
+    outputs = {term.output_name: term for term in query.select}
     all_outputs = frozenset(outputs)
 
     if query.distinct:
@@ -167,7 +167,7 @@ def _producer_input_fields(
     retained = set(required_outputs)
     for term in query.select:
         if term.expression is not None and not analyse_expression(term.expression).deterministic:
-            retained.add(term.output_name.casefold())
+            retained.add(term.output_name)
 
     fields = _non_projection_fields(query)
     for name in retained:
@@ -190,22 +190,22 @@ def plan_cte_dependencies(query: Query) -> CteDependencyPlan:
     if not query.ctes:
         return CteDependencyPlan(())
 
-    names = [cte.name.casefold() for cte in query.ctes]
+    names = [cte.name for cte in query.ctes]
     required: dict[str, set[str]] = {name: set() for name in names}
 
     # Main query consumption seeds the backwards walk.
     for cte in query.ctes:
-        required[cte.name.casefold()].update(_query_relation_references(query, cte.name))
+        required[cte.name].update(_query_relation_references(query, cte.name))
 
     planned: dict[str, CteDependency] = {}
     # CTEs may reference only earlier CTEs, so a reverse walk propagates requirements transitively.
     for cte in reversed(query.ctes):
-        key = cte.name.casefold()
+        key = cte.name
         needed = frozenset(required[key])
         input_fields, retained, pruned, applied, reason = _producer_input_fields(cte.query, needed)
         planned[key] = CteDependency(cte.name, needed, retained, pruned, input_fields, applied, reason)
 
-        source_name = (cte.query.from_source or "").casefold()
+        source_name = cte.query.from_source or ""
         if source_name in required:
             required[source_name].update(input_fields)
 

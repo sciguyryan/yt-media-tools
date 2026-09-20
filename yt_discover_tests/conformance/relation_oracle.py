@@ -21,7 +21,7 @@ class OracleRelationIdentity:
 
     @property
     def key(self) -> tuple[str, str | None, str | None]:
-        return (self.kind, self.name.casefold() if self.name is not None else None, self.facet)
+        return (self.kind, self.name if self.name is not None else None, self.facet)
 
 
 @dataclass(frozen=True)
@@ -42,11 +42,11 @@ class OracleRelation:
         kind: str = "physical",
     ) -> "OracleRelation":
         materialised = tuple(rows)
-        fields = frozenset(str(key).casefold() for row in materialised for key in row if not str(key).startswith("_"))
+        fields = frozenset(str(key) for row in materialised for key in row if not str(key).startswith("_"))
         return cls(OracleRelationIdentity(name, facet, kind), fields, materialised)
 
     def has_field(self, name: str) -> bool:
-        return name.casefold() in self.fields
+        return name in self.fields
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ class OracleFieldIdentity:
 
     @property
     def key(self) -> tuple[tuple[str, str | None, str | None], str]:
-        return (self.relation.key, self.name.casefold())
+        return (self.relation.key, self.name)
 
 
 @dataclass(frozen=True)
@@ -90,7 +90,7 @@ class OracleRelationScope:
             relation
             for relation in self.relations
             if relation.identity.name is not None
-            and relation.identity.name.casefold() == relation_name.casefold()
+            and relation.identity.name == relation_name
             and relation.has_field(name)
         ]
         if len(matches) != 1:

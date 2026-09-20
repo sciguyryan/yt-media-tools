@@ -196,7 +196,7 @@ def _expand_join_projection(query: Query, scope: SemanticScope) -> tuple[SelectT
     names: set[str] = set()
     for term in expanded:
         output_name = _projection_output_name(term)
-        key = output_name.casefold()
+        key = output_name
         if key in names:
             raise QuerySemanticError(
                 query.source,

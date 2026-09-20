@@ -285,7 +285,7 @@ def _field_properties(field: Field, source: SourceSpec | None) -> ExpressionProp
     stage = STAGE_ENUMERATION if enumeration else STAGE_DETAILED
     metadata = METADATA_ENUMERATION if enumeration else METADATA_DETAILED
     return ExpressionProperties(
-        frozenset({field.name.casefold()}),
+        frozenset({field.name}),
         field.kind or capability.logical_kind,
         False,
         True,
@@ -298,7 +298,7 @@ def _field_properties(field: Field, source: SourceSpec | None) -> ExpressionProp
         (),
         (),
         (),
-        frozenset({field.name.casefold()}),
+        frozenset({field.name}),
     )
 
 
@@ -391,11 +391,11 @@ def _structured_member_requirement(expression: ScalarMember) -> StructuredMember
     if isinstance(node, ScalarIndex) and isinstance(node.collection, Field):
         index_properties = analyse_expression(node.index)
         if not index_properties.constant:
-            return StructuredMemberRequirement(node.collection.name.casefold(), tuple(members), None, True)
+            return StructuredMemberRequirement(node.collection.name, tuple(members), None, True)
         index = _constant_nonnegative_integer(node.index)
-        return StructuredMemberRequirement(node.collection.name.casefold(), tuple(members), index, True)
+        return StructuredMemberRequirement(node.collection.name, tuple(members), index, True)
     if isinstance(node, Field):
-        return StructuredMemberRequirement(node.name.casefold(), tuple(members), None, False)
+        return StructuredMemberRequirement(node.name, tuple(members), None, False)
     return None
 
 
@@ -405,7 +405,7 @@ def _collection_root_field(expression: Any) -> str | None:
     while isinstance(node, (CollectionFilter, CollectionProjection)):
         node = node.collection
     if isinstance(node, Field):
-        return node.name.casefold()
+        return node.name
     return None
 
 
@@ -630,7 +630,7 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
         )
         if isinstance(expression.collection, Field):
             indexed_value = _constant_nonnegative_integer(expression.index) if index.constant else None
-            field_name = expression.collection.name.casefold()
+            field_name = expression.collection.name
             requirement = IndexedFieldRequirement(field_name, indexed_value)
             return replace(
                 combined,
@@ -735,9 +735,9 @@ def _fields_in_having(node: Any) -> set[str]:
 def _required_body_fields(query: Query) -> set[str]:
     fields = _fields_in_predicate(query.predicate)
     for term in query.order_by:
-        fields.update(_fields_in_scalar(term.expression) if term.expression is not None else {term.field.casefold()})
+        fields.update(_fields_in_scalar(term.expression) if term.expression is not None else {term.field})
     for term in query.select or ():
-        fields.update(_fields_in_scalar(term.expression) if term.expression is not None else {term.field.casefold()})
+        fields.update(_fields_in_scalar(term.expression) if term.expression is not None else {term.field})
     for expression in query.group_by:
         fields.update(_fields_in_scalar(expression))
     fields.update(_fields_in_having(query.having))
@@ -748,11 +748,11 @@ def _required_body_fields(query: Query) -> set[str]:
 
 def required_query_fields(query: Query) -> set[str]:
     """Return physical-source fields needed by a query, CTEs and UNION branches."""
-    cte_names = {cte.name.casefold() for cte in query.ctes}
+    cte_names = {cte.name for cte in query.ctes}
     fields: set[str] = set()
 
     def visit(candidate: Query) -> None:
-        if (candidate.from_source or "").casefold() not in cte_names:
+        if (candidate.from_source or "") not in cte_names:
             fields.update(_required_body_fields(candidate))
         for operation in candidate.set_operations:
             visit(operation.query)
@@ -795,11 +795,7 @@ def _cardinality_effects(query: Query, requires_aggregation: bool) -> tuple[str,
 def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryProperties:
     """Derive semantic properties without performing source acquisition."""
     fields = required_query_fields(query)
-    dynamic = tuple(
-        sorted(
-            field for field in fields if field.casefold() not in KNOWN_FIELD_TYPES and field.casefold() not in ALIASES
-        )
-    )
+    dynamic = tuple(sorted(field for field in fields if field not in KNOWN_FIELD_TYPES and field not in ALIASES))
     aggregate = bool(
         query.group_by
         or query.having is not None
@@ -831,9 +827,7 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
         field
         for term in query.order_by
         for field in (
-            properties_for(term.expression).required_fields
-            if term.expression is not None
-            else frozenset({term.field.casefold()})
+            properties_for(term.expression).required_fields if term.expression is not None else frozenset({term.field})
         )
     )
 

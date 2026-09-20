@@ -403,7 +403,7 @@ def explain_user_query(
                 None,
             )
             detail = f"  {term.output_name}: {term.field} ({term.kind or 'unknown'})"
-            if original is not None and original.field.casefold() != term.field.casefold():
+            if original is not None and original.field != term.field:
                 detail += f" [resolved from {original.field}]"
             lines.append(detail)
     else:

@@ -127,7 +127,7 @@ def semantic_key(node: Any) -> Any:
     if isinstance(node, TextPredicate):
         return ("text", node.operator, semantic_key(node.field), semantic_key(node.value), node.negated)
     if isinstance(node, Field):
-        return ("field", node.name.casefold(), node.kind)
+        return ("field", node.name, node.kind)
     if isinstance(node, Literal):
         return ("literal", _hashable_value(node.value), node.quoted)
     if isinstance(node, SelectTerm):
@@ -135,7 +135,7 @@ def semantic_key(node: Any) -> Any:
     if isinstance(node, OrderTerm):
         return ("order", node.field, node.descending, node.kind, semantic_key(node.expression))
     if isinstance(node, CommonTableExpression):
-        return ("cte", node.name.casefold(), semantic_key(node.query))
+        return ("cte", node.name, semantic_key(node.query))
     if isinstance(node, SetOperation):
         return ("set-operation", node.all, semantic_key(node.query))
     if isinstance(node, Query):
@@ -159,12 +159,7 @@ def semantic_key(node: Any) -> Any:
 
 def same_field(left: Any, right: Any) -> bool:
     """Compare resolved fields without treating source positions as semantic."""
-    return (
-        isinstance(left, Field)
-        and isinstance(right, Field)
-        and left.name.casefold() == right.name.casefold()
-        and left.kind == right.kind
-    )
+    return isinstance(left, Field) and isinstance(right, Field) and left.name == right.name and left.kind == right.kind
 
 
 def _hashable_value(value: Any) -> Any:
@@ -247,7 +242,7 @@ def _direct_from_sources(query: Query) -> tuple[str, ...]:
 
 def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None], ...]:
     """Return physical source/facet requests in deterministic first-use order."""
-    cte_names = {cte.name.casefold() for cte in query.ctes}
+    cte_names = {cte.name for cte in query.ctes}
     seen: set[tuple[str, str | None]] = set()
     result: list[tuple[str, str | None]] = []
 
@@ -258,7 +253,7 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
         for join in candidate.joins:
             direct.append((join.relation.source, join.relation.facet))
         for source_name, facet in direct:
-            if source_name.casefold() in cte_names:
+            if source_name in cte_names:
                 if facet is not None:
                     raise QuerySemanticError(
                         query.source,

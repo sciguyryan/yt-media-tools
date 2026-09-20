@@ -23,7 +23,7 @@ class RelationIdentity:
 
     @property
     def key(self) -> tuple[str, str | None, str | None]:
-        return (self.kind, self.name.casefold() if self.name is not None else None, self.facet)
+        return (self.kind, self.name if self.name is not None else None, self.facet)
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,7 @@ class ResolvedFieldIdentity:
     @property
     def key(self) -> tuple[tuple[str, str | None, str | None], str]:
         canonical = self.field.alias_of or self.field.name
-        return (self.relation.key, canonical.casefold())
+        return (self.relation.key, canonical)
 
 
 @dataclass(frozen=True)
@@ -102,7 +102,7 @@ def relation_binding(
     """Resolve the single relation used by the current query-body grammar."""
     if source_name is None:
         return RelationBinding(RelationIdentity(None, source_facet, "implicit"), physical_schema, None)
-    logical = cte_schemas.get(source_name.casefold())
+    logical = cte_schemas.get(source_name)
     if logical is not None:
         return RelationBinding(RelationIdentity(source_name, None, "cte"), logical, source_name)
     schema = source_schemas.get((source_name, source_facet), physical_schema)

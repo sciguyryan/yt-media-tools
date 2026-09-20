@@ -367,7 +367,7 @@ def _resolve_scalar_expression(
         )
     if isinstance(expression, Field):
         if aliases is not None:
-            alias = aliases.get(expression.name.casefold())
+            alias = aliases.get(expression.name)
             if alias is not None:
                 return (
                     alias.expression
@@ -509,7 +509,7 @@ def _resolve_scalar_expression(
         return ScalarMember(value, expression.member, expression.position, result_type.kind, result_type)
     if isinstance(expression, ScalarIndex):
         if isinstance(expression.collection, Field) and not (
-            aliases is not None and expression.collection.name.casefold() in aliases
+            aliases is not None and expression.collection.name in aliases
         ):
             # Resolve a direct field without applying the standalone structured-value
             # selection restriction first. Indexing owns the diagnostic for whether
@@ -840,7 +840,7 @@ def _fields_outside_aggregates(expression: Any) -> set[str]:
     if expression is None or isinstance(expression, (Literal, AggregateFunction)):
         return set()
     if isinstance(expression, Field):
-        return {expression.name.casefold()}
+        return {expression.name}
     if isinstance(expression, ScalarUnary):
         return _fields_outside_aggregates(expression.operand)
     if isinstance(expression, ScalarBinary):
@@ -883,9 +883,9 @@ def _fields_in_predicate(node: Any) -> set[str]:
         return _fields_outside_aggregates(node.collection) | _fields_in_predicate(node.predicate)
     field = getattr(node, "field", None)
     if isinstance(field, Field):
-        return {field.name.casefold()}
+        return {field.name}
     if isinstance(node, Binary) and isinstance(node.left, Field):
-        return {node.left.name.casefold()}
+        return {node.left.name}
     return set()
 
 
@@ -1203,7 +1203,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             field_text = field.name
             kind = field.kind
         output_name = original_term.alias or original_term.field
-        key = output_name.casefold()
+        key = output_name
         if key in output_names:
             raise QuerySemanticError(
                 source,
@@ -1214,7 +1214,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
         resolved_term = SelectTerm(field_text, output_name, original_term.position, kind, expression)
         select_terms.append(resolved_term)
         if original_term.alias is not None:
-            explicit_aliases[original_term.alias.casefold()] = resolved_term
+            explicit_aliases[original_term.alias] = resolved_term
 
     having = _resolve_having(query.having, schema, source, context, explicit_aliases)
 
@@ -1228,7 +1228,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
                 field_text = expression.name
             order_terms.append(OrderTerm(field_text, term.descending, term.position, kind, expression))
             continue
-        selected_alias = explicit_aliases.get(term.field.casefold())
+        selected_alias = explicit_aliases.get(term.field)
         if selected_alias is not None:
             order_terms.append(
                 OrderTerm(
@@ -1395,11 +1395,11 @@ def resolve_query(
 
     resolved_ctes: list[CommonTableExpression] = []
     cte_schemas: dict[str, QuerySchema] = {}
-    cte_names = {cte.name.casefold() for cte in query.ctes}
+    cte_names = {cte.name for cte in query.ctes}
 
     for cte in query.ctes:
-        referenced = [name.casefold() for name in _direct_from_sources(cte.query)]
-        if cte.name.casefold() in referenced:
+        referenced = list(_direct_from_sources(cte.query))
+        if cte.name in referenced:
             raise QuerySemanticError(
                 query.source, f"Recursive reference to CTE {cte.name!r} is not supported.", cte.position
             )
@@ -1414,7 +1414,7 @@ def resolve_query(
             replace(cte.query, ctes=()), schema, cte_schemas, context, physical_source_schemas
         )
         resolved_ctes.append(CommonTableExpression(cte.name, resolved_subquery, cte.position))
-        cte_schemas[cte.name.casefold()] = _query_result_schema(resolved_subquery)
+        cte_schemas[cte.name] = _query_result_schema(resolved_subquery)
 
     resolved = _resolve_composed_query(replace(query, ctes=()), schema, cte_schemas, context, physical_source_schemas)
     return replace(resolved, ctes=tuple(resolved_ctes))

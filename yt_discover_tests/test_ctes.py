@@ -50,11 +50,11 @@ def test_single_cte_projects_a_logical_relation() -> None:
     ]
 
 
-def test_chained_ctes_use_prior_logical_schema_case_insensitively() -> None:
+def test_chained_ctes_use_prior_logical_schema_with_exact_spelling() -> None:
     rows, query = resolve(
         "WITH Base AS (SELECT id, title, duration / 60 AS minutes FROM @fixture), "
-        "mars AS (SELECT id, minutes FROM base WHERE title ILIKE '%mars%') "
-        "SELECT id, minutes FROM MARS ORDER BY minutes DESC"
+        "mars AS (SELECT id, minutes FROM Base WHERE title ILIKE '%mars%') "
+        "SELECT id, minutes FROM mars ORDER BY minutes DESC"
     )
     assert [(row["id"], row["minutes"]) for row in apply_query(rows, query)] == [
         ("d", 70.0),

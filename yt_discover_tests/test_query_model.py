@@ -35,10 +35,17 @@ def test_dataclass_equality_remains_exact_about_source_positions() -> None:
 
 
 def test_semantic_field_identity_ignores_source_positions() -> None:
-    left = Field("View_Count", position=4, kind="count")
+    left = Field("view_count", position=4, kind="count")
     right = Field("view_count", position=99, kind="count")
     assert same_field(left, right)
     assert semantic_key(left) == semantic_key(right)
+
+
+def test_semantic_field_identity_preserves_identifier_case() -> None:
+    left = Field("View_Count", position=4, kind="count")
+    right = Field("view_count", position=99, kind="count")
+    assert not same_field(left, right)
+    assert semantic_key(left) != semantic_key(right)
 
 
 def test_semantic_identity_covers_scalar_case_and_aggregate_nodes() -> None:

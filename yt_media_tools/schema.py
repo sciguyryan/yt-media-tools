@@ -297,21 +297,19 @@ class QuerySchema:
         instance = cls.__new__(cls)
         instance.records = ()
         logical_fields = tuple(fields)
-        instance._fields = {field.name.casefold(): field for field in logical_fields}
+        instance._fields = {field.name: field for field in logical_fields}
         instance._logical_fields = logical_fields
         return instance
 
     def _build(self) -> None:
         for name, kind in KNOWN_FIELD_TYPES.items():
             nullable = any(record.get(name) is None for record in self.records) or not self.records
-            self._fields[name.casefold()] = FieldInfo(name, kind, nullable, dynamic=False)
+            self._fields[name] = FieldInfo(name, kind, nullable, dynamic=False)
 
         for name, declared_type in KNOWN_COLLECTION_TYPES.items():
             nullable = any(record.get(name) is None for record in self.records) or not self.records
             resolved_type = declared_type.with_nullable(nullable)
-            self._fields[name.casefold()] = FieldInfo(
-                name, "collection", nullable, dynamic=False, resolved_type=resolved_type
-            )
+            self._fields[name] = FieldInfo(name, "collection", nullable, dynamic=False, resolved_type=resolved_type)
 
         observed: dict[str, list[Any]] = {}
         for record in self.records:
@@ -322,7 +320,7 @@ class QuerySchema:
                     observed.setdefault(name, []).append(value)
 
         for name, values in observed.items():
-            key = name.casefold()
+            key = name
             canonical = self._fields.get(key)
             if canonical is not None:
                 continue
@@ -335,9 +333,9 @@ class QuerySchema:
             self._fields[key] = FieldInfo(name, kind, nullable, dynamic=True)
 
         for alias, target in ALIASES.items():
-            target_info = self._fields.get(target.casefold())
+            target_info = self._fields.get(target)
             if target_info is not None:
-                self._fields[alias.casefold()] = FieldInfo(
+                self._fields[alias] = FieldInfo(
                     alias,
                     target_info.kind,
                     target_info.nullable,
@@ -347,8 +345,7 @@ class QuerySchema:
 
     def resolve(self, name: str) -> FieldInfo | None:
         """Resolve a field name, including raw dotted paths."""
-        lowered = name.casefold()
-        if lowered.startswith("raw."):
+        if name.casefold().startswith("raw."):
             path = name[4:]
             if not path:
                 return None
@@ -381,7 +378,7 @@ class QuerySchema:
                 )
             kind = "structured" if structured else infer_kind(path.split(".")[-1], values)
             return FieldInfo(name, kind, nullable, dynamic=True)
-        return self._fields.get(lowered)
+        return self._fields.get(name)
 
     def resolve_index_operand(self, name: str) -> FieldInfo | None:
         """Resolve a field specifically for collection indexing.
@@ -419,7 +416,7 @@ class QuerySchema:
         """Return non-raw fields in deterministic display order."""
         unique: dict[tuple[str, str | None], FieldInfo] = {}
         for info in self._fields.values():
-            unique[(info.name.casefold(), info.alias_of)] = info
+            unique[(info.name, info.alias_of)] = info
         return sorted(unique.values(), key=lambda item: (item.alias_of is not None, item.name.casefold()))
 
     def select_star_fields(self) -> list[FieldInfo]:
@@ -432,8 +429,8 @@ class QuerySchema:
         """
         if self._logical_fields is not None:
             return list(self._logical_fields)
-        builtins = [self._fields[name.casefold()] for name in KNOWN_FIELD_TYPES]
-        builtin_keys = {info.name.casefold() for info in builtins}
+        builtins = [self._fields[name] for name in KNOWN_FIELD_TYPES]
+        builtin_keys = {info.name for info in builtins}
         dynamic = sorted(
             (
                 info
@@ -441,7 +438,7 @@ class QuerySchema:
                 if info.dynamic
                 and info.kind != "collection"
                 and info.alias_of is None
-                and info.name.casefold() not in builtin_keys
+                and info.name not in builtin_keys
             ),
             key=lambda item: item.name.casefold(),
         )

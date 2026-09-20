@@ -375,12 +375,12 @@ class SourceBoundaryPlan:
 
 def _relation_fields(candidate: Query, alias: str, *, include_unqualified: bool = False) -> frozenset[str]:
     """Return physical fields consumed from one relation in a JOIN query body."""
-    prefix = alias.casefold() + "."
+    prefix = alias + "."
     fields: set[str] = set()
     for node in walk_ast(candidate, descend=lambda item: not isinstance(item, Query) or item is candidate):
         if not isinstance(node, Field):
             continue
-        name = node.name.casefold()
+        name = node.name
         if name.startswith(prefix):
             fields.add(name[len(prefix) :])
         elif include_unqualified and "." not in name:
@@ -417,11 +417,11 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
     fields owned by that relation, preventing qualified requirements from leaking
     onto another source/facet boundary.
     """
-    cte_names = {cte.name.casefold() for cte in query.ctes}
+    cte_names = {cte.name for cte in query.ctes}
     uses: list[tuple[str, str | None, Query, str | None]] = []
 
     def visit(candidate: Query, owner_cte: str | None = None) -> None:
-        if candidate.from_source is not None and candidate.from_source.casefold() not in cte_names:
+        if candidate.from_source is not None and candidate.from_source not in cte_names:
             if candidate.joins and candidate.from_alias is not None:
                 local = _relation_use(
                     candidate, candidate.from_source, candidate.from_facet, candidate.from_alias, primary=True
@@ -430,7 +430,7 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
                 local = replace(candidate, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
             uses.append((candidate.from_source, candidate.from_facet, local, owner_cte))
         for join in candidate.joins:
-            if join.relation.source.casefold() in cte_names:
+            if join.relation.source in cte_names:
                 continue
             if join.relation.alias is None:
                 continue

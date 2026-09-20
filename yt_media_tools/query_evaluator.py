@@ -879,8 +879,8 @@ def _records_for_source(
     relations: dict[str, list[dict[str, Any]]],
     physical_requests: tuple[tuple[str, str | None], ...],
 ) -> list[dict[str, Any]]:
-    if source_name is not None and source_name.casefold() in relations:
-        return relations[source_name.casefold()]
+    if source_name is not None and source_name in relations:
+        return relations[source_name]
     if source_name is None or len(physical_requests) <= 1:
         return list(records)
     return [
@@ -1194,7 +1194,7 @@ def apply_query(
             cte_result = _apply_composed_query(
                 records, cte.query, relations, physical_requests, relational_optimisation=relational_optimisation
             )
-            relations[cte.name.casefold()] = (
+            relations[cte.name] = (
                 _project_result_rows(cte_result, cte.query)
                 if not cte.query.set_operations
                 else [dict(row) for row in cte_result]

@@ -89,7 +89,7 @@ def prove_source_field_facts(source: SourceSpec, field: str) -> FieldFacts:
             claim="field-capability-facts",
             status=PROVEN,
             provenance=("source-capability",),
-            reasons=(f"{field.casefold()} has a stable logical field declaration",),
+            reasons=(f"{field} has a stable logical field declaration",),
         )
     )
     query_type = capability.logical_type
@@ -129,7 +129,7 @@ def prove_result_field_facts(query: Query, output_name: str, *, source: SourceSp
     if source is None or query.joins or query.set_operations or query.ctes or query.group_by:
         return FieldFacts(False, None, None, None, None, None, None, boundary)
     for term in query.select:
-        if term.output_name.casefold() != output_name.casefold():
+        if term.output_name != output_name:
             continue
         if not isinstance(term.expression, Field) or term.kind is None:
             return FieldFacts(False, None, None, None, None, None, None, boundary)
@@ -182,9 +182,9 @@ def _filter_rejection_proven(proof: PredicateTruthProof) -> bool:
 def _field_key(node: Any) -> tuple[str | None, str] | None:
     """Return stable relation identity and field name for a direct field reference."""
     if isinstance(node, RelationField):
-        return node.relation_key, node.name.casefold()
+        return node.relation_key, node.name
     if isinstance(node, Field):
-        return None, node.name.casefold()
+        return None, node.name
     return None
 
 
@@ -509,13 +509,13 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
 
     cte_facts: dict[str, RelationFacts] = {}
     for cte in query.ctes:
-        cte_facts[cte.name.casefold()] = prove_query_relation_facts(cte.query)
+        cte_facts[cte.name] = prove_query_relation_facts(cte.query)
 
     premises: list[OptimisationProof] = []
     reasons: list[str] = []
     body_empty = False
 
-    source_name = (query.from_source or "").casefold()
+    source_name = query.from_source or ""
     source_fact = cte_facts.get(source_name)
     if source_fact is not None and source_fact.empty:
         body_empty = True
@@ -540,7 +540,7 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
     # source here.
     if len(query.joins) == 1 and not body_empty:
         join = query.joins[0]
-        right_fact = cte_facts.get(join.relation.source.casefold())
+        right_fact = cte_facts.get(join.relation.source)
         kind = join.kind.value.upper()
         join_consequence = prove_join_consequences(kind, join.predicate)
         if join_consequence.result_empty:
