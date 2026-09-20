@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.29.7 - Literal Contract
+
+- Freeze the yt-sql literal and parameter contract across decimal, hexadecimal, octal and binary integers, strict numeric separators, quoted strings, reserved literals, query parameters and unary signs.
+- Confirm deterministic lexical boundaries between numbers, temporal units and identifiers, and preserve the lexical base of unchanged integer literals through canonical parse-and-format behaviour.
+- Reserve `TRUE`, `FALSE` and `NULL` throughout the grammar so the literal words cannot be reused in aliases, relation names, facets, collection bindings or other identifier-only positions.
+- Add dedicated deterministic diagnostics for unterminated quoted strings and incomplete terminal string escapes while preserving the established string language.
+- Define the parameter binding boundary, canonical formatting rules and malformed-input behaviour as durable conformance requirements for the formal grammar and differential parser tests.
+- Reconcile the completed literal and parameter audit into the canonical language and test documentation and retire the temporary audit material.
+
 ## Discover 0.29.6 - Operator Principles
 
 - Define durable criteria for deciding when an operation deserves dedicated yt-sql operator syntax, favouring grammar for structural and scope-changing semantics while keeping ordinary value transformations in functions where appropriate.
