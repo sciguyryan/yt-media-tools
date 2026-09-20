@@ -61,6 +61,7 @@ _TOKEN_RE = re.compile(
   | (?P<DATETIME>\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)
   | (?P<DATE>\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})
   | (?P<TIME>\d{1,3}:\d{1,2}(?::\d{1,2})?)
+  | (?P<LITERAL_WORD>(?i:TRUE|FALSE|NULL))(?![\w-])
   | (?P<NUMBER>(?:0[xX][0-9A-Za-z_]*|0[oO][0-9A-Za-z_]*|0[bB][0-9A-Za-z_]*|\d[\d_]*(?:\.\d[\d_]*)?(?:[kKmMbB])?))
   | (?P<IDENT>[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*)
   | (?P<COMMA>,)
@@ -79,6 +80,8 @@ _DECIMAL_INTEGER_RE = re.compile(r"[+-]?\d+(?:_\d+)*")
 _DECIMAL_NUMBER_RE = re.compile(r"[+-]?\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*))?")
 
 _BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Za-z]+(?:_[0-9A-Za-z]+)*)")
+
+_RESERVED_LITERAL_WORDS = {"TRUE", "FALSE", "NULL"}
 
 _MEMBER_TERMINATOR_KEYWORDS = {
     "AS",
@@ -210,7 +213,7 @@ class Parser:
         return token
 
     def keyword(self, word: str) -> bool:
-        return self.current.kind == "IDENT" and self.current.text.upper() == word
+        return self.current.kind in {"IDENT", "LITERAL_WORD"} and self.current.text.upper() == word
 
     def consume_keyword(self, word: str) -> Token | None:
         if self.keyword(word):
@@ -549,17 +552,20 @@ class Parser:
             node = self.parse_scalar_expression()
             self.expect("RPAREN", "Expected ')' to close the scalar expression.")
             return node
+        if token.kind == "LITERAL_WORD":
+            self.advance()
+            value = {"NULL": None, "TRUE": True, "FALSE": False}[token.text.upper()]
+            return Literal(value, token.text, token.position)
         if token.kind == "IDENT":
+            if any(part.upper() in _RESERVED_LITERAL_WORDS for part in token.text.split(".")):
+                raise QuerySyntaxError(
+                    self.source,
+                    f"{token.text!r} contains a reserved literal word and cannot be used as an identifier.",
+                    token.position,
+                )
             self.advance()
             if self.current.kind == "LPAREN":
                 return self.parse_scalar_function(token)
-            lowered = token.text.casefold()
-            if lowered == "null":
-                return Literal(None, token.text, token.position)
-            if lowered == "true":
-                return Literal(True, token.text, token.position)
-            if lowered == "false":
-                return Literal(False, token.text, token.position)
             bound = self._bound_collection_reference(token)
             return bound if bound is not None else Field(token.text, token.position)
         if token.kind == "STRING":

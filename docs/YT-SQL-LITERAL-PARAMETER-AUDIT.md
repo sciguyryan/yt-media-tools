@@ -38,8 +38,8 @@ An unterminated string currently fails lexically with the general unexpected-cha
 
 Although `TRUE`, `FALSE` and `NULL` are recognised as literals in scalar-expression positions, the tokenizer currently emits them as ordinary identifier tokens and some grammar positions accept them as aliases. For example, `SELECT id AS TRUE FROM @example` and `SELECT id FROM @example AS NULL` can currently parse successfully.
 
-That conflicts with the settled contract that `TRUE`, `FALSE` and `NULL` are always reserved literals rather than context-dependent identifiers. This is a genuine parser-language defect. It should be resolved in a separate implementation issue before #79 and #13 are considered complete, with deterministic coverage proving that the words remain literals in expression positions and are rejected wherever an identifier or alias is required.
+That conflicts with the settled contract that `TRUE`, `FALSE` and `NULL` are always reserved literals rather than context-dependent identifiers. The implementation now gives these words a dedicated lexical token class, retains their literal meaning in expression and predicate positions, and rejects them in identifier-only grammar positions. Deterministic conformance coverage protects both sides of that contract.
 
 ## Audit disposition
 
-The current integer bases, underscore rules, string forms, parameter spelling, unary-sign model, lexical numeric/temporal boundaries and base-preserving parse-and-format behaviour can be frozen without language expansion. The reserved-literal-word defect requires implementation before the contract is frozen. A dedicated unterminated-string diagnostic is also a concrete diagnostics decision to resolve before issue #80 documents the final malformed-literal contract.
+The current integer bases, underscore rules, string forms, parameter spelling, unary-sign model, lexical numeric/temporal boundaries, reserved literal words and base-preserving parse-and-format behaviour can be frozen without language expansion. A dedicated unterminated-string diagnostic remains a concrete diagnostics decision to resolve before issue #80 documents the final malformed-literal contract.
