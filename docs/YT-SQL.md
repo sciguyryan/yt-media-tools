@@ -65,9 +65,13 @@ FROM @example
 ORDER BY length_class
 ```
 
-## Numeric literals
+## Literal and parameter contract
 
-Decimal integers may use underscores between digits for readability, such as `1_000_000`. Integer literals also support hexadecimal (`0x`), octal (`0o`), and binary (`0b`) prefixes. Prefix letters are case-insensitive, and underscores may separate digits in every supported base.
+yt-sql has a deliberately small literal surface. The established forms are frozen for the current language: decimal, hexadecimal, octal and binary integers; decimal numeric forms already used by field-aware values; single-quoted and double-quoted strings; and the reserved literal words `TRUE`, `FALSE` and `NULL`. New literal or parameter spellings should be introduced only when a concrete language requirement cannot be expressed clearly through the existing forms.
+
+### Integer literals and separators
+
+Decimal integers may use underscores between digits for readability, such as `1_000_000`. Integer literals also support hexadecimal (`0x`), octal (`0o`) and binary (`0b`) prefixes. Prefix letters are case-insensitive, and underscores may separate digits in every supported base. Mixed-base arithmetic is valid wherever ordinary numeric scalar expressions are valid.
 
 ```sql
 SELECT 1_000_000
@@ -77,7 +81,53 @@ SELECT 0b1010_0101
 SELECT 0x10 + 0o10 + 0b10 + 10
 ```
 
-Underscores must occur between digits. Leading, trailing, or repeated underscores are rejected. Commas are list and argument separators rather than numeric grouping characters, so write `1_000_000` rather than `1,000,000`. Non-decimal forms are integer-only. Decimal fractional values and the existing decimal `k`, `m`, and `b` count suffixes retain their established semantics.
+Underscores must occur strictly between digits. Leading, trailing or repeated underscores are rejected rather than repaired or reinterpreted. Commas are list and argument separators rather than numeric grouping characters, so write `1_000_000` rather than `1,000,000`. Non-decimal forms are integer-only. Decimal fractional values and the established decimal `k`, `m` and `b` count suffixes retain their existing field-aware semantics.
+
+A leading sign is an expression operator rather than part of an integer literal. `-42` is unary minus applied to the positive decimal literal `42`, and `-0xff` is unary minus applied to the positive hexadecimal literal `0xff`. Unary plus follows the same expression model. This distinction is part of the grammar contract and must be preserved by alternate parser implementations.
+
+The lexical boundary between numbers, temporal units and identifiers is deterministic. Dates, datetimes, times and explicit temporal expressions have dedicated lexical forms. A decimal number followed by alphabetic unit text is tokenised as a number followed by an identifier so field-aware parsing can interpret established duration and count forms. A non-decimal prefix and its following alphanumeric text are consumed as one numeric token, allowing malformed values such as `0xGG` or `0xFFh` to fail as malformed hexadecimal literals rather than being split into unrelated tokens.
+
+### String literals and escaping
+
+Strings may use either single quotes or double quotes. A matching quote character may be represented by doubling it, so `'O''Brien'` contains one single quote and `"a""b"` contains one double quote. Backslash escaping supports `\\`, an escaped matching quote, `\n` and `\t`. No raw-string, triple-quoted or prefixed string form is part of yt-sql.
+
+```sql
+SELECT 'O''Brien'
+SELECT "a""b"
+SELECT 'line\nbreak'
+SELECT 'C:\\media'
+```
+
+Quoted text is also a lexical boundary for CLI parameter substitution: text resembling `:name` inside either string form remains literal text and is never expanded as a parameter.
+
+### Reserved literal words
+
+`TRUE`, `FALSE` and `NULL` are case-insensitive reserved literal words. They are not context-dependent identifiers and therefore cannot be reused as projection aliases, relation aliases, CTE names, facet names, collection bindings, relation identifiers or components of dotted field identifiers. Their expression meanings remain Boolean true, Boolean false and SQL NULL respectively. Canonical formatting emits these reserved literals as uppercase `TRUE`, `FALSE` and `NULL`.
+
+### Query parameters
+
+The parameter spelling is `:name`, where names follow `[A-Za-z_][A-Za-z0-9_]*`. Names are matched case-insensitively at the CLI binding boundary. Bind values with repeatable `--param NAME=VALUE` options. Every placeholder must have a binding, every supplied binding must be used, and duplicate names are rejected case-insensitively. An invalid name or a `--param` argument without the `NAME=VALUE` separator is an error.
+
+```bash
+yt-discover.py \
+  --param start=2026-08-01 \
+  --param maximum=1h \
+  "SELECT id FROM @whatdamath WHERE upload_date >= :start AND duration < :maximum"
+```
+
+Parameter substitution occurs immediately before parsing rather than creating parameter AST nodes. Each bound value is safely single-quoted, with embedded single quotes doubled, and the resulting text is then interpreted through the ordinary field-aware literal rules. This preserves the established typing of dates, timestamps, durations, counts, Booleans and strings without giving parameter values a separate semantic system. The substitution boundary is observable language behaviour even if a future parser represents parameters differently internally.
+
+### Canonical formatting
+
+Parsed source literals retain the lexical spelling required for stable parse-format-parse behaviour. In particular, canonical formatting does not silently convert unchanged `0xff`, `0o755` or `0b101010` source literals to decimal, and unary signs do not erase the operand's base representation. Parsed string spellings are likewise retained where the parser-level literal survives unchanged. Reserved Boolean and NULL literals use their canonical uppercase forms.
+
+Optimiser-created constants are derived values rather than source literals and may therefore use a newly generated canonical representation, including decimal integers. This does not weaken the requirement that formatting an unchanged parsed source literal preserve its established lexical representation.
+
+### Malformed literal and parameter behaviour
+
+Malformed input is rejected deterministically rather than guessed. Invalid base digits, malformed non-decimal prefixes and misplaced numeric underscores fail as numeric-literal errors. Unterminated single-quoted and double-quoted strings report `Unterminated string literal.` at the opening quote. If an unclosed string ends with an active backslash escape, it instead reports `Incomplete escape sequence at end of string literal.` at the terminal backslash. Invalid parameter names, missing values, duplicate bindings, missing bindings and unused bindings are also errors.
+
+These diagnostics form part of the parser and CLI conformance surface. Differential parser implementations should agree on accepted lexical forms, token boundaries, resulting literal values, canonical formatting and the deterministic rejection class for malformed input; they must not accept an invalid spelling merely because another tokenisation would make it parseable.
 
 ## Data-driven units
 

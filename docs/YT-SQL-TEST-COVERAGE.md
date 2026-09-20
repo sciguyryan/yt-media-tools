@@ -10,7 +10,7 @@ Optimiser tests must compare the complete observable result of optimised and uno
 
 ## Grammar and scalar expressions
 
-Current dedicated coverage includes SELECT projection, aliases, SELECT *, arithmetic and precedence, parenthesised expressions, CASE, LOWER, UPPER, LENGTH, COALESCE, CONCAT, NULLIF, GREATEST, LEAST, CHAR, RANDOM, decimal and non-decimal integer literals, query parameters, and malformed scalar-function calls.
+Current dedicated coverage includes SELECT projection, aliases, SELECT *, arithmetic and precedence, parenthesised expressions, CASE, LOWER, UPPER, LENGTH, COALESCE, CONCAT, NULLIF, GREATEST, LEAST, CHAR, RANDOM, decimal and non-decimal integer literals, strict numeric separators, base-preserving canonical formatting, unary-sign separation, quoted-string forms and escapes, reserved `TRUE`/`FALSE`/`NULL` literals, query parameters, and malformed scalar-function calls. Parameter tests cover the CLI binding boundary independently from parser tests, including case-insensitive names, safe quoting, quoted-placeholder exclusion, duplicate, missing and unused bindings.
 
 Torture coverage additionally combines deeply parenthesised scalar and Boolean expressions, hostile whitespace, CASE with nested functions and mixed-base literals, malformed CASE boundaries, malformed function argument lists, and parse-format-parse stability.
 
@@ -94,7 +94,7 @@ No implicit Unicode normalisation is permitted. Torture composition retains Unic
 
 ## Malformed and hostile input
 
-The negative suite covers missing clauses, invalid literals, malformed predicates, unsupported functions, invalid types, malformed CTEs and invalid source/facet forms. The torture suite extends this with hostile whitespace, excessive parentheses, malformed repeated clauses, broken UNION boundaries, malformed aggregate FILTER, incomplete LIKE escaping and invalid Unicode scalar construction.
+The negative suite covers missing clauses, invalid literals, malformed predicates, unsupported functions, invalid types, malformed CTEs and invalid source/facet forms. Literal-specific negative coverage includes malformed base prefixes and digits, misplaced numeric underscores, reserved literal words in identifier-only positions, unterminated strings, incomplete terminal string escapes and invalid parameter bindings. The torture suite extends this with hostile whitespace, excessive parentheses, malformed repeated clauses, broken UNION boundaries, malformed aggregate FILTER, incomplete LIKE escaping and invalid Unicode scalar construction.
 
 Diagnostics tested by the suite must remain deterministic. Parser failures should not turn into internal exceptions merely because the surrounding query is deeply nested or composition-heavy.
 

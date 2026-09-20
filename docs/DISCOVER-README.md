@@ -91,6 +91,8 @@ yt-discover.py \
 
 Every supplied parameter must be used and every placeholder must be bound. Duplicate parameter names are rejected case-insensitively. Placeholders inside quoted SQL strings are literal text and are not expanded.
 
+The complete lexical and binding contract, including parameter names, quoting, literal forms and malformed-input behaviour, is defined in `YT-SQL.md` under **Literal and parameter contract**.
+
 `--provenance FILE` writes a JSON sidecar describing the submitted and resolved query, parameter bindings, source, execution plan/backend, cache outcome, temporal context, and result counts. It is intended for reproducibility and audit trails rather than replacing `--report`:
 
 ```bash

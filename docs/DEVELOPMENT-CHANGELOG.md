@@ -11,6 +11,9 @@ This file records meaningful changes during active development. It is not releas
 - [fix] Add dedicated diagnostics for unterminated quoted strings and incomplete terminal string escapes.
 - [test] Cover malformed single-quoted and double-quoted strings with deterministic messages and source positions.
 - [docs] Resolve the malformed-string diagnostics finding from the literal and parameter audit.
+- [docs] Freeze the settled literal and parameter contract in the canonical yt-sql language reference.
+- [docs] Document lexical forms, numeric separators, string escaping, reserved literals, parameters, unary signs, canonical formatting and deterministic malformed-input behaviour.
+- [docs] Retire the completed literal and parameter audit after reconciling its durable conclusions into canonical documentation and test-coverage guidance.
 
 ## Downloader 1.19.x - Unreleased
 
