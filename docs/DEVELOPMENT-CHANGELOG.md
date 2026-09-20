@@ -13,6 +13,9 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Canonically quote identifiers only where the ordinary identifier grammar cannot represent them, using doubled backticks for embedded backticks.
 - [test] Add deterministic quoted-identifier parsing, formatting, resolution, escaping and malformed-input coverage.
 - [test] Extend the parser torture corpus with composed and decomposed Unicode identifiers, case-distinct names, contextual and reserved words, quoted raw keys, embedded backticks and quoted relation aliases.
+- [maintenance] Make the reserved and contextual keyword classification explicit and conformance-tested without broadening the reserved vocabulary.
+- [docs] Freeze the identifier and keyword contract, including exact case-sensitive identity, Unicode rules, contextual keywords, quoted identifiers and raw/structured member behaviour.
+- [docs] Retire the completed identifier and keyword audit after reconciling its durable conclusions into canonical documentation.
 
 ## Downloader 1.19.x - Unreleased
 

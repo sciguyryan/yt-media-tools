@@ -97,6 +97,8 @@ Identifier torture coverage additionally keeps composed and decomposed spellings
 
 ## Malformed and hostile input
 
+Identifier and keyword conformance coverage freezes case-sensitive exact-spelling identity, case-insensitive structural keyword recognition, the explicit reserved/contextual classification, XID-style Unicode ordinary identifiers with the retained hyphen extension, absence of implicit Unicode normalisation, and backtick-quoted identifiers. Dedicated and torture coverage composes composed/decomposed Unicode spellings, case-distinct names, contextual and reserved words, embedded backticks, raw keys, relation qualification, formatting round-trips, execution and optimiser differential/idempotence checks.
+
 The negative suite covers missing clauses, invalid literals, malformed predicates, unsupported functions, invalid types, malformed CTEs and invalid source/facet forms. Literal-specific negative coverage includes malformed base prefixes and digits, misplaced numeric underscores, reserved literal words in identifier-only positions, unterminated strings, incomplete terminal string escapes and invalid parameter bindings. The torture suite extends this with hostile whitespace, excessive parentheses, malformed repeated clauses, broken UNION boundaries, malformed aggregate FILTER, incomplete LIKE escaping and invalid Unicode scalar construction.
 
 Diagnostics tested by the suite must remain deterministic. Parser failures should not turn into internal exceptions merely because the surrounding query is deeply nested or composition-heavy.

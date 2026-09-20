@@ -84,6 +84,61 @@ _BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<
 
 _RESERVED_LITERAL_WORDS = {"TRUE", "FALSE", "NULL"}
 
+# Grammar words recognised by parser position rather than globally reserved by the lexer.
+# Keep this inventory explicit so language growth cannot silently broaden the reserved vocabulary.
+_CONTEXTUAL_KEYWORDS = {
+    "ALL",
+    "AND",
+    "ANY",
+    "ANTI",
+    "AS",
+    "ASC",
+    "BETWEEN",
+    "BY",
+    "CASE",
+    "CONTAIN",
+    "CONTAINS",
+    "CROSS",
+    "DESC",
+    "DISTINCT",
+    "DOES",
+    "ELSE",
+    "END",
+    "FILTER",
+    "FROM",
+    "FULL",
+    "GROUP",
+    "HAVING",
+    "ILIKE",
+    "IN",
+    "INNER",
+    "IS",
+    "JOIN",
+    "LEFT",
+    "LIKE",
+    "LIMIT",
+    "MATCH",
+    "MATCHES",
+    "NATURAL",
+    "NOT",
+    "OF",
+    "OFFSET",
+    "ON",
+    "OR",
+    "ORDER",
+    "OUTER",
+    "RECURSIVE",
+    "RIGHT",
+    "SELECT",
+    "SEMI",
+    "THEN",
+    "UNION",
+    "UNKNOWN",
+    "WHEN",
+    "WHERE",
+    "WITH",
+}
+
 
 def _is_xid_start(character: str) -> bool:
     """Return whether *character* is valid at the start of an ordinary identifier component."""

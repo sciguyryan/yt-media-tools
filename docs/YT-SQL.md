@@ -65,6 +65,42 @@ FROM @example
 ORDER BY length_class
 ```
 
+## Identifier and keyword contract
+
+yt-sql identifiers are case-sensitive and preserve their exact Unicode spelling. Keywords are recognised case-insensitively, but most grammar words are contextual rather than globally reserved. This distinction lets the grammar grow without needlessly taking ordinary names away from fields, aliases and relations.
+
+### Ordinary identifiers
+
+An unquoted identifier component follows Unicode XID-style identifier rules: its first character must be `XID_Start` or `_`, and subsequent characters must satisfy `XID_Continue`. yt-sql deliberately retains its established extension permitting `-` after the first character, so `release-title` is one unquoted identifier while `release - title` is subtraction. Dotted names apply the same component rule on each side of the dot.
+
+Identifier identity is exact and case-sensitive. `title`, `Title` and `TITLE` are three different names. yt-sql performs no implicit Unicode normalisation, so canonically equivalent or visually identical code-point sequences remain distinct unless their exact spelling is identical. This rule applies through parsing, resolution, aliases, CTEs, relation qualification, semantic identity and canonical formatting.
+
+### Reserved and contextual keywords
+
+Keyword recognition is case-insensitive in grammar positions, so `SELECT`, `select` and `SeLeCt` have the same structural meaning when the parser expects `SELECT`. Grammar words are contextual by default and remain legal identifiers where their position is unambiguous. For example, `SELECT select, Select, SELECT` may refer to three distinct fields. Adding future grammar should prefer contextual recognition and grammar-position disambiguation rather than silently expanding the globally reserved vocabulary.
+
+The globally reserved identifier vocabulary is deliberately small: `TRUE`, `FALSE` and `NULL`. These spellings are case-insensitive and denote literals when unquoted. The current contextual grammar vocabulary is `ALL`, `AND`, `ANTI`, `ANY`, `AS`, `ASC`, `BETWEEN`, `BY`, `CASE`, `CONTAIN`, `CONTAINS`, `CROSS`, `DESC`, `DISTINCT`, `DOES`, `ELSE`, `END`, `FILTER`, `FROM`, `FULL`, `GROUP`, `HAVING`, `ILIKE`, `IN`, `INNER`, `IS`, `JOIN`, `LEFT`, `LIKE`, `LIMIT`, `MATCH`, `MATCHES`, `NATURAL`, `NOT`, `OF`, `OFFSET`, `ON`, `OR`, `ORDER`, `OUTER`, `RECURSIVE`, `RIGHT`, `SELECT`, `SEMI`, `THEN`, `UNION`, `UNKNOWN`, `WHEN`, `WHERE` and `WITH`. This classification is explicit and conformance-tested. Function names are not globally reserved merely because a function of that name exists.
+
+`UNKNOWN` is contextual: it has truth-inspection meaning after `IS` but is not a standalone fourth scalar literal and remains available as an identifier where the grammar is unambiguous. Any future change to its reservation status belongs to the deliberate reserved-terms language work rather than occurring incidentally.
+
+### Backtick-quoted identifiers
+
+Backticks quote an identifier whose spelling cannot or should not be represented as an ordinary identifier. Quoting permits reserved words, spaces, punctuation and exact backend keys without creating a second identifier namespace. Thus `title` and `` `title` `` denote the same identifier spelling, while `` `true` `` permits the identifier `true` where unquoted `TRUE` would denote the reserved literal.
+
+An embedded backtick is represented by doubling it. For example, `` `odd``name` `` denotes the identifier `odd` followed by one literal backtick followed by `name`. Empty and unterminated quoted identifiers are errors. Canonical formatting removes unnecessary quoting when the spelling is a safe ordinary non-reserved identifier and emits backtick quoting when it is required. Formatting must preserve the exact identifier spelling.
+
+### Aliases, qualification and structured names
+
+The same identifier identity rules apply to projection aliases, relation aliases, CTE names, collection bindings, qualified fields and declared structured members. A quoted component may be used wherever those grammar positions accept an identifier. Case differences remain significant at every such boundary.
+
+The language-level `raw` namespace is recognised by the grammar, while backend keys beneath it retain exact backend spelling. Quoted member segments make keys containing spaces, punctuation, reserved words or other spellings outside the ordinary identifier grammar addressable, for example `raw.` followed by `` `provider key` ``. Quoting does not normalise, case-fold or otherwise rewrite the backend key.
+
+### Formatting and diagnostics
+
+Canonical parse-format-parse behaviour must preserve identifier identity exactly. It may add or remove backticks according to whether quoting is syntactically necessary, but it must not change case, Unicode code-point spelling or semantic qualification. Composed and decomposed Unicode spellings therefore remain distinct across formatting and optimisation.
+
+Malformed ordinary identifier boundaries and malformed quoted identifiers are rejected deterministically. Empty or unterminated backtick identifiers receive dedicated quoted-identifier diagnostics. Alternate parser implementations must preserve the same case sensitivity, reserved/contextual classification, Unicode acceptance boundary, quoting semantics and exact-spelling identity.
+
 ## Literal and parameter contract
 
 yt-sql has a deliberately small literal surface. The established forms are frozen for the current language: decimal, hexadecimal, octal and binary integers; decimal numeric forms already used by field-aware values; single-quoted and double-quoted strings; and the reserved literal words `TRUE`, `FALSE` and `NULL`. New literal or parameter spellings should be introduced only when a concrete language requirement cannot be expressed clearly through the existing forms.
