@@ -126,6 +126,16 @@ def tokenise(source: str) -> list[Token]:
             position = match.end()
             continue
         if kind == "MISMATCH":
+            if text in {"'", '"'}:
+                remainder = source[position + 1 :]
+                trailing_backslashes = len(remainder) - len(remainder.rstrip("\\"))
+                if trailing_backslashes % 2 == 1:
+                    raise QuerySyntaxError(
+                        source,
+                        "Incomplete escape sequence at end of string literal.",
+                        len(source) - 1,
+                    )
+                raise QuerySyntaxError(source, "Unterminated string literal.", position)
             raise QuerySyntaxError(source, f"Unexpected character {text!r}.", position)
         value: Any = _unescape_string(text) if kind == "STRING" else text
         tokens.append(Token(kind, text, position, value))

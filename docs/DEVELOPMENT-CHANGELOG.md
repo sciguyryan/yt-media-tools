@@ -8,7 +8,9 @@ This file records meaningful changes during active development. It is not releas
 - [docs] Confirm deterministic numeric, temporal-unit and identifier lexical boundaries and base-preserving parse-and-format behaviour.
 - [feature] Reserve `TRUE`, `FALSE` and `NULL` lexically so they cannot be reused in identifier-only grammar positions.
 - [test] Add deterministic conformance coverage for reserved literal tokenisation, expression semantics, identifier rejection and predicate use.
-- [docs] Identify the generic unterminated-string diagnostic as a remaining malformed-literal diagnostics decision.
+- [fix] Add dedicated diagnostics for unterminated quoted strings and incomplete terminal string escapes.
+- [test] Cover malformed single-quoted and double-quoted strings with deterministic messages and source positions.
+- [docs] Resolve the malformed-string diagnostics finding from the literal and parameter audit.
 
 ## Downloader 1.19.x - Unreleased
 

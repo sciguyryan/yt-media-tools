@@ -71,7 +71,7 @@ def _resolve(text: str) -> None:
         ("SELECT id FROM @yt_sql_fixture WHERE title DOES NOT EQUAL 'Mars'", "Expected CONTAIN, MATCH, LIKE, or ILIKE"),
         ("SELECT id FROM @yt_sql_fixture WHERE title NOT = 'Mars'", "NOT must be followed"),
         ("SELECT id FROM @yt_sql_fixture WHERE title MATCHES '[unterminated'", "Invalid regular expression"),
-        ("SELECT id FROM @yt_sql_fixture WHERE title = 'unterminated", "Unexpected character"),
+        ("SELECT id FROM @yt_sql_fixture WHERE title = 'unterminated", "Unterminated string literal"),
     ),
 )
 def test_parser_rejects_malformed_supported_syntax(query: str, message: str) -> None:
@@ -112,3 +112,44 @@ def test_parser_rejects_malformed_supported_syntax(query: str, message: str) -> 
 def test_semantic_resolution_rejects_invalid_values_against_dataset(query: str, message: str) -> None:
     with pytest.raises(QuerySyntaxError, match=re.escape(message)):
         _resolve(query)
+
+
+@pytest.mark.parametrize(
+    ("query", "message", "position_text"),
+    (
+        (
+            "SELECT id FROM @yt_sql_fixture WHERE title = 'unterminated",
+            "Unterminated string literal.",
+            "'unterminated",
+        ),
+        (
+            'SELECT id FROM @yt_sql_fixture WHERE title = "unterminated',
+            "Unterminated string literal.",
+            '"unterminated',
+        ),
+        (
+            "SELECT id FROM @yt_sql_fixture WHERE title = 'broken\\",
+            "Incomplete escape sequence at end of string literal.",
+            "\\",
+        ),
+        (
+            'SELECT id FROM @yt_sql_fixture WHERE title = "broken\\',
+            "Incomplete escape sequence at end of string literal.",
+            "\\",
+        ),
+    ),
+)
+def test_parser_reports_dedicated_malformed_string_diagnostics(
+    query: str,
+    message: str,
+    position_text: str,
+) -> None:
+    with pytest.raises(QuerySyntaxError) as exc_info:
+        parse_query(query)
+
+    error = exc_info.value
+    assert error.message == message
+    if position_text.startswith(("'", '"')):
+        assert error.position == query.index(position_text)
+    else:
+        assert error.position == len(query) - 1

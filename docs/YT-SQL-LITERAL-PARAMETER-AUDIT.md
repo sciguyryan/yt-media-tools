@@ -32,7 +32,7 @@ Optimiser-created constants are new derived literals and may use a canonical dec
 
 Invalid base digits and malformed non-decimal prefixes already receive deterministic numeric-literal diagnostics. Misplaced numeric underscores are rejected rather than guessed. Invalid parameter names, missing values, duplicate bindings, missing bindings and unused bindings are also diagnosed deterministically.
 
-An unterminated string currently fails lexically with the general unexpected-character diagnostic. That behaviour is deterministic, but it does not satisfy the agreed preference for a dedicated malformed-string diagnostic where practical. This is a diagnostic-quality gap and should be tracked separately if the project wants the literal contract to promise a specific unterminated-string diagnostic.
+Malformed quoted strings now receive dedicated lexical diagnostics. An unclosed single-quoted or double-quoted string reports `Unterminated string literal.`, anchored at its opening quote. If the unclosed string ends with an active backslash escape, the parser instead reports `Incomplete escape sequence at end of string literal.`, anchored at the terminal backslash. This improves diagnostic specificity without changing the established string forms or escape semantics.
 
 ## Defect found: reserved literal words
 
@@ -42,4 +42,4 @@ That conflicts with the settled contract that `TRUE`, `FALSE` and `NULL` are alw
 
 ## Audit disposition
 
-The current integer bases, underscore rules, string forms, parameter spelling, unary-sign model, lexical numeric/temporal boundaries, reserved literal words and base-preserving parse-and-format behaviour can be frozen without language expansion. A dedicated unterminated-string diagnostic remains a concrete diagnostics decision to resolve before issue #80 documents the final malformed-literal contract.
+The current integer bases, underscore rules, string forms, parameter spelling, unary-sign model, lexical numeric/temporal boundaries, reserved literal words, base-preserving parse-and-format behaviour and malformed-string diagnostics can be frozen without language expansion. The concrete implementation findings from this audit are now resolved, leaving issue #80 to reconcile the durable contract into canonical documentation and retire this temporary audit.
