@@ -9,6 +9,9 @@ This file records meaningful changes during active development. It is not releas
 - [fix] Make field, alias, CTE and semantic identifier resolution case-sensitive while preserving contextual case-insensitive keywords.
 - [fix] Define ordinary unquoted identifiers using explicit Unicode XID-style recognition without implicit normalisation, while preserving the established hyphen extension.
 - [test] Add deterministic Unicode identifier coverage for combining marks, exact spelling, case sensitivity, invalid starts and hyphen compatibility.
+- [feature] Add backtick-quoted identifiers for otherwise unavailable names, reserved literal spellings, aliases, CTEs, relation qualification, structured members and raw backend-key segments.
+- [maintenance] Canonically quote identifiers only where the ordinary identifier grammar cannot represent them, using doubled backticks for embedded backticks.
+- [test] Add deterministic quoted-identifier parsing, formatting, resolution, escaping and malformed-input coverage.
 
 ## Downloader 1.19.x - Unreleased
 

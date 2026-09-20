@@ -56,6 +56,7 @@ _TOKEN_RE = re.compile(
   | (?P<DOT>\.)
   | (?P<ATIDENT>@[A-Za-z0-9_.-]+)
   | (?P<RPAREN>\))
+  | (?P<QIDENT>`(?:``|[^`])*)
   | (?P<STRING>'(?:''|\\.|[^'\\])*'|\"(?:\"\"|\\.|[^\"\\])*\")
   | (?P<TEMPORAL>(?:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[^\W\d_]+(?:-[^\W\d_]+)*)?)
   | (?P<DATETIME>\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)
@@ -171,6 +172,8 @@ def tokenise(source: str) -> list[Token]:
             position = match_end
             continue
         if kind == "MISMATCH":
+            if text == "`":
+                raise QuerySyntaxError(source, "Unterminated quoted identifier.", position)
             if text in {"'", '"'}:
                 remainder = source[position + 1 :]
                 trailing_backslashes = len(remainder) - len(remainder.rstrip("\\"))
@@ -182,7 +185,14 @@ def tokenise(source: str) -> list[Token]:
                     )
                 raise QuerySyntaxError(source, "Unterminated string literal.", position)
             raise QuerySyntaxError(source, f"Unexpected character {text!r}.", position)
-        value: Any = _unescape_string(text) if kind == "STRING" else text
+        if kind == "STRING":
+            value: Any = _unescape_string(text)
+        elif kind == "QIDENT":
+            value = text[1:-1].replace("``", "`")
+            if not value:
+                raise QuerySyntaxError(source, "Quoted identifier cannot be empty.", position)
+        else:
+            value = text
         tokens.append(Token(kind, text, position, value))
         position = match_end
     tokens.append(Token("EOF", "", len(source), None))
@@ -286,6 +296,15 @@ class Parser:
             raise QuerySyntaxError(self.source, message, self.current.position)
         return self.advance()
 
+    def expect_identifier(self, message: str) -> Token:
+        """Consume an ordinary or backtick-quoted identifier token."""
+        if self.current.kind not in {"IDENT", "QIDENT"}:
+            raise QuerySyntaxError(self.source, message, self.current.position)
+        token = self.advance()
+        if token.kind == "QIDENT":
+            return Token(token.kind, str(token.value), token.position, token.value)
+        return token
+
     def parse_query(
         self,
         where_only: bool = False,
@@ -324,8 +343,8 @@ class Parser:
                 )
             seen_names: set[str] = set()
             while True:
-                name_token = self.expect("IDENT", "Expected a CTE name after WITH.")
-                key = name_token.text.casefold()
+                name_token = self.expect_identifier("Expected a CTE name after WITH.")
+                key = name_token.text
                 if key in seen_names:
                     raise QuerySyntaxError(self.source, f"Duplicate CTE name {name_token.text!r}.", name_token.position)
                 seen_names.add(key)
@@ -494,16 +513,21 @@ class Parser:
                 return (SelectTerm("*", position=star.position),)
             position = self.current.position
             if (
-                self.current.kind == "IDENT"
+                self.current.kind in {"IDENT", "QIDENT"}
                 and self.index + 2 < len(self.tokens)
                 and self.tokens[self.index + 1].kind == "DOT"
                 and self.tokens[self.index + 2].kind == "STAR"
             ):
-                qualifier = self.advance().text
+                qualifier_token = self.advance()
+                qualifier = str(qualifier_token.value if qualifier_token.kind == "QIDENT" else qualifier_token.text)
                 self.advance()
                 self.advance()
                 expression = RelationWildcard(qualifier, position)
-                field_text = f"{qualifier}.*"
+                if qualifier_token.kind == "QIDENT":
+                    escaped_qualifier = qualifier.replace("`", "``")
+                    field_text = f"`{escaped_qualifier}`.*"
+                else:
+                    field_text = f"{qualifier}.*"
                 if self.keyword("AS"):
                     raise QuerySyntaxError(
                         self.source,
@@ -515,7 +539,7 @@ class Parser:
                 field_text = format_scalar_expression(expression)
             alias = None
             if self.consume_keyword("AS"):
-                alias_token = self.expect("IDENT", "Expected an alias name after AS.")
+                alias_token = self.expect_identifier("Expected an alias name after AS.")
                 alias = alias_token.text
             terms.append(SelectTerm(field_text, alias, position, expression=expression))
             if self.current.kind != "COMMA":
@@ -563,9 +587,17 @@ class Parser:
                 continue
 
             dot = self.advance()
-            if self.current.kind != "IDENT" or self.current.text.upper() in _MEMBER_TERMINATOR_KEYWORDS:
+            if self.current.kind not in {"IDENT", "QIDENT"} or (
+                self.current.kind == "IDENT" and self.current.text.upper() in _MEMBER_TERMINATOR_KEYWORDS
+            ):
                 raise QuerySyntaxError(self.source, "Expected a member name after '.'.", self.current.position)
             member_token = self.advance()
+            quoted_member = member_token.kind == "QIDENT"
+            if quoted_member:
+                member_token = Token("QIDENT", str(member_token.value), member_token.position, member_token.value)
+                if isinstance(node, Field) and (node.name == "raw" or node.name.startswith("raw.")):
+                    node = Field(f"{node.name}.{member_token.text}", node.position)
+                    continue
             # IDENT deliberately retains legacy dotted field paths such as raw.extra.score.
             # After an explicit postfix dot, split any dotted token into successive member
             # operations so expressions such as formats[0].video.height remain composable
@@ -611,6 +643,18 @@ class Parser:
             self.advance()
             value = {"NULL": None, "TRUE": True, "FALSE": False}[token.text.upper()]
             return Literal(value, token.text, token.position)
+        if token.kind == "QIDENT":
+            self.advance()
+            name = str(token.value)
+            while self.current.kind == "DOT" and self.index + 1 < len(self.tokens):
+                next_token = self.tokens[self.index + 1]
+                if next_token.kind not in {"IDENT", "QIDENT"}:
+                    break
+                self.advance()
+                component = self.advance()
+                component_name = str(component.value if component.kind == "QIDENT" else component.text)
+                name += f".{component_name}"
+            return Field(name, token.position)
         if token.kind == "IDENT":
             if any(part.upper() in _RESERVED_LITERAL_WORDS for part in token.text.split(".")):
                 raise QuerySyntaxError(
@@ -709,8 +753,8 @@ class Parser:
             elif self.current.kind != "RPAREN":
                 first_arg = self.parse_scalar_expression()
                 if name == "COUNT" and self.consume_keyword("AS"):
-                    binding_token = self.expect(
-                        "IDENT", "Expected an element binding name after AS in collection COUNT."
+                    binding_token = self.expect_identifier(
+                        "Expected an element binding name after AS in collection COUNT."
                     )
                     if "." in binding_token.text:
                         raise QuerySyntaxError(
@@ -749,7 +793,7 @@ class Parser:
                 raise QuerySyntaxError(self.source, "FILTER requires a collection expression.", name_token.position)
             collection = self.parse_scalar_expression()
             self.expect_keyword("AS", "Expected AS after the FILTER collection expression.")
-            binding_token = self.expect("IDENT", "Expected an element binding name after AS in FILTER.")
+            binding_token = self.expect_identifier("Expected an element binding name after AS in FILTER.")
             if "." in binding_token.text:
                 raise QuerySyntaxError(
                     self.source,
@@ -770,7 +814,7 @@ class Parser:
                 raise QuerySyntaxError(self.source, "MAP requires a collection expression.", name_token.position)
             collection = self.parse_scalar_expression()
             self.expect_keyword("AS", "Expected AS after the MAP collection expression.")
-            binding_token = self.expect("IDENT", "Expected an element binding name after AS in MAP.")
+            binding_token = self.expect_identifier("Expected an element binding name after AS in MAP.")
             if "." in binding_token.text:
                 raise QuerySyntaxError(
                     self.source,
@@ -819,6 +863,9 @@ class Parser:
         if token.kind == "IDENT":
             self.advance()
             return token.text
+        if token.kind == "QIDENT":
+            self.advance()
+            return str(token.value)
         if token.kind == "STRING":
             self.advance()
             return str(token.value)
@@ -835,13 +882,13 @@ class Parser:
         facet = None
         if self.consume_keyword("OF"):
             facet_token = self.current
-            if facet_token.kind != "IDENT":
+            if facet_token.kind not in {"IDENT", "QIDENT"}:
                 raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
-            facet = facet_token.text.casefold()
+            facet = str(facet_token.value if facet_token.kind == "QIDENT" else facet_token.text).casefold()
             self.advance()
         alias = None
         if self.consume_keyword("AS"):
-            alias_token = self.expect("IDENT", "Expected a relation alias after AS.")
+            alias_token = self.expect_identifier("Expected a relation alias after AS.")
             alias = alias_token.text
         return RelationReference(source, facet, alias, position)
 
@@ -1012,7 +1059,7 @@ class Parser:
         self.expect("LPAREN", f"Expected '(' after {quantifier}.")
         collection = self.parse_scalar_expression()
         self.expect_keyword("AS", f"Expected AS to name the {quantifier} element binding.")
-        binding_token = self.expect("IDENT", f"Expected an element binding name after AS in {quantifier}.")
+        binding_token = self.expect_identifier(f"Expected an element binding name after AS in {quantifier}.")
         if "." in binding_token.text:
             raise QuerySyntaxError(
                 self.source, "Collection element bindings must be simple identifiers.", binding_token.position
