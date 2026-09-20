@@ -1,5 +1,14 @@
 # Changelog
 
+## Discover 0.29.8 - Temporal Contract
+
+- Freeze the yt-sql temporal grammar across deterministic query-captured relative time, accepted date and timestamp forms, multilingual duration units, temporal arithmetic boundaries and typed temporal infinity.
+- Confirm that duration-unit recognition remains contextually separate from ordinary identifiers and that temporal arithmetic introduces no independent precedence ambiguity beyond its deliberately bounded grammar.
+- Normalise equivalent accepted temporal spellings in canonical resolved-query output, including date and timestamp forms, duration aliases and relative `TODAY()` and `NOW()` unit aliases.
+- Preserve relative `TODAY()` and `NOW()` expressions symbolically during canonicalisation rather than replacing them with captured absolute values.
+- Define deterministic syntax-versus-semantic temporal failure boundaries and semantic parse-resolve-format-parse-resolve stability as durable conformance requirements.
+- Reconcile the completed temporal grammar audit into the canonical language and test documentation and retire the temporary audit material.
+
 ## Discover 0.29.7 - Literal Contract
 
 - Freeze the yt-sql literal and parameter contract across decimal, hexadecimal, octal and binary integers, strict numeric separators, quoted strings, reserved literals, query parameters and unary signs.
