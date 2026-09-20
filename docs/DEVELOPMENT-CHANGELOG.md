@@ -6,6 +6,9 @@ This file records meaningful changes during active development. It is not releas
 
 - [docs] Audit identifier case sensitivity, contextual and reserved keywords, Unicode identifier behaviour, quoted identifiers, structured members and raw backend-key access.
 - [docs] Identify case-folded identifier resolution, the implementation-defined Unicode identifier grammar and missing backtick-quoted identifiers as dependencies before the identifier and keyword contract can be frozen.
+- [fix] Make field, alias, CTE and semantic identifier resolution case-sensitive while preserving contextual case-insensitive keywords.
+- [fix] Define ordinary unquoted identifiers using explicit Unicode XID-style recognition without implicit normalisation, while preserving the established hyphen extension.
+- [test] Add deterministic Unicode identifier coverage for combining marks, exact spelling, case sensitivity, invalid starts and hyphen compatibility.
 
 ## Downloader 1.19.x - Unreleased
 

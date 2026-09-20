@@ -65,7 +65,7 @@ Case-only collisions and duplicate-name diagnostics must also follow the final c
 The audit identifies three implementation areas that must be resolved before issue #88 freezes the contract.
 
 1. Identifier resolution was not consistently case-sensitive. Issue #89 removes identifier case-folding from field, alias, CTE and semantic identity resolution while preserving case-insensitive keyword recognition.
-2. The ordinary Unicode identifier grammar is implementation-defined rather than an explicit XID-style contract, and the established unquoted-hyphen extension needs a deliberate compatibility decision.
+2. Issue #90 replaces the implementation-defined ordinary Unicode identifier grammar with explicit XID-style recognition, retains `_` as an ordinary start character and deliberately preserves the established unquoted-hyphen extension for compatibility.
 3. Backtick-quoted identifiers are not implemented, including quoted structured/raw path segments and their diagnostics/formatting.
 
 The keyword model itself does not require a broad lexer rewrite. Existing parser-position recognition already provides useful contextual-keyword behaviour. The durable contract should instead make the reserved/contextual classification explicit and machine-testable. `TRUE`, `FALSE` and `NULL` are currently globally reserved; `UNKNOWN` remains contextual and should be considered alongside the separate reserved-terms work rather than changed incidentally here.
@@ -74,4 +74,4 @@ The keyword model itself does not require a broad lexer rewrite. Existing parser
 
 The broad keyword architecture is compatible with issue #14: case-insensitive grammar words can remain contextual by default, with a deliberately small globally reserved set. Unicode is already accepted in practice and no implicit normalisation is performed.
 
-The identifier contract is not yet ready to freeze. Issue #89 resolves the case-sensitive identifier-resolution discrepancy identified by this audit. The deliberate Unicode ordinary-identifier grammar in #90 and backtick-quoted identifiers in #91 remain concrete dependencies for #88. Once those are resolved, the temporary audit can be retired when its durable conclusions are reconciled into `YT-SQL.md` and `YT-SQL-TEST-COVERAGE.md`.
+The identifier contract is not yet ready to freeze. Issues #89 and #90 resolve the case-sensitive identifier-resolution and deliberate Unicode ordinary-identifier grammar discrepancies identified by this audit. Backtick-quoted identifiers in #91 remain the concrete implementation dependency for #88. Once those are resolved, the temporary audit can be retired when its durable conclusions are reconciled into `YT-SQL.md` and `YT-SQL-TEST-COVERAGE.md`.

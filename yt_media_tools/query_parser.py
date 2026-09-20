@@ -83,6 +83,37 @@ _BASE_INTEGER_RE = re.compile(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<
 
 _RESERVED_LITERAL_WORDS = {"TRUE", "FALSE", "NULL"}
 
+
+def _is_xid_start(character: str) -> bool:
+    """Return whether *character* is valid at the start of an ordinary identifier component."""
+    return character == "_" or character.isidentifier()
+
+
+def _is_xid_continue(character: str) -> bool:
+    """Return whether *character* is valid after the first character of an identifier component."""
+    return ("A" + character).isidentifier()
+
+
+def _scan_identifier(source: str, position: int) -> int | None:
+    """Return the end of an XID-style yt-sql identifier, retaining the established hyphen extension."""
+    if position >= len(source) or not _is_xid_start(source[position]):
+        return None
+
+    index = position + 1
+    while index < len(source) and (_is_xid_continue(source[index]) or source[index] == "-"):
+        index += 1
+
+    while index < len(source) and source[index] == ".":
+        component_start = index + 1
+        if component_start >= len(source) or not _is_xid_start(source[component_start]):
+            break
+        index = component_start + 1
+        while index < len(source) and (_is_xid_continue(source[index]) or source[index] == "-"):
+            index += 1
+
+    return index
+
+
 _MEMBER_TERMINATOR_KEYWORDS = {
     "AS",
     "FROM",
@@ -122,8 +153,22 @@ def tokenise(source: str) -> list[Token]:
             raise QuerySyntaxError(source, "Could not tokenise query.", position)
         kind = match.lastgroup or ""
         text = match.group(0)
+        if kind in {"IDENT", "MISMATCH"}:
+            identifier_end = _scan_identifier(source, position)
+            if identifier_end is not None:
+                kind = "IDENT"
+                text = source[position:identifier_end]
+                match_end = identifier_end
+            elif kind == "IDENT":
+                kind = "MISMATCH"
+                text = source[position]
+                match_end = position + 1
+            else:
+                match_end = match.end()
+        else:
+            match_end = match.end()
         if kind == "SPACE":
-            position = match.end()
+            position = match_end
             continue
         if kind == "MISMATCH":
             if text in {"'", '"'}:
@@ -139,7 +184,7 @@ def tokenise(source: str) -> list[Token]:
             raise QuerySyntaxError(source, f"Unexpected character {text!r}.", position)
         value: Any = _unescape_string(text) if kind == "STRING" else text
         tokens.append(Token(kind, text, position, value))
-        position = match.end()
+        position = match_end
     tokens.append(Token("EOF", "", len(source), None))
     return tokens
 
