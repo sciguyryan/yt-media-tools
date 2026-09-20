@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import re
+from datetime import date, datetime, timezone
 from typing import Any
+
+from .dates import TemporalInfinity, canonicalise_temporal_expression
 
 from .query_model import (
     AggregateFunction,
@@ -35,6 +38,37 @@ from .query_model import (
 )
 
 
+def _format_literal(literal: Literal, *, expected_kind: str | None = None) -> str:
+    """Render a literal, normalising established temporal spellings where type information permits."""
+    if literal.value is None:
+        return "NULL"
+    if isinstance(literal.value, bool):
+        return "TRUE" if literal.value else "FALSE"
+
+    temporal_expression = canonicalise_temporal_expression(literal.raw)
+    if temporal_expression is not None:
+        return temporal_expression
+
+    if isinstance(literal.value, TemporalInfinity):
+        return str(literal.value)
+    if expected_kind == "date" and isinstance(literal.value, date) and not isinstance(literal.value, datetime):
+        return literal.value.isoformat()
+    if expected_kind == "datetime" and isinstance(literal.value, datetime):
+        value = literal.value.isoformat(timespec="auto")
+        if literal.value.utcoffset() == timezone.utc.utcoffset(literal.value):
+            value = value.removesuffix("+00:00") + "Z"
+        return value
+    if expected_kind == "duration" and isinstance(literal.value, (int, float)) and not isinstance(literal.value, bool):
+        if isinstance(literal.value, float) and not literal.value.is_integer():
+            return f"{literal.value:g}s"
+        return f"{int(literal.value)}s"
+    return literal.raw
+
+
+def _format_field_literal(field: Field | RelationField, literal: Literal) -> str:
+    return _format_literal(literal, expected_kind=field.kind)
+
+
 def format_scalar_expression(expression: Any) -> str:
     """Render a scalar expression in canonical yt-sql form."""
     if isinstance(expression, Field):
@@ -44,11 +78,7 @@ def format_scalar_expression(expression: Any) -> str:
     if isinstance(expression, CollectionElementReference):
         return expression.binding
     if isinstance(expression, Literal):
-        if expression.value is None:
-            return "NULL"
-        if isinstance(expression.value, bool):
-            return "TRUE" if expression.value else "FALSE"
-        return expression.raw
+        return _format_literal(expression)
     if isinstance(expression, ScalarUnary):
         operand = format_scalar_expression(expression.operand)
         if isinstance(expression.operand, ScalarBinary):
@@ -109,38 +139,45 @@ def format_expression(node: Any) -> str:
     if isinstance(node, RelationField):
         return f"{node.qualifier}.{node.name}"
     if isinstance(node, Literal):
-        if node.value is None:
-            return "NULL"
-        if isinstance(node.value, bool):
-            return "TRUE" if node.value else "FALSE"
-        return node.raw
+        return _format_literal(node)
     if isinstance(node, Unary):
         return f"NOT ({format_expression(node.operand)})"
     if isinstance(node, Binary):
         if node.operator in {"AND", "OR"}:
             return f"({format_expression(node.left)} {node.operator} {format_expression(node.right)})"
-        return f"{format_expression(node.left)} {node.operator} {format_expression(node.right)}"
+        right = (
+            _format_field_literal(node.left, node.right)
+            if isinstance(node.left, (Field, RelationField)) and isinstance(node.right, Literal)
+            else format_expression(node.right)
+        )
+        return f"{format_expression(node.left)} {node.operator} {right}"
     if isinstance(node, Between):
         not_part = " NOT" if node.negated else ""
         return (
-            f"{node.field.name}{not_part} BETWEEN {format_expression(node.lower)} AND {format_expression(node.upper)}"
+            f"{node.field.name}{not_part} BETWEEN {_format_field_literal(node.field, node.lower)} "
+            f"AND {_format_field_literal(node.field, node.upper)}"
         )
     if isinstance(node, InList):
         not_part = " NOT" if node.negated else ""
-        values = ", ".join(format_expression(value) for value in node.values)
+        values = ", ".join(_format_field_literal(node.field, value) for value in node.values)
         return f"{node.field.name}{not_part} IN ({values})"
     if isinstance(node, IsNull):
         return f"{node.field.name} IS {'NOT ' if node.negated else ''}NULL"
     if isinstance(node, TextPredicate):
         not_part = " NOT" if node.negated else ""
-        return f"{node.field.name}{not_part} {node.operator} {format_expression(node.value)}"
+        return f"{node.field.name}{not_part} {node.operator} {_format_field_literal(node.field, node.value)}"
     if isinstance(node, CollectionPredicate):
         return (
             f"{node.quantifier}({format_scalar_expression(node.collection)} AS {node.binding} "
             f"WHERE {format_expression(node.predicate)})"
         )
     if isinstance(node, ScalarComparison):
-        return f"{format_scalar_expression(node.left)} {node.operator} {format_scalar_expression(node.right)}"
+        right = (
+            _format_field_literal(node.left, node.right)
+            if isinstance(node.left, (Field, RelationField)) and isinstance(node.right, Literal)
+            else format_scalar_expression(node.right)
+        )
+        return f"{format_scalar_expression(node.left)} {node.operator} {right}"
     if isinstance(node, TruthTest):
         # Preserve the established compact Boolean-field spelling while making
         # general predicate inspection unambiguous in canonical output.

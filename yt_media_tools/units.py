@@ -90,6 +90,13 @@ class UnitRegistry:
             raise ValueError(f"Unknown unit {token!r}.")
         return self._resolve_name(name, ())
 
+    def canonical_name(self, token: str) -> str:
+        """Return the canonical spelling for an accepted unit name or alias."""
+        name = self._tokens.get(token.casefold())
+        if name is None:
+            raise ValueError(f"Unknown unit {token!r}.")
+        return self._definitions[name].name
+
     def _resolve_name(self, name: str, stack: tuple[str, ...]) -> ResolvedUnit:
         cached = self._resolved.get(name)
         if cached is not None:

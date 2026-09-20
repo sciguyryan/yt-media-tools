@@ -159,7 +159,7 @@ def test_required_fields_include_case_conditions_and_results() -> None:
 def test_case_formats_canonically() -> None:
     records = [{"id": "a", "duration": 60}]
     query = _resolve("SELECT CASE WHEN duration < 10m THEN 1 ELSE 2 END AS bucket FROM @fixture", records)
-    assert format_scalar_expression(query.select[0].expression) == "CASE WHEN duration < 10m THEN 1 ELSE 2 END"
+    assert format_scalar_expression(query.select[0].expression) == "CASE WHEN duration < 600s THEN 1 ELSE 2 END"
 
 
 def test_case_when_predicate_is_optimised_and_semantics_preserved() -> None:
@@ -168,7 +168,7 @@ def test_case_when_predicate_is_optimised_and_semantics_preserved() -> None:
     original = _resolve(source, records)
     result = optimise_query(original)
     assert [(item.rule, item.before, item.after) for item in result.decisions] == [
-        ("case-when-subsumed-and-predicate", "(duration > 1m AND duration > 2m)", "duration > 2m")
+        ("case-when-subsumed-and-predicate", "(duration > 60s AND duration > 120s)", "duration > 120s")
     ]
     assert [canonical_record_value(record, original.select[0]) for record in records] == [
         canonical_record_value(record, result.query.select[0]) for record in records

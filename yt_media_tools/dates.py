@@ -125,6 +125,21 @@ def _calendar_shift(value: date | datetime, *, months: int = 0, years: int = 0) 
     return shifted
 
 
+def canonicalise_temporal_expression(text: str) -> str | None:
+    """Return canonical spelling for TODAY()/NOW() relative syntax when recognised."""
+    raw = _normalise_spaces(text)
+    match = _TEMPORAL_EXPR_RE.fullmatch(raw)
+    if not match:
+        return None
+    base = match.group("base").upper() + "()"
+    operator = match.group("op")
+    if operator is None:
+        return base
+    count = match.group("count")
+    unit = load_default_unit_registry().canonical_name(match.group("unit"))
+    return f"{base}{operator}{count}{unit}"
+
+
 def parse_temporal_expression(text: str, context: DateContext, *, expected: str) -> date | datetime:
     """Parse TODAY()/NOW() with optional relative arithmetic and strict result typing."""
     raw = _normalise_spaces(text)

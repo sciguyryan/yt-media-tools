@@ -6,9 +6,9 @@ This document records the temporary implementation audit for issue #84. It exist
 
 The established temporal model is coherent and should be retained. Query temporal context is captured once, date and timestamp types remain distinct, temporal infinity is typed rather than represented by loose scalar sentinels, multilingual units are data-driven and globally unambiguous, and unit recognition does not reserve ordinary identifier spellings.
 
-One concrete discrepancy remains before the temporal contract can be frozen: canonical formatting currently preserves accepted temporal source spellings instead of normalising equivalent spellings to one representation. This affects unit aliases and the broader family of accepted date and timestamp spellings. That discrepancy should be resolved explicitly before issue #85 freezes the contract.
+The audit identified one concrete discrepancy before the temporal contract could be frozen: canonical formatting preserved accepted temporal source spellings instead of normalising equivalent spellings. Issue #86 resolves that discrepancy by canonicalising resolved date, timestamp and duration literals and by normalising relative `TODAY()`/`NOW()` unit aliases without replacing symbolic relative expressions with captured absolute values.
 
-No additional temporal form is justified by this audit.
+No additional temporal form is justified by this audit, and no unresolved implementation dependency remains from issue #84.
 
 ## Duration and unit forms
 
@@ -56,13 +56,13 @@ General scalar arithmetic retains its existing precedence independently. Constru
 
 No temporal-specific precedence defect was found. The later general precedence audit should still verify the complete expression hierarchy, but there is no temporal ambiguity that needs to block this contract.
 
-## Canonical formatting discrepancy
+## Canonical formatting
 
-The agreed contract requires the parser to accept established equivalent temporal spellings while the canonical formatter emits one normalised representation. The current formatter does not yet do this. `Literal.raw` is preserved through resolution and the formatter emits that raw spelling for non-Boolean, non-NULL literals.
+Canonical formatting now normalises established temporal spellings rather than retaining arbitrary accepted aliases. Resolved dates use ISO `YYYY-MM-DD`; resolved timestamps use ISO datetime spelling with `Z` for UTC; resolved media durations use seconds; and relative `TODAY()`/`NOW()` expressions retain their symbolic base while normalising spacing, case and the unit token to the canonical name defined by its unit definition.
 
-As a result, equivalent unit aliases such as `1yr`, `1year` and their case variants remain distinct in canonical output. Multilingual aliases likewise retain their submitted spelling. Accepted date spellings such as compact, slash-separated, local numeric and named dates also remain source-preserved rather than being normalised to one date representation, and equivalent timestamp spellings retain their source representation.
+This preserves query-captured temporal semantics: formatting `TODAY()-1yr` does not replace the expression with the date captured during resolution. Multilingual unit definitions retain their own canonical names while aliases of the same definition converge on that name. Field-aware date forms such as configured local numeric and named dates are normalised after semantic resolution, when their meaning is known.
 
-This is a genuine discrepancy between the agreed temporal contract and the implementation. It should be resolved in a focused implementation issue before #85. The implementation should define deterministic canonical representations without weakening parse-format-parse semantic stability, query-captured temporal semantics or the distinction between fixed and calendar units.
+Deterministic parse-format-parse coverage verifies semantic stability across relative expressions, multilingual aliases, local and named dates, timestamps and duration aliases. The formatting discrepancy identified by the audit is therefore resolved by issue #86.
 
 ## Syntax and semantic failure boundary
 
@@ -74,6 +74,4 @@ This boundary matches the agreed principle when "malformed" is understood struct
 
 ## Required follow-up before freeze
 
-The audit identifies one implementation dependency: normalise accepted temporal spellings in canonical formatting. That work should cover at least duration/unit aliases, relative temporal expressions, date literals and timestamp literals, with deterministic round-trip and multilingual coverage.
-
-After that discrepancy is resolved, issue #85 can freeze the temporal grammar contract, incorporate these durable conclusions into `YT-SQL.md` and `YT-SQL-TEST-COVERAGE.md`, and remove this temporary audit document.
+Issue #86 resolves the only implementation discrepancy identified by this audit. Issue #85 can now freeze the temporal grammar contract, incorporate these durable conclusions into `YT-SQL.md` and `YT-SQL-TEST-COVERAGE.md`, and remove this temporary audit document.

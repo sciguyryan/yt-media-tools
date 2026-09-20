@@ -194,11 +194,11 @@ def test_json_explain_reports_case_predicate_optimizer_rewrites() -> None:
     assert optimiser["rewrites"] == [
         {
             "rule": "case-when-subsumed-and-predicate",
-            "before": "(duration > 1m AND duration > 2m)",
-            "after": "duration > 2m",
+            "before": "(duration > 60s AND duration > 120s)",
+            "after": "duration > 120s",
         }
     ]
-    assert optimiser["optimised_query"] == "SELECT CASE WHEN duration > 2m THEN 1 ELSE 0 END AS bucket FROM @example"
+    assert optimiser["optimised_query"] == "SELECT CASE WHEN duration > 120s THEN 1 ELSE 0 END AS bucket FROM @example"
 
 
 def test_text_explain_handles_case_only_optimizer_rewrites_without_filter() -> None:
