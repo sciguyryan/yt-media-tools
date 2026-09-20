@@ -67,6 +67,7 @@ The audit identifies three implementation areas that must be resolved before iss
 1. Identifier resolution was not consistently case-sensitive. Issue #89 removes identifier case-folding from field, alias, CTE and semantic identity resolution while preserving case-insensitive keyword recognition.
 2. Issue #90 replaces the implementation-defined ordinary Unicode identifier grammar with explicit XID-style recognition, retains `_` as an ordinary start character and deliberately preserves the established unquoted-hyphen extension for compatibility.
 3. Issue #91 adds backtick-quoted identifiers across fields, aliases, CTEs, relation qualification, structured members and raw backend-key segments, with deterministic escaping, formatting and malformed-input diagnostics.
+   The deliberate torture corpus also composes quoted identifiers with exact Unicode spelling, composed/decomposed distinctions, contextual and reserved words, raw keys, embedded backticks and relation qualification across formatting, execution and optimisation.
 
 The keyword model itself does not require a broad lexer rewrite. Existing parser-position recognition already provides useful contextual-keyword behaviour. The durable contract should instead make the reserved/contextual classification explicit and machine-testable. `TRUE`, `FALSE` and `NULL` are currently globally reserved; `UNKNOWN` remains contextual and should be considered alongside the separate reserved-terms work rather than changed incidentally here.
 

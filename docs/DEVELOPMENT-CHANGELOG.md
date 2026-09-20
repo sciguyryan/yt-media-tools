@@ -12,6 +12,7 @@ This file records meaningful changes during active development. It is not releas
 - [feature] Add backtick-quoted identifiers for otherwise unavailable names, reserved literal spellings, aliases, CTEs, relation qualification, structured members and raw backend-key segments.
 - [maintenance] Canonically quote identifiers only where the ordinary identifier grammar cannot represent them, using doubled backticks for embedded backticks.
 - [test] Add deterministic quoted-identifier parsing, formatting, resolution, escaping and malformed-input coverage.
+- [test] Extend the parser torture corpus with composed and decomposed Unicode identifiers, case-distinct names, contextual and reserved words, quoted raw keys, embedded backticks and quoted relation aliases.
 
 ## Downloader 1.19.x - Unreleased
 

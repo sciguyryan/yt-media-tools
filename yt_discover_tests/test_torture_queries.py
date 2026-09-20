@@ -194,3 +194,80 @@ def test_join_function_composition_tortures_parser_execution_and_optimiser() -> 
     optimised = optimise_query(query)
     assert apply_query(rows, optimised.query) == expected
     assert optimise_query(optimised.query).query == optimised.query
+
+
+def test_unicode_and_quoted_identifier_torture_round_trip_execution_and_optimiser() -> None:
+    composed = "café"
+    decomposed = "cafe\u0301"
+    rows = [
+        {
+            "id": "weird-1",
+            composed: 11,
+            decomposed: 22,
+            "Δata": 33,
+            "δata": 44,
+            "select": 55,
+            "Select": 66,
+            "true": 77,
+            "release-title": "hyphenated",
+            "_raw": {"provider key": "provider", "odd`key": "embedded"},
+        }
+    ]
+    schema = QuerySchema(rows)
+    source = (
+        "SELECT café, café, Δata, δata, select, Select, `true`, release-title, "
+        "raw.`provider key`, raw.`odd``key` FROM @unicode_fixture"
+    )
+    parsed = parse_query(source)
+    canonical = format_query(parsed)
+    reparsed = parse_query(canonical)
+    assert format_query(reparsed) == canonical
+
+    resolved = resolve_query(
+        reparsed,
+        schema,
+        CONTEXT,
+        source_schemas={("@unicode_fixture", None): schema},
+    )
+    assert [item.expression.name for item in resolved.select[:8]] == [
+        composed,
+        decomposed,
+        "Δata",
+        "δata",
+        "select",
+        "Select",
+        "true",
+        "release-title",
+    ]
+    assert resolved.select[0].expression.name != resolved.select[1].expression.name
+
+    result = apply_query(rows, resolved)
+    optimised = optimise_query(resolved)
+    assert apply_query(rows, optimised.query) == result
+    assert optimise_query(optimised.query).query == optimised.query
+
+
+def test_unicode_and_quoted_identifier_torture_across_cte_and_relation_qualification() -> None:
+    source = (
+        "SELECT `odd``alias`.id AS `select`, `odd``alias`.title AS `café`, "
+        "`right side`.title AS `café` "
+        "FROM @whatdamath OF videos AS `odd``alias` "
+        "INNER JOIN @whatdamath OF shorts AS `right side` "
+        "ON `odd``alias`.id = `right side`.id "
+        "ORDER BY `odd``alias`.id"
+    )
+    rows, query = _resolve_cross_facet(source)
+    canonical = format_query(query)
+    reparsed = parse_query(canonical)
+    assert format_query(reparsed) == canonical
+    assert "`odd``alias`" in canonical
+    assert "`right side`" in canonical
+    assert "AS select" in canonical
+    assert "café" in canonical
+    assert "café" in canonical
+    assert "café" != "café"
+
+    result = apply_query(rows, query)
+    optimised = optimise_query(query)
+    assert apply_query(rows, optimised.query) == result
+    assert optimise_query(optimised.query).query == optimised.query
