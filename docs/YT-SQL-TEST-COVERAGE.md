@@ -46,9 +46,11 @@ Torture coverage combines duplicate IN members, nested NOT, NULL-sensitive predi
 
 ## Temporal and numeric semantics
 
-Current coverage includes durations, multilingual units, relative dates, date/timestamp type distinctions, temporal infinity, malformed dates and timestamps, duration boundaries, decimal separators that are intentionally unsupported, numeric underscores, hexadecimal, octal and binary literals.
+Current temporal coverage includes fixed and calendar durations, multilingual canonical units and aliases, unit/identifier lexical boundaries, query-captured `TODAY()` and `NOW()` semantics, established relative-date forms, date/timestamp type distinctions, typed positive and negative temporal infinity, malformed dates and timestamps, duration boundaries and the deterministic syntax-versus-semantic rejection boundary.
 
-Torture coverage keeps temporal and numeric values embedded inside larger Boolean/scalar expressions so parser and resolver interactions are exercised rather than only isolated literal parsing.
+Canonicalisation coverage exercises equivalent unit aliases, multilingual units, configured local and named dates, ISO dates and timestamps, UTC `Z` normalisation, duration-to-seconds formatting and symbolic `TODAY()`/`NOW()` relative expressions. Parse-resolve-format-parse-resolve tests require the canonical representation to preserve temporal meaning while accepted aliases and alternate spellings converge deterministically. Temporal arithmetic coverage also preserves the contract that one optional signed unit quantity belongs to the atomic relative temporal form rather than the general scalar arithmetic hierarchy.
+
+Numeric coverage includes decimal separators that are intentionally unsupported, strict numeric underscores, hexadecimal, octal and binary literals. Torture coverage keeps temporal and numeric values embedded inside larger Boolean/scalar expressions so parser and resolver interactions are exercised rather than only isolated literal parsing.
 
 ## Aggregation
 

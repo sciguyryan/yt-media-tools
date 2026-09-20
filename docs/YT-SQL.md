@@ -129,6 +129,57 @@ Malformed input is rejected deterministically rather than guessed. Invalid base 
 
 These diagnostics form part of the parser and CLI conformance surface. Differential parser implementations should agree on accepted lexical forms, token boundaries, resulting literal values, canonical formatting and the deterministic rejection class for malformed input; they must not accept an invalid spelling merely because another tokenisation would make it parseable.
 
+## Temporal grammar contract
+
+yt-sql has a deterministic temporal language built around typed dates, timestamps, durations and temporal infinity. The established temporal forms are frozen for the current language. Alternate parser implementations must preserve the same type distinctions, query-captured temporal context, unit semantics, canonical formatting and rejection boundary rather than treating temporal values as loosely parsed strings.
+
+### Temporal context and relative expressions
+
+The local temporal context is captured once for each query run. `TODAY()` denotes the date from that captured context and `NOW()` denotes its timestamp, so repeated evaluation within one query cannot drift as wall-clock time advances. `TODAY()` is a date expression and `NOW()` is a timestamp expression; the resolver rejects cross-kind use rather than silently coercing between them.
+
+`TODAY()` and `NOW()` may have one optional signed unit quantity, for example `TODAY()-90d`, `TODAY()-18mo` or `NOW()+2hour`. Calendar units shift Gregorian calendar months with end-of-month clamping. Fixed units use exact elapsed seconds, except that `TODAY()` requires a fixed unit to resolve to a whole number of days. The relative form is one atomic temporal expression rather than general scalar arithmetic: chained adjustments and multiplication of unit quantities are not part of the established temporal grammar. Its internal sign therefore does not alter the ordinary scalar arithmetic precedence hierarchy.
+
+The established field-aware relative-date forms `today`, `yesterday`, `tomorrow` and `<count> <unit> ago` use the same captured context and unit registry. Their meaning is deterministic for the query even when execution spans a clock or date boundary.
+
+### Date and timestamp forms
+
+Date resolution accepts compact `YYYYMMDD`, year-first numeric dates using `-`, `/` or `.`, configured local numeric dates, named-month dates and the established relative-date forms. Ambiguous local numeric order follows the configured date order and is never guessed. Date values remain distinct from timestamp values.
+
+Timestamp resolution accepts ISO datetime input, including `Z` and explicit UTC offsets. A timestamp without an explicit offset receives the timezone from the query's captured local temporal context. `NOW()` and its relative forms remain timestamp expressions.
+
+The lexer has dedicated forms for ISO-shaped dates, datetimes and explicit `TODAY()`/`NOW()` relative expressions where appropriate. Other accepted human-readable dates are collected only in field-aware temporal positions and resolved according to the established date rules. This is a deliberate grammar boundary rather than permission for arbitrary text to become a date.
+
+### Duration units and identifiers
+
+Duration and temporal-arithmetic units come from the case-insensitive data-driven registry described below. Every canonical unit name and alias must be globally unique, so every accepted spelling has one definition. Multilingual definitions and aliases are part of the language surface and remain supported.
+
+Unit spellings are not globally reserved identifier tokens. They are interpreted as units only in the established field-aware duration and temporal-unit positions. A spelling such as `day`, `month`, `dydd` or `mis` therefore remains an ordinary identifier where the grammar expects an identifier and cannot be stolen merely because the same spelling exists in the unit registry.
+
+Fixed units may represent media durations. Calendar units cannot represent media durations but may participate in date or timestamp arithmetic where their calendar meaning is valid. This distinction is semantic and must not be collapsed by a parser into an undifferentiated numeric duration.
+
+### Temporal infinity
+
+`INFINITY()` and `-INFINITY()` are typed temporal values. Resolution assigns them the temporal kind required by their context, so date infinity compares only with dates and timestamp infinity only with timestamps. They are not strings, large integers or generic floating-point infinities, and they are rejected in non-temporal contexts. NULL remains distinct from temporal infinity and retains ordinary SQL-like NULL semantics; use `IS NULL` or `IS NOT NULL` when NULL membership matters.
+
+```sql
+WHERE upload_date BETWEEN -INFINITY() AND INFINITY()
+WHERE release_timestamp < INFINITY()
+WHERE upload_date >= TODAY()-1decade
+WHERE upload_date >= TODAY()-1baktun
+```
+
+### Canonical temporal formatting
+
+Canonical formatting normalises equivalent accepted temporal spellings after their meaning is known. Resolved dates use ISO `YYYY-MM-DD`. Resolved timestamps use ISO datetime spelling and use `Z` for UTC. Resolved media durations use seconds. Relative `TODAY()` and `NOW()` expressions remain symbolic while normalising spacing, case and unit aliases to the canonical name of the selected unit definition.
+
+Canonicalisation does not translate one canonical multilingual unit definition into another language. Aliases of a definition converge on that definition's canonical name. It also does not replace a relative expression with the absolute date or timestamp captured for one execution. Parse-resolve-format-parse-resolve behaviour must preserve temporal meaning even when accepted source spellings converge on a different canonical representation.
+
+### Temporal syntax and semantic errors
+
+The parser rejects structurally malformed temporal syntax. A spelling that is grammatically admissible in a temporal value position but denotes an invalid typed value or operation is rejected during semantic resolution. This boundary is deterministic and is part of the temporal contract.
+
+For example, an ISO-shaped impossible calendar date is a semantic error because its spelling belongs to the date grammar but the calendar value does not exist. An unknown unit in an otherwise structured temporal expression, a calendar unit used as a media duration, or a date/timestamp kind mismatch is likewise a semantic error. Input that does not form the required temporal or query structure remains a syntax error. Differential parser implementations must preserve this rejection class rather than moving calendar, unit and type validation arbitrarily into lexical analysis.
+
 ## Data-driven units
 
 yt-sql unit names are loaded from JSON files in the repository `units/` directory rather than being hard-coded into the parser. All `*.json` files in that directory are loaded into one case-insensitive registry. This allows additional languages and domain-specific units to be added or removed without editing Python code.
@@ -153,21 +204,6 @@ The registry validates every canonical name and alias globally. A token may not 
 Fixed units may be used for durations and relative temporal arithmetic when the resulting type is meaningful. Calendar units may be used for date/time arithmetic but are rejected as media durations. `TODAY()` requires fixed units to resolve to whole days; `NOW()` may use sub-day fixed units. Existing English units use exactly the same registry mechanism as additional language files.
 
 The shipped English definitions also include `decade`, `century`, and `millennium` as calendar-aware units derived from `year`. A separate Maya Long Count file defines exact fixed-day units `kin`, `uinal`, `tun`, `katun`, and `baktun`. In that system a `tun` is 360 days, a `katun` is 7,200 days, and a `baktun` is 144,000 days. Because these definitions ultimately resolve to fixed days, they can be used in both suitable duration expressions and whole-day temporal arithmetic.
-
-## Temporal infinity
-
-`INFINITY()` and `-INFINITY()` provide typed unbounded values for temporal comparisons. The resolver assigns the infinity to the field's temporal type, so date fields receive date infinity and timestamp fields receive timestamp infinity. They are not generic numeric infinities and are rejected for count, duration and other non-temporal fields.
-
-Normal SQL-like NULL semantics still apply. A NULL date or timestamp does not become comparable merely because the other operand is infinite. Use `IS NULL` or `IS NOT NULL` when NULL membership matters.
-
-Examples:
-
-```sql
-WHERE upload_date BETWEEN -INFINITY() AND INFINITY()
-WHERE release_timestamp < INFINITY()
-WHERE upload_date >= TODAY()-1decade
-WHERE upload_date >= TODAY()-1baktun
-```
 
 ### Pattern matching
 
