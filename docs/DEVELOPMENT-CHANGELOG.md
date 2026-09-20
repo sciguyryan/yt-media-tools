@@ -2,6 +2,11 @@
 
 This file records meaningful changes during active development. It is not release history. When a dot release is completed and accepted, relevant entries are reconciled into the root `CHANGELOG.md` and the completed development section is cleared or advanced for the next work item.
 
+## Discover 0.29.x - Unreleased
+
+- [docs] Audit the established temporal grammar across duration units, multilingual aliases, lexical boundaries, captured relative-time semantics, date and timestamp forms, typed infinity, precedence, formatting and error classification.
+- [docs] Confirm that the temporal model is otherwise coherent while identifying source-preserving temporal formatting as the remaining discrepancy before grammar freeze.
+
 ## Downloader 1.19.x - Unreleased
 
 - [feature] Add `--remove-completed-rows` for annotated file-backed queues whose first whitespace-delimited field is the download target.
