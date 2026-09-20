@@ -1,5 +1,16 @@
 # Changelog
 
+## Discover 0.29.9 - Identifier Contract
+
+- Freeze the yt-sql identifier and keyword contract around exact case-sensitive identifier identity and case-insensitive contextual keyword recognition.
+- Make field, alias, CTE and semantic identifier resolution case-sensitive while preserving ordinary contextual keyword spellings as identifiers where grammar position is unambiguous.
+- Define ordinary unquoted identifiers with explicit Unicode XID-style recognition, preserve the established hyphen extension and perform no implicit Unicode normalisation.
+- Add backtick-quoted identifiers across fields, aliases, CTEs, relation qualification, structured members and raw backend-key segments, with doubled backticks for embedded backticks.
+- Canonically quote identifiers only where required by the ordinary identifier grammar or reserved-word contract, preserving exact spelling and semantic identity through round trips.
+- Make the deliberately small reserved vocabulary and the contextual structural keyword vocabulary explicit and conformance-tested without broadly reserving future grammar words.
+- Extend deterministic and adversarial coverage for case-distinct identifiers, Unicode spelling, quoted identifiers, raw keys, relation aliases, optimiser behaviour and canonical formatting.
+- Reconcile the completed identifier and keyword audit into the canonical language and testing documentation and retire the temporary audit material.
+
 ## Discover 0.29.8 - Temporal Contract
 
 - Freeze the yt-sql temporal grammar across deterministic query-captured relative time, accepted date and timestamp forms, multilingual duration units, temporal arithmetic boundaries and typed temporal infinity.
