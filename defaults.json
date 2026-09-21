@@ -1,18 +1,40 @@
 {
-  "version": 1,
+  "version": 2,
   "profiles": {
+    "default": {
+      "path": "$defaults.single.path",
+      "output": "$defaults.single.output"
+    },
     "best": {
+      "path": "$defaults.single.path",
+      "output": "$defaults.single.output",
       "resolution": "best"
     },
     "4k": {
+      "path": "$defaults.single.path",
+      "output": "$defaults.single.output",
       "resolution": "2160p"
     },
     "1440p": {
+      "path": "$defaults.single.path",
+      "output": "$defaults.single.output",
       "resolution": "1440p"
     },
     "playlist": {
+      "path": "$defaults.playlist.path",
+      "output": "$defaults.playlist.output",
       "resolution": "1080p",
       "playlist": true
+    }
+  },
+  "defaults": {
+    "playlist": {
+      "path": "/mnt/storage/Storage/YouTube/YouTube Playlists/",
+      "output": "%(playlist)s/%(playlist_autonumber|03d)s - %(title)s [%(id)s] [%(uploader)s].%(ext)s"
+    },
+    "single": {
+      "path": "/mnt/storage/Storage/YouTube/YouTube/",
+      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
     }
   }
 }

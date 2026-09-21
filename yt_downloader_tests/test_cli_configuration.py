@@ -8,13 +8,12 @@ import pytest
 
 
 def test_version_is_current(downloader) -> None:
-    assert downloader.PROGRAM_VERSION == "1.19.1"
+    assert downloader.PROGRAM_VERSION == "1.20.0"
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
     assert downloader.ARCHIVE_FILE == downloader.SCRIPT_DIR / "archive.txt"
     assert downloader.COOKIES_FILE == downloader.SCRIPT_DIR / "cookies.txt"
-    assert downloader.PROFILES_DIR == downloader.SCRIPT_DIR / "profiles"
     assert downloader.DEFAULTS_FILE == downloader.SCRIPT_DIR / "defaults.json"
 
 
@@ -105,3 +104,15 @@ def test_examples_are_available_without_external_environment(downloader, capsys)
     assert "--audio-only" in output
     assert "--audio-format" in output
     assert "--schema-json" in output
+
+
+def test_profile_recording_and_separate_output_profile_options_are_removed(downloader) -> None:
+    parser = downloader.build_parser()
+    option_strings = {option for action in parser._actions for option in action.option_strings}
+    assert "--generate-profile" not in option_strings
+    assert "--write-profile" not in option_strings
+    assert "--overwrite-profile" not in option_strings
+    assert "--output-profile" not in option_strings
+    assert "-P" not in option_strings
+    assert "--profile" in option_strings
+    assert "--list-profiles" in option_strings

@@ -82,7 +82,7 @@ def test_metadata_and_chapter_defaults_can_be_explicitly_disabled(downloader) ->
 
 
 def test_sponsorblock_policy_validates_mark_and_remove_categories(downloader) -> None:
-    settings = downloader.validate_parameter_settings(
+    settings = downloader.validate_profile_settings(
         {
             "sponsorblock-mark": "all,-preview",
             "sponsorblock-remove": "sponsor,selfpromo",
@@ -93,7 +93,7 @@ def test_sponsorblock_policy_validates_mark_and_remove_categories(downloader) ->
     assert settings["sponsorblock-remove"] == "sponsor,selfpromo"
 
     with pytest.raises(ValueError, match="unsupported SponsorBlock category"):
-        downloader.validate_parameter_settings(
+        downloader.validate_profile_settings(
             {"sponsorblock-remove": "chapter"},
             profile_name="broken",
         )
@@ -112,7 +112,7 @@ def test_sponsorblock_can_be_disabled_without_emitting_cut_policy(downloader) ->
     assert "--sponsorblock-remove" not in command
 
 
-def test_cli_false_values_override_parameter_profile_booleans(downloader, tmp_path: Path) -> None:
+def test_cli_false_values_override_profile_booleans(downloader, tmp_path: Path) -> None:
     parser = downloader.build_parser()
     args = parser.parse_args(
         [
@@ -124,8 +124,8 @@ def test_cli_false_values_override_parameter_profile_booleans(downloader, tmp_pa
             "abc",
         ]
     )
-    cli = downloader.explicit_parameter_settings(args)
-    profile = downloader.ParameterProfile(
+    cli = downloader.explicit_profile_settings(args)
+    profile = downloader.Profile(
         name="rich",
         source=tmp_path / "defaults.json",
         settings={
@@ -134,7 +134,7 @@ def test_cli_false_values_override_parameter_profile_booleans(downloader, tmp_pa
             "sponsorblock": True,
         },
     )
-    merged = downloader.merge_parameter_settings(profile, cli)
+    merged = downloader.merge_profile_settings(profile, cli)
     assert merged["write-subs"] is False
     assert merged["embed-metadata"] is False
     assert merged["sponsorblock"] is False
@@ -142,7 +142,7 @@ def test_cli_false_values_override_parameter_profile_booleans(downloader, tmp_pa
 
 def test_artifact_policy_is_visible_in_explain_payload(downloader, monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
-    resolved = downloader.ResolvedParameterSettings(
+    resolved = downloader.ResolvedProfileSettings(
         settings={
             "write-subs": True,
             "sub-langs": "en.*,cy",
@@ -158,11 +158,11 @@ def test_artifact_policy_is_visible_in_explain_payload(downloader, monkeypatch, 
     )
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
     policy = downloader.explain_plan_payload(plan)["policy"]
@@ -177,22 +177,22 @@ def test_artifact_policy_is_visible_in_explain_payload(downloader, monkeypatch, 
 
 
 def test_explicit_sponsorblock_categories_reenable_profile_disabled_policy(downloader, tmp_path: Path) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="quiet",
         source=tmp_path / "defaults.json",
         settings={"sponsorblock": False},
     )
-    merged = downloader.merge_parameter_settings(profile, {"sponsorblock-mark": "sponsor"})
-    policy, _, _ = downloader.resolve_parameter_policy({**merged, "no-cookies": True})
+    merged = downloader.merge_profile_settings(profile, {"sponsorblock-mark": "sponsor"})
+    policy, _, _ = downloader.resolve_profile_policy({**merged, "no-cookies": True})
     assert policy.sponsorblock is True
     assert policy.sponsorblock_mark == "sponsor"
 
 
 def test_explicit_no_sponsorblock_discards_profile_category_policy(downloader, tmp_path: Path) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="cuts",
         source=tmp_path / "defaults.json",
         settings={"sponsorblock-mark": "sponsor", "sponsorblock-remove": "intro"},
     )
-    merged = downloader.merge_parameter_settings(profile, {"sponsorblock": False})
+    merged = downloader.merge_profile_settings(profile, {"sponsorblock": False})
     assert merged == {"sponsorblock": False}

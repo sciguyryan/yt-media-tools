@@ -11,11 +11,11 @@ def _plan(downloader, tmp_path: Path, monkeypatch, settings: dict[str, object], 
     monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
     return downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=downloader.ResolvedParameterSettings(settings=settings, sources={}),
+        resolved_profile=downloader.ResolvedProfileSettings(settings=settings, sources={}),
         input_source=downloader.InputSource(direct_targets=("https://example.invalid/playlist",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=remove,
     )
 
@@ -35,7 +35,7 @@ def test_cli_playlist_selection_preserves_mixed_option_order(downloader) -> None
             "PLAYLIST_URL",
         ]
     )
-    assert downloader.explicit_parameter_settings(args)["playlist-items"] == [
+    assert downloader.explicit_profile_settings(args)["playlist-items"] == [
         "5:8",
         "1",
         "-5::2",
@@ -66,7 +66,7 @@ def test_playlist_profile_normalises_indices_and_slices(downloader, tmp_path: Pa
         '{"version":1,"profiles":{"selected":{"playlist":true,"playlist-items":[3,"5:8","01:020:02",-1]}}}',
         encoding="utf-8",
     )
-    profile = downloader.select_parameter_profile("selected", path, explicit_defaults=True)
+    profile = downloader.select_profile("selected", path, explicit_defaults=True)
     assert profile is not None
     assert profile.settings["playlist-items"] == ["3", "5:8", "1:20:2", "-1"]
 
@@ -84,26 +84,26 @@ def test_playlist_profile_normalises_indices_and_slices(downloader, tmp_path: Pa
 )
 def test_playlist_profile_rejects_invalid_item_specs(downloader, tmp_path: Path, items: list[object]) -> None:
     with pytest.raises(ValueError, match="playlist-items"):
-        downloader.validate_parameter_settings({"playlist-items": items}, profile_name="broken")
+        downloader.validate_profile_settings({"playlist-items": items}, profile_name="broken")
 
 
 def test_explicit_playlist_selection_replaces_profile_selection(downloader, tmp_path: Path) -> None:
     args = downloader.build_parser().parse_args(
         ["--playlist-index", "9", "--playlist-slice", "20:30:2", "PLAYLIST_URL"]
     )
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="subset",
         source=tmp_path / "defaults.json",
         settings={"playlist": True, "playlist-items": ["1:5"]},
     )
-    resolved = downloader.resolve_parameter_settings(profile, downloader.explicit_parameter_settings(args))
+    resolved = downloader.resolve_profile_settings(profile, downloader.explicit_profile_settings(args))
     assert resolved.settings["playlist-items"] == ["9", "20:30:2"]
     assert resolved.sources["playlist-items"] == "explicit CLI"
 
 
 def test_playlist_profile_rejects_no_playlist_conflict(downloader) -> None:
     with pytest.raises(ValueError, match="playlist-items with playlist=false"):
-        downloader.validate_parameter_settings(
+        downloader.validate_profile_settings(
             {"playlist": False, "playlist-items": [1, "3:5"]},
             profile_name="broken",
         )
@@ -138,12 +138,12 @@ def test_playlist_selection_can_combine_with_reverse_traversal(downloader, tmp_p
 def test_playlist_forward_overrides_reverse_profile(downloader, tmp_path: Path) -> None:
     parser = downloader.build_parser()
     args = parser.parse_args(["--playlist-forward", "PLAYLIST_URL"])
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="reverse",
         source=tmp_path / "defaults.json",
         settings={"reverse-playlist": True},
     )
-    resolved = downloader.resolve_parameter_settings(profile, downloader.explicit_parameter_settings(args))
+    resolved = downloader.resolve_profile_settings(profile, downloader.explicit_profile_settings(args))
     assert resolved.settings["reverse-playlist"] is False
     assert resolved.sources["reverse-playlist"] == "explicit CLI"
 
@@ -151,7 +151,7 @@ def test_playlist_forward_overrides_reverse_profile(downloader, tmp_path: Path) 
 def test_resolved_policy_rejects_selection_with_no_playlist(downloader, monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
     with pytest.raises(ValueError, match="playlist item selection cannot be combined with --no-playlist"):
-        downloader.resolve_parameter_policy({"playlist": False, "playlist-items": ["1:3"]})
+        downloader.resolve_profile_policy({"playlist": False, "playlist-items": ["1:3"]})
 
 
 def test_playlist_selection_is_visible_in_explain_output(downloader, tmp_path: Path, monkeypatch) -> None:
@@ -175,13 +175,13 @@ def test_playlist_selection_rejects_completed_id_queue_mutation(downloader, tmp_
     with pytest.raises(ValueError, match="playlist item selection cannot be combined with --remove-completed-ids"):
         downloader.create_download_plan(
             executable="yt-dlp",
-            resolved_parameters=downloader.ResolvedParameterSettings(
+            resolved_profile=downloader.ResolvedProfileSettings(
                 settings={"playlist-items": ["1:3"]},
                 sources={"playlist-items": "explicit CLI"},
             ),
             input_source=downloader.InputSource(batch_file=queue),
             output_profile=None,
             defaults_file=tmp_path / "defaults.json",
-            parameter_profile=None,
+            profile=None,
             remove_completed_ids=True,
         )

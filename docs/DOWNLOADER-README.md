@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.19.1 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.20.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -25,7 +25,7 @@ Cookies:          ./cookies.txt beside yt-download.py, when present
 Temporary files:  /mnt/storage/Temp/yt-dlp
 ```
 
-Output locations are normally supplied by output profiles in the `profiles/` directory beside the script. Named download-parameter profiles live in the versioned `defaults.json` file beside the script.
+Reusable Downloader policy, including output location and filename layout, lives in named profiles in the versioned `defaults.json` file beside the script.
 
 ## Usage
 
@@ -88,7 +88,7 @@ Select one or more playlist entries with typed index, inclusive-range and slice 
 
 Playlist indices are 1-based. Negative indices count from the end. `--playlist-range START STOP` includes both endpoints. `--playlist-slice` uses yt-dlp's `[START]:[STOP][:STEP]` selection semantics, with non-zero supplied bounds and a non-zero step. Repeat and mix the three options as needed; Downloader preserves their command-line order and compiles the resolved selection into one `-I/--playlist-items` expression.
 
-`--playlist-forward` explicitly restores normal traversal when a parameter profile enables reverse traversal. `--playlist-reverse`/`--rev` remains the reverse traversal control. Playlist item selection cannot be combined with `--no-playlist`.
+`--playlist-forward` explicitly restores normal traversal when a profile enables reverse traversal. `--playlist-reverse`/`--rev` remains the reverse traversal control. Playlist item selection cannot be combined with `--no-playlist`.
 
 The configured download archive continues to apply to the selected entries through yt-dlp, so already archived media remain excluded normally. Playlist item selection is not accepted with `--remove-completed-ids`: the durable text queue tracks exact input targets, while successful playlist child entries do not establish that a playlist container target itself is complete. This fails closed rather than removing or classifying the container line incorrectly.
 
@@ -112,7 +112,7 @@ Wait for a scheduled stream with a fixed or bounded retry interval in seconds:
 ./yt-download.py --live --wait-for-video 60-300 SCHEDULED_URL
 ```
 
-`--live-edge` overrides `--live-from-start` inherited from a parameter profile. `--no-wait-for-video` similarly removes inherited scheduled-stream waiting. Downloader emits explicit yt-dlp live-edge and no-wait options when live mode is enabled without those behaviours, so a user's external yt-dlp configuration cannot silently change the resolved live policy.
+`--live-edge` overrides `--live-from-start` inherited from a profile. `--no-wait-for-video` similarly removes inherited scheduled-stream waiting. Downloader emits explicit yt-dlp live-edge and no-wait options when live mode is enabled without those behaviours, so a user's external yt-dlp configuration cannot silently change the resolved live policy.
 
 Live work can use the existing retry controls without acquiring hidden retry defaults:
 
@@ -131,7 +131,7 @@ Request live chat as an associated sidecar when the extractor exposes `live_chat
 
 `--write-live-chat` adds `live_chat` to any explicit subtitle-language selection rather than replacing it. An explicit `-live_chat` exclusion conflicts with that request and is rejected. Availability and completeness remain extractor/service properties, so requesting live chat does not guarantee that a service exposes or successfully delivers it. Actual sidecar paths are not inferred for run manifests.
 
-Live-specific options require explicit live mode, including when stored in parameter profiles. `--no-live` disables inherited live-from-start, scheduled-wait and live-chat policy together. Existing queue completion and run-manifest boundaries remain unchanged: durable queue removal occurs only after successful primary-output completion, while interrupted or failed live work remains unresolved.
+Live-specific options require explicit live mode, including when stored in profiles. `--no-live` disables inherited live-from-start, scheduled-wait and live-chat policy together. Existing queue completion and run-manifest boundaries remain unchanged: durable queue removal occurs only after successful primary-output completion, while interrupted or failed live work remains unresolved.
 
 ## Partial media and sections
 
@@ -147,9 +147,9 @@ Partial-media acquisition is explicit derivative policy. Select chapters by regu
 
 A partial-media run produces derivative outputs rather than establishing that the source item itself has been retrieved in full. Downloader therefore disables the download archive for that invocation and rejects `--remove-completed-ids`. This prevents a successful excerpt from marking the source target complete or removing it from a durable whole-item queue. Partial-media selection is also rejected in explicit live mode because live timing does not provide the same stable derivative boundary.
 
-Partial acquisition uses a section-aware filename template containing `section_number` and `section_title` so multiple matched chapters or time ranges cannot silently collide with one another. An output profile's home path is preserved, but its filename template is replaced for the derivative run. Whole-item downloads continue to use the profile's normal filename template unchanged.
+Partial acquisition uses a section-aware filename template containing `section_number` and `section_title` so multiple matched chapters or time ranges cannot silently collide with one another. The selected profile's output path is preserved, but its filename template is replaced for the derivative run. Whole-item downloads continue to use the profile's normal filename template unchanged.
 
-Run manifests record the partial-media policy and identify the input as derivative partial media. Completed output paths still come from yt-dlp's `after_move` events rather than filename inference. `--whole-item` removes chapter/time-range policy inherited from a parameter profile.
+Run manifests record the partial-media policy and identify the input as derivative partial media. Completed output paths still come from yt-dlp's `after_move` events rather than filename inference. `--whole-item` removes chapter/time-range policy inherited from a profile.
 
 Playlist randomisation is not exposed as Downloader policy. Its ordering semantics do not currently provide enough value to justify making queue and reproducibility behaviour less predictable.
 
@@ -194,9 +194,9 @@ Explain the fully resolved download plan without executing yt-dlp:
 ./yt-download.py --explain VIDEO_ID
 ```
 
-The explanation shows the selected parameter and output profiles, effective format and playlist policy, authentication source, input source, archive and temporary paths, queue behaviour, the final yt-dlp command, and where explicitly configured parameter values came from. Use `--explain-json` for a machine-readable form suitable for scripts and regression checks. Explain mode does not require yt-dlp to be installed and does not mutate queue files.
+The explanation shows the selected profile, effective format and playlist policy, authentication source, input source, archive and temporary paths, queue behaviour, the final yt-dlp command, and where explicitly configured parameter values came from. Use `--explain-json` for a machine-readable form suitable for scripts and regression checks. Explain mode does not require yt-dlp to be installed and does not mutate queue files.
 
-## Machine contract and parameter-profile schema
+## Machine contract and profile schema
 
 Emit Downloader's versioned machine contract without requiring yt-dlp or a configured download target:
 
@@ -204,11 +204,11 @@ Emit Downloader's versioned machine contract without requiring yt-dlp or a confi
 ./yt-download.py --schema-json
 ```
 
-The contract is language-neutral JSON. It identifies the machine-contract version, Downloader version, parameter-profile format version, JSON Schema dialect, complete parameter-profile file/settings schemas, configuration precedence, semantic-validation boundaries and the machine-readable interfaces that currently exist. The schema rejects unknown profile settings and describes structural cross-field constraints such as cookie-source exclusivity, live-policy requirements, audio-quality conversion requirements and playlist-selection conflicts.
+The contract is language-neutral JSON. It identifies the machine-contract version, Downloader version, profile format version, JSON Schema dialect, complete profile file/settings schemas, configuration precedence, semantic-validation boundaries and the machine-readable interfaces that currently exist. The schema rejects unknown profile settings and describes structural cross-field constraints such as cookie-source exclusivity, live-policy requirements, audio-quality conversion requirements and playlist-selection conflicts.
 
 Finite case-insensitive values expose canonical lower-case choices through `x-downloader-canonical-values` so editors, scripts and AI/plugin tooling can generate stable configuration without scraping human help text. Validation that depends on comparisons, regular-expression compilation, yt-dlp expression semantics or the fully resolved policy remains an explicit Downloader runtime check and is listed in the surrounding contract rather than being overstated as pure JSON Schema validation.
 
-The machine-contract version is independent of the parameter-profile format version and run-manifest schema version. A consumer should inspect the relevant version instead of assuming that a Downloader release number is itself an API contract. The current contract defines configuration/schema discovery only; a formal machine execution-request schema is not yet part of the contract.
+The machine-contract version is independent of the profile format version and run-manifest schema version. A consumer should inspect the relevant version instead of assuming that a Downloader release number is itself an API contract. The current contract defines configuration/schema discovery only; a formal machine execution-request schema is not yet part of the contract.
 
 Print only the resolved `yt-dlp` command without executing it:
 
@@ -248,14 +248,14 @@ Deterministic Downloader behaviour is expected to be verified by the automated t
 
 Manual verification is reserved for behaviour that genuinely depends on an external environment or service and cannot be represented faithfully with deterministic fixtures, fakes or simulated process outcomes.
 
-## Parameter profiles
+## Profiles
 
-Named parameter profiles provide reusable Downloader CLI defaults without replacing explicit command-line control. The script-local `defaults.json` is used by default, or another file may be selected with `-d/--defaults`.
+Named profiles provide reusable Downloader policy without replacing explicit command-line control. The script-local `defaults.json` is used by default, or another file may be selected with `-d/--defaults`.
 
 List available profiles:
 
 ```bash
-./yt-download.py --list-parameters
+./yt-download.py --list-profiles
 ```
 
 Select one:
@@ -270,24 +270,20 @@ Explicit CLI options override selected profile values:
 ./yt-download.py -p 4k --resolution 1080p VIDEO_ID
 ```
 
-The shipped `defaults.json` contains `best`, `4k`, `1440p` and `playlist`. These profiles inherit the built-in `bv+ba/best` selector unless a profile or explicit CLI setting deliberately supplies raw `format` policy.
+The shipped `defaults.json` contains `default`, `best`, `4k`, `1440p` and `playlist`. The `default` profile is selected when no profile is named. These profiles inherit the built-in `bv+ba/best` selector unless a profile or explicit CLI setting deliberately supplies raw `format` policy.
 
 ```json
 {
   "version": 1,
   "profiles": {
-    "best": {
-      "resolution": "best"
-    },
-    "4k": {
-      "resolution": "2160p"
+    "default": {
+      "path": "/mnt/storage/Storage/YouTube/YouTube/",
+      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
     },
     "1440p": {
+      "path": "/mnt/storage/Storage/YouTube/YouTube/",
+      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s",
       "resolution": "1440p"
-    },
-    "playlist": {
-      "resolution": "1080p",
-      "playlist": true
     }
   }
 }
@@ -295,37 +291,17 @@ The shipped `defaults.json` contains `best`, `4k`, `1440p` and `playlist`. These
 
 Supported profile keys are intentionally limited to Downloader-owned configuration. Unknown keys and wrong JSON types are errors rather than being silently ignored. `format` is passed directly to yt-dlp's `-f` option.
 
-Generate a profile from explicitly supplied eligible settings:
+Profiles are deliberately hand-edited JSON configuration. Downloader validates and lists them but does not record, generate, overwrite or remove profiles on the user's behalf.
 
-```bash
-./yt-download.py --resolution 1440p --format 'bv+ba/best' --no-cookies --generate-profile offline-1440
-```
-
-Without `--write-profile`, the complete JSON document is written to stdout for manual inclusion. To insert the profile directly into the resolved defaults file:
-
-```bash
-./yt-download.py -d defaults.json --resolution 1440p --no-cookies \
-  --generate-profile offline-1440 --write-profile
-```
-
-If the named profile already exists, the write is refused. Replacement requires explicit intent:
-
-```bash
-./yt-download.py -d defaults.json --resolution 2160p \
-  --generate-profile offline-1440 --write-profile --overwrite-profile
-```
-
-When generation starts from an existing `-p` profile, that profile is copied and explicit CLI settings override it. Without a source profile, only explicitly supplied eligible settings are generated, so built-in defaults are not frozen into user profiles unnecessarily. There is deliberately no profile-removal command; `defaults.json` is human-editable.
-
-Parameter-profile precedence is:
+Profile precedence is:
 
 ```text
-built-in defaults -> selected parameter profile -> explicit CLI settings
+built-in defaults -> selected profile -> explicit CLI settings
 ```
 
 `--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
 
-Operational policy can also be stored in parameter profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `live`, `live-from-start`, `wait-for-video`, `write-live-chat`, `chapter-sections`, `time-ranges`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. `chapter-sections` is an ordered array of regular-expression strings. `time-ranges` is an ordered array of canonical `START-STOP` strings or two-item `START`, `STOP` arrays. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+Operational policy can also be stored in profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `live`, `live-from-start`, `wait-for-video`, `write-live-chat`, `chapter-sections`, `time-ranges`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. `chapter-sections` is an ordered array of regular-expression strings. `time-ranges` is an ordered array of canonical `START-STOP` strings or two-item `START`, `STOP` arrays. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
 
 For example:
 
@@ -356,7 +332,7 @@ The most common network and retry controls have first-class Downloader options:
 ./yt-download.py --archive ~/media/archive.txt --temp-path ~/media/tmp VIDEO_ID
 ```
 
-Downloader keeps its existing `20M` rate limit, script-local archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a parameter profile or explicit CLI setting chooses them.
+Downloader keeps its existing `20M` rate limit, script-local archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a profile or explicit CLI setting chooses them.
 
 `--explain` and `--explain-json` include these resolved operational values and their configured archive/temporary paths. Sensitive extractor-argument values such as tokens, keys and credentials are redacted from explanation output. `--dry-run` remains an exact command preview and therefore may contain explicitly configured sensitive values; treat its output accordingly.
 
@@ -388,7 +364,7 @@ When separate streams must be merged, `--merge-container` may choose one of yt-d
 
 This controls the container used for a merge only. It does not force remuxing or transcoding when no merge is required. Those operations remain separate future policy decisions.
 
-The corresponding parameter-profile keys are `min-resolution`, `max-resolution`, `min-fps`, `max-fps`, `preferred-fps`, `preferred-video-codec`, `preferred-audio-codec`, `preferred-hdr`, `preferred-audio-channels` and `merge-container`.
+The corresponding profile keys are `min-resolution`, `max-resolution`, `min-fps`, `max-fps`, `preferred-fps`, `preferred-video-codec`, `preferred-audio-codec`, `preferred-hdr`, `preferred-audio-channels` and `merge-container`.
 
 Raw `-f/--format` remains the expert selector authority. Downloader rejects a raw selector combined with hard min/max resolution or FPS constraints instead of silently editing the raw expression. Sorting preferences and merge-container policy may still accompany a raw selector because they do not rewrite it.
 
@@ -423,7 +399,7 @@ Supported conversion formats are `best`, `aac`, `alac`, `flac`, `m4a`, `mp3`, `o
 
 Audio workflows reject video-only resolution, frame-rate, video-codec, HDR and merge-container policy rather than silently ignoring it. Raw `-f/--format` is also mutually exclusive with first-class audio mode, keeping expert raw selection and typed audio policy as separate authorities. Subtitle sidecars remain available, but subtitle embedding is rejected for an audio-only primary output.
 
-The corresponding parameter-profile keys are `audio-only`, `audio-source-codec`, `audio-source-container`, `audio-source-fallback`, `audio-format` and `audio-quality`. Existing `preferred-audio-codec` and `preferred-audio-channels` remain fallback-friendly source sorting preferences in audio mode.
+The corresponding profile keys are `audio-only`, `audio-source-codec`, `audio-source-container`, `audio-source-fallback`, `audio-format` and `audio-quality`. Existing `preferred-audio-codec` and `preferred-audio-channels` remain fallback-friendly source sorting preferences in audio mode.
 
 Use `--explain` or `--explain-json` to see whether the resolved run is source-only or conversion-enabled before execution.
 
@@ -456,7 +432,7 @@ Thumbnail embedding is also independent:
 ./yt-download.py --embed-thumbnail VIDEO_ID
 ```
 
-Metadata and chapters remain embedded by default for compatibility with earlier Downloader releases. Either can be disabled explicitly or from a parameter profile:
+Metadata and chapters remain embedded by default for compatibility with earlier Downloader releases. Either can be disabled explicitly or from a profile:
 
 ```bash
 ./yt-download.py --no-embed-metadata --no-embed-chapters VIDEO_ID
@@ -470,7 +446,7 @@ SponsorBlock processing remains enabled by default with removal category `all`, 
 
 `--no-sponsorblock` disables both marking and removal. Category expressions are validated against the categories supported by yt-dlp; `poi_highlight` and `chapter` are accepted for marking but rejected for removal because yt-dlp does not permit them there.
 
-The corresponding parameter-profile keys are `write-subs`, `write-auto-subs`, `sub-langs`, `sub-format`, `embed-subs`, `write-thumbnail`, `embed-thumbnail`, `write-info-json`, `embed-metadata`, `embed-chapters`, `sponsorblock`, `sponsorblock-mark` and `sponsorblock-remove`. Boolean settings have matching positive and negative CLI forms so explicit CLI choices can override a selected profile in either direction.
+The corresponding profile keys are `write-subs`, `write-auto-subs`, `sub-langs`, `sub-format`, `embed-subs`, `write-thumbnail`, `embed-thumbnail`, `write-info-json`, `embed-metadata`, `embed-chapters`, `sponsorblock`, `sponsorblock-mark` and `sponsorblock-remove`. Boolean settings have matching positive and negative CLI forms so explicit CLI choices can override a selected profile in either direction.
 
 `--explain` and `--explain-json` report all of these resolved choices. Run manifests reuse that resolved policy and distinguish the primary media output from explicitly requested associated artefacts without inferring policy from the final command.
 
@@ -497,38 +473,13 @@ Cookie-file selection, browser cookies and `--no-cookies` are mutually exclusive
 ./yt-download.py --no-cookies VIDEO_ID
 ```
 
-## Output profiles
+## Output layout
 
-Output profiles are separate from parameter profiles. They control path and filename layout only. `-P/--output-profile` selects them; the legacy long option `--profile` remains available as an alias.
+Output layout is part of the same named JSON profile as download policy. The optional `path` setting controls yt-dlp's output home path and `output` controls its filename template. Both are strictly validated as non-empty strings.
 
-Profiles are UTF-8 text files stored under `profiles/` beside the downloader. A profile begins with `@profile` and may define `path`, `output`, or both.
+The shipped profiles include the established single-item layout, while `playlist` uses the playlist-oriented path and template. There is no separate `profiles/` directory or `@profile` configuration language. Edit `defaults.json`, or a file selected with `-d/--defaults`, to add or change profiles.
 
-Example:
-
-```text
-@profile
-
-path=/mnt/storage/Downloads/YouTube/
-output=%(title)s [%(id)s] [%(uploader)s].%(ext)s
-```
-
-Select a profile by name:
-
-```bash
-./yt-download.py -P playlist PLAYLIST_URL
-```
-
-Bare profile names are resolved beneath `profiles/`. An explicit path may also be supplied.
-
-Profile fallback is:
-
-```text
-requested profile -> profiles/default -> yt-dlp native output defaults
-```
-
-A missing profile is recoverable. An existing but invalid profile is a configuration error.
-
-The bundle includes `profiles/default` and `profiles/playlist`.
+For an older `@profile` file, copy its `path` and `output` values into the corresponding named JSON profile. For example, `path=/srv/media` and `output=%(id)s.%(ext)s` become `"path": "/srv/media"` and `"output": "%(id)s.%(ext)s"`. The old `-P/--output-profile` selector and the profile recording commands are no longer part of the CLI. `--parameter-profile` and `--list-parameters` remain compatibility aliases for `--profile` and `--list-profiles`.
 
 ## Relationship to yt-discover
 
@@ -536,7 +487,7 @@ The bundle includes `profiles/default` and `profiles/playlist`.
 
 ## Machine validation and capabilities
 
-Use `--validate-config [FILE]` to validate a complete parameter-profile file with the same runtime validation used for normal Downloader configuration. When FILE is omitted, Downloader validates the resolved defaults file. Successful validation emits a small JSON result suitable for scripts.
+Use `--validate-config [FILE]` to validate a complete profile file with the same runtime validation used for normal Downloader configuration. When FILE is omitted, Downloader validates the resolved defaults file. Successful validation emits a small JSON result suitable for scripts.
 
 Use `--capabilities` for a concise human-readable environment report or `--capabilities-json` for the versioned machine-readable form. Capability reporting identifies the installed Downloader version and the availability and reported versions of yt-dlp, ffmpeg and ffprobe. Availability does not imply that every extractor or media workflow is supported.
 

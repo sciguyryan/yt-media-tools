@@ -1,5 +1,14 @@
 # Changelog
 
+## Downloader 1.20.0 - One Profile
+
+- Unify reusable download policy and output layout in the versioned JSON profile system.
+- Select the shipped `default` profile automatically and include equivalent single-item and playlist output layouts in `defaults.json`.
+- Replace separate parameter/output profile terminology and machine-plan fields with one profile contract, while retaining `--parameter-profile` and `--list-parameters` as compatibility aliases.
+- Remove the legacy `@profile` files, `profiles/` directory and separate `-P/--output-profile` selector.
+- Remove profile generation, recording and overwrite commands so profiles are managed directly as hand-editable JSON.
+- Bump the machine contract and explain-plan schema versions for the unified profile representation.
+
 ## Discover 0.29.9 - Identifier Contract
 
 - Freeze the yt-sql identifier and keyword contract around exact case-sensitive identifier identity and case-insensitive contextual keyword recognition.

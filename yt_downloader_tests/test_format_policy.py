@@ -71,7 +71,7 @@ def test_merge_container_is_only_added_for_merge_output_policy(downloader) -> No
 
 
 def test_format_profile_accepts_typed_constraints_and_preferences(downloader, tmp_path: Path) -> None:
-    settings = downloader.validate_parameter_settings(
+    settings = downloader.validate_profile_settings(
         {
             "min-resolution": 1080,
             "max-resolution": "2160p",
@@ -102,31 +102,31 @@ def test_format_profile_accepts_typed_constraints_and_preferences(downloader, tm
 
 def test_format_profile_rejects_inverted_hard_bounds(downloader) -> None:
     with pytest.raises(ValueError, match="min-resolution above max-resolution"):
-        downloader.validate_parameter_settings(
+        downloader.validate_profile_settings(
             {"min-resolution": 2160, "max-resolution": 1080},
             profile_name="broken",
         )
     with pytest.raises(ValueError, match="min-fps above max-fps"):
-        downloader.validate_parameter_settings(
+        downloader.validate_profile_settings(
             {"min-fps": 60, "max-fps": 30},
             profile_name="broken",
         )
 
 
 def test_resolved_cli_and_profile_bounds_are_revalidated_after_merge(downloader, tmp_path: Path) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="bounded",
         source=tmp_path / "defaults.json",
         settings={"min-resolution": 2160},
     )
-    resolved = downloader.resolve_parameter_settings(profile, {"max-resolution": 1080})
+    resolved = downloader.resolve_profile_settings(profile, {"max-resolution": 1080})
     with pytest.raises(ValueError, match="min-resolution cannot be greater"):
-        downloader.resolve_parameter_policy(resolved.settings)
+        downloader.resolve_profile_policy(resolved.settings)
 
 
 def test_raw_format_selector_cannot_be_silently_reinterpreted_by_hard_constraints(downloader) -> None:
     with pytest.raises(ValueError, match="raw format selection cannot be combined"):
-        downloader.resolve_parameter_policy(
+        downloader.resolve_profile_policy(
             {
                 "format": "137+140/22",
                 "max-resolution": 1080,
@@ -139,7 +139,7 @@ def test_raw_format_selector_can_coexist_with_preferences_without_being_rewritte
     downloader, monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
-    policy, cookies, browser = downloader.resolve_parameter_policy(
+    policy, cookies, browser = downloader.resolve_profile_policy(
         {
             "format": "137+140/22",
             "preferred-video-codec": "h264",
@@ -157,7 +157,7 @@ def test_raw_format_selector_can_coexist_with_preferences_without_being_rewritte
 
 def test_declarative_format_policy_is_visible_in_explain_payload(downloader, monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(downloader, "COOKIES_FILE", tmp_path / "missing-cookies.txt")
-    resolved = downloader.ResolvedParameterSettings(
+    resolved = downloader.ResolvedProfileSettings(
         settings={
             "max-resolution": 2160,
             "preferred-video-codec": "av01",
@@ -169,11 +169,11 @@ def test_declarative_format_policy_is_visible_in_explain_payload(downloader, mon
     )
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
     payload = downloader.explain_plan_payload(plan)

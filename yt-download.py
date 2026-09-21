@@ -2,20 +2,18 @@
 """Download media through yt-dlp using a small, predictable wrapper.
 
 The downloader resolves typed operational policy from built-in defaults, optional
-parameter profiles and explicit CLI settings while delegating output location
-and naming to optional output profiles stored beside the script in ``profiles``.
+profiles and explicit CLI settings, including output location and naming.
 
 Targets may be supplied directly on the command line, read from standard input,
 read from an explicitly named batch file, or read from ``./ids.txt`` when no
 input is specified.
 
-Downloader configuration has two deliberately separate profile layers:
+Downloader configuration uses one versioned JSON profile system:
 
-* ``-p NAME`` selects a named parameter profile from ``defaults.json``.
-* ``-P NAME`` selects an output-layout profile from ``profiles/``.
-* Explicit CLI options override values loaded from a parameter profile.
-* Output profiles remain the existing UTF-8 ``@profile`` files containing
-  ``path`` and/or ``output`` settings.
+* ``-p NAME`` selects a named profile from ``defaults.json``.
+* Profiles may contain both operational policy and output layout.
+* Explicit CLI options override values loaded from a profile.
+* The shipped ``default`` profile is selected when no profile is requested.
 """
 
 from __future__ import annotations
@@ -45,26 +43,26 @@ from yt_media_tools.ytdlp_runtime import (
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.19.1"
+PROGRAM_VERSION = "1.20.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROFILES_DIR = SCRIPT_DIR / "profiles"
 DEFAULT_PROFILE_NAME = "default"
-PROFILE_SIGNATURE = "@profile"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
-PARAMETER_PROFILE_VERSION = 1
+PROFILE_VERSION = 1
 RUN_MANIFEST_SCHEMA_VERSION = 1
-MACHINE_CONTRACT_VERSION = 1
-PLAN_SCHEMA_VERSION = 1
+MACHINE_CONTRACT_VERSION = 2
+PLAN_SCHEMA_VERSION = 2
 CAPABILITIES_SCHEMA_VERSION = 1
 CONFIG_VALIDATION_SCHEMA_VERSION = 1
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
-PARAMETER_PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SUPPORTED_COOKIE_BROWSERS = frozenset(
     {"brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale"}
 )
 
-PARAMETER_PROFILE_KEYS = (
+PROFILE_KEYS = (
+    "path",
+    "output",
     "resolution",
     "format",
     "cookies",
@@ -155,7 +153,9 @@ DEFAULT_SPONSORBLOCK_REMOVE = "all"
 
 # Machine-facing schema metadata is kept explicit rather than inferred from argparse.
 # The CLI and profile format have related but intentionally different contracts.
-PARAMETER_SETTING_DESCRIPTIONS = {
+PROFILE_SETTING_DESCRIPTIONS = {
+    "path": "yt-dlp output home path.",
+    "output": "yt-dlp output filename template.",
     "resolution": "Preferred vertical resolution used for format sorting.",
     "format": "Expert yt-dlp format selector. This is passed through unchanged.",
     "cookies": "Path to a Netscape-format cookie file.",
@@ -241,16 +241,12 @@ EXAMPLES = r"""Examples:
   Pipe discovery output directly into the downloader:
     yt-discover @SomeChannel --after 2025-01-01 | %(prog)s -
 
-  Select a named parameter profile from defaults.json:
+  Select a named profile from defaults.json:
     %(prog)s -p 4k VIDEO_ID
     %(prog)s -p playlist PLAYLIST_URL
 
-  List available parameter profiles:
-    %(prog)s --list-parameters
-
-  Select an output-layout profile by name or path:
-    %(prog)s -P playlist PLAYLIST_URL
-    %(prog)s --output-profile /srv/youtube/profiles/music VIDEO_ID
+  List available profiles:
+    %(prog)s --list-profiles
 
   Prefer 1080p when yt-dlp sorts available formats:
     %(prog)s -r 1080 VIDEO_ID
@@ -290,7 +286,7 @@ EXAMPLES = r"""Examples:
     %(prog)s --playlist-slice 1:20:2 PLAYLIST_URL
     %(prog)s --playlist-index 1 --playlist-range 5 8 --playlist-slice=-5: PLAYLIST_URL
 
-  Combine parameter-profile selection, an explicit override and playlist reversal:
+  Combine profile selection, an explicit override and playlist reversal:
     %(prog)s -p playlist -r 1440 --rev PLAYLIST_URL
 
   Acquire an active live stream from the current edge or, where supported, from its beginning:
@@ -335,7 +331,7 @@ EXAMPLES = r"""Examples:
   Explain the resolved download plan without executing it:
     %(prog)s --explain -p playlist PLAYLIST_URL
 
-  Emit the versioned machine contract and parameter-profile schema:
+  Emit the versioned machine contract and profile schema:
     %(prog)s --schema-json
 
   Validate the resolved defaults file without downloading:
@@ -356,25 +352,8 @@ EXAMPLES = r"""Examples:
   Include SHA-256 hashes for successfully completed primary outputs:
     %(prog)s --run-manifest run.json --hash-outputs VIDEO_ID
 
-  Emit a new parameter profile without modifying defaults.json:
-    %(prog)s --resolution 1440p --format "bv+ba/best" --no-cookies --generate-profile offline-1440
-
-  Add that generated profile directly to a defaults file:
-    %(prog)s -d defaults.json --resolution 1440p --no-cookies --generate-profile offline-1440 --write-profile
-
-Parameter profiles are versioned JSON objects in defaults.json. Explicit CLI settings override selected profile values.
-
-Output-profile format:
-
-  @profile
-  path=/mnt/storage/Downloads/YouTube/
-  output=%%(title)s [%%(id)s] [%%(uploader)s].%%(ext)s
-
-Profile resolution:
-
-  requested profile -> profiles/default -> yt-dlp native output defaults
-
-An existing but invalid profile is an error. A missing profile is recoverable.
+Profiles are versioned JSON objects in defaults.json and may contain both operational policy and output layout.
+Explicit CLI settings override selected profile values. The shipped default profile is selected when no profile is requested.
 """
 
 
@@ -520,8 +499,8 @@ class DownloadPolicy:
 
 
 @dataclass(frozen=True)
-class ParameterProfile:
-    """One validated named Downloader parameter profile."""
+class Profile:
+    """One validated named Downloader profile."""
 
     name: str
     settings: dict[str, object]
@@ -529,7 +508,7 @@ class ParameterProfile:
 
 
 @dataclass(frozen=True)
-class ResolvedParameterSettings:
+class ResolvedProfileSettings:
     """Merged Downloader settings plus the source of each effective value."""
 
     settings: dict[str, object]
@@ -567,8 +546,8 @@ class DownloadPlan:
     cookies_source: str
     remove_completed_ids: bool
     defaults_file: Path
-    parameter_profile: ParameterProfile | None
-    parameter_sources: dict[str, str]
+    profile: Profile | None
+    setting_sources: dict[str, str]
     remove_completed_rows: bool = False
 
     def command(self, *, output_event_file: Path | None = None) -> list[str]:
@@ -637,7 +616,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
-            "Output profiles live in the profiles/ directory beside this script.\n"
+            "Profiles live in the versioned defaults.json file beside this script.\n"
             "Run %(prog)s --examples for practical examples and profile syntax."
         ),
     )
@@ -649,26 +628,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-p",
+        "--profile",
         "--parameter-profile",
+        dest="profile",
         metavar="NAME",
-        help="Apply named download parameters from the resolved defaults JSON file.",
+        help="Apply a named Downloader profile from the resolved defaults JSON file.",
     )
     parser.add_argument(
         "-d",
         "--defaults",
         type=Path,
         metavar="FILE",
-        help="Use FILE for named parameter profiles instead of script-local defaults.json.",
+        help="Use FILE for named profiles instead of script-local defaults.json.",
     )
     parser.add_argument(
+        "--list-profiles",
         "--list-parameters",
+        dest="list_profiles",
         action="store_true",
-        help="List named parameter profiles in the resolved defaults JSON file and exit.",
+        help="List named profiles in the resolved defaults JSON file and exit.",
     )
     parser.add_argument(
         "--schema-json",
         action="store_true",
-        help="Emit the versioned Downloader machine contract and parameter-profile JSON Schema, then exit.",
+        help="Emit the versioned Downloader machine contract and profile JSON Schema, then exit.",
     )
     parser.add_argument(
         "--validate-config",
@@ -688,32 +671,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report Downloader and external-tool capabilities as versioned JSON, then exit.",
     )
     parser.add_argument(
-        "--generate-profile",
-        metavar="NAME",
-        help="Generate a named parameter profile from profile-eligible settings and exit.",
-    )
-    parser.add_argument(
-        "--write-profile",
-        action="store_true",
-        help="Write --generate-profile into the resolved defaults JSON file instead of only printing it.",
-    )
-    parser.add_argument(
-        "--overwrite-profile",
-        action="store_true",
-        help="Allow --write-profile to replace an existing profile of the same name.",
-    )
-    parser.add_argument(
-        "-P",
-        "--output-profile",
-        "--profile",
-        dest="output_profile",
-        metavar="PROFILE",
-        help=(
-            "Output-layout profile name or explicit path. --profile is retained as a legacy alias; "
-            "bare names are looked up under profiles/ beside this script."
-        ),
-    )
-    parser.add_argument(
         "-r",
         "--resolution",
         default=None,
@@ -731,7 +688,7 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FORMAT",
         help=(
             f"Pass yt-dlp format selector FORMAT directly (built-in default: {FORMAT_SELECTOR}). "
-            "This may also be stored in a parameter profile."
+            "This may also be stored in a profile."
         ),
     )
     parser.add_argument(
@@ -790,7 +747,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-audio-only",
         dest="audio_only",
         action="store_false",
-        help="Disable audio-only source selection inherited from a parameter profile.",
+        help="Disable audio-only source selection inherited from a profile.",
     )
     parser.add_argument(
         "--audio-source-codec",
@@ -985,7 +942,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-live",
         dest="live",
         action="store_false",
-        help="Disable live-media policy inherited from a parameter profile.",
+        help="Disable live-media policy inherited from a profile.",
     )
     live_start_group = parser.add_mutually_exclusive_group()
     live_start_group.add_argument(
@@ -1000,7 +957,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-live-from-start",
         dest="live_from_start",
         action="store_false",
-        help="Acquire from the current live edge, overriding a live-from-start parameter profile.",
+        help="Acquire from the current live edge, overriding a live-from-start profile.",
     )
     parser.add_argument(
         "--wait-for-video",
@@ -1011,7 +968,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-wait-for-video",
         dest="no_wait_for_video",
         action="store_true",
-        help="Disable scheduled-stream waiting inherited from a parameter profile.",
+        help="Disable scheduled-stream waiting inherited from a profile.",
     )
     live_chat_group = parser.add_mutually_exclusive_group()
     live_chat_group.add_argument(
@@ -1025,7 +982,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-write-live-chat",
         dest="write_live_chat",
         action="store_false",
-        help="Disable live-chat sidecar acquisition inherited from a parameter profile.",
+        help="Disable live-chat sidecar acquisition inherited from a profile.",
     )
     parser.add_argument(
         "--chapter-section",
@@ -1050,7 +1007,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--whole-item",
         action="store_true",
-        help="Disable chapter/time-range selection inherited from a parameter profile.",
+        help="Disable chapter/time-range selection inherited from a profile.",
     )
     parser.add_argument(
         "--limit-rate",
@@ -1154,7 +1111,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-reverse-playlist",
         dest="reverse_playlist",
         action="store_false",
-        help="Disable reverse playlist traversal, overriding a parameter profile.",
+        help="Disable reverse playlist traversal, overriding a profile.",
     )
     playlist_group = parser.add_mutually_exclusive_group()
     playlist_group.add_argument(
@@ -1201,7 +1158,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--auto-cookies",
         action="store_true",
         default=None,
-        help="Restore automatic script-local cookie discovery, overriding a parameter profile.",
+        help="Restore automatic script-local cookie discovery, overriding a profile.",
     )
     explain_group = parser.add_mutually_exclusive_group()
     explain_group.add_argument(
@@ -1351,158 +1308,46 @@ def _batch_file_source(path: Path) -> InputSource:
     return InputSource(batch_file=expanded)
 
 
-def _looks_like_explicit_path(value: str) -> bool:
-    """Return whether a profile argument should be interpreted as a path."""
-    path = Path(value).expanduser()
-    if path.is_absolute():
-        return True
-    if value.startswith((".", "~")):
-        return True
-    if os.sep in value:
-        return True
-    return bool(os.altsep and os.altsep in value)
-
-
-def profile_path(value: str) -> Path:
-    """Resolve a profile name or explicit path to one filesystem path."""
-    if _looks_like_explicit_path(value):
-        return Path(value).expanduser()
-    return PROFILES_DIR / value
-
-
-def parse_profile(path: Path) -> OutputProfile:
-    """Parse and validate one existing output profile.
-
-    The first non-empty line must be ``@profile``. Subsequent blank lines and
-    comments beginning with ``#`` are ignored. Recognised keys are ``path`` and
-    ``output``. Keys are case-insensitive and may appear at most once.
-    """
-    try:
-        text = path.read_text(encoding="utf-8-sig")
-    except UnicodeDecodeError as exc:
-        raise ValueError(f"profile is not valid UTF-8 text: {path}") from exc
-    except OSError as exc:
-        raise ValueError(f"unable to read profile {path}: {exc}") from exc
-
-    lines = text.splitlines()
-    first_content_index: int | None = None
-    for index, line in enumerate(lines):
-        if line.strip():
-            first_content_index = index
-            break
-
-    if first_content_index is None:
-        raise ValueError(f"profile is empty: {path}")
-
-    signature = lines[first_content_index].strip()
-    if signature != PROFILE_SIGNATURE:
-        raise ValueError(f"invalid profile {path}: expected {PROFILE_SIGNATURE!r} on the first non-empty line")
-
-    settings: dict[str, str] = {}
-    recognised = {"path", "output"}
-
-    for line_number, raw_line in enumerate(lines[first_content_index + 1 :], start=first_content_index + 2):
-        stripped = raw_line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if stripped.startswith("@"):
-            raise ValueError(f"invalid profile {path}, line {line_number}: unknown directive {stripped!r}")
-        if "=" not in raw_line:
-            raise ValueError(f"invalid profile {path}, line {line_number}: expected KEY=VALUE")
-
-        raw_key, raw_value = raw_line.split("=", 1)
-        key = raw_key.strip().lower()
-        value = raw_value.strip()
-
-        if key not in recognised:
-            hint = " Did you mean 'path'?" if key == "paht" else ""
-            raise ValueError(f"invalid profile {path}, line {line_number}: unknown setting {key!r}.{hint}")
-        if key in settings:
-            raise ValueError(f"invalid profile {path}, line {line_number}: duplicate setting {key!r}")
-        if not value:
-            raise ValueError(f"invalid profile {path}, line {line_number}: setting {key!r} must not be empty")
-        settings[key] = value
-
-    if not settings:
-        raise ValueError(f"invalid profile {path}: define at least one of 'path' or 'output'")
-
-    return OutputProfile(
-        source=path,
-        path=settings.get("path"),
-        output=settings.get("output"),
-    )
-
-
-def resolve_profile(requested: str | None) -> OutputProfile | None:
-    """Resolve a requested profile with fallback to ``profiles/default``.
-
-    Missing profiles are recoverable. Existing but invalid profiles are not.
-    ``None`` means yt-dlp should use its native output location and naming.
-    """
-    default_path = PROFILES_DIR / DEFAULT_PROFILE_NAME
-
-    if requested is not None:
-        requested_path = profile_path(requested)
-        if requested_path.is_file():
-            return parse_profile(requested_path)
-
-        print(
-            f"Warning: profile {requested!r} was not found at {requested_path}. Trying {default_path}.",
-            file=sys.stderr,
-        )
-
-    if default_path.is_file():
-        return parse_profile(default_path)
-
-    if requested is not None:
-        print(
-            "Warning: default profile was not found. Using yt-dlp's native output defaults.",
-            file=sys.stderr,
-        )
-
-    return None
-
-
-def validate_parameter_profile_name(name: str) -> str:
-    """Validate a parameter-profile name used as a JSON object key."""
-    if not PARAMETER_PROFILE_NAME_RE.fullmatch(name):
-        raise ValueError(f"invalid parameter profile name {name!r}; use letters, numbers, '.', '_' or '-'")
+def validate_profile_name(name: str) -> str:
+    """Validate a profile name used as a JSON object key."""
+    if not PROFILE_NAME_RE.fullmatch(name):
+        raise ValueError(f"invalid profile name {name!r}; use letters, numbers, '.', '_' or '-'")
     return name
 
 
 def _validate_rate_setting(key: str, value: object) -> str:
     """Validate a yt-dlp byte-rate setting without accepting arbitrary option text."""
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"parameter setting {key!r} must be a non-empty JSON string")
+        raise ValueError(f"profile setting {key!r} must be a non-empty JSON string")
     normalised = value.strip()
     if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?[KMGTP]?", normalised, flags=re.IGNORECASE):
-        raise ValueError(f"parameter setting {key!r} must be a yt-dlp byte rate such as '500K' or '20M'")
+        raise ValueError(f"profile setting {key!r} must be a yt-dlp byte rate such as '500K' or '20M'")
     return normalised
 
 
 def _validate_retry_setting(key: str, value: object) -> str:
     """Validate a retry count accepted by yt-dlp."""
     if isinstance(value, bool):
-        raise ValueError(f"parameter setting {key!r} must be an integer or 'infinite'")
+        raise ValueError(f"profile setting {key!r} must be an integer or 'infinite'")
     if isinstance(value, int):
         if value < 0:
-            raise ValueError(f"parameter setting {key!r} must not be negative")
+            raise ValueError(f"profile setting {key!r} must not be negative")
         return str(value)
     if isinstance(value, str):
         normalised = value.strip().lower()
         if normalised == "infinite" or normalised.isdigit():
             return normalised
-    raise ValueError(f"parameter setting {key!r} must be a non-negative integer or 'infinite'")
+    raise ValueError(f"profile setting {key!r} must be a non-negative integer or 'infinite'")
 
 
 def _validate_string_list_setting(key: str, value: object) -> list[str]:
     """Validate a profile setting represented by one or more non-empty strings."""
     if not isinstance(value, list) or not value:
-        raise ValueError(f"parameter setting {key!r} must be a non-empty JSON array of strings")
+        raise ValueError(f"profile setting {key!r} must be a non-empty JSON array of strings")
     result: list[str] = []
     for item in value:
         if not isinstance(item, str) or not item.strip():
-            raise ValueError(f"parameter setting {key!r} must contain only non-empty JSON strings")
+            raise ValueError(f"profile setting {key!r} must contain only non-empty JSON strings")
         result.append(item.strip())
     return result
 
@@ -1510,40 +1355,40 @@ def _validate_string_list_setting(key: str, value: object) -> list[str]:
 def _validate_positive_integer_setting(key: str, value: object) -> int:
     """Validate a strictly positive JSON integer setting."""
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-        raise ValueError(f"parameter setting {key!r} must be a positive JSON integer")
+        raise ValueError(f"profile setting {key!r} must be a positive JSON integer")
     return value
 
 
 def _validate_resolution_bound_setting(key: str, value: object) -> int:
     """Validate a hard vertical-resolution bound."""
     if isinstance(value, bool):
-        raise ValueError(f"parameter setting {key!r} must be a positive integer or numeric string")
+        raise ValueError(f"profile setting {key!r} must be a positive integer or numeric string")
     text = str(value).strip().lower()
     if text.endswith("p"):
         text = text[:-1]
     if not text.isdigit() or int(text) < 1:
-        raise ValueError(f"parameter setting {key!r} must be a positive integer or numeric string")
+        raise ValueError(f"profile setting {key!r} must be a positive integer or numeric string")
     return int(text)
 
 
 def _validate_codec_setting(key: str, value: object) -> str:
     """Validate a codec preference without accepting format-expression syntax."""
     if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", value.strip()):
-        raise ValueError(f"parameter setting {key!r} must be a codec name such as 'av01', 'vp9' or 'opus'")
+        raise ValueError(f"profile setting {key!r} must be a codec name such as 'av01', 'vp9' or 'opus'")
     return value.strip().lower()
 
 
 def _validate_nonempty_string_setting(key: str, value: object) -> str:
     """Validate an intentionally opaque non-empty yt-dlp string setting."""
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"parameter setting {key!r} must be a non-empty JSON string")
+        raise ValueError(f"profile setting {key!r} must be a non-empty JSON string")
     return value.strip()
 
 
 def _validate_audio_source_container_setting(key: str, value: object) -> str:
     """Validate an exact source extension/container token."""
     if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", value.strip()):
-        raise ValueError(f"parameter setting {key!r} must be a simple container/extension name")
+        raise ValueError(f"profile setting {key!r} must be a simple container/extension name")
     return value.strip().lower()
 
 
@@ -1551,25 +1396,25 @@ def _validate_audio_format_setting(value: object) -> str:
     """Validate a yt-dlp audio conversion format."""
     if not isinstance(value, str) or value.lower() not in SUPPORTED_AUDIO_FORMATS:
         supported = ", ".join(sorted(SUPPORTED_AUDIO_FORMATS))
-        raise ValueError(f"parameter setting 'audio-format' must be one of: {supported}")
+        raise ValueError(f"profile setting 'audio-format' must be one of: {supported}")
     return value.lower()
 
 
 def _validate_audio_quality_setting(value: object) -> str:
     """Validate yt-dlp's documented VBR or bitrate audio-quality syntax."""
     if isinstance(value, bool):
-        raise ValueError("parameter setting 'audio-quality' must be 0..10 or a bitrate such as '128K'")
+        raise ValueError("profile setting 'audio-quality' must be 0..10 or a bitrate such as '128K'")
     if isinstance(value, int):
         if 0 <= value <= 10:
             return str(value)
-        raise ValueError("parameter setting 'audio-quality' integer must be between 0 and 10")
+        raise ValueError("profile setting 'audio-quality' integer must be between 0 and 10")
     if isinstance(value, str):
         text = value.strip()
         if re.fullmatch(r"(?:10|[0-9])", text):
             return text
         if re.fullmatch(r"[1-9][0-9]*(?:\.[0-9]+)?[KkMm]", text):
             return text.upper()
-    raise ValueError("parameter setting 'audio-quality' must be 0..10 or a bitrate such as '128K'")
+    raise ValueError("profile setting 'audio-quality' must be 0..10 or a bitrate such as '128K'")
 
 
 def _validate_sponsorblock_categories(key: str, value: object) -> str:
@@ -1578,13 +1423,13 @@ def _validate_sponsorblock_categories(key: str, value: object) -> str:
     allowed = SPONSORBLOCK_MARK_CATEGORIES if key == "sponsorblock-mark" else SPONSORBLOCK_REMOVE_CATEGORIES
     categories = [item.strip() for item in text.split(",")]
     if any(not item for item in categories):
-        raise ValueError(f"parameter setting {key!r} contains an empty SponsorBlock category")
+        raise ValueError(f"profile setting {key!r} contains an empty SponsorBlock category")
     for item in categories:
         category = item[1:] if item.startswith("-") else item
         if category not in allowed:
             supported = ", ".join(sorted(allowed))
             raise ValueError(
-                f"parameter setting {key!r} contains unsupported SponsorBlock category {category!r}; "
+                f"profile setting {key!r} contains unsupported SponsorBlock category {category!r}; "
                 f"expected one of: {supported}"
             )
     return ",".join(categories)
@@ -1593,15 +1438,15 @@ def _validate_sponsorblock_categories(key: str, value: object) -> str:
 def _validate_wait_for_video_setting(value: object) -> str:
     """Validate yt-dlp's scheduled-stream wait interval without accepting option text."""
     if isinstance(value, bool):
-        raise ValueError("parameter setting 'wait-for-video' must be MIN or MIN-MAX seconds")
+        raise ValueError("profile setting 'wait-for-video' must be MIN or MIN-MAX seconds")
     text = str(value).strip()
     match = re.fullmatch(r"([0-9]+)(?:-([0-9]+))?", text)
     if match is None:
-        raise ValueError("parameter setting 'wait-for-video' must be MIN or MIN-MAX seconds")
+        raise ValueError("profile setting 'wait-for-video' must be MIN or MIN-MAX seconds")
     minimum = int(match.group(1))
     maximum = int(match.group(2)) if match.group(2) is not None else None
     if minimum < 1 or (maximum is not None and maximum < minimum):
-        raise ValueError("parameter setting 'wait-for-video' requires MIN >= 1 and MAX >= MIN")
+        raise ValueError("profile setting 'wait-for-video' requires MIN >= 1 and MAX >= MIN")
     return str(minimum) if maximum is None else f"{minimum}-{maximum}"
 
 
@@ -1640,13 +1485,13 @@ def _normalise_playlist_slice(value: object) -> str:
 
 
 def _validate_playlist_items_setting(value: object) -> list[str]:
-    """Validate canonical playlist index/range/slice expressions from a parameter profile."""
+    """Validate canonical playlist index/range/slice expressions from a profile."""
     if not isinstance(value, list) or not value:
-        raise ValueError("parameter setting 'playlist-items' must be a non-empty JSON array")
+        raise ValueError("profile setting 'playlist-items' must be a non-empty JSON array")
     result: list[str] = []
     for item in value:
         if isinstance(item, bool):
-            raise ValueError("parameter setting 'playlist-items' entries must be integers or slice strings")
+            raise ValueError("profile setting 'playlist-items' entries must be integers or slice strings")
         if isinstance(item, int):
             result.append(str(_validate_playlist_index(item, label="playlist-items index")))
             continue
@@ -1660,7 +1505,7 @@ def _validate_playlist_items_setting(value: object) -> list[str]:
                 except ValueError as exc:
                     raise ValueError(f"invalid playlist-items entry {item!r}: {exc}") from exc
             continue
-        raise ValueError("parameter setting 'playlist-items' entries must be integers or slice strings")
+        raise ValueError("profile setting 'playlist-items' entries must be integers or slice strings")
     return result
 
 
@@ -1709,13 +1554,13 @@ def _normalise_time_range(value: object) -> str:
 
 
 def _validate_chapter_sections_setting(value: object) -> list[str]:
-    """Validate chapter regexes from a parameter profile."""
+    """Validate chapter regexes from a profile."""
     if not isinstance(value, list) or not value:
-        raise ValueError("parameter setting 'chapter-sections' must be a non-empty JSON array")
+        raise ValueError("profile setting 'chapter-sections' must be a non-empty JSON array")
     result: list[str] = []
     for item in value:
         if not isinstance(item, str) or not item.strip():
-            raise ValueError("parameter setting 'chapter-sections' entries must be non-empty strings")
+            raise ValueError("profile setting 'chapter-sections' entries must be non-empty strings")
         try:
             re.compile(item)
         except re.error as exc:
@@ -1725,9 +1570,9 @@ def _validate_chapter_sections_setting(value: object) -> list[str]:
 
 
 def _validate_time_ranges_setting(value: object) -> list[str]:
-    """Validate time ranges from a parameter profile."""
+    """Validate time ranges from a profile."""
     if not isinstance(value, list) or not value:
-        raise ValueError("parameter setting 'time-ranges' must be a non-empty JSON array")
+        raise ValueError("profile setting 'time-ranges' must be a non-empty JSON array")
     result: list[str] = []
     for item in value:
         if isinstance(item, str):
@@ -1738,34 +1583,38 @@ def _validate_time_ranges_setting(value: object) -> list[str]:
         elif isinstance(item, list) and len(item) == 2:
             result.append(_normalise_time_range(item))
         else:
-            raise ValueError("parameter setting 'time-ranges' entries must be strings or two-item arrays")
+            raise ValueError("profile setting 'time-ranges' entries must be strings or two-item arrays")
     return result
 
 
-def _validate_parameter_setting(key: str, value: object) -> object:
-    """Validate one parameter-profile setting and return its normalised value."""
+def _validate_profile_setting(key: str, value: object) -> object:
+    """Validate one profile setting and return its normalised value."""
     if key == "resolution":
         if not isinstance(value, str):
-            raise ValueError("parameter setting 'resolution' must be a JSON string")
+            raise ValueError("profile setting 'resolution' must be a JSON string")
         validate_resolution(value)
         return value
+    if key in {"path", "output"}:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"profile setting {key!r} must be a non-empty JSON string")
+        return value.strip()
     if key == "format":
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("parameter setting 'format' must be a non-empty JSON string")
+            raise ValueError("profile setting 'format' must be a non-empty JSON string")
         return value.strip()
     if key in {"cookies", "archive", "temp-path"}:
         if not isinstance(value, str) or not value.strip():
-            raise ValueError(f"parameter setting {key!r} must be a non-empty JSON string")
+            raise ValueError(f"profile setting {key!r} must be a non-empty JSON string")
         return value.strip()
     if key == "cookies-from-browser":
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("parameter setting 'cookies-from-browser' must be a non-empty JSON string")
+            raise ValueError("profile setting 'cookies-from-browser' must be a non-empty JSON string")
         normalised = value.strip()
         browser = re.split(r"[+:]", normalised, maxsplit=1)[0].lower()
         if browser not in SUPPORTED_COOKIE_BROWSERS:
             supported = ", ".join(sorted(SUPPORTED_COOKIE_BROWSERS))
             raise ValueError(
-                f"parameter setting 'cookies-from-browser' uses unsupported browser {browser!r}; "
+                f"profile setting 'cookies-from-browser' uses unsupported browser {browser!r}; "
                 f"expected one of: {supported}"
             )
         return normalised
@@ -1783,18 +1632,18 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         return _validate_audio_quality_setting(value)
     if key == "preferred-hdr":
         if not isinstance(value, str) or value.lower() not in {"sdr", "hdr", "dv"}:
-            raise ValueError("parameter setting 'preferred-hdr' must be one of: sdr, hdr, dv")
+            raise ValueError("profile setting 'preferred-hdr' must be one of: sdr, hdr, dv")
         return value.lower()
     if key == "merge-container":
         if not isinstance(value, str) or value.lower() not in SUPPORTED_MERGE_CONTAINERS:
             supported = ", ".join(sorted(SUPPORTED_MERGE_CONTAINERS))
-            raise ValueError(f"parameter setting 'merge-container' must be one of: {supported}")
+            raise ValueError(f"profile setting 'merge-container' must be one of: {supported}")
         return value.lower()
     if key in {"limit-rate", "throttled-rate"}:
         return _validate_rate_setting(key, value)
     if key == "concurrent-fragments":
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-            raise ValueError("parameter setting 'concurrent-fragments' must be a positive JSON integer")
+            raise ValueError("profile setting 'concurrent-fragments' must be a positive JSON integer")
         return value
     if key in {"retries", "fragment-retries", "file-access-retries", "extractor-retries"}:
         return _validate_retry_setting(key, value)
@@ -1832,9 +1681,9 @@ def _validate_parameter_setting(key: str, value: object) -> object:
         "write-live-chat",
     }:
         if not isinstance(value, bool):
-            raise ValueError(f"parameter setting {key!r} must be a JSON Boolean")
+            raise ValueError(f"profile setting {key!r} must be a JSON Boolean")
         return value
-    raise ValueError(f"unknown parameter setting {key!r}")
+    raise ValueError(f"unknown profile setting {key!r}")
 
 
 def _json_schema_string(*, description: str, pattern: str | None = None) -> dict[str, object]:
@@ -1858,14 +1707,14 @@ def _json_schema_positive_integer(*, description: str) -> dict[str, object]:
     return {"type": "integer", "minimum": 1, "description": description}
 
 
-def parameter_profile_setting_schema() -> dict[str, object]:
-    """Return JSON Schema for one parameter-profile settings object.
+def profile_setting_schema() -> dict[str, object]:
+    """Return JSON Schema for one profile settings object.
 
     JSON Schema describes structural constraints. Cross-field comparisons and
     yt-dlp expression validation that cannot be represented faithfully remain
     runtime semantic checks and are listed in the surrounding machine contract.
     """
-    descriptions = PARAMETER_SETTING_DESCRIPTIONS
+    descriptions = PROFILE_SETTING_DESCRIPTIONS
     boolean_keys = {
         "no-cookies",
         "reverse-playlist",
@@ -1900,6 +1749,8 @@ def parameter_profile_setting_schema() -> dict[str, object]:
 
     properties.update(
         {
+            "path": _json_schema_string(description=descriptions["path"]),
+            "output": _json_schema_string(description=descriptions["output"]),
             "resolution": _json_schema_string(
                 description=descriptions["resolution"],
                 pattern=r"^(?:[bB][eE][sS][tT]|[1-9][0-9]*[pP]?)$",
@@ -2044,21 +1895,21 @@ def parameter_profile_setting_schema() -> dict[str, object]:
         }
     )
 
-    missing = set(PARAMETER_PROFILE_KEYS) - set(properties)
-    extra = set(properties) - set(PARAMETER_PROFILE_KEYS)
+    missing = set(PROFILE_KEYS) - set(properties)
+    extra = set(properties) - set(PROFILE_KEYS)
     if missing or extra:
         raise RuntimeError(
-            "parameter-profile schema metadata is out of sync with runtime keys: "
+            "profile schema metadata is out of sync with runtime keys: "
             f"missing={sorted(missing)!r}, extra={sorted(extra)!r}"
         )
 
     return {
         "$schema": JSON_SCHEMA_DIALECT,
-        "$id": "urn:yt-media-tools:downloader:parameter-settings:1",
-        "title": "yt-downloader parameter-profile settings",
+        "$id": "urn:yt-media-tools:downloader:profile-settings:1",
+        "title": "yt-downloader profile settings",
         "type": "object",
         "additionalProperties": False,
-        "properties": {key: properties[key] for key in PARAMETER_PROFILE_KEYS},
+        "properties": {key: properties[key] for key in PROFILE_KEYS},
         "allOf": [
             {
                 "not": {
@@ -2092,23 +1943,23 @@ def parameter_profile_setting_schema() -> dict[str, object]:
     }
 
 
-def parameter_profile_file_schema() -> dict[str, object]:
+def profile_file_schema() -> dict[str, object]:
     """Return JSON Schema for the complete versioned defaults/profile file."""
-    settings_schema = parameter_profile_setting_schema()
+    settings_schema = profile_setting_schema()
     embedded_settings = {key: value for key, value in settings_schema.items() if key not in {"$schema", "$id"}}
     return {
         "$schema": JSON_SCHEMA_DIALECT,
-        "$id": "urn:yt-media-tools:downloader:parameter-profiles:1",
-        "title": "yt-downloader parameter profiles",
+        "$id": "urn:yt-media-tools:downloader:profiles:1",
+        "title": "yt-downloader profiles",
         "type": "object",
         "additionalProperties": False,
         "required": ["version", "profiles"],
         "$defs": {"settings": embedded_settings},
         "properties": {
-            "version": {"const": PARAMETER_PROFILE_VERSION},
+            "version": {"const": PROFILE_VERSION},
             "profiles": {
                 "type": "object",
-                "propertyNames": {"pattern": PARAMETER_PROFILE_NAME_RE.pattern},
+                "propertyNames": {"pattern": PROFILE_NAME_RE.pattern},
                 "additionalProperties": {"$ref": "#/$defs/settings"},
             },
         },
@@ -2121,11 +1972,11 @@ def machine_contract() -> dict[str, object]:
         "contract_version": MACHINE_CONTRACT_VERSION,
         "downloader": {"name": PROGRAM_NAME, "version": PROGRAM_VERSION},
         "json_schema_dialect": JSON_SCHEMA_DIALECT,
-        "parameter_profiles": {
-            "format_version": PARAMETER_PROFILE_VERSION,
-            "file_schema": parameter_profile_file_schema(),
-            "settings_schema": parameter_profile_setting_schema(),
-            "precedence": ["explicit-cli", "parameter-profile", "built-in-defaults"],
+        "profiles": {
+            "format_version": PROFILE_VERSION,
+            "file_schema": profile_file_schema(),
+            "settings_schema": profile_setting_schema(),
+            "precedence": ["explicit-cli", "profile", "built-in-defaults"],
             "unknown_settings": "error",
             "semantic_validation": [
                 "minimum resolution must not exceed maximum resolution",
@@ -2170,8 +2021,8 @@ def emit_machine_contract() -> None:
 
 
 def validate_config_file(path: Path) -> dict[str, object]:
-    """Validate a complete parameter-profile file using Downloader's runtime rules."""
-    profiles = load_parameter_profiles(path, allow_missing=False)
+    """Validate a complete profile file using Downloader's runtime rules."""
+    profiles = load_profiles(path, allow_missing=False)
     return {
         "kind": "yt-download-config-validation",
         "schema_version": CONFIG_VALIDATION_SCHEMA_VERSION,
@@ -2252,41 +2103,41 @@ def format_capabilities(payload: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
-def validate_parameter_settings(settings: object, *, profile_name: str) -> dict[str, object]:
+def validate_profile_settings(settings: object, *, profile_name: str) -> dict[str, object]:
     """Validate a profile settings object without silently coercing JSON types."""
     if not isinstance(settings, dict):
-        raise ValueError(f"parameter profile {profile_name!r} must be a JSON object")
+        raise ValueError(f"profile {profile_name!r} must be a JSON object")
 
     validated: dict[str, object] = {}
     for key, value in settings.items():
         if not isinstance(key, str):
-            raise ValueError(f"parameter profile {profile_name!r} contains a non-string setting name")
-        if key not in PARAMETER_PROFILE_KEYS:
-            raise ValueError(f"parameter profile {profile_name!r} contains unknown option {key!r}")
-        validated[key] = _validate_parameter_setting(key, value)
+            raise ValueError(f"profile {profile_name!r} contains a non-string setting name")
+        if key not in PROFILE_KEYS:
+            raise ValueError(f"profile {profile_name!r} contains unknown option {key!r}")
+        validated[key] = _validate_profile_setting(key, value)
 
     cookie_keys = {"cookies", "cookies-from-browser", "no-cookies"} & set(validated)
     if len(cookie_keys) > 1:
         rendered = ", ".join(repr(key) for key in sorted(cookie_keys))
-        raise ValueError(f"parameter profile {profile_name!r} cannot combine cookie settings: {rendered}")
+        raise ValueError(f"profile {profile_name!r} cannot combine cookie settings: {rendered}")
     if (
         "min-resolution" in validated
         and "max-resolution" in validated
         and int(validated["min-resolution"]) > int(validated["max-resolution"])
     ):
-        raise ValueError(f"parameter profile {profile_name!r} has min-resolution above max-resolution")
+        raise ValueError(f"profile {profile_name!r} has min-resolution above max-resolution")
     if "min-fps" in validated and "max-fps" in validated and int(validated["min-fps"]) > int(validated["max-fps"]):
-        raise ValueError(f"parameter profile {profile_name!r} has min-fps above max-fps")
+        raise ValueError(f"profile {profile_name!r} has min-fps above max-fps")
     if "audio-quality" in validated and "audio-format" not in validated:
-        raise ValueError(f"parameter profile {profile_name!r} cannot set audio-quality without audio-format")
+        raise ValueError(f"profile {profile_name!r} cannot set audio-quality without audio-format")
     if validated.get("playlist") is False and "playlist-items" in validated:
-        raise ValueError(f"parameter profile {profile_name!r} cannot combine playlist-items with playlist=false")
+        raise ValueError(f"profile {profile_name!r} cannot combine playlist-items with playlist=false")
     live_options = {key for key in ("live-from-start", "write-live-chat") if validated.get(key) is True}
     if "wait-for-video" in validated:
         live_options.add("wait-for-video")
     if live_options and validated.get("live") is not True:
         rendered = ", ".join(sorted(live_options))
-        raise ValueError(f"parameter profile {profile_name!r} requires live=true for: {rendered}")
+        raise ValueError(f"profile {profile_name!r} requires live=true for: {rendered}")
     return validated
 
 
@@ -2295,7 +2146,7 @@ def defaults_path(requested: Path | None) -> Path:
     return requested.expanduser() if requested is not None else DEFAULTS_FILE
 
 
-def load_parameter_profiles(path: Path, *, allow_missing: bool) -> dict[str, ParameterProfile]:
+def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
     """Load and strictly validate one versioned defaults JSON file."""
     if not path.is_file():
         if allow_missing:
@@ -2317,53 +2168,55 @@ def load_parameter_profiles(path: Path, *, allow_missing: bool) -> dict[str, Par
     if unknown_root:
         rendered = ", ".join(repr(key) for key in sorted(unknown_root))
         raise ValueError(f"defaults file {path} contains unknown top-level key(s): {rendered}")
-    if payload.get("version") != PARAMETER_PROFILE_VERSION:
+    if payload.get("version") != PROFILE_VERSION:
         raise ValueError(
-            f"defaults file {path} has unsupported version {payload.get('version')!r}; "
-            f"expected {PARAMETER_PROFILE_VERSION}"
+            f"defaults file {path} has unsupported version {payload.get('version')!r}; expected {PROFILE_VERSION}"
         )
     profiles_raw = payload.get("profiles")
     if not isinstance(profiles_raw, dict):
         raise ValueError(f"defaults file {path} must define a 'profiles' JSON object")
 
-    profiles: dict[str, ParameterProfile] = {}
+    profiles: dict[str, Profile] = {}
     for name, raw_settings in profiles_raw.items():
         if not isinstance(name, str):
             raise ValueError(f"defaults file {path} contains a non-string profile name")
-        validate_parameter_profile_name(name)
-        settings = validate_parameter_settings(raw_settings, profile_name=name)
-        profiles[name] = ParameterProfile(name=name, settings=settings, source=path)
+        validate_profile_name(name)
+        settings = validate_profile_settings(raw_settings, profile_name=name)
+        profiles[name] = Profile(name=name, settings=settings, source=path)
     return profiles
 
 
-def select_parameter_profile(
+def select_profile(
     name: str | None,
     path: Path,
     *,
     explicit_defaults: bool,
-) -> ParameterProfile | None:
-    """Resolve one selected parameter profile, if requested."""
+) -> Profile | None:
+    """Resolve one selected profile, if requested."""
     if name is None:
         if explicit_defaults and not path.is_file():
             raise ValueError(f"defaults file not found: {path}")
-        return None
-    validate_parameter_profile_name(name)
-    profiles = load_parameter_profiles(path, allow_missing=False)
+        if not path.is_file():
+            return None
+        profiles = load_profiles(path, allow_missing=False)
+        return profiles.get(DEFAULT_PROFILE_NAME)
+    validate_profile_name(name)
+    profiles = load_profiles(path, allow_missing=False)
     try:
         return profiles[name]
     except KeyError as exc:
-        raise ValueError(f"parameter profile {name!r} was not found in {path}") from exc
+        raise ValueError(f"profile {name!r} was not found in {path}") from exc
 
 
-def list_parameter_profiles(path: Path, *, explicit_defaults: bool) -> list[str]:
-    """Return sorted parameter-profile names from one defaults file."""
+def list_profiles(path: Path, *, explicit_defaults: bool) -> list[str]:
+    """Return sorted profile names from one defaults file."""
     if not path.is_file() and not explicit_defaults:
         return []
-    profiles = load_parameter_profiles(path, allow_missing=False)
+    profiles = load_profiles(path, allow_missing=False)
     return sorted(profiles, key=str.casefold)
 
 
-def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
+def explicit_profile_settings(args: argparse.Namespace) -> dict[str, object]:
     """Return only profile-eligible settings explicitly supplied on the CLI."""
     settings: dict[str, object] = {}
     scalar_settings = {
@@ -2398,11 +2251,11 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
     }
     for key, value in scalar_settings.items():
         if value is not None:
-            settings[key] = _validate_parameter_setting(key, value)
+            settings[key] = _validate_profile_setting(key, value)
     if args.retry_sleep is not None:
-        settings["retry-sleep"] = _validate_parameter_setting("retry-sleep", args.retry_sleep)
+        settings["retry-sleep"] = _validate_profile_setting("retry-sleep", args.retry_sleep)
     if args.chapter_sections is not None:
-        settings["chapter-sections"] = _validate_parameter_setting("chapter-sections", args.chapter_sections)
+        settings["chapter-sections"] = _validate_profile_setting("chapter-sections", args.chapter_sections)
     if args.time_ranges is not None:
         settings["time-ranges"] = [_normalise_time_range(value) for value in args.time_ranges]
     if args.whole_item:
@@ -2414,7 +2267,7 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
     if args.temp_path is not None:
         settings["temp-path"] = str(args.temp_path.expanduser())
     if args.extractor_args is not None:
-        settings["extractor-args"] = _validate_parameter_setting("extractor-args", args.extractor_args)
+        settings["extractor-args"] = _validate_profile_setting("extractor-args", args.extractor_args)
     for key, value in (
         ("write-subs", args.write_subs),
         ("write-auto-subs", args.write_auto_subs),
@@ -2443,9 +2296,7 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
     if args.cookies is not None:
         settings["cookies"] = str(args.cookies.expanduser())
     elif args.cookies_from_browser is not None:
-        settings["cookies-from-browser"] = _validate_parameter_setting(
-            "cookies-from-browser", args.cookies_from_browser
-        )
+        settings["cookies-from-browser"] = _validate_profile_setting("cookies-from-browser", args.cookies_from_browser)
     elif args.no_cookies is True:
         settings["no-cookies"] = True
     elif args.auto_cookies is True:
@@ -2453,8 +2304,8 @@ def explicit_parameter_settings(args: argparse.Namespace) -> dict[str, object]:
     return settings
 
 
-def merge_parameter_settings(
-    profile: ParameterProfile | None,
+def merge_profile_settings(
+    profile: Profile | None,
     cli_settings: dict[str, object],
 ) -> dict[str, object]:
     """Merge a selected profile with explicit CLI settings, with CLI precedence."""
@@ -2480,103 +2331,21 @@ def merge_parameter_settings(
     return merged
 
 
-def resolve_parameter_settings(
-    profile: ParameterProfile | None,
+def resolve_profile_settings(
+    profile: Profile | None,
     cli_settings: dict[str, object],
-) -> ResolvedParameterSettings:
+) -> ResolvedProfileSettings:
     """Merge settings and retain deterministic provenance for explanation."""
-    settings = merge_parameter_settings(profile, cli_settings)
+    settings = merge_profile_settings(profile, cli_settings)
     sources: dict[str, str] = {}
     if profile is not None:
-        sources.update({key: f"parameter profile {profile.name!r}" for key in profile.settings})
+        sources.update({key: f"profile {profile.name!r}" for key in profile.settings})
     sources.update({key: "explicit CLI" for key in cli_settings if key in settings})
     sources = {key: source for key, source in sources.items() if key in settings}
-    return ResolvedParameterSettings(settings=settings, sources=sources)
+    return ResolvedProfileSettings(settings=settings, sources=sources)
 
 
-def generated_profile_settings(
-    source: ParameterProfile | None,
-    cli_settings: dict[str, object],
-) -> dict[str, object]:
-    """Build settings for profile generation without snapshotting built-in defaults."""
-    generated = merge_parameter_settings(source, cli_settings)
-    if not generated:
-        raise ValueError(
-            "--generate-profile has no profile-eligible settings to save; "
-            "supply options such as --resolution or select a source parameter profile"
-        )
-    return generated
-
-
-def profile_document(name: str, settings: dict[str, object]) -> dict[str, object]:
-    """Return a complete standalone defaults document for one generated profile."""
-    validate_parameter_profile_name(name)
-    validate_parameter_settings(settings, profile_name=name)
-    return {
-        "version": PARAMETER_PROFILE_VERSION,
-        "profiles": {name: settings},
-    }
-
-
-def format_profile_document(name: str, settings: dict[str, object]) -> str:
-    """Serialise one generated profile deterministically for stdout or a new file."""
-    return json.dumps(profile_document(name, settings), indent=2, ensure_ascii=False) + "\n"
-
-
-def write_parameter_profile(
-    path: Path,
-    name: str,
-    settings: dict[str, object],
-    *,
-    overwrite: bool,
-) -> None:
-    """Atomically add or explicitly replace one profile in a defaults JSON file."""
-    validate_parameter_profile_name(name)
-    validate_parameter_settings(settings, profile_name=name)
-
-    if path.is_file():
-        profiles = load_parameter_profiles(path, allow_missing=False)
-        if name in profiles and not overwrite:
-            raise ValueError(
-                f"parameter profile {name!r} already exists in {path}; use --overwrite-profile to replace it explicitly"
-            )
-        raw_profiles: dict[str, object] = {profile.name: dict(profile.settings) for profile in profiles.values()}
-    else:
-        raw_profiles = {}
-
-    raw_profiles[name] = settings
-    payload = {
-        "version": PARAMETER_PROFILE_VERSION,
-        "profiles": raw_profiles,
-    }
-    rendered = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
-    try:
-        with temporary.open("x", encoding="utf-8", newline="\n") as handle:
-            handle.write(rendered)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        try:
-            directory_fd = os.open(path.parent, os.O_RDONLY)
-        except OSError:
-            directory_fd = None
-        if directory_fd is not None:
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
-    except OSError as exc:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
-        raise ValueError(f"unable to write defaults file {path}: {exc}") from exc
-
-
-def resolve_parameter_policy(
+def resolve_profile_policy(
     settings: dict[str, object],
 ) -> tuple[DownloadPolicy, Path | None, str | None]:
     """Resolve merged profile settings into Downloader runtime policy."""
@@ -3228,19 +2997,28 @@ def describe_cookie_source(settings: dict[str, object], cookies_file: Path | Non
     return "none available"
 
 
+def output_profile_from_settings(settings: dict[str, object], source: Path) -> OutputProfile | None:
+    """Return output layout carried by the resolved unified profile settings."""
+    path = str(settings["path"]) if "path" in settings else None
+    output = str(settings["output"]) if "output" in settings else None
+    if path is None and output is None:
+        return None
+    return OutputProfile(source=source, path=path, output=output)
+
+
 def create_download_plan(
     *,
     executable: str,
-    resolved_parameters: ResolvedParameterSettings,
+    resolved_profile: ResolvedProfileSettings,
     input_source: InputSource,
     output_profile: OutputProfile | None,
     defaults_file: Path,
-    parameter_profile: ParameterProfile | None,
+    profile: Profile | None,
     remove_completed_ids: bool,
     remove_completed_rows: bool = False,
 ) -> DownloadPlan:
     """Resolve one complete download plan without mutating queues or launching yt-dlp."""
-    policy, cookies_file, cookies_from_browser = resolve_parameter_policy(resolved_parameters.settings)
+    policy, cookies_file, cookies_from_browser = resolve_profile_policy(resolved_profile.settings)
     removal_requested = remove_completed_ids or remove_completed_rows
     if removal_requested and policy.playlist_items:
         raise ValueError(
@@ -3259,11 +3037,11 @@ def create_download_plan(
         output_profile=output_profile,
         cookies_file=cookies_file,
         cookies_from_browser=cookies_from_browser,
-        cookies_source=describe_cookie_source(resolved_parameters.settings, cookies_file),
+        cookies_source=describe_cookie_source(resolved_profile.settings, cookies_file),
         remove_completed_ids=remove_completed_ids,
         defaults_file=defaults_file,
-        parameter_profile=parameter_profile,
-        parameter_sources=dict(resolved_parameters.sources),
+        profile=profile,
+        setting_sources=dict(resolved_profile.sources),
         remove_completed_rows=remove_completed_rows,
     )
 
@@ -3339,12 +3117,12 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
         "kind": "yt-download-plan",
         "schema_version": PLAN_SCHEMA_VERSION,
         "version": PROGRAM_VERSION,
-        "parameter_profile": {
-            "name": plan.parameter_profile.name if plan.parameter_profile is not None else None,
-            "source": str(plan.parameter_profile.source) if plan.parameter_profile is not None else None,
+        "profile": {
+            "name": plan.profile.name if plan.profile is not None else None,
+            "source": str(plan.profile.source) if plan.profile is not None else None,
             "defaults_file": str(plan.defaults_file),
         },
-        "parameter_sources": dict(sorted(plan.parameter_sources.items())),
+        "setting_sources": dict(sorted(plan.setting_sources.items())),
         "policy": {
             "resolution": plan.policy.resolution,
             "format": plan.policy.effective_format_selector,
@@ -3408,7 +3186,7 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "cookies_from_browser": plan.cookies_from_browser,
         },
         "input": _input_source_payload(plan.input_source),
-        "output_profile": output_profile,
+        "output_layout": output_profile,
         "paths": {
             "archive": str(plan.policy.archive_file),
             "archive_enabled": not plan.policy.partial_media,
@@ -3431,18 +3209,18 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
 def format_plan_explanation(plan: DownloadPlan) -> str:
     """Return a concise human-readable explanation of a resolved download plan."""
     payload = explain_plan_payload(plan)
-    profile = payload["parameter_profile"]
+    profile = payload["profile"]
     policy = payload["policy"]
     authentication = payload["authentication"]
     input_payload = payload["input"]
-    output_profile = payload["output_profile"]
+    output_profile = payload["output_layout"]
     queue = payload["queue"]
 
-    parameter_name = profile["name"] if isinstance(profile, dict) else None
-    if parameter_name is None:
-        parameter_text = "none"
+    profile_name = profile["name"] if isinstance(profile, dict) else None
+    if profile_name is None:
+        profile_text = "none"
     else:
-        parameter_text = f"{parameter_name} ({profile['source']})"
+        profile_text = f"{profile_name} ({profile['source']})"
 
     if isinstance(output_profile, dict):
         output_text = str(output_profile["source"])
@@ -3460,9 +3238,9 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
     lines = [
         f"{PROGRAM_NAME} {PROGRAM_VERSION} resolved download plan",
         "",
-        f"Parameter profile: {parameter_text}",
+        f"Profile:           {profile_text}",
         f"Defaults file:     {plan.defaults_file}",
-        f"Output profile:    {output_text}",
+        f"Output layout:     {output_text}",
         f"Input:             {input_text}",
         f"Resolution:        {policy['resolution']}",
         f"Format selector:   {policy['format']}",
@@ -3517,9 +3295,9 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         "Resolved yt-dlp command:",
         f"  {format_command(payload['yt_dlp']['command'])}",
     ]
-    if plan.parameter_sources:
+    if plan.setting_sources:
         lines.extend(["", "Parameter value sources:"])
-        for key, source in sorted(plan.parameter_sources.items()):
+        for key, source in sorted(plan.setting_sources.items()):
             lines.append(f"  {key}: {source}")
     return "\n".join(lines)
 
@@ -3775,8 +3553,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     explicit_defaults = args.defaults is not None
 
-    if args.list_parameters and args.generate_profile is not None:
-        parser.error("--list-parameters cannot be combined with --generate-profile")
     if args.dry_run and (args.explain or args.explain_json):
         parser.error("--dry-run cannot be combined with --explain or --explain-json")
     if args.dry_run and (args.queue_report is not None or args.failed_targets is not None):
@@ -3787,73 +3563,44 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--run-manifest is unavailable with --explain or --explain-json")
     if args.hash_outputs and args.run_manifest is None:
         parser.error("--hash-outputs requires --run-manifest FILE")
-    if args.write_profile and args.generate_profile is None:
-        parser.error("--write-profile requires --generate-profile NAME")
-    if args.overwrite_profile and not args.write_profile:
-        parser.error("--overwrite-profile requires --write-profile")
 
-    if args.list_parameters:
+    if args.list_profiles:
         try:
-            names = list_parameter_profiles(resolved_defaults, explicit_defaults=explicit_defaults)
+            names = list_profiles(resolved_defaults, explicit_defaults=explicit_defaults)
         except ValueError as exc:
             parser.error(str(exc))
         if not names:
-            print(f"No parameter profiles are available in {resolved_defaults}.")
+            print(f"No profiles are available in {resolved_defaults}.")
             return 0
-        print(f"Available parameter profiles in {resolved_defaults}:\n")
+        print(f"Available profiles in {resolved_defaults}:\n")
         for name in names:
             print(f"  {name}")
         return 0
 
     try:
-        selection_requires_existing_defaults = explicit_defaults and not (
-            args.generate_profile is not None and args.write_profile and args.parameter_profile is None
-        )
-        selected_parameters = select_parameter_profile(
-            args.parameter_profile,
+        selected_profile = select_profile(
+            args.profile,
             resolved_defaults,
-            explicit_defaults=selection_requires_existing_defaults,
+            explicit_defaults=explicit_defaults,
         )
-        cli_settings = explicit_parameter_settings(args)
+        cli_settings = explicit_profile_settings(args)
     except ValueError as exc:
         parser.error(str(exc))
 
-    if args.generate_profile is not None:
-        try:
-            generated_name = validate_parameter_profile_name(args.generate_profile)
-            generated_settings = generated_profile_settings(selected_parameters, cli_settings)
-            if args.write_profile:
-                write_parameter_profile(
-                    resolved_defaults,
-                    generated_name,
-                    generated_settings,
-                    overwrite=args.overwrite_profile,
-                )
-                action = "Replaced" if args.overwrite_profile else "Added"
-                print(
-                    f"{action} parameter profile {generated_name!r} in {resolved_defaults}.",
-                    file=sys.stderr,
-                )
-            else:
-                print(format_profile_document(generated_name, generated_settings), end="")
-        except ValueError as exc:
-            parser.error(str(exc))
-        return 0
-
     try:
-        resolved_parameters = resolve_parameter_settings(selected_parameters, cli_settings)
+        resolved_profile = resolve_profile_settings(selected_profile, cli_settings)
         input_source = resolve_input(args)
         validate_remove_completed_ids(args, input_source)
-        output_profile = resolve_profile(args.output_profile)
+        output_profile = output_profile_from_settings(resolved_profile.settings, resolved_defaults)
         explanatory_only = args.dry_run or args.explain or args.explain_json
         executable = validate_environment(dry_run=explanatory_only)
         plan = create_download_plan(
             executable=executable,
-            resolved_parameters=resolved_parameters,
+            resolved_profile=resolved_profile,
             input_source=input_source,
             output_profile=output_profile,
             defaults_file=resolved_defaults,
-            parameter_profile=selected_parameters,
+            profile=selected_profile,
             remove_completed_ids=args.remove_completed_ids,
             remove_completed_rows=args.remove_completed_rows,
         )

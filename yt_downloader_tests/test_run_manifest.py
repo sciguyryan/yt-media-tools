@@ -14,14 +14,14 @@ def make_plan(downloader, tmp_path: Path, *, extractor_args: list[str] | None = 
     settings: dict[str, object] = {"no-cookies": True}
     if extractor_args is not None:
         settings["extractor-args"] = extractor_args
-    resolved = downloader.ResolvedParameterSettings(settings=settings, sources={})
+    resolved = downloader.ResolvedProfileSettings(settings=settings, sources={})
     return downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
 
@@ -121,14 +121,14 @@ def test_run_manifest_is_rejected_for_dry_run(downloader, tmp_path: Path) -> Non
 def test_instrumented_command_records_outputs_before_queue_callback(downloader, tmp_path: Path) -> None:
     queue = tmp_path / "ids.txt"
     queue.write_text("abc\n", encoding="utf-8")
-    resolved = downloader.ResolvedParameterSettings(settings={"no-cookies": True}, sources={})
+    resolved = downloader.ResolvedProfileSettings(settings={"no-cookies": True}, sources={})
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(batch_file=queue),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=True,
     )
     ledger = tmp_path / "events.jsonl"
@@ -177,7 +177,7 @@ def test_main_writes_hashed_manifest_from_simulated_after_move_event(downloader,
 
     assert result == 0
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["downloader"]["version"] == "1.19.1"
+    assert manifest["downloader"]["version"] == "1.20.0"
     assert manifest["yt_dlp"] == {"version": "2026.09.01", "exit_status": 0}
     assert manifest["run"] == {
         "started_at": "2026-09-09T10:00:00Z",

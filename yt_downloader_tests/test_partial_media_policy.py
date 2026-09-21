@@ -52,30 +52,30 @@ def test_partial_cli_settings_are_profile_eligible(downloader) -> None:
         "1:20",
         "abc",
     )
-    assert downloader.explicit_parameter_settings(args) == {
+    assert downloader.explicit_profile_settings(args) == {
         "chapter-sections": ["^Intro$"],
         "time-ranges": ["10-1:20"],
     }
 
 
 def test_whole_item_clears_inherited_partial_policy(downloader, tmp_path: Path) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="extract",
         source=tmp_path / "defaults.json",
         settings={"chapter-sections": ["Intro"], "time-ranges": ["10-20"]},
     )
     args = parse(downloader, "-p", "extract", "--whole-item", "abc")
-    cli = downloader.explicit_parameter_settings(args)
-    assert downloader.merge_parameter_settings(profile, cli) == {}
+    cli = downloader.explicit_profile_settings(args)
+    assert downloader.merge_profile_settings(profile, cli) == {}
 
 
 def test_partial_media_rejects_live_mode(downloader) -> None:
     with pytest.raises(ValueError, match="cannot be combined with live mode"):
-        downloader.resolve_parameter_policy({"live": True, "time-ranges": ["10-20"]})
+        downloader.resolve_profile_policy({"live": True, "time-ranges": ["10-20"]})
 
 
 def test_partial_command_disables_whole_item_archive_and_uses_section_naming(downloader) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy({"chapter-sections": ["^Intro$"], "time-ranges": ["10-20"]})
+    policy, _, _ = downloader.resolve_profile_policy({"chapter-sections": ["^Intro$"], "time-ranges": ["10-20"]})
     command = downloader.build_yt_dlp_command(
         "yt-dlp",
         policy,
@@ -92,7 +92,7 @@ def test_partial_command_disables_whole_item_archive_and_uses_section_naming(dow
 
 
 def test_partial_output_naming_overrides_profile_filename_but_preserves_home(downloader, tmp_path: Path) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy({"time-ranges": ["10-20"]})
+    policy, _, _ = downloader.resolve_profile_policy({"time-ranges": ["10-20"]})
     profile = downloader.OutputProfile(
         source=tmp_path / "profile",
         path="/media/output",
@@ -110,7 +110,7 @@ def test_partial_output_naming_overrides_profile_filename_but_preserves_home(dow
 
 
 def test_whole_item_command_keeps_archive_and_profile_output(downloader, tmp_path: Path) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy({})
+    policy, _, _ = downloader.resolve_profile_policy({})
     profile = downloader.OutputProfile(
         source=tmp_path / "profile",
         path="/media/output",
@@ -127,32 +127,32 @@ def test_whole_item_command_keeps_archive_and_profile_output(downloader, tmp_pat
 def test_partial_media_rejects_completed_id_queue_mutation(downloader, tmp_path: Path) -> None:
     queue = tmp_path / "ids.txt"
     queue.write_text("abc\n", encoding="utf-8")
-    resolved = downloader.ResolvedParameterSettings(settings={"time-ranges": ["10-20"]}, sources={})
+    resolved = downloader.ResolvedProfileSettings(settings={"time-ranges": ["10-20"]}, sources={})
     with pytest.raises(ValueError, match="does not establish completion"):
         downloader.create_download_plan(
             executable="yt-dlp",
-            resolved_parameters=resolved,
+            resolved_profile=resolved,
             input_source=downloader.InputSource(batch_file=queue),
             output_profile=None,
             defaults_file=tmp_path / "defaults.json",
-            parameter_profile=None,
+            profile=None,
             remove_completed_ids=True,
         )
 
 
 def test_explain_reports_derivative_partial_policy(downloader, tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(downloader, "resolve_cookies", lambda *_args, **_kwargs: None)
-    resolved = downloader.ResolvedParameterSettings(
+    resolved = downloader.ResolvedProfileSettings(
         settings={"chapter-sections": ["Intro"], "time-ranges": ["10-20"]},
         sources={"chapter-sections": "explicit CLI", "time-ranges": "explicit CLI"},
     )
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
     payload = downloader.explain_plan_payload(plan)

@@ -8,7 +8,7 @@ import json
 def test_validate_config_uses_runtime_profile_validation(downloader, tmp_path, capsys) -> None:
     path = tmp_path / "profiles.json"
     path.write_text(
-        json.dumps({"version": downloader.PARAMETER_PROFILE_VERSION, "profiles": {"audio": {"audio-only": True}}}),
+        json.dumps({"version": downloader.PROFILE_VERSION, "profiles": {"audio": {"audio-only": True}}}),
         encoding="utf-8",
     )
     assert downloader.main(["--validate-config", str(path)]) == 0
@@ -23,9 +23,7 @@ def test_validate_config_uses_runtime_profile_validation(downloader, tmp_path, c
 def test_validate_config_rejects_runtime_semantic_error(downloader, tmp_path) -> None:
     path = tmp_path / "bad.json"
     path.write_text(
-        json.dumps(
-            {"version": downloader.PARAMETER_PROFILE_VERSION, "profiles": {"bad": {"min-fps": 60, "max-fps": 30}}}
-        ),
+        json.dumps({"version": downloader.PROFILE_VERSION, "profiles": {"bad": {"min-fps": 60, "max-fps": 30}}}),
         encoding="utf-8",
     )
     try:
@@ -76,7 +74,7 @@ def test_validate_config_handles_unicode_path_and_profile_name(downloader, tmp_p
     path = directory / "プロファイル.json"
     path.write_text(
         json.dumps(
-            {"version": downloader.PARAMETER_PROFILE_VERSION, "profiles": {"audio": {"audio-only": True}}},
+            {"version": downloader.PROFILE_VERSION, "profiles": {"audio": {"audio-only": True}}},
             ensure_ascii=False,
         ),
         encoding="utf-8",

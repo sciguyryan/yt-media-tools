@@ -6,7 +6,7 @@ import pytest
 
 
 def _policy(downloader, settings: dict[str, object]):
-    policy, cookies, browser = downloader.resolve_parameter_policy({**settings, "no-cookies": True})
+    policy, cookies, browser = downloader.resolve_profile_policy({**settings, "no-cookies": True})
     assert cookies is None
     assert browser is None
     return policy
@@ -109,17 +109,17 @@ def test_audio_workflows_reject_raw_format_authority(downloader) -> None:
     [(0, "0"), (10, "10"), ("5", "5"), ("128k", "128K"), ("1.5M", "1.5M")],
 )
 def test_audio_quality_validation_normalises_documented_forms(downloader, value: object, expected: str) -> None:
-    assert downloader._validate_parameter_setting("audio-quality", value) == expected
+    assert downloader._validate_profile_setting("audio-quality", value) == expected
 
 
 @pytest.mark.parametrize("value", [-1, 11, "", "lossless", True, "128"])
 def test_audio_quality_validation_rejects_ambiguous_or_invalid_values(downloader, value: object) -> None:
     with pytest.raises(ValueError, match="audio-quality"):
-        downloader._validate_parameter_setting("audio-quality", value)
+        downloader._validate_profile_setting("audio-quality", value)
 
 
 def test_audio_settings_are_profile_eligible_and_normalised(downloader) -> None:
-    settings = downloader.validate_parameter_settings(
+    settings = downloader.validate_profile_settings(
         {
             "audio-only": True,
             "audio-source-codec": "OPUS",
@@ -142,11 +142,11 @@ def test_audio_settings_are_profile_eligible_and_normalised(downloader) -> None:
 
 def test_profile_audio_quality_requires_profile_audio_format(downloader) -> None:
     with pytest.raises(ValueError, match="cannot set audio-quality without audio-format"):
-        downloader.validate_parameter_settings({"audio-quality": "128K"}, profile_name="broken")
+        downloader.validate_profile_settings({"audio-quality": "128K"}, profile_name="broken")
 
 
 def test_audio_policy_is_visible_in_explain_payload(downloader, tmp_path) -> None:
-    resolved = downloader.ResolvedParameterSettings(
+    resolved = downloader.ResolvedProfileSettings(
         settings={
             "audio-only": True,
             "audio-source-codec": "opus",
@@ -157,11 +157,11 @@ def test_audio_policy_is_visible_in_explain_payload(downloader, tmp_path) -> Non
     )
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
     payload = downloader.explain_plan_payload(plan)
@@ -321,7 +321,7 @@ def test_conversion_workflow_enforces_the_same_audio_policy_boundaries(
 
 
 def test_audio_profile_boolean_fallback_can_be_overridden_explicitly(downloader) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="strict-audio",
         source=downloader.DEFAULTS_FILE,
         settings={
@@ -330,7 +330,7 @@ def test_audio_profile_boolean_fallback_can_be_overridden_explicitly(downloader)
             "audio-source-fallback": False,
         },
     )
-    resolved = downloader.merge_parameter_settings(
+    resolved = downloader.merge_profile_settings(
         profile,
         {"audio-source-fallback": True},
     )
@@ -341,13 +341,13 @@ def test_audio_profile_boolean_fallback_can_be_overridden_explicitly(downloader)
 
 def test_audio_source_tokens_reject_format_expression_syntax(downloader) -> None:
     with pytest.raises(ValueError, match="audio-source-codec"):
-        downloader._validate_parameter_setting("audio-source-codec", "opus/ba")
+        downloader._validate_profile_setting("audio-source-codec", "opus/ba")
     with pytest.raises(ValueError, match="audio-source-container"):
-        downloader._validate_parameter_setting("audio-source-container", "webm]/ba")
+        downloader._validate_profile_setting("audio-source-container", "webm]/ba")
 
 
 def test_audio_explain_reports_conversion_and_source_requirements(downloader, tmp_path) -> None:
-    resolved = downloader.ResolvedParameterSettings(
+    resolved = downloader.ResolvedProfileSettings(
         settings={
             "audio-format": "flac",
             "audio-quality": "0",
@@ -360,11 +360,11 @@ def test_audio_explain_reports_conversion_and_source_requirements(downloader, tm
     )
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
     payload = downloader.explain_plan_payload(plan)

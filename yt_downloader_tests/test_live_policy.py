@@ -25,16 +25,16 @@ def test_live_options_require_explicit_live_mode(downloader) -> None:
         {"write-live-chat": True},
     ):
         with pytest.raises(ValueError, match="require explicit live mode"):
-            downloader.resolve_parameter_policy(settings)
+            downloader.resolve_profile_policy(settings)
 
 
 def test_profile_rejects_live_options_without_live_mode(downloader) -> None:
     with pytest.raises(ValueError, match="requires live=true"):
-        downloader.validate_parameter_settings({"wait-for-video": "60-300"}, profile_name="broken")
+        downloader.validate_profile_settings({"wait-for-video": "60-300"}, profile_name="broken")
 
 
 def test_live_policy_builds_explicit_yt_dlp_boundaries(downloader) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy(
+    policy, _, _ = downloader.resolve_profile_policy(
         {"live": True, "live-from-start": True, "wait-for-video": "60-300"}
     )
     command = downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
@@ -44,14 +44,14 @@ def test_live_policy_builds_explicit_yt_dlp_boundaries(downloader) -> None:
 
 
 def test_plain_live_mode_makes_edge_and_no_wait_explicit(downloader) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy({"live": True})
+    policy, _, _ = downloader.resolve_profile_policy({"live": True})
     command = downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
     assert "--no-live-from-start" in command
     assert "--no-wait-for-video" in command
 
 
 def test_live_chat_is_requested_as_sidecar_without_overwriting_subtitle_policy(downloader) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy(
+    policy, _, _ = downloader.resolve_profile_policy(
         {"live": True, "write-live-chat": True, "write-subs": True, "sub-langs": "en.*"}
     )
     command = downloader.build_yt_dlp_command("yt-dlp", policy, downloader.InputSource(direct_targets=("abc",)), None)
@@ -60,7 +60,7 @@ def test_live_chat_is_requested_as_sidecar_without_overwriting_subtitle_policy(d
 
 
 def test_live_chat_rejects_explicit_exclusion(downloader) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy(
+    policy, _, _ = downloader.resolve_profile_policy(
         {"live": True, "write-live-chat": True, "sub-langs": "all,-live_chat"}
     )
     with pytest.raises(ValueError, match="sub-langs exclusion"):
@@ -68,7 +68,7 @@ def test_live_chat_rejects_explicit_exclusion(downloader) -> None:
 
 
 def test_no_live_clears_inherited_live_policy(downloader, tmp_path) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="scheduled",
         source=tmp_path / "defaults.json",
         settings={
@@ -78,20 +78,20 @@ def test_no_live_clears_inherited_live_policy(downloader, tmp_path) -> None:
             "write-live-chat": True,
         },
     )
-    merged = downloader.merge_parameter_settings(profile, {"live": False})
+    merged = downloader.merge_profile_settings(profile, {"live": False})
     assert merged == {"live": False}
 
 
 def test_no_wait_for_video_removes_profile_wait(downloader, tmp_path) -> None:
-    profile = downloader.ParameterProfile(
+    profile = downloader.Profile(
         name="scheduled",
         source=tmp_path / "defaults.json",
         settings={"live": True, "wait-for-video": "60-300"},
     )
     args = parse(downloader, "-p", "scheduled", "--no-wait-for-video", "abc")
-    cli = downloader.explicit_parameter_settings(args)
+    cli = downloader.explicit_profile_settings(args)
     assert cli["wait-for-video"] is None
-    merged = downloader.merge_parameter_settings(profile, cli)
+    merged = downloader.merge_profile_settings(profile, cli)
     assert merged == {"live": True}
 
 
@@ -105,7 +105,7 @@ def test_live_cli_values_are_profile_eligible(downloader) -> None:
         "--write-live-chat",
         "abc",
     )
-    settings = downloader.explicit_parameter_settings(args)
+    settings = downloader.explicit_profile_settings(args)
     assert settings["live"] is True
     assert settings["live-from-start"] is True
     assert settings["wait-for-video"] == "30-90"
@@ -123,15 +123,15 @@ def test_explain_reports_live_policy(downloader, tmp_path, monkeypatch) -> None:
         "--write-live-chat",
         "abc",
     )
-    cli_settings = downloader.explicit_parameter_settings(args)
-    resolved = downloader.resolve_parameter_settings(None, cli_settings)
+    cli_settings = downloader.explicit_profile_settings(args)
+    resolved = downloader.resolve_profile_settings(None, cli_settings)
     plan = downloader.create_download_plan(
         executable="yt-dlp",
-        resolved_parameters=resolved,
+        resolved_profile=resolved,
         input_source=downloader.InputSource(direct_targets=("abc",)),
         output_profile=None,
         defaults_file=tmp_path / "defaults.json",
-        parameter_profile=None,
+        profile=None,
         remove_completed_ids=False,
     )
     payload = downloader.explain_plan_payload(plan)
@@ -142,7 +142,7 @@ def test_explain_reports_live_policy(downloader, tmp_path, monkeypatch) -> None:
 
 
 def test_existing_retry_policy_composes_without_hidden_live_defaults(downloader) -> None:
-    policy, _, _ = downloader.resolve_parameter_policy(
+    policy, _, _ = downloader.resolve_profile_policy(
         {
             "live": True,
             "retries": "infinite",
