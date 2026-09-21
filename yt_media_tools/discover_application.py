@@ -14,7 +14,7 @@ from yt_media_tools.cache import CacheStats, MetadataCache, SourceCoverage
 from yt_media_tools.capabilities import safely_reject_lightweight
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_acquisition import (
-    _acquisition_progress,
+    _DetailedMetadataProgress,
     _cached_or_refresh_metadata,
     _enumeration_progress,
     _limit_aware_cached_acquire,
@@ -573,10 +573,10 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 _verbose(args.verbose, f"Acquiring UNION source {source_value} with yt-dlp...")
                 try:
-                    source_records, source_stats = load_metadata(
-                        source_command,
-                        progress=_acquisition_progress(args.verbose) if args.verbose else None,
-                    )
+                    semantic_progress = _DetailedMetadataProgress(level=args.verbose, total=None)
+                    semantic_progress.start()
+                    source_records, source_stats = load_metadata(source_command, progress=semantic_progress.backend)
+                    semantic_progress.complete(source_stats.attempted)
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)
                     return 1
@@ -997,10 +997,10 @@ def main(argv: list[str] | None = None) -> int:
                             "Queries requiring ORDER BY/LIMIT are evaluated after acquisition; result output may remain quiet until this phase completes.",
                         )
                     try:
-                        raw_records, acquisition_stats = load_metadata(
-                            command,
-                            progress=_acquisition_progress(args.verbose) if args.verbose else None,
-                        )
+                        semantic_progress = _DetailedMetadataProgress(level=args.verbose, total=None)
+                        semantic_progress.start()
+                        raw_records, acquisition_stats = load_metadata(command, progress=semantic_progress.backend)
+                        semantic_progress.complete(acquisition_stats.attempted)
                     except YtDlpError as exc:
                         print(f"Error: {exc}.", file=sys.stderr)
                         return 1

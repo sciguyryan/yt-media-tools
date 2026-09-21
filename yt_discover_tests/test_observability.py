@@ -227,3 +227,44 @@ def test_report_includes_cache_outcome(tmp_path: Path) -> None:
     assert f"Path: {cache_path}" in result.stderr
     assert "Misses: 2" in result.stderr
     assert "Records written: 2" in result.stderr
+
+
+def test_normal_output_announces_detailed_metadata_stage_without_verbose(tmp_path: Path) -> None:
+    env = fake_ytdlp_env(tmp_path, count=2)
+    result = run_cli("FROM @example WHERE views >= 1k", env=env)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "vid00000001\nvid00000002\n"
+    assert "yt-discover: Detailed metadata: started." in result.stderr
+    assert "yt-discover: Detailed metadata: complete (2 observed)." in result.stderr
+
+
+def test_known_detailed_candidate_total_is_visible_without_verbose(tmp_path: Path) -> None:
+    env = fake_ytdlp_env(tmp_path, count=2)
+    cache_path = tmp_path / "metadata.sqlite3"
+    result = run_cli(
+        "--tab",
+        "videos",
+        "--backend",
+        "ytdlp",
+        "--cache",
+        str(cache_path),
+        "FROM @example WHERE upload_date >= 2026-04-01 AND views >= 1k",
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "yt-discover: Detailed metadata: started for 2 candidates." in result.stderr
+    assert "yt-discover: Detailed metadata: complete (2/2)." in result.stderr
+
+
+def test_normal_progress_does_not_contaminate_jsonl_stdout(tmp_path: Path) -> None:
+    import json
+
+    env = fake_ytdlp_env(tmp_path, count=2)
+    result = run_cli("--format", "jsonl", "SELECT id, title FROM @example WHERE views >= 1k", env=env)
+    assert result.returncode == 0, result.stderr
+    rows = [json.loads(line) for line in result.stdout.splitlines()]
+    assert rows == [
+        {"id": "vid00000001", "title": "Video 1"},
+        {"id": "vid00000002", "title": "Video 2"},
+    ]
+    assert "Detailed metadata" in result.stderr

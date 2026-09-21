@@ -9,6 +9,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from yt_media_tools.acquisition_progress import (
+    AcquisitionProgressEvent,
+    AcquisitionProgressKind,
+    AcquisitionProgressStage,
+    render_acquisition_progress,
+)
 from yt_media_tools.cache import CacheStats, MetadataCache
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_constants import (
@@ -97,6 +103,78 @@ def _enumeration_progress(
     return callback
 
 
+class _DetailedMetadataProgress:
+    """Adapt backend extraction telemetry to semantic detailed-metadata progress."""
+
+    def __init__(self, *, level: int, total: int | None, offset: int = 0) -> None:
+        self.level = level
+        self.total = total
+        self.offset = offset
+        self.completed = offset
+        self._last_reported = offset
+
+    def start(self) -> None:
+        render_acquisition_progress(
+            AcquisitionProgressEvent(
+                AcquisitionProgressKind.STAGE_STARTED,
+                AcquisitionProgressStage.DETAILED_METADATA,
+                completed=self.offset,
+                total=self.total,
+            )
+        )
+
+    def backend(self, event: str, stats: AcquisitionStats, detail: str | None) -> None:
+        if event not in {"available", "skipped"}:
+            return
+        completed = self.offset + stats.available + stats.skipped
+        self.completed = min(completed, self.total) if self.total is not None else completed
+        if event == "available":
+            if self.level >= 2:
+                _verbose(self.level, f"Available entry {stats.available}: {detail}", minimum=2)
+            elif self.level >= 1 and (stats.available == 1 or stats.available % 10 == 0):
+                _verbose(
+                    self.level,
+                    f"Acquired {stats.available} available entries; {stats.skipped} skipped so far.",
+                )
+        if event == "skipped" and self.level >= 1:
+            render_acquisition_progress(
+                AcquisitionProgressEvent(
+                    AcquisitionProgressKind.ENTRY_SKIPPED,
+                    AcquisitionProgressStage.DETAILED_METADATA,
+                    completed=self.completed,
+                    total=self.total,
+                    detail=detail,
+                )
+            )
+        if self.level >= 2:
+            interval = 1
+        elif self.level >= 1:
+            interval = 10
+        else:
+            interval = 25
+        if self.completed and (self.completed == self.total or self.completed - self._last_reported >= interval):
+            render_acquisition_progress(
+                AcquisitionProgressEvent(
+                    AcquisitionProgressKind.STAGE_PROGRESS,
+                    AcquisitionProgressStage.DETAILED_METADATA,
+                    completed=self.completed,
+                    total=self.total,
+                )
+            )
+            self._last_reported = self.completed
+
+    def complete(self, completed: int | None = None) -> None:
+        final = self.completed if completed is None else completed
+        render_acquisition_progress(
+            AcquisitionProgressEvent(
+                AcquisitionProgressKind.STAGE_COMPLETED,
+                AcquisitionProgressStage.DETAILED_METADATA,
+                completed=final,
+                total=self.total,
+            )
+        )
+
+
 def _cached_or_refresh_metadata(
     *,
     cache: MetadataCache | None,
@@ -135,10 +213,10 @@ def _cached_or_refresh_metadata(
         _verbose(verbose, f"Refreshing detailed metadata for {len(refresh_ids)} cache-miss/stale videos...")
         if verbose >= 2:
             _verbose(verbose, f"Candidate yt-dlp command: {shell_join(command)}")
-        fetched_records, acquisition_stats = load_metadata(
-            command,
-            progress=_acquisition_progress(verbose) if verbose else None,
-        )
+        semantic_progress = _DetailedMetadataProgress(level=verbose, total=len(refresh_ids))
+        semantic_progress.start()
+        fetched_records, acquisition_stats = load_metadata(command, progress=semantic_progress.backend)
+        semantic_progress.complete(acquisition_stats.attempted)
 
     fetched_by_id = {
         record.get("id"): record for record in fetched_records if isinstance(record.get("id"), str) and record.get("id")

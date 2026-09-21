@@ -32,7 +32,7 @@ The initial event kinds are:
 
 Each event may carry a completed count and an optional total. Unknown totals are valid and must degrade cleanly. A detail string may provide diagnostic context, but presentation must not depend on backend-specific text to understand the stage or count.
 
-The semantic event model lives in `yt_media_tools.acquisition_progress`. The audit does not replace the established callbacks or change user-visible output. The follow-up implementation should adapt orchestration and backend telemetry to this model before changing normal interactive presentation.
+The semantic event model lives in `yt_media_tools.acquisition_progress`. Phase 2 adapts detailed-metadata orchestration and backend telemetry to this model and renders semantic stage transitions at normal verbosity. Lightweight enumeration retains its established coarse progress path for now because its existing behaviour already remains visible without `-v`.
 
 ## Presentation requirements
 
@@ -54,6 +54,14 @@ Backend adapters may report implementation telemetry, but yt-dlp and YouTube.js 
 
 Skipped or inaccessible entries remain important acquisition telemetry. They should be represented separately from successful stage progress so later rendering can preserve concise summaries at normal verbosity and detailed diagnostics at higher verbosity.
 
+## Phase 2 implementation
+
+Detailed metadata acquisition now announces semantic stage start and completion at normal verbosity. When orchestration knows the candidate count, progress reports use that total. Open-ended detailed acquisition degrades to observed counts without inventing a total.
+
+Normal detailed progress is bounded to every 25 attempted entries. `-v` retains concise acquisition telemetry at ten-entry intervals and `-vv` retains per-entry diagnostics. Skipped-entry detail remains a verbose diagnostic rather than normal per-item output.
+
+The renderer writes only to standard error. Query results and machine-readable standard output remain unchanged. Progress observes the existing acquisition path and does not alter ordering, batching, cache decisions, backend selection, early termination, retries or yt-sql evaluation.
+
 ## Implementation acceptance targets
 
-The follow-up implementation should add deterministic coverage demonstrating that semantic stage transitions are rendered at the intended interactive level, detailed work with known and unknown totals remains visibly active when sufficiently long-running, `-vv` retains useful per-entry diagnostics, and query-result or machine-readable output remains uncontaminated.
+Deterministic coverage verifies semantic stage transitions at normal verbosity, known and unknown totals, bounded progress, retained `-vv` per-entry diagnostics, and uncontaminated query-result and JSONL output.
