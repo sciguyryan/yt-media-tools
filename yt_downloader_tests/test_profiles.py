@@ -297,3 +297,64 @@ def test_profile_reference_value_is_validated_for_destination_setting(downloader
     )
     with pytest.raises(ValueError, match="positive JSON integer"):
         downloader.load_profiles(path, allow_missing=False)
+
+
+def test_request_policy_is_profileable_and_type_checked(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(
+        path,
+        {
+            "network": {
+                "user-agent": "ExampleBrowser/1.0",
+                "referer": "https://example.test/watch",
+                "headers": ["X-Test:value"],
+                "proxy": "socks5://127.0.0.1:1080/",
+                "socket-timeout": 15.5,
+                "source-address": "192.0.2.10",
+                "ip-family": "ipv6",
+            }
+        },
+    )
+    profile = downloader.select_profile("network", path, explicit_defaults=True)
+    assert profile is not None
+    policy, _, _ = downloader.resolve_profile_policy(profile.settings)
+    assert policy.user_agent == "ExampleBrowser/1.0"
+    assert policy.referer == "https://example.test/watch"
+    assert policy.headers == ("X-Test:value",)
+    assert policy.proxy == "socks5://127.0.0.1:1080/"
+    assert policy.socket_timeout == 15.5
+    assert policy.source_address == "192.0.2.10"
+    assert policy.ip_family == "ipv6"
+
+
+def test_request_policy_rejects_malformed_headers(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"broken": {"headers": ["missing-value:"]}})
+    with pytest.raises(ValueError, match="FIELD:VALUE"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_request_policy_rejects_non_positive_socket_timeout(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"broken": {"socket-timeout": 0}})
+    with pytest.raises(ValueError, match="positive JSON number"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_request_policy_rejects_invalid_ip_family(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"broken": {"ip-family": "auto"}})
+    with pytest.raises(ValueError, match="ipv4, ipv6"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_dedicated_user_agent_rejects_duplicate_generic_header(downloader) -> None:
+    with pytest.raises(ValueError, match="User-Agent entry"):
+        downloader.resolve_profile_policy({"user-agent": "Example/1.0", "headers": ["User-Agent:Other/2.0"]})
+
+
+def test_dedicated_referer_rejects_duplicate_generic_header(downloader) -> None:
+    with pytest.raises(ValueError, match="Referer entry"):
+        downloader.resolve_profile_policy(
+            {"referer": "https://example.test", "headers": ["Referer:https://other.test"]}
+        )

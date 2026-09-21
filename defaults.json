@@ -24,7 +24,8 @@
       "path": "$values.single.path",
       "output": "$values.single.output",
       "resolution": "1440p",
-      "limit-rate": "2.5M"
+      "limit-rate": "2.5M",
+      "user-agent": "$values.general.test-user-agent"
     },
     "playlist": {
       "path": "$values.playlist.path",
@@ -41,6 +42,9 @@
     "single": {
       "path": "/mnt/storage/Storage/YouTube/YouTube/",
       "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
+    },
+    "general": {
+      "test-user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0"
     }
   }
 }

@@ -81,6 +81,13 @@ PROFILE_KEYS = (
     "time-ranges",
     "limit-rate",
     "throttled-rate",
+    "user-agent",
+    "referer",
+    "headers",
+    "proxy",
+    "socket-timeout",
+    "source-address",
+    "ip-family",
     "concurrent-fragments",
     "retries",
     "fragment-retries",
@@ -174,6 +181,13 @@ PROFILE_SETTING_DESCRIPTIONS = {
     "time-ranges": "Partial-media time ranges, each represented as START-STOP or [START, STOP].",
     "limit-rate": "Maximum download rate accepted by yt-dlp.",
     "throttled-rate": "Rate below which yt-dlp may consider the download throttled.",
+    "user-agent": "Custom HTTP User-Agent compiled to yt-dlp's recommended --add-headers form.",
+    "referer": "Custom HTTP Referer compiled to yt-dlp's recommended --add-headers form.",
+    "headers": "Ordered custom HTTP FIELD:VALUE headers passed to yt-dlp with --add-headers.",
+    "proxy": "HTTP, HTTPS or SOCKS proxy URL passed to yt-dlp with --proxy.",
+    "socket-timeout": "Network socket timeout in seconds passed to yt-dlp.",
+    "source-address": "Client-side IP address passed to yt-dlp with --source-address.",
+    "ip-family": "Force yt-dlp connections to IPv4 or IPv6.",
     "concurrent-fragments": "Number of fragments downloaded concurrently per stream.",
     "retries": "Whole-download retry count or the literal infinite.",
     "fragment-retries": "Fragment retry count or the literal infinite.",
@@ -385,6 +399,13 @@ class DownloadPolicy:
     time_ranges: tuple[str, ...] = ()
     limit_rate: str = DEFAULT_DOWNLOAD_RATE
     throttled_rate: str | None = None
+    user_agent: str | None = None
+    referer: str | None = None
+    headers: tuple[str, ...] = ()
+    proxy: str | None = None
+    socket_timeout: float | None = None
+    source_address: str | None = None
+    ip_family: str | None = None
     concurrent_fragments: int | None = None
     retries: str | None = None
     fragment_retries: str | None = None
@@ -1022,6 +1043,54 @@ def build_parser() -> argparse.ArgumentParser:
         help="Treat transfer rates below RATE as throttled and allow yt-dlp to re-extract the media.",
     )
     parser.add_argument(
+        "--user-agent",
+        metavar="UA",
+        help="Pass UA to yt-dlp as its custom HTTP User-Agent.",
+    )
+    parser.add_argument(
+        "--referer",
+        metavar="URL",
+        help="Pass URL to yt-dlp as the custom HTTP Referer.",
+    )
+    parser.add_argument(
+        "--add-header",
+        dest="headers",
+        action="append",
+        metavar="FIELD:VALUE",
+        help="Add one custom HTTP header. Repeat for multiple headers; yt-dlp receives each via --add-headers.",
+    )
+    parser.add_argument(
+        "--proxy",
+        metavar="URL",
+        help="Use the HTTP, HTTPS or SOCKS proxy URL accepted by yt-dlp.",
+    )
+    parser.add_argument(
+        "--socket-timeout",
+        type=float,
+        metavar="SECONDS",
+        help="Set yt-dlp's network socket timeout in seconds.",
+    )
+    parser.add_argument(
+        "--source-address",
+        metavar="IP",
+        help="Bind yt-dlp network connections to the client-side IP address.",
+    )
+    ip_group = parser.add_mutually_exclusive_group()
+    ip_group.add_argument(
+        "--force-ipv4",
+        dest="ip_family",
+        action="store_const",
+        const="ipv4",
+        help="Force yt-dlp connections through IPv4.",
+    )
+    ip_group.add_argument(
+        "--force-ipv6",
+        dest="ip_family",
+        action="store_const",
+        const="ipv6",
+        help="Force yt-dlp connections through IPv6.",
+    )
+    parser.add_argument(
         "-N",
         "--concurrent-fragments",
         type=int,
@@ -1643,6 +1712,23 @@ def _validate_profile_setting(key: str, value: object) -> object:
         return value.lower()
     if key in {"limit-rate", "throttled-rate"}:
         return _validate_rate_setting(key, value)
+    if key in {"user-agent", "referer", "proxy", "source-address"}:
+        return _validate_nonempty_string_setting(key, value)
+    if key == "headers":
+        headers = _validate_string_list_setting(key, value)
+        for header in headers:
+            field, separator, header_value = header.partition(":")
+            if not separator or not field.strip() or not header_value.strip():
+                raise ValueError("profile setting 'headers' entries must use FIELD:VALUE syntax")
+        return headers
+    if key == "socket-timeout":
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+            raise ValueError("profile setting 'socket-timeout' must be a positive JSON number")
+        return float(value)
+    if key == "ip-family":
+        if not isinstance(value, str) or value.lower() not in {"ipv4", "ipv6"}:
+            raise ValueError("profile setting 'ip-family' must be one of: ipv4, ipv6")
+        return value.lower()
     if key == "concurrent-fragments":
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError("profile setting 'concurrent-fragments' must be a positive JSON integer")
@@ -1802,6 +1888,18 @@ def profile_setting_schema() -> dict[str, object]:
             },
             "limit-rate": _json_schema_string(description=descriptions["limit-rate"]),
             "throttled-rate": _json_schema_string(description=descriptions["throttled-rate"]),
+            "user-agent": _json_schema_string(description=descriptions["user-agent"]),
+            "referer": _json_schema_string(description=descriptions["referer"]),
+            "headers": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "pattern": r"^\s*[^:]+\s*:\s*.+$"},
+                "description": descriptions["headers"],
+            },
+            "proxy": _json_schema_string(description=descriptions["proxy"]),
+            "socket-timeout": {"type": "number", "exclusiveMinimum": 0, "description": descriptions["socket-timeout"]},
+            "source-address": _json_schema_string(description=descriptions["source-address"]),
+            "ip-family": {"type": "string", "enum": ["ipv4", "ipv6"], "description": descriptions["ip-family"]},
             "retries": {
                 "oneOf": [
                     {"type": "integer", "minimum": 0},
@@ -2019,6 +2117,7 @@ def machine_contract() -> dict[str, object]:
                 "partial-media timestamps and chapter regular expressions receive additional runtime validation",
                 "the schema describes canonical machine-facing values while runtime validation may normalise equivalent text forms",
                 "cross-policy conflicts that depend on resolved CLI state are validated after precedence resolution",
+                "dedicated user-agent/referer policy cannot duplicate the same names in generic HTTP headers",
             ],
         },
         "machine_interfaces": {
@@ -2309,6 +2408,12 @@ def explicit_profile_settings(args: argparse.Namespace) -> dict[str, object]:
         "format": args.format_selector,
         "limit-rate": args.limit_rate,
         "throttled-rate": args.throttled_rate,
+        "user-agent": args.user_agent,
+        "referer": args.referer,
+        "proxy": args.proxy,
+        "socket-timeout": args.socket_timeout,
+        "source-address": args.source_address,
+        "ip-family": args.ip_family,
         "concurrent-fragments": args.concurrent_fragments,
         "retries": args.retries,
         "fragment-retries": args.fragment_retries,
@@ -2339,6 +2444,8 @@ def explicit_profile_settings(args: argparse.Namespace) -> dict[str, object]:
             settings[key] = _validate_profile_setting(key, value)
     if args.retry_sleep is not None:
         settings["retry-sleep"] = _validate_profile_setting("retry-sleep", args.retry_sleep)
+    if args.headers is not None:
+        settings["headers"] = _validate_profile_setting("headers", args.headers)
     if args.chapter_sections is not None:
         settings["chapter-sections"] = _validate_profile_setting("chapter-sections", args.chapter_sections)
     if args.time_ranges is not None:
@@ -2507,6 +2614,12 @@ def resolve_profile_policy(
         disabled = bool(settings.get("no-cookies", False))
         cookies_file = resolve_cookies(None, disabled=disabled)
 
+    header_names = {str(header).partition(":")[0].strip().casefold() for header in settings.get("headers", ())}
+    if "user-agent" in settings and "user-agent" in header_names:
+        raise ValueError("user-agent cannot be combined with a User-Agent entry in headers")
+    if "referer" in settings and "referer" in header_names:
+        raise ValueError("referer cannot be combined with a Referer entry in headers")
+
     return (
         DownloadPolicy(
             resolution=resolution,
@@ -2522,6 +2635,13 @@ def resolve_profile_policy(
             time_ranges=time_ranges,
             limit_rate=str(settings.get("limit-rate", DEFAULT_DOWNLOAD_RATE)),
             throttled_rate=(str(settings["throttled-rate"]) if "throttled-rate" in settings else None),
+            user_agent=(str(settings["user-agent"]) if "user-agent" in settings else None),
+            referer=(str(settings["referer"]) if "referer" in settings else None),
+            headers=tuple(settings.get("headers", ())),
+            proxy=(str(settings["proxy"]) if "proxy" in settings else None),
+            socket_timeout=(float(settings["socket-timeout"]) if "socket-timeout" in settings else None),
+            source_address=(str(settings["source-address"]) if "source-address" in settings else None),
+            ip_family=(str(settings["ip-family"]) if "ip-family" in settings else None),
             concurrent_fragments=(
                 int(settings["concurrent-fragments"]) if "concurrent-fragments" in settings else None
             ),
@@ -3257,6 +3377,13 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "download_sections": list(plan.policy.download_sections),
             "limit_rate": plan.policy.limit_rate,
             "throttled_rate": plan.policy.throttled_rate,
+            "user_agent": plan.policy.user_agent,
+            "referer": plan.policy.referer,
+            "headers": list(plan.policy.headers),
+            "proxy": plan.policy.proxy,
+            "socket_timeout": plan.policy.socket_timeout,
+            "source_address": plan.policy.source_address,
+            "ip_family": plan.policy.ip_family,
             "concurrent_fragments": plan.policy.concurrent_fragments,
             "retries": plan.policy.retries,
             "fragment_retries": plan.policy.fragment_retries,
@@ -3368,6 +3495,13 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         + (f" ({authentication['cookies_from_browser']})" if authentication["cookies_from_browser"] else ""),
         f"Limit rate:        {policy['limit_rate']}",
         f"Throttled rate:    {policy['throttled_rate'] or 'yt-dlp default'}",
+        f"User-Agent:        {policy['user_agent'] or 'yt-dlp default'}",
+        f"Referer:           {policy['referer'] or 'yt-dlp default'}",
+        f"Headers:           {', '.join(policy['headers']) if policy['headers'] else 'none'}",
+        f"Proxy:             {policy['proxy'] or 'yt-dlp default'}",
+        f"Socket timeout:    {policy['socket_timeout'] if policy['socket_timeout'] is not None else 'yt-dlp default'}",
+        f"Source address:    {policy['source_address'] or 'yt-dlp default'}",
+        f"IP family:         {policy['ip_family'] or 'yt-dlp default'}",
         f"Concurrent frags:  {policy['concurrent_fragments'] or 'yt-dlp default'}",
         f"Retries:           {policy['retries'] or 'yt-dlp default'}",
         f"Fragment retries:  {policy['fragment_retries'] or 'yt-dlp default'}",
@@ -3463,6 +3597,25 @@ def build_yt_dlp_command(
         command.extend(("--merge-output-format", policy.merge_container))
     if policy.throttled_rate is not None:
         command.extend(("--throttled-rate", policy.throttled_rate))
+    # yt-dlp documents --user-agent/--referer as compatibility options and
+    # recommends expressing both through --add-headers instead. Keep the
+    # Downloader policy names ergonomic while compiling to the recommended form.
+    if policy.user_agent is not None:
+        command.extend(("--add-headers", f"User-Agent:{policy.user_agent}"))
+    if policy.referer is not None:
+        command.extend(("--add-headers", f"Referer:{policy.referer}"))
+    for header in policy.headers:
+        command.extend(("--add-headers", header))
+    if policy.proxy is not None:
+        command.extend(("--proxy", policy.proxy))
+    if policy.socket_timeout is not None:
+        command.extend(("--socket-timeout", str(policy.socket_timeout)))
+    if policy.source_address is not None:
+        command.extend(("--source-address", policy.source_address))
+    if policy.ip_family == "ipv4":
+        command.append("--force-ipv4")
+    elif policy.ip_family == "ipv6":
+        command.append("--force-ipv6")
     if policy.concurrent_fragments is not None:
         command.extend(("--concurrent-fragments", str(policy.concurrent_fragments)))
     for option, value in (

@@ -344,6 +344,14 @@ The most common network and retry controls have first-class Downloader options:
 
 Downloader keeps its existing `20M` rate limit, script-local archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a profile or explicit CLI setting chooses them.
 
+## HTTP request and network policy
+
+Downloader exposes reusable request policy through `user-agent`, `referer`, `headers`, `proxy`, `socket-timeout`, `source-address` and `ip-family`. The corresponding CLI controls are `--user-agent`, `--referer`, repeatable `--add-header`, `--proxy`, `--socket-timeout`, `--source-address`, `--force-ipv4` and `--force-ipv6`. Explicit CLI values override a selected profile in the normal way.
+
+`user-agent` and `referer` deliberately compile to yt-dlp's documented recommended `--add-headers` representation rather than its compatibility `--user-agent` and `--referer` options. For example, `"user-agent": "ExampleBrowser/1.0"` becomes `--add-headers User-Agent:ExampleBrowser/1.0`. Arbitrary `headers` entries use the same yt-dlp `FIELD:VALUE` syntax and preserve their configured order. A dedicated `user-agent` or `referer` cannot be combined with the same header name in `headers`, avoiding ambiguous duplicate request policy.
+
+`socket-timeout` is a positive number of seconds. `ip-family` is either `"ipv4"` or `"ipv6"` and maps to yt-dlp's mutually exclusive `--force-ipv4` or `--force-ipv6`. Proxy and source-address values are passed to yt-dlp without inventing a separate Downloader network syntax. As with other profile settings, these values may be supplied through typed `$values.*` references.
+
 `--explain` and `--explain-json` include these resolved operational values and their configured archive/temporary paths. Sensitive extractor-argument values such as tokens, keys and credentials are redacted from explanation output. `--dry-run` remains an exact command preview and therefore may contain explicitly configured sensitive values; treat its output accordingly.
 
 ## Declarative format policy

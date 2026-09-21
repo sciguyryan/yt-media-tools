@@ -75,3 +75,34 @@ def test_build_command_uses_annotated_row_targets_and_row_callback(downloader, t
     assert "--_remove-completed-row" in command[exec_index + 1]
     assert "--batch-file" not in command
     assert command[-2:] == ["abc", "def"]
+
+
+def test_request_policy_compiles_to_documented_yt_dlp_options(downloader) -> None:
+    source = downloader.InputSource(direct_targets=("abc",))
+    policy = downloader.DownloadPolicy(
+        resolution="1080",
+        format_selector="bv+ba/best",
+        reverse_playlist=False,
+        user_agent="ExampleBrowser/1.0",
+        referer="https://example.test/watch",
+        headers=("X-Test:value", "Accept-Language:en-GB"),
+        proxy="socks5://127.0.0.1:1080/",
+        socket_timeout=12.5,
+        source_address="192.0.2.10",
+        ip_family="ipv4",
+    )
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None)
+    header_values = [command[index + 1] for index, value in enumerate(command) if value == "--add-headers"]
+    assert header_values == [
+        "User-Agent:ExampleBrowser/1.0",
+        "Referer:https://example.test/watch",
+        "X-Test:value",
+        "Accept-Language:en-GB",
+    ]
+    assert "--user-agent" not in command
+    assert "--referer" not in command
+    assert command[command.index("--proxy") + 1] == "socks5://127.0.0.1:1080/"
+    assert command[command.index("--socket-timeout") + 1] == "12.5"
+    assert command[command.index("--source-address") + 1] == "192.0.2.10"
+    assert "--force-ipv4" in command
+    assert "--force-ipv6" not in command
