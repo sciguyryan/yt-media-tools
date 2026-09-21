@@ -44,7 +44,7 @@ from yt_media_tools.ytdlp_runtime import (
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.20.0"
+PROGRAM_VERSION = "1.21.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROFILE_NAME = "default"

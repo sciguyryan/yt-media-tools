@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.20.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.21.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -349,6 +349,8 @@ Downloader keeps its existing `20M` rate limit, script-local archive, temporary 
 Downloader exposes reusable request policy through `user-agent`, `referer`, `headers`, `proxy`, `socket-timeout`, `source-address` and `ip-family`. The corresponding CLI controls are `--user-agent`, `--referer`, repeatable `--add-header`, `--proxy`, `--socket-timeout`, `--source-address`, `--force-ipv4` and `--force-ipv6`. Explicit CLI values override a selected profile in the normal way.
 
 `user-agent` and `referer` deliberately compile to yt-dlp's documented recommended `--add-headers` representation rather than its compatibility `--user-agent` and `--referer` options. For example, `"user-agent": "ExampleBrowser/1.0"` becomes `--add-headers User-Agent:ExampleBrowser/1.0`. Arbitrary `headers` entries use the same yt-dlp `FIELD:VALUE` syntax and preserve their configured order. A dedicated `user-agent` or `referer` cannot be combined with the same header name in `headers`, avoiding ambiguous duplicate request policy.
+
+The shipped profiles share their default User-Agent through `$values.general.user-agent`, so it can be changed once in `defaults.json` when a different identity is required.
 
 `socket-timeout` is a positive number of seconds. `ip-family` is either `"ipv4"` or `"ipv6"` and maps to yt-dlp's mutually exclusive `--force-ipv4` or `--force-ipv6`. Proxy and source-address values are passed to yt-dlp without inventing a separate Downloader network syntax. As with other profile settings, these values may be supplied through typed `$values.*` references.
 

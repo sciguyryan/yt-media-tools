@@ -1,5 +1,12 @@
 # Changelog
 
+## Downloader 1.21.0 - Request Policy
+
+- Add typed reusable HTTP request and network policy for User-Agent, Referer, custom headers, proxy, socket timeout, source address and IP-family selection.
+- Compile User-Agent and Referer policy to yt-dlp's recommended `--add-headers` representation and reject ambiguous duplicate dedicated and generic headers.
+- Adopt the configured Firefox/Linux User-Agent as the shipped default across all bundled profiles through the shared `$values.general.user-agent` value.
+- Add the `1440p-slow` bundled profile with a 2.5M rate limit while retaining the shared 1440p output layout and default User-Agent.
+
 ## Downloader 1.20.0 - One Profile
 
 - Unify reusable download policy and output layout in the versioned JSON profile system.

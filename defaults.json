@@ -3,35 +3,40 @@
   "profiles": {
     "default": {
       "path": "$values.single.path",
-      "output": "$values.single.output"
+      "output": "$values.single.output",
+      "user-agent": "$values.general.user-agent"
     },
     "best": {
       "path": "$values.single.path",
       "output": "$values.single.output",
-      "resolution": "best"
+      "resolution": "best",
+      "user-agent": "$values.general.user-agent"
     },
     "4k": {
       "path": "$values.single.path",
       "output": "$values.single.output",
-      "resolution": "2160p"
+      "resolution": "2160p",
+      "user-agent": "$values.general.user-agent"
     },
     "1440p": {
       "path": "$values.single.path",
       "output": "$values.single.output",
-      "resolution": "1440p"
+      "resolution": "1440p",
+      "user-agent": "$values.general.user-agent"
     },
     "1440p-slow": {
       "path": "$values.single.path",
       "output": "$values.single.output",
       "resolution": "1440p",
       "limit-rate": "2.5M",
-      "user-agent": "$values.general.test-user-agent"
+      "user-agent": "$values.general.user-agent"
     },
     "playlist": {
       "path": "$values.playlist.path",
       "output": "$values.playlist.output",
       "resolution": "1080p",
-      "playlist": true
+      "playlist": true,
+      "user-agent": "$values.general.user-agent"
     }
   },
   "values": {
@@ -44,7 +49,7 @@
       "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
     },
     "general": {
-      "test-user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0"
+      "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0"
     }
   }
 }
