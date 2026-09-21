@@ -249,6 +249,15 @@ def _format_join(join: JoinClause, *, identifier_sources: frozenset[str] = froze
     return f"{keyword} {relation} ON {format_expression(join.predicate)}"
 
 
+def _format_select_term(term: Any) -> str:
+    """Render one SELECT term without adding a redundant semantic-name alias."""
+    field_text = term.field
+    implicit_name = term.expression.name if isinstance(term.expression, Field) else term.field
+    if term.alias and term.alias != implicit_name:
+        return f"{field_text} AS {_format_identifier_component(term.alias)}"
+    return field_text
+
+
 def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozenset()) -> str:
     parts: list[str] = []
     local_identifier_sources = _identifier_sources | frozenset(cte.name for cte in query.ctes)
@@ -261,12 +270,7 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
     if query.select:
         parts.append(
             ("SELECT DISTINCT " if query.distinct else "SELECT ")
-            + ", ".join(
-                f"{term.field} AS {_format_identifier_component(term.alias)}"
-                if term.alias and term.alias != term.field
-                else term.field
-                for term in query.select
-            )
+            + ", ".join(_format_select_term(term) for term in query.select)
         )
     if query.from_source is not None:
         parts.append(

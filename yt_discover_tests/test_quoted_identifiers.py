@@ -121,3 +121,15 @@ def test_quoted_cte_reference_stays_quoted_across_set_branch() -> None:
     canonical = format_query(parse_query(source))
     assert canonical == source
     assert format_query(parse_query(canonical)) == canonical
+
+
+def test_resolved_quoted_nonordinary_field_preserves_output_name_and_formatting() -> None:
+    from yt_media_tools.query import apply_query, resolve_query
+    from yt_media_tools.schema import QuerySchema
+
+    name = "a\U0001f600"
+    rows = [{name: "value"}]
+    resolved = resolve_query(parse_query(f"SELECT `{name}` FROM @fixture"), QuerySchema(rows))
+    assert resolved.select[0].output_name == name
+    assert apply_query(rows, resolved) == [{name: "value"}]
+    assert format_query(resolved) == f"SELECT `{name}` FROM @fixture"

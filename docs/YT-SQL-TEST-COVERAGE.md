@@ -93,7 +93,7 @@ Torture coverage combines computed aliases, multiple ORDER BY keys, LIMIT/OFFSET
 The deterministic fixture includes composed and decomposed forms, combining marks, emoji and ZWJ sequences, the Welsh flag tag sequence, variation selectors, Greek sigma forms, Turkish I variants, German sharp s, Kelvin sign, CJK, Arabic, Hebrew, RTL marks, unusual whitespace, line separators, fullwidth wildcard lookalikes and zero-width joiners/non-joiners.
 
 No implicit Unicode normalisation is permitted. Torture composition retains Unicode strings through facets, LIKE/ILIKE, UNION materialisation and grouping.
-Identifier torture coverage additionally keeps composed and decomposed spellings distinct while combining case-distinct Unicode names, contextual keywords, quoted reserved words, hyphenated names, quoted raw backend keys, embedded backticks and quoted relation aliases through resolution, canonical formatting, execution and optimiser differential checks.
+Identifier torture coverage additionally keeps composed and decomposed spellings distinct while combining case-distinct Unicode names, contextual keywords, quoted reserved words, hyphenated names, quoted raw backend keys, embedded backticks and quoted relation aliases through resolution, canonical formatting, execution and optimiser differential checks. The dedicated code-point-level identifier corpus extends this with combining-mark chains, ZWJ and ZWNJ continuations, variation selectors, supplementary-plane starts, mixed-script confusables, unusual XID continuations and deterministically rejected format or non-XID characters; visually ambiguous fixtures record their exact scalar sequences rather than relying on rendered appearance.
 
 ## Malformed and hostile input
 

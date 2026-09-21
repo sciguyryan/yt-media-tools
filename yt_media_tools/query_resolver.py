@@ -1190,7 +1190,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
                     original_term.position,
                 )
             if isinstance(expression, Field):
-                field_text = expression.name
+                field_text = format_scalar_expression(expression)
         else:
             expression = None
             field = _resolve_field(Field(original_term.field, original_term.position), schema, source)
@@ -1202,7 +1202,12 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
                 )
             field_text = field.name
             kind = field.kind
-        output_name = original_term.alias or original_term.field
+        if original_term.alias is not None:
+            output_name = original_term.alias
+        elif isinstance(original_term.expression, Field):
+            output_name = original_term.expression.name
+        else:
+            output_name = original_term.field
         key = output_name
         if key in output_names:
             raise QuerySemanticError(
@@ -1225,7 +1230,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             field_text = format_scalar_expression(expression)
             kind = _scalar_kind(expression)
             if isinstance(expression, Field):
-                field_text = expression.name
+                field_text = format_scalar_expression(expression)
             order_terms.append(OrderTerm(field_text, term.descending, term.position, kind, expression))
             continue
         selected_alias = explicit_aliases.get(term.field)
