@@ -19,6 +19,7 @@ Downloader configuration uses one versioned JSON profile system:
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -48,7 +49,7 @@ PROGRAM_VERSION = "1.20.0"
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROFILE_NAME = "default"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
-PROFILE_VERSION = 1
+PROFILE_VERSION = 2
 RUN_MANIFEST_SCHEMA_VERSION = 1
 MACHINE_CONTRACT_VERSION = 2
 PLAN_SCHEMA_VERSION = 2
@@ -56,6 +57,7 @@ CAPABILITIES_SCHEMA_VERSION = 1
 CONFIG_VALIDATION_SCHEMA_VERSION = 1
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+VALUE_REFERENCE_RE = re.compile(r"^\$values(?:\.[A-Za-z0-9_-]+)+$")
 SUPPORTED_COOKIE_BROWSERS = frozenset(
     {"brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale"}
 )
@@ -1943,24 +1945,48 @@ def profile_setting_schema() -> dict[str, object]:
     }
 
 
+def _reference_capable_schema(schema: dict[str, object]) -> dict[str, object]:
+    """Allow a raw profile property to contain a reusable-value reference."""
+    return {
+        "anyOf": [
+            schema,
+            {"type": "string", "pattern": VALUE_REFERENCE_RE.pattern},
+        ]
+    }
+
+
 def profile_file_schema() -> dict[str, object]:
     """Return JSON Schema for the complete versioned defaults/profile file."""
     settings_schema = profile_setting_schema()
-    embedded_settings = {key: value for key, value in settings_schema.items() if key not in {"$schema", "$id"}}
+    raw_properties = {key: _reference_capable_schema(value) for key, value in settings_schema["properties"].items()}
+    raw_settings = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": raw_properties,
+    }
     return {
         "$schema": JSON_SCHEMA_DIALECT,
-        "$id": "urn:yt-media-tools:downloader:profiles:1",
+        "$id": "urn:yt-media-tools:downloader:profiles:2",
         "title": "yt-downloader profiles",
         "type": "object",
         "additionalProperties": False,
         "required": ["version", "profiles"],
-        "$defs": {"settings": embedded_settings},
+        "$defs": {
+            "settings": raw_settings,
+            "reusable-value": {
+                "description": "A JSON value reusable through $values.* references.",
+            },
+        },
         "properties": {
             "version": {"const": PROFILE_VERSION},
             "profiles": {
                 "type": "object",
                 "propertyNames": {"pattern": PROFILE_NAME_RE.pattern},
                 "additionalProperties": {"$ref": "#/$defs/settings"},
+            },
+            "values": {
+                "type": "object",
+                "additionalProperties": {"$ref": "#/$defs/reusable-value"},
             },
         },
     }
@@ -1978,6 +2004,14 @@ def machine_contract() -> dict[str, object]:
             "settings_schema": profile_setting_schema(),
             "precedence": ["explicit-cli", "profile", "built-in-defaults"],
             "unknown_settings": "error",
+            "references": {
+                "namespace": "$values",
+                "whole_value_only": True,
+                "type_preserving": True,
+                "literal_dollar_escape": "$$",
+                "cycles": "error",
+                "missing_targets": "error",
+            },
             "semantic_validation": [
                 "minimum resolution must not exceed maximum resolution",
                 "minimum FPS must not exceed maximum FPS",
@@ -2146,6 +2180,53 @@ def defaults_path(requested: Path | None) -> Path:
     return requested.expanduser() if requested is not None else DEFAULTS_FILE
 
 
+def _resolve_reusable_value(
+    value: object,
+    values: dict[str, object],
+    *,
+    context: str,
+    chain: tuple[str, ...] = (),
+) -> object:
+    """Resolve one reusable value while preserving its JSON type."""
+    if isinstance(value, str):
+        if value.startswith("$$"):
+            return value[1:]
+        if not value.startswith("$"):
+            return value
+        if VALUE_REFERENCE_RE.fullmatch(value) is None:
+            raise ValueError(f"{context} contains invalid value reference {value!r}")
+        if value in chain:
+            cycle = " -> ".join((*chain, value))
+            raise ValueError(f"cyclic profile value reference: {cycle}")
+        current: object = values
+        for segment in value.split(".")[1:]:
+            if not isinstance(current, dict) or segment not in current:
+                raise ValueError(f"{context} references unknown value {value!r}")
+            current = current[segment]
+        return _resolve_reusable_value(copy.deepcopy(current), values, context=context, chain=(*chain, value))
+    if isinstance(value, list):
+        return [_resolve_reusable_value(item, values, context=context, chain=chain) for item in value]
+    if isinstance(value, dict):
+        return {key: _resolve_reusable_value(item, values, context=context, chain=chain) for key, item in value.items()}
+    return value
+
+
+def _resolve_profile_references(
+    settings: object,
+    values: dict[str, object],
+    *,
+    profile_name: str,
+) -> object:
+    """Resolve reusable-value references in one raw profile object."""
+    if not isinstance(settings, dict):
+        return settings
+    resolved: dict[object, object] = {}
+    for key, value in settings.items():
+        context = f"profile {profile_name!r} option {key!r}"
+        resolved[key] = _resolve_reusable_value(value, values, context=context)
+    return resolved
+
+
 def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
     """Load and strictly validate one versioned defaults JSON file."""
     if not path.is_file():
@@ -2164,7 +2245,7 @@ def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
 
     if not isinstance(payload, dict):
         raise ValueError(f"defaults file {path} must contain a JSON object")
-    unknown_root = set(payload) - {"version", "profiles"}
+    unknown_root = set(payload) - {"version", "profiles", "values"}
     if unknown_root:
         rendered = ", ".join(repr(key) for key in sorted(unknown_root))
         raise ValueError(f"defaults file {path} contains unknown top-level key(s): {rendered}")
@@ -2172,6 +2253,9 @@ def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
         raise ValueError(
             f"defaults file {path} has unsupported version {payload.get('version')!r}; expected {PROFILE_VERSION}"
         )
+    values_raw = payload.get("values", {})
+    if not isinstance(values_raw, dict):
+        raise ValueError(f"defaults file {path} must define 'values' as a JSON object")
     profiles_raw = payload.get("profiles")
     if not isinstance(profiles_raw, dict):
         raise ValueError(f"defaults file {path} must define a 'profiles' JSON object")
@@ -2181,7 +2265,8 @@ def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
         if not isinstance(name, str):
             raise ValueError(f"defaults file {path} contains a non-string profile name")
         validate_profile_name(name)
-        settings = validate_profile_settings(raw_settings, profile_name=name)
+        resolved_settings = _resolve_profile_references(raw_settings, values_raw, profile_name=name)
+        settings = validate_profile_settings(resolved_settings, profile_name=name)
         profiles[name] = Profile(name=name, settings=settings, source=path)
     return profiles
 

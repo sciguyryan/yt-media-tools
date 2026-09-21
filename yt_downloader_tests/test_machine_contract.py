@@ -13,7 +13,9 @@ def test_machine_contract_versions_are_explicit(downloader) -> None:
         "version": downloader.PROGRAM_VERSION,
     }
     assert contract["json_schema_dialect"] == downloader.JSON_SCHEMA_DIALECT
-    assert contract["profiles"]["format_version"] == downloader.PROFILE_VERSION
+    assert contract["profiles"]["format_version"] == downloader.PROFILE_VERSION == 2
+    assert contract["profiles"]["references"]["namespace"] == "$values"
+    assert contract["profiles"]["references"]["type_preserving"] is True
 
 
 def test_settings_schema_covers_every_runtime_profile_key_exactly(downloader) -> None:
@@ -30,6 +32,11 @@ def test_profile_file_schema_is_versioned_and_reuses_settings_definition(downloa
     assert schema["properties"]["version"] == {"const": downloader.PROFILE_VERSION}
     assert schema["properties"]["profiles"]["additionalProperties"] == {"$ref": "#/$defs/settings"}
     assert schema["$defs"]["settings"]["additionalProperties"] is False
+    assert "values" in schema["properties"]
+    assert any(
+        option.get("pattern") == downloader.VALUE_REFERENCE_RE.pattern
+        for option in schema["$defs"]["settings"]["properties"]["path"]["anyOf"]
+    )
 
 
 def test_schema_exposes_canonical_values_for_finite_case_insensitive_settings(downloader) -> None:

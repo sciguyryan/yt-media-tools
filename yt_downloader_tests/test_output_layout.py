@@ -9,7 +9,7 @@ import pytest
 
 def test_output_layout_requires_non_empty_strings(downloader, tmp_path: Path) -> None:
     path = tmp_path / "defaults.json"
-    path.write_text('{"version":1,"profiles":{"broken":{"path":""}}}', encoding="utf-8")
+    path.write_text('{"version":2,"profiles":{"broken":{"path":""}}}', encoding="utf-8")
     with pytest.raises(ValueError, match="path.*non-empty JSON string"):
         downloader.load_profiles(path, allow_missing=False)
 

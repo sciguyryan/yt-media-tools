@@ -274,22 +274,32 @@ The shipped `defaults.json` contains `default`, `best`, `4k`, `1440p` and `playl
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "profiles": {
     "default": {
-      "path": "/mnt/storage/Storage/YouTube/YouTube/",
-      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
+      "path": "$values.single.path",
+      "output": "$values.single.output"
     },
     "1440p": {
-      "path": "/mnt/storage/Storage/YouTube/YouTube/",
-      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s",
+      "path": "$values.single.path",
+      "output": "$values.single.output",
       "resolution": "1440p"
+    }
+  },
+  "values": {
+    "single": {
+      "path": "/mnt/storage/Storage/YouTube/YouTube/",
+      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
     }
   }
 }
 ```
 
 Supported profile keys are intentionally limited to Downloader-owned configuration. Unknown keys and wrong JSON types are errors rather than being silently ignored. `format` is passed directly to yt-dlp's `-f` option.
+
+Profile format version 2 also provides an optional top-level `values` object for reusable JSON values. A complete string value beginning with `$values.` is resolved by following its dot-separated key chain before the normal destination setting is validated. References preserve the referenced JSON type, so strings, Booleans, integers and arrays can all be shared. Reusable values may reference other reusable values, with missing targets and cycles treated as configuration errors.
+
+References replace the complete JSON value rather than interpolating into strings. A string beginning with `$$` escapes the reference marker and produces a literal leading `$`. Other strings beginning with a single `$` are rejected as malformed references so misspellings cannot silently become configuration values.
 
 Profiles are deliberately hand-edited JSON configuration. Downloader validates and lists them but does not record, generate, overwrite or remove profiles on the user's behalf.
 
@@ -307,7 +317,7 @@ For example:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "profiles": {
     "patient": {
       "limit-rate": "12M",

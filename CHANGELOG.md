@@ -8,6 +8,7 @@
 - Remove the legacy `@profile` files, `profiles/` directory and separate `-P/--output-profile` selector.
 - Remove profile generation, recording and overwrite commands so profiles are managed directly as hand-editable JSON.
 - Bump the machine contract and explain-plan schema versions for the unified profile representation.
+- Add typed `$values.*` references so profiles can reuse shared JSON values without duplicating configuration, with recursive resolution, cycle detection and `$$` literal-dollar escaping.
 
 ## Discover 0.29.9 - Identifier Contract
 

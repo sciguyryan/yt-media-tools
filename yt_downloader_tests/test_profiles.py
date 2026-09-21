@@ -8,8 +8,13 @@ from pathlib import Path
 import pytest
 
 
-def write_defaults(path: Path, profiles: dict[str, dict[str, object]]) -> None:
-    path.write_text(json.dumps({"version": 1, "profiles": profiles}), encoding="utf-8")
+def write_defaults(
+    path: Path, profiles: dict[str, dict[str, object]], *, values: dict[str, object] | None = None
+) -> None:
+    payload: dict[str, object] = {"version": 2, "profiles": profiles}
+    if values is not None:
+        payload["values"] = values
+    path.write_text(json.dumps(payload), encoding="utf-8")
 
 
 def test_shipped_defaults_include_expected_profiles(downloader) -> None:
@@ -214,4 +219,81 @@ def test_browser_cookie_setting_rejects_unknown_browser(downloader, tmp_path: Pa
     path = tmp_path / "defaults.json"
     write_defaults(path, {"broken": {"cookies-from-browser": "netscape"}})
     with pytest.raises(ValueError, match="unsupported browser"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_profile_references_preserve_json_types(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(
+        path,
+        {
+            "typed": {
+                "path": "$values.layout.path",
+                "playlist": "$values.policy.playlist",
+                "concurrent-fragments": "$values.policy.fragments",
+                "extractor-args": "$values.policy.extractor_args",
+            }
+        },
+        values={
+            "layout": {"path": "/srv/media"},
+            "policy": {"playlist": True, "fragments": 4, "extractor_args": ["youtube:player-client=tv"]},
+        },
+    )
+    profile = downloader.select_profile("typed", path, explicit_defaults=True)
+    assert profile is not None
+    assert profile.settings == {
+        "path": "/srv/media",
+        "playlist": True,
+        "concurrent-fragments": 4,
+        "extractor-args": ["youtube:player-client=tv"],
+    }
+
+
+def test_profile_references_can_chain(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(
+        path,
+        {"custom": {"path": "$values.layout.path"}},
+        values={"root": "/srv/media", "layout": {"path": "$values.root"}},
+    )
+    profile = downloader.select_profile("custom", path, explicit_defaults=True)
+    assert profile is not None
+    assert profile.settings["path"] == "/srv/media"
+
+
+def test_profile_reference_escape_preserves_literal_dollar(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"custom": {"output": "$$literal.%(ext)s"}})
+    profile = downloader.select_profile("custom", path, explicit_defaults=True)
+    assert profile is not None
+    assert profile.settings["output"] == "$literal.%(ext)s"
+
+
+def test_profile_reference_rejects_unknown_value(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"custom": {"path": "$values.missing.path"}}, values={})
+    with pytest.raises(ValueError, match="references unknown value"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_profile_reference_rejects_invalid_reference_syntax(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"custom": {"path": "$value.single.path"}}, values={})
+    with pytest.raises(ValueError, match="invalid value reference"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_profile_reference_rejects_cycles(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"custom": {"path": "$values.a"}}, values={"a": "$values.b", "b": "$values.a"})
+    with pytest.raises(ValueError, match="cyclic profile value reference"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_profile_reference_value_is_validated_for_destination_setting(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(
+        path, {"custom": {"concurrent-fragments": "$values.bad.fragments"}}, values={"bad": {"fragments": "four"}}
+    )
+    with pytest.raises(ValueError, match="positive JSON integer"):
         downloader.load_profiles(path, allow_missing=False)

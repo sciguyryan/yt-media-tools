@@ -63,7 +63,7 @@ def test_cli_playlist_selection_rejects_invalid_values(downloader, argv: list[st
 def test_playlist_profile_normalises_indices_and_slices(downloader, tmp_path: Path) -> None:
     path = tmp_path / "defaults.json"
     path.write_text(
-        '{"version":1,"profiles":{"selected":{"playlist":true,"playlist-items":[3,"5:8","01:020:02",-1]}}}',
+        '{"version":2,"profiles":{"selected":{"playlist":true,"playlist-items":[3,"5:8","01:020:02",-1]}}}',
         encoding="utf-8",
     )
     profile = downloader.select_profile("selected", path, explicit_defaults=True)
