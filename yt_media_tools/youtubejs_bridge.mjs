@@ -125,6 +125,58 @@ async function enumerateChannelVideos(url) {
   }
 }
 
+
+function integerValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
+}
+
+function basicInfoRecord(info, videoId, elapsedMs) {
+  const basic = info?.basic_info || {};
+  const author = basic.author || {};
+  return {
+    id: basic.id || videoId,
+    title: basic.title ?? null,
+    channel_id: basic.channel_id ?? author.id ?? null,
+    channel_name: author.name ?? basic.channel ?? null,
+    duration: integerValue(basic.duration),
+    view_count: integerValue(basic.view_count),
+    short_description: basic.short_description ?? null,
+    keywords: Array.isArray(basic.keywords) ? basic.keywords : null,
+    is_live: basic.is_live ?? null,
+    is_live_content: basic.is_live_content ?? null,
+    is_private: basic.is_private ?? null,
+    is_unlisted: basic.is_unlisted ?? null,
+    playability_status: info?.playability_status?.status ?? null,
+    elapsed_ms: elapsedMs,
+  };
+}
+
+async function benchmarkBasicInfo(videoIds) {
+  const { Innertube } = await loadLibrary();
+  const yt = await Innertube.create({ generate_session_locally: true });
+  for (const videoId of videoIds) {
+    const started = process.hrtime.bigint();
+    try {
+      const info = await yt.getBasicInfo(videoId);
+      const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
+      process.stdout.write(JSON.stringify({
+        ok: true,
+        ...basicInfoRecord(info, videoId, elapsedMs),
+      }) + '\n');
+    } catch (error) {
+      const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
+      process.stdout.write(JSON.stringify({
+        ok: false,
+        id: videoId,
+        elapsed_ms: elapsedMs,
+        error: error?.message || String(error),
+      }) + '\n');
+    }
+  }
+}
+
 async function main() {
   const [mode, value] = process.argv.slice(2);
   if (mode === '--check') {
@@ -136,12 +188,18 @@ async function main() {
     }) + '\n');
     return;
   }
+  if (mode === '--benchmark-basic-info') {
+    const videoIds = process.argv.slice(3).filter(Boolean);
+    if (videoIds.length === 0) throw new Error('at least one video ID is required');
+    await benchmarkBasicInfo(videoIds);
+    return;
+  }
   if (mode === '--enumerate-channel-videos') {
     if (!value) throw new Error('channel URL is required');
     await enumerateChannelVideos(value);
     return;
   }
-  throw new Error('expected --check or --enumerate-channel-videos <url>');
+  throw new Error('expected --check, --benchmark-basic-info <video-id> [...], or --enumerate-channel-videos <url>');
 }
 
 main().catch((error) => {

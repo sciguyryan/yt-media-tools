@@ -16,3 +16,10 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Derive a conservative extractor-family namespace for future physical provider eligibility without treating it as yt-sql platform semantics.
 - [test] Add deterministic coverage for YouTube, Twitch, generic and missing backend-resolution metadata.
 - [docs] Define the distinction between user source expressions, Discover logical sources and backend-reported resolution evidence.
+
+## Discover - YouTube.js basic metadata benchmark
+
+- [fix] Make the benchmark subprocess policy explicit with `check=False` while preserving manual return-code diagnostics.
+- [maintenance] Extend the existing YouTube.js bridge with an experimental `getBasicInfo()` benchmark mode that reuses one Innertube session across a known-ID corpus.
+- [test] Add deterministic benchmark-contract coverage for scalar field comparison and missing-value handling without adding live network tests to pytest.
+- [docs] Define the benchmark methodology, candidate scalar field surface, publication-date gap, corpus requirements and production-integration boundary.
