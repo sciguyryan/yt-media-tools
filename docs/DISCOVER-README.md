@@ -363,6 +363,15 @@ yt-discover.py @channel --where "duration < 45m AND views >= 5k"
 yt-discover.py PLxxxxxxxxxxxxxxxxxxxxxx --query "WHERE duration >= 30m ORDER BY playlist_index ASC"
 ```
 
+A complete or source-relative yt-sql query can also be loaded from a UTF-8 file with `--query-file`. File input uses the same query parser and execution path as `--query`, so parameters and the established positional-source form remain available:
+
+```bash
+yt-discover.py --query-file ./queries/recent-videos.yt-sql
+yt-discover.py @channel --param maximum=1h --query-file ./queries/short-videos.yt-sql
+```
+
+`--query-file` is mutually exclusive with `--query` and `--where`. A file containing a complete query also cannot be combined with a positional complete query. Query files contain ordinary yt-sql only; loading a file does not add preprocessing, includes, variables, shell expansion or a separate scripting language.
+
 ## SELECT projection
 
 Select one scalar field to receive one value per line by default:

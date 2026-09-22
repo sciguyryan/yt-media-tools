@@ -23,3 +23,10 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Extend the existing YouTube.js bridge with an experimental `getBasicInfo()` benchmark mode that reuses one Innertube session across a known-ID corpus.
 - [test] Add deterministic benchmark-contract coverage for scalar field comparison and missing-value handling without adding live network tests to pytest.
 - [docs] Define the benchmark methodology, candidate scalar field surface, publication-date gap, corpus requirements and production-integration boundary.
+
+## Discover - yt-sql query file input
+
+- [feature] Add `--query-file FILE` for loading reusable UTF-8 yt-sql queries through the existing query-processing path.
+- [cli] Keep query files mutually exclusive with `--query` and `--where` while preserving the established positional-source plus query form.
+- [test] Add deterministic coverage for inline equivalence, parameters, positional sources, conflicting inputs, unreadable files and invalid UTF-8.
+- [docs] Document reusable `.yt-sql` file workflows and keep query files limited to ordinary yt-sql without a separate preprocessing or scripting layer.

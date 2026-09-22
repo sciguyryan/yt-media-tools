@@ -63,6 +63,9 @@ Examples:
     yt-discover.py "SELECT id, LENGTH(LOWER(title)) AS characters FROM @example ORDER BY characters DESC"
     yt-discover.py "SELECT COALESCE(title, 'Untitled') AS title FROM @example"
 
+  Load a reusable yt-sql query from a UTF-8 file:
+    yt-discover.py --query-file ./queries/recent-videos.yt-sql
+
   Bind reusable typed values without editing the query text:
     yt-discover.py --param start=2026-08-01 --param maximum=1h "SELECT id FROM @example WHERE upload_date >= :start AND duration < :maximum"
 
@@ -479,6 +482,12 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="QUERY",
         help="yt-sql query with optional SELECT DISTINCT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, and OFFSET clauses",
     )
+    query_group.add_argument(
+        "--query-file",
+        type=Path,
+        metavar="FILE",
+        help="read a complete yt-sql query from FILE",
+    )
     parser.add_argument(
         "--param",
         action="append",
@@ -741,14 +750,28 @@ def bind_query_parameters(text: str, parameters: dict[str, str]) -> str:
     return "".join(out)
 
 
+def _read_query_file(path: Path) -> str:
+    """Read one yt-sql query file using the project's text encoding contract."""
+
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        detail = exc.strerror or str(exc)
+        raise ValueError(f"cannot read query file {path}: {detail}") from exc
+    except UnicodeError as exc:
+        raise ValueError(f"cannot read query file {path}: expected UTF-8 text") from exc
+
+
 def parse_user_query(args: argparse.Namespace, inline_query: str | None = None) -> Query:
     parameters = _parse_parameters(args.param)
     if inline_query is not None:
-        if args.query or args.where:
-            raise ValueError("a positional complete query cannot be combined with --query or --where")
+        if args.query or args.query_file or args.where:
+            raise ValueError("a positional complete query cannot be combined with --query, --query-file, or --where")
         query = parse_query(bind_query_parameters(inline_query, parameters))
     elif args.query:
         query = parse_query(bind_query_parameters(args.query, parameters))
+    elif args.query_file:
+        query = parse_query(bind_query_parameters(_read_query_file(args.query_file), parameters))
     elif args.where:
         query = parse_where(bind_query_parameters(args.where, parameters))
     else:

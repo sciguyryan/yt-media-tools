@@ -175,8 +175,8 @@ def main(argv: list[str] | None = None) -> int:
     if explain_analyze and args.explain_format == "svg":
         parser.error("--explain-format svg is supported for --explain, not --explain-analyze")
     if explain_analyze:
-        if args.source is not None or args.query or args.where:
-            parser.error("--explain-analyze cannot be combined with SOURCE_OR_QUERY, --query, or --where")
+        if args.source is not None or args.query or args.query_file or args.where:
+            parser.error("--explain-analyze cannot be combined with SOURCE_OR_QUERY, --query, --query-file, or --where")
         args.source = args.explain_analyze
 
     if args.offline and args.no_cache:
@@ -219,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
         print(format_tool_check(tools))
         return 0 if tools.ytdlp.available else 1
 
-    if args.source is None and not args.query:
+    if args.source is None and not args.query and args.query_file is None:
         parser.error(
             "SOURCE_OR_QUERY is required unless --examples, --check-query, --explain, --explain-analyze, --check-tools, or --version is used"
         )
