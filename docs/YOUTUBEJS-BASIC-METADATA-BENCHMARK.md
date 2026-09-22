@@ -24,6 +24,8 @@ python scripts/benchmark_youtubejs_basic_metadata.py VIDEO_ID [VIDEO_ID ...]
 
 Use `--json` for a versioned machine-readable result suitable for retaining benchmark evidence.
 
+For cross-provider work from issue #103 onward, prefer `scripts/benchmark_metadata_providers.py`; the issue #102 harness remains unchanged so retained #102 evidence stays reproducible.
+
 The harness compares one YouTube.js session using `getBasicInfo()` against the existing yt-dlp detailed shape using one yt-dlp invocation over the same known video IDs. It records wall-clock time and compares the following initial scalar boundary:
 
 - `id`;

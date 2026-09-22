@@ -1,5 +1,12 @@
 # Changelog
 
+## Discover active development
+
+- Add a shared experimental known-video metadata benchmark for YouTube.js, youtube-innertube and yt-dlp without changing production acquisition planning.
+- Add explicit youtube-innertube normalisation and field-by-field comparison across the issue #103 scalar metadata surface.
+- Filter the reproduced routine YouTube.js attachment-run parser warning at the bridge boundary while preserving genuine standard-error failures and an explicit diagnostic escape hatch.
+- Document benchmark corpus reuse, authentication limitations, reliability considerations and the provider-promotion boundary.
+
 ## Downloader 1.21.0 - Request Policy
 
 - Add typed reusable HTTP request and network policy for User-Agent, Referer, custom headers, proxy, socket timeout, source address and IP-family selection.

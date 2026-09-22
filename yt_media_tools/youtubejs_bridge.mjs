@@ -8,6 +8,22 @@ import { pathToFileURL } from 'node:url';
 const projectRequire = createRequire(path.join(process.cwd(), 'package.json'));
 const bridgeRequire = createRequire(import.meta.url);
 
+const YOUTUBEJS_ROUTINE_WARNING_PREFIXES = [
+  '[YOUTUBEJS][Text]: Unable to find matching run for attachment run. Skipping',
+];
+
+function installRoutineWarningFilter() {
+  if (process.env.YT_DISCOVER_YOUTUBEJS_DIAGNOSTICS === '1') return;
+  const originalWarn = console.warn.bind(console);
+  console.warn = (...args) => {
+    const message = args.map((value) => String(value)).join(' ');
+    if (YOUTUBEJS_ROUTINE_WARNING_PREFIXES.some((prefix) => message.startsWith(prefix))) return;
+    originalWarn(...args);
+  };
+}
+
+installRoutineWarningFilter();
+
 function textValue(value) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string') return value;
