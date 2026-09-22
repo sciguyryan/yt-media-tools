@@ -171,7 +171,10 @@ function basicInfoRecord(info, videoId, elapsedMs) {
 
 async function benchmarkBasicInfo(videoIds) {
   const { Innertube } = await loadLibrary();
-  const yt = await Innertube.create({ generate_session_locally: true });
+  const cookie = process.env.YT_DISCOVER_YOUTUBEJS_COOKIE;
+  const options = { generate_session_locally: true };
+  if (cookie) options.cookie = cookie;
+  const yt = await Innertube.create(options);
   for (const videoId of videoIds) {
     const started = process.hrtime.bigint();
     try {

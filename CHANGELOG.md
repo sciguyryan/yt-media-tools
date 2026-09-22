@@ -1,3 +1,9 @@
+## Repository - Authenticated metadata benchmark variants
+
+- Added an optional cookie-authenticated YouTube.js benchmark variant alongside the anonymous run without changing production acquisition behaviour.
+- Kept cookie material out of subprocess arguments and reports, with fail-closed serialisation checks for accidental credential leakage.
+- Added direct authenticated-versus-anonymous comparison output and advanced the experimental benchmark schema to version 5.
+
 # Changelog
 
 ## Discover active development

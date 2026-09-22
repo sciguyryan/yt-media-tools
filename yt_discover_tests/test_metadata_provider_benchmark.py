@@ -253,3 +253,66 @@ def test_ytdlp_normalisation_preserves_reference_live_and_availability_signals()
         "live_status": "was_live",
         "availability": "public",
     }
+
+
+def test_youtubejs_cookie_requires_environment_value(monkeypatch) -> None:
+    benchmark = _module()
+    monkeypatch.delenv(benchmark.YOUTUBEJS_COOKIE_ENV, raising=False)
+    assert benchmark._youtubejs_cookie_from_environment(False) is None
+    try:
+        benchmark._youtubejs_cookie_from_environment(True)
+    except RuntimeError as exc:
+        assert benchmark.YOUTUBEJS_COOKIE_ENV in str(exc)
+    else:
+        raise AssertionError("missing cookie environment value was accepted")
+
+
+def test_youtubejs_cookie_is_read_from_environment(monkeypatch) -> None:
+    benchmark = _module()
+    monkeypatch.setenv(benchmark.YOUTUBEJS_COOKIE_ENV, "SID=secret; HSID=other")
+    assert benchmark._youtubejs_cookie_from_environment(True) == "SID=secret; HSID=other"
+
+
+def test_secret_guard_rejects_cookie_material_anywhere_in_report() -> None:
+    benchmark = _module()
+    secret = "SID=super-secret-cookie"
+    benchmark._assert_secret_absent({"safe": "anonymous"}, secret)
+    try:
+        benchmark._assert_secret_absent({"failure": {"message": f"backend echoed {secret}"}}, secret)
+    except RuntimeError as exc:
+        assert "refusing to serialise" in str(exc)
+    else:
+        raise AssertionError("credential material was allowed into serialisable output")
+
+
+def test_youtubejs_runner_passes_cookie_only_through_child_environment(monkeypatch) -> None:
+    benchmark = _module()
+    captured = {}
+    monkeypatch.setattr(benchmark.shutil, "which", lambda name: "/usr/bin/node")
+
+    def fake_json_lines(command, *, env=None):
+        captured["command"] = command
+        captured["env"] = env
+        return [{"id": "abc", "ok": True}], 0.1, ""
+
+    monkeypatch.setattr(benchmark, "_json_lines", fake_json_lines)
+    _, _, diagnostics = benchmark._youtubejs(["abc"], cookie="SID=secret")
+    assert "SID=secret" not in captured["command"]
+    assert captured["env"][benchmark.YOUTUBEJS_COOKIE_ENV] == "SID=secret"
+    assert diagnostics["authentication"] == "cookie"
+
+
+def test_anonymous_youtubejs_runner_removes_inherited_cookie(monkeypatch) -> None:
+    benchmark = _module()
+    captured = {}
+    monkeypatch.setenv(benchmark.YOUTUBEJS_COOKIE_ENV, "SID=inherited")
+    monkeypatch.setattr(benchmark.shutil, "which", lambda name: "/usr/bin/node")
+
+    def fake_json_lines(command, *, env=None):
+        captured["env"] = env
+        return [{"id": "abc", "ok": True}], 0.1, ""
+
+    monkeypatch.setattr(benchmark, "_json_lines", fake_json_lines)
+    _, _, diagnostics = benchmark._youtubejs(["abc"])
+    assert benchmark.YOUTUBEJS_COOKIE_ENV not in captured["env"]
+    assert diagnostics["authentication"] == "anonymous"

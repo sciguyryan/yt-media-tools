@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -25,6 +26,7 @@ FAILURE_PATTERNS = (
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
 PROVIDERS = ("youtubejs", "youtube-innertube", "ytdlp")
+YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
 COMPARISON_FIELDS = (
     "id",
     "title",
@@ -39,10 +41,10 @@ COMPARISON_FIELDS = (
 )
 
 
-def _json_lines(command: list[str]) -> tuple[list[dict[str, Any]], float, str]:
+def _json_lines(command: list[str], *, env: dict[str, str] | None = None) -> tuple[list[dict[str, Any]], float, str]:
     started = time.perf_counter()
     result = subprocess.run(
-        command, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False
+        command, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, env=env
     )
     elapsed = time.perf_counter() - started
     if result.returncode != 0:
@@ -125,12 +127,26 @@ def _normalise_ytdlp(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _youtubejs(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+def _youtubejs(
+    video_ids: list[str], *, cookie: str | None = None
+) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     node = shutil.which("node")
     if node is None:
         raise RuntimeError("Node.js was not found in PATH")
-    rows, elapsed, stderr = _json_lines([node, str(BRIDGE), "--benchmark-basic-info", *video_ids])
-    return [_normalise_youtubejs(row) for row in rows], elapsed, {"stderr_bytes": len(stderr.encode("utf-8"))}
+    env = os.environ.copy()
+    if cookie is None:
+        env.pop(YOUTUBEJS_COOKIE_ENV, None)
+    else:
+        env[YOUTUBEJS_COOKIE_ENV] = cookie
+    rows, elapsed, stderr = _json_lines([node, str(BRIDGE), "--benchmark-basic-info", *video_ids], env=env)
+    return (
+        [_normalise_youtubejs(row) for row in rows],
+        elapsed,
+        {
+            "stderr_bytes": len(stderr.encode("utf-8")),
+            "authentication": "cookie" if cookie is not None else "anonymous",
+        },
+    )
 
 
 def _youtube_innertube(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
@@ -334,6 +350,24 @@ def _provider_names(value: str) -> list[str]:
     return names
 
 
+def _assert_secret_absent(payload: Any, secret: str | None) -> None:
+    """Fail closed if credential material reaches serialisable benchmark output."""
+    if not secret:
+        return
+    serialised = json.dumps(payload, ensure_ascii=False)
+    if secret in serialised:
+        raise RuntimeError("YouTube.js cookie material reached benchmark output; refusing to serialise report")
+
+
+def _youtubejs_cookie_from_environment(enabled: bool) -> str | None:
+    if not enabled:
+        return None
+    cookie = os.environ.get(YOUTUBEJS_COOKIE_ENV)
+    if not cookie:
+        raise RuntimeError(f"--youtubejs-cookie requires {YOUTUBEJS_COOKIE_ENV} to be set")
+    return cookie
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("video_id", nargs="+", help="YouTube video IDs forming the benchmark corpus")
@@ -344,9 +378,16 @@ def main() -> int:
         help="comma-separated providers (youtubejs,youtube-innertube,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
+    parser.add_argument(
+        "--youtubejs-cookie",
+        action="store_true",
+        help=f"also benchmark YouTube.js with cookie authentication from {YOUTUBEJS_COOKIE_ENV}",
+    )
     args = parser.parse_args()
 
+    cookie = _youtubejs_cookie_from_environment(args.youtubejs_cookie)
     provider_results: dict[str, dict[str, Any]] = {}
+    run_names: list[str] = []
     for name in args.providers:
         rows, elapsed, diagnostics = RUNNERS[name](args.video_id)
         provider_results[name] = {
@@ -355,10 +396,23 @@ def main() -> int:
             "diagnostics": diagnostics,
             "summary": _provider_summary(rows, len(args.video_id)),
         }
+        run_names.append(name)
+        if name == "youtubejs" and cookie is not None:
+            authenticated_rows, authenticated_elapsed, authenticated_diagnostics = _youtubejs(
+                args.video_id, cookie=cookie
+            )
+            variant = "youtubejs-cookie"
+            provider_results[variant] = {
+                "elapsed_seconds": authenticated_elapsed,
+                "rows": authenticated_rows,
+                "diagnostics": authenticated_diagnostics,
+                "summary": _provider_summary(authenticated_rows, len(args.video_id)),
+            }
+            run_names.append(variant)
 
     reference = _index(provider_results["ytdlp"]["rows"])
     comparisons: dict[str, list[dict[str, Any]]] = {}
-    for name in args.providers:
+    for name in run_names:
         if name == "ytdlp":
             continue
         candidate = _index(provider_results[name]["rows"])
@@ -367,17 +421,28 @@ def main() -> int:
             for video_id in args.video_id
         ]
 
+    variant_comparisons: dict[str, list[dict[str, Any]]] = {}
+    if "youtubejs-cookie" in provider_results and "youtubejs" in provider_results:
+        anonymous = _index(provider_results["youtubejs"]["rows"])
+        authenticated = _index(provider_results["youtubejs-cookie"]["rows"])
+        variant_comparisons["youtubejs-cookie-against-anonymous"] = [
+            _comparison(video_id, authenticated.get(video_id, {}), anonymous.get(video_id, {}))
+            for video_id in args.video_id
+        ]
+
     payload = {
-        "schema_version": 4,
+        "schema_version": 5,
         "corpus_size": len(args.video_id),
         "providers": provider_results,
         "comparisons": comparisons,
+        "variant_comparisons": variant_comparisons,
     }
+    _assert_secret_absent(payload, cookie)
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     else:
         print(f"Corpus: {len(args.video_id)} videos")
-        for name in args.providers:
+        for name in run_names:
             print(f"{name}: {provider_results[name]['elapsed_seconds']:.3f}s")
         for name, items in comparisons.items():
             print(f"\n{name} against yt-dlp:")
