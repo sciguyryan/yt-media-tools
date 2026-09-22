@@ -47,3 +47,9 @@ This foundation does not register new providers, change runtime acquisition, int
 ## Backend resolution evidence
 
 Backend-reported extractor resolution is documented in [BACKEND-SOURCE-RESOLUTION.md](BACKEND-SOURCE-RESOLUTION.md). The capability selector deliberately accepts resolved source identity as context without deriving it from URL appearance.
+
+## Resolution-aware eligibility
+
+`selection_context_from_backend_resolution()` connects observed backend resolution to provider selection without guessing from the original source expression. A single unambiguous non-generic yt-dlp extractor family may constrain specialised provider capabilities. Generic, missing or conflicting resolution remains unknown and therefore excludes source-specific providers while leaving generic capabilities available.
+
+This is intentionally one-way physical evidence. The selected extractor family does not change logical source identity or yt-sql meaning, and a cheaper specialised provider cannot become eligible from URL or domain appearance alone. Authentication requirements are carried alongside the resolved source kind and remain independently mandatory.

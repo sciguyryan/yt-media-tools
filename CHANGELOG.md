@@ -864,3 +864,8 @@ Entries are annotated by tool or repository so the independent version lines rem
 - Added the LGPL-2.1 licence and repository ignore rules.
 
 Earlier reconstructed development remains represented by Git history.
+
+- [maintenance] Use unambiguous backend extractor-family evidence to constrain source-specific metadata provider eligibility without changing yt-sql semantics.
+- [maintenance] Preserve generic provider fallback and authentication requirements when backend source identity is unknown, generic or conflicting.
+- [test] Cover resolution-aware provider selection, generic URL lookalikes, conflicting extractor families and cookie-authenticated eligibility.
+- [docs] Document the conservative boundary between backend source resolution and physical provider selection.

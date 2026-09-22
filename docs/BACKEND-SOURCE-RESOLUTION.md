@@ -35,3 +35,13 @@ Static `--explain` output continues to describe the logical source known before 
 Backend extractor names are implementation provenance, not yt-sql semantics. Discover must not make query meaning depend directly on a particular yt-dlp class name. Source-kind or platform assertions require a separately defined mapping with explicit reliability rules.
 
 This also means unexpected resolution remains visible. If a source the user expected to be handled by one service is reported through another extractor or through yt-dlp's generic fallback, the provenance is preserved so the discrepancy can be diagnosed rather than hidden.
+
+## Provider eligibility
+
+Backend resolution can now be promoted into physical provider-selection evidence under deliberately conservative rules. A source kind is considered resolved only when all observed yt-dlp resolutions carry the same non-generic extractor family. A generic observation, missing extractor family, conflicting families or observations from mixed resolution providers leave the source kind unresolved.
+
+Domains are never used to prove provider eligibility. A YouTube-looking URL handled by the generic extractor therefore does not make a YouTube-specific metadata provider eligible. This preserves the distinction between what the user supplied and what the acquisition engine actually resolved.
+
+The resulting source kind is physical planning evidence only. It constrains which provider capabilities may be considered, but does not alter yt-sql semantics or become a logical platform assertion. Generic provider capabilities remain eligible when source identity is unresolved, so failure to prove a specialised provider never removes the existing compatibility path.
+
+Authentication remains an independent eligibility dimension. Building selection context from backend resolution preserves whether the acquisition requires anonymous or cookie-authenticated operation; source identity cannot make an authentication-incompatible provider eligible.

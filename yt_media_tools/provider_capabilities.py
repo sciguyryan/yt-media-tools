@@ -113,3 +113,17 @@ def select_provider_capability(
     """Return the deterministic preferred exact capability, if one is eligible."""
     candidates = eligible_provider_candidates(requirement, capabilities, context=context)
     return candidates[0] if candidates else None
+
+
+def selection_context_from_backend_resolution(
+    resolutions: tuple[object, ...],
+    *,
+    authentication: str = AUTH_ANONYMOUS,
+) -> ProviderSelectionContext:
+    """Build provider-selection context from conservative backend resolution evidence."""
+    from .source_resolution import resolved_source_kind
+
+    return ProviderSelectionContext(
+        resolved_source_kind=resolved_source_kind(resolutions),
+        authentication=authentication,
+    )

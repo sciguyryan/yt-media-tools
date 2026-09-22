@@ -92,3 +92,26 @@ def format_backend_resolution(resolution: BackendSourceResolution) -> str:
     if resolution.webpage_domain is not None:
         parts.append(f"webpage-domain={resolution.webpage_domain}")
     return ", ".join(parts)
+
+
+def resolved_source_kind(
+    resolutions: tuple[BackendSourceResolution, ...],
+) -> str | None:
+    """Return a conservative service identity proved by backend resolution.
+
+    Only a single unambiguous yt-dlp extractor family is promoted into physical
+    provider-selection evidence. Domains and original URL spellings are deliberately
+    ignored: they are useful provenance, but they do not prove which service actually
+    handled the source. Generic, absent, mixed-provider and conflicting observations
+    remain unresolved.
+    """
+    if not resolutions:
+        return None
+    if any(resolution.provider != "yt-dlp" for resolution in resolutions):
+        return None
+    families = {resolution.extractor_family for resolution in resolutions if resolution.extractor_family is not None}
+    if len(families) != 1:
+        return None
+    if any(resolution.extractor_family is None for resolution in resolutions):
+        return None
+    return next(iter(families))

@@ -65,3 +65,55 @@ def test_human_renderer_labels_backend_facts_without_semantic_claims() -> None:
         "provider=yt-dlp, extractor=youtube, extractor-key=Youtube, "
         "extractor-family=youtube, result-type=video, webpage-domain=www.youtube.com"
     )
+
+
+def test_single_specific_extractor_family_can_prove_physical_source_kind() -> None:
+    from yt_media_tools.source_resolution import resolved_source_kind
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {"extractor": "youtube:tab", "extractor_key": "YoutubeTab"},
+            {"extractor": "youtube", "extractor_key": "Youtube"},
+        ]
+    )
+    assert resolved_source_kind(resolutions) == "youtube"
+
+
+def test_generic_resolution_never_proves_source_kind_from_domain() -> None:
+    from yt_media_tools.source_resolution import resolved_source_kind
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "generic",
+                "extractor_key": "Generic",
+                "webpage_url": "https://www.youtube.com/watch?v=example",
+                "original_url": "https://www.youtube.com/watch?v=example",
+            }
+        ]
+    )
+    assert resolved_source_kind(resolutions) is None
+
+
+def test_conflicting_extractor_families_remain_unresolved() -> None:
+    from yt_media_tools.source_resolution import resolved_source_kind
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {"extractor": "youtube", "extractor_key": "Youtube"},
+            {"extractor": "twitch:vod", "extractor_key": "TwitchVod"},
+        ]
+    )
+    assert resolved_source_kind(resolutions) is None
+
+
+def test_specific_and_generic_observations_remain_unresolved() -> None:
+    from yt_media_tools.source_resolution import resolved_source_kind
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {"extractor": "youtube", "extractor_key": "Youtube"},
+            {"extractor": "generic", "extractor_key": "Generic"},
+        ]
+    )
+    assert resolved_source_kind(resolutions) is None

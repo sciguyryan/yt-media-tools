@@ -4,15 +4,13 @@
 /.env
 /.env.*
 !/.env.example
-/private/
-/secrets/
-/credentials/
 
 # Downloader state and local queues
 /archive.txt
 /archive*.txt
 /ids/
 /ids.txt
+/queries/
 /queues/
 /state/
 
