@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -12,6 +13,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
+from .cookies import CookieFileError, cookie_header_from_netscape_file
 from .dates import DateContext, parse_date_literal
 from .ytdlp import EnumerationStats, ProgressCallback
 
@@ -58,6 +60,7 @@ def enumerate_until_date_boundary(
     confirmation_entries: int,
     dates: DateContext,
     progress: ProgressCallback | None = None,
+    cookies_file: Path | None = None,
 ) -> tuple[list[dict[str, Any]], EnumerationStats]:
     """Enumerate channel videos through YouTube.js and terminate continuation paging early."""
     node = shutil.which("node")
@@ -68,6 +71,14 @@ def enumerate_until_date_boundary(
         raise YouTubeJsError(f"YouTube.js bridge script is missing: {bridge}")
 
     command = [node, str(bridge), "--enumerate-channel-videos", source_url]
+    env = os.environ.copy()
+    env.pop("YT_DISCOVER_YOUTUBEJS_COOKIE", None)
+    if cookies_file is not None:
+        try:
+            cookie_header, _ = cookie_header_from_netscape_file(cookies_file)
+        except CookieFileError as exc:
+            raise YouTubeJsError(str(exc)) from exc
+        env["YT_DISCOVER_YOUTUBEJS_COOKIE"] = cookie_header
     try:
         process = subprocess.Popen(
             command,
@@ -78,6 +89,7 @@ def enumerate_until_date_boundary(
             encoding="utf-8",
             errors="replace",
             bufsize=1,
+            env=env,
         )
     except OSError as exc:
         raise YouTubeJsError(f"could not run Node.js: {exc}") from exc

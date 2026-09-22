@@ -658,6 +658,7 @@ def main(argv: list[str] | None = None) -> int:
                             warn_threshold=args.warn_source_size,
                             acquisition_observability=not requires_detailed,
                         ),
+                        cookies_file=cookies_file,
                     )
                 else:
                     if args.verbose >= 2:

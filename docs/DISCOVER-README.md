@@ -715,7 +715,7 @@ Verbose mode reports source resolution, the yt-dlp command, acquisition progress
 
 Existing acquisition controls remain available, including `--items`, `--date`, `--after`, `--before`, `--match-filter`, `--exclude-live`, `--exclude-upcoming`, and downloader-archive exclusion. These are kept separate from the local query language where they represent yt-dlp acquisition policy rather than metadata query semantics.
 
-If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to yt-dlp automatically. The file is optional. Use `--cookies FILE` to override the script-local default for a run. An explicitly selected cookie file must exist.
+If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to authentication-capable acquisition backends automatically. The file is optional. yt-dlp consumes the Netscape file directly; when YouTube.js channel enumeration is selected, Discover translates applicable cookies into the HTTP Cookie header required by YouTube.js at the adapter boundary. Use `--cookies FILE` to override the script-local default for a run. An explicitly selected cookie file must exist.
 
 ```bash
 ./yt-discover.py --cookies /path/to/cookies.txt \

@@ -15,6 +15,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from yt_media_tools.cookies import CookieFileError, cookie_header_from_netscape_file
+
 FAILURE_PATTERNS = (
     ("private", ("private video",)),
     ("removed", ("has been removed", "removed for violating")),
@@ -128,7 +130,7 @@ def _normalise_ytdlp(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def _youtubejs(
-    video_ids: list[str], *, cookie: str | None = None
+    video_ids: list[str], *, cookie: str | None = None, secret_values: tuple[str, ...] = ()
 ) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     node = shutil.which("node")
     if node is None:
@@ -138,7 +140,12 @@ def _youtubejs(
         env.pop(YOUTUBEJS_COOKIE_ENV, None)
     else:
         env[YOUTUBEJS_COOKIE_ENV] = cookie
-    rows, elapsed, stderr = _json_lines([node, str(BRIDGE), "--benchmark-basic-info", *video_ids], env=env)
+    try:
+        rows, elapsed, stderr = _json_lines([node, str(BRIDGE), "--benchmark-basic-info", *video_ids], env=env)
+    except RuntimeError as exc:
+        raise RuntimeError(_redact_secrets(str(exc), (cookie, *secret_values))) from exc
+    rows = _redact_secrets(rows, (cookie, *secret_values))
+    stderr = _redact_secrets(stderr, (cookie, *secret_values))
     return (
         [_normalise_youtubejs(row) for row in rows],
         elapsed,
@@ -350,12 +357,24 @@ def _provider_names(value: str) -> list[str]:
     return names
 
 
-def _assert_secret_absent(payload: Any, secret: str | None) -> None:
-    """Fail closed if credential material reaches serialisable benchmark output."""
-    if not secret:
-        return
+def _redact_secrets(value: Any, secrets: tuple[str | None, ...]) -> Any:
+    """Remove credential values from third-party diagnostics before they enter reports."""
+    active = tuple(secret for secret in secrets if secret)
+    if isinstance(value, str):
+        for secret in active:
+            value = value.replace(secret, "[REDACTED]")
+        return value
+    if isinstance(value, list):
+        return [_redact_secrets(item, active) for item in value]
+    if isinstance(value, dict):
+        return {key: _redact_secrets(item, active) for key, item in value.items()}
+    return value
+
+
+def _assert_secrets_absent(payload: Any, secrets: tuple[str | None, ...]) -> None:
+    """Fail closed if any credential material reaches serialisable benchmark output."""
     serialised = json.dumps(payload, ensure_ascii=False)
-    if secret in serialised:
+    if any(secret and secret in serialised for secret in secrets):
         raise RuntimeError("YouTube.js cookie material reached benchmark output; refusing to serialise report")
 
 
@@ -378,14 +397,27 @@ def main() -> int:
         help="comma-separated providers (youtubejs,youtube-innertube,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
-    parser.add_argument(
+    auth = parser.add_mutually_exclusive_group()
+    auth.add_argument(
         "--youtubejs-cookie",
         action="store_true",
-        help=f"also benchmark YouTube.js with cookie authentication from {YOUTUBEJS_COOKIE_ENV}",
+        help=f"also benchmark YouTube.js with a Cookie header from {YOUTUBEJS_COOKIE_ENV}",
+    )
+    auth.add_argument(
+        "--youtubejs-cookies",
+        type=Path,
+        metavar="FILE",
+        help="also benchmark YouTube.js using applicable cookies from a Netscape cookies file",
     )
     args = parser.parse_args()
 
     cookie = _youtubejs_cookie_from_environment(args.youtubejs_cookie)
+    cookie_values: tuple[str, ...] = ()
+    if args.youtubejs_cookies is not None:
+        try:
+            cookie, cookie_values = cookie_header_from_netscape_file(args.youtubejs_cookies)
+        except CookieFileError as exc:
+            parser.error(str(exc))
     provider_results: dict[str, dict[str, Any]] = {}
     run_names: list[str] = []
     for name in args.providers:
@@ -399,7 +431,7 @@ def main() -> int:
         run_names.append(name)
         if name == "youtubejs" and cookie is not None:
             authenticated_rows, authenticated_elapsed, authenticated_diagnostics = _youtubejs(
-                args.video_id, cookie=cookie
+                args.video_id, cookie=cookie, secret_values=cookie_values
             )
             variant = "youtubejs-cookie"
             provider_results[variant] = {
@@ -437,7 +469,7 @@ def main() -> int:
         "comparisons": comparisons,
         "variant_comparisons": variant_comparisons,
     }
-    _assert_secret_absent(payload, cookie)
+    _assert_secrets_absent(payload, (cookie, *cookie_values))
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     else:

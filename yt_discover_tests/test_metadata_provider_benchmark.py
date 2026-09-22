@@ -276,9 +276,9 @@ def test_youtubejs_cookie_is_read_from_environment(monkeypatch) -> None:
 def test_secret_guard_rejects_cookie_material_anywhere_in_report() -> None:
     benchmark = _module()
     secret = "SID=super-secret-cookie"
-    benchmark._assert_secret_absent({"safe": "anonymous"}, secret)
+    benchmark._assert_secrets_absent({"safe": "anonymous"}, (secret,))
     try:
-        benchmark._assert_secret_absent({"failure": {"message": f"backend echoed {secret}"}}, secret)
+        benchmark._assert_secrets_absent({"failure": {"message": f"backend echoed {secret}"}}, (secret,))
     except RuntimeError as exc:
         assert "refusing to serialise" in str(exc)
     else:
@@ -316,3 +316,24 @@ def test_anonymous_youtubejs_runner_removes_inherited_cookie(monkeypatch) -> Non
     _, _, diagnostics = benchmark._youtubejs(["abc"])
     assert benchmark.YOUTUBEJS_COOKIE_ENV not in captured["env"]
     assert diagnostics["authentication"] == "anonymous"
+
+
+def test_redaction_removes_cookie_header_and_individual_values() -> None:
+    benchmark = _module()
+    header = "SID=super-secret; HSID=other-secret"
+    payload = {"failure": {"message": f"invalid header {header}; value super-secret"}}
+    redacted = benchmark._redact_secrets(payload, (header, "super-secret", "other-secret"))
+    serialised = str(redacted)
+    assert "super-secret" not in serialised
+    assert "other-secret" not in serialised
+    assert "[REDACTED]" in serialised
+
+
+def test_secret_guard_checks_multiple_cookie_values() -> None:
+    benchmark = _module()
+    try:
+        benchmark._assert_secrets_absent({"message": "leaked secret-two"}, ("header", "secret-one", "secret-two"))
+    except RuntimeError as exc:
+        assert "refusing to serialise" in str(exc)
+    else:
+        raise AssertionError("individual cookie value was allowed into serialisable output")

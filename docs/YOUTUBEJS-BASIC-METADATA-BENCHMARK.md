@@ -46,7 +46,7 @@ The benchmark also does not promote `keywords` to Discover `tags`, or any live/p
 
 ## Corpus requirements
 
-Performance conclusions must use a recorded corpus rather than a single convenient public video. At minimum the corpus should include ordinary videos, Shorts, active and completed livestreams, scheduled content where available, and unavailable content. Cookie-authenticated cases should be tested separately when the user supplies suitable cookies and the YouTube.js authentication path has been deliberately wired for the benchmark.
+Performance conclusions must use a recorded corpus rather than a single convenient public video. At minimum the corpus should include ordinary videos, Shorts, active and completed livestreams, scheduled content where available, and unavailable content. Cookie-authenticated cases should be tested separately when the user supplies suitable cookies. Netscape-format files are translated at the YouTube.js adapter boundary into the HTTP Cookie header expected by the library, matching Discover's existing cookie-file input.
 
 Do not place cookies or other credentials in benchmark output, fixtures, source files or release artefacts.
 
