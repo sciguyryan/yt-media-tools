@@ -114,3 +114,71 @@ def test_zero_reference_view_count_has_no_relative_percentage() -> None:
     result = benchmark._comparison("abc", {"id": "abc", "view_count": 1, "ok": True}, {"id": "abc", "view_count": 0})
     assert result["deltas"]["view_count"]["absolute"] == 1
     assert result["deltas"]["view_count"]["relative_percent"] is None
+
+
+def test_failure_classification_distinguishes_adversarial_outcomes() -> None:
+    benchmark = _module()
+    assert benchmark._classify_failure("Private video") == "private"
+    assert benchmark._classify_failure("This video has been removed for violating YouTube policy") == "removed"
+    assert (
+        benchmark._classify_failure("HTTP Error 429: Too Many Requests; Sign in to confirm you're not a bot")
+        == "rate_limited"
+    )
+    assert benchmark._classify_failure("Sign in to confirm your age") == "authentication_required"
+    assert benchmark._classify_failure("This video is unavailable") == "unavailable"
+    assert benchmark._classify_failure("unexpected backend response") == "provider_error"
+
+
+def test_failed_comparison_records_which_side_failed() -> None:
+    benchmark = _module()
+    candidate_failure = benchmark._failure_row("abc", "This video is unavailable")
+    reference_failure = benchmark._failure_row("abc", "Private video")
+    candidate_only = benchmark._comparison("abc", candidate_failure, {"id": "abc", "ok": True})
+    reference_only = benchmark._comparison("abc", {"id": "abc", "ok": True}, reference_failure)
+    both = benchmark._comparison("abc", candidate_failure, reference_failure)
+    assert candidate_only["status"] == "candidate_failed"
+    assert candidate_only["candidate_failure"]["kind"] == "unavailable"
+    assert reference_only["status"] == "reference_failed"
+    assert reference_only["reference_failure"]["kind"] == "private"
+    assert both["status"] == "both_failed"
+    assert both["agreement"] == {}
+
+
+def test_provider_summary_counts_failure_kinds() -> None:
+    benchmark = _module()
+    rows = [
+        {"id": "ok", "ok": True},
+        benchmark._failure_row("private", "Private video"),
+        benchmark._failure_row("missing", "This video is unavailable"),
+    ]
+    assert benchmark._provider_summary(rows, 3) == {
+        "expected": 3,
+        "reported": 3,
+        "succeeded": 1,
+        "failed": 2,
+        "failures_by_kind": {"private": 1, "unavailable": 1},
+    }
+
+
+def test_youtubejs_failure_preserves_structured_diagnostic() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_youtubejs({"id": "abc", "ok": False, "error": "This video is unavailable"})
+    assert row["ok"] is False
+    assert row["failure"]["kind"] == "unavailable"
+    assert row["failure"]["message"] == "This video is unavailable"
+
+
+def test_ytdlp_diagnostics_are_associated_with_failed_video_ids() -> None:
+    benchmark = _module()
+    stderr = "\n".join(
+        (
+            "WARNING: [youtube] first_id: Unable to download webpage: HTTP Error 429: Too Many Requests",
+            "ERROR: [youtube] first_id: Sign in to confirm you’re not a bot",
+            "ERROR: [youtube] second_id: Private video",
+        )
+    )
+    result = benchmark._ytdlp_diagnostics_by_id(stderr, ["first_id", "second_id", "successful_id"])
+    assert "HTTP Error 429" in result["first_id"]
+    assert "not a bot" in result["first_id"]
+    assert result["second_id"] == "ERROR: [youtube] second_id: Private video"
+    assert "successful_id" not in result

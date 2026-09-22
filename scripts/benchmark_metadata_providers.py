@@ -6,12 +6,21 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import re
 import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any, Callable
+
+FAILURE_PATTERNS = (
+    ("private", ("private video",)),
+    ("removed", ("has been removed", "removed for violating")),
+    ("rate_limited", ("http error 429", "too many requests")),
+    ("authentication_required", ("sign in to confirm", "authentication", "age-restricted", "age restricted")),
+    ("unavailable", ("video is unavailable", "not available")),
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
@@ -48,6 +57,8 @@ def _json_lines(command: list[str]) -> tuple[list[dict[str, Any]], float, str]:
 
 
 def _normalise_youtubejs(row: dict[str, Any]) -> dict[str, Any]:
+    if not row.get("ok", True):
+        return _failure_row(str(row.get("id", "")), str(row.get("error", "YouTube.js acquisition failed")))
     return {
         "id": row.get("id"),
         "title": row.get("title"),
@@ -123,10 +134,42 @@ def _youtube_innertube(video_ids: list[str]) -> tuple[list[dict[str, Any]], floa
             row["elapsed_ms"] = (time.perf_counter() - item_started) * 1000.0
             rows.append(row)
         except Exception as exc:  # noqa: BLE001 - benchmark must record third-party failure characteristics.
-            rows.append({"id": video_id, "ok": False, "error_type": type(exc).__name__, "error": str(exc)})
-            failures.append({"id": video_id, "error_type": type(exc).__name__})
+            rows.append(_failure_row(video_id, str(exc), error_type=type(exc).__name__))
+            failures.append({"id": video_id, "error_type": type(exc).__name__, "kind": _classify_failure(str(exc))})
     elapsed = time.perf_counter() - started
     return rows, elapsed, {"failures": failures}
+
+
+def _classify_failure(message: str) -> str:
+    lowered = message.lower()
+    for kind, patterns in FAILURE_PATTERNS:
+        if any(pattern in lowered for pattern in patterns):
+            return kind
+    return "provider_error"
+
+
+def _failure_row(video_id: str, message: str, *, error_type: str | None = None) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "id": video_id,
+        "ok": False,
+        "failure": {"kind": _classify_failure(message), "message": message},
+    }
+    if error_type:
+        row["failure"]["error_type"] = error_type
+    return row
+
+
+def _ytdlp_diagnostics_by_id(stderr: str, video_ids: list[str]) -> dict[str, str]:
+    messages: dict[str, list[str]] = {video_id: [] for video_id in video_ids}
+    current_id: str | None = None
+    id_pattern = re.compile(r"\[youtube\]\s+([^:]+):")
+    for line in stderr.splitlines():
+        match = id_pattern.search(line)
+        if match and match.group(1) in messages:
+            current_id = match.group(1)
+        if current_id is not None:
+            messages[current_id].append(line)
+    return {video_id: "\n".join(lines).strip() for video_id, lines in messages.items() if lines}
 
 
 def _ytdlp(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
@@ -134,8 +177,49 @@ def _ytdlp(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str,
     if executable is None:
         raise RuntimeError("yt-dlp was not found in PATH")
     urls = [f"https://www.youtube.com/watch?v={video_id}" for video_id in video_ids]
-    rows, elapsed, stderr = _json_lines([executable, "--dump-json", "--skip-download", *urls])
-    return [_normalise_ytdlp(row) for row in rows], elapsed, {"stderr_bytes": len(stderr.encode("utf-8"))}
+    started = time.perf_counter()
+    result = subprocess.run(
+        [executable, "--dump-json", "--skip-download", "--ignore-errors", *urls],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    elapsed = time.perf_counter() - started
+    successful_rows: list[dict[str, Any]] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"yt-dlp emitted invalid JSON: {exc}") from exc
+        if isinstance(value, dict):
+            successful_rows.append(_normalise_ytdlp(value))
+    successful = _index(successful_rows)
+    per_id_diagnostics = _ytdlp_diagnostics_by_id(result.stderr, video_ids)
+    rows: list[dict[str, Any]] = []
+    for video_id in video_ids:
+        if video_id in successful:
+            rows.append(successful[video_id])
+            continue
+        message = per_id_diagnostics.get(video_id) or f"yt-dlp did not return metadata for {video_id}"
+        rows.append(_failure_row(video_id, message))
+    if result.returncode != 0 and not rows:
+        raise RuntimeError(result.stderr.strip() or f"yt-dlp exited with status {result.returncode}")
+    return (
+        rows,
+        elapsed,
+        {
+            "stderr_bytes": len(result.stderr.encode("utf-8")),
+            "items": [
+                {"id": video_id, "message": message, "kind": _classify_failure(message)}
+                for video_id, message in per_id_diagnostics.items()
+            ],
+        },
+    )
 
 
 RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict[str, Any]]]] = {
@@ -143,6 +227,23 @@ RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict
     "youtube-innertube": _youtube_innertube,
     "ytdlp": _ytdlp,
 }
+
+
+def _provider_summary(rows: list[dict[str, Any]], expected_count: int) -> dict[str, Any]:
+    succeeded = sum(1 for row in rows if row.get("ok", False))
+    failures: dict[str, int] = {}
+    for row in rows:
+        if row.get("ok", False):
+            continue
+        kind = row.get("failure", {}).get("kind", "provider_error")
+        failures[kind] = failures.get(kind, 0) + 1
+    return {
+        "expected": expected_count,
+        "reported": len(rows),
+        "succeeded": succeeded,
+        "failed": len(rows) - succeeded,
+        "failures_by_kind": failures,
+    }
 
 
 def _index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -179,13 +280,31 @@ def _numeric_delta(candidate: dict[str, Any], reference: dict[str, Any], field: 
 
 
 def _comparison(video_id: str, candidate: dict[str, Any], reference: dict[str, Any]) -> dict[str, Any]:
+    candidate_ok = bool(candidate.get("ok", bool(candidate)))
+    reference_ok = bool(reference.get("ok", bool(reference)))
+    if not candidate_ok or not reference_ok:
+        if not candidate_ok and not reference_ok:
+            status = "both_failed"
+        elif not candidate_ok:
+            status = "candidate_failed"
+        else:
+            status = "reference_failed"
+        return {
+            "id": video_id,
+            "ok": False,
+            "status": status,
+            "candidate_failure": candidate.get("failure"),
+            "reference_failure": reference.get("failure"),
+            "agreement": {},
+            "deltas": {},
+        }
     agreement = _agreement(candidate, reference)
     deltas: dict[str, dict[str, Any]] = {}
     if agreement["view_count"] == "different":
         view_count_delta = _numeric_delta(candidate, reference, "view_count")
         if view_count_delta is not None:
             deltas["view_count"] = view_count_delta
-    return {"id": video_id, "ok": bool(candidate.get("ok", False)), "agreement": agreement, "deltas": deltas}
+    return {"id": video_id, "ok": True, "status": "compared", "agreement": agreement, "deltas": deltas}
 
 
 def _provider_names(value: str) -> list[str]:
@@ -213,7 +332,12 @@ def main() -> int:
     provider_results: dict[str, dict[str, Any]] = {}
     for name in args.providers:
         rows, elapsed, diagnostics = RUNNERS[name](args.video_id)
-        provider_results[name] = {"elapsed_seconds": elapsed, "rows": rows, "diagnostics": diagnostics}
+        provider_results[name] = {
+            "elapsed_seconds": elapsed,
+            "rows": rows,
+            "diagnostics": diagnostics,
+            "summary": _provider_summary(rows, len(args.video_id)),
+        }
 
     reference = _index(provider_results["ytdlp"]["rows"])
     comparisons: dict[str, list[dict[str, Any]]] = {}
@@ -227,7 +351,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 2,
+        "schema_version": 3,
         "corpus_size": len(args.video_id),
         "providers": provider_results,
         "comparisons": comparisons,
