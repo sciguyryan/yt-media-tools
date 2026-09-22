@@ -44,6 +44,8 @@ The shared normalised comparison covers `id`, `title`, `description`, `channel_i
 
 Some comparisons require semantic interpretation rather than literal promotion. In particular, `youtube-innertube`'s `publishDate` must not automatically become Discover's authoritative `upload_date`; `keywords` must not automatically become authoritative yt-dlp-style tags; category representation may differ; and mutable values such as view counts can legitimately change between sequential provider requests.
 
+For differing `view_count` values, the machine-readable comparison also records the candidate value, yt-dlp reference value, signed absolute delta and relative percentage delta. View counts are mutable and provider surfaces may update at different times, so the delta is evidence for interpretation rather than an automatic semantic failure. Equal or unavailable counts do not emit a delta.
+
 The machine-readable schema retains normalised rows, provider elapsed time, per-video `youtube-innertube` elapsed time and recorded failures. It currently records process stderr byte counts for subprocess providers. Exact transferred network bytes are not claimed because neither existing provider boundary exposes a trustworthy common measurement without additional instrumentation.
 
 ## Corpus and failure testing

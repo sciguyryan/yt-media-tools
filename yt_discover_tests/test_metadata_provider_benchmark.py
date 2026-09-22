@@ -79,3 +79,38 @@ def test_provider_parser_always_includes_ytdlp_reference() -> None:
     benchmark = _module()
     assert benchmark._provider_names("youtube-innertube") == ["youtube-innertube", "ytdlp"]
     assert benchmark._provider_names("youtubejs,ytdlp") == ["youtubejs", "ytdlp"]
+
+
+def test_view_count_difference_records_absolute_and_relative_delta() -> None:
+    benchmark = _module()
+    result = benchmark._comparison(
+        "abc",
+        {"id": "abc", "view_count": 1005, "ok": True},
+        {"id": "abc", "view_count": 1000, "ok": True},
+    )
+    assert result["agreement"]["view_count"] == "different"
+    assert result["deltas"]["view_count"] == {
+        "candidate": 1005,
+        "reference": 1000,
+        "absolute": 5,
+        "relative_percent": 0.5,
+    }
+
+
+def test_equal_or_missing_view_count_does_not_emit_delta() -> None:
+    benchmark = _module()
+    equal = benchmark._comparison(
+        "abc", {"id": "abc", "view_count": 1000, "ok": True}, {"id": "abc", "view_count": 1000}
+    )
+    missing = benchmark._comparison(
+        "abc", {"id": "abc", "view_count": None, "ok": True}, {"id": "abc", "view_count": 1000}
+    )
+    assert equal["deltas"] == {}
+    assert missing["deltas"] == {}
+
+
+def test_zero_reference_view_count_has_no_relative_percentage() -> None:
+    benchmark = _module()
+    result = benchmark._comparison("abc", {"id": "abc", "view_count": 1, "ok": True}, {"id": "abc", "view_count": 0})
+    assert result["deltas"]["view_count"]["absolute"] == 1
+    assert result["deltas"]["view_count"]["relative_percent"] is None

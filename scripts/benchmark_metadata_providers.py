@@ -163,6 +163,31 @@ def _agreement(candidate: dict[str, Any], reference: dict[str, Any]) -> dict[str
     return result
 
 
+def _numeric_delta(candidate: dict[str, Any], reference: dict[str, Any], field: str) -> dict[str, Any] | None:
+    left = candidate.get(field)
+    right = reference.get(field)
+    if (
+        isinstance(left, bool)
+        or isinstance(right, bool)
+        or not isinstance(left, (int, float))
+        or not isinstance(right, (int, float))
+    ):
+        return None
+    absolute = left - right
+    relative_percent = None if right == 0 else (absolute / right) * 100.0
+    return {"candidate": left, "reference": right, "absolute": absolute, "relative_percent": relative_percent}
+
+
+def _comparison(video_id: str, candidate: dict[str, Any], reference: dict[str, Any]) -> dict[str, Any]:
+    agreement = _agreement(candidate, reference)
+    deltas: dict[str, dict[str, Any]] = {}
+    if agreement["view_count"] == "different":
+        view_count_delta = _numeric_delta(candidate, reference, "view_count")
+        if view_count_delta is not None:
+            deltas["view_count"] = view_count_delta
+    return {"id": video_id, "ok": bool(candidate.get("ok", False)), "agreement": agreement, "deltas": deltas}
+
+
 def _provider_names(value: str) -> list[str]:
     names = [item.strip() for item in value.split(",") if item.strip()]
     invalid = [name for name in names if name not in PROVIDERS]
@@ -197,11 +222,7 @@ def main() -> int:
             continue
         candidate = _index(provider_results[name]["rows"])
         comparisons[name] = [
-            {
-                "id": video_id,
-                "ok": bool(candidate.get(video_id, {}).get("ok", False)),
-                "agreement": _agreement(candidate.get(video_id, {}), reference.get(video_id, {})),
-            }
+            _comparison(video_id, candidate.get(video_id, {}), reference.get(video_id, {}))
             for video_id in args.video_id
         ]
 
