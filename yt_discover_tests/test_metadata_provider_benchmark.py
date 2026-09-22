@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import subprocess
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +16,18 @@ def _module():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_benchmark_script_runs_directly_from_repository_root() -> None:
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "--youtubejs-cookies" in result.stdout
 
 
 def test_shared_comparison_covers_issue_103_scalar_surface() -> None:

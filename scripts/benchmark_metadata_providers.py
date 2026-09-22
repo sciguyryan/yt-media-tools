@@ -15,7 +15,13 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-from yt_media_tools.cookies import CookieFileError, cookie_header_from_netscape_file
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+_cookies = importlib.import_module("yt_media_tools.cookies")
+CookieFileError = _cookies.CookieFileError
+cookie_header_from_netscape_file = _cookies.cookie_header_from_netscape_file
 
 FAILURE_PATTERNS = (
     ("private", ("private video",)),
@@ -25,7 +31,6 @@ FAILURE_PATTERNS = (
     ("unavailable", ("video is unavailable", "not available")),
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
 PROVIDERS = ("youtubejs", "youtube-innertube", "ytdlp")
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
