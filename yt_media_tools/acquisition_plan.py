@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .provider_capabilities import MetadataRequirement
 from .query_properties import (
     CollectionQueryRequirement,
     IndexedFieldRequirement,
@@ -77,6 +78,23 @@ class PhysicalAcquisitionPlan:
     def required_stage_names(self) -> tuple[str, ...]:
         """Return stable names of required stages."""
         return tuple(stage.name for stage in self.required_stages)
+
+    @property
+    def provider_requirements(self) -> tuple[MetadataRequirement, ...]:
+        """Return required semantic work in provider-selection form.
+
+        This is deliberately a projection of the existing physical plan rather than
+        a second source of query semantics. Provider selection may choose how these
+        requirements are satisfied, but it cannot alter which requirements exist.
+        """
+        requirements: list[MetadataRequirement] = []
+        for stage in self.required_stages:
+            fields = set(stage.fields)
+            fields.update(item.field for item in stage.indexed_fields)
+            fields.update(item.field for item in stage.member_fields)
+            fields.update(item.field for item in stage.collection_queries)
+            requirements.append(MetadataRequirement(stage.name, frozenset(fields)))
+        return tuple(requirements)
 
     @property
     def requires_detailed_metadata(self) -> bool:

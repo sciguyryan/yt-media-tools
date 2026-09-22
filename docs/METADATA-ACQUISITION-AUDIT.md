@@ -65,3 +65,5 @@ Useful measurements include provider calls or requests, elapsed acquisition time
 The current detailed path is not simply spawning yt-dlp once per candidate. It already performs bulk process invocation for a known ID set, bulk cache lookup/write, and safe LIMIT-aware batching where query semantics permit early termination. The larger opportunity is reducing the cost or breadth of authoritative per-video extraction after cache filtering.
 
 Phase 4 should therefore investigate alternatives against specific requirement classes rather than asking which library can generally fetch YouTube metadata. A useful alternative must either satisfy authoritative fields more cheaply, batch known IDs more effectively, acquire narrower semantic stages, or materially improve reliability while fitting the existing backend-neutral plan and cache/provenance model.
+
+The completed provider investigation is recorded in `METADATA-BACKEND-INVESTIGATION.md`.

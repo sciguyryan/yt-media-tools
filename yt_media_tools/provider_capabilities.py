@@ -1,0 +1,115 @@
+"""Backend-neutral metadata provider capability and selection contracts."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+AUTH_ANONYMOUS = "anonymous"
+AUTH_COOKIES = "cookies"
+
+AUTHORITY_EXACT = "exact"
+AUTHORITY_APPROXIMATE = "approximate"
+
+GRANULARITY_SOURCE = "source"
+GRANULARITY_ENTRY = "entry"
+GRANULARITY_BATCH = "batch"
+
+
+@dataclass(frozen=True)
+class MetadataRequirement:
+    """One semantic acquisition requirement awaiting physical satisfaction."""
+
+    stage: str
+    fields: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True)
+class ProviderCapability:
+    """One provider's declared ability to satisfy a semantic requirement.
+
+    ``fields=None`` means that the capability covers every field represented by the
+    named semantic stage. A finite field set is deliberately conservative: the
+    capability is eligible only when every requested field is declared.
+    """
+
+    provider: str
+    stage: str
+    fields: frozenset[str] | None
+    authority: str
+    source_kinds: frozenset[str] | None
+    authentication: frozenset[str]
+    granularity: str
+    cost_rank: int
+    provenance: str
+
+    def supports(self, requirement: MetadataRequirement) -> bool:
+        """Return whether this capability covers the requirement semantically."""
+        if self.stage != requirement.stage:
+            return False
+        return self.fields is None or requirement.fields <= self.fields
+
+
+@dataclass(frozen=True)
+class ProviderSelectionContext:
+    """Known physical facts that may conservatively constrain provider eligibility."""
+
+    resolved_source_kind: str | None = None
+    authentication: str = AUTH_ANONYMOUS
+
+
+@dataclass(frozen=True)
+class ProviderCandidate:
+    """One eligible exact provider capability in deterministic preference order."""
+
+    capability: ProviderCapability
+    reason: str
+
+
+def eligible_provider_candidates(
+    requirement: MetadataRequirement,
+    capabilities: tuple[ProviderCapability, ...],
+    *,
+    context: ProviderSelectionContext = ProviderSelectionContext(),
+) -> tuple[ProviderCandidate, ...]:
+    """Return exact provider candidates without changing logical query semantics.
+
+    Approximate capabilities are intentionally excluded. Unknown source identity is
+    conservative: a source-specific provider cannot be selected until the source has
+    been resolved sufficiently to prove its applicability. Cost is a physical-plan
+    hint only and never weakens semantic authority.
+    """
+    candidates: list[ProviderCandidate] = []
+    for capability in capabilities:
+        if capability.authority != AUTHORITY_EXACT:
+            continue
+        if not capability.supports(requirement):
+            continue
+        if context.authentication not in capability.authentication:
+            continue
+        if capability.source_kinds is not None:
+            if context.resolved_source_kind is None:
+                continue
+            if context.resolved_source_kind not in capability.source_kinds:
+                continue
+        candidates.append(
+            ProviderCandidate(
+                capability,
+                (
+                    f"{capability.provider} can satisfy {requirement.stage} exactly "
+                    f"using {capability.granularity} acquisition at cost rank {capability.cost_rank}"
+                ),
+            )
+        )
+    candidates.sort(key=lambda item: (item.capability.cost_rank, item.capability.provider, item.capability.provenance))
+    return tuple(candidates)
+
+
+def select_provider_capability(
+    requirement: MetadataRequirement,
+    capabilities: tuple[ProviderCapability, ...],
+    *,
+    context: ProviderSelectionContext = ProviderSelectionContext(),
+) -> ProviderCandidate | None:
+    """Return the deterministic preferred exact capability, if one is eligible."""
+    candidates = eligible_provider_candidates(requirement, capabilities, context=context)
+    return candidates[0] if candidates else None

@@ -95,3 +95,16 @@ def test_renderer_degrades_cleanly_when_total_is_unknown() -> None:
         stream=stream,
     )
     assert stream.getvalue() == "yt-discover: Detailed metadata: 25 observed so far.\n"
+
+
+def test_detailed_metadata_completion_is_bounded_by_known_candidate_total(capsys) -> None:
+    from yt_media_tools.discover_acquisition import _DetailedMetadataProgress
+
+    progress = _DetailedMetadataProgress(level=0, total=1)
+    progress.start()
+    progress.complete(3)
+
+    assert capsys.readouterr().err.splitlines() == [
+        "yt-discover: Detailed metadata: started for 1 candidates.",
+        "yt-discover: Detailed metadata: complete (1/1).",
+    ]

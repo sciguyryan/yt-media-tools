@@ -165,6 +165,11 @@ class _DetailedMetadataProgress:
 
     def complete(self, completed: int | None = None) -> None:
         final = self.completed if completed is None else completed
+        # Backend telemetry can observe more entries than the bounded candidate set
+        # represented by this semantic stage. Keep presentation counters within the
+        # stage contract without changing the backend acquisition statistics.
+        if self.total is not None:
+            final = min(final, self.total)
         render_acquisition_progress(
             AcquisitionProgressEvent(
                 AcquisitionProgressKind.STAGE_COMPLETED,
