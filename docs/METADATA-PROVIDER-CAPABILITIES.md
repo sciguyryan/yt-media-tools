@@ -43,3 +43,7 @@ Provider resolution and provider acquisition remain separate concepts. A future 
 ## Deliberate exclusions
 
 This foundation does not register new providers, change runtime acquisition, introduce automatic multi-provider execution, reconcile disagreements between authoritative providers, or add official platform developer APIs. Those remain separate follow-up work so that provider experiments cannot silently change established query behaviour.
+
+## Backend resolution evidence
+
+Backend-reported extractor resolution is documented in [BACKEND-SOURCE-RESOLUTION.md](BACKEND-SOURCE-RESOLUTION.md). The capability selector deliberately accepts resolved source identity as context without deriving it from URL appearance.

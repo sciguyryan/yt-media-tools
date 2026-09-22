@@ -69,6 +69,7 @@ from yt_media_tools.query import (
     resolve_query,
 )
 from yt_media_tools.report import RunReport, write_report
+from yt_media_tools.source_resolution import format_backend_resolution, observed_ytdlp_resolutions
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.staged_predicates import matches_at_enumeration, rejects_at_enumeration
 from yt_media_tools.tools import ToolRegistry, ToolStatus, check_tools, format_tool_check
@@ -519,6 +520,7 @@ def main(argv: list[str] | None = None) -> int:
     enumeration_only_acquisition = False
     acquisition_started = perf_counter()
     source_record_counts: dict[tuple[str, str | None], int] = {}
+    source_backend_resolutions: dict[tuple[str, str | None], tuple] = {}
     # Determine this before enumeration because lightweight progress owns acquisition
     # observability only when no detailed metadata pass will follow.
     requires_detailed = (
@@ -583,6 +585,13 @@ def main(argv: list[str] | None = None) -> int:
                 if metadata_cache is not None:
                     metadata_cache.put_many(source_spec.canonical_url, source_records)
             source_record_counts[(source_value, request_facet)] = len(source_records)
+            resolutions = observed_ytdlp_resolutions(source_records)
+            source_backend_resolutions[(source_value, request_facet)] = resolutions
+            for resolution in resolutions:
+                _verbose(
+                    args.verbose,
+                    f"Backend source resolution for {source_value}: {format_backend_resolution(resolution)}",
+                )
             for item in source_records:
                 tagged = dict(item)
                 tagged["_yt_sql_source"] = source_value
@@ -1114,6 +1123,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if not multi_source:
         source_record_counts[source_requests[0]] = len(raw_records)
+        resolutions = observed_ytdlp_resolutions(raw_records)
+        source_backend_resolutions[source_requests[0]] = resolutions
+        for resolution in resolutions:
+            _verbose(args.verbose, f"Backend source resolution: {format_backend_resolution(resolution)}")
 
     observed_source_work = (
         enumeration_stats.enumerated if enumeration_stats is not None else acquisition_stats.attempted
@@ -1326,6 +1339,10 @@ def main(argv: list[str] | None = None) -> int:
                     "facet": source_spec.facet,
                     "adapter": source_capabilities(source_spec).adapter,
                     "acquired_records": source_record_counts.get((source_value, request_facet), 0),
+                    "backend_resolution": [
+                        resolution.as_dict()
+                        for resolution in source_backend_resolutions.get((source_value, request_facet), ())
+                    ],
                 }
                 for (source_value, request_facet), source_spec in zip(source_requests, sources, strict=True)
             ],

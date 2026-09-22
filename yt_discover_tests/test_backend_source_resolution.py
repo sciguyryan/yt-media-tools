@@ -1,0 +1,67 @@
+"""Backend source-resolution provenance contract."""
+
+from yt_media_tools.source_resolution import (
+    format_backend_resolution,
+    observed_ytdlp_resolutions,
+    resolution_from_ytdlp_record,
+)
+
+
+def test_ytdlp_resolution_preserves_raw_extractor_provenance() -> None:
+    resolution = resolution_from_ytdlp_record(
+        {
+            "extractor": "youtube:tab",
+            "extractor_key": "YoutubeTab",
+            "_type": "playlist",
+            "webpage_url": "https://www.youtube.com/@example/videos",
+            "original_url": "https://www.youtube.com/@example",
+        }
+    )
+    assert resolution is not None
+    assert resolution.provider == "yt-dlp"
+    assert resolution.extractor == "youtube:tab"
+    assert resolution.extractor_key == "YoutubeTab"
+    assert resolution.extractor_family == "youtube"
+    assert resolution.result_type == "playlist"
+    assert resolution.webpage_domain == "www.youtube.com"
+    assert resolution.original_domain == "www.youtube.com"
+
+
+def test_generic_extractor_does_not_claim_a_platform_family() -> None:
+    resolution = resolution_from_ytdlp_record(
+        {"extractor": "generic", "extractor_key": "Generic", "webpage_url": "https://example.invalid/watch"}
+    )
+    assert resolution is not None
+    assert resolution.extractor_family is None
+
+
+def test_resolution_can_be_observed_without_extractor_fields() -> None:
+    resolution = resolution_from_ytdlp_record({"webpage_url_domain": "media.example"})
+    assert resolution is not None
+    assert resolution.extractor is None
+    assert resolution.webpage_domain == "media.example"
+
+
+def test_records_without_resolution_provenance_are_ignored() -> None:
+    assert resolution_from_ytdlp_record({"id": "abc", "title": "Example"}) is None
+
+
+def test_observed_resolutions_are_distinct_and_deterministic() -> None:
+    records = [
+        {"extractor": "twitch:vod", "extractor_key": "TwitchVod", "webpage_url_domain": "twitch.tv"},
+        {"extractor": "youtube", "extractor_key": "Youtube", "webpage_url_domain": "www.youtube.com"},
+        {"extractor": "youtube", "extractor_key": "Youtube", "webpage_url_domain": "www.youtube.com"},
+    ]
+    resolutions = observed_ytdlp_resolutions(records)
+    assert [item.extractor for item in resolutions] == ["twitch:vod", "youtube"]
+
+
+def test_human_renderer_labels_backend_facts_without_semantic_claims() -> None:
+    resolution = resolution_from_ytdlp_record(
+        {"extractor": "youtube", "extractor_key": "Youtube", "webpage_url_domain": "www.youtube.com"}
+    )
+    assert resolution is not None
+    assert format_backend_resolution(resolution) == (
+        "provider=yt-dlp, extractor=youtube, extractor-key=Youtube, "
+        "extractor-family=youtube, result-type=video, webpage-domain=www.youtube.com"
+    )
