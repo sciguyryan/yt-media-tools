@@ -2,6 +2,14 @@
 
 This file records meaningful changes during active development. It is not release history. When a dot release is completed and accepted, relevant entries are reconciled into the root `CHANGELOG.md` and the completed development section is cleared or advanced for the next work item.
 
+## Discover - pytubefix metadata benchmark
+
+- [feature] Add pytubefix as an optional experimental provider in the shared known-video metadata benchmark without changing production provider selection.
+- [feature] Preserve pytubefix playability and video-detail signals and inventory thumbnail, chapter and caption capabilities separately from scalar normalisation.
+- [maintenance] Advance the experimental metadata benchmark schema to version 6 and retain per-video pytubefix acquisition timing.
+- [test] Cover pytubefix provider selection, normalisation, extended capability isolation and per-video failure handling with deterministic fixtures.
+- [docs] Define the issue #104 benchmark method, optional dependency, capability inventory and production-promotion boundary.
+
 ## Discover - Capability-oriented metadata provider selection
 
 - [maintenance] Add backend-neutral metadata requirement and provider-capability contracts covering authority, field coverage, resolved source applicability, authentication, acquisition granularity, provenance and relative physical cost.

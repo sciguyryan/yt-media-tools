@@ -11,6 +11,9 @@
 
 ## Discover active development
 
+- Add pytubefix as an optional experimental provider in the shared known-video metadata benchmark for issue #104 without changing production acquisition planning.
+- Preserve pytubefix playability and video-detail source signals while keeping live-state authority unassigned pending corpus evidence.
+- Inventory thumbnail, chapter and caption capabilities separately from the normalised scalar comparison surface and retain per-video acquisition timing.
 - Add a shared experimental known-video metadata benchmark for YouTube.js, youtube-innertube and yt-dlp without changing production acquisition planning.
 - Add explicit youtube-innertube normalisation and field-by-field comparison across the issue #103 scalar metadata surface.
 - Report absolute and relative view-count deltas when lightweight providers differ from the yt-dlp reference so mutable-count drift can be interpreted rather than treated as an undifferentiated mismatch.

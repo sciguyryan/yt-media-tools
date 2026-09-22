@@ -351,3 +351,98 @@ def test_secret_guard_checks_multiple_cookie_values() -> None:
         assert "refusing to serialise" in str(exc)
     else:
         raise AssertionError("individual cookie value was allowed into serialisable output")
+
+
+class _FakeCaptions:
+    def __iter__(self):
+        return iter(("en", "de"))
+
+
+class _FakePytubefixVideo:
+    title = "Example"
+    description = "Description"
+    channel_id = "UCexample"
+    length = 123
+    views = 456
+    keywords = ["one", "two"]
+    thumbnail_url = "https://example.invalid/thumb.jpg"
+    chapters = [{"title": "Intro"}, {"title": "End"}]
+    captions = _FakeCaptions()
+    vid_info = {
+        "playabilityStatus": {"status": "OK"},
+        "videoDetails": {"isPrivate": False, "isLiveContent": True, "videoId": "abc"},
+    }
+
+    class _Date:
+        @staticmethod
+        def strftime(pattern):
+            assert pattern == "%Y%m%d"
+            return "20260922"
+
+    publish_date = _Date()
+
+
+def test_pytubefix_is_available_as_experimental_provider() -> None:
+    benchmark = _module()
+    assert "pytubefix" in benchmark.PROVIDERS
+    assert benchmark._provider_names("pytubefix") == ["pytubefix", "ytdlp"]
+
+
+def test_pytubefix_normalisation_keeps_extended_capabilities_separate() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_pytubefix("abc", _FakePytubefixVideo())
+    assert row["id"] == "abc"
+    assert row["title"] == "Example"
+    assert row["channel_id"] == "UCexample"
+    assert row["duration"] == 123
+    assert row["view_count"] == 456
+    assert row["upload_date"] == "20260922"
+    assert row["category"] is None
+    assert row["is_live"] is None
+    assert row["keywords"] == ["one", "two"]
+    assert row["source_signals"]["playability_status"] == "OK"
+    assert row["source_signals"]["is_live_content"] is True
+    assert row["extended_capabilities"] == {
+        "thumbnail_url": {"available": True},
+        "chapters": {"available": True, "count": 2},
+        "captions": {"available": True, "count": 2, "codes": ["de", "en"]},
+    }
+
+
+def test_pytubefix_capability_probe_failure_does_not_discard_core_metadata() -> None:
+    benchmark = _module()
+
+    class BrokenCapabilities(_FakePytubefixVideo):
+        @property
+        def chapters(self):
+            raise RuntimeError("chapter endpoint unavailable")
+
+    row = benchmark._normalise_pytubefix("abc", BrokenCapabilities())
+    assert row["ok"] is True
+    assert row["extended_capabilities"]["chapters"] == {"available": False, "error_type": "RuntimeError"}
+
+
+def test_pytubefix_runner_records_per_video_failures(monkeypatch) -> None:
+    benchmark = _module()
+
+    class FakeModule:
+        __version__ = "test-version"
+
+        @staticmethod
+        def YouTube(url):
+            if url.endswith("private-id"):
+                raise RuntimeError("Private video")
+            return _FakePytubefixVideo()
+
+    original_import = benchmark.importlib.import_module
+    monkeypatch.setattr(
+        benchmark.importlib,
+        "import_module",
+        lambda name: FakeModule if name == "pytubefix" else original_import(name),
+    )
+    rows, _, diagnostics = benchmark._pytubefix(["ok-id", "private-id"])
+    assert rows[0]["ok"] is True
+    assert rows[1]["failure"]["kind"] == "private"
+    assert diagnostics["version"] == "test-version"
+    assert diagnostics["authentication"] == "anonymous"
+    assert diagnostics["network_measurement"] == "not instrumented"

@@ -2,18 +2,24 @@
 
 ## Purpose
 
-Issues #102 and #103 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()` and `youtube-innertube` acquisition against the existing yt-dlp detailed path over the same corpus.
+Issues #102, #103 and #104 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube` and pytubefix acquisition against the existing yt-dlp detailed path over the same corpus.
 
 The benchmark is evidence gathering. A field being present, or even equal to yt-dlp in one run, does not establish authoritative semantic equivalence.
 
 ## Providers
 
-The harness supports `youtubejs`, `youtube-innertube` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID.
+The harness supports `youtubejs`, `youtube-innertube`, `pytubefix` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
 
 `youtube-innertube` is deliberately an optional benchmark dependency rather than a production Discover dependency. Install the research candidate directly from its upstream repository before running that provider:
 
 ```bash
 python -m pip install git+https://github.com/danielvangulla/youtube-innertube
+```
+
+Pytubefix is likewise an optional research dependency for issue #104 rather than a production Discover dependency:
+
+```bash
+python -m pip install pytubefix
 ```
 
 ## Running the benchmark
@@ -36,15 +42,29 @@ To benchmark only the #103 candidate against yt-dlp:
 python scripts/benchmark_metadata_providers.py --providers youtube-innertube --json -- $(cat ./ids/ids-curiousmarc-bench) > bench-103.json
 ```
 
+To benchmark the #104 pytubefix candidate against yt-dlp:
+
+```bash
+python scripts/benchmark_metadata_providers.py --providers pytubefix --json -- $(cat ./ids/ids-curiousmarc-bench) > bench-104.json
+```
+
 The older #102-specific harness remains available so retained #102 evidence and its schema stay reproducible.
 
 ## Comparison surface
 
 The shared normalised comparison covers `id`, `title`, `description`, `channel_id`, `duration`, `view_count`, `upload_date`, `category`, `is_live` and `keywords`. Each value is classified as equal, different or missing relative to yt-dlp.
 
-Some comparisons require semantic interpretation rather than literal promotion. In particular, `youtube-innertube`'s `publishDate` must not automatically become Discover's authoritative `upload_date`; `keywords` must not automatically become authoritative yt-dlp-style tags; category representation may differ; and mutable values such as view counts can legitimately change between sequential provider requests.
+Some comparisons require semantic interpretation rather than literal promotion. In particular, `youtube-innertube`'s `publishDate` and pytubefix's `publish_date` must not automatically become Discover's authoritative `upload_date`; provider keywords must not automatically become authoritative yt-dlp-style tags; category and live-state representation may differ; and mutable values such as view counts can legitimately change between sequential provider requests.
 
 For differing `view_count` values, the machine-readable comparison also records the candidate value, yt-dlp reference value, signed absolute delta and relative percentage delta. View counts are mutable and provider surfaces may update at different times, so the delta is evidence for interpretation rather than an automatic semantic failure. Equal or unavailable counts do not emit a delta.
+
+## Pytubefix extended capability inventory
+
+Issue #104 also asks whether pytubefix exposes useful metadata outside the established scalar comparison surface. Successful pytubefix rows therefore contain an `extended_capabilities` inventory for thumbnail availability, chapters and captions. The inventory records availability and small structural facts such as counts or caption codes, not thumbnail URLs, chapter text or caption content. Capability probing is deliberately separate from scalar normalisation so a failure while inspecting chapters or captions does not discard otherwise valid core metadata.
+
+The inventory is evidence only. A property being present does not establish its authority, acquisition cost or suitability for Discover. In particular, pytubefix `videoDetails.isLiveContent` is retained as a provider-native source signal and is not mapped directly to Discover's current `is_live` semantic. Publication dates are normalised to `YYYYMMDD` for comparison when pytubefix supplies a date, but equality with yt-dlp remains something the corpus must establish rather than an assumption in the adapter.
+
+Pytubefix per-video elapsed time is retained so the corpus can expose expensive individual acquisitions. Exact request counts and transferred bytes are currently reported as not instrumented rather than inferred from implementation details. If #104 demonstrates a reason to pursue pytubefix further, request-level instrumentation can be added without changing the normalised semantic surface.
 
 ## Cookie-authenticated YouTube.js comparison
 
@@ -58,7 +78,7 @@ The report labels the variants as `youtubejs` and `youtubejs-cookie`, compares b
 
 Discover's existing Netscape `--cookies FILE` input is also forwarded to the production YouTube.js channel-enumeration adapter when that backend is selected. Translation into the provider-specific HTTP header occurs at the adapter boundary. The authentication context therefore follows the acquisition request without becoming yt-sql semantics, planner metadata, provenance or command-line subprocess arguments.
 
-Machine-readable schema version 5 retains normalised rows, provider elapsed time, per-video `youtube-innertube` elapsed time, provider success/failure summaries and structured acquisition failures. Successful rows also retain a deliberately small `source_signals` diagnostic object: YouTube.js exposes its playability/private/live flags, yt-dlp exposes its live-history and availability fields, and `youtube-innertube` exposes its `isLive` value plus the names of keys returned by `video_details()`. These diagnostics are evidence only and are not part of the normalised semantic comparison surface. A failed video does not abort an adversarial benchmark: comparisons distinguish candidate failure, reference failure and failure on both sides. yt-dlp runs the corpus in one process with `--ignore-errors`; its standard error is captured rather than leaked into JSON-oriented terminal output, and per-video diagnostics are retained where yt-dlp identifies the affected video. Exact transferred network bytes are not claimed because neither existing provider boundary exposes a trustworthy common measurement without additional instrumentation.
+Machine-readable schema version 6 retains normalised rows, provider elapsed time, per-video `youtube-innertube` elapsed time, provider success/failure summaries and structured acquisition failures. Successful rows also retain a deliberately small `source_signals` diagnostic object: YouTube.js exposes its playability/private/live flags, yt-dlp exposes its live-history and availability fields, and `youtube-innertube` exposes its `isLive` value plus the names of keys returned by `video_details()`. These diagnostics are evidence only and are not part of the normalised semantic comparison surface. A failed video does not abort an adversarial benchmark: comparisons distinguish candidate failure, reference failure and failure on both sides. yt-dlp runs the corpus in one process with `--ignore-errors`; its standard error is captured rather than leaked into JSON-oriented terminal output, and per-video diagnostics are retained where yt-dlp identifies the affected video. Exact transferred network bytes are not claimed because neither existing provider boundary exposes a trustworthy common measurement without additional instrumentation.
 
 ## Corpus and failure testing
 
@@ -78,4 +98,4 @@ Normal Discover operation filters the known YouTube.js `Text` attachment-run par
 
 ## Promotion boundary
 
-Issue #103 does not register `youtube-innertube` capabilities with Discover and does not alter automatic acquisition planning. Promotion requires a later field-by-field authority decision based on repeated corpus evidence, difficult-content behaviour, failure characteristics, maintenance risk and a clear authentication policy.
+Issues #103 and #104 do not register `youtube-innertube` or pytubefix capabilities with Discover and do not alter automatic acquisition planning. Promotion requires a later field-by-field authority decision based on repeated corpus evidence, difficult-content behaviour, failure characteristics, maintenance risk and a clear authentication policy.
