@@ -7,6 +7,7 @@
 - Report absolute and relative view-count deltas when lightweight providers differ from the yt-dlp reference so mutable-count drift can be interpreted rather than treated as an undifferentiated mismatch.
 - Preserve adversarial benchmark output when individual acquisitions fail, with structured failure classification, provider summaries and explicit failed-comparison states.
 - Capture yt-dlp diagnostics during JSON benchmark runs while retaining per-video failure evidence and corpus-level timing.
+- Preserve provider-native playability, live-state and availability signals in benchmark evidence so final #103 semantic discrepancies can be investigated without promoting those signals into Discover semantics.
 - Filter the reproduced routine YouTube.js attachment-run parser warning at the bridge boundary while preserving genuine standard-error failures and an explicit diagnostic escape hatch.
 - Document benchmark corpus reuse, authentication limitations, reliability considerations and the provider-promotion boundary.
 

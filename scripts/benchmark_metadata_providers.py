@@ -71,6 +71,13 @@ def _normalise_youtubejs(row: dict[str, Any]) -> dict[str, Any]:
         "is_live": row.get("is_live"),
         "keywords": row.get("keywords"),
         "ok": row.get("ok", True),
+        "source_signals": {
+            "is_live": row.get("is_live"),
+            "is_live_content": row.get("is_live_content"),
+            "is_private": row.get("is_private"),
+            "is_unlisted": row.get("is_unlisted"),
+            "playability_status": row.get("playability_status"),
+        },
     }
 
 
@@ -87,6 +94,10 @@ def _normalise_youtube_innertube(video_id: str, row: dict[str, Any]) -> dict[str
         "is_live": row.get("isLive"),
         "keywords": row.get("keywords"),
         "ok": True,
+        "source_signals": {
+            "isLive": row.get("isLive"),
+            "available_keys": sorted(str(key) for key in row),
+        },
     }
 
 
@@ -105,6 +116,12 @@ def _normalise_ytdlp(row: dict[str, Any]) -> dict[str, Any]:
         "is_live": row.get("is_live"),
         "keywords": row.get("tags"),
         "ok": True,
+        "source_signals": {
+            "is_live": row.get("is_live"),
+            "was_live": row.get("was_live"),
+            "live_status": row.get("live_status"),
+            "availability": row.get("availability"),
+        },
     }
 
 
@@ -351,7 +368,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 3,
+        "schema_version": 4,
         "corpus_size": len(args.video_id),
         "providers": provider_results,
         "comparisons": comparisons,

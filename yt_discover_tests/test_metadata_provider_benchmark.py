@@ -59,6 +59,20 @@ def test_youtube_innertube_normalisation_is_explicit() -> None:
         "is_live": False,
         "keywords": ["one", "two"],
         "ok": True,
+        "source_signals": {
+            "isLive": False,
+            "available_keys": [
+                "category",
+                "channelId",
+                "description",
+                "durationSeconds",
+                "isLive",
+                "keywords",
+                "publishDate",
+                "title",
+                "viewCount",
+            ],
+        },
     }
 
 
@@ -182,3 +196,60 @@ def test_ytdlp_diagnostics_are_associated_with_failed_video_ids() -> None:
     assert "not a bot" in result["first_id"]
     assert result["second_id"] == "ERROR: [youtube] second_id: Private video"
     assert "successful_id" not in result
+
+
+def test_youtubejs_normalisation_preserves_playability_and_live_signals() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_youtubejs(
+        {
+            "id": "private-id",
+            "ok": True,
+            "title": None,
+            "is_live": False,
+            "is_live_content": False,
+            "is_private": True,
+            "is_unlisted": False,
+            "playability_status": "LOGIN_REQUIRED",
+        }
+    )
+    assert row["source_signals"] == {
+        "is_live": False,
+        "is_live_content": False,
+        "is_private": True,
+        "is_unlisted": False,
+        "playability_status": "LOGIN_REQUIRED",
+    }
+
+
+def test_youtube_innertube_normalisation_preserves_live_signal_and_available_keys() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_youtube_innertube(
+        "live-id",
+        {
+            "title": "Archived stream",
+            "isLive": True,
+            "viewCount": 10,
+            "unexpectedLiveHint": "ended",
+        },
+    )
+    assert row["source_signals"]["isLive"] is True
+    assert row["source_signals"]["available_keys"] == ["isLive", "title", "unexpectedLiveHint", "viewCount"]
+
+
+def test_ytdlp_normalisation_preserves_reference_live_and_availability_signals() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_ytdlp(
+        {
+            "id": "archived-id",
+            "is_live": False,
+            "was_live": True,
+            "live_status": "was_live",
+            "availability": "public",
+        }
+    )
+    assert row["source_signals"] == {
+        "is_live": False,
+        "was_live": True,
+        "live_status": "was_live",
+        "availability": "public",
+    }
