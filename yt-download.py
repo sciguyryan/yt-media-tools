@@ -30,7 +30,7 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
 
@@ -44,14 +44,15 @@ from yt_media_tools.ytdlp_runtime import (
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.21.1"
+PROGRAM_VERSION = "1.22.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROFILE_NAME = "default"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
-PROFILE_VERSION = 2
+PROFILE_VERSION = 3
+LEGACY_PROFILE_VERSIONS = frozenset({2})
 RUN_MANIFEST_SCHEMA_VERSION = 1
-MACHINE_CONTRACT_VERSION = 3
+MACHINE_CONTRACT_VERSION = 4
 PLAN_SCHEMA_VERSION = 3
 CAPABILITIES_SCHEMA_VERSION = 1
 CONFIG_VALIDATION_SCHEMA_VERSION = 1
@@ -209,6 +210,7 @@ CLI_DESTINATION_CLASSES = {
             "profile",
             "defaults",
             "list_profiles",
+            "profile_tree",
             "schema_json",
             "validate_config",
             "capabilities",
@@ -627,11 +629,14 @@ class DownloadPolicy:
 
 @dataclass(frozen=True)
 class Profile:
-    """One validated named Downloader profile."""
+    """One validated named Downloader profile with resolved ancestry."""
 
     name: str
     settings: dict[str, object]
     source: Path
+    parent: str | None = None
+    ancestry: tuple[str, ...] = ()
+    setting_sources: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -774,6 +779,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="list_profiles",
         action="store_true",
         help="List named profiles in the resolved defaults JSON file and exit.",
+    )
+    parser.add_argument(
+        "--profile-tree",
+        nargs="?",
+        const="",
+        metavar="NAME",
+        help="Print the validated parameter-profile hierarchy, optionally focused on NAME, and exit.",
     )
     parser.add_argument(
         "--schema-json",
@@ -2178,25 +2190,35 @@ def profile_file_schema() -> dict[str, object]:
         "additionalProperties": False,
         "properties": raw_properties,
     }
+    inherited_profile = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "parent": {"type": "string", "pattern": PROFILE_NAME_RE.pattern},
+            **raw_properties,
+        },
+    }
     return {
         "$schema": JSON_SCHEMA_DIALECT,
-        "$id": "urn:yt-media-tools:downloader:profiles:2",
+        "$id": "urn:yt-media-tools:downloader:profiles:3",
         "title": "yt-downloader profiles",
         "type": "object",
         "additionalProperties": False,
         "required": ["version", "profiles"],
         "$defs": {
             "settings": raw_settings,
+            "profile": inherited_profile,
             "reusable-value": {
                 "description": "A JSON value reusable through $values.* references.",
             },
         },
         "properties": {
             "version": {"const": PROFILE_VERSION},
+            "$defaults": {"$ref": "#/$defs/settings"},
             "profiles": {
                 "type": "object",
                 "propertyNames": {"pattern": PROFILE_NAME_RE.pattern},
-                "additionalProperties": {"$ref": "#/$defs/settings"},
+                "additionalProperties": {"$ref": "#/$defs/profile"},
             },
             "values": {
                 "type": "object",
@@ -2216,7 +2238,13 @@ def machine_contract() -> dict[str, object]:
             "format_version": PROFILE_VERSION,
             "file_schema": profile_file_schema(),
             "settings_schema": profile_setting_schema(),
-            "precedence": ["explicit-cli", "profile", "built-in-defaults"],
+            "precedence": ["explicit-cli", "selected-profile", "ancestor-profiles", "$defaults", "built-in-defaults"],
+            "inheritance": {
+                "model": "single-parent",
+                "implicit_root": "$defaults",
+                "root_optional": True,
+                "cycles": "error",
+            },
             "unknown_settings": "error",
             "references": {
                 "namespace": "$values",
@@ -2241,6 +2269,7 @@ def machine_contract() -> dict[str, object]:
         },
         "machine_interfaces": {
             "schema": {"cli": "--schema-json", "stability": "versioned"},
+            "profile_tree": {"cli": "--profile-tree [NAME]", "stability": "versioned"},
             "config_validation": {
                 "cli": "--validate-config [FILE]",
                 "schema_version": CONFIG_VALIDATION_SCHEMA_VERSION,
@@ -2446,12 +2475,11 @@ def _resolve_profile_references(
 
 
 def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
-    """Load and strictly validate one versioned defaults JSON file."""
+    """Load, resolve and strictly validate one versioned defaults JSON file."""
     if not path.is_file():
         if allow_missing:
             return {}
         raise ValueError(f"defaults file not found: {path}")
-
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
@@ -2460,17 +2488,19 @@ def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
         ) from exc
     except (OSError, UnicodeDecodeError) as exc:
         raise ValueError(f"unable to read defaults file {path}: {exc}") from exc
-
     if not isinstance(payload, dict):
         raise ValueError(f"defaults file {path} must contain a JSON object")
-    unknown_root = set(payload) - {"version", "profiles", "values"}
+    version = payload.get("version")
+    supported_versions = {PROFILE_VERSION, *LEGACY_PROFILE_VERSIONS}
+    if version not in supported_versions:
+        raise ValueError(
+            f"defaults file {path} has unsupported version {version!r}; expected one of {sorted(supported_versions)}"
+        )
+    allowed_root = {"version", "profiles", "values"} | ({"$defaults"} if version == PROFILE_VERSION else set())
+    unknown_root = set(payload) - allowed_root
     if unknown_root:
         rendered = ", ".join(repr(key) for key in sorted(unknown_root))
         raise ValueError(f"defaults file {path} contains unknown top-level key(s): {rendered}")
-    if payload.get("version") != PROFILE_VERSION:
-        raise ValueError(
-            f"defaults file {path} has unsupported version {payload.get('version')!r}; expected {PROFILE_VERSION}"
-        )
     values_raw = payload.get("values", {})
     if not isinstance(values_raw, dict):
         raise ValueError(f"defaults file {path} must define 'values' as a JSON object")
@@ -2478,23 +2508,75 @@ def load_profiles(path: Path, *, allow_missing: bool) -> dict[str, Profile]:
     if not isinstance(profiles_raw, dict):
         raise ValueError(f"defaults file {path} must define a 'profiles' JSON object")
 
-    profiles: dict[str, Profile] = {}
-    for name, raw_settings in profiles_raw.items():
+    defaults_raw = payload.get("$defaults", {})
+    defaults_resolved = _resolve_profile_references(defaults_raw, values_raw, profile_name="$defaults")
+    defaults_settings = validate_profile_settings(defaults_resolved, profile_name="$defaults")
+
+    raw_profiles: dict[str, tuple[str | None, dict[str, object]]] = {}
+    for name, raw in profiles_raw.items():
         if not isinstance(name, str):
             raise ValueError(f"defaults file {path} contains a non-string profile name")
         validate_profile_name(name)
-        resolved_settings = _resolve_profile_references(raw_settings, values_raw, profile_name=name)
-        settings = validate_profile_settings(resolved_settings, profile_name=name)
-        profiles[name] = Profile(name=name, settings=settings, source=path)
+        if not isinstance(raw, dict):
+            raise ValueError(f"profile {name!r} must be a JSON object")
+        parent = raw.get("parent") if version == PROFILE_VERSION else None
+        if version != PROFILE_VERSION and "parent" in raw:
+            raise ValueError(f"profile {name!r} contains unknown option 'parent'")
+        if parent is not None:
+            if not isinstance(parent, str):
+                raise ValueError(f"profile {name!r} parent must be a profile name string")
+            validate_profile_name(parent)
+            if parent == name:
+                raise ValueError(f"profile inheritance cycle: {name} -> {name}")
+        settings_raw = {key: value for key, value in raw.items() if key != "parent"}
+        resolved = _resolve_profile_references(settings_raw, values_raw, profile_name=name)
+        raw_profiles[name] = (parent, resolved)
+
+    for name, (parent, _) in raw_profiles.items():
+        if parent is not None and parent not in raw_profiles:
+            raise ValueError(f"profile {name!r} refers to missing parent {parent!r}")
+
+    profiles: dict[str, Profile] = {}
+    visiting: list[str] = []
+
+    def resolve(name: str) -> Profile:
+        if name in profiles:
+            return profiles[name]
+        if name in visiting:
+            first = visiting.index(name)
+            cycle = visiting[first:] + [name]
+            raise ValueError(f"profile inheritance cycle: {' -> '.join(cycle)}")
+        visiting.append(name)
+        parent, own = raw_profiles[name]
+        merged = dict(defaults_settings)
+        sources = {key: "$defaults" for key in defaults_settings}
+        ancestry: tuple[str, ...] = ()
+        if parent is not None:
+            parent_profile = resolve(parent)
+            merged.update(parent_profile.settings)
+            sources.update(parent_profile.setting_sources)
+            ancestry = (*parent_profile.ancestry, parent)
+        merged.update(own)
+        sources.update({key: f"profile {name!r}" for key in own})
+        validated = validate_profile_settings(merged, profile_name=name)
+        profile = Profile(
+            name=name,
+            settings=validated,
+            source=path,
+            parent=parent,
+            ancestry=ancestry,
+            setting_sources={key: sources[key] for key in validated},
+        )
+        profiles[name] = profile
+        visiting.pop()
+        return profile
+
+    for name in sorted(raw_profiles, key=str.casefold):
+        resolve(name)
     return profiles
 
 
-def select_profile(
-    name: str | None,
-    path: Path,
-    *,
-    explicit_defaults: bool,
-) -> Profile | None:
+def select_profile(name: str | None, path: Path, *, explicit_defaults: bool) -> Profile | None:
     """Resolve one selected profile, if requested."""
     if name is None:
         if explicit_defaults and not path.is_file():
@@ -2512,11 +2594,58 @@ def select_profile(
 
 
 def list_profiles(path: Path, *, explicit_defaults: bool) -> list[str]:
-    """Return sorted profile names from one defaults file."""
+    """Return sorted selectable profile names from one defaults file."""
     if not path.is_file() and not explicit_defaults:
         return []
+    return sorted(load_profiles(path, allow_missing=False), key=str.casefold)
+
+
+def profile_tree(path: Path, *, focus: str | None = None, ascii_only: bool = False) -> str:
+    """Render the validated profile hierarchy deterministically."""
     profiles = load_profiles(path, allow_missing=False)
-    return sorted(profiles, key=str.casefold)
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    has_defaults = payload.get("version") == PROFILE_VERSION and "$defaults" in payload
+    if focus is not None:
+        validate_profile_name(focus)
+        if focus not in profiles:
+            raise ValueError(f"profile {focus!r} was not found in {path}")
+        chain = list(profiles[focus].ancestry) + [focus]
+        if has_defaults:
+            chain.insert(0, "$defaults")
+        connector = "`-- " if ascii_only else "└── "
+        lines = [chain[0]]
+        for depth, name in enumerate(chain[1:]):
+            lines.append("    " * depth + connector + name)
+        return "\n".join(lines)
+    children: dict[str | None, list[str]] = {}
+    for name, profile in profiles.items():
+        children.setdefault(profile.parent, []).append(name)
+    for names in children.values():
+        names.sort(key=str.casefold)
+    tee, elbow, pipe, space = ("|-- ", "`-- ", "|   ", "    ") if ascii_only else ("├── ", "└── ", "│   ", "    ")
+    lines: list[str] = []
+
+    def emit(name: str, prefix: str = "") -> None:
+        kids = children.get(name, [])
+        for index, child in enumerate(kids):
+            last = index == len(kids) - 1
+            lines.append(prefix + (elbow if last else tee) + child)
+            emit(child, prefix + (space if last else pipe))
+
+    roots = children.get(None, [])
+    if has_defaults:
+        lines.append("$defaults")
+        for index, root in enumerate(roots):
+            last = index == len(roots) - 1
+            lines.append((elbow if last else tee) + root)
+            emit(root, space if last else pipe)
+    else:
+        for root_index, root in enumerate(roots):
+            if root_index:
+                lines.append("")
+            lines.append(root)
+            emit(root)
+    return "\n".join(lines)
 
 
 def explicit_profile_settings(args: argparse.Namespace) -> dict[str, object]:
@@ -2655,7 +2784,7 @@ def resolve_profile_settings(
     settings = merge_profile_settings(profile, cli_settings)
     sources: dict[str, str] = {}
     if profile is not None:
-        sources.update({key: f"profile {profile.name!r}" for key in profile.settings})
+        sources.update(profile.setting_sources or {key: f"profile {profile.name!r}" for key in profile.settings})
     sources.update({key: "explicit CLI" for key in cli_settings if key in settings})
     sources = {key: source for key, source in sources.items() if key in settings}
     return ResolvedProfileSettings(settings=settings, sources=sources)
@@ -3930,6 +4059,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--run-manifest is unavailable with --explain or --explain-json")
     if args.hash_outputs and args.run_manifest is None:
         parser.error("--hash-outputs requires --run-manifest FILE")
+
+    if args.profile_tree is not None:
+        if not resolved_defaults.is_file() and not explicit_defaults:
+            print(f"No profiles are available in {resolved_defaults}.")
+            return 0
+        try:
+            focus = args.profile_tree or None
+            ascii_only = not getattr(sys.stdout, "encoding", None) or not str(sys.stdout.encoding).lower().startswith(
+                "utf"
+            )
+            print(profile_tree(resolved_defaults, focus=focus, ascii_only=ascii_only))
+        except ValueError as exc:
+            parser.error(str(exc))
+        return 0
 
     if args.list_profiles:
         try:

@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.21.1 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.22.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -252,85 +252,54 @@ Manual verification is reserved for behaviour that genuinely depends on an exter
 
 Named profiles provide reusable Downloader policy without replacing explicit command-line control. The script-local `defaults.json` is used by default, or another file may be selected with `-d/--defaults`.
 
-List available profiles:
+Profile format version 3 adds deterministic single-parent inheritance. The optional top-level `$defaults` object is the shared implicit root. Every ordinary profile without an explicit `parent` inherits from `$defaults` when it is present. An ordinary profile may name one other ordinary profile as its parent; multiple inheritance is deliberately unsupported. Missing parents and direct or indirect cycles are configuration errors. Existing version 2 non-hierarchical files remain accepted for backwards compatibility.
 
-```bash
-./yt-download.py --list-profiles
-```
-
-Select one:
-
-```bash
-./yt-download.py -p 4k VIDEO_ID
-```
-
-Explicit CLI options override selected profile values:
-
-```bash
-./yt-download.py -p 4k --resolution 1080p VIDEO_ID
-```
-
-The shipped `defaults.json` contains `default`, `best`, `4k`, `1440p` and `playlist`. The `default` profile is selected when no profile is named. These profiles inherit the built-in `bv+ba/best` selector unless a profile or explicit CLI setting deliberately supplies raw `format` policy.
-
-```json
-{
-  "version": 2,
-  "profiles": {
-    "default": {
-      "path": "$values.single.path",
-      "output": "$values.single.output"
-    },
-    "1440p": {
-      "path": "$values.single.path",
-      "output": "$values.single.output",
-      "resolution": "1440p"
-    }
-  },
-  "values": {
-    "single": {
-      "path": "/mnt/storage/Storage/YouTube/YouTube/",
-      "output": "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
-    }
-  }
-}
-```
-
-Supported profile keys are intentionally limited to Downloader-owned configuration. Unknown keys and wrong JSON types are errors rather than being silently ignored. `format` is passed directly to yt-dlp's `-f` option.
-
-Profile format version 2 also provides an optional top-level `values` object for reusable JSON values. A complete string value beginning with `$values.` is resolved by following its dot-separated key chain before the normal destination setting is validated. References preserve the referenced JSON type, so strings, Booleans, integers and arrays can all be shared. Reusable values may reference other reusable values, with missing targets and cycles treated as configuration errors.
-
-References replace the complete JSON value rather than interpolating into strings. A string beginning with `$$` escapes the reference marker and produces a literal leading `$`. Other strings beginning with a single `$` are rejected as malformed references so misspellings cannot silently become configuration values.
-
-Profiles are deliberately hand-edited JSON configuration. Downloader validates and lists them but does not record, generate, overwrite or remove profiles on the user's behalf.
-
-Profile precedence is:
+The effective precedence is:
 
 ```text
-built-in defaults -> selected profile -> explicit CLI settings
+built-in defaults -> $defaults -> oldest ancestor -> ... -> immediate parent -> selected profile -> explicit CLI settings
 ```
 
-`--auto-cookies` explicitly restores automatic script-local cookie discovery when a selected profile contains `"no-cookies": true` or a browser/file cookie source.
-
-Operational policy can also be stored in profiles. Supported settings include `playlist`, `reverse-playlist`, `playlist-items`, `live`, `live-from-start`, `wait-for-video`, `write-live-chat`, `chapter-sections`, `time-ranges`, `limit-rate`, `throttled-rate`, `concurrent-fragments`, `retries`, `fragment-retries`, `file-access-retries`, `extractor-retries`, `retry-sleep`, `archive`, `temp-path`, `extractor-args` and `cookies-from-browser`. Declarative format settings are documented separately below. `playlist-items` is an ordered JSON array containing non-zero integer indices or validated slice strings such as `"5:12"` and `"1:20:2"`. `chapter-sections` is an ordered array of regular-expression strings. `time-ranges` is an ordered array of canonical `START-STOP` strings or two-item `START`, `STOP` arrays. Retry counts accept non-negative integers or `"infinite"`; `retry-sleep` and `extractor-args` are ordered JSON arrays because their corresponding yt-dlp options may be repeated.
+List selectable profiles with `./yt-download.py --list-profiles`. `$defaults` is structural and is never listed or selectable. Inspect the complete validated hierarchy with `./yt-download.py --profile-tree`, or inspect one ancestry path with `./yt-download.py --profile-tree NAME`. Tree output uses Unicode box drawing when the output encoding supports it and a deterministic ASCII fallback otherwise.
 
 For example:
 
 ```json
 {
-  "version": 2,
+  "version": 3,
+  "$defaults": {
+    "user-agent": "$values.general.user-agent",
+    "impersonate": "$values.general.impersonate"
+  },
   "profiles": {
-    "patient": {
-      "limit-rate": "12M",
-      "concurrent-fragments": 4,
-      "retries": "infinite",
-      "fragment-retries": 20,
-      "retry-sleep": ["linear=1:5", "fragment:exp=1:20"]
+    "high-quality": {
+      "resolution": "2160p"
+    },
+    "archive": {
+      "parent": "high-quality",
+      "merge-container": "mkv"
+    },
+    "special": {
+      "parent": "archive",
+      "impersonate": "firefox"
+    }
+  },
+  "values": {
+    "general": {
+      "user-agent": "ExampleBrowser/1.0",
+      "impersonate": "chrome"
     }
   }
 }
 ```
 
-The same values may be supplied explicitly on the CLI. Explicit `--extractor-args` values replace Downloader's built-in extractor-argument set for that invocation, preserving the normal explicit-CLI precedence rule rather than silently combining policies.
+Selecting `special` resolves `$defaults -> high-quality -> archive -> special`. Descendants override ancestors, while explicit CLI values remain final authority. Inherited and directly declared values pass through the same typed profile validation, and resolution is independent of JSON declaration order.
+
+The optional top-level `values` object continues to provide reusable JSON values. A complete string beginning with `$values.` follows its dot-separated key chain before normal destination validation. References preserve JSON type, may chain, reject missing targets and cycles, and work identically in `$defaults`, ancestors and selected profiles. A string beginning with `$$` escapes the reference marker and produces a literal leading `$`.
+
+Profiles are deliberately hand-edited JSON configuration. Downloader validates, resolves, lists and inspects them but does not record, generate, overwrite or remove profiles on the user's behalf. Supported profile keys remain intentionally limited to Downloader-owned configuration; unknown keys and wrong JSON types are errors rather than being silently ignored.
+
+The shipped version 3 configuration uses `$defaults` for shared User-Agent and impersonation policy, avoiding repetition across ordinary profiles. `--auto-cookies`, `--no-impersonate`, `--whole-item` and other explicit override controls retain final CLI precedence over inherited policy.
 
 ## Operational policy
 
@@ -350,7 +319,7 @@ Downloader exposes reusable request policy through `user-agent`, `impersonate`, 
 
 `user-agent` and `referer` deliberately compile to yt-dlp's documented recommended `--add-headers` representation rather than its compatibility `--user-agent` and `--referer` options. For example, `"user-agent": "ExampleBrowser/1.0"` becomes `--add-headers User-Agent:ExampleBrowser/1.0`. Arbitrary `headers` entries use the same yt-dlp `FIELD:VALUE` syntax and preserve their configured order. A dedicated `user-agent` or `referer` cannot be combined with the same header name in `headers`, avoiding ambiguous duplicate request policy.
 
-The shipped profiles share their default User-Agent through `$values.general.user-agent`, so it can be changed once in `defaults.json` when a different identity is required. `impersonate` accepts yt-dlp's `CLIENT[:OS]` target syntax and compiles directly to `--impersonate`; it is disabled unless configured by a profile or explicit CLI option.
+The shipped `$defaults` policy shares its User-Agent and impersonation target through `$values.general`, so either identity value can be changed once in `defaults.json`. `impersonate` accepts yt-dlp's `CLIENT[:OS]` target syntax and compiles directly to `--impersonate`; `--no-impersonate` removes the inherited value for an explicit invocation.
 
 The public CLI surface is deliberately classified by persistence semantics. Reusable acquisition and output policy is profileable; target/input selection, configuration and inspection controls, execution modes, and reporting or queue-mutating side effects remain invocation-scoped. In particular, `--input-file`, `--dry-run`, `--explain`, `--run-manifest`, `--hash-outputs`, queue reports and completed-row/ID removal are not profile properties. The versioned machine contract exposes this classification so additions to the CLI must make an explicit persistence decision rather than silently drifting away from the profile schema.
 

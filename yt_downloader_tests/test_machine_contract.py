@@ -7,13 +7,13 @@ import json
 
 def test_machine_contract_versions_are_explicit(downloader) -> None:
     contract = downloader.machine_contract()
-    assert contract["contract_version"] == downloader.MACHINE_CONTRACT_VERSION == 3
+    assert contract["contract_version"] == downloader.MACHINE_CONTRACT_VERSION == 4
     assert contract["downloader"] == {
         "name": downloader.PROGRAM_NAME,
         "version": downloader.PROGRAM_VERSION,
     }
     assert contract["json_schema_dialect"] == downloader.JSON_SCHEMA_DIALECT
-    assert contract["profiles"]["format_version"] == downloader.PROFILE_VERSION == 2
+    assert contract["profiles"]["format_version"] == downloader.PROFILE_VERSION == 3
     assert contract["profiles"]["references"]["namespace"] == "$values"
     assert contract["profiles"]["references"]["type_preserving"] is True
 
@@ -30,7 +30,7 @@ def test_profile_file_schema_is_versioned_and_reuses_settings_definition(downloa
     schema = downloader.profile_file_schema()
     assert schema["$schema"] == downloader.JSON_SCHEMA_DIALECT
     assert schema["properties"]["version"] == {"const": downloader.PROFILE_VERSION}
-    assert schema["properties"]["profiles"]["additionalProperties"] == {"$ref": "#/$defs/settings"}
+    assert schema["properties"]["profiles"]["additionalProperties"] == {"$ref": "#/$defs/profile"}
     assert schema["$defs"]["settings"]["additionalProperties"] is False
     assert "values" in schema["properties"]
     assert any(
@@ -117,3 +117,19 @@ def test_machine_contract_exposes_cli_persistence_classification(downloader) -> 
     assert "run_manifest" in classes["reporting-side-effect"]
     assert "dry_run" in classes["execution-mode"]
     assert "targets" in classes["input"]
+
+
+def test_profile_schema_describes_hierarchy(downloader) -> None:
+    schema = downloader.profile_file_schema()
+    assert schema["properties"]["$defaults"] == {"$ref": "#/$defs/settings"}
+    assert schema["$defs"]["profile"]["properties"]["parent"] == {
+        "type": "string",
+        "pattern": downloader.PROFILE_NAME_RE.pattern,
+    }
+    inheritance = downloader.machine_contract()["profiles"]["inheritance"]
+    assert inheritance == {
+        "model": "single-parent",
+        "implicit_root": "$defaults",
+        "root_optional": True,
+        "cycles": "error",
+    }

@@ -22,17 +22,19 @@ def test_shipped_defaults_include_expected_profiles(downloader) -> None:
     assert set(profiles) == {"default", "best", "4k", "1440p", "1440p-slow", "playlist"}
     standard_path = "/mnt/storage/Storage/YouTube/YouTube/"
     standard_output = "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
-    default_user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0"
+    default_user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:147.0) Gecko/20100101 Firefox/147.0"
     assert profiles["default"].settings == {
         "path": standard_path,
         "output": standard_output,
         "user-agent": default_user_agent,
+        "impersonate": "Firefox-147:Macos-26",
     }
     assert profiles["1440p"].settings == {
         "path": standard_path,
         "output": standard_output,
         "resolution": "1440p",
         "user-agent": default_user_agent,
+        "impersonate": "Firefox-147:Macos-26",
     }
     assert profiles["1440p-slow"].settings["limit-rate"] == "2.5M"
     assert profiles["1440p-slow"].settings["user-agent"] == default_user_agent
@@ -395,3 +397,149 @@ def test_no_impersonate_removes_profile_value(downloader) -> None:
     resolved = downloader.resolve_profile_settings(profile, cli_settings)
     assert "impersonate" not in resolved.settings
     assert "impersonate" not in resolved.sources
+
+
+def write_hierarchical_defaults(
+    path: Path, profiles: dict[str, dict[str, object]], *, defaults=None, values=None
+) -> None:
+    payload: dict[str, object] = {"version": 3, "profiles": profiles}
+    if defaults is not None:
+        payload["$defaults"] = defaults
+    if values is not None:
+        payload["values"] = values
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_hierarchy_resolves_defaults_and_deep_single_parent_chain(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(
+        path,
+        {
+            "high-quality": {"resolution": "2160p"},
+            "archive": {"parent": "high-quality", "merge-container": "mkv"},
+            "special": {"parent": "archive", "impersonate": "firefox"},
+        },
+        defaults={"user-agent": "Shared Agent", "impersonate": "chrome"},
+    )
+    profile = downloader.select_profile("special", path, explicit_defaults=True)
+    assert profile is not None
+    assert profile.ancestry == ("high-quality", "archive")
+    assert profile.settings["resolution"] == "2160p"
+    assert profile.settings["merge-container"] == "mkv"
+    assert profile.settings["impersonate"] == "firefox"
+    assert profile.settings["user-agent"] == "Shared Agent"
+    assert profile.setting_sources["user-agent"] == "$defaults"
+    assert profile.setting_sources["resolution"] == "profile 'high-quality'"
+    assert profile.setting_sources["merge-container"] == "profile 'archive'"
+    assert profile.setting_sources["impersonate"] == "profile 'special'"
+
+
+def test_hierarchy_without_defaults_has_independent_roots(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(
+        path, {"root": {"resolution": "1080p"}, "child": {"parent": "root", "format": "best"}, "other": {}}
+    )
+    assert downloader.select_profile("child", path, explicit_defaults=True).settings == {
+        "resolution": "1080p",
+        "format": "best",
+    }
+    assert downloader.profile_tree(path) == "other\n\nroot\n└── child"
+
+
+def test_hierarchy_rejects_missing_parent_and_cycles(downloader, tmp_path: Path) -> None:
+    missing = tmp_path / "missing.json"
+    write_hierarchical_defaults(missing, {"child": {"parent": "absent"}})
+    with pytest.raises(ValueError, match="profile 'child' refers to missing parent 'absent'"):
+        downloader.load_profiles(missing, allow_missing=False)
+    cycle = tmp_path / "cycle.json"
+    write_hierarchical_defaults(cycle, {"a": {"parent": "b"}, "b": {"parent": "c"}, "c": {"parent": "a"}})
+    with pytest.raises(ValueError, match=r"profile inheritance cycle: a -> b -> c -> a"):
+        downloader.load_profiles(cycle, allow_missing=False)
+
+
+def test_hierarchy_is_independent_of_json_declaration_order(downloader, tmp_path: Path) -> None:
+    first = tmp_path / "first.json"
+    second = tmp_path / "second.json"
+    profiles = {
+        "root": {"resolution": "1080p"},
+        "middle": {"parent": "root", "limit-rate": "2M"},
+        "leaf": {"parent": "middle", "resolution": "2160p"},
+    }
+    write_hierarchical_defaults(first, profiles, defaults={"user-agent": "Agent"})
+    write_hierarchical_defaults(second, dict(reversed(list(profiles.items()))), defaults={"user-agent": "Agent"})
+    assert (
+        downloader.select_profile("leaf", first, explicit_defaults=True).settings
+        == downloader.select_profile("leaf", second, explicit_defaults=True).settings
+    )
+    assert downloader.profile_tree(first) == downloader.profile_tree(second)
+
+
+def test_hierarchy_preserves_values_references_and_validates_effective_settings(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(
+        path,
+        {"audio": {"audio-quality": 0}},
+        defaults={"audio-format": "$values.audio.format"},
+        values={"audio": {"format": "flac"}},
+    )
+    assert downloader.select_profile("audio", path, explicit_defaults=True).settings["audio-format"] == "flac"
+
+
+def test_profile_tree_renders_defaults_and_focused_ancestry(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(
+        path,
+        {"mobile": {}, "archive": {"parent": "high-quality"}, "high-quality": {}, "special": {"parent": "archive"}},
+        defaults={},
+    )
+    assert (
+        downloader.profile_tree(path) == "$defaults\n├── high-quality\n│   └── archive\n│       └── special\n└── mobile"
+    )
+    assert (
+        downloader.profile_tree(path, focus="special")
+        == "$defaults\n└── high-quality\n    └── archive\n        └── special"
+    )
+    assert downloader.profile_tree(path, ascii_only=True).startswith("$defaults\n|-- high-quality")
+
+
+def test_legacy_version_two_profiles_remain_supported(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"legacy": {"resolution": "1080p"}})
+    assert downloader.select_profile("legacy", path, explicit_defaults=True).settings["resolution"] == "1080p"
+
+
+def test_cli_overrides_inherited_profile_value(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(path, {"leaf": {}}, defaults={"impersonate": "chrome"})
+    profile = downloader.select_profile("leaf", path, explicit_defaults=True)
+    resolved = downloader.resolve_profile_settings(profile, {"impersonate": "firefox"})
+    assert resolved.settings["impersonate"] == "firefox"
+    assert resolved.sources["impersonate"] == "explicit CLI"
+
+
+def test_profile_tree_cli_prints_complete_and_focused_hierarchy(downloader, tmp_path: Path, capsys) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(path, {"root": {}, "child": {"parent": "root"}}, defaults={})
+    assert downloader.main(["--defaults", str(path), "--profile-tree"]) == 0
+    assert capsys.readouterr().out == "$defaults\n└── root\n    └── child\n"
+    assert downloader.main(["--defaults", str(path), "--profile-tree", "child"]) == 0
+    assert capsys.readouterr().out == "$defaults\n└── root\n    └── child\n"
+
+
+def test_deep_hierarchy_resolves_without_order_dependence(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    profiles: dict[str, dict[str, object]] = {"level-00": {"resolution": "720p"}}
+    for index in range(1, 40):
+        profiles[f"level-{index:02d}"] = {"parent": f"level-{index - 1:02d}"}
+    profiles["level-39"]["resolution"] = "2160p"
+    write_hierarchical_defaults(path, dict(reversed(list(profiles.items()))), defaults={"user-agent": "Agent"})
+    leaf = downloader.select_profile("level-39", path, explicit_defaults=True)
+    assert leaf is not None
+    assert len(leaf.ancestry) == 39
+    assert leaf.settings == {"user-agent": "Agent", "resolution": "2160p"}
+
+
+def test_list_profiles_excludes_structural_defaults(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_hierarchical_defaults(path, {"b": {}, "a": {}}, defaults={"user-agent": "Agent"})
+    assert downloader.list_profiles(path, explicit_defaults=True) == ["a", "b"]

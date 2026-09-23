@@ -4,14 +4,22 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
-### Parameter-profile option coverage
+### Hierarchical parameter-profile inheritance
 
-- [feature] Add typed profile and CLI support for yt-dlp impersonation targets with explicit inherited-policy removal.
-- [maintenance] Classify every public CLI destination by persistence semantics so future options require an explicit profileability decision.
-- [test] Cover impersonation profile validation, command compilation, override behaviour and CLI classification completeness.
-- [docs] Document profileable impersonation policy and the deliberate invocation-only option classes.
+- [feature] Add optional `$defaults` shared profile policy and deterministic single-parent inheritance.
+- [cli] Add `--profile-tree [NAME]` for complete or focused hierarchy inspection.
+- [maintenance] Bump the profile format to version 3 while retaining version 2 non-hierarchical compatibility.
+- [test] Cover inheritance, cycles, missing parents, declaration-order independence, reusable values, provenance and tree rendering.
+- [docs] Document root-to-leaf precedence, `$defaults`, parent relationships and hierarchy inspection.
 
 ## Release history
+
+### Downloader 1.22.0 - Profile Hierarchy
+
+- Add deterministic single-parent parameter-profile inheritance with optional shared `$defaults` policy.
+- Add validated complete and focused profile-tree inspection through `--profile-tree`.
+- Preserve `$values` references, typed validation and explicit CLI precedence throughout inherited policy.
+- Retain backwards compatibility with version 2 non-hierarchical profile files while making version 3 the current profile contract.
 
 ### Downloader 1.21.1 - Profile Coverage
 
