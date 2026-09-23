@@ -131,12 +131,27 @@ Issues #103 and #104 do not register `youtube-innertube` or pytubefix capabiliti
 
 After the single-channel CuriousMarc run, use the checked-in heterogeneous corpus to exercise materially different source shapes before drawing a production-integration conclusion. The corpus records sampling intentions rather than expected provider answers so live service changes do not silently become test assertions.
 
-Run the NewPipeExtractor variation from the repository root with:
+Run the NewPipeExtractor variation from Fish shell at the repository root with:
 
-```bash
-python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --profile core --json -- $(python -c 'import json; print(" ".join(item["id"] for item in json.load(open("benchmarks/metadata-provider-corpora/issue-109-heterogeneous.json"))["items"]))') > bench-109-heterogeneous.json
+```fish
+set ids (python -c 'import json; [print(item["id"]) for item in json.load(open("benchmarks/metadata-provider-corpora/issue-109-heterogeneous.json"))["items"]]')
+python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --profile core --json -- $ids > bench-109-heterogeneous.json
 ```
+
+Benchmark IDs containing whitespace are rejected before provider execution. This prevents an accidentally combined argument from being interpreted differently by individual providers.
 
 Schema version 9 adds `description_analysis` to successful comparisons. Raw description equality remains unchanged. The additional analysis strips provider-specific HTML markup, decodes entities, collapses whitespace and reports a similarity ratio. Similarity is evidence only and must not be interpreted as semantic authority or automatic equivalence, particularly where one provider abbreviates visible link text while another exposes a complete URL.
 
 The heterogeneous corpus includes old and newer material, different channels, music and non-English metadata, short-form candidates, historical live-stream pages and other source shapes. Traits are intentionally descriptive sampling goals rather than assertions about the current state of mutable YouTube resources.
+
+## Issue #109 reconciliation
+
+The CuriousMarc corpus and the heterogeneous variation provide sufficient evidence to complete the NewPipeExtractor investigation without promoting it into production acquisition planning. Across the successful heterogeneous comparisons, the common structured fields matched the yt-dlp reference exactly. Both providers also classified the two unavailable historical live recordings as unavailable. The observed wall-clock results show that a persistent single-JVM bridge is operationally viable and competitive in these benchmark runs, but timings remain workload and network observations rather than a general performance guarantee.
+
+Description content is useful but is not representation-compatible with yt-dlp. NewPipeExtractor can expose HTML and abbreviated visible anchor text where yt-dlp exposes decoded plain text or complete URLs. The schema 9 description analysis therefore remains diagnostic evidence only and raw description equality remains authoritative for the benchmark comparison.
+
+Provider-native signals also require conservative authority boundaries. The heterogeneous run observed `short_form: false` for a seven-second video presented as a Short, so `short_form` is not treated as an authoritative Discover Shorts classification. Successful ordinary rows exposed `VIDEO_STREAM`, while the historical live examples were unavailable to both providers, so the investigation does not establish authoritative NewPipeExtractor live or upcoming-state semantics. Authentication and private or restricted-content capability also remain unestablished.
+
+NewPipeExtractor standard error remains captured so JSON output stays clean. Set `YT_DISCOVER_NEWPIPE_DIAGNOSTICS=1` to mirror captured bridge standard error to the benchmark process standard error while investigating third-party diagnostics. Non-zero bridge exits still fail normally; this switch does not suppress or reclassify errors.
+
+The #109 evidence therefore supports NewPipeExtractor as a credible future capability-based metadata backend candidate for the fields demonstrated by the benchmark, subject to a separate production-integration decision. No automatic provider selection, planner capability registration or yt-sql semantic change is made by this investigation.

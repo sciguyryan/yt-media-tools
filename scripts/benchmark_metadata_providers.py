@@ -50,6 +50,7 @@ PROFILE_SUPPORT = {
 }
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
 NEWPIPE_BRIDGE_ENV = "YT_DISCOVER_NEWPIPE_BRIDGE"
+NEWPIPE_DIAGNOSTICS_ENV = "YT_DISCOVER_NEWPIPE_DIAGNOSTICS"
 NEWPIPE_DEFAULT_BRIDGE = (
     ROOT
     / "tools"
@@ -390,6 +391,11 @@ def _newpipe_extractor(video_ids: list[str]) -> tuple[list[dict[str, Any]], floa
         )
     )
     rows, elapsed, stderr = _json_lines(command)
+    if stderr and os.environ.get(NEWPIPE_DIAGNOSTICS_ENV):
+        sys.stderr.write("[NewPipeExtractor bridge stderr]\n")
+        sys.stderr.write(stderr)
+        if not stderr.endswith("\n"):
+            sys.stderr.write("\n")
     normalised = [_normalise_newpipe(row) for row in rows]
     per_item = [float(row["elapsed_ms"]) for row in rows if isinstance(row.get("elapsed_ms"), (int, float))]
     return (
@@ -639,6 +645,13 @@ def _comparison(video_id: str, candidate: dict[str, Any], reference: dict[str, A
     }
 
 
+def _video_id(value: str) -> str:
+    """Reject malformed benchmark IDs before providers can reinterpret them differently."""
+    if any(character.isspace() for character in value):
+        raise argparse.ArgumentTypeError("video ID must not contain whitespace")
+    return value
+
+
 def _provider_names(value: str) -> list[str]:
     names = [item.strip() for item in value.split(",") if item.strip()]
     invalid = [name for name in names if name not in PROVIDERS]
@@ -681,7 +694,7 @@ def _youtubejs_cookie_from_environment(enabled: bool) -> str | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("video_id", nargs="+", help="YouTube video IDs forming the benchmark corpus")
+    parser.add_argument("video_id", nargs="+", type=_video_id, help="YouTube video IDs forming the benchmark corpus")
     parser.add_argument(
         "--providers",
         type=_provider_names,

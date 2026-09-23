@@ -6,6 +6,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover - NewPipeExtractor metadata benchmark
 
+- [fix] Reject whitespace-containing benchmark video IDs before provider execution so malformed corpus arguments cannot be reinterpreted differently by providers.
+- [maintenance] Add an opt-in NewPipeExtractor bridge stderr diagnostic path without weakening normal bridge failure handling or contaminating JSON output.
+- [docs] Reconcile issue #109 benchmark evidence, authority boundaries and production-promotion limits.
 - [feature] Add a heterogeneous issue #109 corpus spanning multiple source shapes for a second NewPipeExtractor compatibility run.
 - [maintenance] Add conservative text-normalised description analysis and similarity evidence without treating similarity as semantic equivalence, advancing the experimental benchmark schema to version 9.
 - [test] Cover description representation normalisation and the deterministic heterogeneous corpus contract.

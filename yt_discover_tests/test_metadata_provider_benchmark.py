@@ -595,3 +595,34 @@ def test_issue_109_heterogeneous_corpus_is_deterministic_and_diverse() -> None:
     assert corpus["schema_version"] == 1
     assert len(ids) == len(set(ids)) >= 8
     assert {"very-old-upload", "short-form-candidate", "live-history", "non-english-title"} <= traits
+
+
+def test_benchmark_video_id_rejects_whitespace() -> None:
+    benchmark = _module()
+    try:
+        benchmark._video_id("first second")
+    except benchmark.argparse.ArgumentTypeError as exc:
+        assert str(exc) == "video ID must not contain whitespace"
+    else:
+        raise AssertionError("whitespace-containing benchmark ID was accepted")
+
+
+def test_newpipe_stderr_is_hidden_by_default_and_available_on_demand(monkeypatch, tmp_path, capsys) -> None:
+    benchmark = _module()
+    bridge = tmp_path / "newpipe-bridge"
+    bridge.write_text("bridge")
+    monkeypatch.setattr(benchmark, "_newpipe_bridge_path", lambda: bridge)
+    monkeypatch.setattr(
+        benchmark,
+        "_json_lines",
+        lambda command: ([{"id": "abc", "ok": True, "elapsed_ms": 1.0}], 0.01, "diagnostic chatter\n"),
+    )
+
+    benchmark._newpipe_extractor(["abc"])
+    assert capsys.readouterr().err == ""
+
+    monkeypatch.setenv(benchmark.NEWPIPE_DIAGNOSTICS_ENV, "1")
+    benchmark._newpipe_extractor(["abc"])
+    stderr = capsys.readouterr().err
+    assert "[NewPipeExtractor bridge stderr]" in stderr
+    assert "diagnostic chatter" in stderr
