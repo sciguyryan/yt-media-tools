@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Discover - NewPipeExtractor metadata benchmark
+
+- [feature] Add NewPipeExtractor v0.26.5 as an optional experimental known-video metadata provider for issue #109 without changing production provider selection.
+- [feature] Add a minimal Java 21 bridge that keeps one JVM alive across a benchmark corpus and reports provider-native metadata and per-item acquisition time.
+- [maintenance] Register NewPipeExtractor with the shared external-tool invocation diagnostics and advance the experimental metadata benchmark schema to version 8.
+- [test] Cover NewPipeExtractor provider selection, normalisation, failure classification, single-JVM corpus execution and external-tool registration.
+- [docs] Document bridge construction, benchmark invocation, timing interpretation and the production-promotion boundary.
+
 ### External tool invocation diagnostics
 
 - [feature] Add a shared registry and structured invocation model for external command, bridge and Python-library integrations.

@@ -22,6 +22,10 @@ if str(ROOT) not in sys.path:
 _cookies = importlib.import_module("yt_media_tools.cookies")
 CookieFileError = _cookies.CookieFileError
 cookie_header_from_netscape_file = _cookies.cookie_header_from_netscape_file
+_external = importlib.import_module("yt_media_tools.external_tools")
+ToolInvocation = _external.ToolInvocation
+configure_external_diagnostics = _external.configure_external_diagnostics
+emit_invocation = _external.emit_invocation
 
 FAILURE_PATTERNS = (
     ("private", ("private video",)),
@@ -32,15 +36,27 @@ FAILURE_PATTERNS = (
 )
 
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
-PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "ytdlp")
+PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "newpipe-extractor", "ytdlp")
 MEASUREMENT_PROFILES = ("core", "full")
 PROFILE_SUPPORT = {
     "youtubejs": {"core"},
     "youtube-innertube": {"core"},
     "pytubefix": {"core", "full"},
+    "newpipe-extractor": {"core"},
     "ytdlp": {"core", "full"},
 }
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
+NEWPIPE_BRIDGE_ENV = "YT_DISCOVER_NEWPIPE_BRIDGE"
+NEWPIPE_DEFAULT_BRIDGE = (
+    ROOT
+    / "tools"
+    / "newpipe-extractor-bridge"
+    / "build"
+    / "install"
+    / "yt-media-tools-newpipe-bridge"
+    / "bin"
+    / "yt-media-tools-newpipe-bridge"
+)
 COMPARISON_FIELDS = (
     "id",
     "title",
@@ -308,6 +324,86 @@ def _pytubefix(video_ids: list[str], *, profile: str = "core") -> tuple[list[dic
     )
 
 
+def _normalise_newpipe(row: dict[str, Any]) -> dict[str, Any]:
+    """Normalise NewPipeExtractor evidence without treating bridge-only signals as yt-sql authority."""
+    if not row.get("ok", True):
+        return _failure_row(
+            str(row.get("id", "")),
+            str(row.get("error", "NewPipeExtractor acquisition failed")),
+            error_type=str(row.get("error_type")) if row.get("error_type") else None,
+        )
+    uploader_url = str(row.get("uploader_url") or "")
+    channel_match = re.search(r"/channel/([^/?#]+)", uploader_url)
+    stream_type = str(row.get("stream_type") or "")
+    upload_date = row.get("upload_date")
+    if isinstance(upload_date, str) and len(upload_date) >= 10:
+        upload_date = upload_date[:10].replace("-", "")
+    return {
+        "id": row.get("id"),
+        "title": row.get("title"),
+        "description": row.get("description"),
+        "channel_id": channel_match.group(1) if channel_match else None,
+        "duration": row.get("duration"),
+        "view_count": row.get("view_count"),
+        "upload_date": upload_date,
+        "category": row.get("category"),
+        "is_live": "LIVE" in stream_type.upper(),
+        "keywords": row.get("keywords"),
+        "ok": True,
+        "elapsed_ms": row.get("elapsed_ms"),
+        "source_signals": {
+            "uploader_name": row.get("uploader_name"),
+            "uploader_url": row.get("uploader_url"),
+            "upload_date_approximate": row.get("upload_date_approximate"),
+            "stream_type": row.get("stream_type"),
+            "content_availability": row.get("content_availability"),
+            "uploader_verified": row.get("uploader_verified"),
+            "short_form": row.get("short_form"),
+        },
+    }
+
+
+def _newpipe_bridge_path() -> Path:
+    configured = os.environ.get(NEWPIPE_BRIDGE_ENV)
+    return Path(configured).expanduser() if configured else NEWPIPE_DEFAULT_BRIDGE
+
+
+def _newpipe_extractor(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    bridge = _newpipe_bridge_path()
+    if not bridge.is_file():
+        raise RuntimeError(
+            "NewPipeExtractor benchmark bridge was not found; run "
+            "'gradle installDist' in tools/newpipe-extractor-bridge or set " + NEWPIPE_BRIDGE_ENV
+        )
+    command = [str(bridge), *video_ids]
+    emit_invocation(
+        ToolInvocation(
+            tool="newpipe-extractor",
+            operation="StreamInfo.getInfo",
+            purpose="known-video metadata benchmark",
+            status="executing",
+            argv=tuple(command),
+            arguments={"video_ids": list(video_ids)},
+        )
+    )
+    rows, elapsed, stderr = _json_lines(command)
+    normalised = [_normalise_newpipe(row) for row in rows]
+    per_item = [float(row["elapsed_ms"]) for row in rows if isinstance(row.get("elapsed_ms"), (int, float))]
+    return (
+        normalised,
+        elapsed,
+        {
+            "bridge": str(bridge),
+            "extractor_version": "0.26.5",
+            "authentication": "anonymous",
+            "jvm_processes": 1,
+            "startup_and_shutdown_ms": max(0.0, elapsed * 1000.0 - sum(per_item)),
+            "per_item_elapsed_ms": per_item,
+            "stderr_bytes": len(stderr.encode("utf-8")),
+        },
+    )
+
+
 def _classify_failure(message: str) -> str:
     lowered = message.lower()
     for kind, patterns in FAILURE_PATTERNS:
@@ -399,6 +495,8 @@ def _run_provider(name: str, video_ids: list[str], profile: str) -> tuple[list[d
         return _pytubefix(video_ids, profile=profile)
     if name == "ytdlp":
         return _ytdlp(video_ids, profile=profile)
+    if name == "newpipe-extractor":
+        return _newpipe_extractor(video_ids)
     rows, elapsed, diagnostics = RUNNERS[name](video_ids)
     diagnostics = dict(diagnostics)
     diagnostics["measurement_profile"] = profile
@@ -409,6 +507,7 @@ RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict
     "youtubejs": _youtubejs,
     "youtube-innertube": _youtube_innertube,
     "pytubefix": _pytubefix,
+    "newpipe-extractor": _newpipe_extractor,
     "ytdlp": _ytdlp,
 }
 
@@ -538,9 +637,12 @@ def main() -> int:
         "--providers",
         type=_provider_names,
         default=list(PROVIDERS),
-        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,ytdlp); ytdlp is always included as the reference",
+        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
+    parser.add_argument(
+        "--debug-external", action="store_true", help="show redacted external-tool invocations on stderr"
+    )
     parser.add_argument(
         "--profile",
         choices=MEASUREMENT_PROFILES,
@@ -560,6 +662,7 @@ def main() -> int:
         help="also benchmark YouTube.js using applicable cookies from a Netscape cookies file",
     )
     args = parser.parse_args()
+    configure_external_diagnostics(enabled=args.debug_external)
 
     cookie = _youtubejs_cookie_from_environment(args.youtubejs_cookie)
     cookie_values: tuple[str, ...] = ()
@@ -613,7 +716,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 7,
+        "schema_version": 8,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

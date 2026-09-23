@@ -13,7 +13,7 @@ from yt_media_tools.external_tools import (
 
 def test_registry_contains_current_external_integrations() -> None:
     identifiers = {tool.identifier for tool in registered_tools()}
-    assert {"yt-dlp", "ffmpeg", "ffprobe", "node", "youtubejs", "graphviz"} <= identifiers
+    assert {"yt-dlp", "ffmpeg", "ffprobe", "node", "youtubejs", "graphviz", "newpipe-extractor"} <= identifiers
 
 
 def test_command_diagnostics_redact_sensitive_arguments() -> None:

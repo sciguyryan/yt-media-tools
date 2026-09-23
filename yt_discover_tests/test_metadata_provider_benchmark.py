@@ -494,3 +494,71 @@ def test_full_ytdlp_inventory_is_structural_only() -> None:
         "captions": {"available": True, "count": 2, "codes": ["cy", "en"]},
     }
     assert "secret.example" not in str(row["extended_capabilities"])
+
+
+def test_newpipe_extractor_is_available_as_experimental_provider() -> None:
+    benchmark = _module()
+    assert "newpipe-extractor" in benchmark.PROVIDERS
+    assert benchmark._provider_names("newpipe-extractor") == ["newpipe-extractor", "ytdlp"]
+    assert benchmark.PROFILE_SUPPORT["newpipe-extractor"] == {"core"}
+
+
+def test_newpipe_normalisation_preserves_bridge_signals_separately() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_newpipe(
+        {
+            "id": "abc",
+            "ok": True,
+            "title": "Example",
+            "description": "Description",
+            "uploader_name": "Example channel",
+            "uploader_url": "https://www.youtube.com/channel/UCexample",
+            "duration": 123,
+            "view_count": 456,
+            "upload_date": "2026-09-23T12:34:56Z",
+            "upload_date_approximate": False,
+            "category": "Science & Technology",
+            "stream_type": "VIDEO_STREAM",
+            "keywords": ["one", "two"],
+            "content_availability": "PUBLIC",
+            "uploader_verified": True,
+            "short_form": False,
+            "elapsed_ms": 12.5,
+        }
+    )
+    assert row["channel_id"] == "UCexample"
+    assert row["upload_date"] == "20260923"
+    assert row["is_live"] is False
+    assert row["elapsed_ms"] == 12.5
+    assert row["source_signals"]["content_availability"] == "PUBLIC"
+    assert row["source_signals"]["uploader_verified"] is True
+
+
+def test_newpipe_failure_is_classified_without_discarding_error_type() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_newpipe(
+        {"id": "private-id", "ok": False, "error_type": "ContentNotAvailableException", "error": "Private video"}
+    )
+    assert row["failure"]["kind"] == "private"
+    assert row["failure"]["error_type"] == "ContentNotAvailableException"
+
+
+def test_newpipe_runner_keeps_one_jvm_for_the_corpus(monkeypatch, tmp_path) -> None:
+    benchmark = _module()
+    bridge = tmp_path / "newpipe-bridge"
+    bridge.write_text("stub", encoding="utf-8")
+    monkeypatch.setenv(benchmark.NEWPIPE_BRIDGE_ENV, str(bridge))
+    calls = []
+
+    def fake_json_lines(command, *, env=None):
+        calls.append(command)
+        return ([{"id": "a", "ok": True, "elapsed_ms": 10.0}, {"id": "b", "ok": True, "elapsed_ms": 20.0}], 0.05, "")
+
+    monkeypatch.setattr(benchmark, "_json_lines", fake_json_lines)
+    rows, elapsed, diagnostics = benchmark._newpipe_extractor(["a", "b"])
+    assert calls == [[str(bridge), "a", "b"]]
+    assert len(rows) == 2
+    assert elapsed == 0.05
+    assert diagnostics["jvm_processes"] == 1
+    assert diagnostics["per_item_elapsed_ms"] == [10.0, 20.0]
+    assert diagnostics["startup_and_shutdown_ms"] == 20.0

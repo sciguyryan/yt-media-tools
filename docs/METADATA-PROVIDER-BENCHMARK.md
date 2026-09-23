@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Issues #102, #103 and #104 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube` and pytubefix acquisition against the existing yt-dlp detailed path over the same corpus.
+Issues #102, #103, #104 and #109 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix and NewPipeExtractor acquisition against the existing yt-dlp detailed path over the same corpus.
 
 The benchmark is evidence gathering. A field being present, or even equal to yt-dlp in one run, does not establish authoritative semantic equivalence.
 
 ## Providers
 
-The harness supports `youtubejs`, `youtube-innertube`, `pytubefix` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
+The harness supports `youtubejs`, `youtube-innertube`, `pytubefix`, `newpipe-extractor` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
 
 `youtube-innertube` is deliberately an optional benchmark dependency rather than a production Discover dependency. Install the research candidate directly from its upstream repository before running that provider:
 
@@ -22,11 +22,20 @@ Pytubefix is likewise an optional research dependency for issue #104 rather than
 python -m pip install pytubefix
 ```
 
+NewPipeExtractor is an issue #109 research candidate and remains outside production Discover acquisition. Its JVM bridge pins NewPipeExtractor v0.26.5. Build the bridge once before benchmarking it:
+
+```bash
+cd tools/newpipe-extractor-bridge
+gradle installDist
+```
+
+The benchmark discovers the installed launcher automatically. `YT_DISCOVER_NEWPIPE_BRIDGE` may name an alternative launcher path. The bridge keeps one JVM process alive for the complete corpus and records both per-item extraction time and residual process startup/shutdown time. This avoids conflating a deliberately inefficient one-JVM-per-video design with NewPipeExtractor's extraction cost.
+
 ## Measurement profiles
 
-Benchmark schema 7 defines provider-neutral measurement profiles so elapsed times are compared only when providers are asked to satisfy the same acquisition contract. The default `core` profile requests only the established scalar metadata and provider-native availability or live-state source signals. Extended thumbnail, chapter and caption probing is not performed in this profile. This makes the ordinary four-provider timing comparison directly comparable and avoids charging one provider for optional capability work that the others were not asked to perform.
+Benchmark schema 8 defines provider-neutral measurement profiles so elapsed times are compared only when providers are asked to satisfy the same acquisition contract. The default `core` profile requests only the established scalar metadata and provider-native availability or live-state source signals. Extended thumbnail, chapter and caption probing is not performed in this profile. This makes the ordinary four-provider timing comparison directly comparable and avoids charging one provider for optional capability work that the others were not asked to perform.
 
-The `full` profile independently measures acquisition of the core surface plus the structural extended-capability inventory. It is currently supported by pytubefix and yt-dlp. YouTube.js and youtube-innertube are explicitly marked as core-only rather than silently treating unsupported extended capabilities as zero-cost. A full-profile run should therefore name only providers that support it, for example `--providers pytubefix,ytdlp --profile full`. Each profile is a fresh benchmark invocation; incremental costs may be derived by comparing repeated core and full runs, but the harness does not infer per-property network costs from access order or provider caching.
+The `full` profile independently measures acquisition of the core surface plus the structural extended-capability inventory. It is currently supported by pytubefix and yt-dlp. YouTube.js, youtube-innertube and NewPipeExtractor are explicitly marked as core-only rather than silently treating unsupported extended capabilities as zero-cost. A full-profile run should therefore name only providers that support it, for example `--providers pytubefix,ytdlp --profile full`. Each profile is a fresh benchmark invocation; incremental costs may be derived by comparing repeated core and full runs, but the harness does not infer per-property network costs from access order or provider caching.
 
 The report records the selected `measurement_profile` and the declared `profile_support` matrix. Unsupported profiles fail explicitly. This is intentional: benchmark timing must describe work actually requested from a provider rather than mixing unlike acquisition surfaces.
 
@@ -58,6 +67,14 @@ python scripts/benchmark_metadata_providers.py --providers pytubefix --profile c
 python scripts/benchmark_metadata_providers.py --providers pytubefix,ytdlp --profile full --json -- $(cat ./ids/ids-curiousmarc-bench) > bench-104-full.json
 ```
 
+To benchmark the #109 NewPipeExtractor candidate against yt-dlp:
+
+```bash
+python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --profile core --json -- $(cat ./ids/ids-curiousmarc-bench) > bench-109.json
+```
+
+Add `--debug-external` when the JVM bridge invocation should be shown on stderr through the shared external-tool diagnostics.
+
 The older #102-specific harness remains available so retained #102 evidence and its schema stay reproducible.
 
 ## Comparison surface
@@ -88,7 +105,7 @@ The report labels the variants as `youtubejs` and `youtubejs-cookie`, compares b
 
 Discover's existing Netscape `--cookies FILE` input is also forwarded to the production YouTube.js channel-enumeration adapter when that backend is selected. Translation into the provider-specific HTTP header occurs at the adapter boundary. The authentication context therefore follows the acquisition request without becoming yt-sql semantics, planner metadata, provenance or command-line subprocess arguments.
 
-Machine-readable schema version 7 records the selected measurement profile and provider support matrix and retains normalised rows, provider elapsed time, per-video `youtube-innertube` elapsed time, provider success/failure summaries and structured acquisition failures. Successful rows also retain a deliberately small `source_signals` diagnostic object: YouTube.js exposes its playability/private/live flags, yt-dlp exposes its live-history and availability fields, and `youtube-innertube` exposes its `isLive` value plus the names of keys returned by `video_details()`. These diagnostics are evidence only and are not part of the normalised semantic comparison surface. A failed video does not abort an adversarial benchmark: comparisons distinguish candidate failure, reference failure and failure on both sides. yt-dlp runs the corpus in one process with `--ignore-errors`; its standard error is captured rather than leaked into JSON-oriented terminal output, and per-video diagnostics are retained where yt-dlp identifies the affected video. Exact transferred network bytes are not claimed because neither existing provider boundary exposes a trustworthy common measurement without additional instrumentation.
+Machine-readable schema version 8 records the selected measurement profile and provider support matrix and retains normalised rows, provider elapsed time, per-video `youtube-innertube` elapsed time, provider success/failure summaries and structured acquisition failures. Successful rows also retain a deliberately small `source_signals` diagnostic object: YouTube.js exposes its playability/private/live flags, yt-dlp exposes its live-history and availability fields, and `youtube-innertube` exposes its `isLive` value plus the names of keys returned by `video_details()`. These diagnostics are evidence only and are not part of the normalised semantic comparison surface. A failed video does not abort an adversarial benchmark: comparisons distinguish candidate failure, reference failure and failure on both sides. yt-dlp runs the corpus in one process with `--ignore-errors`; its standard error is captured rather than leaked into JSON-oriented terminal output, and per-video diagnostics are retained where yt-dlp identifies the affected video. Exact transferred network bytes are not claimed because neither existing provider boundary exposes a trustworthy common measurement without additional instrumentation.
 
 ## Corpus and failure testing
 
