@@ -7,7 +7,7 @@ import json
 
 def test_machine_contract_versions_are_explicit(downloader) -> None:
     contract = downloader.machine_contract()
-    assert contract["contract_version"] == downloader.MACHINE_CONTRACT_VERSION == 2
+    assert contract["contract_version"] == downloader.MACHINE_CONTRACT_VERSION == 3
     assert contract["downloader"] == {
         "name": downloader.PROGRAM_NAME,
         "version": downloader.PROGRAM_VERSION,
@@ -95,5 +95,25 @@ def test_explain_json_contract_has_independent_schema_version(downloader, tmp_pa
     )
     payload = downloader.explain_plan_payload(plan)
     assert payload["kind"] == "yt-download-plan"
-    assert payload["schema_version"] == downloader.PLAN_SCHEMA_VERSION == 2
-    assert downloader.machine_contract()["machine_interfaces"]["explain"]["schema_version"] == 2
+    assert payload["schema_version"] == downloader.PLAN_SCHEMA_VERSION == 3
+    assert downloader.machine_contract()["machine_interfaces"]["explain"]["schema_version"] == 3
+
+
+def test_every_public_cli_destination_has_an_explicit_persistence_class(downloader) -> None:
+    parser = downloader.build_parser()
+    public_destinations = {
+        action.dest for action in parser._actions if action.dest != "help" and not action.dest.startswith("_")
+    }
+    classified = set().union(*downloader.CLI_DESTINATION_CLASSES.values())
+    assert classified == public_destinations
+    total_memberships = sum(len(destinations) for destinations in downloader.CLI_DESTINATION_CLASSES.values())
+    assert total_memberships == len(classified)
+
+
+def test_machine_contract_exposes_cli_persistence_classification(downloader) -> None:
+    contract = downloader.machine_contract()
+    classes = contract["profiles"]["cli_destination_classes"]
+    assert "impersonate" in classes["profile-policy"]
+    assert "run_manifest" in classes["reporting-side-effect"]
+    assert "dry_run" in classes["execution-mode"]
+    assert "targets" in classes["input"]

@@ -106,3 +106,16 @@ def test_request_policy_compiles_to_documented_yt_dlp_options(downloader) -> Non
     assert command[command.index("--source-address") + 1] == "192.0.2.10"
     assert "--force-ipv4" in command
     assert "--force-ipv6" not in command
+
+
+def test_request_policy_compiles_impersonation_target(downloader) -> None:
+    source = downloader.InputSource(direct_targets=("abc",))
+    policy = downloader.DownloadPolicy(
+        resolution="1080",
+        format_selector="bv+ba/best",
+        reverse_playlist=False,
+        impersonate="Firefox-147:Macos-26",
+    )
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None)
+    index = command.index("--impersonate")
+    assert command[index + 1] == "Firefox-147:Macos-26"

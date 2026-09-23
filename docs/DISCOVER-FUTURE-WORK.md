@@ -12,7 +12,7 @@ This roadmap is intentionally ambitious. It records the features we currently wa
 
 Every phase must leave Discover in a releasable state. New syntax and functions require complete parser, semantic, execution and formatting coverage, including malformed forms and interactions with existing language features. Optimiser changes require differential testing against unoptimised execution and must remain deterministic and idempotent. NULL and three-valued logic, Unicode behaviour, temporal semantics, source/facet identity, ordering and volatile functions remain conservative boundaries for optimisation.
 
-Documentation is part of implementation. `DISCOVER-README.md`, `YT-SQL.md`, `YT-SQL-OPTIMISATION.md`, `YT-SQL-TEST-COVERAGE.md`, `TODO.md` where appropriate, and `CHANGELOG.md` must be updated in the same release when their contracts change. Permanent documentation should describe current behaviour rather than narrating development phases.
+Documentation is part of implementation. `DISCOVER-README.md`, `YT-SQL.md`, `YT-SQL-OPTIMISATION.md`, `YT-SQL-TEST-COVERAGE.md`, `TODO.md` where appropriate, and `DISCOVER-CHANGELOG.md` must be updated in the same release when their contracts change. Permanent documentation should describe current behaviour rather than narrating development phases.
 
 The deterministic conformance corpus remains the semantic authority for routine testing. Small and normal generated datasets remain suitable for normal tests. Large and huge datasets remain explicit scale/stress work and must not make routine CI slow.
 

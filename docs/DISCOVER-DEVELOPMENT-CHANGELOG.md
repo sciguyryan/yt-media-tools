@@ -1,6 +1,22 @@
-# Development changelog
+# Discover development changelog
 
 This file records meaningful changes during active development. It is not release history. When a dot release is completed and accepted, relevant entries are reconciled into the root `CHANGELOG.md` and the completed development section is cleared or advanced for the next work item.
+
+## Discover - comparable metadata benchmark profiles
+
+- [fix] Separate core metadata timing from optional extended capability probing so provider elapsed times describe the same acquisition contract.
+- [feature] Add explicit core and full measurement profiles with provider support declarations and fail-closed handling for unsupported profile/provider combinations.
+- [feature] Add structural yt-dlp thumbnail, chapter and caption inventory for direct full-profile comparison with pytubefix without retaining media URLs or caption contents.
+- [test] Cover profile support, core-only pytubefix acquisition and structural yt-dlp extended capability reporting.
+- [maintenance] Exclude virtual environments and nested Node dependency trees from project Markdown linting.
+
+## Discover - pytubefix metadata benchmark
+
+- [feature] Add pytubefix as an optional experimental provider in the shared known-video metadata benchmark without changing production provider selection.
+- [feature] Preserve pytubefix playability and video-detail signals and inventory thumbnail, chapter and caption capabilities separately from scalar normalisation.
+- [maintenance] Advance the experimental metadata benchmark schema to version 6 and retain per-video pytubefix acquisition timing.
+- [test] Cover pytubefix provider selection, normalisation, extended capability isolation and per-video failure handling with deterministic fixtures.
+- [docs] Define the issue #104 benchmark method, optional dependency, capability inventory and production-promotion boundary.
 
 ## Discover - Capability-oriented metadata provider selection
 
@@ -23,3 +39,10 @@ This file records meaningful changes during active development. It is not releas
 - [maintenance] Extend the existing YouTube.js bridge with an experimental `getBasicInfo()` benchmark mode that reuses one Innertube session across a known-ID corpus.
 - [test] Add deterministic benchmark-contract coverage for scalar field comparison and missing-value handling without adding live network tests to pytest.
 - [docs] Define the benchmark methodology, candidate scalar field surface, publication-date gap, corpus requirements and production-integration boundary.
+
+## Discover - yt-sql query file input
+
+- [feature] Add `--query-file FILE` for loading reusable UTF-8 yt-sql queries through the existing query-processing path.
+- [cli] Keep query files mutually exclusive with `--query` and `--where` while preserving the established positional-source plus query form.
+- [test] Add deterministic coverage for inline equivalence, parameters, positional sources, conflicting inputs, unreadable files and invalid UTF-8.
+- [docs] Document reusable `.yt-sql` file workflows and keep query files limited to ordinary yt-sql without a separate preprocessing or scripting layer.

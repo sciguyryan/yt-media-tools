@@ -366,3 +366,32 @@ def test_dedicated_referer_rejects_duplicate_generic_header(downloader) -> None:
         downloader.resolve_profile_policy(
             {"referer": "https://example.test", "headers": ["Referer:https://other.test"]}
         )
+
+
+def test_impersonate_is_profileable_and_type_checked(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"browser": {"impersonate": "Firefox-147:Macos-26"}})
+    profile = downloader.select_profile("browser", path, explicit_defaults=True)
+    assert profile is not None
+    policy, _, _ = downloader.resolve_profile_policy(profile.settings)
+    assert policy.impersonate == "Firefox-147:Macos-26"
+
+
+def test_impersonate_rejects_empty_profile_value(downloader, tmp_path: Path) -> None:
+    path = tmp_path / "defaults.json"
+    write_defaults(path, {"broken": {"impersonate": ""}})
+    with pytest.raises(ValueError, match="non-empty JSON string"):
+        downloader.load_profiles(path, allow_missing=False)
+
+
+def test_no_impersonate_removes_profile_value(downloader) -> None:
+    args = downloader.build_parser().parse_args(["--no-impersonate", "abc"])
+    cli_settings = downloader.explicit_profile_settings(args)
+    profile = downloader.Profile(
+        name="browser",
+        source=Path("defaults.json"),
+        settings={"impersonate": "chrome"},
+    )
+    resolved = downloader.resolve_profile_settings(profile, cli_settings)
+    assert "impersonate" not in resolved.settings
+    assert "impersonate" not in resolved.sources

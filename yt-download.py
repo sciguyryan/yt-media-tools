@@ -44,15 +44,15 @@ from yt_media_tools.ytdlp_runtime import (
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.21.0"
+PROGRAM_VERSION = "1.21.1"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROFILE_NAME = "default"
 DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
 PROFILE_VERSION = 2
 RUN_MANIFEST_SCHEMA_VERSION = 1
-MACHINE_CONTRACT_VERSION = 2
-PLAN_SCHEMA_VERSION = 2
+MACHINE_CONTRACT_VERSION = 3
+PLAN_SCHEMA_VERSION = 3
 CAPABILITIES_SCHEMA_VERSION = 1
 CONFIG_VALIDATION_SCHEMA_VERSION = 1
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
@@ -82,6 +82,7 @@ PROFILE_KEYS = (
     "limit-rate",
     "throttled-rate",
     "user-agent",
+    "impersonate",
     "referer",
     "headers",
     "proxy",
@@ -127,6 +128,107 @@ PROFILE_KEYS = (
     "sponsorblock-mark",
     "sponsorblock-remove",
 )
+
+# Every public CLI destination belongs to one deliberate persistence class.
+# Keep this audit explicit so new command-line features cannot accidentally
+# bypass a decision about whether they belong in reusable profiles.
+CLI_DESTINATION_CLASSES = {
+    "profile-policy": frozenset(
+        {
+            "resolution",
+            "format_selector",
+            "min_resolution",
+            "max_resolution",
+            "min_fps",
+            "max_fps",
+            "preferred_fps",
+            "preferred_video_codec",
+            "preferred_audio_codec",
+            "preferred_hdr",
+            "preferred_audio_channels",
+            "merge_container",
+            "audio_only",
+            "audio_source_codec",
+            "audio_source_container",
+            "audio_source_fallback",
+            "audio_format",
+            "audio_quality",
+            "write_subs",
+            "write_auto_subs",
+            "sub_langs",
+            "sub_format",
+            "embed_subs",
+            "write_thumbnail",
+            "embed_thumbnail",
+            "write_info_json",
+            "embed_metadata",
+            "embed_chapters",
+            "sponsorblock",
+            "sponsorblock_mark",
+            "sponsorblock_remove",
+            "live",
+            "live_from_start",
+            "wait_for_video",
+            "no_wait_for_video",
+            "write_live_chat",
+            "chapter_sections",
+            "time_ranges",
+            "whole_item",
+            "limit_rate",
+            "throttled_rate",
+            "user_agent",
+            "impersonate",
+            "no_impersonate",
+            "referer",
+            "headers",
+            "proxy",
+            "socket_timeout",
+            "source_address",
+            "ip_family",
+            "concurrent_fragments",
+            "retries",
+            "fragment_retries",
+            "file_access_retries",
+            "extractor_retries",
+            "retry_sleep",
+            "archive",
+            "temp_path",
+            "extractor_args",
+            "playlist_items",
+            "reverse_playlist",
+            "playlist",
+            "cookies",
+            "cookies_from_browser",
+            "no_cookies",
+            "auto_cookies",
+        }
+    ),
+    "input": frozenset({"targets", "input_file"}),
+    "configuration-control": frozenset(
+        {
+            "profile",
+            "defaults",
+            "list_profiles",
+            "schema_json",
+            "validate_config",
+            "capabilities",
+            "capabilities_json",
+            "examples",
+            "version",
+        }
+    ),
+    "execution-mode": frozenset({"explain", "explain_json", "dry_run"}),
+    "reporting-side-effect": frozenset(
+        {
+            "remove_completed_ids",
+            "remove_completed_rows",
+            "queue_report",
+            "failed_targets",
+            "run_manifest",
+            "hash_outputs",
+        }
+    ),
+}
 
 DEFAULT_VIDEO_ID_FILE = Path("./ids.txt")
 ARCHIVE_FILE = SCRIPT_DIR / "archive.txt"
@@ -182,6 +284,7 @@ PROFILE_SETTING_DESCRIPTIONS = {
     "limit-rate": "Maximum download rate accepted by yt-dlp.",
     "throttled-rate": "Rate below which yt-dlp may consider the download throttled.",
     "user-agent": "Custom HTTP User-Agent compiled to yt-dlp's recommended --add-headers form.",
+    "impersonate": "yt-dlp impersonation target in CLIENT[:OS] form.",
     "referer": "Custom HTTP Referer compiled to yt-dlp's recommended --add-headers form.",
     "headers": "Ordered custom HTTP FIELD:VALUE headers passed to yt-dlp with --add-headers.",
     "proxy": "HTTP, HTTPS or SOCKS proxy URL passed to yt-dlp with --proxy.",
@@ -400,6 +503,7 @@ class DownloadPolicy:
     limit_rate: str = DEFAULT_DOWNLOAD_RATE
     throttled_rate: str | None = None
     user_agent: str | None = None
+    impersonate: str | None = None
     referer: str | None = None
     headers: tuple[str, ...] = ()
     proxy: str | None = None
@@ -1046,6 +1150,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--user-agent",
         metavar="UA",
         help="Pass UA to yt-dlp as its custom HTTP User-Agent.",
+    )
+    impersonation_group = parser.add_mutually_exclusive_group()
+    impersonation_group.add_argument(
+        "--impersonate",
+        metavar="CLIENT[:OS]",
+        help="Request yt-dlp HTTP impersonation for CLIENT[:OS].",
+    )
+    impersonation_group.add_argument(
+        "--no-impersonate",
+        action="store_true",
+        help="Disable impersonation inherited from a profile.",
     )
     parser.add_argument(
         "--referer",
@@ -1712,7 +1827,7 @@ def _validate_profile_setting(key: str, value: object) -> object:
         return value.lower()
     if key in {"limit-rate", "throttled-rate"}:
         return _validate_rate_setting(key, value)
-    if key in {"user-agent", "referer", "proxy", "source-address"}:
+    if key in {"user-agent", "impersonate", "referer", "proxy", "source-address"}:
         return _validate_nonempty_string_setting(key, value)
     if key == "headers":
         headers = _validate_string_list_setting(key, value)
@@ -1889,6 +2004,7 @@ def profile_setting_schema() -> dict[str, object]:
             "limit-rate": _json_schema_string(description=descriptions["limit-rate"]),
             "throttled-rate": _json_schema_string(description=descriptions["throttled-rate"]),
             "user-agent": _json_schema_string(description=descriptions["user-agent"]),
+            "impersonate": _json_schema_string(description=descriptions["impersonate"]),
             "referer": _json_schema_string(description=descriptions["referer"]),
             "headers": {
                 "type": "array",
@@ -2109,6 +2225,9 @@ def machine_contract() -> dict[str, object]:
                 "literal_dollar_escape": "$$",
                 "cycles": "error",
                 "missing_targets": "error",
+            },
+            "cli_destination_classes": {
+                name: sorted(destinations) for name, destinations in CLI_DESTINATION_CLASSES.items()
             },
             "semantic_validation": [
                 "minimum resolution must not exceed maximum resolution",
@@ -2409,6 +2528,7 @@ def explicit_profile_settings(args: argparse.Namespace) -> dict[str, object]:
         "limit-rate": args.limit_rate,
         "throttled-rate": args.throttled_rate,
         "user-agent": args.user_agent,
+        "impersonate": None if args.no_impersonate else args.impersonate,
         "referer": args.referer,
         "proxy": args.proxy,
         "socket-timeout": args.socket_timeout,
@@ -2442,6 +2562,8 @@ def explicit_profile_settings(args: argparse.Namespace) -> dict[str, object]:
     for key, value in scalar_settings.items():
         if value is not None:
             settings[key] = _validate_profile_setting(key, value)
+    if args.no_impersonate:
+        settings["_no-impersonate"] = True
     if args.retry_sleep is not None:
         settings["retry-sleep"] = _validate_profile_setting("retry-sleep", args.retry_sleep)
     if args.headers is not None:
@@ -2514,10 +2636,12 @@ def merge_profile_settings(
     if cli_settings.get("live") is False:
         for key in ("live-from-start", "wait-for-video", "write-live-chat"):
             merged.pop(key, None)
+    if cli_settings.get("_no-impersonate") is True:
+        merged.pop("impersonate", None)
     if cli_settings.get("_whole-item") is True:
         merged.pop("chapter-sections", None)
         merged.pop("time-ranges", None)
-    merged.update({key: value for key, value in cli_settings.items() if key != "_whole-item"})
+    merged.update({key: value for key, value in cli_settings.items() if key not in {"_whole-item", "_no-impersonate"}})
     if merged.get("wait-for-video") is None:
         merged.pop("wait-for-video", None)
     return merged
@@ -2636,6 +2760,7 @@ def resolve_profile_policy(
             limit_rate=str(settings.get("limit-rate", DEFAULT_DOWNLOAD_RATE)),
             throttled_rate=(str(settings["throttled-rate"]) if "throttled-rate" in settings else None),
             user_agent=(str(settings["user-agent"]) if "user-agent" in settings else None),
+            impersonate=(str(settings["impersonate"]) if "impersonate" in settings else None),
             referer=(str(settings["referer"]) if "referer" in settings else None),
             headers=tuple(settings.get("headers", ())),
             proxy=(str(settings["proxy"]) if "proxy" in settings else None),
@@ -3378,6 +3503,7 @@ def explain_plan_payload(plan: DownloadPlan) -> dict[str, object]:
             "limit_rate": plan.policy.limit_rate,
             "throttled_rate": plan.policy.throttled_rate,
             "user_agent": plan.policy.user_agent,
+            "impersonate": plan.policy.impersonate,
             "referer": plan.policy.referer,
             "headers": list(plan.policy.headers),
             "proxy": plan.policy.proxy,
@@ -3496,6 +3622,7 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
         f"Limit rate:        {policy['limit_rate']}",
         f"Throttled rate:    {policy['throttled_rate'] or 'yt-dlp default'}",
         f"User-Agent:        {policy['user_agent'] or 'yt-dlp default'}",
+        f"Impersonate:       {policy['impersonate'] or 'disabled'}",
         f"Referer:           {policy['referer'] or 'yt-dlp default'}",
         f"Headers:           {', '.join(policy['headers']) if policy['headers'] else 'none'}",
         f"Proxy:             {policy['proxy'] or 'yt-dlp default'}",
@@ -3602,6 +3729,8 @@ def build_yt_dlp_command(
     # Downloader policy names ergonomic while compiling to the recommended form.
     if policy.user_agent is not None:
         command.extend(("--add-headers", f"User-Agent:{policy.user_agent}"))
+    if policy.impersonate is not None:
+        command.extend(("--impersonate", policy.impersonate))
     if policy.referer is not None:
         command.extend(("--add-headers", f"Referer:{policy.referer}"))
     for header in policy.headers:

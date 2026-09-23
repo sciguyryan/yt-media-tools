@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.21.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.21.1 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -346,11 +346,13 @@ Downloader keeps its existing `20M` rate limit, script-local archive, temporary 
 
 ## HTTP request and network policy
 
-Downloader exposes reusable request policy through `user-agent`, `referer`, `headers`, `proxy`, `socket-timeout`, `source-address` and `ip-family`. The corresponding CLI controls are `--user-agent`, `--referer`, repeatable `--add-header`, `--proxy`, `--socket-timeout`, `--source-address`, `--force-ipv4` and `--force-ipv6`. Explicit CLI values override a selected profile in the normal way.
+Downloader exposes reusable request policy through `user-agent`, `impersonate`, `referer`, `headers`, `proxy`, `socket-timeout`, `source-address` and `ip-family`. The corresponding CLI controls are `--user-agent`, `--impersonate`, `--referer`, repeatable `--add-header`, `--proxy`, `--socket-timeout`, `--source-address`, `--force-ipv4` and `--force-ipv6`. Explicit CLI values override a selected profile in the normal way. `--no-impersonate` explicitly removes impersonation inherited from a profile.
 
 `user-agent` and `referer` deliberately compile to yt-dlp's documented recommended `--add-headers` representation rather than its compatibility `--user-agent` and `--referer` options. For example, `"user-agent": "ExampleBrowser/1.0"` becomes `--add-headers User-Agent:ExampleBrowser/1.0`. Arbitrary `headers` entries use the same yt-dlp `FIELD:VALUE` syntax and preserve their configured order. A dedicated `user-agent` or `referer` cannot be combined with the same header name in `headers`, avoiding ambiguous duplicate request policy.
 
-The shipped profiles share their default User-Agent through `$values.general.user-agent`, so it can be changed once in `defaults.json` when a different identity is required.
+The shipped profiles share their default User-Agent through `$values.general.user-agent`, so it can be changed once in `defaults.json` when a different identity is required. `impersonate` accepts yt-dlp's `CLIENT[:OS]` target syntax and compiles directly to `--impersonate`; it is disabled unless configured by a profile or explicit CLI option.
+
+The public CLI surface is deliberately classified by persistence semantics. Reusable acquisition and output policy is profileable; target/input selection, configuration and inspection controls, execution modes, and reporting or queue-mutating side effects remain invocation-scoped. In particular, `--input-file`, `--dry-run`, `--explain`, `--run-manifest`, `--hash-outputs`, queue reports and completed-row/ID removal are not profile properties. The versioned machine contract exposes this classification so additions to the CLI must make an explicit persistence decision rather than silently drifting away from the profile schema.
 
 `socket-timeout` is a positive number of seconds. `ip-family` is either `"ipv4"` or `"ipv6"` and maps to yt-dlp's mutually exclusive `--force-ipv4` or `--force-ipv6`. Proxy and source-address values are passed to yt-dlp without inventing a separate Downloader network syntax. As with other profile settings, these values may be supplied through typed `$values.*` references.
 

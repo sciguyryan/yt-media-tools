@@ -32,4 +32,4 @@ Run manifests should track actual associated-artefact paths only when authoritat
 
 Anything deterministic that can be represented faithfully with controlled fixtures or simulated outcomes should be tested automatically. Keep ordinary CI fast and deterministic. Property-based testing, mutation testing, branch coverage and focused fuzzing remain useful techniques where they materially improve confidence in policy precedence, queue transitions, completion boundaries and configuration parsing.
 
-Keep `DOWNLOADER-README.md`, help, `--examples`, `TODO.md` and `CHANGELOG.md` consistent with the implemented command surface. Remove completed work from TODO documentation rather than retaining historical roadmap sections.
+Keep `DOWNLOADER-README.md`, help, `--examples`, `TODO.md` and `DOWNLOADER-CHANGELOG.md` consistent with the implemented command surface. Remove completed work from TODO documentation rather than retaining historical roadmap sections.
