@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import html
 import importlib
+from html.parser import HTMLParser
 import json
 import os
 import re
@@ -12,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import time
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Callable
 
@@ -533,6 +536,45 @@ def _index(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {str(row["id"]): row for row in rows if row.get("id")}
 
 
+class _DescriptionTextExtractor(HTMLParser):
+    """Extract human-visible description text without provider-specific HTML markup."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+
+def _normalise_description_text(value: Any) -> str | None:
+    """Return a conservative text-only form for cross-provider description analysis."""
+    if not isinstance(value, str):
+        return None
+    parser = _DescriptionTextExtractor()
+    parser.feed(value)
+    parser.close()
+    text = html.unescape(" ".join(parser.parts))
+    return " ".join(text.split())
+
+
+def _description_analysis(candidate: dict[str, Any], reference: dict[str, Any]) -> dict[str, Any]:
+    """Describe representation-level description differences without claiming semantic equivalence."""
+    left_raw = candidate.get("description")
+    right_raw = reference.get("description")
+    left = _normalise_description_text(left_raw)
+    right = _normalise_description_text(right_raw)
+    if left is None or right is None:
+        return {"status": "missing", "text_equal": False, "similarity_ratio": None}
+    return {
+        "status": "exact" if left_raw == right_raw else ("text_equal" if left == right else "different"),
+        "text_equal": left == right,
+        "similarity_ratio": SequenceMatcher(None, left, right, autojunk=False).ratio(),
+        "candidate_text_length": len(left),
+        "reference_text_length": len(right),
+    }
+
+
 def _agreement(candidate: dict[str, Any], reference: dict[str, Any]) -> dict[str, str]:
     result: dict[str, str] = {}
     for field in COMPARISON_FIELDS:
@@ -587,7 +629,14 @@ def _comparison(video_id: str, candidate: dict[str, Any], reference: dict[str, A
         view_count_delta = _numeric_delta(candidate, reference, "view_count")
         if view_count_delta is not None:
             deltas["view_count"] = view_count_delta
-    return {"id": video_id, "ok": True, "status": "compared", "agreement": agreement, "deltas": deltas}
+    return {
+        "id": video_id,
+        "ok": True,
+        "status": "compared",
+        "agreement": agreement,
+        "deltas": deltas,
+        "description_analysis": _description_analysis(candidate, reference),
+    }
 
 
 def _provider_names(value: str) -> list[str]:
@@ -716,7 +765,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 8,
+        "schema_version": 9,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

@@ -126,3 +126,17 @@ Normal Discover operation filters the known YouTube.js `Text` attachment-run par
 ## Promotion boundary
 
 Issues #103 and #104 do not register `youtube-innertube` or pytubefix capabilities with Discover and do not alter automatic acquisition planning. Promotion requires a later field-by-field authority decision based on repeated corpus evidence, difficult-content behaviour, failure characteristics, maintenance risk and a clear authentication policy.
+
+## Issue #109 heterogeneous variation
+
+After the single-channel CuriousMarc run, use the checked-in heterogeneous corpus to exercise materially different source shapes before drawing a production-integration conclusion. The corpus records sampling intentions rather than expected provider answers so live service changes do not silently become test assertions.
+
+Run the NewPipeExtractor variation from the repository root with:
+
+```bash
+python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --profile core --json -- $(python -c 'import json; print(" ".join(item["id"] for item in json.load(open("benchmarks/metadata-provider-corpora/issue-109-heterogeneous.json"))["items"]))') > bench-109-heterogeneous.json
+```
+
+Schema version 9 adds `description_analysis` to successful comparisons. Raw description equality remains unchanged. The additional analysis strips provider-specific HTML markup, decodes entities, collapses whitespace and reports a similarity ratio. Similarity is evidence only and must not be interpreted as semantic authority or automatic equivalence, particularly where one provider abbreviates visible link text while another exposes a complete URL.
+
+The heterogeneous corpus includes old and newer material, different channels, music and non-English metadata, short-form candidates, historical live-stream pages and other source shapes. Traits are intentionally descriptive sampling goals rather than assertions about the current state of mutable YouTube resources.

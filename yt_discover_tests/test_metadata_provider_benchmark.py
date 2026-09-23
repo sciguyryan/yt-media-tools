@@ -562,3 +562,36 @@ def test_newpipe_runner_keeps_one_jvm_for_the_corpus(monkeypatch, tmp_path) -> N
     assert diagnostics["jvm_processes"] == 1
     assert diagnostics["per_item_elapsed_ms"] == [10.0, 20.0]
     assert diagnostics["startup_and_shutdown_ms"] == 20.0
+
+
+def test_description_analysis_distinguishes_markup_from_text() -> None:
+    benchmark = _module()
+    result = benchmark._description_analysis(
+        {"description": "E&amp;L<br><b>computer</b>"},
+        {"description": "E&L computer"},
+    )
+    assert result["status"] == "text_equal"
+    assert result["text_equal"] is True
+    assert result["similarity_ratio"] == 1.0
+
+
+def test_description_analysis_reports_similarity_without_claiming_equivalence() -> None:
+    benchmark = _module()
+    result = benchmark._description_analysis(
+        {"description": '<a href="https://example.invalid/full">https://example.invalid/...</a>'},
+        {"description": "https://example.invalid/full"},
+    )
+    assert result["status"] == "different"
+    assert result["text_equal"] is False
+    assert 0.0 < result["similarity_ratio"] < 1.0
+
+
+def test_issue_109_heterogeneous_corpus_is_deterministic_and_diverse() -> None:
+    import json
+
+    corpus = json.loads((ROOT / "benchmarks/metadata-provider-corpora/issue-109-heterogeneous.json").read_text())
+    ids = [item["id"] for item in corpus["items"]]
+    traits = {trait for item in corpus["items"] for trait in item["traits"]}
+    assert corpus["schema_version"] == 1
+    assert len(ids) == len(set(ids)) >= 8
+    assert {"very-old-upload", "short-form-candidate", "live-history", "non-english-title"} <= traits

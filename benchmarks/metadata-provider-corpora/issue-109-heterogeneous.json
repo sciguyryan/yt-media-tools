@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "purpose": "Issue #109 heterogeneous NewPipeExtractor compatibility evidence",
+  "notes": "Traits are sampling intentions, not assertions about current YouTube state. Provider output remains authoritative evidence for the benchmark run.",
+  "items": [
+    {"id": "jNQXAC9IVRw", "traits": ["very-old-upload", "short-duration", "legacy-metadata"]},
+    {"id": "dQw4w9WgXcQ", "traits": ["old-upload", "high-view-count", "music"]},
+    {"id": "9bZkp7q19f0", "traits": ["non-english-title", "very-high-view-count", "music"]},
+    {"id": "g1zbexho0zc", "traits": ["short-form-candidate", "very-high-view-count"]},
+    {"id": "9EJIH8kxTn8", "traits": ["shorts-topic", "creator-education"]},
+    {"id": "nA9UZF-SZoQ", "traits": ["live-history", "institutional-channel", "long-running-stream"]},
+    {"id": "21X5lGlDOfg", "traits": ["live-history", "institutional-channel", "high-view-count"]},
+    {"id": "aqz-KE-bpKQ", "traits": ["creative-commons-candidate", "animation", "long-form"]}
+  ]
+}

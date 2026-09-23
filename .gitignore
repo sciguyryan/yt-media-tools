@@ -110,3 +110,4 @@ Thumbs.db
 # Local performance benchmark results
 /.benchmarks/
 /benchmark-results*.json
+/bench*.json

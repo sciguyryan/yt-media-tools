@@ -6,6 +6,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover - NewPipeExtractor metadata benchmark
 
+- [feature] Add a heterogeneous issue #109 corpus spanning multiple source shapes for a second NewPipeExtractor compatibility run.
+- [maintenance] Add conservative text-normalised description analysis and similarity evidence without treating similarity as semantic equivalence, advancing the experimental benchmark schema to version 9.
+- [test] Cover description representation normalisation and the deterministic heterogeneous corpus contract.
+- [docs] Document the heterogeneous benchmark variation and interpretation boundary.
 - [feature] Add NewPipeExtractor v0.26.5 as an optional experimental known-video metadata provider for issue #109 without changing production provider selection.
 - [feature] Add a minimal Java 21 bridge that keeps one JVM alive across a benchmark corpus and reports provider-native metadata and per-item acquisition time.
 - [maintenance] Register NewPipeExtractor with the shared external-tool invocation diagnostics and advance the experimental metadata benchmark schema to version 8.
