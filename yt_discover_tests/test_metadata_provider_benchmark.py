@@ -708,16 +708,16 @@ def test_invidious_runner_uses_only_selected_instance(monkeypatch) -> None:
 
     def fake_urlopen(request, timeout):
         requested.append((request.full_url, timeout))
-        if request.full_url.endswith("/api/v1/stats"):
-            return FakeResponse(b'{"software":{"name":"invidious"}}')
         return FakeResponse(b'{"videoId":"abc","title":"Example","published":0,"liveNow":false}')
 
     monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
     rows, _, diagnostics = benchmark._invidious(["abc"], instance="https://chosen.example/")
     assert requested == [
-        ("https://chosen.example/api/v1/stats", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS),
-        ("https://chosen.example/api/v1/videos/abc", benchmark.INVIDIOUS_REQUEST_TIMEOUT_SECONDS),
+        ("https://chosen.example/api/v1/videos/abc", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS),
     ]
+    assert diagnostics["preflight_endpoint"] == "/api/v1/videos/:id"
+    assert diagnostics["preflight_video_id"] == "abc"
+    assert diagnostics["preflight_reused_as_first_result"] is True
     assert rows[0]["id"] == "abc"
     assert diagnostics["instance"] == "https://chosen.example"
     assert diagnostics["request_count"] == 1
@@ -739,4 +739,25 @@ def test_invidious_preflight_fails_before_video_requests(monkeypatch) -> None:
         assert "unreachable.example" in str(exc)
     else:
         raise AssertionError("unreachable Invidious instance passed preflight")
-    assert requested == [("https://unreachable.example/api/v1/stats", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS)]
+    assert requested == [
+        ("https://unreachable.example/api/v1/videos/abc", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS)
+    ]
+
+
+def test_invidious_video_api_disabled_fails_capability_preflight(monkeypatch) -> None:
+    benchmark = _module()
+    requested = []
+
+    def fake_urlopen(request, timeout):
+        requested.append((request.full_url, timeout))
+        raise benchmark.HTTPError(request.full_url, 403, "Forbidden", {}, None)
+
+    monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
+    try:
+        benchmark._invidious(["abc", "def"], instance="https://disabled.example")
+    except RuntimeError as exc:
+        assert "video API preflight failed" in str(exc)
+        assert "HTTP 403" in str(exc)
+    else:
+        raise AssertionError("disabled Invidious video API passed capability preflight")
+    assert requested == [("https://disabled.example/api/v1/videos/abc", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS)]

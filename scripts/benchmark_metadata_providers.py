@@ -468,6 +468,17 @@ def _normalise_invidious(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _invidious_video_request(base: str, video_id: str, *, timeout: int) -> dict[str, Any]:
+    """Request one video from the explicitly selected Invidious instance."""
+    url = f"{base}/api/v1/videos/{quote(video_id, safe='')}"
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"})
+    with urlopen(request, timeout=timeout) as response:  # noqa: S310 - caller explicitly selects the remote instance.
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError("Invidious video endpoint returned a non-object JSON response")
+    return payload
+
+
 def _invidious(
     video_ids: list[str], *, instance: str | None = None
 ) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
@@ -478,34 +489,39 @@ def _invidious(
             "Invidious benchmarking requires an explicitly configured instance via "
             "--invidious-instance or " + INVIDIOUS_INSTANCE_ENV
         )
+    if not video_ids:
+        raise RuntimeError("Invidious benchmarking requires at least one video ID")
     try:
         base = _invidious_instance(configured)
     except argparse.ArgumentTypeError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    preflight_url = f"{base}/api/v1/stats"
+    # Capability preflight deliberately exercises the exact endpoint required by
+    # the benchmark. A healthy /stats endpoint does not imply that /videos/:id
+    # is enabled on a particular public deployment.
+    probe_id = video_ids[0]
     emit_invocation(
         ToolInvocation(
             tool="invidious",
-            operation="GET /api/v1/stats",
-            purpose="explicit instance benchmark preflight",
+            operation="GET /api/v1/videos/:id",
+            purpose="explicit instance video-API capability preflight",
             status="executing",
-            arguments={"instance": base},
+            arguments={"instance": base, "video_id": probe_id},
         )
     )
     preflight_started = time.perf_counter()
     try:
-        request = Request(
-            preflight_url,
-            headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"},
-        )
-        with urlopen(request, timeout=INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS) as response:  # noqa: S310 - caller explicitly selects the remote instance.
-            preflight_payload = json.loads(response.read().decode("utf-8"))
-        if not isinstance(preflight_payload, dict):
-            raise RuntimeError("Invidious stats endpoint returned a non-object JSON response")
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
+        probe_payload = _invidious_video_request(base, probe_id, timeout=INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS)
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = f"HTTP {exc.code}: {body or exc.reason}"
         raise RuntimeError(
-            f"Invidious instance preflight failed for {base}: {exc}. "
+            f"Invidious video API preflight failed for {base}: {detail}. "
+            "The selected instance may be reachable while its video API is disabled or unavailable."
+        ) from exc
+    except (URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"Invidious video API preflight failed for {base}: {exc}. "
             "Check the explicitly selected instance before running a benchmark corpus."
         ) from exc
     preflight_elapsed_ms = (time.perf_counter() - preflight_started) * 1000.0
@@ -514,8 +530,7 @@ def _invidious(
     failures: list[dict[str, str]] = []
     item_times: list[float] = []
     started = time.perf_counter()
-    for video_id in video_ids:
-        url = f"{base}/api/v1/videos/{quote(video_id, safe='')}"
+    for index, video_id in enumerate(video_ids):
         emit_invocation(
             ToolInvocation(
                 tool="invidious",
@@ -527,13 +542,11 @@ def _invidious(
         )
         item_started = time.perf_counter()
         try:
-            request = Request(
-                url, headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"}
+            payload = (
+                probe_payload
+                if index == 0
+                else _invidious_video_request(base, video_id, timeout=INVIDIOUS_REQUEST_TIMEOUT_SECONDS)
             )
-            with urlopen(request, timeout=INVIDIOUS_REQUEST_TIMEOUT_SECONDS) as response:  # noqa: S310 - caller explicitly selects the remote instance.
-                payload = json.loads(response.read().decode("utf-8"))
-            if not isinstance(payload, dict):
-                raise RuntimeError("Invidious video endpoint returned a non-object JSON response")
             row = _normalise_invidious(video_id, payload)
         except HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace").strip()
@@ -555,10 +568,12 @@ def _invidious(
             "instance": base,
             "authentication": "anonymous",
             "request_count": len(video_ids),
-            "preflight_endpoint": "/api/v1/stats",
+            "preflight_endpoint": "/api/v1/videos/:id",
+            "preflight_video_id": probe_id,
             "preflight_elapsed_ms": preflight_elapsed_ms,
             "preflight_timeout_seconds": INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS,
             "request_timeout_seconds": INVIDIOUS_REQUEST_TIMEOUT_SECONDS,
+            "preflight_reused_as_first_result": True,
             "per_item_elapsed_ms": item_times,
             "failures": failures,
         },

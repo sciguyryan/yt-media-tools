@@ -6,6 +6,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover - explicitly configured Invidious metadata benchmark
 
+- [fix] Replace the reachability-only Invidious stats preflight with a video-API capability preflight so instances returning `403 Endpoint disabled` fail before the remaining corpus is disclosed.
+- [maintenance] Reuse the successful video capability-probe payload as the first benchmark result and record the probed ID in diagnostics.
+- [test] Cover disabled video-API capability preflight and verify the successful probe is not requested twice.
+- [docs] Record the disabled-video-endpoint finding and select another current official public instance for the next explicit probe.
 - [fix] Preflight the explicitly selected Invidious instance with a five-second stats request before disclosing or iterating over a benchmark corpus.
 - [maintenance] Bound individual Invidious video metadata requests to 15 seconds and record preflight/request timeout diagnostics.
 - [test] Verify failed Invidious preflight stops before any video endpoint is requested.
