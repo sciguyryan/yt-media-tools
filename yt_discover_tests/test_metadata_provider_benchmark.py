@@ -390,7 +390,7 @@ def test_pytubefix_is_available_as_experimental_provider() -> None:
 
 def test_pytubefix_normalisation_keeps_extended_capabilities_separate() -> None:
     benchmark = _module()
-    row = benchmark._normalise_pytubefix("abc", _FakePytubefixVideo())
+    row = benchmark._normalise_pytubefix("abc", _FakePytubefixVideo(), include_extended=True)
     assert row["id"] == "abc"
     assert row["title"] == "Example"
     assert row["channel_id"] == "UCexample"
@@ -417,7 +417,7 @@ def test_pytubefix_capability_probe_failure_does_not_discard_core_metadata() -> 
         def chapters(self):
             raise RuntimeError("chapter endpoint unavailable")
 
-    row = benchmark._normalise_pytubefix("abc", BrokenCapabilities())
+    row = benchmark._normalise_pytubefix("abc", BrokenCapabilities(), include_extended=True)
     assert row["ok"] is True
     assert row["extended_capabilities"]["chapters"] == {"available": False, "error_type": "RuntimeError"}
 
@@ -446,3 +446,51 @@ def test_pytubefix_runner_records_per_video_failures(monkeypatch) -> None:
     assert diagnostics["version"] == "test-version"
     assert diagnostics["authentication"] == "anonymous"
     assert diagnostics["network_measurement"] == "not instrumented"
+
+
+def test_core_profile_does_not_probe_pytubefix_extended_capabilities() -> None:
+    benchmark = _module()
+
+    class CoreOnlyVideo(_FakePytubefixVideo):
+        @property
+        def thumbnail_url(self):
+            raise AssertionError("core profile probed thumbnail metadata")
+
+        @property
+        def chapters(self):
+            raise AssertionError("core profile probed chapter metadata")
+
+        @property
+        def captions(self):
+            raise AssertionError("core profile probed caption metadata")
+
+    row = benchmark._normalise_pytubefix("abc", CoreOnlyVideo(), include_extended=False)
+    assert row["extended_capabilities"] == {"status": "not_requested"}
+
+
+def test_measurement_profile_support_is_explicit() -> None:
+    benchmark = _module()
+    assert benchmark.PROFILE_SUPPORT["youtubejs"] == {"core"}
+    assert benchmark.PROFILE_SUPPORT["youtube-innertube"] == {"core"}
+    assert benchmark.PROFILE_SUPPORT["pytubefix"] == {"core", "full"}
+    assert benchmark.PROFILE_SUPPORT["ytdlp"] == {"core", "full"}
+
+
+def test_full_ytdlp_inventory_is_structural_only() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_ytdlp(
+        {
+            "id": "abc",
+            "thumbnails": [{"url": "https://secret.example/thumb.jpg"}],
+            "chapters": [{"title": "Intro"}],
+            "subtitles": {"en": [{"url": "https://secret.example/en.vtt"}]},
+            "automatic_captions": {"cy": [{"url": "https://secret.example/cy.vtt"}]},
+        },
+        include_extended=True,
+    )
+    assert row["extended_capabilities"] == {
+        "thumbnail_url": {"available": True},
+        "chapters": {"available": True, "count": 1},
+        "captions": {"available": True, "count": 2, "codes": ["cy", "en"]},
+    }
+    assert "secret.example" not in str(row["extended_capabilities"])

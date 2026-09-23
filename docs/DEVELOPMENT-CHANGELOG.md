@@ -2,6 +2,14 @@
 
 This file records meaningful changes during active development. It is not release history. When a dot release is completed and accepted, relevant entries are reconciled into the root `CHANGELOG.md` and the completed development section is cleared or advanced for the next work item.
 
+## Discover - comparable metadata benchmark profiles
+
+- [fix] Separate core metadata timing from optional extended capability probing so provider elapsed times describe the same acquisition contract.
+- [feature] Add explicit core and full measurement profiles with provider support declarations and fail-closed handling for unsupported profile/provider combinations.
+- [feature] Add structural yt-dlp thumbnail, chapter and caption inventory for direct full-profile comparison with pytubefix without retaining media URLs or caption contents.
+- [test] Cover profile support, core-only pytubefix acquisition and structural yt-dlp extended capability reporting.
+- [maintenance] Exclude virtual environments and nested Node dependency trees from project Markdown linting.
+
 ## Discover - pytubefix metadata benchmark
 
 - [feature] Add pytubefix as an optional experimental provider in the shared known-video metadata benchmark without changing production provider selection.

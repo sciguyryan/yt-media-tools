@@ -33,6 +33,13 @@ FAILURE_PATTERNS = (
 
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
 PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "ytdlp")
+MEASUREMENT_PROFILES = ("core", "full")
+PROFILE_SUPPORT = {
+    "youtubejs": {"core"},
+    "youtube-innertube": {"core"},
+    "pytubefix": {"core", "full"},
+    "ytdlp": {"core", "full"},
+}
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
 COMPARISON_FIELDS = (
     "id",
@@ -110,9 +117,28 @@ def _normalise_youtube_innertube(video_id: str, row: dict[str, Any]) -> dict[str
     }
 
 
-def _normalise_ytdlp(row: dict[str, Any]) -> dict[str, Any]:
+def _normalise_ytdlp(row: dict[str, Any], *, include_extended: bool = False) -> dict[str, Any]:
     categories = row.get("categories")
     category = categories[0] if isinstance(categories, list) and len(categories) == 1 else categories
+    extended = {"status": "not_requested"}
+    if include_extended:
+        thumbnails = row.get("thumbnails")
+        chapters = row.get("chapters")
+        subtitles = row.get("subtitles")
+        automatic_captions = row.get("automatic_captions")
+        caption_codes = set()
+        if isinstance(subtitles, dict):
+            caption_codes.update(str(code) for code in subtitles)
+        if isinstance(automatic_captions, dict):
+            caption_codes.update(str(code) for code in automatic_captions)
+        extended = {
+            "thumbnail_url": {"available": bool(thumbnails)},
+            "chapters": {
+                "available": chapters is not None,
+                "count": len(chapters) if isinstance(chapters, list) else 0,
+            },
+            "captions": {"available": bool(caption_codes), "count": len(caption_codes), "codes": sorted(caption_codes)},
+        }
     return {
         "id": row.get("id"),
         "title": row.get("title"),
@@ -131,6 +157,7 @@ def _normalise_ytdlp(row: dict[str, Any]) -> dict[str, Any]:
             "live_status": row.get("live_status"),
             "availability": row.get("availability"),
         },
+        "extended_capabilities": extended,
     }
 
 
@@ -185,7 +212,7 @@ def _youtube_innertube(video_ids: list[str]) -> tuple[list[dict[str, Any]], floa
     return rows, elapsed, {"failures": failures}
 
 
-def _normalise_pytubefix(video_id: str, video: Any) -> dict[str, Any]:
+def _normalise_pytubefix(video_id: str, video: Any, *, include_extended: bool = False) -> dict[str, Any]:
     """Normalise pytubefix evidence without granting extended fields authority."""
     publish_date = video.publish_date
     if publish_date is None:
@@ -200,27 +227,28 @@ def _normalise_pytubefix(video_id: str, video: Any) -> dict[str, Any]:
     playability = vid_info.get("playabilityStatus") if isinstance(vid_info.get("playabilityStatus"), dict) else {}
 
     extended: dict[str, Any] = {}
-    for name, getter in (
-        ("thumbnail_url", lambda: video.thumbnail_url),
-        ("chapters", lambda: video.chapters),
-        ("captions", lambda: video.captions),
-    ):
-        try:
-            value = getter()
-            if name == "thumbnail_url":
-                extended[name] = {"available": bool(value)}
-            elif name == "chapters":
-                extended[name] = {"available": value is not None, "count": len(value) if value is not None else 0}
-            else:
-                keys = []
-                if value is not None:
-                    try:
-                        keys = sorted(str(key) for key in value)
-                    except TypeError:
-                        keys = []
-                extended[name] = {"available": bool(keys), "count": len(keys), "codes": keys}
-        except Exception as exc:  # noqa: BLE001 - capability probing must not discard otherwise valid metadata.
-            extended[name] = {"available": False, "error_type": type(exc).__name__}
+    if include_extended:
+        for name, getter in (
+            ("thumbnail_url", lambda: video.thumbnail_url),
+            ("chapters", lambda: video.chapters),
+            ("captions", lambda: video.captions),
+        ):
+            try:
+                value = getter()
+                if name == "thumbnail_url":
+                    extended[name] = {"available": bool(value)}
+                elif name == "chapters":
+                    extended[name] = {"available": value is not None, "count": len(value) if value is not None else 0}
+                else:
+                    keys = []
+                    if value is not None:
+                        try:
+                            keys = sorted(str(key) for key in value)
+                        except TypeError:
+                            keys = []
+                    extended[name] = {"available": bool(keys), "count": len(keys), "codes": keys}
+            except Exception as exc:  # noqa: BLE001 - capability probing must not discard otherwise valid metadata.
+                extended[name] = {"available": False, "error_type": type(exc).__name__}
 
     return {
         "id": video_id,
@@ -241,11 +269,11 @@ def _normalise_pytubefix(video_id: str, video: Any) -> dict[str, Any]:
             "is_live_content": video_details.get("isLiveContent"),
             "available_video_detail_keys": sorted(str(key) for key in video_details),
         },
-        "extended_capabilities": extended,
+        "extended_capabilities": extended if include_extended else {"status": "not_requested"},
     }
 
 
-def _pytubefix(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+def _pytubefix(video_ids: list[str], *, profile: str = "core") -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     try:
         module = importlib.import_module("pytubefix")
     except ImportError as exc:
@@ -258,7 +286,7 @@ def _pytubefix(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[
         item_started = time.perf_counter()
         try:
             video = module.YouTube(f"https://www.youtube.com/watch?v={video_id}")
-            row = _normalise_pytubefix(video_id, video)
+            row = _normalise_pytubefix(video_id, video, include_extended=profile == "full")
             row["elapsed_ms"] = (time.perf_counter() - item_started) * 1000.0
             rows.append(row)
         except Exception as exc:  # noqa: BLE001 - benchmark records third-party failure characteristics.
@@ -275,6 +303,7 @@ def _pytubefix(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[
             "version": str(version) if version is not None else None,
             "authentication": "anonymous",
             "network_measurement": "not instrumented",
+            "measurement_profile": profile,
         },
     )
 
@@ -311,7 +340,7 @@ def _ytdlp_diagnostics_by_id(stderr: str, video_ids: list[str]) -> dict[str, str
     return {video_id: "\n".join(lines).strip() for video_id, lines in messages.items() if lines}
 
 
-def _ytdlp(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+def _ytdlp(video_ids: list[str], *, profile: str = "core") -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     executable = shutil.which("yt-dlp")
     if executable is None:
         raise RuntimeError("yt-dlp was not found in PATH")
@@ -336,7 +365,7 @@ def _ytdlp(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str,
         except json.JSONDecodeError as exc:
             raise RuntimeError(f"yt-dlp emitted invalid JSON: {exc}") from exc
         if isinstance(value, dict):
-            successful_rows.append(_normalise_ytdlp(value))
+            successful_rows.append(_normalise_ytdlp(value, include_extended=profile == "full"))
     successful = _index(successful_rows)
     per_id_diagnostics = _ytdlp_diagnostics_by_id(result.stderr, video_ids)
     rows: list[dict[str, Any]] = []
@@ -352,6 +381,7 @@ def _ytdlp(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str,
         rows,
         elapsed,
         {
+            "measurement_profile": profile,
             "stderr_bytes": len(result.stderr.encode("utf-8")),
             "items": [
                 {"id": video_id, "message": message, "kind": _classify_failure(message)}
@@ -359,6 +389,20 @@ def _ytdlp(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str,
             ],
         },
     )
+
+
+def _run_provider(name: str, video_ids: list[str], profile: str) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    """Run one provider under a declared provider-neutral measurement profile."""
+    if profile not in PROFILE_SUPPORT[name]:
+        raise RuntimeError(f"provider {name} does not support measurement profile {profile}")
+    if name == "pytubefix":
+        return _pytubefix(video_ids, profile=profile)
+    if name == "ytdlp":
+        return _ytdlp(video_ids, profile=profile)
+    rows, elapsed, diagnostics = RUNNERS[name](video_ids)
+    diagnostics = dict(diagnostics)
+    diagnostics["measurement_profile"] = profile
+    return rows, elapsed, diagnostics
 
 
 RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict[str, Any]]]] = {
@@ -497,6 +541,12 @@ def main() -> int:
         help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
+    parser.add_argument(
+        "--profile",
+        choices=MEASUREMENT_PROFILES,
+        default="core",
+        help="provider-neutral acquisition profile; full is available only where the provider can satisfy the extended capability contract",
+    )
     auth = parser.add_mutually_exclusive_group()
     auth.add_argument(
         "--youtubejs-cookie",
@@ -521,7 +571,7 @@ def main() -> int:
     provider_results: dict[str, dict[str, Any]] = {}
     run_names: list[str] = []
     for name in args.providers:
-        rows, elapsed, diagnostics = RUNNERS[name](args.video_id)
+        rows, elapsed, diagnostics = _run_provider(name, args.video_id, args.profile)
         provider_results[name] = {
             "elapsed_seconds": elapsed,
             "rows": rows,
@@ -563,7 +613,9 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 6,
+        "schema_version": 7,
+        "measurement_profile": args.profile,
+        "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),
         "providers": provider_results,
         "comparisons": comparisons,
