@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Issues #102, #103, #104, #109 and #110 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix, NewPipeExtractor and explicitly configured Invideous acquisition against the existing yt-dlp detailed path over the same corpus.
+Issues #102, #103, #104, #109 and #110 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix, NewPipeExtractor and explicitly configured Invidious acquisition against the existing yt-dlp detailed path over the same corpus.
 
 The benchmark is evidence gathering. A field being present, or even equal to yt-dlp in one run, does not establish authoritative semantic equivalence.
 
@@ -77,13 +77,21 @@ python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --p
 
 Add `--debug-external` when the JVM bridge invocation should be shown on stderr through the shared external-tool diagnostics.
 
-To benchmark issue #110 against an Invidious instance you have explicitly selected:
+To benchmark issue #110, explicitly select an Invidious instance. The project does not ship a default instance because that would turn an investigative operator choice into an implicit remote disclosure. For example, `https://inv.nadeko.net` was present on the official Invidious public-instance list when the issue #110 investigation was performed. Public-instance availability is external and may change, so verify the current official list before relying on a documented example.
+
+Start with a small probe before sending a full corpus:
 
 ```fish
-python scripts/benchmark_metadata_providers.py --providers invidious --invidious-instance https://YOUR-INVIDIOUS-INSTANCE --profile core --json -- (cat ./ids/ids-curiousmarc-bench) > bench-110.json
+python scripts/benchmark_metadata_providers.py --providers invidious --invidious-instance https://inv.nadeko.net --profile core --json -- jNQXAC9IVRw dQw4w9WgXcQ aqz-KE-bpKQ > bench-110-probe.json
 ```
 
-The configured instance is recorded in benchmark diagnostics for provenance. No instance discovery, fallback or automatic public-instance selection occurs. `--debug-external` shows each logical Invidious API operation through the common external-tool diagnostics. Because the remote instance receives the requested video IDs, use only an instance you deliberately trust for the corpus being tested.
+If the probe is healthy, run the established corpus:
+
+```fish
+python scripts/benchmark_metadata_providers.py --providers invidious --invidious-instance https://inv.nadeko.net --profile core --json -- (cat ./ids/ids-curiousmarc-bench) > bench-110.json
+```
+
+Before requesting any video metadata, the benchmark now performs a five-second `/api/v1/stats` preflight against the explicitly selected instance. A failed preflight aborts the provider before the corpus is sent. Individual video requests have a 15-second timeout. The configured instance and preflight timing are recorded in benchmark diagnostics for provenance. No instance discovery, fallback or automatic public-instance selection occurs. `--debug-external` shows each logical Invidious API operation through the common external-tool diagnostics. Because the remote instance receives the requested video IDs, use only an instance you deliberately trust for the corpus being tested.
 
 The older #102-specific harness remains available so retained #102 evidence and its schema stay reproducible.
 

@@ -58,6 +58,8 @@ YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
 NEWPIPE_BRIDGE_ENV = "YT_DISCOVER_NEWPIPE_BRIDGE"
 NEWPIPE_DIAGNOSTICS_ENV = "YT_DISCOVER_NEWPIPE_DIAGNOSTICS"
 INVIDIOUS_INSTANCE_ENV = "YT_DISCOVER_INVIDIOUS_INSTANCE"
+INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS = 5
+INVIDIOUS_REQUEST_TIMEOUT_SECONDS = 15
 NEWPIPE_DEFAULT_BRIDGE = (
     ROOT
     / "tools"
@@ -481,6 +483,33 @@ def _invidious(
     except argparse.ArgumentTypeError as exc:
         raise RuntimeError(str(exc)) from exc
 
+    preflight_url = f"{base}/api/v1/stats"
+    emit_invocation(
+        ToolInvocation(
+            tool="invidious",
+            operation="GET /api/v1/stats",
+            purpose="explicit instance benchmark preflight",
+            status="executing",
+            arguments={"instance": base},
+        )
+    )
+    preflight_started = time.perf_counter()
+    try:
+        request = Request(
+            preflight_url,
+            headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"},
+        )
+        with urlopen(request, timeout=INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS) as response:  # noqa: S310 - caller explicitly selects the remote instance.
+            preflight_payload = json.loads(response.read().decode("utf-8"))
+        if not isinstance(preflight_payload, dict):
+            raise RuntimeError("Invidious stats endpoint returned a non-object JSON response")
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"Invidious instance preflight failed for {base}: {exc}. "
+            "Check the explicitly selected instance before running a benchmark corpus."
+        ) from exc
+    preflight_elapsed_ms = (time.perf_counter() - preflight_started) * 1000.0
+
     rows: list[dict[str, Any]] = []
     failures: list[dict[str, str]] = []
     item_times: list[float] = []
@@ -501,7 +530,7 @@ def _invidious(
             request = Request(
                 url, headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"}
             )
-            with urlopen(request, timeout=30) as response:  # noqa: S310 - caller explicitly selects the remote instance.
+            with urlopen(request, timeout=INVIDIOUS_REQUEST_TIMEOUT_SECONDS) as response:  # noqa: S310 - caller explicitly selects the remote instance.
                 payload = json.loads(response.read().decode("utf-8"))
             if not isinstance(payload, dict):
                 raise RuntimeError("Invidious video endpoint returned a non-object JSON response")
@@ -526,6 +555,10 @@ def _invidious(
             "instance": base,
             "authentication": "anonymous",
             "request_count": len(video_ids),
+            "preflight_endpoint": "/api/v1/stats",
+            "preflight_elapsed_ms": preflight_elapsed_ms,
+            "preflight_timeout_seconds": INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS,
+            "request_timeout_seconds": INVIDIOUS_REQUEST_TIMEOUT_SECONDS,
             "per_item_elapsed_ms": item_times,
             "failures": failures,
         },

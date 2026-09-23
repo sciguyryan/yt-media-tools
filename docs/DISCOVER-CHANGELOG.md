@@ -6,6 +6,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover - explicitly configured Invidious metadata benchmark
 
+- [fix] Preflight the explicitly selected Invidious instance with a five-second stats request before disclosing or iterating over a benchmark corpus.
+- [maintenance] Bound individual Invidious video metadata requests to 15 seconds and record preflight/request timeout diagnostics.
+- [test] Verify failed Invidious preflight stops before any video endpoint is requested.
+- [docs] Replace the ambiguous placeholder-only example with a small-probe workflow and a contemporaneous official-list instance example.
 - [feature] Add Invidious as an optional experimental core metadata provider for issue #110 without changing production provider selection.
 - [security] Require the benchmark operator to select the Invidious instance explicitly and reject credential-bearing, query-bearing or fragment-bearing instance URLs.
 - [maintenance] Register Invidious with the shared external-tool invocation diagnostics and advance the experimental metadata benchmark schema to version 10.

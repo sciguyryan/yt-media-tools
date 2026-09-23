@@ -694,6 +694,9 @@ def test_invidious_runner_uses_only_selected_instance(monkeypatch) -> None:
     requested = []
 
     class FakeResponse:
+        def __init__(self, payload):
+            self.payload = payload
+
         def __enter__(self):
             return self
 
@@ -701,15 +704,39 @@ def test_invidious_runner_uses_only_selected_instance(monkeypatch) -> None:
             return False
 
         def read(self):
-            return b'{"videoId":"abc","title":"Example","published":0,"liveNow":false}'
+            return self.payload
 
     def fake_urlopen(request, timeout):
         requested.append((request.full_url, timeout))
-        return FakeResponse()
+        if request.full_url.endswith("/api/v1/stats"):
+            return FakeResponse(b'{"software":{"name":"invidious"}}')
+        return FakeResponse(b'{"videoId":"abc","title":"Example","published":0,"liveNow":false}')
 
     monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
     rows, _, diagnostics = benchmark._invidious(["abc"], instance="https://chosen.example/")
-    assert requested == [("https://chosen.example/api/v1/videos/abc", 30)]
+    assert requested == [
+        ("https://chosen.example/api/v1/stats", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS),
+        ("https://chosen.example/api/v1/videos/abc", benchmark.INVIDIOUS_REQUEST_TIMEOUT_SECONDS),
+    ]
     assert rows[0]["id"] == "abc"
     assert diagnostics["instance"] == "https://chosen.example"
     assert diagnostics["request_count"] == 1
+
+
+def test_invidious_preflight_fails_before_video_requests(monkeypatch) -> None:
+    benchmark = _module()
+    requested = []
+
+    def fake_urlopen(request, timeout):
+        requested.append((request.full_url, timeout))
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
+    try:
+        benchmark._invidious(["abc", "def"], instance="https://unreachable.example/")
+    except RuntimeError as exc:
+        assert "preflight failed" in str(exc)
+        assert "unreachable.example" in str(exc)
+    else:
+        raise AssertionError("unreachable Invidious instance passed preflight")
+    assert requested == [("https://unreachable.example/api/v1/stats", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS)]
