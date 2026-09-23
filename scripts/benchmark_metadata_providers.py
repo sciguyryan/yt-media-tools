@@ -14,6 +14,10 @@ import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.request import Request, urlopen
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Callable
@@ -39,18 +43,21 @@ FAILURE_PATTERNS = (
 )
 
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
-PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "newpipe-extractor", "ytdlp")
+PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "newpipe-extractor", "invidious", "ytdlp")
+DEFAULT_PROVIDERS = tuple(name for name in PROVIDERS if name != "invidious")
 MEASUREMENT_PROFILES = ("core", "full")
 PROFILE_SUPPORT = {
     "youtubejs": {"core"},
     "youtube-innertube": {"core"},
     "pytubefix": {"core", "full"},
     "newpipe-extractor": {"core"},
+    "invidious": {"core"},
     "ytdlp": {"core", "full"},
 }
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
 NEWPIPE_BRIDGE_ENV = "YT_DISCOVER_NEWPIPE_BRIDGE"
 NEWPIPE_DIAGNOSTICS_ENV = "YT_DISCOVER_NEWPIPE_DIAGNOSTICS"
+INVIDIOUS_INSTANCE_ENV = "YT_DISCOVER_INVIDIOUS_INSTANCE"
 NEWPIPE_DEFAULT_BRIDGE = (
     ROOT
     / "tools"
@@ -413,6 +420,118 @@ def _newpipe_extractor(video_ids: list[str]) -> tuple[list[dict[str, Any]], floa
     )
 
 
+def _invidious_instance(value: str) -> str:
+    """Validate an explicitly selected Invidious instance without discovering alternatives."""
+    parsed = urlsplit(value.strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise argparse.ArgumentTypeError("Invidious instance must be an absolute http:// or https:// URL")
+    if parsed.username is not None or parsed.password is not None:
+        raise argparse.ArgumentTypeError("Invidious instance URL must not contain credentials")
+    if parsed.query or parsed.fragment:
+        raise argparse.ArgumentTypeError("Invidious instance URL must not contain a query string or fragment")
+    path = parsed.path.rstrip("/")
+    return urlunsplit((parsed.scheme, parsed.netloc, path, "", ""))
+
+
+def _invidious_date(value: Any) -> str | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return datetime.fromtimestamp(value, tz=timezone.utc).strftime("%Y%m%d")
+
+
+def _normalise_invidious(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
+    """Normalise documented Invidious video fields while retaining provider-native live signals."""
+    return {
+        "id": row.get("videoId") or video_id,
+        "title": row.get("title"),
+        "description": row.get("description"),
+        "channel_id": row.get("authorId"),
+        "duration": row.get("lengthSeconds"),
+        "view_count": row.get("viewCount"),
+        "upload_date": _invidious_date(row.get("published")),
+        "category": row.get("genre"),
+        "is_live": row.get("liveNow"),
+        "keywords": row.get("keywords"),
+        "ok": True,
+        "source_signals": {
+            "author": row.get("author"),
+            "author_url": row.get("authorUrl"),
+            "is_listed": row.get("isListed"),
+            "live_now": row.get("liveNow"),
+            "is_post_live_dvr": row.get("isPostLiveDvr"),
+            "is_upcoming": row.get("isUpcoming"),
+            "paid": row.get("paid"),
+            "premium": row.get("premium"),
+        },
+    }
+
+
+def _invidious(
+    video_ids: list[str], *, instance: str | None = None
+) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    """Acquire video metadata only from the instance explicitly selected by the caller."""
+    configured = instance or os.environ.get(INVIDIOUS_INSTANCE_ENV)
+    if not configured:
+        raise RuntimeError(
+            "Invidious benchmarking requires an explicitly configured instance via "
+            "--invidious-instance or " + INVIDIOUS_INSTANCE_ENV
+        )
+    try:
+        base = _invidious_instance(configured)
+    except argparse.ArgumentTypeError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    rows: list[dict[str, Any]] = []
+    failures: list[dict[str, str]] = []
+    item_times: list[float] = []
+    started = time.perf_counter()
+    for video_id in video_ids:
+        url = f"{base}/api/v1/videos/{quote(video_id, safe='')}"
+        emit_invocation(
+            ToolInvocation(
+                tool="invidious",
+                operation="GET /api/v1/videos/:id",
+                purpose="known-video metadata benchmark",
+                status="executing",
+                arguments={"instance": base, "video_id": video_id},
+            )
+        )
+        item_started = time.perf_counter()
+        try:
+            request = Request(
+                url, headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"}
+            )
+            with urlopen(request, timeout=30) as response:  # noqa: S310 - caller explicitly selects the remote instance.
+                payload = json.loads(response.read().decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise RuntimeError("Invidious video endpoint returned a non-object JSON response")
+            row = _normalise_invidious(video_id, payload)
+        except HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace").strip()
+            message = f"Invidious HTTP {exc.code}: {body or exc.reason}"
+            row = _failure_row(video_id, message, error_type=type(exc).__name__)
+            failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
+        except (URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
+            row = _failure_row(video_id, str(exc), error_type=type(exc).__name__)
+            failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
+        elapsed_ms = (time.perf_counter() - item_started) * 1000.0
+        row["elapsed_ms"] = elapsed_ms
+        item_times.append(elapsed_ms)
+        rows.append(row)
+    elapsed = time.perf_counter() - started
+    return (
+        rows,
+        elapsed,
+        {
+            "instance": base,
+            "authentication": "anonymous",
+            "request_count": len(video_ids),
+            "per_item_elapsed_ms": item_times,
+            "failures": failures,
+        },
+    )
+
+
 def _classify_failure(message: str) -> str:
     lowered = message.lower()
     for kind, patterns in FAILURE_PATTERNS:
@@ -496,7 +615,9 @@ def _ytdlp(video_ids: list[str], *, profile: str = "core") -> tuple[list[dict[st
     )
 
 
-def _run_provider(name: str, video_ids: list[str], profile: str) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+def _run_provider(
+    name: str, video_ids: list[str], profile: str, *, invidious_instance: str | None = None
+) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     """Run one provider under a declared provider-neutral measurement profile."""
     if profile not in PROFILE_SUPPORT[name]:
         raise RuntimeError(f"provider {name} does not support measurement profile {profile}")
@@ -506,6 +627,8 @@ def _run_provider(name: str, video_ids: list[str], profile: str) -> tuple[list[d
         return _ytdlp(video_ids, profile=profile)
     if name == "newpipe-extractor":
         return _newpipe_extractor(video_ids)
+    if name == "invidious":
+        return _invidious(video_ids, instance=invidious_instance)
     rows, elapsed, diagnostics = RUNNERS[name](video_ids)
     diagnostics = dict(diagnostics)
     diagnostics["measurement_profile"] = profile
@@ -517,6 +640,7 @@ RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict
     "youtube-innertube": _youtube_innertube,
     "pytubefix": _pytubefix,
     "newpipe-extractor": _newpipe_extractor,
+    "invidious": _invidious,
     "ytdlp": _ytdlp,
 }
 
@@ -698,10 +822,16 @@ def main() -> int:
     parser.add_argument(
         "--providers",
         type=_provider_names,
-        default=list(PROVIDERS),
-        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,ytdlp); ytdlp is always included as the reference",
+        default=list(DEFAULT_PROVIDERS),
+        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,invidious,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
+    parser.add_argument(
+        "--invidious-instance",
+        type=_invidious_instance,
+        metavar="URL",
+        help=f"explicit Invidious instance for the invidious provider; alternatively set {INVIDIOUS_INSTANCE_ENV}",
+    )
     parser.add_argument(
         "--debug-external", action="store_true", help="show redacted external-tool invocations on stderr"
     )
@@ -736,7 +866,9 @@ def main() -> int:
     provider_results: dict[str, dict[str, Any]] = {}
     run_names: list[str] = []
     for name in args.providers:
-        rows, elapsed, diagnostics = _run_provider(name, args.video_id, args.profile)
+        rows, elapsed, diagnostics = _run_provider(
+            name, args.video_id, args.profile, invidious_instance=args.invidious_instance
+        )
         provider_results[name] = {
             "elapsed_seconds": elapsed,
             "rows": rows,
@@ -778,7 +910,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 9,
+        "schema_version": 10,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

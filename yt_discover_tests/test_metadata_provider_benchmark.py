@@ -473,6 +473,7 @@ def test_measurement_profile_support_is_explicit() -> None:
     assert benchmark.PROFILE_SUPPORT["youtubejs"] == {"core"}
     assert benchmark.PROFILE_SUPPORT["youtube-innertube"] == {"core"}
     assert benchmark.PROFILE_SUPPORT["pytubefix"] == {"core", "full"}
+    assert benchmark.PROFILE_SUPPORT["invidious"] == {"core"}
     assert benchmark.PROFILE_SUPPORT["ytdlp"] == {"core", "full"}
 
 
@@ -626,3 +627,89 @@ def test_newpipe_stderr_is_hidden_by_default_and_available_on_demand(monkeypatch
     stderr = capsys.readouterr().err
     assert "[NewPipeExtractor bridge stderr]" in stderr
     assert "diagnostic chatter" in stderr
+
+
+def test_invidious_is_explicit_core_only_provider() -> None:
+    benchmark = _module()
+    assert "invidious" in benchmark.PROVIDERS
+    assert benchmark._provider_names("invidious") == ["invidious", "ytdlp"]
+    assert benchmark.PROFILE_SUPPORT["invidious"] == {"core"}
+    assert "invidious" not in benchmark.DEFAULT_PROVIDERS
+
+
+def test_invidious_instance_validation_requires_explicit_absolute_url() -> None:
+    benchmark = _module()
+    assert benchmark._invidious_instance("https://inv.example/") == "https://inv.example"
+    for value in ("inv.example", "ftp://inv.example", "https://user:secret@inv.example", "https://inv.example/?x=1"):
+        try:
+            benchmark._invidious_instance(value)
+        except benchmark.argparse.ArgumentTypeError:
+            pass
+        else:
+            raise AssertionError(f"unsafe or ambiguous Invidious instance accepted: {value}")
+
+
+def test_invidious_normalisation_preserves_live_and_provider_signals() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_invidious(
+        "abc",
+        {
+            "videoId": "abc",
+            "title": "Example",
+            "description": "Description",
+            "author": "Channel",
+            "authorId": "UCexample",
+            "authorUrl": "/channel/UCexample",
+            "lengthSeconds": 123,
+            "viewCount": 456,
+            "published": 0,
+            "genre": "Science & Technology",
+            "liveNow": False,
+            "isPostLiveDvr": True,
+            "isUpcoming": False,
+            "isListed": True,
+            "keywords": ["one"],
+        },
+    )
+    assert row["channel_id"] == "UCexample"
+    assert row["upload_date"] == "19700101"
+    assert row["duration"] == 123
+    assert row["is_live"] is False
+    assert row["source_signals"]["is_post_live_dvr"] is True
+
+
+def test_invidious_requires_configuration_before_any_request(monkeypatch) -> None:
+    benchmark = _module()
+    monkeypatch.delenv(benchmark.INVIDIOUS_INSTANCE_ENV, raising=False)
+    try:
+        benchmark._invidious(["abc"])
+    except RuntimeError as exc:
+        assert "explicitly configured instance" in str(exc)
+    else:
+        raise AssertionError("Invidious provider ran without an explicitly configured instance")
+
+
+def test_invidious_runner_uses_only_selected_instance(monkeypatch) -> None:
+    benchmark = _module()
+    requested = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b'{"videoId":"abc","title":"Example","published":0,"liveNow":false}'
+
+    def fake_urlopen(request, timeout):
+        requested.append((request.full_url, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
+    rows, _, diagnostics = benchmark._invidious(["abc"], instance="https://chosen.example/")
+    assert requested == [("https://chosen.example/api/v1/videos/abc", 30)]
+    assert rows[0]["id"] == "abc"
+    assert diagnostics["instance"] == "https://chosen.example"
+    assert diagnostics["request_count"] == 1

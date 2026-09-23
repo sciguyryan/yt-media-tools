@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Discover - explicitly configured Invidious metadata benchmark
+
+- [feature] Add Invidious as an optional experimental core metadata provider for issue #110 without changing production provider selection.
+- [security] Require the benchmark operator to select the Invidious instance explicitly and reject credential-bearing, query-bearing or fragment-bearing instance URLs.
+- [maintenance] Register Invidious with the shared external-tool invocation diagnostics and advance the experimental metadata benchmark schema to version 10.
+- [test] Cover explicit instance selection, URL validation, documented field normalisation, provider-native live-state signals and selected-instance request routing.
+- [docs] Document the remote-disclosure boundary, explicit configuration contract and initial anonymous Invidious benchmark procedure.
+
 ### Discover - NewPipeExtractor metadata benchmark
 
 - [fix] Reject whitespace-containing benchmark video IDs before provider execution so malformed corpus arguments cannot be reinterpreted differently by providers.
