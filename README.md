@@ -102,3 +102,7 @@ GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. 
 ## Future work
 
 The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Completed Discover series are retained in release history and durable architecture documentation rather than the active roadmap directory. Discover 0.29.x remains focused on completing the language and parser architecture programme; broader language and utility work in 0.30.x remains deferred until that programme is fully reconciled. Downloader 1.22.0 contains the current machine-interface foundation.
+
+## External tool diagnostics
+
+Both tools can report the external operations they invoke with `--debug-external`. Diagnostics are written to standard error and redact credential-bearing arguments by default. `--debug-external-unsafe` deliberately disables redaction for local troubleshooting and may expose cookies, credentials or other sensitive values in terminal history or captured logs. Command integrations are rendered as their final argument vector, while bridge and library integrations may report an annotated operation and meaningful arguments instead of pretending to have a command line.

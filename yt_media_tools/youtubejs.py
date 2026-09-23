@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .cookies import CookieFileError, cookie_header_from_netscape_file
+from .external_tools import ToolInvocation, emit_invocation
 from .dates import DateContext, parse_date_literal
 from .ytdlp import EnumerationStats, ProgressCallback
 
@@ -79,6 +80,15 @@ def enumerate_until_date_boundary(
         except CookieFileError as exc:
             raise YouTubeJsError(str(exc)) from exc
         env["YT_DISCOVER_YOUTUBEJS_COOKIE"] = cookie_header
+    emit_invocation(
+        ToolInvocation(
+            tool="youtubejs",
+            operation="Innertube channel enumeration",
+            purpose="lightweight channel enumeration",
+            argv=tuple(command),
+            arguments={"source_url": source_url, "cookie": "present" if cookies_file is not None else "absent"},
+        )
+    )
     try:
         process = subprocess.Popen(
             command,

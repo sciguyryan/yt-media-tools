@@ -12,6 +12,8 @@ import subprocess
 from pathlib import Path
 from typing import Sequence
 
+from .external_tools import ToolInvocation, emit_invocation
+
 
 class YtDlpRuntimeError(RuntimeError):
     """Raised when the yt-dlp runtime cannot satisfy an invocation request."""
@@ -34,6 +36,14 @@ def ensure_executable(command_name: str = "yt-dlp") -> None:
 
 def probe_version(executable: str) -> str | None:
     """Return the invoked yt-dlp version without making execution depend on it."""
+    emit_invocation(
+        ToolInvocation(
+            tool="yt-dlp",
+            operation="version probe",
+            purpose="runtime capability detection",
+            argv=(executable, "--version"),
+        )
+    )
     try:
         completed = subprocess.run(
             [executable, "--version"],

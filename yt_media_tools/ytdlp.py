@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+from .external_tools import ToolInvocation, emit_invocation
 from .acquisition_plan import (
     PhysicalAcquisitionPlan,
     STAGE_BASIC_METADATA,
@@ -194,6 +195,9 @@ def load_metadata(
     blocking when the other stream is busy.
     """
     ensure_ytdlp()
+    emit_invocation(
+        ToolInvocation(tool="yt-dlp", operation="extract", purpose="metadata acquisition", argv=tuple(command))
+    )
     try:
         process = subprocess.Popen(
             command,
@@ -356,6 +360,9 @@ def enumerate_until_date_boundary(
     from datetime import date, datetime, timezone
 
     ensure_ytdlp()
+    emit_invocation(
+        ToolInvocation(tool="yt-dlp", operation="extract", purpose="metadata acquisition", argv=tuple(command))
+    )
     try:
         process = subprocess.Popen(
             command,
@@ -493,6 +500,9 @@ def enumerate_until_known_overlap(
     enumeration naturally runs to the source end, allowing the caller to rebuild the frontier.
     """
     ensure_ytdlp()
+    emit_invocation(
+        ToolInvocation(tool="yt-dlp", operation="extract", purpose="metadata acquisition", argv=tuple(command))
+    )
     try:
         process = subprocess.Popen(
             command,
@@ -578,6 +588,9 @@ def enumerate_until_match_limit(
 ) -> tuple[list[dict[str, Any]], EnumerationStats]:
     """Enumerate lazily until authoritative lightweight rows satisfy OFFSET + LIMIT."""
     ensure_ytdlp()
+    emit_invocation(
+        ToolInvocation(tool="yt-dlp", operation="extract", purpose="metadata acquisition", argv=tuple(command))
+    )
     try:
         process = subprocess.Popen(
             command,

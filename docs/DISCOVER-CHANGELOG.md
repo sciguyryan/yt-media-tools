@@ -4,6 +4,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### External tool invocation diagnostics
+
+- [feature] Add a shared registry and structured invocation model for external command, bridge and Python-library integrations.
+- [cli] Add `--debug-external` for safely redacted live invocation diagnostics and `--debug-external-unsafe` for deliberate unredacted diagnostics.
+- [security] Redact credential-bearing command options and sensitive annotated library arguments by default.
+- [test] Cover registry completeness, deterministic rendering, redaction and library-call annotation.
+
 ### Repository - Authenticated metadata benchmark variants
 
 - [feature] Translate Discover Netscape cookie files for authenticated YouTube.js acquisition at the provider boundary.

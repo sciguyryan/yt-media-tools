@@ -9,6 +9,8 @@ import subprocess
 import textwrap
 from typing import Any
 
+from .external_tools import ToolInvocation, emit_invocation
+
 EXPLANATION_SCHEMA_VERSION = 1
 
 STATUS_APPLIED = "applied"
@@ -542,6 +544,9 @@ def render_svg(payload: dict[str, Any]) -> str:
         )
     graph = build_explain_graph(payload)
     source = graph_to_dot(graph)
+    emit_invocation(
+        ToolInvocation(tool="graphviz", operation="render SVG", purpose="explain graph rendering", argv=(dot, "-Tsvg"))
+    )
     completed = subprocess.run(
         [dot, "-Tsvg"],
         input=source,

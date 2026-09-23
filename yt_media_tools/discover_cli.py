@@ -660,6 +660,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="report live progress to stderr; repeat as -vv for per-entry acquisition detail",
     )
     parser.add_argument(
+        "--debug-external",
+        action="store_true",
+        help="report redacted external command and library invocations to stderr",
+    )
+    parser.add_argument(
+        "--debug-external-unsafe",
+        action="store_true",
+        help="report external invocations without redaction; may expose credentials and cookies",
+    )
+    parser.add_argument(
         "--report",
         nargs="?",
         const="stderr",

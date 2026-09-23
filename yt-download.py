@@ -27,6 +27,8 @@ import re
 import shlex
 import shutil
 import subprocess
+
+from yt_media_tools.external_tools import ToolInvocation, configure_external_diagnostics, emit_invocation
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -219,7 +221,7 @@ CLI_DESTINATION_CLASSES = {
             "version",
         }
     ),
-    "execution-mode": frozenset({"explain", "explain_json", "dry_run"}),
+    "execution-mode": frozenset({"explain", "explain_json", "dry_run", "debug_external", "debug_external_unsafe"}),
     "reporting-side-effect": frozenset(
         {
             "remove_completed_ids",
@@ -1373,6 +1375,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Print the resolved yt-dlp command without running it.",
+    )
+    parser.add_argument(
+        "--debug-external",
+        action="store_true",
+        help="Report redacted external command and library invocations to standard error.",
+    )
+    parser.add_argument(
+        "--debug-external-unsafe",
+        action="store_true",
+        help="Report external invocations without redaction; may expose credentials and cookies.",
     )
     removal_group = parser.add_mutually_exclusive_group()
     removal_group.add_argument(
@@ -3960,9 +3972,17 @@ def format_command(command: Sequence[str]) -> str:
 def run(command: Sequence[str], *, dry_run: bool) -> int:
     """Run yt-dlp and return its exit status."""
     if dry_run:
+        emit_invocation(
+            ToolInvocation(
+                tool="yt-dlp", operation="download", purpose="media acquisition", status="planned", argv=tuple(command)
+            )
+        )
         print(format_command(command))
         return 0
 
+    emit_invocation(
+        ToolInvocation(tool="yt-dlp", operation="download", purpose="media acquisition", argv=tuple(command))
+    )
     try:
         completed = subprocess.run(command, check=False)
     except KeyboardInterrupt:
@@ -3979,6 +3999,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, construct the yt-dlp invocation, and execute it."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    configure_external_diagnostics(enabled=args.debug_external, unsafe=args.debug_external_unsafe)
 
     if args._remove_completed_id is not None:
         input_file, video_id = args._remove_completed_id

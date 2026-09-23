@@ -34,6 +34,7 @@ from yt_media_tools.discover_constants import (
     PROGRAM_VERSION,
 )
 from yt_media_tools.explain_presentation import render_svg, resolve_console_modes
+from yt_media_tools.external_tools import configure_external_diagnostics
 from yt_media_tools.discover_explain import (
     _explain_analyze_payload,
     _format_explain_analyze_text,
@@ -97,6 +98,7 @@ from yt_media_tools.ytdlp import (
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    configure_external_diagnostics(enabled=args.debug_external, unsafe=args.debug_external_unsafe)
 
     try:
         cookies_file = resolve_cookie_file(args.cookies, default_file=DEFAULT_COOKIES_FILE)

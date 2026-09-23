@@ -4,6 +4,13 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+### External tool invocation diagnostics
+
+- [feature] Add a shared registry and structured invocation model for external command, bridge and Python-library integrations.
+- [cli] Add `--debug-external` for safely redacted live invocation diagnostics and `--debug-external-unsafe` for deliberate unredacted diagnostics.
+- [security] Redact credential-bearing command options and sensitive annotated library arguments by default.
+- [test] Cover registry completeness, deterministic rendering, redaction and library-call annotation.
+
 ### Hierarchical parameter-profile inheritance
 
 - [feature] Add optional `$defaults` shared profile policy and deterministic single-parent inheritance.
