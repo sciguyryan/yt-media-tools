@@ -946,6 +946,36 @@ def test_ytmusicapi_normalisation_preserves_specialised_signals() -> None:
     assert result["source_signals"]["playability_status"] == "OK"
 
 
+def test_ytmusicapi_provider_preserves_non_ok_playability_evidence(monkeypatch) -> None:
+    benchmark = _module()
+
+    class FakeYTMusic:
+        def get_song(self, video_id: str):
+            return {
+                "playabilityStatus": {"status": "UNPLAYABLE", "reason": "Video unavailable"},
+                "videoDetails": {"title": "Still useful evidence", "musicVideoType": "MUSIC_VIDEO_TYPE_OMV"},
+            }
+
+    class FakeModule:
+        YTMusic = FakeYTMusic
+
+    original = benchmark.importlib.import_module
+    monkeypatch.setattr(
+        benchmark.importlib, "import_module", lambda name: FakeModule if name == "ytmusicapi" else original(name)
+    )
+    rows, _, diagnostics = benchmark._ytmusicapi(["abc"])
+    assert rows[0]["ok"] is False
+    assert rows[0]["title"] == "Still useful evidence"
+    assert rows[0]["source_signals"]["playability_status"] == "UNPLAYABLE"
+    assert rows[0]["source_signals"]["playability_reason"] == "Video unavailable"
+    assert rows[0]["source_signals"]["music_video_type"] == "MUSIC_VIDEO_TYPE_OMV"
+    assert rows[0]["failure"]["kind"] == "playability_rejection"
+    assert rows[0]["failure"]["error_type"] == "ProviderPlayabilityStatus"
+    assert diagnostics["failures"] == [
+        {"id": "abc", "kind": "playability_rejection", "error_type": "ProviderPlayabilityStatus"}
+    ]
+
+
 def test_ytmusicapi_provider_records_get_song_failures(monkeypatch) -> None:
     benchmark = _module()
 
@@ -977,6 +1007,7 @@ def test_issue_112_probe_corpus_is_deterministic_and_contains_non_music_control(
         "dQw4w9WgXcQ",
         "9bZkp7q19f0",
         "7fv84nPfTH0",
+        "yebNIHKAC4A",
         "jNQXAC9IVRw",
     ]
     assert "non-music" in corpus["items"][-1]["trait"]

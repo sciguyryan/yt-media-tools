@@ -178,13 +178,17 @@ python -m pip install ytmusicapi
 
 Candidate 1 uses an unauthenticated `YTMusic()` client and calls `get_song(videoId)` once per known video. Common video-detail fields are normalised conservatively for comparison with yt-dlp. Provider-native evidence such as `musicVideoType`, playability state, author identity and the available response keys remains under `source_signals` rather than being promoted to Discover authority. Richer specialised operations such as song credits are deliberately outside this first acquisition profile because they require additional browse identifiers and requests.
 
-The first live probe is deliberately small and includes three music-oriented videos plus one ordinary non-music YouTube control. This tests both useful specialised coverage and the boundary where a resolved source should not be assumed to be music merely because it has a YouTube video ID. The checked-in corpus is `benchmarks/metadata-provider-corpora/issue-112-ytmusicapi-probe.json`.
+The first live probe is deliberately small and includes four music-oriented videos plus one ordinary non-music YouTube control. This tests both useful specialised coverage and the boundary where a resolved source should not be assumed to be music merely because it has a YouTube video ID. The checked-in corpus is `benchmarks/metadata-provider-corpora/issue-112-ytmusicapi-probe.json`.
 
 ```bash
-python scripts/benchmark_metadata_providers.py --providers ytmusicapi --profile core --json -- dQw4w9WgXcQ 9bZkp7q19f0 7fv84nPfTH0 jNQXAC9IVRw > bench-112-probe.json
+python scripts/benchmark_metadata_providers.py --providers ytmusicapi --profile core --json -- dQw4w9WgXcQ 9bZkp7q19f0 7fv84nPfTH0 yebNIHKAC4A jNQXAC9IVRw > bench-112-probe.json
 ```
 
 Schema version 12 adds the specialised `ytmusicapi` provider. This remains experimental benchmark infrastructure and does not alter production acquisition planning.
+
+Candidate 2 follows the first live probe, where all five ytmusicapi calls returned a structured `UNPLAYABLE` response even though yt-dlp resolved four of the five targets. A non-OK playability state is therefore retained as provider evidence rather than raised as an exception. The benchmark normalises any metadata present in the response, records the playability status and reason under `source_signals`, and marks the row unsuccessful with the dedicated `playability_rejection` failure kind. This does not treat an unplayable response as successful metadata acquisition, and it does not assume that `UNPLAYABLE` proves the underlying YouTube video is unavailable.
+
+Schema version 13 adds this diagnostic distinction. The purpose is to measure what ytmusicapi actually returned before deciding whether anonymous `get_song()` is useful for specialised acquisition.
 
 ## Issue #111 reconciliation
 

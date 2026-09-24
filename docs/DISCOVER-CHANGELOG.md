@@ -10,7 +10,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Treat ytmusicapi as a specialised resolved-source-type candidate rather than a general YouTube replacement, preserving provider-native music signals separately from common-field comparison.
 - [maintenance] Register `YTMusic.get_song()` with shared external-tool diagnostics and advance the experimental metadata benchmark schema to version 12.
 - [test] Cover specialised provider eligibility, conservative `get_song()` normalisation, provider-native music evidence and deterministic failure recording.
-- [docs] Add a four-item music-oriented probe with a non-music control before any larger specialised-provider corpus is attempted.
+- [docs] Add a five-item music-oriented probe with a non-music control before any larger specialised-provider corpus is attempted.
+- [fix] Preserve normalised metadata and provider-native playability evidence when `YTMusic.get_song()` returns a non-OK playability state instead of discarding the response as an exception.
+- [maintenance] Classify non-OK ytmusicapi playability as `playability_rejection`, distinct from transport, library and generic provider failures, and advance the experimental benchmark schema to version 13.
+- [test] Cover metadata-bearing non-OK playability responses and the additional high-popularity music-video probe case.
 
 ### Discover - Piped metadata benchmark reconciliation
 

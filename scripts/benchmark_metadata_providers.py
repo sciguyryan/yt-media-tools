@@ -881,10 +881,19 @@ def _ytmusicapi(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict
                 raise RuntimeError("ytmusicapi get_song returned a non-object response")
             playability = payload.get("playabilityStatus")
             status = playability.get("status") if isinstance(playability, dict) else None
+            row = _normalise_ytmusicapi(video_id, payload)
             if status not in {None, "OK"}:
                 reason = playability.get("reason") if isinstance(playability, dict) else None
-                raise RuntimeError(f"ytmusicapi playability {status}: {reason or 'no reason supplied'}")
-            row = _normalise_ytmusicapi(video_id, payload)
+                message = f"ytmusicapi playability {status}: {reason or 'no reason supplied'}"
+                row["ok"] = False
+                row["failure"] = {
+                    "kind": "playability_rejection",
+                    "message": message,
+                    "error_type": "ProviderPlayabilityStatus",
+                }
+                failures.append(
+                    {"id": video_id, "kind": "playability_rejection", "error_type": "ProviderPlayabilityStatus"}
+                )
         except Exception as exc:  # noqa: BLE001 - benchmark records third-party failure characteristics.
             row = _failure_row(video_id, str(exc), error_type=type(exc).__name__)
             failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
@@ -1306,7 +1315,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 12,
+        "schema_version": 13,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

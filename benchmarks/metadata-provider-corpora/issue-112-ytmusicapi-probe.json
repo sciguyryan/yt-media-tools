@@ -2,10 +2,25 @@
   "issue": 112,
   "purpose": "Small specialised-provider probe for ytmusicapi get_song before a broader music corpus is justified.",
   "items": [
-    {"id": "dQw4w9WgXcQ", "trait": "established official music video"},
-    {"id": "9bZkp7q19f0", "trait": "high-view non-English music video"},
-    {"id": "7fv84nPfTH0", "trait": "song/video example represented in ytmusicapi documentation"},
-    {"id": "jNQXAC9IVRw", "trait": "ordinary non-music YouTube control"},
-    {"id": "yebNIHKAC4A", "trait": "extremely popular music video"}
+    {
+      "id": "dQw4w9WgXcQ",
+      "trait": "established official music video"
+    },
+    {
+      "id": "9bZkp7q19f0",
+      "trait": "high-view non-English music video"
+    },
+    {
+      "id": "7fv84nPfTH0",
+      "trait": "song/video example represented in ytmusicapi documentation"
+    },
+    {
+      "id": "yebNIHKAC4A",
+      "trait": "extremely popular music video"
+    },
+    {
+      "id": "jNQXAC9IVRw",
+      "trait": "ordinary non-music YouTube control"
+    }
   ]
 }
