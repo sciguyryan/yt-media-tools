@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
@@ -852,16 +852,28 @@ def _normalise_ytmusicapi(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _ytmusicapi(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
-    """Acquire specialised YouTube Music metadata without authentication for issue #112."""
+def _ytmusicapi_current_signature_timestamp() -> int:
+    """Return the current day-based signature timestamp used by ytmusicapi."""
+    return (date.today() - date.fromtimestamp(0)).days
+
+
+def _ytmusicapi(
+    video_ids: list[str],
+    *,
+    auth_path: Path | None = None,
+    signature_timestamp: int | None = None,
+) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    """Acquire specialised YouTube Music metadata while keeping playback status orthogonal."""
     try:
         module = importlib.import_module("ytmusicapi")
     except ImportError as exc:
         raise RuntimeError("ytmusicapi is not installed; install it with python -m pip install ytmusicapi") from exc
 
-    client = module.YTMusic()
+    authentication = "browser" if auth_path is not None else "anonymous"
+    client = module.YTMusic(str(auth_path)) if auth_path is not None else module.YTMusic()
     rows: list[dict[str, Any]] = []
     failures: list[dict[str, str]] = []
+    playability_rejections: list[dict[str, str]] = []
     item_times: list[float] = []
     started = time.perf_counter()
     for video_id in video_ids:
@@ -871,29 +883,43 @@ def _ytmusicapi(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict
                 operation="YTMusic.get_song",
                 purpose="specialised resolved-source metadata benchmark",
                 status="executing",
-                arguments={"video_id": video_id, "authentication": "anonymous"},
+                arguments={
+                    "video_id": video_id,
+                    "authentication": authentication,
+                    "signature_timestamp": signature_timestamp,
+                },
             )
         )
         item_started = time.perf_counter()
         try:
-            payload = client.get_song(video_id)
+            kwargs = {} if signature_timestamp is None else {"signatureTimestamp": signature_timestamp}
+            payload = client.get_song(video_id, **kwargs)
             if not isinstance(payload, dict):
                 raise RuntimeError("ytmusicapi get_song returned a non-object response")
             playability = payload.get("playabilityStatus")
             status = playability.get("status") if isinstance(playability, dict) else None
             row = _normalise_ytmusicapi(video_id, payload)
+            metadata_usable = bool(row.get("title") and row.get("channel_id"))
             if status not in {None, "OK"}:
                 reason = playability.get("reason") if isinstance(playability, dict) else None
-                message = f"ytmusicapi playability {status}: {reason or 'no reason supplied'}"
-                row["ok"] = False
-                row["failure"] = {
-                    "kind": "playability_rejection",
-                    "message": message,
-                    "error_type": "ProviderPlayabilityStatus",
-                }
-                failures.append(
-                    {"id": video_id, "kind": "playability_rejection", "error_type": "ProviderPlayabilityStatus"}
+                playability_rejections.append(
+                    {
+                        "id": video_id,
+                        "status": str(status),
+                        "reason": str(reason or ""),
+                    }
                 )
+                if not metadata_usable:
+                    message = f"ytmusicapi playability {status}: {reason or 'no reason supplied'}"
+                    row["ok"] = False
+                    row["failure"] = {
+                        "kind": "playability_rejection",
+                        "message": message,
+                        "error_type": "ProviderPlayabilityStatus",
+                    }
+                    failures.append(
+                        {"id": video_id, "kind": "playability_rejection", "error_type": "ProviderPlayabilityStatus"}
+                    )
         except Exception as exc:  # noqa: BLE001 - benchmark records third-party failure characteristics.
             row = _failure_row(video_id, str(exc), error_type=type(exc).__name__)
             failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
@@ -906,11 +932,16 @@ def _ytmusicapi(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict
         rows,
         elapsed,
         {
-            "authentication": "anonymous",
+            "authentication": authentication,
             "operation": "YTMusic.get_song",
             "request_count": len(video_ids),
+            "signature_timestamp": signature_timestamp,
+            "signature_timestamp_mode": "library-default"
+            if signature_timestamp is None
+            else "explicit-current-datestamp",
             "per_item_elapsed_ms": item_times,
             "failures": failures,
+            "playability_rejections": playability_rejections,
             "specialised_scope": "resolved YouTube Music or music-oriented source types",
         },
     )
@@ -1006,6 +1037,8 @@ def _run_provider(
     *,
     invidious_instance: str | None = None,
     piped_instance: str | None = None,
+    ytmusicapi_auth: Path | None = None,
+    ytmusicapi_signature_timestamp: int | None = None,
 ) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     """Run one provider under a declared provider-neutral measurement profile."""
     if profile not in PROFILE_SUPPORT[name]:
@@ -1021,7 +1054,7 @@ def _run_provider(
     if name == "piped":
         return _piped(video_ids, instance=piped_instance)
     if name == "ytmusicapi":
-        return _ytmusicapi(video_ids)
+        return _ytmusicapi(video_ids, auth_path=ytmusicapi_auth, signature_timestamp=ytmusicapi_signature_timestamp)
     rows, elapsed, diagnostics = RUNNERS[name](video_ids)
     diagnostics = dict(diagnostics)
     diagnostics["measurement_profile"] = profile
@@ -1234,6 +1267,17 @@ def main() -> int:
         help=f"explicit Piped API instance for the piped provider; alternatively set {PIPED_INSTANCE_ENV}",
     )
     parser.add_argument(
+        "--ytmusicapi-auth",
+        type=Path,
+        metavar="FILE",
+        help="also benchmark ytmusicapi with a native browser-auth JSON file; credential contents are never serialised",
+    )
+    parser.add_argument(
+        "--ytmusicapi-current-signature",
+        action="store_true",
+        help="also benchmark anonymous ytmusicapi with the current day-based signature timestamp instead of its library default",
+    )
+    parser.add_argument(
         "--debug-external", action="store_true", help="show redacted external-tool invocations on stderr"
     )
     parser.add_argument(
@@ -1281,6 +1325,31 @@ def main() -> int:
             "summary": _provider_summary(rows, len(args.video_id)),
         }
         run_names.append(name)
+        if name == "ytmusicapi" and (args.ytmusicapi_current_signature or args.ytmusicapi_auth is not None):
+            current_signature = _ytmusicapi_current_signature_timestamp()
+            current_rows, current_elapsed, current_diagnostics = _ytmusicapi(
+                args.video_id, signature_timestamp=current_signature
+            )
+            current_variant = "ytmusicapi-current-signature"
+            provider_results[current_variant] = {
+                "elapsed_seconds": current_elapsed,
+                "rows": current_rows,
+                "diagnostics": current_diagnostics,
+                "summary": _provider_summary(current_rows, len(args.video_id)),
+            }
+            run_names.append(current_variant)
+            if args.ytmusicapi_auth is not None:
+                authenticated_rows, authenticated_elapsed, authenticated_diagnostics = _ytmusicapi(
+                    args.video_id, auth_path=args.ytmusicapi_auth, signature_timestamp=current_signature
+                )
+                authenticated_variant = "ytmusicapi-browser-current-signature"
+                provider_results[authenticated_variant] = {
+                    "elapsed_seconds": authenticated_elapsed,
+                    "rows": authenticated_rows,
+                    "diagnostics": authenticated_diagnostics,
+                    "summary": _provider_summary(authenticated_rows, len(args.video_id)),
+                }
+                run_names.append(authenticated_variant)
         if name == "youtubejs" and cookie is not None:
             authenticated_rows, authenticated_elapsed, authenticated_diagnostics = _youtubejs(
                 args.video_id, cookie=cookie, secret_values=cookie_values
@@ -1313,9 +1382,22 @@ def main() -> int:
             _comparison(video_id, authenticated.get(video_id, {}), anonymous.get(video_id, {}))
             for video_id in args.video_id
         ]
+    if "ytmusicapi-current-signature" in provider_results:
+        baseline = _index(provider_results["ytmusicapi"]["rows"])
+        current = _index(provider_results["ytmusicapi-current-signature"]["rows"])
+        variant_comparisons["ytmusicapi-current-signature-against-default"] = [
+            _comparison(video_id, current.get(video_id, {}), baseline.get(video_id, {})) for video_id in args.video_id
+        ]
+    if "ytmusicapi-browser-current-signature" in provider_results:
+        current = _index(provider_results["ytmusicapi-current-signature"]["rows"])
+        authenticated = _index(provider_results["ytmusicapi-browser-current-signature"]["rows"])
+        variant_comparisons["ytmusicapi-browser-against-anonymous-current-signature"] = [
+            _comparison(video_id, authenticated.get(video_id, {}), current.get(video_id, {}))
+            for video_id in args.video_id
+        ]
 
     payload = {
-        "schema_version": 13,
+        "schema_version": 14,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

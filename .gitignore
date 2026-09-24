@@ -4,6 +4,7 @@
 /.env
 /.env.*
 !/.env.example
+/browser.json
 
 # Downloader state and local queues
 /archive.txt

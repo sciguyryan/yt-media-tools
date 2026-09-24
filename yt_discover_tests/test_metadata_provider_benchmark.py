@@ -946,14 +946,21 @@ def test_ytmusicapi_normalisation_preserves_specialised_signals() -> None:
     assert result["source_signals"]["playability_status"] == "OK"
 
 
-def test_ytmusicapi_provider_preserves_non_ok_playability_evidence(monkeypatch) -> None:
+def test_ytmusicapi_provider_treats_metadata_and_playability_as_orthogonal(monkeypatch) -> None:
     benchmark = _module()
 
     class FakeYTMusic:
-        def get_song(self, video_id: str):
+        def __init__(self, auth=None):
+            self.auth = auth
+
+        def get_song(self, video_id: str, **kwargs):
             return {
                 "playabilityStatus": {"status": "UNPLAYABLE", "reason": "Video unavailable"},
-                "videoDetails": {"title": "Still useful evidence", "musicVideoType": "MUSIC_VIDEO_TYPE_OMV"},
+                "videoDetails": {
+                    "title": "Still useful evidence",
+                    "channelId": "UCmusic",
+                    "musicVideoType": "MUSIC_VIDEO_TYPE_OMV",
+                },
             }
 
     class FakeModule:
@@ -964,23 +971,83 @@ def test_ytmusicapi_provider_preserves_non_ok_playability_evidence(monkeypatch) 
         benchmark.importlib, "import_module", lambda name: FakeModule if name == "ytmusicapi" else original(name)
     )
     rows, _, diagnostics = benchmark._ytmusicapi(["abc"])
-    assert rows[0]["ok"] is False
+    assert rows[0]["ok"] is True
     assert rows[0]["title"] == "Still useful evidence"
     assert rows[0]["source_signals"]["playability_status"] == "UNPLAYABLE"
     assert rows[0]["source_signals"]["playability_reason"] == "Video unavailable"
     assert rows[0]["source_signals"]["music_video_type"] == "MUSIC_VIDEO_TYPE_OMV"
-    assert rows[0]["failure"]["kind"] == "playability_rejection"
-    assert rows[0]["failure"]["error_type"] == "ProviderPlayabilityStatus"
-    assert diagnostics["failures"] == [
-        {"id": "abc", "kind": "playability_rejection", "error_type": "ProviderPlayabilityStatus"}
+    assert "failure" not in rows[0]
+    assert diagnostics["failures"] == []
+    assert diagnostics["playability_rejections"] == [
+        {"id": "abc", "status": "UNPLAYABLE", "reason": "Video unavailable"}
     ]
+
+
+def test_ytmusicapi_playability_rejection_without_usable_metadata_remains_failure(monkeypatch) -> None:
+    benchmark = _module()
+
+    class FakeYTMusic:
+        def __init__(self, auth=None):
+            pass
+
+        def get_song(self, video_id: str, **kwargs):
+            return {"playabilityStatus": {"status": "UNPLAYABLE", "reason": "Video unavailable"}}
+
+    class FakeModule:
+        YTMusic = FakeYTMusic
+
+    original = benchmark.importlib.import_module
+    monkeypatch.setattr(
+        benchmark.importlib, "import_module", lambda name: FakeModule if name == "ytmusicapi" else original(name)
+    )
+    rows, _, diagnostics = benchmark._ytmusicapi(["abc"])
+    assert rows[0]["ok"] is False
+    assert rows[0]["failure"]["kind"] == "playability_rejection"
+    assert diagnostics["failures"][0]["kind"] == "playability_rejection"
+
+
+def test_ytmusicapi_auth_and_signature_timestamp_are_passed_without_exposing_auth_path(monkeypatch, tmp_path) -> None:
+    benchmark = _module()
+    observed = {}
+
+    class FakeYTMusic:
+        def __init__(self, auth=None):
+            observed["auth"] = auth
+
+        def get_song(self, video_id: str, **kwargs):
+            observed["kwargs"] = kwargs
+            return {
+                "playabilityStatus": {"status": "OK"},
+                "videoDetails": {"title": "Song", "channelId": "UCmusic"},
+            }
+
+    class FakeModule:
+        YTMusic = FakeYTMusic
+
+    auth_path = tmp_path / "browser.json"
+    auth_path.write_text('{"Cookie": "secret-cookie"}')
+    original = benchmark.importlib.import_module
+    monkeypatch.setattr(
+        benchmark.importlib, "import_module", lambda name: FakeModule if name == "ytmusicapi" else original(name)
+    )
+    rows, _, diagnostics = benchmark._ytmusicapi(["abc"], auth_path=auth_path, signature_timestamp=20721)
+    assert rows[0]["ok"] is True
+    assert observed["auth"] == str(auth_path)
+    assert observed["kwargs"] == {"signatureTimestamp": 20721}
+    assert diagnostics["authentication"] == "browser"
+    assert diagnostics["signature_timestamp"] == 20721
+    assert str(auth_path) not in str(diagnostics)
+    assert "secret-cookie" not in str(diagnostics)
 
 
 def test_ytmusicapi_provider_records_get_song_failures(monkeypatch) -> None:
     benchmark = _module()
 
     class FakeYTMusic:
-        def get_song(self, video_id: str):
+        def __init__(self, auth=None):
+            pass
+
+        def get_song(self, video_id: str, **kwargs):
             raise RuntimeError(f"unavailable {video_id}")
 
     class FakeModule:

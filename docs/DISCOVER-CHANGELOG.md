@@ -14,6 +14,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [fix] Preserve normalised metadata and provider-native playability evidence when `YTMusic.get_song()` returns a non-OK playability state instead of discarding the response as an exception.
 - [maintenance] Classify non-OK ytmusicapi playability as `playability_rejection`, distinct from transport, library and generic provider failures, and advance the experimental benchmark schema to version 13.
 - [test] Cover metadata-bearing non-OK playability responses and the additional high-popularity music-video probe case.
+- [fix] Treat usable ytmusicapi metadata acquisition as successful independently of provider-native playback eligibility, while retaining non-OK playability as diagnostic evidence.
+- [feature] Add opt-in current-signature and native browser-authenticated ytmusicapi benchmark variants for controlled three-way comparison.
+- [security] Keep ytmusicapi browser-auth credential paths and contents out of serialised benchmark results and external-invocation diagnostics.
+- [maintenance] Advance the experimental metadata benchmark schema to version 14 and expose deterministic variant comparisons.
+- [test] Cover metadata/playability independence, metadata-free rejection, explicit signature forwarding and browser-auth credential isolation.
 
 ### Discover - Piped metadata benchmark reconciliation
 

@@ -190,6 +190,26 @@ Candidate 2 follows the first live probe, where all five ytmusicapi calls return
 
 Schema version 13 adds this diagnostic distinction. The purpose is to measure what ytmusicapi actually returned before deciding whether anonymous `get_song()` is useful for specialised acquisition.
 
+Candidate 3 follows the second live probe, which demonstrated that `get_song()` can return usable title, channel, duration, view-count, category, description and publication metadata while simultaneously reporting `UNPLAYABLE`. Metadata acquisition and playback eligibility are therefore modelled as independent dimensions. A response containing at least a title and channel identifier is a successful metadata row even when provider-native playability is non-OK. The playability status and reason remain under `source_signals` and in provider diagnostics. A non-OK response without the minimum usable metadata remains a `playability_rejection` failure.
+
+Candidate 3 also adds controlled variants to investigate the uniform anonymous `UNPLAYABLE` result. ytmusicapi's `get_song()` accepts a `signatureTimestamp`; its current implementation defaults to the previous day-based timestamp. `--ytmusicapi-current-signature` adds an anonymous variant using the current day-based timestamp. `--ytmusicapi-auth FILE` implies that current-signature anonymous variant and additionally runs a browser-authenticated current-signature variant using ytmusicapi's native browser-auth JSON file. This isolates the library default timestamp and browser session context without changing the baseline anonymous result.
+
+Create the browser-auth file using ytmusicapi's own setup workflow and keep it outside the repository:
+
+```bash
+ytmusicapi browser --file browser.json
+```
+
+The file contains credential material and must not be committed, packaged, pasted into benchmark output or supplied through external-invocation diagnostics. The benchmark passes only its path to `YTMusic()` and reports the authentication mode, never the path or file contents.
+
+Run the three-way issue #112 probe with:
+
+```bash
+python scripts/benchmark_metadata_providers.py --providers ytmusicapi --profile core --ytmusicapi-auth browser.json --json -- dQw4w9WgXcQ 9bZkp7q19f0 7fv84nPfTH0 yebNIHKAC4A jNQXAC9IVRw > bench-112-probe-candidate-3.json
+```
+
+This produces the baseline `ytmusicapi` result, `ytmusicapi-current-signature`, and `ytmusicapi-browser-current-signature`, plus direct variant comparisons. If browser authentication is not desired, `--ytmusicapi-current-signature` runs only the first two. Schema version 14 adds these variant semantics. They remain investigative infrastructure and do not add authenticated ytmusicapi acquisition to Discover's production planner.
+
 ## Issue #111 reconciliation
 
 The two public-instance probes provide sufficient operational evidence to complete the Piped investigation without promoting Piped into production acquisition planning. Neither probe returned successful video metadata: `https://api.piped.private.coffee` accepted the streams request but its NewPipeExtractor-backed upstream YouTube acquisition was rejected with `LOGIN_REQUIRED`, while `https://pipedapi.ducks.party` timed out during the TLS handshake before its API could be exercised. These observations concern the selected deployments and their external dependencies; they do not establish that Piped's metadata semantics are unsuitable.
