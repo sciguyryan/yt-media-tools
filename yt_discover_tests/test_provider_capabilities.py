@@ -203,3 +203,74 @@ def test_cookie_requirement_is_preserved_when_resolution_context_is_built() -> N
 
     assert selected is not None
     assert selected.capability.provider == "cookie-youtube"
+
+
+def test_production_youtubejs_exact_scalar_capability_is_deliberately_bounded() -> None:
+    from yt_media_tools.provider_capabilities import (
+        YOUTUBEJS_EXACT_SCALAR_FIELDS,
+        production_provider_capabilities,
+    )
+
+    capability = production_provider_capabilities()[0]
+
+    assert capability.provider == "youtubejs"
+    assert capability.provenance == "youtubejs:getBasicInfo"
+    assert capability.fields == YOUTUBEJS_EXACT_SCALAR_FIELDS
+    assert capability.fields == frozenset({"id", "title", "channel_id", "duration", "view_count"})
+    assert "upload_date" not in capability.fields
+    assert "date" not in capability.fields
+    assert "is_live" not in capability.fields
+
+
+def test_youtubejs_exact_scalar_requires_resolved_youtube_source() -> None:
+    from yt_media_tools.provider_capabilities import production_provider_capabilities
+
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "view_count"}))
+    capabilities = production_provider_capabilities()
+
+    assert select_provider_capability(requirement, capabilities) is None
+    assert (
+        select_provider_capability(
+            requirement,
+            capabilities,
+            context=ProviderSelectionContext(resolved_source_kind="vimeo"),
+        )
+        is None
+    )
+    selected = select_provider_capability(
+        requirement,
+        capabilities,
+        context=ProviderSelectionContext(resolved_source_kind="youtube"),
+    )
+    assert selected is not None
+    assert selected.capability.provider == "youtubejs"
+
+
+def test_youtubejs_exact_scalar_rejects_mixed_unsupported_requirement() -> None:
+    from yt_media_tools.provider_capabilities import production_provider_capabilities
+
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "upload_date"}))
+
+    assert (
+        select_provider_capability(
+            requirement,
+            production_provider_capabilities(),
+            context=ProviderSelectionContext(resolved_source_kind="youtube"),
+        )
+        is None
+    )
+
+
+def test_youtubejs_exact_scalar_accepts_cookie_context_without_exposing_cookie_data() -> None:
+    from yt_media_tools.provider_capabilities import production_provider_capabilities
+
+    requirement = MetadataRequirement("complete-metadata", frozenset({"channel_id"}))
+    selected = select_provider_capability(
+        requirement,
+        production_provider_capabilities(),
+        context=ProviderSelectionContext(resolved_source_kind="youtube", authentication=AUTH_COOKIES),
+    )
+
+    assert selected is not None
+    assert selected.capability.provenance == "youtubejs:getBasicInfo"
+    assert "cookie" not in selected.reason.casefold()

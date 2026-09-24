@@ -56,6 +56,14 @@ This is intentionally one-way physical evidence. The selected extractor family d
 
 ## Issue #113 production-candidate boundary
 
-The completed provider investigations are reconciled in [METADATA-PROVIDER-RECONCILIATION.md](METADATA-PROVIDER-RECONCILIATION.md). Issue #113 recommends separate future production-integration work for a narrow authoritative YouTube.js known-video scalar capability and for specialised ytmusicapi acquisition after conservative music-source resolution. It deliberately does not register either capability here.
+The completed provider investigations are reconciled in [METADATA-PROVIDER-RECONCILIATION.md](METADATA-PROVIDER-RECONCILIATION.md). Issue #113 recommended separate production-integration work for a narrow authoritative YouTube.js known-video scalar capability and for specialised ytmusicapi acquisition after conservative music-source resolution. Issue #114 now registers the first of those capabilities as physical planning data without changing yt-sql semantics or promoting the experimental benchmark adapter wholesale.
 
 The same reconciliation defers youtube-innertube, pytubefix and NewPipeExtractor because the retained evidence does not demonstrate a concrete production advantage sufficient to justify another runtime path. Automatic public-instance Invidious and Piped acquisition is rejected on the observed operational evidence while explicitly configured operator-controlled deployments remain research possibilities.
+
+## Issue #114 YouTube.js exact-scalar capability
+
+The production capability registry advertises `youtubejs:getBasicInfo` only for `id`, `title`, `channel_id`, `duration` and `view_count` at the complete-metadata stage. Eligibility additionally requires conservative backend resolution to the `youtube` extractor family. Anonymous and existing cookie-authenticated contexts are supported, but credential material is never part of the capability or provenance record.
+
+The field set is intentionally closed. `upload_date`, `date`, live/private/unlisted state, descriptions, keywords and other values exposed by the underlying library are not authoritative merely because `getBasicInfo()` can return them. A requirement containing any uncovered field makes this capability ineligible as a complete satisfier, preserving the established acquisition path for that requirement.
+
+This first #114 step establishes the production authority and eligibility contract. Runtime lowering and acquisition must consume this contract rather than duplicating the field list or inferring additional authority from provider output.

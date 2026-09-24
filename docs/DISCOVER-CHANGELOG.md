@@ -12,6 +12,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Add capability-scoped YouTube.js exact-scalar metadata acquisition
+
+- [feature] Register a production YouTube.js `getBasicInfo()` capability for the exact known-video scalar fields established by issue #113.
+- [maintenance] Require conservative resolved YouTube source evidence before the capability can participate in provider selection.
+- [maintenance] Keep publication dates, provider-native state flags and all unproven fields outside the capability boundary so mixed requirements retain the established acquisition path.
+- [test] Cover the exact field boundary, unresolved and mismatched source rejection, mixed unsupported requirements and cookie-context eligibility without credential disclosure.
+
 ### Discover - specialised ytmusicapi metadata benchmark
 
 - [feature] Add ytmusicapi as an optional experimental core metadata provider for issue #112 without changing production provider selection or yt-sql semantics.

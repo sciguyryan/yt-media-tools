@@ -127,3 +127,30 @@ def selection_context_from_backend_resolution(
         resolved_source_kind=resolved_source_kind(resolutions),
         authentication=authentication,
     )
+
+
+YOUTUBE_SOURCE_KINDS = frozenset({"youtube"})
+YOUTUBEJS_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
+
+
+def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
+    """Return production provider capabilities in declaration-independent form.
+
+    The registry is physical planning data, not yt-sql semantics. YouTube.js is
+    deliberately bounded to the exact scalar fields established by the retained
+    provider investigation. In particular, publication dates and provider-native
+    state flags are not advertised here.
+    """
+    return (
+        ProviderCapability(
+            provider="youtubejs",
+            stage="complete-metadata",
+            fields=YOUTUBEJS_EXACT_SCALAR_FIELDS,
+            authority=AUTHORITY_EXACT,
+            source_kinds=YOUTUBE_SOURCE_KINDS,
+            authentication=frozenset({AUTH_ANONYMOUS, AUTH_COOKIES}),
+            granularity=GRANULARITY_ENTRY,
+            cost_rank=20,
+            provenance="youtubejs:getBasicInfo",
+        ),
+    )
