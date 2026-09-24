@@ -1,0 +1,73 @@
+# Metadata provider reconciliation
+
+## Purpose
+
+Issue #113 reconciles the independent metadata-provider investigations into production-candidate recommendations for Discover. It does not promote benchmark adapters into runtime acquisition, alter yt-sql semantics, or change automatic provider selection. A separate production-integration issue is required for every candidate that demonstrates a concrete advantage.
+
+The decision boundary is capability based. Technical integrability is insufficient. A provider must demonstrate a useful metadata requirement set that it can satisfy more appropriately than the existing production path, with defensible field authority, provenance, acquisition cost, source applicability, authentication behaviour, portability, maintenance characteristics and failure semantics.
+
+## Existing production baseline
+
+`yt-dlp` remains the general authoritative detailed-acquisition baseline. It has the broadest established extractor coverage, existing cookie support, mature failure handling and the current semantic mapping used by Discover. A candidate does not displace this baseline merely by returning similar values more quickly in a small corpus.
+
+YouTube.js already has a narrower production role for continuation-driven bounded YouTube channel enumeration. Its known-video `getBasicInfo()` path was investigated separately as a possible exact scalar provider. This distinction matters: the existing enumeration integration is not evidence that every `getBasicInfo()` field is authoritative for detailed metadata.
+
+## Reconciled provider matrix
+
+| Provider | Demonstrated advantage | Authority and provenance | Cost and batching | Authentication | Portability and maintenance | Failure evidence | Recommendation |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| yt-dlp | General extractor breadth and established Discover semantics | Current authoritative detailed baseline | Supports corpus-oriented invocation and existing planning paths; not always the cheapest way to obtain a narrow scalar set | Existing Netscape cookie support | Existing required dependency with broad upstream extractor maintenance | Mature production behaviour already integrated | Retain as general fallback and authority baseline |
+| YouTube.js `getBasicInfo()` | Narrower known-video acquisition for a useful scalar subset while reusing an existing optional runtime dependency | Strong evidence for identity, title, channel identity, duration and view count; exact `upload_date` remains unresolved and provider-native flags remain evidence rather than Discover semantics | One request per known video; session reuse is available, but no supported known-ID bulk operation was identified | Existing cookie translation is implemented at the adapter boundary | Node.js dependency already supported by Discover; internal InnerTube changes remain an upstream maintenance risk | Adversarial/failure benchmarking and diagnostic isolation exist; authority remains field-specific | Production candidate for a deliberately bounded exact scalar capability, not a general detailed replacement |
+| youtube-innertube | Small pure-Python integration footprint | Comparison support exists, but publication-date authority and broader field authority remain unresolved | Per-video `video_details()` acquisition; no demonstrated batching advantage | Upstream candidate is unauthenticated and does not cover private or age-gated content | Small and young upstream project with explicitly documented InnerTube churn and throttling concerns | Insufficient evidence of a production advantage over the other candidates | Defer. Do not create a production-integration issue without materially changed evidence |
+| pytubefix | Exposes thumbnails, chapters and captions in addition to the scalar surface | Extended capabilities were inventoried structurally, but their authority and incremental acquisition cost were not established; live and publication semantics remain deliberately unassigned | Per-video acquisition; request counts and transferred bytes were not instrumented | No production authentication contract established by this investigation | Adds another Python dependency and overlapping YouTube extraction implementation | Benchmark failure handling exists, but no concrete requirement set was shown to outperform the established paths | Defer. Do not create a production-integration issue without a demonstrated capability/cost advantage |
+| NewPipeExtractor | Structured core fields agreed closely with yt-dlp on the successful heterogeneous cases and a persistent JVM was operationally competitive in the observed runs | Good evidence for the demonstrated structured fields, but description representation differs and Shorts/live/authentication authority remains unresolved | Persistent JVM amortises startup; observed timings were competitive but not a general guarantee | Authentication/private/restricted capability not established | Requires Java 21, Gradle-built bridge and an additional extraction stack | Both providers agreed on the sampled unavailable historical live items; bridge diagnostics are bounded | Defer despite technical credibility. The investigation did not demonstrate a concrete advantage sufficient to justify the additional runtime stack |
+| Invidious | Potential operator-controlled remote metadata service | Field mapping is documented, but no successful public-instance corpus was obtained to establish authority against Discover | Remote service could centralise acquisition, but no dependable cost evidence was obtained | Initial investigation was anonymous only | Adds a remote service and explicit third-party disclosure boundary | Tested public deployments returned disabled endpoint, HTTP 403 or TLS timeout | Reject public-instance production use. Retain only as experimental infrastructure for explicitly configured/operator-controlled deployments |
+| Piped | Potential operator-controlled remote metadata service | Field mapping exists, but no successful tested deployment returned metadata, so semantic authority remains insufficiently measured | Remote acquisition cost not established | Initial investigation was unauthenticated | Adds a remote service whose own upstream acquisition can fail independently | One deployment reached Piped but failed upstream with `LOGIN_REQUIRED`; another timed out at TLS | Reject public-instance production use. Retain only as experimental infrastructure for explicitly configured/operator-controlled deployments |
+| ytmusicapi | Provides specialised YouTube Music evidence, including `musicVideoType`, and returned useful metadata for a music item unavailable through the comparison yt-dlp run | Common metadata must retain provider provenance; `MUSIC_VIDEO_TYPE_OMV`/`ATV` is useful source-type evidence. Metadata acquisition is independent of playback eligibility | One `get_song()` request per known ID in the investigated profile; observed runs were encouraging but too small for general timing claims | Anonymous current-signature acquisition was sufficient; browser authentication did not materially change the tested results | Adds an optional Python library and depends on YouTube Music/InnerTube behaviour | Current signature timestamp removed the blanket music-item `UNPLAYABLE` result; ordinary non-music control remained metadata-readable but unplayable | Production candidate only as a specialised resolved-source capability, never as a general YouTube backend |
+
+## Production candidates
+
+### YouTube.js exact scalar known-video capability
+
+A separate integration issue is justified for a narrow YouTube known-video capability. The capability must enumerate its authoritative fields explicitly rather than claiming a generic `core` profile. The initial production boundary should be limited to fields whose semantics are established by retained evidence. In particular, unresolved publication-date semantics must force residual yt-dlp acquisition whenever authoritative `upload_date` is required.
+
+The capability should be eligible only after conservative backend resolution identifies an applicable YouTube source. It may reuse the existing YouTube.js runtime/session and cookie translation, but known-video metadata acquisition must remain a distinct operation from channel enumeration. Lowering must be requirement driven: a cheaper provider may satisfy only the exact subset it covers, while uncovered or non-authoritative fields remain on the established path.
+
+### ytmusicapi specialised resolved-source capability
+
+A separate integration issue is justified for specialised YouTube Music metadata. Eligibility must come from resolved physical source evidence, not URL appearance, yt-sql syntax, ordinary YouTube category, successful `get_song()` acquisition or playback state alone. `musicVideoType` should remain provider-native evidence that can participate in physical source classification without becoming a new yt-sql semantic by itself.
+
+The prospective production operation should use anonymous acquisition with the explicit current day-based signature timestamp. Browser authentication is not part of the demonstrated production requirement. Metadata success and provider-native playability must remain independent. Common fields acquired from ytmusicapi require explicit authority decisions and provenance; specialised music evidence must not silently overwrite differently scoped yt-dlp metadata.
+
+## Deferred and rejected candidates
+
+`youtube-innertube`, pytubefix and NewPipeExtractor remain useful research adapters, but #113 does not recommend production integration for them. NewPipeExtractor is the strongest of these technically, yet close agreement and competitive timing are not by themselves a concrete advantage over an architecture that already contains yt-dlp and YouTube.js. Its additional JVM/bridge footprint therefore lacks a demonstrated compensating requirement set. The decision can be revisited if future evidence establishes a unique authoritative field set, materially better difficult-content behaviour, meaningful batching, or a repeatable cost advantage for a real planner requirement.
+
+`youtube-innertube` should be reconsidered only if upstream maturity, authentication capability or a clearly cheaper authoritative requirement set materially changes. Pytubefix should be reconsidered only if a real Discover requirement for chapters, captions, thumbnails or another capability demonstrates an authority/cost advantage that yt-dlp cannot already satisfy appropriately.
+
+Public Invidious and Piped instances are rejected as automatic production acquisition backends. This conclusion is operational rather than a claim that their schemas are semantically defective. A future operator-controlled deployment may justify a separate investigation, but Discover must not silently discover, rotate through or fall back to third-party public instances.
+
+## Conservative lowering boundary
+
+Provider choice remains below the semantic physical plan. The planner establishes metadata requirements first, then provider lowering considers only capabilities that are authoritative for every field they claim, applicable to the resolved source, compatible with the available authentication context and capable of preserving provenance.
+
+A provider-specific field or operation must not appear in yt-sql merely because a backend exposes it. Provider-native evidence can inform physical source resolution or diagnostics while remaining outside logical query semantics until Discover deliberately defines a provider-neutral semantic for it.
+
+Mixed acquisition is permissible only when each provider's contribution has an explicit authority and provenance contract. Provider disagreement must not be resolved by cost rank, provider order or silent overwrite. Until a disagreement policy is separately designed, ambiguous authoritative disagreement should conservatively retain or fall back to the established yt-dlp semantic path.
+
+Relative cost ranks should represent stable planner hints derived from reproducible evidence, not hard-coded claims that one library is globally faster. Batching, persistent sessions/processes and startup amortisation belong to physical provider capabilities and should be represented independently of yt-sql.
+
+## Follow-up production-integration issues
+
+Issue #113 should result in two production-integration issues, without implementing either integration here.
+
+1. **Integrate YouTube.js as a capability-based exact scalar metadata provider.** Define the authoritative known-video scalar subset, requirement lowering, residual yt-dlp acquisition, source eligibility, cookie handling, provenance, disagreement behaviour, cost rank and deterministic planner/explain tests. Do not promote unresolved `upload_date` or provider-native flags.
+2. **Integrate ytmusicapi as a specialised resolved-source metadata provider.** Define conservative music-source eligibility, current-signature acquisition, authoritative common-field boundaries, `musicVideoType` source evidence, metadata/playability separation, provenance, fallback behaviour, cost rank and deterministic planner/explain tests. Do not require browser authentication and do not make arbitrary YouTube videos eligible merely because `get_song()` returns metadata.
+
+The issue numbers should be assigned when these are created in GitHub. The investigation adapters remain experimental until their respective production-integration issue is implemented and accepted.
+
+## Revisit conditions
+
+A deferred or rejected candidate should be reopened only when circumstances materially change. Useful triggers include a new authoritative metadata capability, demonstrated batching or acquisition-cost advantage for a real requirement set, substantially improved authentication or difficult-content behaviour, upstream maintenance changes, a new operator-controlled remote-service requirement, or evidence that an accepted production candidate no longer satisfies its contract.
+
+This preserves the investigation record without treating historical benchmark timings or public-instance availability as permanent facts.

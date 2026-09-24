@@ -53,3 +53,9 @@ Backend-reported extractor resolution is documented in [BACKEND-SOURCE-RESOLUTIO
 `selection_context_from_backend_resolution()` connects observed backend resolution to provider selection without guessing from the original source expression. A single unambiguous non-generic yt-dlp extractor family may constrain specialised provider capabilities. Generic, missing or conflicting resolution remains unknown and therefore excludes source-specific providers while leaving generic capabilities available.
 
 This is intentionally one-way physical evidence. The selected extractor family does not change logical source identity or yt-sql meaning, and a cheaper specialised provider cannot become eligible from URL or domain appearance alone. Authentication requirements are carried alongside the resolved source kind and remain independently mandatory.
+
+## Issue #113 production-candidate boundary
+
+The completed provider investigations are reconciled in [METADATA-PROVIDER-RECONCILIATION.md](METADATA-PROVIDER-RECONCILIATION.md). Issue #113 recommends separate future production-integration work for a narrow authoritative YouTube.js known-video scalar capability and for specialised ytmusicapi acquisition after conservative music-source resolution. It deliberately does not register either capability here.
+
+The same reconciliation defers youtube-innertube, pytubefix and NewPipeExtractor because the retained evidence does not demonstrate a concrete production advantage sufficient to justify another runtime path. Automatic public-instance Invidious and Piped acquisition is rejected on the observed operational evidence while explicitly configured operator-controlled deployments remain research possibilities.

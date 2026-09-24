@@ -1,0 +1,114 @@
+# Runtime credentials and private configuration
+/cookies.txt
+/cookies*.txt
+/.env
+/.env.*
+!/.env.example
+/browser.json
+
+# Downloader state and local queues
+/archive.txt
+/archive*.txt
+/ids/
+/ids.txt
+/queries/
+/queues/
+/state/
+
+# Discover caches and locally generated reports
+/*.sqlite
+/*.sqlite3
+/*.sqlite3-shm
+/*.sqlite3-wal
+/*.db
+/query-provenance*.json
+/provenance/
+/reports/
+
+# Media and yt-dlp sidecars produced in the repository root
+/*.3gp
+/*.aac
+/*.flac
+/*.m4a
+/*.m4v
+/*.mkv
+/*.mov
+/*.mp3
+/*.mp4
+/*.ogg
+/*.opus
+/*.wav
+/*.webm
+/*.webp
+/*.jpg
+/*.jpeg
+/*.png
+/*.gif
+/*.avif
+/*.srt
+/*.vtt
+/*.ass
+/*.lrc
+/*.description
+/*.info.json
+/*.live_chat.json
+/*.part
+/*.ytdl
+/*.temp
+
+# Explicit local output directories
+/downloads/
+/output/
+/outputs/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python tooling and test caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Optional local YouTube.js installation
+/node_modules/
+
+# Gradle build artefacts
+/tools/newpipe-extractor-bridge/.gradle/
+/tools/newpipe-extractor-bridge/build/
+
+# Node/npm generated files and logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and IDE state
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.orig
+
+# Local performance benchmark results
+/.benchmarks/
+/benchmark-results*.json
+/bench*.json
