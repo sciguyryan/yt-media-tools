@@ -43,8 +43,8 @@ FAILURE_PATTERNS = (
 )
 
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
-PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "newpipe-extractor", "invidious", "ytdlp")
-DEFAULT_PROVIDERS = tuple(name for name in PROVIDERS if name != "invidious")
+PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "newpipe-extractor", "invidious", "piped", "ytdlp")
+DEFAULT_PROVIDERS = tuple(name for name in PROVIDERS if name not in {"invidious", "piped"})
 MEASUREMENT_PROFILES = ("core", "full")
 PROFILE_SUPPORT = {
     "youtubejs": {"core"},
@@ -52,6 +52,7 @@ PROFILE_SUPPORT = {
     "pytubefix": {"core", "full"},
     "newpipe-extractor": {"core"},
     "invidious": {"core"},
+    "piped": {"core"},
     "ytdlp": {"core", "full"},
 }
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
@@ -60,6 +61,9 @@ NEWPIPE_DIAGNOSTICS_ENV = "YT_DISCOVER_NEWPIPE_DIAGNOSTICS"
 INVIDIOUS_INSTANCE_ENV = "YT_DISCOVER_INVIDIOUS_INSTANCE"
 INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS = 5
 INVIDIOUS_REQUEST_TIMEOUT_SECONDS = 15
+PIPED_INSTANCE_ENV = "YT_DISCOVER_PIPED_INSTANCE"
+PIPED_PREFLIGHT_TIMEOUT_SECONDS = 5
+PIPED_REQUEST_TIMEOUT_SECONDS = 15
 NEWPIPE_DEFAULT_BRIDGE = (
     ROOT
     / "tools"
@@ -580,6 +584,171 @@ def _invidious(
     )
 
 
+def _piped_instance(value: str) -> str:
+    """Validate an explicitly selected Piped API instance without discovering alternatives."""
+    parsed = urlsplit(value.strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise argparse.ArgumentTypeError("Piped instance must be an absolute http:// or https:// URL")
+    if parsed.username is not None or parsed.password is not None:
+        raise argparse.ArgumentTypeError("Piped instance URL must not contain credentials")
+    if parsed.query or parsed.fragment:
+        raise argparse.ArgumentTypeError("Piped instance URL must not contain a query string or fragment")
+    path = parsed.path.rstrip("/")
+    return urlunsplit((parsed.scheme, parsed.netloc, path, "", ""))
+
+
+def _piped_channel_id(uploader_url: Any) -> str | None:
+    if not isinstance(uploader_url, str):
+        return None
+    match = re.fullmatch(r"/channel/([A-Za-z0-9_-]+)", uploader_url)
+    return match.group(1) if match else None
+
+
+def _piped_upload_date(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?", value.strip())
+    return "".join(match.groups()) if match else None
+
+
+def _normalise_piped(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
+    """Normalise documented Piped stream fields and retain provider-native evidence."""
+    return {
+        "id": video_id,
+        "title": row.get("title"),
+        "description": row.get("description"),
+        "channel_id": _piped_channel_id(row.get("uploaderUrl")),
+        "duration": row.get("duration"),
+        "view_count": row.get("views"),
+        "upload_date": _piped_upload_date(row.get("uploadDate")),
+        "category": None,
+        "is_live": row.get("livestream"),
+        "keywords": None,
+        "ok": True,
+        "source_signals": {
+            "uploader": row.get("uploader"),
+            "uploader_url": row.get("uploaderUrl"),
+            "uploader_verified": row.get("uploaderVerified"),
+            "upload_date_raw": row.get("uploadDate"),
+            "likes": row.get("likes"),
+            "dislikes": row.get("dislikes"),
+            "livestream": row.get("livestream"),
+            "subtitle_count": len(row.get("subtitles", [])) if isinstance(row.get("subtitles"), list) else None,
+            "audio_stream_count": len(row.get("audioStreams", []))
+            if isinstance(row.get("audioStreams"), list)
+            else None,
+            "video_stream_count": len(row.get("videoStreams", []))
+            if isinstance(row.get("videoStreams"), list)
+            else None,
+        },
+    }
+
+
+def _piped_stream_request(base: str, video_id: str, *, timeout: int) -> dict[str, Any]:
+    """Request one video from the explicitly selected Piped API instance."""
+    url = f"{base}/streams/{quote(video_id, safe='')}"
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "yt-media-tools metadata benchmark"})
+    with urlopen(request, timeout=timeout) as response:  # noqa: S310 - caller explicitly selects the remote instance.
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError("Piped streams endpoint returned a non-object JSON response")
+    return payload
+
+
+def _piped(video_ids: list[str], *, instance: str | None = None) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    """Acquire video metadata only from the Piped API instance explicitly selected by the caller."""
+    configured = instance or os.environ.get(PIPED_INSTANCE_ENV)
+    if not configured:
+        raise RuntimeError(
+            "Piped benchmarking requires an explicitly configured instance via --piped-instance or "
+            + PIPED_INSTANCE_ENV
+        )
+    if not video_ids:
+        raise RuntimeError("Piped benchmarking requires at least one video ID")
+    try:
+        base = _piped_instance(configured)
+    except argparse.ArgumentTypeError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    probe_id = video_ids[0]
+    emit_invocation(
+        ToolInvocation(
+            tool="piped",
+            operation="GET /streams/:id",
+            purpose="explicit instance streams-API capability preflight",
+            status="executing",
+            arguments={"instance": base, "video_id": probe_id},
+        )
+    )
+    preflight_started = time.perf_counter()
+    try:
+        probe_payload = _piped_stream_request(base, probe_id, timeout=PIPED_PREFLIGHT_TIMEOUT_SECONDS)
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = f"HTTP {exc.code}: {body or exc.reason}"
+        raise RuntimeError(
+            f"Piped streams API preflight failed for {base}: {detail}. The selected instance may be reachable while its streams API is disabled or unavailable."
+        ) from exc
+    except (URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"Piped streams API preflight failed for {base}: {exc}. Check the explicitly selected instance before running a benchmark corpus."
+        ) from exc
+    preflight_elapsed_ms = (time.perf_counter() - preflight_started) * 1000.0
+
+    rows: list[dict[str, Any]] = []
+    failures: list[dict[str, str]] = []
+    item_times: list[float] = []
+    started = time.perf_counter()
+    for index, video_id in enumerate(video_ids):
+        emit_invocation(
+            ToolInvocation(
+                tool="piped",
+                operation="GET /streams/:id",
+                purpose="known-video metadata benchmark",
+                status="executing",
+                arguments={"instance": base, "video_id": video_id},
+            )
+        )
+        item_started = time.perf_counter()
+        try:
+            payload = (
+                probe_payload
+                if index == 0
+                else _piped_stream_request(base, video_id, timeout=PIPED_REQUEST_TIMEOUT_SECONDS)
+            )
+            row = _normalise_piped(video_id, payload)
+        except HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace").strip()
+            message = f"Piped HTTP {exc.code}: {body or exc.reason}"
+            row = _failure_row(video_id, message, error_type=type(exc).__name__)
+            failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
+        except (URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
+            row = _failure_row(video_id, str(exc), error_type=type(exc).__name__)
+            failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
+        elapsed_ms = (time.perf_counter() - item_started) * 1000.0
+        row["elapsed_ms"] = elapsed_ms
+        item_times.append(elapsed_ms)
+        rows.append(row)
+    elapsed = time.perf_counter() - started
+    return (
+        rows,
+        elapsed,
+        {
+            "instance": base,
+            "authentication": "anonymous",
+            "request_count": len(video_ids),
+            "preflight_endpoint": "/streams/:id",
+            "preflight_video_id": probe_id,
+            "preflight_elapsed_ms": preflight_elapsed_ms,
+            "preflight_timeout_seconds": PIPED_PREFLIGHT_TIMEOUT_SECONDS,
+            "request_timeout_seconds": PIPED_REQUEST_TIMEOUT_SECONDS,
+            "preflight_reused_as_first_result": True,
+            "per_item_elapsed_ms": item_times,
+            "failures": failures,
+        },
+    )
+
+
 def _classify_failure(message: str) -> str:
     lowered = message.lower()
     for kind, patterns in FAILURE_PATTERNS:
@@ -664,7 +833,12 @@ def _ytdlp(video_ids: list[str], *, profile: str = "core") -> tuple[list[dict[st
 
 
 def _run_provider(
-    name: str, video_ids: list[str], profile: str, *, invidious_instance: str | None = None
+    name: str,
+    video_ids: list[str],
+    profile: str,
+    *,
+    invidious_instance: str | None = None,
+    piped_instance: str | None = None,
 ) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
     """Run one provider under a declared provider-neutral measurement profile."""
     if profile not in PROFILE_SUPPORT[name]:
@@ -677,6 +851,8 @@ def _run_provider(
         return _newpipe_extractor(video_ids)
     if name == "invidious":
         return _invidious(video_ids, instance=invidious_instance)
+    if name == "piped":
+        return _piped(video_ids, instance=piped_instance)
     rows, elapsed, diagnostics = RUNNERS[name](video_ids)
     diagnostics = dict(diagnostics)
     diagnostics["measurement_profile"] = profile
@@ -689,6 +865,7 @@ RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict
     "pytubefix": _pytubefix,
     "newpipe-extractor": _newpipe_extractor,
     "invidious": _invidious,
+    "piped": _piped,
     "ytdlp": _ytdlp,
 }
 
@@ -871,7 +1048,7 @@ def main() -> int:
         "--providers",
         type=_provider_names,
         default=list(DEFAULT_PROVIDERS),
-        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,invidious,ytdlp); ytdlp is always included as the reference",
+        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,invidious,piped,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
     parser.add_argument(
@@ -879,6 +1056,12 @@ def main() -> int:
         type=_invidious_instance,
         metavar="URL",
         help=f"explicit Invidious instance for the invidious provider; alternatively set {INVIDIOUS_INSTANCE_ENV}",
+    )
+    parser.add_argument(
+        "--piped-instance",
+        type=_piped_instance,
+        metavar="URL",
+        help=f"explicit Piped API instance for the piped provider; alternatively set {PIPED_INSTANCE_ENV}",
     )
     parser.add_argument(
         "--debug-external", action="store_true", help="show redacted external-tool invocations on stderr"
@@ -915,7 +1098,11 @@ def main() -> int:
     run_names: list[str] = []
     for name in args.providers:
         rows, elapsed, diagnostics = _run_provider(
-            name, args.video_id, args.profile, invidious_instance=args.invidious_instance
+            name,
+            args.video_id,
+            args.profile,
+            invidious_instance=args.invidious_instance,
+            piped_instance=args.piped_instance,
         )
         provider_results[name] = {
             "elapsed_seconds": elapsed,
@@ -958,7 +1145,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 10,
+        "schema_version": 11,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

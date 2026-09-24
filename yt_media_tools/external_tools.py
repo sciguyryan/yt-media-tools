@@ -42,6 +42,7 @@ _TOOLS: dict[str, ExternalTool] = {
         ExternalTool("youtube-innertube", "youtube-innertube", "python-library"),
         ExternalTool("newpipe-extractor", "NewPipeExtractor", "jvm-bridge"),
         ExternalTool("invidious", "Invidious", "remote-api"),
+        ExternalTool("piped", "Piped", "remote-api"),
     )
 }
 

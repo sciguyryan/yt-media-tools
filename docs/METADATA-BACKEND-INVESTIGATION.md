@@ -128,7 +128,7 @@ Invidious should therefore not become a mandatory provider or silent default. It
 
 **Estimated acquisition weight:** client-light / server-variable. Very light for Discover itself, but not intrinsically cheap end to end.
 
-**Best next use:** optional experimental provider only, with explicit instance configuration and provenance. Do not silently send user queries to a public instance.
+**Issue #110 outcome:** retain only as experimental explicitly configured infrastructure. Four selected public deployments failed the required video capability through a TLS handshake timeout or HTTP 403 responses, including an explicitly disabled endpoint. This is operational evidence rather than a semantic verdict because no successful public-instance comparison corpus was obtained. Do not add automatic public-instance discovery or fallback.
 
 ## Piped API
 

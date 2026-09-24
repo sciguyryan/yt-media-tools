@@ -761,3 +761,114 @@ def test_invidious_video_api_disabled_fails_capability_preflight(monkeypatch) ->
     else:
         raise AssertionError("disabled Invidious video API passed capability preflight")
     assert requested == [("https://disabled.example/api/v1/videos/abc", benchmark.INVIDIOUS_PREFLIGHT_TIMEOUT_SECONDS)]
+
+
+def test_piped_is_explicit_core_only_provider() -> None:
+    benchmark = _module()
+    assert "piped" in benchmark.PROVIDERS
+    assert benchmark._provider_names("piped") == ["piped", "ytdlp"]
+    assert benchmark.PROFILE_SUPPORT["piped"] == {"core"}
+    assert "piped" not in benchmark.DEFAULT_PROVIDERS
+
+
+def test_piped_instance_validation_requires_explicit_absolute_url() -> None:
+    benchmark = _module()
+    assert benchmark._piped_instance("https://piped.example/") == "https://piped.example"
+    for value in (
+        "piped.example",
+        "ftp://piped.example",
+        "https://user:secret@piped.example",
+        "https://piped.example/?x=1",
+    ):
+        try:
+            benchmark._piped_instance(value)
+        except benchmark.argparse.ArgumentTypeError:
+            pass
+        else:
+            raise AssertionError(f"unsafe or ambiguous Piped instance accepted: {value}")
+
+
+def test_piped_normalisation_preserves_documented_stream_signals() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_piped(
+        "abc",
+        {
+            "title": "Example",
+            "description": "Description",
+            "uploader": "Channel",
+            "uploaderUrl": "/channel/UCexample",
+            "uploaderVerified": True,
+            "duration": 123,
+            "views": 456,
+            "uploadDate": "2026-09-23T12:00:00Z",
+            "livestream": False,
+            "likes": 12,
+            "dislikes": 1,
+            "subtitles": [{"code": "en"}],
+            "audioStreams": [{"itag": 1}],
+            "videoStreams": [{"itag": 2}, {"itag": 3}],
+        },
+    )
+    assert row["channel_id"] == "UCexample"
+    assert row["upload_date"] == "20260923"
+    assert row["duration"] == 123
+    assert row["is_live"] is False
+    assert row["category"] is None
+    assert row["keywords"] is None
+    assert row["source_signals"]["video_stream_count"] == 2
+
+
+def test_piped_requires_configuration_before_any_request(monkeypatch) -> None:
+    benchmark = _module()
+    monkeypatch.delenv(benchmark.PIPED_INSTANCE_ENV, raising=False)
+    try:
+        benchmark._piped(["abc"])
+    except RuntimeError as exc:
+        assert "explicitly configured instance" in str(exc)
+    else:
+        raise AssertionError("Piped provider ran without an explicitly configured instance")
+
+
+def test_piped_runner_uses_only_selected_instance_and_reuses_preflight(monkeypatch) -> None:
+    benchmark = _module()
+    requested = []
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b'{"title":"Example","uploadDate":"2026-09-23","livestream":false}'
+
+    def fake_urlopen(request, timeout):
+        requested.append((request.full_url, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
+    rows, _, diagnostics = benchmark._piped(["abc"], instance="https://chosen.example/")
+    assert requested == [("https://chosen.example/streams/abc", benchmark.PIPED_PREFLIGHT_TIMEOUT_SECONDS)]
+    assert diagnostics["preflight_endpoint"] == "/streams/:id"
+    assert diagnostics["preflight_reused_as_first_result"] is True
+    assert diagnostics["instance"] == "https://chosen.example"
+    assert rows[0]["title"] == "Example"
+
+
+def test_piped_preflight_fails_before_remaining_corpus(monkeypatch) -> None:
+    benchmark = _module()
+    requested = []
+
+    def fake_urlopen(request, timeout):
+        requested.append((request.full_url, timeout))
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
+    try:
+        benchmark._piped(["abc", "def"], instance="https://unreachable.example/")
+    except RuntimeError as exc:
+        assert "preflight failed" in str(exc)
+    else:
+        raise AssertionError("unreachable Piped instance passed preflight")
+    assert requested == [("https://unreachable.example/streams/abc", benchmark.PIPED_PREFLIGHT_TIMEOUT_SECONDS)]

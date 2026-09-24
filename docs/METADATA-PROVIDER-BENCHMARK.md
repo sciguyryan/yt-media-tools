@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Issues #102, #103, #104, #109 and #110 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix, NewPipeExtractor and explicitly configured Invidious acquisition against the existing yt-dlp detailed path over the same corpus.
+Issues #102, #103, #104, #109, #110 and #111 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix, NewPipeExtractor and explicitly configured Invidious and Piped acquisition against the existing yt-dlp detailed path over the same corpus.
 
 The benchmark is evidence gathering. A field being present, or even equal to yt-dlp in one run, does not establish authoritative semantic equivalence.
 
 ## Providers
 
-The harness supports `youtubejs`, `youtube-innertube`, `pytubefix`, `newpipe-extractor`, `invidious` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
+The harness supports `youtubejs`, `youtube-innertube`, `pytubefix`, `newpipe-extractor`, `invidious`, `piped` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
 
 `youtube-innertube` is deliberately an optional benchmark dependency rather than a production Discover dependency. Install the research candidate directly from its upstream repository before running that provider:
 
@@ -37,7 +37,9 @@ Invidious is an issue #110 research candidate and remains outside production Dis
 
 Benchmark schema 8 defines provider-neutral measurement profiles so elapsed times are compared only when providers are asked to satisfy the same acquisition contract. The default `core` profile requests only the established scalar metadata and provider-native availability or live-state source signals. Extended thumbnail, chapter and caption probing is not performed in this profile. This makes the ordinary four-provider timing comparison directly comparable and avoids charging one provider for optional capability work that the others were not asked to perform.
 
-The `full` profile independently measures acquisition of the core surface plus the structural extended-capability inventory. It is currently supported by pytubefix and yt-dlp. YouTube.js, youtube-innertube, NewPipeExtractor and Invidious are explicitly marked as core-only rather than silently treating unsupported extended capabilities as zero-cost. A full-profile run should therefore name only providers that support it, for example `--providers pytubefix,ytdlp --profile full`. Each profile is a fresh benchmark invocation; incremental costs may be derived by comparing repeated core and full runs, but the harness does not infer per-property network costs from access order or provider caching.
+Piped is an issue #111 research candidate and remains outside production Discover acquisition. The benchmark never discovers or selects an instance automatically. The operator must explicitly provide a Piped API base URL with `--piped-instance URL` or `YT_DISCOVER_PIPED_INSTANCE`. Each known video is requested through that selected instance's documented unauthenticated `/streams/{videoId}` endpoint. A five-second capability preflight exercises the first requested video and is reused as its benchmark result; subsequent requests have a 15-second timeout. This carries the issue #110 lesson forward by testing the exact required capability before disclosing the remaining corpus.
+
+The `full` profile independently measures acquisition of the core surface plus the structural extended-capability inventory. It is currently supported by pytubefix and yt-dlp. YouTube.js, youtube-innertube, NewPipeExtractor, Invidious and Piped are explicitly marked as core-only rather than silently treating unsupported extended capabilities as zero-cost. A full-profile run should therefore name only providers that support it, for example `--providers pytubefix,ytdlp --profile full`. Each profile is a fresh benchmark invocation; incremental costs may be derived by comparing repeated core and full runs, but the harness does not infer per-property network costs from access order or provider caching.
 
 The report records the selected `measurement_profile` and the declared `profile_support` matrix. Unsupported profiles fail explicitly. This is intentional: benchmark timing must describe work actually requested from a provider rather than mixing unlike acquisition surfaces.
 
@@ -77,7 +79,9 @@ python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --p
 
 Add `--debug-external` when the JVM bridge invocation should be shown on stderr through the shared external-tool diagnostics.
 
-To benchmark issue #110, explicitly select an Invidious instance. The project does not ship a default instance because that would turn an investigative operator choice into an implicit remote disclosure. For example, `https://invidious.nerdvpn.de` was present on the official Invidious public-instance list when the issue #110 investigation was performed. An earlier probe of `https://invidious.nerdvpn.de` showed that a healthy stats endpoint can coexist with a disabled video API, so the benchmark now capability-probes the video endpoint itself. Public-instance availability is external and may change, so verify the current official list before relying on a documented example.
+Issue #110 reconciliation: public-instance operation was not dependable enough to justify production promotion. Four explicitly selected deployments were tried during the investigation. The observed outcomes were a TLS handshake timeout, `403 Endpoint disabled`, and two other HTTP 403 responses. These failures establish an important operational limitation but do not establish poor Invidious metadata semantics, because no successful public-instance response set was obtained for comparison. Invidious remains experimental infrastructure for an explicitly configured operator-controlled deployment; Discover must not discover, select or fall back to arbitrary public instances.
+
+To benchmark issue #110, explicitly select an Invidious instance. The project does not ship a default instance because that would turn an investigative operator choice into an implicit remote disclosure. For example, `https://invidious.nerdvpn.de` was present on the official Invidious public-instance list when the issue #110 investigation was performed. An earlier probe of `https://inv.nadeko.net` showed that a healthy stats endpoint can coexist with a disabled video API, while a later `https://invidious.nerdvpn.de` capability probe timed out during the TLS handshake. The benchmark therefore capability-probes the video endpoint itself. Public-instance availability is external and may change, so verify the current official list before relying on a documented example.
 
 Start with a small probe before sending a full corpus:
 
@@ -157,6 +161,16 @@ python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --p
 ```
 
 Benchmark IDs containing whitespace are rejected before provider execution. This prevents an accidentally combined argument from being interpreted differently by individual providers.
+
+For the first issue #111 live probe, use a deliberately small corpus and an explicitly selected API instance. `https://api.piped.private.coffee` was present on the Piped project's public-instance list during the investigation and a recent independent endpoint survey reported its `/streams/:id` endpoint working. That is only a contemporaneous test candidate, not a bundled default or availability guarantee.
+
+```fish
+python scripts/benchmark_metadata_providers.py --providers piped --piped-instance https://api.piped.private.coffee --profile core --json -- jNQXAC9IVRw dQw4w9WgXcQ aqz-KE-bpKQ > bench-111-probe.json
+```
+
+Do not move directly to a large corpus if the capability preflight fails. A successful three-item probe should be inspected for field semantics, payload breadth, timing and instance behaviour before a larger run.
+
+Schema version 11 adds the explicitly configured Piped provider. Piped maps the documented `/streams/{videoId}` fields `title`, `description`, `duration`, `views`, `uploadDate`, `uploaderUrl` and `livestream` onto the common comparison surface where the mapping is sufficiently direct. The documented `VideoInfo` schema does not provide common `category` or `keywords` fields, so the adapter leaves them unavailable rather than inferring them. Provider-native uploader verification, likes/dislikes, subtitle counts and audio/video stream counts remain separate evidence.
 
 Schema version 10 adds the explicitly configured Invidious provider while preserving the schema 9 `description_analysis` behaviour. Invidious maps the documented video endpoint fields `videoId`, `title`, `description`, `authorId`, `lengthSeconds`, `viewCount`, `published`, `genre`, `liveNow` and `keywords` onto the common comparison surface. Provider-native `isPostLiveDvr`, `isUpcoming`, listing and commercial-status signals remain separate evidence rather than being collapsed into Discover semantics.
 

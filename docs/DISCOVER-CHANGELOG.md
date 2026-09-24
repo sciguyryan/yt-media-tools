@@ -4,6 +4,21 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Discover - explicitly configured Piped metadata benchmark
+
+- [feature] Add Piped as an optional experimental core metadata provider for issue #111 without changing production provider selection.
+- [security] Require an explicitly selected Piped API instance and capability-probe `/streams/:id` before disclosing the remaining corpus.
+- [maintenance] Reuse the successful capability-probe response, bound remote requests and register Piped with shared external-tool diagnostics.
+- [maintenance] Advance the experimental metadata benchmark schema to version 11.
+- [test] Cover explicit instance validation, documented stream-field normalisation, capability preflight, selected-instance routing and preflight reuse.
+- [docs] Begin the Piped comparison with a small-probe workflow and preserve the remote-instance trust boundary.
+
+### Discover - Invidious metadata benchmark reconciliation
+
+- [maintenance] Conclude issue #110 without promoting Invidious into production acquisition planning.
+- [docs] Record that four explicitly selected public instances produced a TLS handshake timeout, a disabled video endpoint or HTTP 403 responses, leaving metadata-semantic compatibility insufficiently measured.
+- [docs] Retain Invidious as experimental infrastructure for explicitly configured operator-controlled deployments while rejecting automatic instance discovery or fallback.
+
 ### Discover - explicitly configured Invidious metadata benchmark
 
 - [fix] Replace the reachability-only Invidious stats preflight with a video-API capability preflight so instances returning `403 Endpoint disabled` fail before the remaining corpus is disclosed.
