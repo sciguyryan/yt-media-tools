@@ -854,7 +854,7 @@ def _normalise_ytmusicapi(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
 
 def _ytmusicapi_current_signature_timestamp() -> int:
     """Return the current day-based signature timestamp used by ytmusicapi."""
-    return (date.today() - date.fromtimestamp(0)).days
+    return (date.today() - date(1970, 1, 1)).days
 
 
 def _ytmusicapi(
@@ -1054,7 +1054,12 @@ def _run_provider(
     if name == "piped":
         return _piped(video_ids, instance=piped_instance)
     if name == "ytmusicapi":
-        return _ytmusicapi(video_ids, auth_path=ytmusicapi_auth, signature_timestamp=ytmusicapi_signature_timestamp)
+        signature_timestamp = (
+            _ytmusicapi_current_signature_timestamp()
+            if ytmusicapi_signature_timestamp is None
+            else ytmusicapi_signature_timestamp
+        )
+        return _ytmusicapi(video_ids, auth_path=ytmusicapi_auth, signature_timestamp=signature_timestamp)
     rows, elapsed, diagnostics = RUNNERS[name](video_ids)
     diagnostics = dict(diagnostics)
     diagnostics["measurement_profile"] = profile
@@ -1273,9 +1278,9 @@ def main() -> int:
         help="also benchmark ytmusicapi with a native browser-auth JSON file; credential contents are never serialised",
     )
     parser.add_argument(
-        "--ytmusicapi-current-signature",
+        "--ytmusicapi-library-default-signature",
         action="store_true",
-        help="also benchmark anonymous ytmusicapi with the current day-based signature timestamp instead of its library default",
+        help="also benchmark anonymous ytmusicapi using its library-default signature timestamp for diagnostic comparison",
     )
     parser.add_argument(
         "--debug-external", action="store_true", help="show redacted external-tool invocations on stderr"
@@ -1325,19 +1330,18 @@ def main() -> int:
             "summary": _provider_summary(rows, len(args.video_id)),
         }
         run_names.append(name)
-        if name == "ytmusicapi" and (args.ytmusicapi_current_signature or args.ytmusicapi_auth is not None):
+        if name == "ytmusicapi":
             current_signature = _ytmusicapi_current_signature_timestamp()
-            current_rows, current_elapsed, current_diagnostics = _ytmusicapi(
-                args.video_id, signature_timestamp=current_signature
-            )
-            current_variant = "ytmusicapi-current-signature"
-            provider_results[current_variant] = {
-                "elapsed_seconds": current_elapsed,
-                "rows": current_rows,
-                "diagnostics": current_diagnostics,
-                "summary": _provider_summary(current_rows, len(args.video_id)),
-            }
-            run_names.append(current_variant)
+            if args.ytmusicapi_library_default_signature:
+                default_rows, default_elapsed, default_diagnostics = _ytmusicapi(args.video_id)
+                default_variant = "ytmusicapi-library-default-signature"
+                provider_results[default_variant] = {
+                    "elapsed_seconds": default_elapsed,
+                    "rows": default_rows,
+                    "diagnostics": default_diagnostics,
+                    "summary": _provider_summary(default_rows, len(args.video_id)),
+                }
+                run_names.append(default_variant)
             if args.ytmusicapi_auth is not None:
                 authenticated_rows, authenticated_elapsed, authenticated_diagnostics = _ytmusicapi(
                     args.video_id, auth_path=args.ytmusicapi_auth, signature_timestamp=current_signature
@@ -1382,14 +1386,15 @@ def main() -> int:
             _comparison(video_id, authenticated.get(video_id, {}), anonymous.get(video_id, {}))
             for video_id in args.video_id
         ]
-    if "ytmusicapi-current-signature" in provider_results:
-        baseline = _index(provider_results["ytmusicapi"]["rows"])
-        current = _index(provider_results["ytmusicapi-current-signature"]["rows"])
-        variant_comparisons["ytmusicapi-current-signature-against-default"] = [
-            _comparison(video_id, current.get(video_id, {}), baseline.get(video_id, {})) for video_id in args.video_id
+    if "ytmusicapi-library-default-signature" in provider_results:
+        current = _index(provider_results["ytmusicapi"]["rows"])
+        library_default = _index(provider_results["ytmusicapi-library-default-signature"]["rows"])
+        variant_comparisons["ytmusicapi-library-default-against-current-signature"] = [
+            _comparison(video_id, library_default.get(video_id, {}), current.get(video_id, {}))
+            for video_id in args.video_id
         ]
     if "ytmusicapi-browser-current-signature" in provider_results:
-        current = _index(provider_results["ytmusicapi-current-signature"]["rows"])
+        current = _index(provider_results["ytmusicapi"]["rows"])
         authenticated = _index(provider_results["ytmusicapi-browser-current-signature"]["rows"])
         variant_comparisons["ytmusicapi-browser-against-anonymous-current-signature"] = [
             _comparison(video_id, authenticated.get(video_id, {}), current.get(video_id, {}))
@@ -1397,7 +1402,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 14,
+        "schema_version": 15,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

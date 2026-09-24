@@ -192,23 +192,19 @@ Schema version 13 adds this diagnostic distinction. The purpose is to measure wh
 
 Candidate 3 follows the second live probe, which demonstrated that `get_song()` can return usable title, channel, duration, view-count, category, description and publication metadata while simultaneously reporting `UNPLAYABLE`. Metadata acquisition and playback eligibility are therefore modelled as independent dimensions. A response containing at least a title and channel identifier is a successful metadata row even when provider-native playability is non-OK. The playability status and reason remain under `source_signals` and in provider diagnostics. A non-OK response without the minimum usable metadata remains a `playability_rejection` failure.
 
-Candidate 3 also adds controlled variants to investigate the uniform anonymous `UNPLAYABLE` result. ytmusicapi's `get_song()` accepts a `signatureTimestamp`; its current implementation defaults to the previous day-based timestamp. `--ytmusicapi-current-signature` adds an anonymous variant using the current day-based timestamp. `--ytmusicapi-auth FILE` implies that current-signature anonymous variant and additionally runs a browser-authenticated current-signature variant using ytmusicapi's native browser-auth JSON file. This isolates the library default timestamp and browser session context without changing the baseline anonymous result.
+Candidate 3 also added controlled variants to investigate the uniform anonymous `UNPLAYABLE` result. The live probe isolated three conditions: ytmusicapi's library-default signature timestamp, an explicit current day-based signature timestamp, and browser-authenticated acquisition using the same current timestamp. The explicit current timestamp changed the four music-oriented cases from `UNPLAYABLE` to `OK`, while browser authentication produced no substantive metadata or playability difference from anonymous current-signature acquisition. Repeating the probe without the user's VPN also produced the same result, so that VPN exit location did not explain the observed behaviour.
 
-Create the browser-auth file using ytmusicapi's own setup workflow and keep it outside the repository:
+The reconciled experimental provider therefore uses the explicit current day-based signature timestamp by default. `--ytmusicapi-library-default-signature` retains the former library-default behaviour only as a diagnostic comparison. `--ytmusicapi-auth FILE` remains available for controlled research but is not part of the prospective production path. The authentication file contains credential material and must not be committed, packaged, pasted into benchmark output or supplied through external-invocation diagnostics.
 
-```bash
-ytmusicapi browser --file browser.json
-```
+The live probe also produced useful provider-native source-type evidence. Rick Astley, Gangnam Style and Golden were identified as `MUSIC_VIDEO_TYPE_OMV`, while High and Dry was identified as `MUSIC_VIDEO_TYPE_ATV`. The ordinary non-music control, Me at the zoo, had no `musicVideoType` and remained `UNPLAYABLE` while still returning usable general metadata. This supports retaining `musicVideoType` as specialised evidence without treating `get_song()` success, ordinary YouTube category, or playability alone as proof of music-oriented source eligibility.
 
-The file contains credential material and must not be committed, packaged, pasted into benchmark output or supplied through external-invocation diagnostics. The benchmark passes only its path to `YTMusic()` and reports the authentication mode, never the path or file contents.
-
-Run the three-way issue #112 probe with:
+Run the reconciled issue #112 probe with:
 
 ```bash
-python scripts/benchmark_metadata_providers.py --providers ytmusicapi --profile core --ytmusicapi-auth browser.json --json -- dQw4w9WgXcQ 9bZkp7q19f0 7fv84nPfTH0 yebNIHKAC4A jNQXAC9IVRw > bench-112-probe-candidate-3.json
+python scripts/benchmark_metadata_providers.py --providers ytmusicapi --profile core --json -- dQw4w9WgXcQ 9bZkp7q19f0 7fv84nPfTH0 yebNIHKAC4A jNQXAC9IVRw > bench-112-probe-reconciled.json
 ```
 
-This produces the baseline `ytmusicapi` result, `ytmusicapi-current-signature`, and `ytmusicapi-browser-current-signature`, plus direct variant comparisons. If browser authentication is not desired, `--ytmusicapi-current-signature` runs only the first two. Schema version 14 adds these variant semantics. They remain investigative infrastructure and do not add authenticated ytmusicapi acquisition to Discover's production planner.
+For diagnostic reproduction of the library-default signature behaviour, add `--ytmusicapi-library-default-signature`. For the already-completed browser-authentication control, `--ytmusicapi-auth browser.json` adds the authenticated current-signature variant without serialising the credential path or contents. Schema version 15 makes current-signature acquisition the normal experimental ytmusicapi behaviour and retains the other modes only as explicit diagnostic variants. Production acquisition planning remains unchanged.
 
 ## Issue #111 reconciliation
 

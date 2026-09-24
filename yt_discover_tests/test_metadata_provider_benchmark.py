@@ -1063,6 +1063,35 @@ def test_ytmusicapi_provider_records_get_song_failures(monkeypatch) -> None:
     assert diagnostics["authentication"] == "anonymous"
 
 
+def test_run_provider_uses_current_signature_for_ytmusicapi(monkeypatch) -> None:
+    benchmark = _module()
+    observed = {}
+
+    monkeypatch.setattr(benchmark, "_ytmusicapi_current_signature_timestamp", lambda: 20720)
+
+    def fake_ytmusicapi(video_ids, *, auth_path=None, signature_timestamp=None):
+        observed["video_ids"] = video_ids
+        observed["auth_path"] = auth_path
+        observed["signature_timestamp"] = signature_timestamp
+        return [], 0.0, {}
+
+    monkeypatch.setattr(benchmark, "_ytmusicapi", fake_ytmusicapi)
+    benchmark._run_provider("ytmusicapi", ["abc"], "core")
+    assert observed == {"video_ids": ["abc"], "auth_path": None, "signature_timestamp": 20720}
+
+
+def test_ytmusicapi_current_signature_timestamp_is_epoch_day(monkeypatch) -> None:
+    benchmark = _module()
+
+    class FixedDate(benchmark.date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 9, 24)
+
+    monkeypatch.setattr(benchmark, "date", FixedDate)
+    assert benchmark._ytmusicapi_current_signature_timestamp() == 20720
+
+
 def test_issue_112_probe_corpus_is_deterministic_and_contains_non_music_control() -> None:
     import json
 

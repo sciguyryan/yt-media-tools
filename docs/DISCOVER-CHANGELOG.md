@@ -19,6 +19,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [security] Keep ytmusicapi browser-auth credential paths and contents out of serialised benchmark results and external-invocation diagnostics.
 - [maintenance] Advance the experimental metadata benchmark schema to version 14 and expose deterministic variant comparisons.
 - [test] Cover metadata/playability independence, metadata-free rejection, explicit signature forwarding and browser-auth credential isolation.
+- [fix] Make the explicit current day-based signature timestamp the normal experimental ytmusicapi acquisition path after the controlled probe eliminated the library default's blanket music-item `UNPLAYABLE` result.
+- [maintenance] Retain library-default signature and browser-authenticated acquisition only as explicit diagnostic variants and advance the experimental benchmark schema to version 15.
+- [security] Ignore `browser.json` as credential material while keeping authenticated ytmusicapi outside the prospective production path.
+- [test] Cover deterministic epoch-day signature calculation and automatic current-signature provider dispatch.
+- [docs] Record that browser authentication and VPN removal did not change the controlled results, while the explicit current signature timestamp did, and retain `musicVideoType` as useful provider-native source-type evidence.
 
 ### Discover - Piped metadata benchmark reconciliation
 
