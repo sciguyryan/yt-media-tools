@@ -4,6 +4,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Discover - Piped metadata benchmark reconciliation
+
+- [maintenance] Conclude issue #111 without promoting Piped into production acquisition planning.
+- [docs] Record that two explicitly selected public instances failed operationally: one reached its streams API but its server-side YouTube acquisition was rejected, while the other timed out during the TLS handshake.
+- [docs] Retain Piped as experimental infrastructure for explicitly configured operator-controlled deployments while rejecting automatic instance discovery or fallback.
+- [docs] Record that metadata-semantic compatibility remains insufficiently measured because neither public-instance probe returned successful video metadata.
+
 ### Discover - explicitly configured Piped metadata benchmark
 
 - [feature] Add Piped as an optional experimental core metadata provider for issue #111 without changing production provider selection.

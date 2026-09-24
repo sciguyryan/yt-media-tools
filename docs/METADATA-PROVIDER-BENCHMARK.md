@@ -164,13 +164,15 @@ Benchmark IDs containing whitespace are rejected before provider execution. This
 
 The first issue #111 live probe used `https://api.piped.private.coffee`. Its `/streams/:id` API was operational, but its NewPipeExtractor-backed upstream request was rejected by YouTube with `LOGIN_REQUIRED` and a bot-confirmation message. This is an instance-side upstream acquisition failure rather than evidence that the user's network was blocked. Candidate 2 therefore distinguishes upstream authentication rejection from API access denial and generic provider-side failures, and bounds remote error detail so Java stack traces or arbitrary response bodies do not flood normal CLI output.
 
-For the second small probe, use `https://pipedapi.ducks.party`. A 2026-09-11 independent endpoint survey reported it as the only other successful `/streams/:id` instance alongside the first candidate. This remains a contemporaneous research candidate, not a bundled default or availability guarantee.
+The second issue #111 live probe used `https://pipedapi.ducks.party`. Its TLS handshake timed out before the Piped API could be exercised. Together, the two explicitly selected public-instance probes demonstrate distinct operational dependencies: a deployment may be unreachable at the transport layer, or it may expose the required Piped API while its server-side acquisition is rejected upstream by YouTube.
 
-```fish
-python scripts/benchmark_metadata_providers.py --providers piped --piped-instance https://pipedapi.ducks.party --profile core --json -- jNQXAC9IVRw dQw4w9WgXcQ aqz-KE-bpKQ > bench-111-probe.json
-```
+## Issue #111 reconciliation
 
-Do not move directly to a large corpus if the capability preflight fails. A successful three-item probe should be inspected for field semantics, payload breadth, timing and instance behaviour before a larger run.
+The two public-instance probes provide sufficient operational evidence to complete the Piped investigation without promoting Piped into production acquisition planning. Neither probe returned successful video metadata: `https://api.piped.private.coffee` accepted the streams request but its NewPipeExtractor-backed upstream YouTube acquisition was rejected with `LOGIN_REQUIRED`, while `https://pipedapi.ducks.party` timed out during the TLS handshake before its API could be exercised. These observations concern the selected deployments and their external dependencies; they do not establish that Piped's metadata semantics are unsuitable.
+
+Because no successful Piped metadata response was obtained, field-level semantic compatibility with Discover and yt-dlp remains insufficiently measured. The documented mapping in schema version 11 therefore remains an experimental adapter contract rather than evidence of production authority.
+
+Piped may remain useful as experimental infrastructure when an operator explicitly configures and controls a deployment whose API and upstream acquisition are known to be available. Public-instance acquisition is not a production candidate from this investigation. Discover must not automatically discover, rotate between or fall back across public Piped instances, because doing so would add an unstable external-service dependency and disclose requested video identifiers to third parties the user did not explicitly select. A future investigation may revisit Piped if deployment reliability or an operator-controlled use case provides materially different evidence.
 
 Schema version 11 adds the explicitly configured Piped provider. Piped maps the documented `/streams/{videoId}` fields `title`, `description`, `duration`, `views`, `uploadDate`, `uploaderUrl` and `livestream` onto the common comparison surface where the mapping is sufficiently direct. The documented `VideoInfo` schema does not provide common `category` or `keywords` fields, so the adapter leaves them unavailable rather than inferring them. Provider-native uploader verification, likes/dislikes, subtitle counts and audio/video stream counts remain separate evidence.
 
