@@ -872,3 +872,33 @@ def test_piped_preflight_fails_before_remaining_corpus(monkeypatch) -> None:
     else:
         raise AssertionError("unreachable Piped instance passed preflight")
     assert requested == [("https://unreachable.example/streams/abc", benchmark.PIPED_PREFLIGHT_TIMEOUT_SECONDS)]
+
+
+def test_piped_preflight_classifies_upstream_youtube_rejection_without_stack_trace(monkeypatch) -> None:
+    benchmark = _module()
+    body = b'{"error":"org.example.Stack: noisy\\n\\tat internal.Frame","message":"YouTube probably temporarily blocked anonymous watch access with this IP, got error LOGIN_REQUIRED: \\"Sign in to confirm that you are not a bot\\""}'
+
+    def fake_urlopen(request, timeout):
+        raise benchmark.HTTPError(request.full_url, 500, "Internal Server Error", {}, __import__("io").BytesIO(body))
+
+    monkeypatch.setattr(benchmark, "urlopen", fake_urlopen)
+    try:
+        benchmark._piped(["abc", "def"], instance="https://upstream-blocked.example")
+    except RuntimeError as exc:
+        message = str(exc)
+        assert "upstream_authentication_required" in message
+        assert "upstream YouTube acquisition was rejected" in message
+        assert "internal.Frame" not in message
+    else:
+        raise AssertionError("upstream-blocked Piped instance passed preflight")
+
+
+def test_piped_http_failure_bounds_unstructured_remote_body() -> None:
+    benchmark = _module()
+    import io
+
+    exc = benchmark.HTTPError("https://example/streams/abc", 500, "Internal", {}, io.BytesIO(b"x" * 2000))
+    kind, detail = benchmark._piped_http_failure(exc)
+    assert kind == "provider_upstream_failure"
+    assert len(detail) <= benchmark.PIPED_ERROR_DETAIL_MAX_CHARS + len("HTTP 500: ")
+    assert detail.endswith("…")

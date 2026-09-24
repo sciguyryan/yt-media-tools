@@ -162,10 +162,12 @@ python scripts/benchmark_metadata_providers.py --providers newpipe-extractor --p
 
 Benchmark IDs containing whitespace are rejected before provider execution. This prevents an accidentally combined argument from being interpreted differently by individual providers.
 
-For the first issue #111 live probe, use a deliberately small corpus and an explicitly selected API instance. `https://api.piped.private.coffee` was present on the Piped project's public-instance list during the investigation and a recent independent endpoint survey reported its `/streams/:id` endpoint working. That is only a contemporaneous test candidate, not a bundled default or availability guarantee.
+The first issue #111 live probe used `https://api.piped.private.coffee`. Its `/streams/:id` API was operational, but its NewPipeExtractor-backed upstream request was rejected by YouTube with `LOGIN_REQUIRED` and a bot-confirmation message. This is an instance-side upstream acquisition failure rather than evidence that the user's network was blocked. Candidate 2 therefore distinguishes upstream authentication rejection from API access denial and generic provider-side failures, and bounds remote error detail so Java stack traces or arbitrary response bodies do not flood normal CLI output.
+
+For the second small probe, use `https://pipedapi.ducks.party`. A 2026-09-11 independent endpoint survey reported it as the only other successful `/streams/:id` instance alongside the first candidate. This remains a contemporaneous research candidate, not a bundled default or availability guarantee.
 
 ```fish
-python scripts/benchmark_metadata_providers.py --providers piped --piped-instance https://api.piped.private.coffee --profile core --json -- jNQXAC9IVRw dQw4w9WgXcQ aqz-KE-bpKQ > bench-111-probe.json
+python scripts/benchmark_metadata_providers.py --providers piped --piped-instance https://pipedapi.ducks.party --profile core --json -- jNQXAC9IVRw dQw4w9WgXcQ aqz-KE-bpKQ > bench-111-probe.json
 ```
 
 Do not move directly to a large corpus if the capability preflight fails. A successful three-item probe should be inspected for field semantics, payload breadth, timing and instance behaviour before a larger run.

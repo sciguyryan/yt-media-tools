@@ -64,6 +64,7 @@ INVIDIOUS_REQUEST_TIMEOUT_SECONDS = 15
 PIPED_INSTANCE_ENV = "YT_DISCOVER_PIPED_INSTANCE"
 PIPED_PREFLIGHT_TIMEOUT_SECONDS = 5
 PIPED_REQUEST_TIMEOUT_SECONDS = 15
+PIPED_ERROR_DETAIL_MAX_CHARS = 500
 NEWPIPE_DEFAULT_BRIDGE = (
     ROOT
     / "tools"
@@ -644,6 +645,37 @@ def _normalise_piped(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _piped_http_failure(exc: HTTPError) -> tuple[str, str]:
+    """Classify a bounded Piped HTTP failure without echoing arbitrary remote diagnostics."""
+    raw = exc.read().decode("utf-8", errors="replace").strip()
+    message = raw
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        payload = None
+    if isinstance(payload, dict):
+        candidate = payload.get("message") or payload.get("error")
+        if isinstance(candidate, str) and candidate.strip():
+            message = candidate.strip().splitlines()[0]
+    lowered = message.lower()
+    if (
+        "sign in to confirm" in lowered
+        or "login_required" in lowered
+        or "temporarily blocked anonymous watch access" in lowered
+    ):
+        kind = "upstream_authentication_required"
+    elif exc.code in {401, 403}:
+        kind = "api_access_denied"
+    elif 500 <= exc.code < 600:
+        kind = "provider_upstream_failure"
+    else:
+        kind = "provider_http_error"
+    detail = message or str(exc.reason)
+    if len(detail) > PIPED_ERROR_DETAIL_MAX_CHARS:
+        detail = detail[: PIPED_ERROR_DETAIL_MAX_CHARS - 1].rstrip() + "…"
+    return kind, f"HTTP {exc.code}: {detail}"
+
+
 def _piped_stream_request(base: str, video_id: str, *, timeout: int) -> dict[str, Any]:
     """Request one video from the explicitly selected Piped API instance."""
     url = f"{base}/streams/{quote(video_id, safe='')}"
@@ -684,11 +716,14 @@ def _piped(video_ids: list[str], *, instance: str | None = None) -> tuple[list[d
     try:
         probe_payload = _piped_stream_request(base, probe_id, timeout=PIPED_PREFLIGHT_TIMEOUT_SECONDS)
     except HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace").strip()
-        detail = f"HTTP {exc.code}: {body or exc.reason}"
-        raise RuntimeError(
-            f"Piped streams API preflight failed for {base}: {detail}. The selected instance may be reachable while its streams API is disabled or unavailable."
-        ) from exc
+        kind, detail = _piped_http_failure(exc)
+        if kind == "upstream_authentication_required":
+            guidance = "The Piped API is operational, but its upstream YouTube acquisition was rejected."
+        elif kind == "api_access_denied":
+            guidance = "The selected instance denied access to its streams API."
+        else:
+            guidance = "The selected instance reached its streams path but could not satisfy the metadata request."
+        raise RuntimeError(f"Piped streams API preflight failed for {base} [{kind}]: {detail}. {guidance}") from exc
     except (URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
         raise RuntimeError(
             f"Piped streams API preflight failed for {base}: {exc}. Check the explicitly selected instance before running a benchmark corpus."
@@ -718,10 +753,11 @@ def _piped(video_ids: list[str], *, instance: str | None = None) -> tuple[list[d
             )
             row = _normalise_piped(video_id, payload)
         except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace").strip()
-            message = f"Piped HTTP {exc.code}: {body or exc.reason}"
+            kind, detail = _piped_http_failure(exc)
+            message = f"Piped {detail}"
             row = _failure_row(video_id, message, error_type=type(exc).__name__)
-            failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
+            row["failure"]["kind"] = kind
+            failures.append({"id": video_id, "kind": kind, "error_type": type(exc).__name__})
         except (URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as exc:
             row = _failure_row(video_id, str(exc), error_type=type(exc).__name__)
             failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})

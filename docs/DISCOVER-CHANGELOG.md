@@ -12,6 +12,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Advance the experimental metadata benchmark schema to version 11.
 - [test] Cover explicit instance validation, documented stream-field normalisation, capability preflight, selected-instance routing and preflight reuse.
 - [docs] Begin the Piped comparison with a small-probe workflow and preserve the remote-instance trust boundary.
+- [fix] Distinguish upstream YouTube authentication rejection from Piped API access denial and generic provider-side HTTP failure.
+- [security] Bound remote Piped error detail and avoid echoing provider stack traces into normal benchmark errors.
+- [test] Cover upstream authentication classification and bounded unstructured remote error bodies.
+- [docs] Record the first public-instance probe as an operational API success whose upstream YouTube acquisition was rejected.
 
 ### Discover - Invidious metadata benchmark reconciliation
 
