@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Issues #102, #103, #104, #109, #110 and #111 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix, NewPipeExtractor and explicitly configured Invidious and Piped acquisition against the existing yt-dlp detailed path over the same corpus.
+Issues #102, #103, #104, #109, #110, #111 and #112 evaluate lightweight known-video metadata acquisition without changing Discover's production acquisition planner. The shared benchmark compares experimental YouTube.js `getBasicInfo()`, `youtube-innertube`, pytubefix, NewPipeExtractor and explicitly configured Invidious and Piped acquisition plus specialised ytmusicapi acquisition against the existing yt-dlp detailed path over the same corpus.
 
 The benchmark is evidence gathering. A field being present, or even equal to yt-dlp in one run, does not establish authoritative semantic equivalence.
 
 ## Providers
 
-The harness supports `youtubejs`, `youtube-innertube`, `pytubefix`, `newpipe-extractor`, `invidious`, `piped` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
+The harness supports `youtubejs`, `youtube-innertube`, `pytubefix`, `newpipe-extractor`, `invidious`, `piped`, `ytmusicapi` and `ytdlp`. yt-dlp is always included as the comparison reference. YouTube.js uses Discover's existing Node.js bridge and reuses one Innertube session for the corpus. `youtube-innertube` calls its Python `video_details()` path once per known video ID. pytubefix constructs a `YouTube` object for each known video and records the acquisition cost of resolving the benchmark metadata surface.
 
 `youtube-innertube` is deliberately an optional benchmark dependency rather than a production Discover dependency. Install the research candidate directly from its upstream repository before running that provider:
 
@@ -165,6 +165,26 @@ Benchmark IDs containing whitespace are rejected before provider execution. This
 The first issue #111 live probe used `https://api.piped.private.coffee`. Its `/streams/:id` API was operational, but its NewPipeExtractor-backed upstream request was rejected by YouTube with `LOGIN_REQUIRED` and a bot-confirmation message. This is an instance-side upstream acquisition failure rather than evidence that the user's network was blocked. Candidate 2 therefore distinguishes upstream authentication rejection from API access denial and generic provider-side failures, and bounds remote error detail so Java stack traces or arbitrary response bodies do not flood normal CLI output.
 
 The second issue #111 live probe used `https://pipedapi.ducks.party`. Its TLS handshake timed out before the Piped API could be exercised. Together, the two explicitly selected public-instance probes demonstrate distinct operational dependencies: a deployment may be unreachable at the transport layer, or it may expose the required Piped API while its server-side acquisition is rejected upstream by YouTube.
+
+## Issue #112 specialised ytmusicapi candidate
+
+Issue #112 begins with `ytmusicapi` as a specialised provider for source types already resolved as YouTube Music or otherwise music-oriented. It is not added to the default benchmark provider set and this investigation does not make arbitrary YouTube videos eligible for specialised acquisition. Provider selection remains a backend/planner concern rather than yt-sql syntax.
+
+Install the research dependency explicitly before benchmarking it:
+
+```bash
+python -m pip install ytmusicapi
+```
+
+Candidate 1 uses an unauthenticated `YTMusic()` client and calls `get_song(videoId)` once per known video. Common video-detail fields are normalised conservatively for comparison with yt-dlp. Provider-native evidence such as `musicVideoType`, playability state, author identity and the available response keys remains under `source_signals` rather than being promoted to Discover authority. Richer specialised operations such as song credits are deliberately outside this first acquisition profile because they require additional browse identifiers and requests.
+
+The first live probe is deliberately small and includes three music-oriented videos plus one ordinary non-music YouTube control. This tests both useful specialised coverage and the boundary where a resolved source should not be assumed to be music merely because it has a YouTube video ID. The checked-in corpus is `benchmarks/metadata-provider-corpora/issue-112-ytmusicapi-probe.json`.
+
+```bash
+python scripts/benchmark_metadata_providers.py --providers ytmusicapi --profile core --json -- dQw4w9WgXcQ 9bZkp7q19f0 7fv84nPfTH0 jNQXAC9IVRw > bench-112-probe.json
+```
+
+Schema version 12 adds the specialised `ytmusicapi` provider. This remains experimental benchmark infrastructure and does not alter production acquisition planning.
 
 ## Issue #111 reconciliation
 

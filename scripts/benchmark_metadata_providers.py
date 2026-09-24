@@ -43,8 +43,17 @@ FAILURE_PATTERNS = (
 )
 
 BRIDGE = ROOT / "yt_media_tools" / "youtubejs_bridge.mjs"
-PROVIDERS = ("youtubejs", "youtube-innertube", "pytubefix", "newpipe-extractor", "invidious", "piped", "ytdlp")
-DEFAULT_PROVIDERS = tuple(name for name in PROVIDERS if name not in {"invidious", "piped"})
+PROVIDERS = (
+    "youtubejs",
+    "youtube-innertube",
+    "pytubefix",
+    "newpipe-extractor",
+    "invidious",
+    "piped",
+    "ytmusicapi",
+    "ytdlp",
+)
+DEFAULT_PROVIDERS = tuple(name for name in PROVIDERS if name not in {"invidious", "piped", "ytmusicapi"})
 MEASUREMENT_PROFILES = ("core", "full")
 PROFILE_SUPPORT = {
     "youtubejs": {"core"},
@@ -53,6 +62,7 @@ PROFILE_SUPPORT = {
     "newpipe-extractor": {"core"},
     "invidious": {"core"},
     "piped": {"core"},
+    "ytmusicapi": {"core"},
     "ytdlp": {"core", "full"},
 }
 YOUTUBEJS_COOKIE_ENV = "YT_DISCOVER_YOUTUBEJS_COOKIE"
@@ -785,6 +795,118 @@ def _piped(video_ids: list[str], *, instance: str | None = None) -> tuple[list[d
     )
 
 
+def _normalise_ytmusicapi(video_id: str, row: dict[str, Any]) -> dict[str, Any]:
+    """Normalise conservative get_song fields while retaining music-specific evidence separately."""
+    details = row.get("videoDetails") if isinstance(row.get("videoDetails"), dict) else {}
+    microformat = row.get("microformat") if isinstance(row.get("microformat"), dict) else {}
+    renderer = (
+        microformat.get("microformatDataRenderer")
+        if isinstance(microformat.get("microformatDataRenderer"), dict)
+        else {}
+    )
+    playability = row.get("playabilityStatus") if isinstance(row.get("playabilityStatus"), dict) else {}
+
+    duration: int | None = None
+    raw_duration = details.get("lengthSeconds")
+    if raw_duration is not None:
+        try:
+            duration = int(raw_duration)
+        except (TypeError, ValueError):
+            duration = None
+
+    view_count: int | None = None
+    raw_views = details.get("viewCount")
+    if raw_views is not None:
+        try:
+            view_count = int(raw_views)
+        except (TypeError, ValueError):
+            view_count = None
+
+    publish_date = renderer.get("publishDate")
+    upload_date = None
+    if isinstance(publish_date, str):
+        match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", publish_date.strip())
+        upload_date = "".join(match.groups()) if match else publish_date
+
+    return {
+        "id": video_id,
+        "title": details.get("title"),
+        "description": renderer.get("description"),
+        "channel_id": details.get("channelId"),
+        "duration": duration,
+        "view_count": view_count,
+        "upload_date": upload_date,
+        "category": renderer.get("category"),
+        "is_live": details.get("isLiveContent"),
+        "keywords": details.get("keywords"),
+        "ok": True,
+        "source_signals": {
+            "author": details.get("author"),
+            "is_live_content": details.get("isLiveContent"),
+            "playability_status": playability.get("status"),
+            "playability_reason": playability.get("reason"),
+            "music_video_type": details.get("musicVideoType"),
+            "available_top_level_keys": sorted(str(key) for key in row),
+            "available_video_detail_keys": sorted(str(key) for key in details),
+        },
+    }
+
+
+def _ytmusicapi(video_ids: list[str]) -> tuple[list[dict[str, Any]], float, dict[str, Any]]:
+    """Acquire specialised YouTube Music metadata without authentication for issue #112."""
+    try:
+        module = importlib.import_module("ytmusicapi")
+    except ImportError as exc:
+        raise RuntimeError("ytmusicapi is not installed; install it with python -m pip install ytmusicapi") from exc
+
+    client = module.YTMusic()
+    rows: list[dict[str, Any]] = []
+    failures: list[dict[str, str]] = []
+    item_times: list[float] = []
+    started = time.perf_counter()
+    for video_id in video_ids:
+        emit_invocation(
+            ToolInvocation(
+                tool="ytmusicapi",
+                operation="YTMusic.get_song",
+                purpose="specialised resolved-source metadata benchmark",
+                status="executing",
+                arguments={"video_id": video_id, "authentication": "anonymous"},
+            )
+        )
+        item_started = time.perf_counter()
+        try:
+            payload = client.get_song(video_id)
+            if not isinstance(payload, dict):
+                raise RuntimeError("ytmusicapi get_song returned a non-object response")
+            playability = payload.get("playabilityStatus")
+            status = playability.get("status") if isinstance(playability, dict) else None
+            if status not in {None, "OK"}:
+                reason = playability.get("reason") if isinstance(playability, dict) else None
+                raise RuntimeError(f"ytmusicapi playability {status}: {reason or 'no reason supplied'}")
+            row = _normalise_ytmusicapi(video_id, payload)
+        except Exception as exc:  # noqa: BLE001 - benchmark records third-party failure characteristics.
+            row = _failure_row(video_id, str(exc), error_type=type(exc).__name__)
+            failures.append({"id": video_id, "kind": row["failure"]["kind"], "error_type": type(exc).__name__})
+        elapsed_ms = (time.perf_counter() - item_started) * 1000.0
+        row["elapsed_ms"] = elapsed_ms
+        item_times.append(elapsed_ms)
+        rows.append(row)
+    elapsed = time.perf_counter() - started
+    return (
+        rows,
+        elapsed,
+        {
+            "authentication": "anonymous",
+            "operation": "YTMusic.get_song",
+            "request_count": len(video_ids),
+            "per_item_elapsed_ms": item_times,
+            "failures": failures,
+            "specialised_scope": "resolved YouTube Music or music-oriented source types",
+        },
+    )
+
+
 def _classify_failure(message: str) -> str:
     lowered = message.lower()
     for kind, patterns in FAILURE_PATTERNS:
@@ -889,6 +1011,8 @@ def _run_provider(
         return _invidious(video_ids, instance=invidious_instance)
     if name == "piped":
         return _piped(video_ids, instance=piped_instance)
+    if name == "ytmusicapi":
+        return _ytmusicapi(video_ids)
     rows, elapsed, diagnostics = RUNNERS[name](video_ids)
     diagnostics = dict(diagnostics)
     diagnostics["measurement_profile"] = profile
@@ -902,6 +1026,7 @@ RUNNERS: dict[str, Callable[[list[str]], tuple[list[dict[str, Any]], float, dict
     "newpipe-extractor": _newpipe_extractor,
     "invidious": _invidious,
     "piped": _piped,
+    "ytmusicapi": _ytmusicapi,
     "ytdlp": _ytdlp,
 }
 
@@ -1084,7 +1209,7 @@ def main() -> int:
         "--providers",
         type=_provider_names,
         default=list(DEFAULT_PROVIDERS),
-        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,invidious,piped,ytdlp); ytdlp is always included as the reference",
+        help="comma-separated providers (youtubejs,youtube-innertube,pytubefix,newpipe-extractor,invidious,piped,ytmusicapi,ytdlp); ytdlp is always included as the reference",
     )
     parser.add_argument("--json", action="store_true", help="emit the complete machine-readable benchmark result")
     parser.add_argument(
@@ -1181,7 +1306,7 @@ def main() -> int:
         ]
 
     payload = {
-        "schema_version": 11,
+        "schema_version": 12,
         "measurement_profile": args.profile,
         "profile_support": {name: sorted(PROFILE_SUPPORT[name]) for name in PROVIDERS},
         "corpus_size": len(args.video_id),

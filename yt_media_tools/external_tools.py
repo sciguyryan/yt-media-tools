@@ -43,6 +43,7 @@ _TOOLS: dict[str, ExternalTool] = {
         ExternalTool("newpipe-extractor", "NewPipeExtractor", "jvm-bridge"),
         ExternalTool("invidious", "Invidious", "remote-api"),
         ExternalTool("piped", "Piped", "remote-api"),
+        ExternalTool("ytmusicapi", "ytmusicapi", "python-library"),
     )
 }
 

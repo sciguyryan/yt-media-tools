@@ -23,6 +23,7 @@ def test_registry_contains_current_external_integrations() -> None:
         "newpipe-extractor",
         "invidious",
         "piped",
+        "ytmusicapi",
     } <= identifiers
 
 

@@ -902,3 +902,81 @@ def test_piped_http_failure_bounds_unstructured_remote_body() -> None:
     assert kind == "provider_upstream_failure"
     assert len(detail) <= benchmark.PIPED_ERROR_DETAIL_MAX_CHARS + len("HTTP 500: ")
     assert detail.endswith("…")
+
+
+def test_ytmusicapi_is_specialised_and_not_a_default_provider() -> None:
+    benchmark = _module()
+    assert "ytmusicapi" in benchmark.PROVIDERS
+    assert "ytmusicapi" not in benchmark.DEFAULT_PROVIDERS
+    assert benchmark.PROFILE_SUPPORT["ytmusicapi"] == {"core"}
+
+
+def test_ytmusicapi_normalisation_preserves_specialised_signals() -> None:
+    benchmark = _module()
+    result = benchmark._normalise_ytmusicapi(
+        "music123",
+        {
+            "playabilityStatus": {"status": "OK"},
+            "videoDetails": {
+                "title": "Example Song",
+                "author": "Example Artist",
+                "channelId": "UCmusic",
+                "lengthSeconds": "213",
+                "viewCount": "42",
+                "keywords": ["music", "example"],
+                "isLiveContent": False,
+                "musicVideoType": "MUSIC_VIDEO_TYPE_ATV",
+            },
+            "microformat": {
+                "microformatDataRenderer": {
+                    "description": "Example description",
+                    "publishDate": "2020-01-02",
+                    "category": "Music",
+                }
+            },
+        },
+    )
+    assert result["title"] == "Example Song"
+    assert result["channel_id"] == "UCmusic"
+    assert result["duration"] == 213
+    assert result["view_count"] == 42
+    assert result["upload_date"] == "20200102"
+    assert result["source_signals"]["author"] == "Example Artist"
+    assert result["source_signals"]["music_video_type"] == "MUSIC_VIDEO_TYPE_ATV"
+    assert result["source_signals"]["playability_status"] == "OK"
+
+
+def test_ytmusicapi_provider_records_get_song_failures(monkeypatch) -> None:
+    benchmark = _module()
+
+    class FakeYTMusic:
+        def get_song(self, video_id: str):
+            raise RuntimeError(f"unavailable {video_id}")
+
+    class FakeModule:
+        YTMusic = FakeYTMusic
+
+    original = benchmark.importlib.import_module
+    monkeypatch.setattr(
+        benchmark.importlib, "import_module", lambda name: FakeModule if name == "ytmusicapi" else original(name)
+    )
+    rows, _, diagnostics = benchmark._ytmusicapi(["abc"])
+    assert rows[0]["ok"] is False
+    assert diagnostics["operation"] == "YTMusic.get_song"
+    assert diagnostics["authentication"] == "anonymous"
+
+
+def test_issue_112_probe_corpus_is_deterministic_and_contains_non_music_control() -> None:
+    import json
+
+    corpus = json.loads(
+        (ROOT / "benchmarks" / "metadata-provider-corpora" / "issue-112-ytmusicapi-probe.json").read_text()
+    )
+    assert corpus["issue"] == 112
+    assert [item["id"] for item in corpus["items"]] == [
+        "dQw4w9WgXcQ",
+        "9bZkp7q19f0",
+        "7fv84nPfTH0",
+        "jNQXAC9IVRw",
+    ]
+    assert "non-music" in corpus["items"][-1]["trait"]

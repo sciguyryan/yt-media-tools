@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Discover - specialised ytmusicapi metadata benchmark
+
+- [feature] Add ytmusicapi as an optional experimental core metadata provider for issue #112 without changing production provider selection or yt-sql semantics.
+- [maintenance] Treat ytmusicapi as a specialised resolved-source-type candidate rather than a general YouTube replacement, preserving provider-native music signals separately from common-field comparison.
+- [maintenance] Register `YTMusic.get_song()` with shared external-tool diagnostics and advance the experimental metadata benchmark schema to version 12.
+- [test] Cover specialised provider eligibility, conservative `get_song()` normalisation, provider-native music evidence and deterministic failure recording.
+- [docs] Add a four-item music-oriented probe with a non-music control before any larger specialised-provider corpus is attempted.
+
 ### Discover - Piped metadata benchmark reconciliation
 
 - [maintenance] Conclude issue #111 without promoting Piped into production acquisition planning.
