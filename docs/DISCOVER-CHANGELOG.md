@@ -56,6 +56,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Preserve normal cost-based YouTube.js preference and use ytmusicapi only as an independently eligible specialised fallback before the established yt-dlp path.
 - [maintenance] Keep ytmusicapi partial records out of the existing full detailed metadata cache and retain explicit provider/operation provenance.
 - [test] Cover production ytmusicapi normalisation, provenance, specialised fallback ordering and avoidance of unnecessary yt-dlp fallback.
+- [feature] Preserve distinct YouTube.js and ytmusicapi provider/operation attribution in runtime query provenance.
+- [maintenance] Make specialised fallback strictly unresolved-ID driven and ignore unexpected or duplicate provider records instead of permitting order-dependent authoritative overwrites.
+- [test] Cover mixed-provider provenance and the disagreement boundary that prevents a later specialised provider from replacing an earlier authoritative result.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 

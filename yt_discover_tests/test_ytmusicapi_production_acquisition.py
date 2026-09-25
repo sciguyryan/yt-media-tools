@@ -88,3 +88,91 @@ def test_music_specialised_provider_chain_retains_cost_preference_then_specialis
         "youtubejs",
         "ytmusicapi",
     )
+
+
+def test_specialised_fallback_cannot_overwrite_an_entry_satisfied_by_an_earlier_provider(monkeypatch, tmp_path) -> None:
+    import yt_media_tools.discover_acquisition as acquisition
+
+    youtube_stats = AcquisitionStats(available=1)
+    monkeypatch.setattr(
+        acquisition,
+        "acquire_youtubejs_basic_info",
+        lambda *args, **kwargs: (
+            [
+                {
+                    "id": "a",
+                    "title": "YouTube.js",
+                    "channel_id": "channel",
+                    "duration": 1,
+                    "view_count": 2,
+                    "_yt_sql_metadata_provider": "youtubejs",
+                    "_yt_sql_metadata_operation": "getBasicInfo",
+                }
+            ],
+            youtube_stats,
+        ),
+    )
+
+    def unexpected_music(ids):
+        assert ids == ["b"]
+        return (
+            [
+                {
+                    "id": "a",
+                    "title": "Conflicting",
+                    "channel_id": "artist",
+                    "duration": 9,
+                    "view_count": 9,
+                    "_yt_sql_metadata_provider": "ytmusicapi",
+                    "_yt_sql_metadata_operation": "YTMusic.get_song",
+                },
+                {
+                    "id": "b",
+                    "title": "Music",
+                    "channel_id": "artist",
+                    "duration": 3,
+                    "view_count": 4,
+                    "_yt_sql_metadata_provider": "ytmusicapi",
+                    "_yt_sql_metadata_operation": "YTMusic.get_song",
+                },
+            ],
+            AcquisitionStats(available=2),
+        )
+
+    monkeypatch.setattr(acquisition, "acquire_ytmusic_song_metadata", unexpected_music)
+    monkeypatch.setattr(
+        acquisition,
+        "load_metadata",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("yt-dlp should not run")),
+    )
+    records, _, _ = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://music.youtube.com/playlist?list=x",
+        video_ids=["a", "b"],
+        required_fields={"duration"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider="youtubejs",
+        specialised_fallback_providers=("ytmusicapi",),
+        project_root=tmp_path,
+    )
+    assert [(record["id"], record["title"], record["_yt_sql_metadata_provider"]) for record in records] == [
+        ("a", "YouTube.js", "youtubejs"),
+        ("b", "Music", "ytmusicapi"),
+    ]
+
+
+def test_metadata_provider_provenance_distinguishes_youtubejs_and_ytmusicapi() -> None:
+    from yt_media_tools.discover_application import _metadata_provider_provenance
+
+    payload = _metadata_provider_provenance(
+        [
+            {"id": "a", "_yt_sql_metadata_provider": "youtubejs", "_yt_sql_metadata_operation": "getBasicInfo"},
+            {"id": "b", "_yt_sql_metadata_provider": "ytmusicapi", "_yt_sql_metadata_operation": "YTMusic.get_song"},
+        ]
+    )
+    assert payload["observed"] == [
+        {"provider": "youtubejs", "operation": "getBasicInfo", "records": 1},
+        {"provider": "ytmusicapi", "operation": "YTMusic.get_song", "records": 1},
+    ]
+    assert payload["unattributed_records"] == 0

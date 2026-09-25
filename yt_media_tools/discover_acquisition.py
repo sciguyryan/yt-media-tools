@@ -39,6 +39,36 @@ def _verbose(level: int, message: str, *, minimum: int = 1) -> None:
         print(f"[yt-discover] {message}", file=sys.stderr, flush=True)
 
 
+def _accepted_specialised_records(
+    provider: str, records: list[dict], remaining_ids: list[str], *, verbose: int
+) -> list[dict]:
+    """Accept only the unresolved IDs requested from one specialised provider.
+
+    Specialised providers are fallbacks, not competing writers. A provider therefore cannot
+    overwrite an entry already satisfied by an earlier authoritative capability, and malformed,
+    duplicate or out-of-scope IDs are ignored visibly instead of becoming order-dependent merges.
+    """
+    expected = set(remaining_ids)
+    seen: set[str] = set()
+    accepted: list[dict] = []
+    for record in records:
+        video_id = record.get("id")
+        if not isinstance(video_id, str) or not video_id or video_id not in expected:
+            _verbose(
+                verbose, f"{provider} returned an unexpected video ID; ignoring it to preserve provider boundaries."
+            )
+            continue
+        if video_id in seen:
+            _verbose(
+                verbose,
+                f"{provider} returned duplicate metadata for {video_id}; keeping the first authoritative record.",
+            )
+            continue
+        seen.add(video_id)
+        accepted.append(record)
+    return accepted
+
+
 def _acquisition_progress(level: int):
     """Create a yt-dlp progress callback for concise (-v) or detailed (-vv) telemetry."""
 
@@ -249,13 +279,11 @@ def _cached_or_refresh_metadata(
                 )
                 continue
             used_specialised_provider = True
-            fetched_records.extend(provider_records)
+            accepted_records = _accepted_specialised_records(provider, provider_records, remaining_ids, verbose=verbose)
+            fetched_records.extend(accepted_records)
+            provider_stats.available = len(accepted_records)
             _merge_acquisition_stats(acquisition_stats, provider_stats)
-            fetched_ids = {
-                record.get("id")
-                for record in provider_records
-                if isinstance(record.get("id"), str) and record.get("id")
-            }
+            fetched_ids = {record["id"] for record in accepted_records}
             remaining_ids = [video_id for video_id in remaining_ids if video_id not in fetched_ids]
             if remaining_ids:
                 _verbose(
