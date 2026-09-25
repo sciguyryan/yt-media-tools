@@ -57,6 +57,11 @@ from yt_media_tools.planner import (
     plan_source_boundaries,
     required_query_fields,
 )
+from yt_media_tools.provider_capabilities import (
+    AUTH_COOKIES,
+    lower_provider_requirements,
+    selection_context_from_backend_resolution,
+)
 from yt_media_tools.query import (
     Query,
     QuerySchema,
@@ -93,6 +98,27 @@ from yt_media_tools.ytdlp import (
     load_metadata,
     shell_join,
 )
+
+
+def _specialised_metadata_provider(
+    *,
+    physical_plan,
+    resolution_records: list[dict],
+    cookies_file: Path | None,
+) -> str | None:
+    """Select a specialised provider only when it satisfies the complete physical request."""
+    requirements = physical_plan.provider_requirements
+    if not requirements:
+        return None
+    context = selection_context_from_backend_resolution(
+        observed_ytdlp_resolutions(resolution_records),
+        authentication=AUTH_COOKIES if cookies_file is not None else "anonymous",
+    )
+    lowered = lower_provider_requirements(requirements, context=context)
+    if len(lowered) != len(requirements):
+        return None
+    providers = {item.candidate.capability.provider for item in lowered}
+    return next(iter(providers)) if len(providers) == 1 else None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -758,6 +784,11 @@ def main(argv: list[str] | None = None) -> int:
                         "All required fields are authoritative in enumeration metadata; skipped detailed yt-dlp extraction.",
                     )
                 else:
+                    specialised_provider = _specialised_metadata_provider(
+                        physical_plan=query_plan.physical_acquisition,
+                        resolution_records=flat_entries,
+                        cookies_file=cookies_file,
+                    )
                     try:
                         if limit_plan.eligible:
                             (
@@ -776,6 +807,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(metadata_requirements.detailed_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
+                                specialised_provider=specialised_provider,
+                                project_root=Path(__file__).resolve().parent.parent,
                             )
                         else:
                             raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
@@ -785,6 +818,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(metadata_requirements.detailed_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
+                                specialised_provider=specialised_provider,
+                                project_root=Path(__file__).resolve().parent.parent,
                             )
                     except YtDlpError as exc:
                         print(f"Error: {exc}.", file=sys.stderr)
@@ -965,6 +1000,11 @@ def main(argv: list[str] | None = None) -> int:
                             continue
                         candidate_ids.append(video_id)
                     detailed_candidates = len(candidate_ids)
+                    specialised_provider = _specialised_metadata_provider(
+                        physical_plan=query_plan.physical_acquisition,
+                        resolution_records=list(entry_by_id.values()),
+                        cookies_file=cookies_file,
+                    )
                     try:
                         if limit_plan.eligible:
                             (
@@ -983,6 +1023,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(query_plan.physical_request.required_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
+                                specialised_provider=specialised_provider,
+                                project_root=Path(__file__).resolve().parent.parent,
                             )
                         else:
                             raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
@@ -992,6 +1034,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(query_plan.physical_request.required_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
+                                specialised_provider=specialised_provider,
+                                project_root=Path(__file__).resolve().parent.parent,
                             )
                     except YtDlpError as exc:
                         print(f"Error: {exc}.", file=sys.stderr)

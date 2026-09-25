@@ -210,7 +210,7 @@ async function main() {
     }) + '\n');
     return;
   }
-  if (mode === '--benchmark-basic-info') {
+  if (mode === '--basic-info' || mode === '--benchmark-basic-info') {
     const videoIds = process.argv.slice(3).filter(Boolean);
     if (videoIds.length === 0) throw new Error('at least one video ID is required');
     await benchmarkBasicInfo(videoIds);
@@ -221,7 +221,7 @@ async function main() {
     await enumerateChannelVideos(value);
     return;
   }
-  throw new Error('expected --check, --benchmark-basic-info <video-id> [...], or --enumerate-channel-videos <url>');
+  throw new Error('expected --check, --basic-info <video-id> [...], --benchmark-basic-info <video-id> [...], or --enumerate-channel-videos <url>');
 }
 
 main().catch((error) => {

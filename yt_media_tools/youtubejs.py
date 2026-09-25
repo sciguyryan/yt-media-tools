@@ -16,7 +16,7 @@ from typing import Any
 from .cookies import CookieFileError, cookie_header_from_netscape_file
 from .external_tools import ToolInvocation, emit_invocation
 from .dates import DateContext, parse_date_literal
-from .ytdlp import EnumerationStats, ProgressCallback
+from .ytdlp import AcquisitionStats, EnumerationStats, ProgressCallback
 
 
 class YouTubeJsError(RuntimeError):
@@ -51,6 +51,92 @@ def _published_date(text: str, dates: DateContext) -> tuple[date, timedelta] | N
     else:
         uncertainty = timedelta(days=1)
     return parsed, uncertainty
+
+
+def acquire_basic_info(
+    project_root: Path,
+    video_ids: list[str],
+    *,
+    cookies_file: Path | None = None,
+) -> tuple[list[dict[str, Any]], AcquisitionStats]:
+    """Acquire the production-authorised exact scalar surface through getBasicInfo()."""
+    node = shutil.which("node")
+    bridge = project_root / "yt_media_tools" / "youtubejs_bridge.mjs"
+    if node is None:
+        raise YouTubeJsError("Node.js was not found in PATH")
+    if not bridge.is_file():
+        raise YouTubeJsError(f"YouTube.js bridge script is missing: {bridge}")
+    if not video_ids:
+        return [], AcquisitionStats()
+
+    command = [node, str(bridge), "--basic-info", *video_ids]
+    env = os.environ.copy()
+    env.pop("YT_DISCOVER_YOUTUBEJS_COOKIE", None)
+    if cookies_file is not None:
+        try:
+            cookie_header, _ = cookie_header_from_netscape_file(cookies_file)
+        except CookieFileError as exc:
+            raise YouTubeJsError(str(exc)) from exc
+        env["YT_DISCOVER_YOUTUBEJS_COOKIE"] = cookie_header
+    emit_invocation(
+        ToolInvocation(
+            tool="youtubejs",
+            operation="getBasicInfo",
+            purpose="authoritative exact-scalar metadata acquisition",
+            argv=tuple(command),
+            arguments={"video_ids": tuple(video_ids), "cookie": "present" if cookies_file is not None else "absent"},
+        )
+    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=project_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError as exc:
+        raise YouTubeJsError(f"could not run Node.js: {exc}") from exc
+    if completed.stderr:
+        sys.stderr.write(completed.stderr)
+        sys.stderr.flush()
+    if completed.returncode != 0:
+        raise YouTubeJsError(f"YouTube.js bridge exited with status {completed.returncode}")
+
+    records: list[dict[str, Any]] = []
+    stats = AcquisitionStats()
+    for line_number, raw_line in enumerate(completed.stdout.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise YouTubeJsError(
+                f"YouTube.js bridge emitted invalid JSON on output line {line_number}: {exc.msg}"
+            ) from exc
+        if not isinstance(payload, dict):
+            continue
+        video_id = payload.get("id")
+        if payload.get("ok") is not True:
+            if isinstance(video_id, str) and video_id:
+                stats.record_skip(video_id, "youtubejs-error")
+            continue
+        record = {
+            "id": video_id,
+            "title": payload.get("title"),
+            "channel_id": payload.get("channel_id"),
+            "duration": payload.get("duration"),
+            "view_count": payload.get("view_count"),
+            "_yt_sql_metadata_provider": "youtubejs",
+            "_yt_sql_metadata_operation": "getBasicInfo",
+        }
+        records.append(record)
+        stats.available += 1
+    return records, stats
 
 
 def enumerate_until_date_boundary(
