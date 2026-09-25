@@ -129,9 +129,6 @@ def _normalise_youtubejs(row: dict[str, Any]) -> dict[str, Any]:
     for key in ("publish_date", "upload_date", "start_timestamp", "channel_name"):
         if row.get(key) is not None:
             source_signals[key] = row[key]
-    provider_native_dates = row.get("provider_native_dates")
-    if isinstance(provider_native_dates, dict):
-        source_signals["provider_native_dates"] = dict(provider_native_dates)
     return {
         "id": row.get("id"),
         "title": row.get("title"),

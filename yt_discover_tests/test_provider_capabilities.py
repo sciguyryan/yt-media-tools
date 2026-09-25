@@ -274,3 +274,34 @@ def test_youtubejs_exact_scalar_accepts_cookie_context_without_exposing_cookie_d
     assert selected is not None
     assert selected.capability.provenance == "youtubejs:getBasicInfo"
     assert "cookie" not in selected.reason.casefold()
+
+
+def test_production_lowering_maps_only_wholly_supported_youtubejs_requirement() -> None:
+    from yt_media_tools.provider_capabilities import (
+        MetadataRequirement,
+        ProviderSelectionContext,
+        lower_provider_requirements,
+    )
+
+    requirements = (
+        MetadataRequirement("complete-metadata", frozenset({"duration", "view_count"})),
+        MetadataRequirement("complete-metadata", frozenset({"duration", "upload_date"})),
+        MetadataRequirement("formats", frozenset({"formats"})),
+    )
+    lowered = lower_provider_requirements(
+        requirements,
+        context=ProviderSelectionContext(resolved_source_kind="youtube"),
+    )
+
+    assert len(lowered) == 1
+    assert lowered[0].requirement == requirements[0]
+    assert lowered[0].candidate.capability.provider == "youtubejs"
+    assert lowered[0].candidate.capability.provenance == "youtubejs:getBasicInfo"
+
+
+def test_production_lowering_does_not_select_youtubejs_without_resolved_youtube_evidence() -> None:
+    from yt_media_tools.provider_capabilities import MetadataRequirement, lower_provider_requirements
+
+    requirements = (MetadataRequirement("complete-metadata", frozenset({"title", "duration"})),)
+
+    assert lower_provider_requirements(requirements) == ()

@@ -17,15 +17,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Register a production YouTube.js `getBasicInfo()` capability for the exact known-video scalar fields established by issue #113.
 - [maintenance] Require conservative resolved YouTube source evidence before the capability can participate in provider selection.
 - [maintenance] Keep publication dates, provider-native state flags and all unproven fields outside the capability boundary so mixed requirements retain the established acquisition path.
-- [test] Cover the exact field boundary, unresolved and mismatched source rejection, mixed unsupported requirements and cookie-context eligibility without credential disclosure.
-- [maintenance] Remove the discontinued interactive browser-source authority-assessment machinery and its dedicated corpus and tests.
-- [fix] Preserve YouTube.js player-microformat publication and upload timestamps as research diagnostics instead of incorrectly reporting them as absent when `basic_info` omits them.
-- [test] Cover extraction of provider-native player-microformat date evidence independently from the production authority boundary.
-- [fix] Carry provider-native YouTube.js date evidence through benchmark normalisation so diagnostic output reflects values emitted by the bridge.
-- [test] Cover benchmark preservation of provider-native date evidence without promoting it to normalised `upload_date`.
-- [maintenance] Capture the raw InnerTube player response microformat during the YouTube.js benchmark so parser exposure can be distinguished from response omission without retaining the response body.
-- [test] Cover raw player-response microformat diagnostics, per-video capture reset and continued separation from normalised publication semantics.
-- [docs] Record that YouTube.js `getBasicInfo()` exposes player microformat separately from `basic_info`, while publication fields remain outside the production capability until their yt-sql semantics are established.
+- [maintenance] Remove the discontinued human authority-assessment machinery and the temporary raw-response/date diagnostic instrumentation after their investigations concluded.
+- [maintenance] Add backend-neutral production lowering that maps only complete eligible metadata requirements to the registered YouTube.js capability and leaves unsupported requirements on the established acquisition path.
+- [test] Cover the exact field boundary, source eligibility, mixed unsupported requirements, cookie-context eligibility and conservative production lowering.
+- [docs] Record that YouTube.js `MediaInfo.basic_info` does not propagate `PlayerMicroformat.publish_date` or `upload_date`, while populated `PlayerMicroformat` fields themselves are direct mappings of the corresponding player response values. Publication dates remain outside the #114 production authority boundary.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 

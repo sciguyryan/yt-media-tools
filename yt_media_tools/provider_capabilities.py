@@ -129,6 +129,36 @@ def selection_context_from_backend_resolution(
     )
 
 
+@dataclass(frozen=True)
+class ProviderLowering:
+    """One semantic requirement lowered to an eligible physical provider operation."""
+
+    requirement: MetadataRequirement
+    candidate: ProviderCandidate
+
+
+def lower_provider_requirements(
+    requirements: tuple[MetadataRequirement, ...],
+    *,
+    context: ProviderSelectionContext = ProviderSelectionContext(),
+    capabilities: tuple[ProviderCapability, ...] | None = None,
+) -> tuple[ProviderLowering, ...]:
+    """Lower only wholly satisfiable requirements without inventing partial authority.
+
+    Requirements without an eligible specialised capability are deliberately omitted;
+    the established acquisition path remains responsible for them. This keeps lowering
+    below yt-sql semantics and prevents a cheap provider from satisfying only part of
+    a semantic stage.
+    """
+    available = production_provider_capabilities() if capabilities is None else capabilities
+    lowered: list[ProviderLowering] = []
+    for requirement in requirements:
+        candidate = select_provider_capability(requirement, available, context=context)
+        if candidate is not None:
+            lowered.append(ProviderLowering(requirement, candidate))
+    return tuple(lowered)
+
+
 YOUTUBE_SOURCE_KINDS = frozenset({"youtube"})
 YOUTUBEJS_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
 

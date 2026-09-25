@@ -148,49 +148,9 @@ function integerValue(value) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
-function rawPlayerMicroformatDates(payload) {
-  const microformat = payload?.microformat?.playerMicroformatRenderer || null;
-  return {
-    response_has_player_microformat: microformat !== null,
-    player_microformat_publish_date: microformat?.publishDate ?? null,
-    player_microformat_upload_date: microformat?.uploadDate ?? null,
-    player_microformat_live_broadcast_details: microformat?.liveBroadcastDetails ?? null,
-  };
-}
-
-function diagnosticFetchCapture() {
-  const nativeFetch = globalThis.fetch.bind(globalThis);
-  let playerResponseDates = rawPlayerMicroformatDates(null);
-  return {
-    async fetch(input, init) {
-      const response = await nativeFetch(input, init);
-      const url = typeof input === 'string' || input instanceof URL ? String(input) : input?.url || '';
-      if (/\/youtubei\/v1\/player(?:[?/#]|$)/.test(url)) {
-        try {
-          const payload = await response.clone().json();
-          playerResponseDates = rawPlayerMicroformatDates(payload);
-        } catch {
-          playerResponseDates = {
-            ...rawPlayerMicroformatDates(null),
-            response_parse_error: true,
-          };
-        }
-      }
-      return response;
-    },
-    reset() {
-      playerResponseDates = rawPlayerMicroformatDates(null);
-    },
-    playerResponseDates() {
-      return { ...playerResponseDates };
-    },
-  };
-}
-
-function basicInfoRecord(info, videoId, elapsedMs, rawPlayerResponseDates = null) {
+function basicInfoRecord(info, videoId, elapsedMs) {
   const basic = info?.basic_info || {};
   const author = basic.author || {};
-  const microformat = info?.microformat || {};
   return {
     id: basic.id || videoId,
     title: basic.title ?? null,
@@ -202,12 +162,6 @@ function basicInfoRecord(info, videoId, elapsedMs, rawPlayerResponseDates = null
     publish_date: basic.publish_date ?? null,
     upload_date: basic.upload_date ?? null,
     start_timestamp: basic.start_timestamp ?? null,
-    provider_native_dates: {
-      player_microformat_publish_date: microformat.publish_date ?? microformat.publishDate ?? null,
-      player_microformat_upload_date: microformat.upload_date ?? microformat.uploadDate ?? null,
-      player_microformat_live_broadcast_details: microformat.live_broadcast_details ?? microformat.liveBroadcastDetails ?? null,
-      raw_player_response: rawPlayerResponseDates,
-    },
     keywords: Array.isArray(basic.keywords) ? basic.keywords : null,
     is_live: basic.is_live ?? null,
     is_live_content: basic.is_live_content ?? null,
@@ -223,18 +177,15 @@ async function benchmarkBasicInfo(videoIds) {
   const cookie = process.env.YT_DISCOVER_YOUTUBEJS_COOKIE;
   const options = { generate_session_locally: true };
   if (cookie) options.cookie = cookie;
-  const capture = diagnosticFetchCapture();
-  options.fetch = capture.fetch;
   const yt = await Innertube.create(options);
   for (const videoId of videoIds) {
-    capture.reset();
     const started = process.hrtime.bigint();
     try {
       const info = await yt.getBasicInfo(videoId);
       const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
       process.stdout.write(JSON.stringify({
         ok: true,
-        ...basicInfoRecord(info, videoId, elapsedMs, capture.playerResponseDates()),
+        ...basicInfoRecord(info, videoId, elapsedMs),
       }) + '\n');
     } catch (error) {
       const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
