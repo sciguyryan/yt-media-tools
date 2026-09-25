@@ -48,7 +48,7 @@ These are investigation targets, not accepted optimisations. No capability decla
 
 ## Measurements needed for backend comparison
 
-Phase 4 should compare candidate mechanisms against the current path using representative fixed ID sets and query requirement classes. At minimum, measurements should distinguish:
+Issue #98 subsequently compared candidate mechanisms against this baseline using representative fixed ID sets and query requirement classes. The investigation criteria required measurements to distinguish:
 
 - exact scalar-only detailed requirements;
 - collection metadata requirements;
@@ -64,6 +64,6 @@ Useful measurements include provider calls or requests, elapsed acquisition time
 
 The current detailed path is not simply spawning yt-dlp once per candidate. It already performs bulk process invocation for a known ID set, bulk cache lookup/write, and safe LIMIT-aware batching where query semantics permit early termination. The larger opportunity is reducing the cost or breadth of authoritative per-video extraction after cache filtering.
 
-Phase 4 should therefore investigate alternatives against specific requirement classes rather than asking which library can generally fetch YouTube metadata. A useful alternative must either satisfy authoritative fields more cheaply, batch known IDs more effectively, acquire narrower semantic stages, or materially improve reliability while fitting the existing backend-neutral plan and cache/provenance model.
+Issue #98 therefore investigated alternatives against specific requirement classes rather than asking which library could generally fetch YouTube metadata. A useful alternative had to satisfy authoritative fields more cheaply, batch known IDs more effectively, acquire narrower semantic stages, or materially improve reliability while fitting the existing backend-neutral plan and cache/provenance model.
 
-The completed provider investigation is recorded in `METADATA-BACKEND-INVESTIGATION.md`.
+The completed Phase 4 investigation and its descendant provider evidence are reconciled in `METADATA-BACKEND-INVESTIGATION.md` and `METADATA-PROVIDER-RECONCILIATION.md`. This audit remains the pre-investigation baseline and should not be read as a description of the later specialised production capabilities.

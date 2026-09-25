@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the revised Phase 4 investigation for issue #81. It evaluates whether Discover can satisfy selected acquisition requirements more cheaply or reliably through multiple independent provider capabilities rather than treating one backend as the owner of an entire query.
+This document records the detailed-metadata backend investigation completed through issue #98, the Phase 4 child of issue #81. It evaluates whether Discover can satisfy selected acquisition requirements more cheaply or reliably through multiple independent provider capabilities rather than treating one backend as the owner of an entire query. The later #105 investigation programme and #113 reconciliation supplied the empirical provider evidence, while #114 and #116 carried the two demonstrated production candidates into accepted integrations.
 
 The governing principle is requirement-oriented acquisition. A provider is useful when it can satisfy a specific semantic requirement with the required authority and provenance at an advantageous cost. It does not need to replace yt-dlp or YouTube.js wholesale.
 
@@ -38,7 +38,7 @@ The official YouTube Data API was considered during the initial investigation an
 
 ## Relative acquisition-cost scale
 
-The estimates below are architectural estimates, not benchmark results. Phase 4 does not claim measured performance for providers that have not yet been integrated.
+The estimates below are the architectural estimates used to select investigation targets, not later benchmark results. Measured evidence and final provider dispositions are recorded in `METADATA-PROVIDER-BENCHMARK.md` and `METADATA-PROVIDER-RECONCILIATION.md`; these estimates must not be read as superseding that evidence.
 
 - **Very light**: one small remote JSON request or equivalent client operation for a known item, with little local processing and no media-format extraction.
 - **Light**: narrow per-item metadata acquisition with limited parsing and no need to construct the complete media information model.
@@ -223,20 +223,22 @@ Where extractor selection can be obtained before expensive acquisition through a
 
 If reliable resolution is available only after extraction has already performed substantial work, it remains useful provenance and diagnostics but has less value as a pre-acquisition planning primitive. This timing distinction needs a dedicated implementation investigation.
 
-## Revised recommended direction
+## Final evidence-backed outcome
 
-Do not replace the existing backends as part of issue #81. The revised investigation supports these follow-up directions:
+Issue #98 did not identify a reason to replace yt-dlp or YouTube.js wholesale. Its durable result is the requirement-oriented capability architecture: yt-sql produces backend-neutral semantic requirements, source resolution supplies conservative applicability evidence, eligible provider capabilities declare bounded authority, and provider-specific lowering remains below that boundary.
 
-1. introduce a provider-capability model that can map one semantic requirement to multiple eligible independent providers without changing the logical plan;
-2. expose and retain backend source/extractor resolution, then determine which resolution facts are sufficiently stable to constrain provider selection;
-3. use resolved source identity to prevent platform-specific providers from being scheduled for unrelated sources;
-4. benchmark YouTube.js `getBasicInfo()` as the first narrow provider candidate because its runtime is already present;
-5. prototype `youtube-innertube` against the scalar requirement corpus and assess its maintenance and authentication characteristics;
-6. compare pytubefix where it can provide a genuinely independent acquisition path rather than duplicating yt-dlp at similar cost;
-7. investigate NewPipeExtractor, Invidious and Piped as optional diversity paths while accounting explicitly for runtime or instance trust boundaries;
-8. defer specialised providers such as ytmusicapi until source resolution can prove their semantic applicability.
+The follow-up investigation programme completed through #105 established the following dispositions:
 
-The existing yt-dlp and YouTube.js paths remain accepted behaviour until a candidate demonstrates both semantic correctness and an operational advantage. Official Google/YouTube developer APIs are outside the intended provider set. User-supplied cookies remain an available authentication mechanism where the selected independent provider supports them.
+1. YouTube.js `getBasicInfo()` demonstrated a concrete acquisition-cost advantage for the closed exact-scalar set `id`, `title`, `channel_id`, `duration` and `view_count` on conservatively resolved YouTube sources. Issue #114 implemented and accepted that capability with bounded batch/session reuse and yt-dlp fallback.
+2. ytmusicapi demonstrated a specialised advantage for the same closed scalar surface only after independent positive music-source resolution. Issue #116 implemented and accepted anonymous `YTMusic.get_song()` acquisition as a lower-priority specialised fallback, without allowing provider-native music semantics to masquerade as general YouTube metadata.
+3. `youtube-innertube`, pytubefix and NewPipeExtractor remain research adapters rather than production backends. None demonstrated a sufficiently distinct authoritative requirement set, reliability advantage or repeatable acquisition-cost benefit to justify its additional production surface.
+4. Invidious and Piped remain possible operator-controlled research paths, but the investigated public-instance ecosystem did not provide a sufficiently reliable or predictable basis for automatic production acquisition.
+5. The official YouTube Data API remains outside Discover's intended ordinary metadata path because its developer credentials, quota model and platform dependency do not provide a compensating advantage for this project.
+6. More efficient yt-dlp use remains part of the established fallback rather than a separate provider. The pre-investigation audit confirmed that known-ID detailed extraction already uses one process for a batch, bulk cache filtering and bounded LIMIT-aware semantic batches, so process-count reduction alone was not a missing optimisation.
+
+The resulting production boundary is intentionally narrower than automatic multi-backend scheduling. Current lowering may select an eligible authoritative capability where the implementation already supports that choice, but issue #98 does not authorise a general cost-based scheduler, speculative parallel provider execution, provider races or yt-sql-visible provider concepts. Those remain separate planner work if future evidence justifies them.
+
+`METADATA-PROVIDER-CAPABILITIES.md` is the current authority and lowering contract. `METADATA-PROVIDER-RECONCILIATION.md` records the final provider dispositions and revisit conditions. `METADATA-PROVIDER-BENCHMARK.md` retains the repeatable research evidence and benchmark procedure.
 
 ## External references reviewed
 

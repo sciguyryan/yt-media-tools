@@ -2,6 +2,15 @@
 
 This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
 
+## Active development
+
+### Reconcile alternative detailed metadata acquisition backends (#98)
+
+- [maintenance] Reconcile the original Phase 4 backend investigation against the completed #105 provider programme and its accepted #114 and #116 production integrations.
+- [docs] Replace prospective backend recommendations with evidence-backed final dispositions for YouTube.js, ytmusicapi, youtube-innertube, pytubefix, NewPipeExtractor, Invidious, Piped, the official YouTube Data API and the existing yt-dlp fallback.
+- [docs] Preserve the Phase 3 acquisition audit as a clearly historical pre-investigation baseline rather than allowing its former future-work wording to describe current behaviour.
+- [docs] Keep general automatic multi-backend scheduling outside issue #98 while documenting how accepted capabilities fit the backend-neutral physical acquisition boundary.
+
 ## Completed development
 
 ### Reconcile independent metadata provider investigations (#105)
