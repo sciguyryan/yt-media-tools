@@ -190,7 +190,7 @@ def test_json_explain_exposes_stages_and_ytdlp_lowering() -> None:
     ]
 
 
-def test_explain_surfaces_conditional_youtubejs_provider_lowering() -> None:
+def test_explain_surfaces_conditional_specialised_provider_lowering() -> None:
     payload = explain_user_query_json(
         "SELECT id, duration FROM @example",
         source_type="auto",
@@ -208,10 +208,22 @@ def test_explain_surfaces_conditional_youtubejs_provider_lowering() -> None:
             "authority": "exact",
             "fields": ["channel_id", "duration", "id", "title", "view_count"],
             "required_source_kinds": ["youtube"],
+            "required_source_traits": [],
             "authentication": ["anonymous", "cookies"],
             "cost_rank": 20,
             "eligibility": "requires-runtime-source-resolution",
-        }
+        },
+        {
+            "provider": "ytmusicapi",
+            "operation": "ytmusicapi:YTMusic.get_song",
+            "authority": "exact",
+            "fields": ["channel_id", "duration", "id", "title", "view_count"],
+            "required_source_kinds": ["youtube"],
+            "required_source_traits": ["music"],
+            "authentication": ["anonymous"],
+            "cost_rank": 30,
+            "eligibility": "requires-runtime-source-resolution",
+        },
     ]
     human = explain_user_query(
         "SELECT id, duration FROM @example",
@@ -220,4 +232,6 @@ def test_explain_surfaces_conditional_youtubejs_provider_lowering() -> None:
         date_format="ymd",
     )
     assert "Specialised candidate: youtubejs:getBasicInfo" in human
+    assert "Specialised candidate: ytmusicapi:YTMusic.get_song" in human
+    assert "source-traits=music" in human
     assert "eligibility=requires-runtime-source-resolution" in human

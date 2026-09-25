@@ -37,8 +37,18 @@ This file is the authoritative changelog for yt-discover. Active development and
 ### Reconcile metadata provider production candidates (#113)
 
 - [maintenance] Reconcile accepted issue #114 as the completed YouTube.js production-integration branch of issue #113.
-- [maintenance] Retain specialised ytmusicapi production integration as an explicit outstanding branch until its separate GitHub issue is identified or created and accepted.
+- [maintenance] Track issue #116 as the specialised ytmusicapi production-integration branch and keep issue #113 open until that child is implemented and accepted.
 - [docs] Preserve deferred and rejected provider conclusions from issue #113 without promoting experimental adapters during parent reconciliation.
+
+### Add capability-scoped ytmusicapi specialised metadata acquisition (#116)
+
+- [feature] Register an initial production `YTMusic.get_song()` capability for the conservative exact scalar field surface established by the provider investigation.
+- [maintenance] Require both resolved YouTube source identity and independent positive music-source evidence before ytmusicapi can become eligible.
+- [maintenance] Keep `musicVideoType`, publication dates, descriptions, keywords, category and live/playability state outside the common-field authority contract.
+- [security] Keep production ytmusicapi acquisition anonymous; browser or cookie authentication is not part of the demonstrated production requirement.
+- [maintenance] Keep `YTMusic.get_song_credits()` outside the initial capability so a distinct higher-cost operation cannot be acquired implicitly.
+- [test] Cover positive source-trait eligibility, ordinary-YouTube exclusion, unsupported-field contamination and authentication boundaries.
+- [docs] Record issue #116 as the outstanding specialised production child of issue #113.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 

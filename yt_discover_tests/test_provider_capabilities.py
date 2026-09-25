@@ -21,6 +21,7 @@ def capability(
     fields: frozenset[str] | None = None,
     authority: str = AUTHORITY_EXACT,
     source_kinds: frozenset[str] | None = None,
+    required_source_traits: frozenset[str] = frozenset(),
     authentication: frozenset[str] = frozenset({AUTH_ANONYMOUS}),
     granularity: str = GRANULARITY_ENTRY,
     cost_rank: int = 100,
@@ -31,6 +32,7 @@ def capability(
         fields=fields,
         authority=authority,
         source_kinds=source_kinds,
+        required_source_traits=required_source_traits,
         authentication=authentication,
         granularity=granularity,
         cost_rank=cost_rank,
@@ -351,3 +353,99 @@ def test_youtubejs_exact_scalar_unsupported_fields_poison_complete_lowering() ->
             )
             is None
         ), unsupported
+
+
+def test_source_trait_requirement_is_positive_and_conservative() -> None:
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
+    music = capability(
+        "music-provider",
+        source_kinds=frozenset({"youtube"}),
+        required_source_traits=frozenset({"music"}),
+        cost_rank=1,
+    )
+
+    assert (
+        select_provider_capability(
+            requirement,
+            (music,),
+            context=ProviderSelectionContext(resolved_source_kind="youtube"),
+        )
+        is None
+    )
+    selected = select_provider_capability(
+        requirement,
+        (music,),
+        context=ProviderSelectionContext(
+            resolved_source_kind="youtube",
+            source_traits=frozenset({"music"}),
+        ),
+    )
+    assert selected is not None
+    assert selected.capability.provider == "music-provider"
+
+
+def test_production_ytmusicapi_capability_requires_positive_music_evidence() -> None:
+    from yt_media_tools.provider_capabilities import (
+        SOURCE_TRAIT_MUSIC,
+        YTMUSICAPI_EXACT_SCALAR_FIELDS,
+        production_provider_capabilities,
+    )
+
+    capabilities = production_provider_capabilities()
+    ytmusicapi = next(item for item in capabilities if item.provider == "ytmusicapi")
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "view_count"}))
+
+    assert ytmusicapi.provenance == "ytmusicapi:YTMusic.get_song"
+    assert ytmusicapi.fields == YTMUSICAPI_EXACT_SCALAR_FIELDS
+    assert ytmusicapi.fields == frozenset({"id", "title", "channel_id", "duration", "view_count"})
+    assert ytmusicapi.required_source_traits == frozenset({SOURCE_TRAIT_MUSIC})
+    assert ytmusicapi.authentication == frozenset({AUTH_ANONYMOUS})
+    assert "upload_date" not in ytmusicapi.fields
+    assert "description" not in ytmusicapi.fields
+    assert "musicVideoType" not in ytmusicapi.fields
+
+    youtube_only = ProviderSelectionContext(resolved_source_kind="youtube")
+    assert all(
+        candidate.capability.provider != "ytmusicapi"
+        for candidate in eligible_provider_candidates(requirement, capabilities, context=youtube_only)
+    )
+
+    music_context = ProviderSelectionContext(
+        resolved_source_kind="youtube",
+        source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+    )
+    assert any(
+        candidate.capability.provider == "ytmusicapi"
+        for candidate in eligible_provider_candidates(requirement, capabilities, context=music_context)
+    )
+
+
+def test_ytmusicapi_cannot_self_authorise_from_unsupported_or_provider_native_fields() -> None:
+    from yt_media_tools.provider_capabilities import SOURCE_TRAIT_MUSIC, production_provider_capabilities
+
+    context = ProviderSelectionContext(
+        resolved_source_kind="youtube",
+        source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+    )
+    capabilities = production_provider_capabilities()
+    for unsupported in ("upload_date", "description", "keywords", "category", "is_live", "musicVideoType"):
+        requirement = MetadataRequirement("complete-metadata", frozenset({"duration", unsupported}))
+        assert all(
+            candidate.capability.provider != "ytmusicapi"
+            for candidate in eligible_provider_candidates(requirement, capabilities, context=context)
+        ), unsupported
+
+
+def test_ytmusicapi_browser_or_cookie_authentication_is_not_a_production_requirement() -> None:
+    from yt_media_tools.provider_capabilities import SOURCE_TRAIT_MUSIC, production_provider_capabilities
+
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
+    context = ProviderSelectionContext(
+        resolved_source_kind="youtube",
+        source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+        authentication=AUTH_COOKIES,
+    )
+    assert all(
+        candidate.capability.provider != "ytmusicapi"
+        for candidate in eligible_provider_candidates(requirement, production_provider_capabilities(), context=context)
+    )

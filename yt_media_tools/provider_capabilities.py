@@ -37,6 +37,7 @@ class ProviderCapability:
     fields: frozenset[str] | None
     authority: str
     source_kinds: frozenset[str] | None
+    required_source_traits: frozenset[str]
     authentication: frozenset[str]
     granularity: str
     cost_rank: int
@@ -54,6 +55,7 @@ class ProviderSelectionContext:
     """Known physical facts that may conservatively constrain provider eligibility."""
 
     resolved_source_kind: str | None = None
+    source_traits: frozenset[str] = frozenset()
     authentication: str = AUTH_ANONYMOUS
 
 
@@ -85,6 +87,8 @@ def eligible_provider_candidates(
         if not capability.supports(requirement):
             continue
         if context.authentication not in capability.authentication:
+            continue
+        if not capability.required_source_traits <= context.source_traits:
             continue
         if capability.source_kinds is not None:
             if context.resolved_source_kind is None:
@@ -160,7 +164,9 @@ def lower_provider_requirements(
 
 
 YOUTUBE_SOURCE_KINDS = frozenset({"youtube"})
+SOURCE_TRAIT_MUSIC = "music"
 YOUTUBEJS_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
+YTMUSICAPI_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
 
 
 def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
@@ -169,7 +175,9 @@ def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
     The registry is physical planning data, not yt-sql semantics. YouTube.js is
     deliberately bounded to the exact scalar fields established by the retained
     provider investigation. In particular, publication dates and provider-native
-    state flags are not advertised here.
+    state flags are not advertised here. ytmusicapi is additionally constrained by a
+    provider-neutral positive music-source trait and anonymous acquisition; a successful
+    ``get_song()`` call cannot manufacture its own eligibility.
     """
     return (
         ProviderCapability(
@@ -178,9 +186,22 @@ def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
             fields=YOUTUBEJS_EXACT_SCALAR_FIELDS,
             authority=AUTHORITY_EXACT,
             source_kinds=YOUTUBE_SOURCE_KINDS,
+            required_source_traits=frozenset(),
             authentication=frozenset({AUTH_ANONYMOUS, AUTH_COOKIES}),
             granularity=GRANULARITY_ENTRY,
             cost_rank=20,
             provenance="youtubejs:getBasicInfo",
+        ),
+        ProviderCapability(
+            provider="ytmusicapi",
+            stage="complete-metadata",
+            fields=YTMUSICAPI_EXACT_SCALAR_FIELDS,
+            authority=AUTHORITY_EXACT,
+            source_kinds=YOUTUBE_SOURCE_KINDS,
+            required_source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+            authentication=frozenset({AUTH_ANONYMOUS}),
+            granularity=GRANULARITY_ENTRY,
+            cost_rank=30,
+            provenance="ytmusicapi:YTMusic.get_song",
         ),
     )

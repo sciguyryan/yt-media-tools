@@ -73,10 +73,13 @@ def _provider_lowering_explain(physical_plan: object) -> list[dict[str, object]]
                     "required_source_kinds": sorted(capability.source_kinds)
                     if capability.source_kinds is not None
                     else [],
+                    "required_source_traits": sorted(capability.required_source_traits),
                     "authentication": sorted(capability.authentication),
                     "cost_rank": capability.cost_rank,
                     "eligibility": (
-                        "requires-runtime-source-resolution" if capability.source_kinds is not None else "eligible"
+                        "requires-runtime-source-resolution"
+                        if capability.source_kinds is not None or capability.required_source_traits
+                        else "eligible"
                     ),
                 }
             )
@@ -647,10 +650,12 @@ def explain_user_query(
             for provider_requirement in _provider_lowering_explain(boundary.physical_acquisition):
                 for candidate in provider_requirement["specialised_candidates"]:
                     source_kinds = ", ".join(candidate["required_source_kinds"]) or "any"
+                    source_traits = ", ".join(candidate["required_source_traits"]) or "none"
                     lines.append(
                         f"    Specialised candidate: {candidate['operation']}; "
                         f"stage={provider_requirement['stage']}; "
-                        f"eligibility={candidate['eligibility']}; source-kind={source_kinds}"
+                        f"eligibility={candidate['eligibility']}; source-kind={source_kinds}; "
+                        f"source-traits={source_traits}"
                     )
             if lowering.collapsed_detailed_stages:
                 lines.append(
