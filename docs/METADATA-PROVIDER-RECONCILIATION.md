@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Issue #113 reconciles the independent metadata-provider investigations into production-candidate recommendations for Discover. It does not promote benchmark adapters into runtime acquisition, alter yt-sql semantics, or change automatic provider selection. A separate production-integration issue is required for every candidate that demonstrates a concrete advantage.
+Issue #113 reconciles the independent metadata-provider investigations into production-candidate recommendations for Discover. It does not itself promote benchmark adapters into runtime acquisition, alter yt-sql semantics, or change automatic provider selection. A separate production-integration issue is required for every candidate that demonstrates a concrete advantage. The YouTube.js branch has now been implemented and accepted through issue #114; the specialised ytmusicapi branch remains outstanding until its separate production-integration issue is identified or created and accepted.
 
 The decision boundary is capability based. Technical integrability is insufficient. A provider must demonstrate a useful metadata requirement set that it can satisfy more appropriately than the existing production path, with defensible field authority, provenance, acquisition cost, source applicability, authentication behaviour, portability, maintenance characteristics and failure semantics.
 
@@ -59,12 +59,12 @@ Relative cost ranks should represent stable planner hints derived from reproduci
 
 ## Follow-up production-integration issues
 
-Issue #113 should result in two production-integration issues, without implementing either integration here.
+Issue #113 produced two production-integration branches. Their reconciliation state is:
 
-1. **Integrate YouTube.js as a capability-based exact scalar metadata provider.** Define the authoritative known-video scalar subset, requirement lowering, residual yt-dlp acquisition, source eligibility, cookie handling, provenance, disagreement behaviour, cost rank and deterministic planner/explain tests. Do not promote unresolved `upload_date` or provider-native flags.
-2. **Integrate ytmusicapi as a specialised resolved-source metadata provider.** Define conservative music-source eligibility, current-signature acquisition, authoritative common-field boundaries, `musicVideoType` source evidence, metadata/playability separation, provenance, fallback behaviour, cost rank and deterministic planner/explain tests. Do not require browser authentication and do not make arbitrary YouTube videos eligible merely because `get_song()` returns metadata.
+1. **YouTube.js capability-based exact scalar metadata provider: completed in issue #114.** The accepted implementation defines the five-field authoritative known-video scalar subset, conservative resolved-source eligibility, complete-stage requirement lowering, yt-dlp fallback, cookie-context handling, provenance, conditional explain visibility, bounded session reuse and deterministic boundary/fallback tests. `upload_date`, provider-native state flags and other unsupported fields remain outside the capability.
+2. **ytmusicapi specialised resolved-source metadata provider: outstanding.** The required production issue must define conservative music-source eligibility, current-signature acquisition, authoritative common-field boundaries, `musicVideoType` source evidence, metadata/playability separation, provenance, fallback behaviour, cost rank and deterministic planner/explain tests. It must not require browser authentication or make arbitrary YouTube videos eligible merely because `get_song()` returns metadata.
 
-The issue numbers should be assigned when these are created in GitHub. The investigation adapters remain experimental until their respective production-integration issue is implemented and accepted.
+The ytmusicapi production-integration issue number is not recorded in the project documentation at this reconciliation point. Do not treat that branch as completed or silently drop it when closing parent work. If no issue has yet been created, create one before issue #113 is closed. Experimental investigation adapters remain experimental unless and until their respective production-integration work is implemented and accepted.
 
 ## Revisit conditions
 

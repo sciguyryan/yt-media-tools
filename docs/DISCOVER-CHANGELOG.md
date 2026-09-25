@@ -10,9 +10,9 @@
 
 This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
 
-## Active development
+## Completed development
 
-### Add capability-scoped YouTube.js exact-scalar metadata acquisition
+### Add capability-scoped YouTube.js exact-scalar metadata acquisition (#114)
 
 - [feature] Register a production YouTube.js `getBasicInfo()` capability for the exact known-video scalar fields established by issue #113.
 - [maintenance] Require conservative resolved YouTube source evidence before the capability can participate in provider selection.
@@ -30,6 +30,15 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [docs] Record that YouTube.js `MediaInfo.basic_info` does not propagate `PlayerMicroformat.publish_date` or `upload_date`, while populated `PlayerMicroformat` fields themselves are direct mappings of the corresponding player response values. Publication dates remain outside the #114 production authority boundary.
 - [test] Exhaustively cover every non-empty subset of the five-field authority surface, unsupported-field contamination and mixed-provider fallback ordering.
 - [docs] Reconcile issue #114 around its final closed authority, lowering, execution, fallback, provenance, explain and session-reuse boundaries in preparation for parent issue #113.
+- [release] Close issue #114 after acceptance of the complete capability-scoped YouTube.js production integration.
+
+## Active development
+
+### Reconcile metadata provider production candidates (#113)
+
+- [maintenance] Reconcile accepted issue #114 as the completed YouTube.js production-integration branch of issue #113.
+- [maintenance] Retain specialised ytmusicapi production integration as an explicit outstanding branch until its separate GitHub issue is identified or created and accepted.
+- [docs] Preserve deferred and rejected provider conclusions from issue #113 without promoting experimental adapters during parent reconciliation.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 
