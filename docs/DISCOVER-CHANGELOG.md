@@ -1,12 +1,11 @@
 # Discover changelog
 
-## Discover - metadata provider reconciliation
+## Discover - independent metadata provider investigation reconciliation
 
-- [docs] Reconcile the independent metadata-provider investigations into capability-based production recommendations for issue #113.
-- [docs] Select narrow YouTube.js exact-scalar acquisition and specialised ytmusicapi acquisition as separate production-integration candidates without changing runtime provider selection.
-- [docs] Defer youtube-innertube, pytubefix and NewPipeExtractor pending a concrete capability or cost advantage, and reject automatic public-instance Invidious and Piped acquisition on the observed operational evidence.
-- [docs] Define conservative authority, provenance, source-resolution, disagreement and lowering boundaries for future production integrations.
-- [maintenance] Restore the user-supplied canonical `.gitignore` baseline, including local query, benchmark, credential and NewPipeExtractor build artefact exclusions.
+- [maintenance] Reconcile issue #105 after its independent provider investigations and the completed issue #113 production-candidate programme.
+- [maintenance] Retain the shared provider benchmark and deferred-provider adapters as explicit research infrastructure with documented revisit conditions rather than production acquisition paths.
+- [maintenance] Remove the superseded standalone YouTube.js basic-metadata benchmark script, documentation and tests now that the shared provider benchmark and production capability cover its continuing purposes.
+- [docs] Consolidate the durable provider outcomes around the accepted YouTube.js and ytmusicapi production capabilities plus the deferred or rejected provider decisions.
 
 This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
 
