@@ -32,14 +32,6 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [docs] Reconcile issue #114 around its final closed authority, lowering, execution, fallback, provenance, explain and session-reuse boundaries in preparation for parent issue #113.
 - [release] Close issue #114 after acceptance of the complete capability-scoped YouTube.js production integration.
 
-## Active development
-
-### Reconcile metadata provider production candidates (#113)
-
-- [maintenance] Reconcile accepted issue #114 as the completed YouTube.js production-integration branch of issue #113.
-- [maintenance] Track issue #116 as the specialised ytmusicapi production-integration branch and keep issue #113 open until that child is implemented and accepted.
-- [docs] Preserve deferred and rejected provider conclusions from issue #113 without promoting experimental adapters during parent reconciliation.
-
 ### Add capability-scoped ytmusicapi specialised metadata acquisition (#116)
 
 - [feature] Register and execute an anonymous `YTMusic.get_song()` capability for the conservative five-field exact scalar surface established by the provider investigation.
@@ -51,6 +43,15 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [security] Keep production ytmusicapi acquisition anonymous; browser or cookie authentication remains outside the demonstrated production requirement.
 - [test] Exhaustively cover every non-empty subset of the five-field authority surface, unsupported-field contamination, source-trait uncertainty, authentication boundaries, deterministic provider ordering, unresolved-ID fallback, duplicate/extraneous records and mixed-provider provenance.
 - [docs] Reconcile issue #116 around its final authority, source-evidence, acquisition, fallback, disagreement, provenance and explain boundaries in preparation for parent issue #113.
+- [release] Close issue #116 after acceptance of the complete capability-scoped ytmusicapi production integration.
+
+### Reconcile metadata provider production candidates (#113)
+
+- [maintenance] Reconcile accepted issue #114 as the completed YouTube.js production-integration branch of issue #113.
+- [maintenance] Reconcile accepted issue #116 as the completed specialised ytmusicapi production-integration branch of issue #113.
+- [docs] Preserve deferred and rejected provider conclusions from issue #113 without promoting experimental adapters during parent reconciliation.
+- [docs] Reconcile both accepted production children against the original provider findings and retain their authority, provenance, source-resolution and disagreement boundaries.
+- [release] Close issue #113 after both demonstrated production candidates are implemented and accepted through issues #114 and #116.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 
