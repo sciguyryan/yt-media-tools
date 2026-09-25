@@ -13,18 +13,7 @@ from yt_media_tools.external_tools import (
 
 def test_registry_contains_current_external_integrations() -> None:
     identifiers = {tool.identifier for tool in registered_tools()}
-    assert {
-        "yt-dlp",
-        "ffmpeg",
-        "ffprobe",
-        "node",
-        "youtubejs",
-        "graphviz",
-        "newpipe-extractor",
-        "invidious",
-        "piped",
-        "ytmusicapi",
-    } <= identifiers
+    assert {"yt-dlp", "ffmpeg", "ffprobe", "node", "youtubejs", "graphviz", "ytmusicapi"} <= identifiers
 
 
 def test_command_diagnostics_redact_sensitive_arguments() -> None:
@@ -46,14 +35,14 @@ def test_library_diagnostics_are_annotated_without_fake_command_line() -> None:
     configure_external_diagnostics(enabled=True)
     text = format_invocation(
         ToolInvocation(
-            tool="pytubefix",
-            operation="YouTube",
+            tool="ytmusicapi",
+            operation="YTMusic.get_song",
             purpose="metadata acquisition",
             arguments={"url": "https://example.invalid/watch?v=x", "token": "secret"},
         )
     )
     assert "kind: python-library" in text
-    assert "operation: YouTube" in text
+    assert "operation: YTMusic.get_song" in text
     assert "token: <redacted>" in text
     assert "command:" not in text
 

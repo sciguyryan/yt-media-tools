@@ -1,30 +1,18 @@
 # Metadata provider capabilities
 
-Discover's logical and semantic planning determines what metadata a query requires. Provider selection is a later physical concern: it may choose how an established requirement is satisfied, but it must not change the requirement or yt-sql's interpretation of the resulting value.
+Discover separates yt-sql semantics from physical metadata acquisition. Logical and semantic planning establishes the metadata a query requires; provider selection then chooses an eligible authoritative implementation without changing the requirement or the meaning of the resulting value.
 
-## Contract
+## Capability contract
 
-`MetadataRequirement` projects an existing physical acquisition stage and its required fields into provider-selection form. `ProviderCapability` declares one provider's ability to satisfy a stage, optionally limited to a finite set of fields. A capability also records semantic authority, applicable resolved source kinds, supported authentication modes, acquisition granularity, a relative physical cost rank and a stable provenance identity.
+`MetadataRequirement` projects an existing physical acquisition stage and its required fields into provider-selection form. `ProviderCapability` declares a provider's authority for a stage, optionally restricted to a finite field set, together with applicable resolved source kinds, required source traits, supported authentication modes, acquisition granularity, relative physical cost and stable provenance identity.
 
-Only exact capabilities are eligible to satisfy an authoritative requirement. Approximate values remain useful elsewhere in acquisition and planning, but a lower cost must never promote them to exact metadata. A finite field capability is eligible only when it covers every field in the requirement.
+Only exact capabilities may satisfy authoritative requirements. Approximate values can inform bounded acquisition and planning but cannot become authoritative merely because they are cheaper. A finite-field capability is eligible only when it covers the complete requirement presented to that stage.
 
-Source-specific capabilities are conservative. They are ineligible while source identity is unresolved and remain ineligible when the resolved source kind does not match. This establishes the boundary needed for later source/extractor resolution work without guessing platform identity from a URL.
+Source-specific capabilities require conservative backend resolution. URL appearance alone is not evidence of source identity. Authentication is also part of eligibility: anonymous and cookie-authenticated contexts are distinct, and credential material must never become provider metadata, provenance, cache data or explain output.
 
-Authentication is also part of eligibility. Anonymous and cookie-authenticated acquisition are distinct capabilities. User-supplied cookies remain supported where a provider can consume them, but credential contents are not provider metadata and must never become provenance, cache data or explain output.
+## Physical selection
 
-## Deterministic selection
-
-Eligible exact capabilities are ordered by physical cost rank and then stable provider/provenance identity. Cost is deliberately only a physical hint. It cannot override authority, field coverage, source applicability or authentication requirements.
-
-The initial selector returns the preferred capability and the complete ordered candidate set. It does not yet alter Discover's execution path. Existing yt-dlp and YouTube.js behaviour therefore remains unchanged while provider candidates are benchmarked and registered in later work.
-
-The current relative cost rank is intentionally abstract rather than a timing estimate. Concrete provider integrations should derive useful ranks from reproducible measurements and should expose enough reasoning for later explain integration.
-
-## Relationship to the physical acquisition plan
-
-`PhysicalAcquisitionPlan.provider_requirements` derives provider requirements directly from required acquisition stages, including whole fields, indexed fields, structured-member requirements and collection-query requirements. The existing acquisition plan remains the single semantic source of truth.
-
-This gives later lowering a stable direction:
+The physical acquisition plan remains the semantic source of truth. Provider lowering follows this direction:
 
 ```text
 logical query requirements
@@ -38,58 +26,42 @@ eligible exact provider capabilities
 deterministic physical provider choice
 ```
 
-Provider resolution and provider acquisition remain separate concepts. A future backend may identify a source while a different eligible provider satisfies some of its metadata requirements.
+Eligible capabilities are ordered by relative physical cost and then stable provider/provenance identity. Cost is a physical hint only. It cannot override authority, field coverage, source applicability, source traits or authentication requirements.
 
-## Deliberate exclusions
+Provider resolution and provider acquisition are separate concerns. One backend may establish conservative source evidence while another eligible provider satisfies metadata requirements. Provider-specific fields and operations remain below the yt-sql boundary unless Discover deliberately defines provider-neutral semantics for them.
 
-This foundation does not register new providers, change runtime acquisition, introduce automatic multi-provider execution, reconcile disagreements between authoritative providers, or add official platform developer APIs. Those remain separate follow-up work so that provider experiments cannot silently change established query behaviour.
+## Backend resolution and source traits
 
-## Backend resolution evidence
+Backend resolution is described in [BACKEND-SOURCE-RESOLUTION.md](BACKEND-SOURCE-RESOLUTION.md). `selection_context_from_backend_resolution()` converts unambiguous non-generic yt-dlp extractor-family evidence into physical provider-selection context. Missing, generic, conflicting or mixed-provider resolution remains unknown and therefore excludes source-specific providers while leaving generic capabilities available.
 
-Backend-reported extractor resolution is documented in [BACKEND-SOURCE-RESOLUTION.md](BACKEND-SOURCE-RESOLUTION.md). The capability selector deliberately accepts resolved source identity as context without deriving it from URL appearance.
+Positive source traits provide a second conservative eligibility dimension. Traits must be established independently of the specialised provider whose eligibility they control. Absence of a trait is unknown rather than evidence of its negation.
 
-## Resolution-aware eligibility
+The current `music` trait requires yt-dlp to resolve the source through the YouTube extractor family and every observed original source domain in the acquisition batch to be `music.youtube.com`. A raw Music URL, generic extractor result, mixed origins, absent origin evidence, ytmusicapi success, `musicVideoType` or playback eligibility cannot establish the trait by themselves.
 
-`selection_context_from_backend_resolution()` connects observed backend resolution to provider selection without guessing from the original source expression. A single unambiguous non-generic yt-dlp extractor family may constrain specialised provider capabilities. Generic, missing or conflicting resolution remains unknown and therefore excludes source-specific providers while leaving generic capabilities available.
+## YouTube.js exact-scalar capability
 
-This is intentionally one-way physical evidence. The selected extractor family does not change logical source identity or yt-sql meaning, and a cheaper specialised provider cannot become eligible from URL or domain appearance alone. Authentication requirements are carried alongside the resolved source kind and remain independently mandatory.
+The production `youtubejs:getBasicInfo` capability is authoritative only for `id`, `title`, `channel_id`, `duration` and `view_count` at the complete-metadata stage. It requires conservative resolution to the `youtube` extractor family and supports anonymous and existing cookie-authenticated contexts.
 
-## Issue #113 production-candidate boundary
+The field set is closed. Publication dates, descriptions, keywords, category, live/private/unlisted state and other values exposed by YouTube.js are not authoritative through this capability. Any complete-stage requirement containing an unsupported field remains on the established yt-dlp path rather than being partially widened to values whose semantics have not been accepted.
 
-The completed provider investigations are reconciled in [METADATA-PROVIDER-RECONCILIATION.md](METADATA-PROVIDER-RECONCILIATION.md). Issue #113 recommended separate production-integration work for a narrow authoritative YouTube.js known-video scalar capability and for specialised ytmusicapi acquisition after conservative music-source resolution. Issue #114 implements the first capability without changing yt-sql semantics or promoting the experimental benchmark adapter wholesale. Issue #116 implements the second production branch as a deliberately narrower ytmusicapi capability that additionally requires positive music-source evidence.
+Production acquisition sends the complete requested batch through one Node bridge process and one Innertube session. A whole-operation failure or omitted individual entry falls back to yt-dlp. Requested record order is preserved. Successful specialised rows carry explicit provider and operation provenance and are not written into the existing detailed metadata cache because that cache represents richer yt-dlp-style records.
 
-The same reconciliation defers youtube-innertube, pytubefix and NewPipeExtractor because the retained evidence does not demonstrate a concrete production advantage sufficient to justify another runtime path. Automatic public-instance Invidious and Piped acquisition is rejected on the observed operational evidence while explicitly configured operator-controlled deployments remain research possibilities.
+Static explain output presents this capability as conditional physical lowering because extractor-family evidence is generally available only at runtime. Runtime provenance reports specialised provider/operation counts only where the acquired row carries explicit attribution; untagged rows remain unattributed rather than being guessed to originate from yt-dlp or cache.
 
-## Issue #114 YouTube.js exact-scalar capability
+## ytmusicapi specialised capability
 
-The production capability registry advertises `youtubejs:getBasicInfo` only for `id`, `title`, `channel_id`, `duration` and `view_count` at the complete-metadata stage. Eligibility additionally requires conservative backend resolution to the `youtube` extractor family. Anonymous and existing cookie-authenticated contexts are supported, but credential material is never part of the capability or provenance record.
+The production ytmusicapi capability uses anonymous `YTMusic.get_song()` acquisition and is authoritative only for the same closed scalar set: `id`, `title`, `channel_id`, `duration` and `view_count`. Publication dates, descriptions, keywords, category, live/playability state, `musicVideoType` and `YTMusic.get_song_credits()` remain outside its authority.
 
-The field set is intentionally closed. `upload_date`, `date`, live/private/unlisted state, descriptions, keywords and other values exposed by the underlying library are not authoritative merely because `getBasicInfo()` can return them. A requirement containing any uncovered field makes this capability ineligible as a complete satisfier, preserving the established acquisition path for that requirement.
+Eligibility requires resolved YouTube source identity plus the independently established `music` source trait. Ordinary YouTube resolution is insufficient. Browser authentication is not part of this capability.
 
-Issue #114 carries this contract through production lowering and execution. The lowering layer selects YouTube.js only when an entire `complete-metadata` requirement is contained within the accepted five-field exact-scalar set. Unsupported or mixed requirements remain on the established acquisition path rather than being partially lowered. Bridge failure or an omitted individual video falls back to yt-dlp. Specialised partial rows are deliberately not written into the existing detailed metadata cache because that cache currently represents full yt-dlp-style records; allowing a five-field row to replace a richer cached record would be a semantic regression. Cache/provenance unification remains separate from the provider authority decision.
+For an independently confirmed music source, the current specialised acquisition order for the shared five-field requirement is YouTube.js, then ytmusicapi, then yt-dlp. Each later provider receives only IDs still unresolved after the preceding provider. Unexpected IDs and duplicate records are ignored rather than overwriting an earlier authoritative result. This prevents provider order or relative cost from becoming an implicit disagreement-resolution policy.
 
-The publication-date investigation is retained only as a boundary decision, not as production machinery. YouTube.js `MediaInfo.basic_info` does not propagate `PlayerMicroformat.publish_date` or `upload_date`, while populated `PlayerMicroformat` fields directly map the corresponding player-response values. A provider-native timestamp must not silently become yt-sql's date-only `upload_date` until its timezone and calendar-date semantics are explicitly established, so publication dates remain outside the #114 capability.
+Successful ytmusicapi rows carry explicit provider and `YTMusic.get_song` provenance and are not written into the full detailed metadata cache. A failed or omitted entry falls through to the remaining acquisition path without widening ytmusicapi's authority.
 
-### Production explain and provenance visibility
+## Fallback and disagreement boundaries
 
-Offline explain output reports specialised provider opportunities as conditional physical lowering. Source-specific capabilities such as `youtubejs:getBasicInfo` remain marked as requiring runtime source resolution because static query explanation does not have the extractor-family evidence used by production selection. The established acquisition path remains explicit as the fallback.
+The existing yt-dlp detailed path remains the general authoritative fallback. It already performs source-scoped bulk cache lookup, passes known video IDs to one yt-dlp process per semantic acquisition batch and preserves LIMIT-aware bounded acquisition where query semantics permit early termination.
 
-Runtime provenance records provider and operation counts only when an acquired row carries explicit specialised-provider attribution. Untagged rows are deliberately reported as unattributed because they may originate from yt-dlp or the existing metadata cache, and provenance must not guess an origin that the execution path did not preserve.
+Mixed acquisition is valid only where every provider contribution has an explicit authority and provenance contract. Cost rank, provider order and successful acquisition do not establish semantic authority. Discover does not race providers or acquire duplicate authoritative values merely to manufacture a disagreement. If a future requirement introduces genuine authoritative disagreement, its resolution policy must be designed explicitly rather than emerging from overwrite order.
 
-### Production session reuse
-
-Production `getBasicInfo()` acquisition passes the complete requested metadata batch to one bridge process. The bridge creates one Innertube session before iterating the video IDs and reuses that session for every item in the batch. This preserves the session-reuse behaviour measured during the provider investigation without introducing cross-query global state, background pooling or provider-specific semantics into the planner. LIMIT-aware acquisition may still create separate sessions for separate semantic batches because those batches are deliberately evaluated incrementally and may terminate early.
-
-### Issue #114 reconciliation
-
-The completed integration preserves the issue's original capability-scoped boundary. YouTube.js is a physical implementation choice beneath yt-sql semantics, not a language feature or a general replacement for yt-dlp. Every non-empty subset of the five authoritative fields is eligible only after conservative YouTube source resolution; adding any unsupported field makes the complete stage ineligible. Production fallback preserves requested record order, provider failures do not widen authority, and cost or session reuse cannot alter the semantic requirement.
-
-The final implementation therefore consists of the closed authority registry, backend-neutral complete-stage lowering, bounded `getBasicInfo()` execution, per-entry and whole-operation yt-dlp fallback, conditional explain visibility, explicit specialised-provider provenance, and one-session-per-semantic-batch reuse. Human authority-assessment tooling and raw-response diagnostics are not retained. Broader provider selection and the specialised ytmusicapi path were subsequently reconciled through the parent issue chain and completed through issues #113, #116 and #105; they remain separate from the deliberately bounded #114 capability.
-
-## ytmusicapi specialised production capability
-
-Issue #116 uses a conservative production contract rather than treating ytmusicapi as a general metadata backend. `YTMusic.get_song()` may satisfy only the exact common scalar fields `id`, `title`, `channel_id`, `duration` and `view_count`. Publication dates, descriptions, keywords, category, live/playability state and provider-native `musicVideoType` remain outside that authority surface. `YTMusic.get_song_credits()` is a separate operation and is not part of this capability.
-
-Eligibility requires both resolved YouTube source identity and independent positive music-source evidence represented as a backend-neutral physical source trait. Ordinary YouTube resolution is insufficient. The first deliberately narrow evidence rule requires yt-dlp to resolve the source through the YouTube extractor family and every observed original source domain in the acquisition batch to be `music.youtube.com`. Raw URL appearance without that backend resolution, a generic extractor result, mixed music and ordinary origins, absent origin evidence, a successful ytmusicapi call, a null `musicVideoType` or playback eligibility cannot manufacture the trait. Absence of the trait remains unknown rather than evidence that the source is not music-oriented. This prevents the specialised provider from authorising itself through the acquisition whose eligibility is being decided.
-
-The initial production capability is anonymous only. The issue #112 investigation did not establish browser authentication as necessary for the demonstrated role, so cookie or browser-authenticated contexts do not make this capability eligible. Production acquisition now retains ordinary cost-based lowering: YouTube.js remains preferred for the shared five-field surface, while ytmusicapi is retained as an independently eligible specialised fallback only for confirmed music sources. If the preferred specialised provider fails or omits an entry, `YTMusic.get_song()` is attempted before the established yt-dlp path. Successful ytmusicapi records carry explicit provider and operation provenance and are not written into the existing full detailed metadata cache. Runtime provenance reports successful ytmusicapi records separately from YouTube.js records. Specialised fallback is strictly absence- or failure-driven: each later provider receives only IDs that remain unresolved, and unexpected or duplicate records are ignored rather than overwriting an earlier authoritative result. This keeps provider disagreement observable as a boundary violation instead of making acquisition order an implicit conflict-resolution policy. Additional source-trait evidence may be added later only when it is independently authoritative; it is not required to complete the accepted #116 production boundary.
+General automatic multi-backend scheduling, speculative parallel acquisition and official platform developer APIs are not part of the current provider contract. They require separate evidence and design if future requirements justify them.

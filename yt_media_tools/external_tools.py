@@ -38,11 +38,6 @@ _TOOLS: dict[str, ExternalTool] = {
         ExternalTool("node", "Node.js", "command"),
         ExternalTool("youtubejs", "YouTube.js", "bridge"),
         ExternalTool("graphviz", "Graphviz", "command"),
-        ExternalTool("pytubefix", "pytubefix", "python-library"),
-        ExternalTool("youtube-innertube", "youtube-innertube", "python-library"),
-        ExternalTool("newpipe-extractor", "NewPipeExtractor", "jvm-bridge"),
-        ExternalTool("invidious", "Invidious", "remote-api"),
-        ExternalTool("piped", "Piped", "remote-api"),
         ExternalTool("ytmusicapi", "ytmusicapi", "python-library"),
     )
 }

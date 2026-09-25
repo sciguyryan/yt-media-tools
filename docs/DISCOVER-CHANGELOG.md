@@ -10,6 +10,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [docs] Replace prospective backend recommendations with evidence-backed final dispositions for YouTube.js, ytmusicapi, youtube-innertube, pytubefix, NewPipeExtractor, Invidious, Piped, the official YouTube Data API and the existing yt-dlp fallback.
 - [docs] Preserve the Phase 3 acquisition audit as a clearly historical pre-investigation baseline rather than allowing its former future-work wording to describe current behaviour.
 - [docs] Keep general automatic multi-backend scheduling outside issue #98 while documenting how accepted capabilities fit the backend-neutral physical acquisition boundary.
+- [maintenance] Remove completed provider-investigation reports, the experimental multi-provider benchmark, its deterministic benchmark tests and the NewPipeExtractor research bridge after preserving durable conclusions in the production capability contract and changelog.
+- [maintenance] Remove research-only provider registrations from external-tool diagnostics so the runtime catalogue describes integrations that remain in the project.
+- [docs] Rewrite the metadata-provider capability document as current production architecture rather than an issue-by-issue development narrative.
 
 ## Completed development
 

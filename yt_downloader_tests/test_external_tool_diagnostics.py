@@ -35,14 +35,14 @@ def test_library_diagnostics_are_annotated_without_fake_command_line() -> None:
     configure_external_diagnostics(enabled=True)
     text = format_invocation(
         ToolInvocation(
-            tool="pytubefix",
-            operation="YouTube",
+            tool="ytmusicapi",
+            operation="YTMusic.get_song",
             purpose="metadata acquisition",
             arguments={"url": "https://example.invalid/watch?v=x", "token": "secret"},
         )
     )
     assert "kind: python-library" in text
-    assert "operation: YouTube" in text
+    assert "operation: YTMusic.get_song" in text
     assert "token: <redacted>" in text
     assert "command:" not in text
 
