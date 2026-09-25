@@ -724,7 +724,9 @@ If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to authent
 
 ## Live progress and acquisition reports
 
-Long channel or playlist scans can take time because yt-discover acquires full metadata before applying operations such as ORDER BY. Use `-v` for periodic acquisition counts and important inaccessible/skipped entries on standard error. Use `-vv` to additionally report every successfully acquired entry. Query results remain on standard output, so both modes are safe in pipelines.
+Long channel or playlist scans can take time because yt-discover may move through lightweight source enumeration and authoritative detailed-metadata acquisition before evaluating the final query. Normal interactive execution keeps these stages visible on standard error: lengthy enumeration emits bounded coarse counts, while detailed acquisition announces stage start and completion and reports progress every 25 attempted entries. Known candidate totals are shown when orchestration can provide them; open-ended work reports observed counts without inventing a total. Query results remain on standard output, including machine-readable output.
+
+Use `-v` for additional operational detail and ten-entry detailed-acquisition telemetry. Use `-vv` to additionally report individual successfully acquired entries. Inaccessible-entry detail remains a verbose diagnostic rather than normal per-item output. Progress is observational only and does not alter acquisition ordering, batching, cache decisions, backend selection, early termination, retries or yt-sql evaluation.
 
 Use `--report` to print a post-run acquisition/query report to standard error. Use `--report FILE` to write the report to a UTF-8 text file, or `--report -` to explicitly place it on standard output. Reports include the number of videos attempted or observed, metadata records available, inaccessible/skipped videos by recognised category, archive exclusions, records evaluated by WHERE, matches before LIMIT, and rows emitted. If yt-dlp emits errors that cannot be associated with a specific video ID, the attempted total is labelled as a minimum rather than presented as exact.
 

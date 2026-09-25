@@ -4,6 +4,15 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Completed development
 
+### Improve acquisition progress and investigate simpler metadata acquisition (#81)
+
+- [feature] Keep meaningful acquisition work visible during ordinary interactive execution with backend-neutral detailed-metadata stage start, bounded progress and completion messages on standard error.
+- [maintenance] Preserve acquisition semantics, batching, cache decisions, backend selection, retry behaviour, early termination and yt-sql evaluation while exposing progress.
+- [maintenance] Complete the alternative detailed-metadata acquisition investigation through issue #98 and its provider-investigation descendants, retaining only the accepted production capability architecture and evidence-backed dispositions.
+- [test] Cover normal stage transitions, known and unknown totals, bounded progress, verbose diagnostics and uncontaminated query-result and JSONL output.
+- [docs] Consolidate the durable acquisition-progress contract into the Discover README and remove the completed issue-specific progress audit.
+- [release] Close issue #81 after both the interactive progress and alternative metadata acquisition objectives are complete.
+
 ### Investigate alternative detailed metadata acquisition backends (#98)
 
 - [maintenance] Reconcile the alternative-backend investigation through the completed #105 provider programme and accepted #114 and #116 production integrations.
@@ -14,8 +23,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 ### Reconcile independent metadata provider investigations (#105)
 
 - [maintenance] Reconcile issue #105 after its independent provider investigations and the completed issue #113 production-candidate programme.
-- [maintenance] Retain the shared provider benchmark and deferred-provider adapters as explicit research infrastructure with documented revisit conditions rather than production acquisition paths.
-- [maintenance] Remove the superseded standalone YouTube.js basic-metadata benchmark script, documentation and tests now that the shared provider benchmark and production capability cover its continuing purposes.
+- [maintenance] Complete the independent provider investigations and preserve their evidence-backed dispositions in release history until the parent acquisition investigation is reconciled.
+- [maintenance] Remove the superseded standalone YouTube.js basic-metadata benchmark script, documentation and tests after their continuing production conclusions are incorporated into the accepted capability architecture.
 - [docs] Consolidate the durable provider outcomes around the accepted YouTube.js and ytmusicapi production capabilities plus the deferred or rejected provider decisions.
 - [release] Close issue #105 after every investigated provider has a durable production, deferred or rejected disposition and both demonstrated production candidates have completed their implementation branches.
 
