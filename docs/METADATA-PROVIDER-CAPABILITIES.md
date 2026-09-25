@@ -67,3 +67,11 @@ The production capability registry advertises `youtubejs:getBasicInfo` only for 
 The field set is intentionally closed. `upload_date`, `date`, live/private/unlisted state, descriptions, keywords and other values exposed by the underlying library are not authoritative merely because `getBasicInfo()` can return them. A requirement containing any uncovered field makes this capability ineligible as a complete satisfier, preserving the established acquisition path for that requirement.
 
 This first #114 step establishes the production authority and eligibility contract. Runtime lowering and acquisition must consume this contract rather than duplicating the field list or inferring additional authority from provider output.
+
+## Issue #114 publication-date investigation
+
+The discontinued browser-source human assessment exposed an adapter-level distinction that must not be confused with provider authority. The YouTube.js bridge historically normalised benchmark output exclusively from `VideoInfo.basic_info`. On the observed legacy upload, that object did not expose the publication fields, so the bridge emitted `null` even though the first-party player response contained `microformat.playerMicroformatRenderer.uploadDate`.
+
+YouTube.js represents parsed player microformat separately from `basic_info`. The benchmark bridge therefore preserves player-microformat publication and upload values under `provider_native_dates` for research diagnostics. These values do not populate the normalised `upload_date` field and do not expand the production capability contract. In particular, a provider-native timestamp such as `2005-04-23T20:31:52-07:00` must not silently become yt-sql's date-only `upload_date` until the required timezone and calendar-date semantics are explicitly established.
+
+This distinction means a null normalised benchmark field no longer implies that YouTube.js or the underlying player response lacks corresponding source data. It may instead mean that the data exists outside the deliberately narrow normalisation surface. Production lowering remains limited to the five exact scalar fields already established for issue #114.

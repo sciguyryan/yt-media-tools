@@ -112,3 +112,6 @@ Thumbs.db
 /.benchmarks/
 /benchmark-results*.json
 /bench*.json
+
+# Human metadata-authority assessment evidence is local research output.
+*-authority-evidence.json

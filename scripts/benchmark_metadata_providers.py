@@ -119,6 +119,16 @@ def _json_lines(command: list[str], *, env: dict[str, str] | None = None) -> tup
 def _normalise_youtubejs(row: dict[str, Any]) -> dict[str, Any]:
     if not row.get("ok", True):
         return _failure_row(str(row.get("id", "")), str(row.get("error", "YouTube.js acquisition failed")))
+    source_signals = {
+        "is_live": row.get("is_live"),
+        "is_live_content": row.get("is_live_content"),
+        "is_private": row.get("is_private"),
+        "is_unlisted": row.get("is_unlisted"),
+        "playability_status": row.get("playability_status"),
+    }
+    for key in ("publish_date", "upload_date", "start_timestamp", "channel_name"):
+        if row.get(key) is not None:
+            source_signals[key] = row[key]
     return {
         "id": row.get("id"),
         "title": row.get("title"),
@@ -131,13 +141,7 @@ def _normalise_youtubejs(row: dict[str, Any]) -> dict[str, Any]:
         "is_live": row.get("is_live"),
         "keywords": row.get("keywords"),
         "ok": row.get("ok", True),
-        "source_signals": {
-            "is_live": row.get("is_live"),
-            "is_live_content": row.get("is_live_content"),
-            "is_private": row.get("is_private"),
-            "is_unlisted": row.get("is_unlisted"),
-            "playability_status": row.get("playability_status"),
-        },
+        "source_signals": source_signals,
     }
 
 

@@ -18,6 +18,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Require conservative resolved YouTube source evidence before the capability can participate in provider selection.
 - [maintenance] Keep publication dates, provider-native state flags and all unproven fields outside the capability boundary so mixed requirements retain the established acquisition path.
 - [test] Cover the exact field boundary, unresolved and mismatched source rejection, mixed unsupported requirements and cookie-context eligibility without credential disclosure.
+- [maintenance] Remove the discontinued interactive browser-source authority-assessment machinery and its dedicated corpus and tests.
+- [fix] Preserve YouTube.js player-microformat publication and upload timestamps as research diagnostics instead of incorrectly reporting them as absent when `basic_info` omits them.
+- [test] Cover extraction of provider-native player-microformat date evidence independently from the production authority boundary.
+- [docs] Record that YouTube.js `getBasicInfo()` exposes player microformat separately from `basic_info`, while publication fields remain outside the production capability until their yt-sql semantics are established.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 

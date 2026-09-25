@@ -151,6 +151,7 @@ function integerValue(value) {
 function basicInfoRecord(info, videoId, elapsedMs) {
   const basic = info?.basic_info || {};
   const author = basic.author || {};
+  const microformat = info?.microformat || {};
   return {
     id: basic.id || videoId,
     title: basic.title ?? null,
@@ -159,6 +160,14 @@ function basicInfoRecord(info, videoId, elapsedMs) {
     duration: integerValue(basic.duration),
     view_count: integerValue(basic.view_count),
     short_description: basic.short_description ?? null,
+    publish_date: basic.publish_date ?? null,
+    upload_date: basic.upload_date ?? null,
+    start_timestamp: basic.start_timestamp ?? null,
+    provider_native_dates: {
+      player_microformat_publish_date: microformat.publish_date ?? microformat.publishDate ?? null,
+      player_microformat_upload_date: microformat.upload_date ?? microformat.uploadDate ?? null,
+      player_microformat_live_broadcast_details: microformat.live_broadcast_details ?? microformat.liveBroadcastDetails ?? null,
+    },
     keywords: Array.isArray(basic.keywords) ? basic.keywords : null,
     is_live: basic.is_live ?? null,
     is_live_content: basic.is_live_content ?? null,
