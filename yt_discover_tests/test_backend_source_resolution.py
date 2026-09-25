@@ -117,3 +117,69 @@ def test_specific_and_generic_observations_remain_unresolved() -> None:
         ]
     )
     assert resolved_source_kind(resolutions) is None
+
+
+def test_resolved_music_origin_proves_positive_music_trait_only_after_youtube_resolution() -> None:
+    from yt_media_tools.source_resolution import resolved_source_traits
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "youtube",
+                "extractor_key": "Youtube",
+                "webpage_url": "https://www.youtube.com/watch?v=example",
+                "original_url": "https://music.youtube.com/watch?v=example",
+            }
+        ]
+    )
+    assert resolved_source_traits(resolutions) == frozenset({"music"})
+
+
+def test_music_domain_without_specific_youtube_resolution_proves_no_music_trait() -> None:
+    from yt_media_tools.source_resolution import resolved_source_traits
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "generic",
+                "extractor_key": "Generic",
+                "original_url": "https://music.youtube.com/watch?v=example",
+            }
+        ]
+    )
+    assert resolved_source_traits(resolutions) == frozenset()
+
+
+def test_ordinary_youtube_origin_does_not_prove_negative_or_positive_music_trait() -> None:
+    from yt_media_tools.source_resolution import resolved_source_traits
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "youtube",
+                "extractor_key": "Youtube",
+                "original_url": "https://www.youtube.com/watch?v=example",
+            }
+        ]
+    )
+    assert resolved_source_traits(resolutions) == frozenset()
+
+
+def test_mixed_music_and_ordinary_origins_do_not_prove_batch_music_trait() -> None:
+    from yt_media_tools.source_resolution import resolved_source_traits
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "youtube",
+                "extractor_key": "Youtube",
+                "original_url": "https://music.youtube.com/watch?v=music",
+            },
+            {
+                "extractor": "youtube",
+                "extractor_key": "Youtube",
+                "original_url": "https://www.youtube.com/watch?v=ordinary",
+            },
+        ]
+    )
+    assert resolved_source_traits(resolutions) == frozenset()

@@ -125,10 +125,11 @@ def selection_context_from_backend_resolution(
     authentication: str = AUTH_ANONYMOUS,
 ) -> ProviderSelectionContext:
     """Build provider-selection context from conservative backend resolution evidence."""
-    from .source_resolution import resolved_source_kind
+    from .source_resolution import resolved_source_kind, resolved_source_traits
 
     return ProviderSelectionContext(
         resolved_source_kind=resolved_source_kind(resolutions),
+        source_traits=resolved_source_traits(resolutions),
         authentication=authentication,
     )
 

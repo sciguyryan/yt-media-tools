@@ -35,7 +35,7 @@ The capability should be eligible only after conservative backend resolution ide
 
 ### ytmusicapi specialised resolved-source capability
 
-A separate integration issue is justified for specialised YouTube Music metadata. Eligibility must come from resolved physical source evidence, not URL appearance, yt-sql syntax, ordinary YouTube category, successful `get_song()` acquisition or playback state alone. `musicVideoType` should remain provider-native evidence that can participate in physical source classification without becoming a new yt-sql semantic by itself.
+A separate integration issue is justified for specialised YouTube Music metadata. Eligibility must come from resolved physical source evidence, not unverified URL appearance, yt-sql syntax, ordinary YouTube category, successful `get_song()` acquisition or playback state alone. `musicVideoType` should remain provider-native evidence that can participate in physical source classification without becoming a new yt-sql semantic by itself.
 
 The prospective production operation should use anonymous acquisition with the explicit current day-based signature timestamp. Browser authentication is not part of the demonstrated production requirement. Metadata success and provider-native playability must remain independent. Common fields acquired from ytmusicapi require explicit authority decisions and provenance; specialised music evidence must not silently overwrite differently scoped yt-dlp metadata.
 

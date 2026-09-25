@@ -449,3 +449,48 @@ def test_ytmusicapi_browser_or_cookie_authentication_is_not_a_production_require
         candidate.capability.provider != "ytmusicapi"
         for candidate in eligible_provider_candidates(requirement, production_provider_capabilities(), context=context)
     )
+
+
+def test_backend_resolution_context_derives_music_trait_only_from_confirmed_music_origin() -> None:
+    from yt_media_tools.provider_capabilities import SOURCE_TRAIT_MUSIC, selection_context_from_backend_resolution
+    from yt_media_tools.source_resolution import observed_ytdlp_resolutions
+
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "youtube",
+                "extractor_key": "Youtube",
+                "original_url": "https://music.youtube.com/watch?v=example",
+                "webpage_url": "https://www.youtube.com/watch?v=example",
+            }
+        ]
+    )
+    context = selection_context_from_backend_resolution(resolutions)
+
+    assert context.resolved_source_kind == "youtube"
+    assert context.source_traits == frozenset({SOURCE_TRAIT_MUSIC})
+
+
+def test_confirmed_music_origin_makes_ytmusicapi_eligible_without_provider_self_evidence() -> None:
+    from yt_media_tools.provider_capabilities import (
+        production_provider_capabilities,
+        selection_context_from_backend_resolution,
+    )
+    from yt_media_tools.source_resolution import observed_ytdlp_resolutions
+
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "view_count"}))
+    resolutions = observed_ytdlp_resolutions(
+        [
+            {
+                "extractor": "youtube",
+                "extractor_key": "Youtube",
+                "original_url": "https://music.youtube.com/watch?v=example",
+            }
+        ]
+    )
+    context = selection_context_from_backend_resolution(resolutions)
+
+    assert any(
+        candidate.capability.provider == "ytmusicapi"
+        for candidate in eligible_provider_candidates(requirement, production_provider_capabilities(), context=context)
+    )

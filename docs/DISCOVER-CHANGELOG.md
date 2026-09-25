@@ -49,6 +49,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Keep `YTMusic.get_song_credits()` outside the initial capability so a distinct higher-cost operation cannot be acquired implicitly.
 - [test] Cover positive source-trait eligibility, ordinary-YouTube exclusion, unsupported-field contamination and authentication boundaries.
 - [docs] Record issue #116 as the outstanding specialised production child of issue #113.
+- [feature] Derive the initial positive music-source trait only when yt-dlp proves the YouTube extractor family and every observed original source domain is `music.youtube.com`.
+- [maintenance] Keep generic extraction, ordinary or mixed YouTube origins and absent origin evidence unknown rather than inferring positive or negative music classification.
+- [test] Cover confirmed music-origin evidence, generic-domain rejection, ordinary-origin neutrality, mixed-origin conservatism and provider eligibility from the derived trait.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 

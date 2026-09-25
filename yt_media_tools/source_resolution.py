@@ -115,3 +115,23 @@ def resolved_source_kind(
     if any(resolution.extractor_family is None for resolution in resolutions):
         return None
     return next(iter(families))
+
+
+def resolved_source_traits(
+    resolutions: tuple[BackendSourceResolution, ...],
+) -> frozenset[str]:
+    """Return conservative positive physical source traits proved by resolution.
+
+    Traits are evidence, not negative classification. The initial music trait is
+    intentionally narrow: yt-dlp must first prove the YouTube extractor family and
+    every observed original source domain must be ``music.youtube.com``. A bare URL
+    spelling, a generic extractor result, mixed origins, or absent origin evidence
+    proves nothing. This keeps specialised providers from manufacturing their own
+    eligibility while leaving room for additional independent evidence sources later.
+    """
+    if resolved_source_kind(resolutions) != "youtube":
+        return frozenset()
+    original_domains = {resolution.original_domain for resolution in resolutions}
+    if original_domains == {"music.youtube.com"}:
+        return frozenset({"music"})
+    return frozenset()
