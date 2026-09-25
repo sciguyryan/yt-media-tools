@@ -28,6 +28,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [test] Lock production batch/session reuse to one bridge invocation for a multi-video metadata request.
 - [test] Cover the exact field boundary, source eligibility, mixed unsupported requirements, cookie-context eligibility, conservative production lowering, runtime execution and whole-request or per-entry fallback.
 - [docs] Record that YouTube.js `MediaInfo.basic_info` does not propagate `PlayerMicroformat.publish_date` or `upload_date`, while populated `PlayerMicroformat` fields themselves are direct mappings of the corresponding player response values. Publication dates remain outside the #114 production authority boundary.
+- [test] Exhaustively cover every non-empty subset of the five-field authority surface, unsupported-field contamination and mixed-provider fallback ordering.
+- [docs] Reconcile issue #114 around its final closed authority, lowering, execution, fallback, provenance, explain and session-reuse boundaries in preparation for parent issue #113.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 

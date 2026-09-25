@@ -305,3 +305,49 @@ def test_production_lowering_does_not_select_youtubejs_without_resolved_youtube_
     requirements = (MetadataRequirement("complete-metadata", frozenset({"title", "duration"})),)
 
     assert lower_provider_requirements(requirements) == ()
+
+
+def test_youtubejs_exact_scalar_all_nonempty_field_subsets_are_eligible() -> None:
+    """Every subset of the closed authority surface must lower identically."""
+    from itertools import combinations
+
+    from yt_media_tools.provider_capabilities import (
+        YOUTUBEJS_EXACT_SCALAR_FIELDS,
+        production_provider_capabilities,
+    )
+
+    fields = sorted(YOUTUBEJS_EXACT_SCALAR_FIELDS)
+    context = ProviderSelectionContext(resolved_source_kind="youtube")
+    capabilities = production_provider_capabilities()
+    for size in range(1, len(fields) + 1):
+        for subset in combinations(fields, size):
+            requirement = MetadataRequirement("complete-metadata", frozenset(subset))
+            selected = select_provider_capability(requirement, capabilities, context=context)
+            assert selected is not None, subset
+            assert selected.capability.provider == "youtubejs"
+
+
+def test_youtubejs_exact_scalar_unsupported_fields_poison_complete_lowering() -> None:
+    """One unsupported field must keep the whole semantic stage off YouTube.js."""
+    from yt_media_tools.provider_capabilities import production_provider_capabilities
+
+    context = ProviderSelectionContext(resolved_source_kind="youtube")
+    for unsupported in (
+        "upload_date",
+        "date",
+        "description",
+        "keywords",
+        "is_live",
+        "is_private",
+        "is_unlisted",
+        "category",
+    ):
+        requirement = MetadataRequirement("complete-metadata", frozenset({"duration", unsupported}))
+        assert (
+            select_provider_capability(
+                requirement,
+                production_provider_capabilities(),
+                context=context,
+            )
+            is None
+        ), unsupported

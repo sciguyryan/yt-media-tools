@@ -160,3 +160,46 @@ def test_production_youtubejs_batches_requested_ids_into_one_bridge_invocation(m
     assert captured[0][-3:] == ["--basic-info", "a", "b"]
     assert [record["id"] for record in records] == ["a", "b"]
     assert stats.available == 2
+
+
+def test_specialised_youtubejs_success_and_ytdlp_fallback_preserve_requested_order(monkeypatch) -> None:
+    """Mixed provider completion must remain observationally ordered by requested IDs."""
+
+    def fake_acquire(project_root, video_ids, *, cookies_file=None):
+        return (
+            [
+                {
+                    "id": "c",
+                    "title": "C",
+                    "_yt_sql_metadata_provider": "youtubejs",
+                    "_yt_sql_metadata_operation": "getBasicInfo",
+                },
+                {
+                    "id": "a",
+                    "title": "A",
+                    "_yt_sql_metadata_provider": "youtubejs",
+                    "_yt_sql_metadata_operation": "getBasicInfo",
+                },
+            ],
+            AcquisitionStats(available=2),
+        )
+
+    def fake_load(command, *, progress=None):
+        return ([{"id": "b", "title": "B"}], AcquisitionStats(available=1))
+
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
+    records, stats, _ = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://www.youtube.com/@example/videos",
+        video_ids=["a", "b", "c"],
+        required_fields={"title"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider="youtubejs",
+        project_root=Path("/project"),
+    )
+
+    assert [record["id"] for record in records] == ["a", "b", "c"]
+    assert [record["title"] for record in records] == ["A", "B", "C"]
+    assert stats.available == 3
