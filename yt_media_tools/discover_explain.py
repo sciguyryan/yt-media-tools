@@ -25,6 +25,7 @@ from yt_media_tools.planner import (
 )
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.optimizer_proofs import proof_to_dict
+from yt_media_tools.provider_capabilities import production_provider_capabilities
 from yt_media_tools.semantic_provability import prove_join_consequences
 from yt_media_tools.query import (
     Query,
@@ -48,6 +49,46 @@ from yt_media_tools.temporal_bounds import infer_temporal_bounds
 from yt_media_tools.source_capabilities import selected_facet_capabilities
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.ytdlp import AcquisitionStats, EnumerationStats, lower_acquisition_plan_to_ytdlp
+
+
+def _provider_lowering_explain(physical_plan: object) -> list[dict[str, object]]:
+    """Describe specialised provider opportunities without pretending runtime eligibility is known.
+
+    Offline EXPLAIN has no observed extractor-family evidence, so source-specific capabilities
+    remain conditional here. Runtime lowering performs the authoritative eligibility decision.
+    """
+    capabilities = production_provider_capabilities()
+    result: list[dict[str, object]] = []
+    for requirement in physical_plan.provider_requirements:
+        candidates = []
+        for capability in capabilities:
+            if capability.authority != "exact" or not capability.supports(requirement):
+                continue
+            candidates.append(
+                {
+                    "provider": capability.provider,
+                    "operation": capability.provenance,
+                    "authority": capability.authority,
+                    "fields": sorted(capability.fields) if capability.fields is not None else None,
+                    "required_source_kinds": sorted(capability.source_kinds)
+                    if capability.source_kinds is not None
+                    else [],
+                    "authentication": sorted(capability.authentication),
+                    "cost_rank": capability.cost_rank,
+                    "eligibility": (
+                        "requires-runtime-source-resolution" if capability.source_kinds is not None else "eligible"
+                    ),
+                }
+            )
+        result.append(
+            {
+                "stage": requirement.stage,
+                "required_fields": sorted(requirement.fields),
+                "specialised_candidates": candidates,
+                "fallback": "established-acquisition-path",
+            }
+        )
+    return result
 
 
 def _query_type_explain_payload(query_type: object | None) -> dict[str, object | None]:
@@ -603,6 +644,14 @@ def explain_user_query(
                 indexed = ", ".join(f"{item.field}[{item.index}]" for item in stage.indexed_fields) or "none"
                 lines.append(f"    {stage.name}: {status}; fields={fields}; indexed={indexed}; {stage.reason}")
             lines.append(f"    yt-dlp lowering: {lowering.reason}")
+            for provider_requirement in _provider_lowering_explain(boundary.physical_acquisition):
+                for candidate in provider_requirement["specialised_candidates"]:
+                    source_kinds = ", ".join(candidate["required_source_kinds"]) or "any"
+                    lines.append(
+                        f"    Specialised candidate: {candidate['operation']}; "
+                        f"stage={provider_requirement['stage']}; "
+                        f"eligibility={candidate['eligibility']}; source-kind={source_kinds}"
+                    )
             if lowering.collapsed_detailed_stages:
                 lines.append(
                     "    Collapsed into detailed JSON extraction: " + ", ".join(lowering.collapsed_detailed_stages)
@@ -1021,6 +1070,7 @@ def explain_user_query_json(
                 "detailed_fields": sorted(boundary.metadata_requirements.detailed_fields),
                 "requires_detailed_metadata": boundary.metadata_requirements.requires_detailed_metadata,
                 "reason": boundary.metadata_requirements.reason,
+                "provider_lowering": _provider_lowering_explain(boundary.physical_acquisition),
             }
             for boundary in source_boundaries
         ],
@@ -1055,6 +1105,7 @@ def explain_user_query_json(
                     for stage in branch.physical_acquisition.stages
                 ],
                 "required_acquisition_stages": list(branch.physical_acquisition.required_stage_names),
+                "provider_lowering": _provider_lowering_explain(branch.physical_acquisition),
                 "ytdlp_lowering": {
                     "flat_stages": list(lower_acquisition_plan_to_ytdlp(branch.physical_acquisition).flat_stages),
                     "detailed_stages": list(

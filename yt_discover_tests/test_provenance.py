@@ -145,3 +145,27 @@ def test_same_source_cross_facet_provenance_keeps_requests_independent(tmp_path:
     assert [source["acquired_records"] for source in payload["sources"]] == [1, 1]
     assert payload["execution"]["normalised_records"] == 2
     assert payload["execution"]["emitted_rows"] == 2
+
+
+def test_metadata_provider_provenance_reports_only_explicit_attribution() -> None:
+    from yt_media_tools.discover_application import _metadata_provider_provenance
+
+    payload = _metadata_provider_provenance(
+        [
+            {
+                "id": "a",
+                "_yt_sql_metadata_provider": "youtubejs",
+                "_yt_sql_metadata_operation": "getBasicInfo",
+            },
+            {
+                "id": "b",
+                "_yt_sql_metadata_provider": "youtubejs",
+                "_yt_sql_metadata_operation": "getBasicInfo",
+            },
+            {"id": "c"},
+        ]
+    )
+
+    assert payload["observed"] == [{"provider": "youtubejs", "operation": "getBasicInfo", "records": 2}]
+    assert payload["unattributed_records"] == 1
+    assert "not inferred" in payload["note"]

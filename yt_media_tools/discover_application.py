@@ -100,6 +100,28 @@ from yt_media_tools.ytdlp import (
 )
 
 
+def _metadata_provider_provenance(records: list[dict]) -> dict[str, object]:
+    """Summarise explicit specialised-provider provenance without guessing cache origins."""
+    operations: dict[tuple[str, str], int] = {}
+    unattributed = 0
+    for record in records:
+        provider = record.get("_yt_sql_metadata_provider")
+        operation = record.get("_yt_sql_metadata_operation")
+        if not isinstance(provider, str) or not provider or not isinstance(operation, str) or not operation:
+            unattributed += 1
+            continue
+        key = (provider, operation)
+        operations[key] = operations.get(key, 0) + 1
+    return {
+        "observed": [
+            {"provider": provider, "operation": operation, "records": count}
+            for (provider, operation), count in sorted(operations.items())
+        ],
+        "unattributed_records": unattributed,
+        "note": "Unattributed records may originate from yt-dlp or the existing metadata cache; provenance is not inferred.",
+    }
+
+
 def _specialised_metadata_provider(
     *,
     physical_plan,
@@ -1406,6 +1428,7 @@ def main(argv: list[str] | None = None) -> int:
                 "distinct_rows": len(distinct_rows),
                 "matched_before_limit": len(matched_before_limit),
                 "emitted_rows": len(selected),
+                "metadata_provider_provenance": _metadata_provider_provenance(raw_records),
             },
             "cache": {
                 "enabled": metadata_cache is not None,

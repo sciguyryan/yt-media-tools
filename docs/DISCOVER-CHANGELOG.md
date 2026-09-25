@@ -22,6 +22,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Execute wholly lowered exact-scalar requirements through the production YouTube.js `getBasicInfo()` bridge after conservative YouTube source resolution.
 - [maintenance] Fall back to yt-dlp for bridge failure or individual videos omitted by YouTube.js, and do not persist partial specialised-provider rows into the existing yt-dlp-oriented detailed metadata cache.
 - [maintenance] Add a production `--basic-info` bridge operation while retaining the benchmark alias for compatibility.
+- [feature] Expose conditional specialised-provider lowering in human and JSON explain output without claiming runtime source eligibility before backend resolution.
+- [feature] Record explicitly observed specialised metadata provider and operation counts in provenance output while leaving cache and untagged origins unattributed.
 - [test] Cover the exact field boundary, source eligibility, mixed unsupported requirements, cookie-context eligibility, conservative production lowering, runtime execution and whole-request or per-entry fallback.
 - [docs] Record that YouTube.js `MediaInfo.basic_info` does not propagate `PlayerMicroformat.publish_date` or `upload_date`, while populated `PlayerMicroformat` fields themselves are direct mappings of the corresponding player response values. Publication dates remain outside the #114 production authority boundary.
 

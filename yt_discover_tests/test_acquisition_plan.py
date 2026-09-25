@@ -188,3 +188,36 @@ def test_json_explain_exposes_stages_and_ytdlp_lowering() -> None:
     assert boundary["ytdlp_lowering"]["detailed_stages"] == [
         STAGE_COMPLETE_METADATA,
     ]
+
+
+def test_explain_surfaces_conditional_youtubejs_provider_lowering() -> None:
+    payload = explain_user_query_json(
+        "SELECT id, duration FROM @example",
+        source_type="auto",
+        tab="all",
+        date_format="ymd",
+    )
+    lowering = payload["source_boundaries"][0]["provider_lowering"]
+    complete = next(item for item in lowering if item["stage"] == STAGE_COMPLETE_METADATA)
+
+    assert complete["required_fields"] == ["duration"]
+    assert complete["specialised_candidates"] == [
+        {
+            "provider": "youtubejs",
+            "operation": "youtubejs:getBasicInfo",
+            "authority": "exact",
+            "fields": ["channel_id", "duration", "id", "title", "view_count"],
+            "required_source_kinds": ["youtube"],
+            "authentication": ["anonymous", "cookies"],
+            "cost_rank": 20,
+            "eligibility": "requires-runtime-source-resolution",
+        }
+    ]
+    human = explain_user_query(
+        "SELECT id, duration FROM @example",
+        source_type="auto",
+        tab="all",
+        date_format="ymd",
+    )
+    assert "Specialised candidate: youtubejs:getBasicInfo" in human
+    assert "eligibility=requires-runtime-source-resolution" in human
