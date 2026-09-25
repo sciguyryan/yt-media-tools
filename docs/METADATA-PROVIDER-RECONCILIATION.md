@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Issue #105 coordinated the independent metadata-provider investigations, and issue #113 reconciled their evidence into production-candidate decisions. The two demonstrated production candidates were subsequently implemented and accepted through issue #114 for YouTube.js and issue #116 for specialised ytmusicapi acquisition. This document records the durable outcome of that investigation chain without promoting any deferred research adapter.
+Issue #105 coordinated the independent metadata-provider investigations and is now complete. Issue #113 reconciled their evidence into production-candidate decisions. The two demonstrated production candidates were subsequently implemented and accepted through issue #114 for YouTube.js and issue #116 for specialised ytmusicapi acquisition. This document records the durable outcome of that investigation chain without promoting any deferred research adapter.
 
 The decision boundary is capability based. Technical integrability is insufficient. A provider must demonstrate a useful metadata requirement set that it can satisfy more appropriately than the existing production path, with defensible field authority, provenance, acquisition cost, source applicability, authentication behaviour, portability, maintenance characteristics and failure semantics.
 

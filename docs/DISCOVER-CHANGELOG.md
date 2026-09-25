@@ -1,15 +1,16 @@
 # Discover changelog
 
-## Discover - independent metadata provider investigation reconciliation
+This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
+
+## Completed development
+
+### Reconcile independent metadata provider investigations (#105)
 
 - [maintenance] Reconcile issue #105 after its independent provider investigations and the completed issue #113 production-candidate programme.
 - [maintenance] Retain the shared provider benchmark and deferred-provider adapters as explicit research infrastructure with documented revisit conditions rather than production acquisition paths.
 - [maintenance] Remove the superseded standalone YouTube.js basic-metadata benchmark script, documentation and tests now that the shared provider benchmark and production capability cover its continuing purposes.
 - [docs] Consolidate the durable provider outcomes around the accepted YouTube.js and ytmusicapi production capabilities plus the deferred or rejected provider decisions.
-
-This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
-
-## Completed development
+- [release] Close issue #105 after every investigated provider has a durable production, deferred or rejected disposition and both demonstrated production candidates have completed their implementation branches.
 
 ### Add capability-scoped YouTube.js exact-scalar metadata acquisition (#114)
 
