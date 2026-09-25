@@ -235,6 +235,28 @@ def test_youtubejs_normalisation_preserves_playability_and_live_signals() -> Non
     }
 
 
+def test_youtubejs_normalisation_preserves_provider_native_dates_without_promoting_upload_date() -> None:
+    benchmark = _module()
+    row = benchmark._normalise_youtubejs(
+        {
+            "id": "old-video",
+            "ok": True,
+            "upload_date": None,
+            "provider_native_dates": {
+                "player_microformat_publish_date": "2005-04-23T20:31:52-07:00",
+                "player_microformat_upload_date": "2005-04-23T20:31:52-07:00",
+                "player_microformat_live_broadcast_details": None,
+            },
+        }
+    )
+    assert row["upload_date"] is None
+    assert row["source_signals"]["provider_native_dates"] == {
+        "player_microformat_publish_date": "2005-04-23T20:31:52-07:00",
+        "player_microformat_upload_date": "2005-04-23T20:31:52-07:00",
+        "player_microformat_live_broadcast_details": None,
+    }
+
+
 def test_youtube_innertube_normalisation_preserves_live_signal_and_available_keys() -> None:
     benchmark = _module()
     row = benchmark._normalise_youtube_innertube(

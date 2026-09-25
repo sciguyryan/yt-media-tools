@@ -21,6 +21,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Remove the discontinued interactive browser-source authority-assessment machinery and its dedicated corpus and tests.
 - [fix] Preserve YouTube.js player-microformat publication and upload timestamps as research diagnostics instead of incorrectly reporting them as absent when `basic_info` omits them.
 - [test] Cover extraction of provider-native player-microformat date evidence independently from the production authority boundary.
+- [fix] Carry provider-native YouTube.js date evidence through benchmark normalisation so diagnostic output reflects values emitted by the bridge.
+- [test] Cover benchmark preservation of provider-native date evidence without promoting it to normalised `upload_date`.
 - [docs] Record that YouTube.js `getBasicInfo()` exposes player microformat separately from `basic_info`, while publication fields remain outside the production capability until their yt-sql semantics are established.
 
 ### Discover - specialised ytmusicapi metadata benchmark
