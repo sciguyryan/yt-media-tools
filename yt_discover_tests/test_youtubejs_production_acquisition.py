@@ -128,3 +128,35 @@ def test_specialised_youtubejs_partial_result_falls_back_only_for_missing_ids(mo
     rendered = " ".join(commands[0])
     assert "watch?v=b" in rendered
     assert "watch?v=a" not in rendered
+
+
+def test_production_youtubejs_batches_requested_ids_into_one_bridge_invocation(monkeypatch) -> None:
+    """One production batch should share one bridge process and therefore one Innertube session."""
+    from types import SimpleNamespace
+
+    from yt_media_tools.youtubejs import acquire_basic_info
+
+    captured = []
+
+    monkeypatch.setattr("yt_media_tools.youtubejs.shutil.which", lambda executable: "/usr/bin/node")
+    monkeypatch.setattr("yt_media_tools.youtubejs.emit_invocation", lambda invocation: None)
+
+    def fake_run(command, **kwargs):
+        captured.append(command)
+        return SimpleNamespace(
+            returncode=0,
+            stderr="",
+            stdout=(
+                '{"ok":true,"id":"a","title":"A","channel_id":"c","duration":1,"view_count":2}\n'
+                '{"ok":true,"id":"b","title":"B","channel_id":"c","duration":3,"view_count":4}\n'
+            ),
+        )
+
+    monkeypatch.setattr("yt_media_tools.youtubejs.subprocess.run", fake_run)
+    project_root = Path(__file__).resolve().parents[1]
+    records, stats = acquire_basic_info(project_root, ["a", "b"])
+
+    assert len(captured) == 1
+    assert captured[0][-3:] == ["--basic-info", "a", "b"]
+    assert [record["id"] for record in records] == ["a", "b"]
+    assert stats.available == 2

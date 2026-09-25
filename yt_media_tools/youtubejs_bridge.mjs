@@ -172,11 +172,13 @@ function basicInfoRecord(info, videoId, elapsedMs) {
   };
 }
 
-async function benchmarkBasicInfo(videoIds) {
+async function acquireBasicInfo(videoIds) {
   const { Innertube } = await loadLibrary();
   const cookie = process.env.YT_DISCOVER_YOUTUBEJS_COOKIE;
   const options = { generate_session_locally: true };
   if (cookie) options.cookie = cookie;
+  // Keep one Innertube session for the complete requested batch. Besides avoiding repeated
+  // session construction, this preserves the production benchmark's demonstrated cost advantage.
   const yt = await Innertube.create(options);
   for (const videoId of videoIds) {
     const started = process.hrtime.bigint();
@@ -213,7 +215,7 @@ async function main() {
   if (mode === '--basic-info' || mode === '--benchmark-basic-info') {
     const videoIds = process.argv.slice(3).filter(Boolean);
     if (videoIds.length === 0) throw new Error('at least one video ID is required');
-    await benchmarkBasicInfo(videoIds);
+    await acquireBasicInfo(videoIds);
     return;
   }
   if (mode === '--enumerate-channel-videos') {

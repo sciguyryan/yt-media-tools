@@ -79,3 +79,7 @@ Publication dates remain outside the #114 capability. A provider-native timestam
 Offline explain output reports specialised provider opportunities as conditional physical lowering. Source-specific capabilities such as `youtubejs:getBasicInfo` remain marked as requiring runtime source resolution because static query explanation does not have the extractor-family evidence used by production selection. The established acquisition path remains explicit as the fallback.
 
 Runtime provenance records provider and operation counts only when an acquired row carries explicit specialised-provider attribution. Untagged rows are deliberately reported as unattributed because they may originate from yt-dlp or the existing metadata cache, and provenance must not guess an origin that the execution path did not preserve.
+
+### Production session reuse
+
+Production `getBasicInfo()` acquisition passes the complete requested metadata batch to one bridge process. The bridge creates one Innertube session before iterating the video IDs and reuses that session for every item in the batch. This preserves the session-reuse behaviour measured during the provider investigation without introducing cross-query global state, background pooling or provider-specific semantics into the planner. LIMIT-aware acquisition may still create separate sessions for separate semantic batches because those batches are deliberately evaluated incrementally and may terminate early.
