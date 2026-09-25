@@ -24,3 +24,14 @@ def test_bridge_preserves_player_microformat_dates_without_promoting_them_to_nor
     assert "player_microformat_upload_date" in source
     assert "publish_date: basic.publish_date ?? null" in source
     assert "upload_date: basic.upload_date ?? null" in source
+
+
+def test_bridge_can_compare_parsed_microformat_with_raw_player_response_without_promoting_dates() -> None:
+    source = BRIDGE.read_text(encoding="utf-8")
+    assert "function rawPlayerMicroformatDates(payload)" in source
+    assert "payload?.microformat?.playerMicroformatRenderer" in source
+    assert "response_has_player_microformat" in source
+    assert "response.clone().json()" in source
+    assert "raw_player_response: rawPlayerResponseDates" in source
+    assert "capture.reset();" in source
+    assert "upload_date: basic.upload_date ?? null" in source

@@ -23,6 +23,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [test] Cover extraction of provider-native player-microformat date evidence independently from the production authority boundary.
 - [fix] Carry provider-native YouTube.js date evidence through benchmark normalisation so diagnostic output reflects values emitted by the bridge.
 - [test] Cover benchmark preservation of provider-native date evidence without promoting it to normalised `upload_date`.
+- [maintenance] Capture the raw InnerTube player response microformat during the YouTube.js benchmark so parser exposure can be distinguished from response omission without retaining the response body.
+- [test] Cover raw player-response microformat diagnostics, per-video capture reset and continued separation from normalised publication semantics.
 - [docs] Record that YouTube.js `getBasicInfo()` exposes player microformat separately from `basic_info`, while publication fields remain outside the production capability until their yt-sql semantics are established.
 
 ### Discover - specialised ytmusicapi metadata benchmark
