@@ -59,7 +59,9 @@ from yt_media_tools.planner import (
 )
 from yt_media_tools.provider_capabilities import (
     AUTH_COOKIES,
+    eligible_provider_candidates,
     lower_provider_requirements,
+    production_provider_capabilities,
     selection_context_from_backend_resolution,
 )
 from yt_media_tools.query import (
@@ -122,25 +124,60 @@ def _metadata_provider_provenance(records: list[dict]) -> dict[str, object]:
     }
 
 
-def _specialised_metadata_provider(
+def _specialised_metadata_providers(
     *,
     physical_plan,
     resolution_records: list[dict],
     cookies_file: Path | None,
-) -> str | None:
-    """Select a specialised provider only when it satisfies the complete physical request."""
+) -> tuple[str, ...]:
+    """Return specialised providers that can each satisfy the complete physical request.
+
+    The first provider follows normal cost-based lowering. Additional providers are retained
+    as conservative specialised fallbacks only when they independently satisfy every semantic
+    requirement in the same resolved-source context.
+    """
     requirements = physical_plan.provider_requirements
     if not requirements:
-        return None
+        return ()
     context = selection_context_from_backend_resolution(
         observed_ytdlp_resolutions(resolution_records),
         authentication=AUTH_COOKIES if cookies_file is not None else "anonymous",
     )
     lowered = lower_provider_requirements(requirements, context=context)
     if len(lowered) != len(requirements):
-        return None
-    providers = {item.candidate.capability.provider for item in lowered}
-    return next(iter(providers)) if len(providers) == 1 else None
+        return ()
+    primary = {item.candidate.capability.provider for item in lowered}
+    if len(primary) != 1:
+        return ()
+    primary_provider = next(iter(primary))
+    candidate_sets = [
+        {
+            candidate.capability.provider
+            for candidate in eligible_provider_candidates(
+                requirement, production_provider_capabilities(), context=context
+            )
+        }
+        for requirement in requirements
+    ]
+    common = set.intersection(*candidate_sets) if candidate_sets else set()
+    ordered = [primary_provider]
+    ordered.extend(sorted(common - {primary_provider}))
+    return tuple(ordered)
+
+
+def _specialised_metadata_provider(
+    *,
+    physical_plan,
+    resolution_records: list[dict],
+    cookies_file: Path | None,
+) -> str | None:
+    """Return the preferred specialised provider for compatibility with existing callers."""
+    providers = _specialised_metadata_providers(
+        physical_plan=physical_plan,
+        resolution_records=resolution_records,
+        cookies_file=cookies_file,
+    )
+    return providers[0] if providers else None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -806,7 +843,7 @@ def main(argv: list[str] | None = None) -> int:
                         "All required fields are authoritative in enumeration metadata; skipped detailed yt-dlp extraction.",
                     )
                 else:
-                    specialised_provider = _specialised_metadata_provider(
+                    specialised_providers = _specialised_metadata_providers(
                         physical_plan=query_plan.physical_acquisition,
                         resolution_records=flat_entries,
                         cookies_file=cookies_file,
@@ -829,7 +866,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(metadata_requirements.detailed_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
-                                specialised_provider=specialised_provider,
+                                specialised_provider=specialised_providers[0] if specialised_providers else None,
+                                specialised_fallback_providers=specialised_providers[1:],
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                         else:
@@ -840,7 +878,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(metadata_requirements.detailed_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
-                                specialised_provider=specialised_provider,
+                                specialised_provider=specialised_providers[0] if specialised_providers else None,
+                                specialised_fallback_providers=specialised_providers[1:],
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                     except YtDlpError as exc:
@@ -1022,7 +1061,7 @@ def main(argv: list[str] | None = None) -> int:
                             continue
                         candidate_ids.append(video_id)
                     detailed_candidates = len(candidate_ids)
-                    specialised_provider = _specialised_metadata_provider(
+                    specialised_providers = _specialised_metadata_providers(
                         physical_plan=query_plan.physical_acquisition,
                         resolution_records=list(entry_by_id.values()),
                         cookies_file=cookies_file,
@@ -1045,7 +1084,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(query_plan.physical_request.required_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
-                                specialised_provider=specialised_provider,
+                                specialised_provider=specialised_providers[0] if specialised_providers else None,
+                                specialised_fallback_providers=specialised_providers[1:],
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                         else:
@@ -1056,7 +1096,8 @@ def main(argv: list[str] | None = None) -> int:
                                 required_fields=set(query_plan.physical_request.required_fields),
                                 verbose=args.verbose,
                                 cookies_file=cookies_file,
-                                specialised_provider=specialised_provider,
+                                specialised_provider=specialised_providers[0] if specialised_providers else None,
+                                specialised_fallback_providers=specialised_providers[1:],
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                     except YtDlpError as exc:

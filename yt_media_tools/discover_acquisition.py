@@ -24,6 +24,7 @@ from yt_media_tools.discover_constants import (
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.query import Query, QuerySchema, QuerySyntaxError, apply_query, resolve_query
 from yt_media_tools.youtubejs import YouTubeJsError, acquire_basic_info as acquire_youtubejs_basic_info
+from yt_media_tools.ytmusic import YtMusicApiError, acquire_song_metadata as acquire_ytmusic_song_metadata
 from yt_media_tools.ytdlp import (
     AcquisitionStats,
     build_video_metadata_command,
@@ -190,6 +191,7 @@ def _cached_or_refresh_metadata(
     verbose: int,
     cookies_file: Path | None,
     specialised_provider: str | None = None,
+    specialised_fallback_providers: tuple[str, ...] = (),
     project_root: Path | None = None,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats]:
     """Reuse fresh source-scoped cache rows and refresh only stale or missing videos."""
@@ -216,49 +218,69 @@ def _cached_or_refresh_metadata(
 
     fetched_records: list[dict] = []
     acquisition_stats = AcquisitionStats()
+    used_specialised_provider = False
     if refresh_ids:
-        if specialised_provider == "youtubejs":
-            if project_root is None:
-                raise ValueError("project_root is required for YouTube.js metadata acquisition")
-            _verbose(verbose, f"Acquiring exact-scalar metadata for {len(refresh_ids)} videos with YouTube.js...")
+        providers = tuple(provider for provider in (specialised_provider, *specialised_fallback_providers) if provider)
+        remaining_ids = list(refresh_ids)
+        for provider in providers:
+            if not remaining_ids:
+                break
             try:
-                fetched_records, acquisition_stats = acquire_youtubejs_basic_info(
-                    project_root, refresh_ids, cookies_file=cookies_file
-                )
-                fetched_ids = {
-                    record.get("id")
-                    for record in fetched_records
-                    if isinstance(record.get("id"), str) and record.get("id")
-                }
-                fallback_ids = [video_id for video_id in refresh_ids if video_id not in fetched_ids]
-                if fallback_ids:
+                if provider == "youtubejs":
+                    if project_root is None:
+                        raise ValueError("project_root is required for YouTube.js metadata acquisition")
+                    _verbose(
+                        verbose, f"Acquiring exact-scalar metadata for {len(remaining_ids)} videos with YouTube.js..."
+                    )
+                    provider_records, provider_stats = acquire_youtubejs_basic_info(
+                        project_root, remaining_ids, cookies_file=cookies_file
+                    )
+                elif provider == "ytmusicapi":
                     _verbose(
                         verbose,
-                        f"YouTube.js did not return {len(fallback_ids)} requested videos; falling back to yt-dlp for those entries.",
+                        f"Acquiring specialised music metadata for {len(remaining_ids)} videos with ytmusicapi...",
                     )
-                    command = build_video_metadata_command(fallback_ids, cookies_file=cookies_file)
-                    fallback_records, fallback_stats = load_metadata(command, progress=_acquisition_progress(verbose))
-                    fetched_records.extend(fallback_records)
-                    _merge_acquisition_stats(acquisition_stats, fallback_stats)
-            except YouTubeJsError as exc:
-                _verbose(verbose, f"YouTube.js exact-scalar acquisition failed; falling back to yt-dlp ({exc}).")
-                specialised_provider = None
-        if specialised_provider != "youtubejs":
-            command = build_video_metadata_command(refresh_ids, cookies_file=cookies_file)
-            _verbose(verbose, f"Refreshing detailed metadata for {len(refresh_ids)} cache-miss/stale videos...")
+                    provider_records, provider_stats = acquire_ytmusic_song_metadata(remaining_ids)
+                else:
+                    continue
+            except (YouTubeJsError, YtMusicApiError) as exc:
+                _verbose(
+                    verbose, f"{provider} specialised acquisition failed; trying the next acquisition path ({exc})."
+                )
+                continue
+            used_specialised_provider = True
+            fetched_records.extend(provider_records)
+            _merge_acquisition_stats(acquisition_stats, provider_stats)
+            fetched_ids = {
+                record.get("id")
+                for record in provider_records
+                if isinstance(record.get("id"), str) and record.get("id")
+            }
+            remaining_ids = [video_id for video_id in remaining_ids if video_id not in fetched_ids]
+            if remaining_ids:
+                _verbose(
+                    verbose,
+                    f"{provider} did not return {len(remaining_ids)} requested videos; trying the next acquisition path.",
+                )
+
+        if remaining_ids:
+            command = build_video_metadata_command(remaining_ids, cookies_file=cookies_file)
+            _verbose(
+                verbose, f"Refreshing detailed metadata for {len(remaining_ids)} cache-miss/stale videos with yt-dlp..."
+            )
             if verbose >= 2:
                 _verbose(verbose, f"Candidate yt-dlp command: {shell_join(command)}")
-            semantic_progress = _DetailedMetadataProgress(level=verbose, total=len(refresh_ids))
+            semantic_progress = _DetailedMetadataProgress(level=verbose, total=len(remaining_ids))
             semantic_progress.start()
-            fetched_records, acquisition_stats = load_metadata(command, progress=semantic_progress.backend)
-            semantic_progress.complete(acquisition_stats.attempted)
+            fallback_records, fallback_stats = load_metadata(command, progress=semantic_progress.backend)
+            semantic_progress.complete(fallback_stats.attempted)
+            fetched_records.extend(fallback_records)
+            _merge_acquisition_stats(acquisition_stats, fallback_stats)
 
     fetched_by_id = {
         record.get("id"): record for record in fetched_records if isinstance(record.get("id"), str) and record.get("id")
     }
-    written = (
-        cache.put_many(source_url, fetched_records) if cache is not None and specialised_provider != "youtubejs" else 0
-    )
+    written = cache.put_many(source_url, fetched_records) if cache is not None and not used_specialised_provider else 0
     records: list[dict] = []
     for video_id in video_ids:
         record = fetched_by_id.get(video_id) or cached_by_id.get(video_id)
@@ -310,6 +332,7 @@ def _limit_aware_cached_acquire(
     verbose: int,
     cookies_file: Path | None,
     specialised_provider: str | None = None,
+    specialised_fallback_providers: tuple[str, ...] = (),
     project_root: Path | None = None,
     batch_size: int = 25,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats, bool, int, int]:
@@ -341,6 +364,7 @@ def _limit_aware_cached_acquire(
             verbose=verbose,
             cookies_file=cookies_file,
             specialised_provider=specialised_provider,
+            specialised_fallback_providers=specialised_fallback_providers,
             project_root=project_root,
         )
         _merge_acquisition_stats(acquisition, batch_acquisition)

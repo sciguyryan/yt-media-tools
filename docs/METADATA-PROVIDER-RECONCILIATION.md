@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Issue #113 reconciles the independent metadata-provider investigations into production-candidate recommendations for Discover. It does not itself promote benchmark adapters into runtime acquisition, alter yt-sql semantics, or change automatic provider selection. A separate production-integration issue is required for every candidate that demonstrates a concrete advantage. The YouTube.js branch has now been implemented and accepted through issue #114; the specialised ytmusicapi branch remains outstanding until its separate production-integration issue is identified or created and accepted.
+Issue #113 reconciles the independent metadata-provider investigations into production-candidate recommendations for Discover. It does not itself promote benchmark adapters into runtime acquisition, alter yt-sql semantics, or change automatic provider selection. A separate production-integration issue is required for every candidate that demonstrates a concrete advantage. The YouTube.js branch has now been implemented and accepted through issue #114; the specialised ytmusicapi branch is now being implemented through issue #116 and remains outstanding until that child is accepted.
 
 The decision boundary is capability based. Technical integrability is insufficient. A provider must demonstrate a useful metadata requirement set that it can satisfy more appropriately than the existing production path, with defensible field authority, provenance, acquisition cost, source applicability, authentication behaviour, portability, maintenance characteristics and failure semantics.
 

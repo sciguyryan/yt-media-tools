@@ -52,6 +52,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Derive the initial positive music-source trait only when yt-dlp proves the YouTube extractor family and every observed original source domain is `music.youtube.com`.
 - [maintenance] Keep generic extraction, ordinary or mixed YouTube origins and absent origin evidence unknown rather than inferring positive or negative music classification.
 - [test] Cover confirmed music-origin evidence, generic-domain rejection, ordinary-origin neutrality, mixed-origin conservatism and provider eligibility from the derived trait.
+- [feature] Execute ytmusicapi `YTMusic.get_song()` as an anonymous specialised fallback for independently confirmed music sources when the preferred YouTube.js capability does not return an entry.
+- [maintenance] Preserve normal cost-based YouTube.js preference and use ytmusicapi only as an independently eligible specialised fallback before the established yt-dlp path.
+- [maintenance] Keep ytmusicapi partial records out of the existing full detailed metadata cache and retain explicit provider/operation provenance.
+- [test] Cover production ytmusicapi normalisation, provenance, specialised fallback ordering and avoidance of unnecessary yt-dlp fallback.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 
