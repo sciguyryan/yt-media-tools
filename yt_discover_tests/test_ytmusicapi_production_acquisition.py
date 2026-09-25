@@ -176,3 +176,109 @@ def test_metadata_provider_provenance_distinguishes_youtubejs_and_ytmusicapi() -
         {"provider": "ytmusicapi", "operation": "YTMusic.get_song", "records": 1},
     ]
     assert payload["unattributed_records"] == 0
+
+
+def test_ytmusicapi_partial_result_falls_back_only_for_the_remaining_id(monkeypatch, tmp_path) -> None:
+    import yt_media_tools.discover_acquisition as acquisition
+
+    monkeypatch.setattr(acquisition, "acquire_youtubejs_basic_info", lambda *args, **kwargs: ([], AcquisitionStats()))
+    monkeypatch.setattr(
+        acquisition,
+        "acquire_ytmusic_song_metadata",
+        lambda ids: (
+            [
+                {
+                    "id": ids[0],
+                    "title": "Music",
+                    "channel_id": "artist",
+                    "duration": 3,
+                    "view_count": 4,
+                    "_yt_sql_metadata_provider": "ytmusicapi",
+                    "_yt_sql_metadata_operation": "YTMusic.get_song",
+                }
+            ],
+            AcquisitionStats(available=1),
+        ),
+    )
+    observed_commands = []
+
+    def fallback(command, **kwargs):
+        observed_commands.append(command)
+        return (
+            [{"id": "b", "title": "Fallback", "channel_id": "channel", "duration": 5, "view_count": 6}],
+            AcquisitionStats(available=1),
+        )
+
+    monkeypatch.setattr(acquisition, "load_metadata", fallback)
+    records, _, _ = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://music.youtube.com/playlist?list=x",
+        video_ids=["a", "b"],
+        required_fields={"duration"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider="youtubejs",
+        specialised_fallback_providers=("ytmusicapi",),
+        project_root=tmp_path,
+    )
+
+    assert [record["id"] for record in records] == ["a", "b"]
+    assert records[0]["_yt_sql_metadata_provider"] == "ytmusicapi"
+    assert len(observed_commands) == 1
+    fallback_urls = [
+        argument for argument in observed_commands[0] if argument.startswith("https://www.youtube.com/watch?v=")
+    ]
+    assert fallback_urls == ["https://www.youtube.com/watch?v=b"]
+
+
+def test_ytmusicapi_duplicate_result_keeps_first_authoritative_record(monkeypatch, tmp_path) -> None:
+    import yt_media_tools.discover_acquisition as acquisition
+
+    monkeypatch.setattr(acquisition, "acquire_youtubejs_basic_info", lambda *args, **kwargs: ([], AcquisitionStats()))
+    monkeypatch.setattr(
+        acquisition,
+        "acquire_ytmusic_song_metadata",
+        lambda ids: (
+            [
+                {
+                    "id": "a",
+                    "title": "First",
+                    "channel_id": "artist",
+                    "duration": 3,
+                    "view_count": 4,
+                    "_yt_sql_metadata_provider": "ytmusicapi",
+                    "_yt_sql_metadata_operation": "YTMusic.get_song",
+                },
+                {
+                    "id": "a",
+                    "title": "Second",
+                    "channel_id": "artist",
+                    "duration": 30,
+                    "view_count": 40,
+                    "_yt_sql_metadata_provider": "ytmusicapi",
+                    "_yt_sql_metadata_operation": "YTMusic.get_song",
+                },
+            ],
+            AcquisitionStats(available=2),
+        ),
+    )
+    monkeypatch.setattr(
+        acquisition,
+        "load_metadata",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("yt-dlp should not run")),
+    )
+
+    records, stats, _ = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://music.youtube.com/watch?v=a",
+        video_ids=["a"],
+        required_fields={"duration"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider="youtubejs",
+        specialised_fallback_providers=("ytmusicapi",),
+        project_root=tmp_path,
+    )
+
+    assert [(record["id"], record["title"]) for record in records] == [("a", "First")]
+    assert stats.available == 1

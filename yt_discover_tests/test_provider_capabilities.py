@@ -1,5 +1,7 @@
 """Provider-capability contract tests for backend-neutral acquisition planning."""
 
+from itertools import combinations
+
 from yt_media_tools.provider_capabilities import (
     AUTH_ANONYMOUS,
     AUTH_COOKIES,
@@ -493,4 +495,77 @@ def test_confirmed_music_origin_makes_ytmusicapi_eligible_without_provider_self_
     assert any(
         candidate.capability.provider == "ytmusicapi"
         for candidate in eligible_provider_candidates(requirement, production_provider_capabilities(), context=context)
+    )
+
+
+def test_ytmusicapi_every_non_empty_authoritative_field_subset_is_eligible_with_music_evidence() -> None:
+    from yt_media_tools.provider_capabilities import (
+        SOURCE_TRAIT_MUSIC,
+        YTMUSICAPI_EXACT_SCALAR_FIELDS,
+        production_provider_capabilities,
+    )
+
+    capabilities = production_provider_capabilities()
+    context = ProviderSelectionContext(
+        resolved_source_kind="youtube",
+        source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+    )
+    fields = sorted(YTMUSICAPI_EXACT_SCALAR_FIELDS)
+    for size in range(1, len(fields) + 1):
+        for subset in combinations(fields, size):
+            requirement = MetadataRequirement("complete-metadata", frozenset(subset))
+            candidates = eligible_provider_candidates(requirement, capabilities, context=context)
+            assert any(candidate.capability.provider == "ytmusicapi" for candidate in candidates), subset
+
+
+def test_ytmusicapi_unsupported_field_contamination_rejects_the_whole_capability() -> None:
+    from yt_media_tools.provider_capabilities import (
+        SOURCE_TRAIT_MUSIC,
+        YTMUSICAPI_EXACT_SCALAR_FIELDS,
+        production_provider_capabilities,
+    )
+
+    capabilities = production_provider_capabilities()
+    context = ProviderSelectionContext(
+        resolved_source_kind="youtube",
+        source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+    )
+    unsupported_fields = (
+        "upload_date",
+        "date",
+        "description",
+        "keywords",
+        "category",
+        "is_live",
+        "is_private",
+        "is_unlisted",
+        "musicVideoType",
+    )
+    for supported in sorted(YTMUSICAPI_EXACT_SCALAR_FIELDS):
+        for unsupported in unsupported_fields:
+            requirement = MetadataRequirement("complete-metadata", frozenset({supported, unsupported}))
+            candidates = eligible_provider_candidates(requirement, capabilities, context=context)
+            assert all(candidate.capability.provider != "ytmusicapi" for candidate in candidates), (
+                supported,
+                unsupported,
+            )
+
+
+def test_ytmusicapi_candidate_order_is_independent_of_capability_declaration_order() -> None:
+    from yt_media_tools.provider_capabilities import SOURCE_TRAIT_MUSIC, production_provider_capabilities
+
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "view_count"}))
+    context = ProviderSelectionContext(
+        resolved_source_kind="youtube",
+        source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
+    )
+    capabilities = production_provider_capabilities()
+
+    forward = eligible_provider_candidates(requirement, capabilities, context=context)
+    reverse = eligible_provider_candidates(requirement, tuple(reversed(capabilities)), context=context)
+
+    assert (
+        [candidate.capability.provenance for candidate in forward]
+        == [candidate.capability.provenance for candidate in reverse]
+        == ["youtubejs:getBasicInfo", "ytmusicapi:YTMusic.get_song"]
     )

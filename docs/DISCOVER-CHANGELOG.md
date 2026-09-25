@@ -42,23 +42,15 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Add capability-scoped ytmusicapi specialised metadata acquisition (#116)
 
-- [feature] Register an initial production `YTMusic.get_song()` capability for the conservative exact scalar field surface established by the provider investigation.
-- [maintenance] Require both resolved YouTube source identity and independent positive music-source evidence before ytmusicapi can become eligible.
-- [maintenance] Keep `musicVideoType`, publication dates, descriptions, keywords, category and live/playability state outside the common-field authority contract.
-- [security] Keep production ytmusicapi acquisition anonymous; browser or cookie authentication is not part of the demonstrated production requirement.
-- [maintenance] Keep `YTMusic.get_song_credits()` outside the initial capability so a distinct higher-cost operation cannot be acquired implicitly.
-- [test] Cover positive source-trait eligibility, ordinary-YouTube exclusion, unsupported-field contamination and authentication boundaries.
-- [docs] Record issue #116 as the outstanding specialised production child of issue #113.
-- [feature] Derive the initial positive music-source trait only when yt-dlp proves the YouTube extractor family and every observed original source domain is `music.youtube.com`.
-- [maintenance] Keep generic extraction, ordinary or mixed YouTube origins and absent origin evidence unknown rather than inferring positive or negative music classification.
-- [test] Cover confirmed music-origin evidence, generic-domain rejection, ordinary-origin neutrality, mixed-origin conservatism and provider eligibility from the derived trait.
-- [feature] Execute ytmusicapi `YTMusic.get_song()` as an anonymous specialised fallback for independently confirmed music sources when the preferred YouTube.js capability does not return an entry.
-- [maintenance] Preserve normal cost-based YouTube.js preference and use ytmusicapi only as an independently eligible specialised fallback before the established yt-dlp path.
-- [maintenance] Keep ytmusicapi partial records out of the existing full detailed metadata cache and retain explicit provider/operation provenance.
-- [test] Cover production ytmusicapi normalisation, provenance, specialised fallback ordering and avoidance of unnecessary yt-dlp fallback.
-- [feature] Preserve distinct YouTube.js and ytmusicapi provider/operation attribution in runtime query provenance.
-- [maintenance] Make specialised fallback strictly unresolved-ID driven and ignore unexpected or duplicate provider records instead of permitting order-dependent authoritative overwrites.
-- [test] Cover mixed-provider provenance and the disagreement boundary that prevents a later specialised provider from replacing an earlier authoritative result.
+- [feature] Register and execute an anonymous `YTMusic.get_song()` capability for the conservative five-field exact scalar surface established by the provider investigation.
+- [maintenance] Require independently resolved YouTube identity plus positive `music` source evidence derived from consistently observed `music.youtube.com` origins before ytmusicapi can participate.
+- [maintenance] Keep `musicVideoType`, publication dates, descriptions, keywords, category, live/playability state and `YTMusic.get_song_credits()` outside the production authority boundary.
+- [maintenance] Preserve the lower-cost YouTube.js capability as the preferred exact-scalar path and use ytmusicapi only as an independently eligible unresolved-ID fallback before yt-dlp.
+- [maintenance] Prevent later specialised providers from overwriting earlier authoritative results, reject unexpected or duplicate records deterministically, and keep partial specialised rows out of the full detailed metadata cache.
+- [feature] Preserve explicit ytmusicapi provider/operation attribution in runtime provenance and expose its conditional source-trait requirement through existing human and JSON explain output.
+- [security] Keep production ytmusicapi acquisition anonymous; browser or cookie authentication remains outside the demonstrated production requirement.
+- [test] Exhaustively cover every non-empty subset of the five-field authority surface, unsupported-field contamination, source-trait uncertainty, authentication boundaries, deterministic provider ordering, unresolved-ID fallback, duplicate/extraneous records and mixed-provider provenance.
+- [docs] Reconcile issue #116 around its final authority, source-evidence, acquisition, fallback, disagreement, provenance and explain boundaries in preparation for parent issue #113.
 
 ### Discover - specialised ytmusicapi metadata benchmark
 
