@@ -4,13 +4,19 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-- Decouple stable physical source identity from source-resolution adapter identity so backend/provider choice cannot become part of logical source identity.
-- Move logical facet-to-physical-target mapping behind the source-family capability boundary and rename the generic URL source family so it no longer implies yt-dlp ownership.
-- Separate backend-resolved service-family evidence from yt-sql logical source kind in metadata-provider eligibility, and add independent logical source/facet applicability constraints for future acquisition backends.
-- Extend provider explain data to report service-family constraints explicitly without presenting backend evidence as logical source identity.
-
 ## Release history
-- Remove the remaining yt-dlp-shaped `extractor` logical source kind for generic URLs, and name source-resolution capability families explicitly without changing the compatibility machine explain field.
+
+### Discover 0.29.11 - Backend Boundaries
+
+- Confirm `OF` as the backend-neutral yt-sql facet syntax and preserve its distinction between external source/facet selection and already-materialised CTE relations.
+- Decouple stable physical and logical source identity from acquisition adapter/provider identity so backend choice cannot become part of yt-sql source semantics, cache identity or provenance identity.
+- Move logical facet-to-physical-target mapping behind the source-family capability boundary while preserving existing YouTube `videos`, `shorts` and `live` facet behaviour.
+- Replace the remaining yt-dlp-shaped generic `extractor` source kind with the backend-neutral `url` source kind and rename source-resolution adapter terminology to source-family terminology.
+- Separate backend-resolved service-family evidence from yt-sql logical source/facet applicability in metadata-provider eligibility and preserve deterministic provider selection and fallback.
+- Keep backend/provider selection below the yt-sql grammar, while retaining the existing compatibility machine explain field and making human diagnostics use source-family terminology.
+- Confirm that source aliases compose as ordinary relation aliases across direct sources and JOINs, and that source/facet relations compose through CTE and UNION semantics without backend-specific syntax.
+- Extend regression coverage for backend-neutral generic URL identity, source-family capabilities, logical source/facet provider eligibility and the revised diagnostics.
+- Close the source/facet multi-backend grammar and architecture review represented by issue #11.
 
 ### Discover 0.29.10 - Acquisition Paths
 
