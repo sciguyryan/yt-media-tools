@@ -1128,9 +1128,17 @@ def _apply_composed_query(
         # Multi-facet OF is one logical source relation expanded across facets.
         # Reconcile the unprojected rows so ordinary source-field ORDER BY terms
         # remain available even when they are not part of the SELECT projection.
-        bodies = [replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())]
+        bodies = [replace(query, set_operations=(), order_by=(), limit=None, offset=0, distinct=False, ctes=())]
         bodies.extend(
-            replace(operation.query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+            replace(
+                operation.query,
+                set_operations=(),
+                order_by=(),
+                limit=None,
+                offset=0,
+                distinct=False,
+                ctes=(),
+            )
             for operation in query.set_operations
         )
         rows: list[dict[str, Any]] = []
@@ -1152,11 +1160,32 @@ def _apply_composed_query(
             except TypeError:
                 present.sort(key=lambda row: str(canonical_record_value(row, term)), reverse=term.descending)
             rows = present + missing
+        if query.distinct:
+            seen: set[tuple[Any, ...]] = set()
+            distinct_rows: list[dict[str, Any]] = []
+            for row in rows:
+                key_values: list[Any] = []
+                for term in query.select:
+                    value = canonical_record_value(row, term)
+                    try:
+                        hash(value)
+                        key_values.append(value)
+                    except TypeError:
+                        key_values.append(repr(value))
+                key = tuple(key_values)
+                if key in seen:
+                    continue
+                seen.add(key)
+                distinct_rows.append(row)
+            rows = distinct_rows
         if query.offset:
             rows = rows[query.offset :]
         if query.limit is not None:
             rows = rows[: query.limit]
-        return _project_result_rows(rows, replace(query, set_operations=(), order_by=(), limit=None, offset=0))
+        return _project_result_rows(
+            rows,
+            replace(query, set_operations=(), order_by=(), limit=None, offset=0, distinct=False),
+        )
 
     left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
     # A UNION branch is a complete relational query body. Apply its JOIN before

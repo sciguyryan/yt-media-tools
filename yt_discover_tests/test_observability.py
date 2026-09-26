@@ -268,3 +268,24 @@ def test_normal_progress_does_not_contaminate_jsonl_stdout(tmp_path: Path) -> No
         {"id": "vid00000002", "title": "Video 2"},
     ]
     assert "Detailed metadata" in result.stderr
+
+
+def test_large_source_enumeration_warning_repeats_at_configured_interval(tmp_path: Path) -> None:
+    result = run_cli(
+        [
+            "--source",
+            "https://www.youtube.com/@example/videos",
+            "--warn-source-size",
+            "500",
+            "--query",
+            "SELECT id",
+        ],
+        env=fake_ytdlp_env(tmp_path, count=1001),
+    )
+
+    assert result.returncode == 0
+    warnings = [line for line in result.stderr.splitlines() if "large-source warning:" in line]
+    assert len(warnings) == 2
+    assert "already observed 500 items" in warnings[0]
+    assert "already observed 1000 items" in warnings[1]
+    assert all("configured warning interval: 500" in line for line in warnings)

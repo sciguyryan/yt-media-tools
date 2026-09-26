@@ -101,3 +101,66 @@ def test_explicit_union_does_not_gain_multi_facet_order_scope() -> None:
     assert not query.set_operations[0].facet_expansion
     with pytest.raises(QuerySyntaxError, match="Unknown field 'upload_date'"):
         resolve_query(query, QuerySchema(({"id": "x", "upload_date": "20240101"},)), DateContext())
+
+
+def test_multi_facet_distinct_applies_after_facet_composition() -> None:
+    source = (
+        "SELECT DISTINCT CONCAT(id, ' # ', title) FROM @Insym OF videos, live "
+        "WHERE title ILIKE '%welcome to the game%' "
+        "ORDER BY upload_date ASC, release_timestamp ASC"
+    )
+    query = parse_query(source)
+    records = [
+        {
+            "id": "same-id",
+            "title": "Welcome to the Game",
+            "upload_date": "20240101",
+            "release_timestamp": 10,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "same-id",
+            "title": "Welcome to the Game",
+            "upload_date": "20240202",
+            "release_timestamp": 20,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "live",
+        },
+    ]
+    resolved = resolve_query(query, QuerySchema(records), DateContext())
+    assert apply_query(records, resolved) == [
+        {"CONCAT(id, ' # ', title)": "same-id # Welcome to the Game"},
+    ]
+
+
+def test_multi_facet_distinct_expression_projection_is_not_blank() -> None:
+    source = (
+        "SELECT DISTINCT CONCAT(id, ' # ', title) FROM @Insym OF videos, live "
+        "WHERE title ILIKE '%welcome to the game%' "
+        "ORDER BY upload_date ASC, release_timestamp ASC"
+    )
+    query = parse_query(source)
+    records = [
+        {
+            "id": "video-id",
+            "title": "Welcome to the Game",
+            "upload_date": "20240101",
+            "release_timestamp": 10,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "live-id",
+            "title": "Welcome to the Game 2",
+            "upload_date": "20240202",
+            "release_timestamp": 20,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "live",
+        },
+    ]
+    resolved = resolve_query(query, QuerySchema(records), DateContext())
+    assert apply_query(records, resolved) == [
+        {"CONCAT(id, ' # ', title)": "video-id # Welcome to the Game"},
+        {"CONCAT(id, ' # ', title)": "live-id # Welcome to the Game 2"},
+    ]

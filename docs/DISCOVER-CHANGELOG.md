@@ -8,6 +8,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - Preserve independent source-boundary acquisition and provider selection across UNION composition, avoiding an unnecessary full-source yt-dlp metadata path when lightweight enumeration and targeted detailed acquisition can satisfy each branch.
 - Preserve ordinary source-field `ORDER BY` semantics for comma-separated `OF` facet expansion, including ordering by fields that are not projected.
 - Identify the source and facet in independent UNION acquisition progress messages so per-boundary counters are unambiguous.
+- Repeat large-source enumeration warnings at the configured per-source/facet interval and describe the setting as a warning interval.
+- Apply `SELECT DISTINCT` globally across a comma-separated `OF` facet set and preserve scalar-expression projection values through facet reconciliation.
 
 - Freeze the ordinary `SELECT` clause-order contract, retaining the established `LIMIT ... OFFSET ...` slicing order, standalone `OFFSET`, deterministic rejection of reordered or repeated clauses, and canonical formatting.
 
