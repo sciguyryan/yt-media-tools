@@ -8,14 +8,14 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover 0.29.11 - Backend Boundaries
 
-- Confirm `OF` as the backend-neutral yt-sql facet syntax and preserve its distinction between external source/facet selection and already-materialised CTE relations.
+- Confirm `OF` as the backend-agnostic yt-sql facet syntax and preserve its distinction between external source/facet selection and already-materialised CTE relations.
 - Decouple stable physical and logical source identity from acquisition adapter/provider identity so backend choice cannot become part of yt-sql source semantics, cache identity or provenance identity.
 - Move logical facet-to-physical-target mapping behind the source-family capability boundary while preserving existing YouTube `videos`, `shorts` and `live` facet behaviour.
-- Replace the remaining yt-dlp-shaped generic `extractor` source kind with the backend-neutral `url` source kind and rename source-resolution adapter terminology to source-family terminology.
+- Replace the remaining yt-dlp-shaped generic `extractor` source kind with the backend-agnostic `url` source kind and rename source-resolution adapter terminology to source-family terminology.
 - Separate backend-resolved service-family evidence from yt-sql logical source/facet applicability in metadata-provider eligibility and preserve deterministic provider selection and fallback.
 - Keep backend/provider selection below the yt-sql grammar, while retaining the existing compatibility machine explain field and making human diagnostics use source-family terminology.
 - Confirm that source aliases compose as ordinary relation aliases across direct sources and JOINs, and that source/facet relations compose through CTE and UNION semantics without backend-specific syntax.
-- Extend regression coverage for backend-neutral generic URL identity, source-family capabilities, logical source/facet provider eligibility and the revised diagnostics.
+- Extend regression coverage for backend-agnostic generic URL identity, source-family capabilities, logical source/facet provider eligibility and the revised diagnostics.
 - Close the source/facet multi-backend grammar and architecture review represented by issue #11.
 
 ### Discover 0.29.10 - Acquisition Paths
@@ -28,7 +28,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 - Promote a specialised anonymous ytmusicapi `YTMusic.get_song()` exact-scalar capability for independently resolved YouTube music sources, ordered after the lower-cost YouTube.js path and before yt-dlp fallback.
 - Preserve unsupported, uncertain and publication-date metadata on the established acquisition path rather than broadening specialised-provider authority beyond demonstrated evidence.
 - Expose specialised-provider lowering and observed provider provenance through existing human and machine-readable explain/diagnostic structures.
-- Add concise backend-neutral detailed-metadata stage progress on standard error for ordinary interactive execution while keeping query results and machine-readable output uncontaminated.
+- Add concise backend-agnostic detailed-metadata stage progress on standard error for ordinary interactive execution while keeping query results and machine-readable output uncontaminated.
 - Preserve acquisition semantics, batching, cache decisions, retry behaviour, early termination and evaluation semantics while adding progress visibility and specialised providers.
 - Reconcile the completed provider investigations into durable capability and source-resolution documentation, removing superseded research-only machinery and issue-specific investigation material.
 - Close the completed acquisition-progress and alternative-metadata investigation programmes represented by issues #81, #98, #105, #113, #114 and #116.
@@ -183,7 +183,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover 0.28.10 - Metadata Acquisition Plan
 
-- Add a backend-neutral physical metadata acquisition plan with ordered semantic stages.
+- Add a backend-agnostic physical metadata acquisition plan with ordered semantic stages.
 - Distinguish source identity enumeration, basic metadata, complete metadata, formats, subtitles and captions, chapters, thumbnails, tags, and dynamic raw metadata.
 - Derive acquisition stages from pruned physical field requirements so CTE, branch and relation simplifications carry through to remote work.
 - Represent statically empty source boundaries with no required acquisition stages.
