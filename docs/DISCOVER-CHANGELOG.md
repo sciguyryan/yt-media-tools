@@ -6,6 +6,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 - Decouple stable physical source identity from source-resolution adapter identity so backend/provider choice cannot become part of logical source identity.
 - Move logical facet-to-physical-target mapping behind the source-family capability boundary and rename the generic URL source family so it no longer implies yt-dlp ownership.
+- Separate backend-resolved service-family evidence from yt-sql logical source kind in metadata-provider eligibility, and add independent logical source/facet applicability constraints for future acquisition backends.
+- Extend provider explain data to report service-family constraints explicitly without presenting backend evidence as logical source identity.
 
 ## Release history
 

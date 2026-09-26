@@ -38,10 +38,10 @@ This also means unexpected resolution remains visible. If a source the user expe
 
 ## Provider eligibility
 
-Backend resolution can now be promoted into physical provider-selection evidence under deliberately conservative rules. A source kind is considered resolved only when all observed yt-dlp resolutions carry the same non-generic extractor family. A generic observation, missing extractor family, conflicting families or observations from mixed resolution providers leave the source kind unresolved.
+Backend resolution can now be promoted into physical provider-selection evidence under deliberately conservative rules. A service family is considered resolved only when all observed yt-dlp resolutions carry the same non-generic extractor family. A generic observation, missing extractor family, conflicting families or observations from mixed resolution providers leave the service family unresolved.
 
 Domains are never used to prove provider eligibility. A YouTube-looking URL handled by the generic extractor therefore does not make a YouTube-specific metadata provider eligible. This preserves the distinction between what the user supplied and what the acquisition engine actually resolved.
 
-The resulting source kind is physical planning evidence only. It constrains which provider capabilities may be considered, but does not alter yt-sql semantics or become a logical platform assertion. Generic provider capabilities remain eligible when source identity is unresolved, so failure to prove a specialised provider never removes the existing compatibility path.
+The resulting service family is physical planning evidence only and is distinct from yt-sql logical source kind. It constrains which provider capabilities may be considered, but does not alter yt-sql semantics or become a logical platform assertion. Generic provider capabilities remain eligible when service-family evidence is unresolved, so failure to prove a specialised provider never removes the existing compatibility path.
 
-Authentication remains an independent eligibility dimension. Building selection context from backend resolution preserves whether the acquisition requires anonymous or cookie-authenticated operation; source identity cannot make an authentication-incompatible provider eligible.
+Authentication remains an independent eligibility dimension. Building selection context from backend resolution preserves whether the acquisition requires anonymous or cookie-authenticated operation; service-family evidence cannot make an authentication-incompatible provider eligible.

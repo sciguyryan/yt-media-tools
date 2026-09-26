@@ -4,11 +4,11 @@ Discover separates yt-sql semantics from physical metadata acquisition. Logical 
 
 ## Capability contract
 
-`MetadataRequirement` projects an existing physical acquisition stage and its required fields into provider-selection form. `ProviderCapability` declares a provider's authority for a stage, optionally restricted to a finite field set, together with applicable resolved source kinds, required source traits, supported authentication modes, acquisition granularity, relative physical cost and stable provenance identity.
+`MetadataRequirement` projects an existing physical acquisition stage and its required fields into provider-selection form. `ProviderCapability` declares a provider's authority for a stage, optionally restricted to a finite field set, together with applicable resolved service families, optional logical source/facet constraints, required source traits, supported authentication modes, acquisition granularity, relative physical cost and stable provenance identity.
 
 Only exact capabilities may satisfy authoritative requirements. Approximate values can inform bounded acquisition and planning but cannot become authoritative merely because they are cheaper. A finite-field capability is eligible only when it covers the complete requirement presented to that stage.
 
-Source-specific capabilities require conservative backend resolution. URL appearance alone is not evidence of source identity. Authentication is also part of eligibility: anonymous and cookie-authenticated contexts are distinct, and credential material must never become provider metadata, provenance, cache data or explain output.
+Service-specific capabilities require conservative backend resolution. Logical source/facet applicability is a separate constraint and is derived from the yt-sql source model rather than backend evidence. URL appearance alone is not evidence of source identity. Authentication is also part of eligibility: anonymous and cookie-authenticated contexts are distinct, and credential material must never become provider metadata, provenance, cache data or explain output.
 
 ## Physical selection
 
@@ -26,13 +26,13 @@ eligible exact provider capabilities
 deterministic physical provider choice
 ```
 
-Eligible capabilities are ordered by relative physical cost and then stable provider/provenance identity. Cost is a physical hint only. It cannot override authority, field coverage, source applicability, source traits or authentication requirements.
+Eligible capabilities are ordered by relative physical cost and then stable provider/provenance identity. Cost is a physical hint only. It cannot override authority, field coverage, service-family applicability, logical source/facet applicability, source traits or authentication requirements.
 
 Provider resolution and provider acquisition are separate concerns. One backend may establish conservative source evidence while another eligible provider satisfies metadata requirements. Provider-specific fields and operations remain below the yt-sql boundary unless Discover deliberately defines provider-neutral semantics for them.
 
 ## Backend resolution and source traits
 
-Backend resolution is described in [BACKEND-SOURCE-RESOLUTION.md](BACKEND-SOURCE-RESOLUTION.md). `selection_context_from_backend_resolution()` converts unambiguous non-generic yt-dlp extractor-family evidence into physical provider-selection context. Missing, generic, conflicting or mixed-provider resolution remains unknown and therefore excludes source-specific providers while leaving generic capabilities available.
+Backend resolution is described in [BACKEND-SOURCE-RESOLUTION.md](BACKEND-SOURCE-RESOLUTION.md). `selection_context_from_backend_resolution()` converts unambiguous non-generic yt-dlp extractor-family evidence into a resolved service-family constraint in physical provider-selection context. The name is deliberately distinct from yt-sql logical source kind: an extractor family such as `youtube` is backend evidence about the handled service, while logical source kinds such as channel, playlist and generic URL belong to the source model. Missing, generic, conflicting or mixed-provider resolution remains unknown and therefore excludes service-specific providers while leaving generic capabilities available.
 
 Positive source traits provide a second conservative eligibility dimension. Traits must be established independently of the specialised provider whose eligibility they control. Absence of a trait is unknown rather than evidence of its negation.
 
@@ -52,7 +52,7 @@ Static explain output presents this capability as conditional physical lowering 
 
 The production ytmusicapi capability uses anonymous `YTMusic.get_song()` acquisition and is authoritative only for the same closed scalar set: `id`, `title`, `channel_id`, `duration` and `view_count`. Publication dates, descriptions, keywords, category, live/playability state, `musicVideoType` and `YTMusic.get_song_credits()` remain outside its authority.
 
-Eligibility requires resolved YouTube source identity plus the independently established `music` source trait. Ordinary YouTube resolution is insufficient. Browser authentication is not part of this capability.
+Eligibility requires resolved YouTube service-family evidence plus the independently established `music` source trait. Ordinary YouTube resolution is insufficient. Browser authentication is not part of this capability.
 
 For an independently confirmed music source, the current specialised acquisition order for the shared five-field requirement is YouTube.js, then ytmusicapi, then yt-dlp. Each later provider receives only IDs still unresolved after the preceding provider. Unexpected IDs and duplicate records are ignored rather than overwriting an earlier authoritative result. This prevents provider order or relative cost from becoming an implicit disagreement-resolution policy.
 
@@ -64,4 +64,4 @@ The existing yt-dlp detailed path remains the general authoritative fallback. It
 
 Mixed acquisition is valid only where every provider contribution has an explicit authority and provenance contract. Cost rank, provider order and successful acquisition do not establish semantic authority. Discover does not race providers or acquire duplicate authoritative values merely to manufacture a disagreement. If a future requirement introduces genuine authoritative disagreement, its resolution policy must be designed explicitly rather than emerging from overwrite order.
 
-General automatic multi-backend scheduling, speculative parallel acquisition and official platform developer APIs are not part of the current provider contract. They require separate evidence and design if future requirements justify them.
+General automatic multi-backend scheduling, speculative parallel acquisition and official platform developer APIs are not part of the current provider contract. The contract nevertheless keeps semantic requirements, logical source/facet applicability, physical service-family evidence and provider identity separate so a future backend can participate without becoming yt-sql syntax. They require separate evidence and design if future requirements justify them.

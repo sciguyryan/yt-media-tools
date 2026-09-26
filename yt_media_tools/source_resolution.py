@@ -94,7 +94,7 @@ def format_backend_resolution(resolution: BackendSourceResolution) -> str:
     return ", ".join(parts)
 
 
-def resolved_source_kind(
+def resolved_service_family(
     resolutions: tuple[BackendSourceResolution, ...],
 ) -> str | None:
     """Return a conservative service identity proved by backend resolution.
@@ -129,7 +129,7 @@ def resolved_source_traits(
     proves nothing. This keeps specialised providers from manufacturing their own
     eligibility while leaving room for additional independent evidence sources later.
     """
-    if resolved_source_kind(resolutions) != "youtube":
+    if resolved_service_family(resolutions) != "youtube":
         return frozenset()
     original_domains = {resolution.original_domain for resolution in resolutions}
     if original_domains == {"music.youtube.com"}:

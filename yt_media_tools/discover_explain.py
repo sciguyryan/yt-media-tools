@@ -70,15 +70,21 @@ def _provider_lowering_explain(physical_plan: object) -> list[dict[str, object]]
                     "operation": capability.provenance,
                     "authority": capability.authority,
                     "fields": sorted(capability.fields) if capability.fields is not None else None,
-                    "required_source_kinds": sorted(capability.source_kinds)
-                    if capability.source_kinds is not None
+                    "required_service_families": sorted(capability.service_families)
+                    if capability.service_families is not None
+                    else [],
+                    "required_logical_source_kinds": sorted(capability.logical_source_kinds)
+                    if capability.logical_source_kinds is not None
+                    else [],
+                    "required_logical_facets": sorted(capability.logical_facets)
+                    if capability.logical_facets is not None
                     else [],
                     "required_source_traits": sorted(capability.required_source_traits),
                     "authentication": sorted(capability.authentication),
                     "cost_rank": capability.cost_rank,
                     "eligibility": (
                         "requires-runtime-source-resolution"
-                        if capability.source_kinds is not None or capability.required_source_traits
+                        if capability.service_families is not None or capability.required_source_traits
                         else "eligible"
                     ),
                 }
@@ -649,12 +655,12 @@ def explain_user_query(
             lines.append(f"    yt-dlp lowering: {lowering.reason}")
             for provider_requirement in _provider_lowering_explain(boundary.physical_acquisition):
                 for candidate in provider_requirement["specialised_candidates"]:
-                    source_kinds = ", ".join(candidate["required_source_kinds"]) or "any"
+                    service_families = ", ".join(candidate["required_service_families"]) or "any"
                     source_traits = ", ".join(candidate["required_source_traits"]) or "none"
                     lines.append(
                         f"    Specialised candidate: {candidate['operation']}; "
                         f"stage={provider_requirement['stage']}; "
-                        f"eligibility={candidate['eligibility']}; source-kind={source_kinds}; "
+                        f"eligibility={candidate['eligibility']}; service-family={service_families}; "
                         f"source-traits={source_traits}"
                     )
             if lowering.collapsed_detailed_stages:

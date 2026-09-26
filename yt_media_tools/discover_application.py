@@ -141,6 +141,7 @@ def _specialised_metadata_providers(
         return ()
     context = selection_context_from_backend_resolution(
         observed_ytdlp_resolutions(resolution_records),
+        source=getattr(physical_plan, "source", None),
         authentication=AUTH_COOKIES if cookies_file is not None else "anonymous",
     )
     lowered = lower_provider_requirements(requirements, context=context)

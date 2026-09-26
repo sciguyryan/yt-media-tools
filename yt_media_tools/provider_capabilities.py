@@ -36,12 +36,14 @@ class ProviderCapability:
     stage: str
     fields: frozenset[str] | None
     authority: str
-    source_kinds: frozenset[str] | None
+    service_families: frozenset[str] | None
     required_source_traits: frozenset[str]
     authentication: frozenset[str]
     granularity: str
     cost_rank: int
     provenance: str
+    logical_source_kinds: frozenset[str] | None = None
+    logical_facets: frozenset[str] | None = None
 
     def supports(self, requirement: MetadataRequirement) -> bool:
         """Return whether this capability covers the requirement semantically."""
@@ -54,7 +56,9 @@ class ProviderCapability:
 class ProviderSelectionContext:
     """Known physical facts that may conservatively constrain provider eligibility."""
 
-    resolved_source_kind: str | None = None
+    resolved_service_family: str | None = None
+    logical_source_kind: str | None = None
+    logical_facet: str | None = None
     source_traits: frozenset[str] = frozenset()
     authentication: str = AUTH_ANONYMOUS
 
@@ -90,10 +94,19 @@ def eligible_provider_candidates(
             continue
         if not capability.required_source_traits <= context.source_traits:
             continue
-        if capability.source_kinds is not None:
-            if context.resolved_source_kind is None:
+        if capability.service_families is not None:
+            if context.resolved_service_family is None:
                 continue
-            if context.resolved_source_kind not in capability.source_kinds:
+            if context.resolved_service_family not in capability.service_families:
+                continue
+        if capability.logical_source_kinds is not None:
+            if (
+                context.logical_source_kind is None
+                or context.logical_source_kind not in capability.logical_source_kinds
+            ):
+                continue
+        if capability.logical_facets is not None:
+            if context.logical_facet is None or context.logical_facet not in capability.logical_facets:
                 continue
         candidates.append(
             ProviderCandidate(
@@ -122,13 +135,16 @@ def select_provider_capability(
 def selection_context_from_backend_resolution(
     resolutions: tuple[object, ...],
     *,
+    source: object | None = None,
     authentication: str = AUTH_ANONYMOUS,
 ) -> ProviderSelectionContext:
     """Build provider-selection context from conservative backend resolution evidence."""
-    from .source_resolution import resolved_source_kind, resolved_source_traits
+    from .source_resolution import resolved_service_family, resolved_source_traits
 
     return ProviderSelectionContext(
-        resolved_source_kind=resolved_source_kind(resolutions),
+        resolved_service_family=resolved_service_family(resolutions),
+        logical_source_kind=getattr(source, "kind", None),
+        logical_facet=getattr(source, "facet", None),
         source_traits=resolved_source_traits(resolutions),
         authentication=authentication,
     )
@@ -164,7 +180,7 @@ def lower_provider_requirements(
     return tuple(lowered)
 
 
-YOUTUBE_SOURCE_KINDS = frozenset({"youtube"})
+YOUTUBE_SERVICE_FAMILIES = frozenset({"youtube"})
 SOURCE_TRAIT_MUSIC = "music"
 YOUTUBEJS_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
 YTMUSICAPI_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
@@ -186,7 +202,7 @@ def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
             stage="complete-metadata",
             fields=YOUTUBEJS_EXACT_SCALAR_FIELDS,
             authority=AUTHORITY_EXACT,
-            source_kinds=YOUTUBE_SOURCE_KINDS,
+            service_families=YOUTUBE_SERVICE_FAMILIES,
             required_source_traits=frozenset(),
             authentication=frozenset({AUTH_ANONYMOUS, AUTH_COOKIES}),
             granularity=GRANULARITY_ENTRY,
@@ -198,7 +214,7 @@ def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
             stage="complete-metadata",
             fields=YTMUSICAPI_EXACT_SCALAR_FIELDS,
             authority=AUTHORITY_EXACT,
-            source_kinds=YOUTUBE_SOURCE_KINDS,
+            service_families=YOUTUBE_SERVICE_FAMILIES,
             required_source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
             authentication=frozenset({AUTH_ANONYMOUS}),
             granularity=GRANULARITY_ENTRY,

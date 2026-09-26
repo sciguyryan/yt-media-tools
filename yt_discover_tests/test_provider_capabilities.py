@@ -22,7 +22,7 @@ def capability(
     *,
     fields: frozenset[str] | None = None,
     authority: str = AUTHORITY_EXACT,
-    source_kinds: frozenset[str] | None = None,
+    service_families: frozenset[str] | None = None,
     required_source_traits: frozenset[str] = frozenset(),
     authentication: frozenset[str] = frozenset({AUTH_ANONYMOUS}),
     granularity: str = GRANULARITY_ENTRY,
@@ -33,7 +33,7 @@ def capability(
         stage="complete-metadata",
         fields=fields,
         authority=authority,
-        source_kinds=source_kinds,
+        service_families=service_families,
         required_source_traits=required_source_traits,
         authentication=authentication,
         granularity=granularity,
@@ -71,21 +71,21 @@ def test_finite_field_capability_must_cover_every_required_field() -> None:
 
 def test_source_specific_provider_requires_matching_resolved_identity() -> None:
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
-    youtube = capability("youtube-provider", source_kinds=frozenset({"youtube"}), cost_rank=1)
+    youtube = capability("youtube-provider", service_families=frozenset({"youtube"}), cost_rank=1)
 
     assert select_provider_capability(requirement, (youtube,)) is None
     assert (
         select_provider_capability(
             requirement,
             (youtube,),
-            context=ProviderSelectionContext(resolved_source_kind="twitch"),
+            context=ProviderSelectionContext(resolved_service_family="twitch"),
         )
         is None
     )
     selected = select_provider_capability(
         requirement,
         (youtube,),
-        context=ProviderSelectionContext(resolved_source_kind="youtube"),
+        context=ProviderSelectionContext(resolved_service_family="youtube"),
     )
     assert selected is not None
     assert selected.capability.provider == "youtube-provider"
@@ -150,7 +150,7 @@ def test_backend_resolution_constrains_source_specific_provider_eligibility() ->
     from yt_media_tools.source_resolution import observed_ytdlp_resolutions
 
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
-    youtube = capability("youtube-provider", source_kinds=frozenset({"youtube"}), cost_rank=1)
+    youtube = capability("youtube-provider", service_families=frozenset({"youtube"}), cost_rank=1)
     generic = capability("generic-provider", cost_rank=50)
     resolutions = observed_ytdlp_resolutions([{"extractor": "youtube:tab", "extractor_key": "YoutubeTab"}])
 
@@ -169,7 +169,7 @@ def test_unresolved_backend_identity_preserves_generic_fallback() -> None:
     from yt_media_tools.source_resolution import observed_ytdlp_resolutions
 
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
-    youtube = capability("youtube-provider", source_kinds=frozenset({"youtube"}), cost_rank=1)
+    youtube = capability("youtube-provider", service_families=frozenset({"youtube"}), cost_rank=1)
     generic = capability("generic-provider", cost_rank=50)
     resolutions = observed_ytdlp_resolutions(
         [{"extractor": "generic", "extractor_key": "Generic", "webpage_url_domain": "youtube.com"}]
@@ -190,10 +190,10 @@ def test_cookie_requirement_is_preserved_when_resolution_context_is_built() -> N
     from yt_media_tools.source_resolution import observed_ytdlp_resolutions
 
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
-    anonymous = capability("anonymous-youtube", source_kinds=frozenset({"youtube"}), cost_rank=1)
+    anonymous = capability("anonymous-youtube", service_families=frozenset({"youtube"}), cost_rank=1)
     cookies = capability(
         "cookie-youtube",
-        source_kinds=frozenset({"youtube"}),
+        service_families=frozenset({"youtube"}),
         authentication=frozenset({AUTH_COOKIES}),
         cost_rank=2,
     )
@@ -237,14 +237,14 @@ def test_youtubejs_exact_scalar_requires_resolved_youtube_source() -> None:
         select_provider_capability(
             requirement,
             capabilities,
-            context=ProviderSelectionContext(resolved_source_kind="vimeo"),
+            context=ProviderSelectionContext(resolved_service_family="vimeo"),
         )
         is None
     )
     selected = select_provider_capability(
         requirement,
         capabilities,
-        context=ProviderSelectionContext(resolved_source_kind="youtube"),
+        context=ProviderSelectionContext(resolved_service_family="youtube"),
     )
     assert selected is not None
     assert selected.capability.provider == "youtubejs"
@@ -259,7 +259,7 @@ def test_youtubejs_exact_scalar_rejects_mixed_unsupported_requirement() -> None:
         select_provider_capability(
             requirement,
             production_provider_capabilities(),
-            context=ProviderSelectionContext(resolved_source_kind="youtube"),
+            context=ProviderSelectionContext(resolved_service_family="youtube"),
         )
         is None
     )
@@ -272,7 +272,7 @@ def test_youtubejs_exact_scalar_accepts_cookie_context_without_exposing_cookie_d
     selected = select_provider_capability(
         requirement,
         production_provider_capabilities(),
-        context=ProviderSelectionContext(resolved_source_kind="youtube", authentication=AUTH_COOKIES),
+        context=ProviderSelectionContext(resolved_service_family="youtube", authentication=AUTH_COOKIES),
     )
 
     assert selected is not None
@@ -294,7 +294,7 @@ def test_production_lowering_maps_only_wholly_supported_youtubejs_requirement() 
     )
     lowered = lower_provider_requirements(
         requirements,
-        context=ProviderSelectionContext(resolved_source_kind="youtube"),
+        context=ProviderSelectionContext(resolved_service_family="youtube"),
     )
 
     assert len(lowered) == 1
@@ -321,7 +321,7 @@ def test_youtubejs_exact_scalar_all_nonempty_field_subsets_are_eligible() -> Non
     )
 
     fields = sorted(YOUTUBEJS_EXACT_SCALAR_FIELDS)
-    context = ProviderSelectionContext(resolved_source_kind="youtube")
+    context = ProviderSelectionContext(resolved_service_family="youtube")
     capabilities = production_provider_capabilities()
     for size in range(1, len(fields) + 1):
         for subset in combinations(fields, size):
@@ -335,7 +335,7 @@ def test_youtubejs_exact_scalar_unsupported_fields_poison_complete_lowering() ->
     """One unsupported field must keep the whole semantic stage off YouTube.js."""
     from yt_media_tools.provider_capabilities import production_provider_capabilities
 
-    context = ProviderSelectionContext(resolved_source_kind="youtube")
+    context = ProviderSelectionContext(resolved_service_family="youtube")
     for unsupported in (
         "upload_date",
         "date",
@@ -361,7 +361,7 @@ def test_source_trait_requirement_is_positive_and_conservative() -> None:
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
     music = capability(
         "music-provider",
-        source_kinds=frozenset({"youtube"}),
+        service_families=frozenset({"youtube"}),
         required_source_traits=frozenset({"music"}),
         cost_rank=1,
     )
@@ -370,7 +370,7 @@ def test_source_trait_requirement_is_positive_and_conservative() -> None:
         select_provider_capability(
             requirement,
             (music,),
-            context=ProviderSelectionContext(resolved_source_kind="youtube"),
+            context=ProviderSelectionContext(resolved_service_family="youtube"),
         )
         is None
     )
@@ -378,7 +378,7 @@ def test_source_trait_requirement_is_positive_and_conservative() -> None:
         requirement,
         (music,),
         context=ProviderSelectionContext(
-            resolved_source_kind="youtube",
+            resolved_service_family="youtube",
             source_traits=frozenset({"music"}),
         ),
     )
@@ -406,14 +406,14 @@ def test_production_ytmusicapi_capability_requires_positive_music_evidence() -> 
     assert "description" not in ytmusicapi.fields
     assert "musicVideoType" not in ytmusicapi.fields
 
-    youtube_only = ProviderSelectionContext(resolved_source_kind="youtube")
+    youtube_only = ProviderSelectionContext(resolved_service_family="youtube")
     assert all(
         candidate.capability.provider != "ytmusicapi"
         for candidate in eligible_provider_candidates(requirement, capabilities, context=youtube_only)
     )
 
     music_context = ProviderSelectionContext(
-        resolved_source_kind="youtube",
+        resolved_service_family="youtube",
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
     )
     assert any(
@@ -426,7 +426,7 @@ def test_ytmusicapi_cannot_self_authorise_from_unsupported_or_provider_native_fi
     from yt_media_tools.provider_capabilities import SOURCE_TRAIT_MUSIC, production_provider_capabilities
 
     context = ProviderSelectionContext(
-        resolved_source_kind="youtube",
+        resolved_service_family="youtube",
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
     )
     capabilities = production_provider_capabilities()
@@ -443,7 +443,7 @@ def test_ytmusicapi_browser_or_cookie_authentication_is_not_a_production_require
 
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
     context = ProviderSelectionContext(
-        resolved_source_kind="youtube",
+        resolved_service_family="youtube",
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
         authentication=AUTH_COOKIES,
     )
@@ -469,7 +469,7 @@ def test_backend_resolution_context_derives_music_trait_only_from_confirmed_musi
     )
     context = selection_context_from_backend_resolution(resolutions)
 
-    assert context.resolved_source_kind == "youtube"
+    assert context.resolved_service_family == "youtube"
     assert context.source_traits == frozenset({SOURCE_TRAIT_MUSIC})
 
 
@@ -507,7 +507,7 @@ def test_ytmusicapi_every_non_empty_authoritative_field_subset_is_eligible_with_
 
     capabilities = production_provider_capabilities()
     context = ProviderSelectionContext(
-        resolved_source_kind="youtube",
+        resolved_service_family="youtube",
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
     )
     fields = sorted(YTMUSICAPI_EXACT_SCALAR_FIELDS)
@@ -527,7 +527,7 @@ def test_ytmusicapi_unsupported_field_contamination_rejects_the_whole_capability
 
     capabilities = production_provider_capabilities()
     context = ProviderSelectionContext(
-        resolved_source_kind="youtube",
+        resolved_service_family="youtube",
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
     )
     unsupported_fields = (
@@ -556,7 +556,7 @@ def test_ytmusicapi_candidate_order_is_independent_of_capability_declaration_ord
 
     requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "view_count"}))
     context = ProviderSelectionContext(
-        resolved_source_kind="youtube",
+        resolved_service_family="youtube",
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
     )
     capabilities = production_provider_capabilities()
@@ -569,3 +569,45 @@ def test_ytmusicapi_candidate_order_is_independent_of_capability_declaration_ord
         == [candidate.capability.provenance for candidate in reverse]
         == ["youtubejs:getBasicInfo", "ytmusicapi:YTMusic.get_song"]
     )
+
+
+def test_logical_source_and_facet_constraints_are_independent_of_service_evidence() -> None:
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration"}))
+    constrained = ProviderCapability(
+        provider="facet-provider",
+        stage="complete-metadata",
+        fields=frozenset({"duration"}),
+        authority=AUTHORITY_EXACT,
+        service_families=frozenset({"youtube"}),
+        required_source_traits=frozenset(),
+        authentication=frozenset({AUTH_ANONYMOUS}),
+        granularity=GRANULARITY_ENTRY,
+        cost_rank=1,
+        provenance="test:facet-provider",
+        logical_source_kinds=frozenset({"channel"}),
+        logical_facets=frozenset({"shorts"}),
+    )
+
+    assert (
+        select_provider_capability(
+            requirement,
+            (constrained,),
+            context=ProviderSelectionContext(
+                resolved_service_family="youtube",
+                logical_source_kind="channel",
+                logical_facet="videos",
+            ),
+        )
+        is None
+    )
+    selected = select_provider_capability(
+        requirement,
+        (constrained,),
+        context=ProviderSelectionContext(
+            resolved_service_family="youtube",
+            logical_source_kind="channel",
+            logical_facet="shorts",
+        ),
+    )
+    assert selected is not None
+    assert selected.capability.provider == "facet-provider"

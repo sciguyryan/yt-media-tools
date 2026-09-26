@@ -68,7 +68,7 @@ def test_human_renderer_labels_backend_facts_without_semantic_claims() -> None:
 
 
 def test_single_specific_extractor_family_can_prove_physical_source_kind() -> None:
-    from yt_media_tools.source_resolution import resolved_source_kind
+    from yt_media_tools.source_resolution import resolved_service_family
 
     resolutions = observed_ytdlp_resolutions(
         [
@@ -76,11 +76,11 @@ def test_single_specific_extractor_family_can_prove_physical_source_kind() -> No
             {"extractor": "youtube", "extractor_key": "Youtube"},
         ]
     )
-    assert resolved_source_kind(resolutions) == "youtube"
+    assert resolved_service_family(resolutions) == "youtube"
 
 
 def test_generic_resolution_never_proves_source_kind_from_domain() -> None:
-    from yt_media_tools.source_resolution import resolved_source_kind
+    from yt_media_tools.source_resolution import resolved_service_family
 
     resolutions = observed_ytdlp_resolutions(
         [
@@ -92,11 +92,11 @@ def test_generic_resolution_never_proves_source_kind_from_domain() -> None:
             }
         ]
     )
-    assert resolved_source_kind(resolutions) is None
+    assert resolved_service_family(resolutions) is None
 
 
 def test_conflicting_extractor_families_remain_unresolved() -> None:
-    from yt_media_tools.source_resolution import resolved_source_kind
+    from yt_media_tools.source_resolution import resolved_service_family
 
     resolutions = observed_ytdlp_resolutions(
         [
@@ -104,11 +104,11 @@ def test_conflicting_extractor_families_remain_unresolved() -> None:
             {"extractor": "twitch:vod", "extractor_key": "TwitchVod"},
         ]
     )
-    assert resolved_source_kind(resolutions) is None
+    assert resolved_service_family(resolutions) is None
 
 
 def test_specific_and_generic_observations_remain_unresolved() -> None:
-    from yt_media_tools.source_resolution import resolved_source_kind
+    from yt_media_tools.source_resolution import resolved_service_family
 
     resolutions = observed_ytdlp_resolutions(
         [
@@ -116,7 +116,7 @@ def test_specific_and_generic_observations_remain_unresolved() -> None:
             {"extractor": "generic", "extractor_key": "Generic"},
         ]
     )
-    assert resolved_source_kind(resolutions) is None
+    assert resolved_service_family(resolutions) is None
 
 
 def test_resolved_music_origin_proves_positive_music_trait_only_after_youtube_resolution() -> None:

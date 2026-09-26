@@ -80,6 +80,8 @@ def test_music_specialised_chain_uses_ytmusicapi_after_youtubejs_omission(monkey
 def test_music_specialised_provider_chain_retains_cost_preference_then_specialised_fallback() -> None:
     from yt_media_tools.discover_application import _specialised_metadata_providers
 
+    # A lightweight plan double may omit logical source evidence. Provider selection must
+    # remain compatible and fall back to the independently resolved service evidence.
     plan = SimpleNamespace(provider_requirements=(MetadataRequirement("complete-metadata", frozenset({"duration"})),))
     records = [
         {"extractor": "youtube", "extractor_key": "Youtube", "original_url": "https://music.youtube.com/watch?v=abc"}
