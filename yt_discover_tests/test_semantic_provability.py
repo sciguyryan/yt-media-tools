@@ -210,7 +210,7 @@ def test_source_field_type_facts_do_not_turn_dynamic_runtime_shape_into_contract
     from yt_media_tools.semantic_provability import prove_source_field_facts
     from yt_media_tools.source_model import SourceSpec
 
-    source = SourceSpec("extractor", "https://example.invalid/item", "https://example.invalid/item", None, None)
+    source = SourceSpec("url", "https://example.invalid/item", "https://example.invalid/item", None, None)
     dynamic = prove_source_field_facts(source, "raw.provider_specific")
 
     assert not dynamic.known_logical_field

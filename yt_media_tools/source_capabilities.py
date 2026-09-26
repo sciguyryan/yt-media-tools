@@ -125,15 +125,20 @@ class FacetCapabilities:
 class SourceCapabilities:
     """Source-family logical collections and their stable acquisition contracts.
 
-    ``adapter`` identifies the source-resolution family, not the acquisition backend.
+    ``source_family`` identifies source-resolution semantics, not the acquisition backend.
     Backends and metadata providers are selected separately from logical source identity.
     """
 
-    adapter: str
+    source_family: str
     facets: tuple[str, ...] = ()
     default_facet: str | None = None
     facet_profiles: tuple[FacetCapabilities, ...] = ()
     facet_target_suffixes: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def adapter(self) -> str:
+        """Return the legacy source-family label for compatibility with older callers."""
+        return self.source_family
 
     def supports(self, facet: str) -> bool:
         """Return whether this source advertises the requested logical facet."""
@@ -144,7 +149,7 @@ class SourceCapabilities:
         for name, suffix in self.facet_target_suffixes:
             if name == facet.casefold():
                 return f"{canonical_url.rstrip('/')}/{suffix}"
-        raise ValueError(f"adapter {self.adapter!r} has no physical target mapping for facet {facet!r}")
+        raise ValueError(f"source family {self.source_family!r} has no physical target mapping for facet {facet!r}")
 
     def facet_capabilities(self, facet: str | None = None) -> FacetCapabilities:
         """Return the declared capability contract for a selected logical collection."""
@@ -153,7 +158,7 @@ class SourceCapabilities:
             if profile.name == selected:
                 return profile
         label = selected if selected is not None else "default"
-        raise ValueError(f"adapter {self.adapter!r} does not advertise facet {label!r}")
+        raise ValueError(f"source family {self.source_family!r} does not advertise facet {label!r}")
 
 
 _STABLE_SCHEMA = tuple(
@@ -181,17 +186,17 @@ def _facet_profile(
 
 
 _YOUTUBE_CHANNEL_CAPABILITIES = SourceCapabilities(
-    adapter="youtube-channel",
+    source_family="youtube-channel",
     facets=YOUTUBE_CHANNEL_FACETS,
     facet_profiles=(_facet_profile(None),) + tuple(_facet_profile(name) for name in YOUTUBE_CHANNEL_FACETS),
     facet_target_suffixes=tuple(YOUTUBE_CHANNEL_FACET_SUFFIXES.items()),
 )
 _YOUTUBE_PLAYLIST_CAPABILITIES = SourceCapabilities(
-    adapter="youtube-playlist",
+    source_family="youtube-playlist",
     facet_profiles=(_facet_profile(None),),
 )
 _GENERIC_YTDLP_CAPABILITIES = SourceCapabilities(
-    adapter="generic-url",
+    source_family="generic-url",
     facet_profiles=(
         _facet_profile(
             None,
@@ -202,7 +207,7 @@ _GENERIC_YTDLP_CAPABILITIES = SourceCapabilities(
     ),
 )
 _UNKNOWN_CAPABILITIES = SourceCapabilities(
-    adapter="unknown",
+    source_family="unknown",
     facet_profiles=(
         _facet_profile(
             None,
@@ -251,7 +256,7 @@ def capabilities_for_fields(fields: set[str]) -> list[FieldCapability]:
 _SOURCE_CAPABILITIES_BY_KIND = {
     "channel": _YOUTUBE_CHANNEL_CAPABILITIES,
     "playlist": _YOUTUBE_PLAYLIST_CAPABILITIES,
-    "extractor": _GENERIC_YTDLP_CAPABILITIES,
+    "url": _GENERIC_YTDLP_CAPABILITIES,
 }
 
 

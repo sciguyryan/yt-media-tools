@@ -400,7 +400,7 @@ def explain_user_query(
             f"  Resolved URL: {source.canonical_url}",
         ]
         capabilities = source_capabilities(source)
-        lines.append(f"  Adapter: {capabilities.adapter}")
+        lines.append(f"  Source family: {capabilities.source_family}")
         lines.append(f"  Advertised facets: {', '.join(capabilities.facets) if capabilities.facets else 'none'}")
         if source.facet is not None:
             lines.append(f"  Facet: {source.facet}")
@@ -411,7 +411,7 @@ def explain_user_query(
         for (item, request_facet), source_spec in zip(source_requests, explained_sources, strict=True):
             lines.append(f"  {item}: {source_spec.kind} -> {source_spec.canonical_url}")
             capabilities = source_capabilities(source_spec)
-            lines.append(f"    Adapter: {capabilities.adapter}")
+            lines.append(f"    Source family: {capabilities.source_family}")
             lines.append(f"    Advertised facets: {', '.join(capabilities.facets) if capabilities.facets else 'none'}")
             if source_spec.facet is not None:
                 lines.append(f"    Facet: {source_spec.facet}")

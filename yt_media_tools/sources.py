@@ -55,7 +55,7 @@ def resolve_source_request(
         compatibility = "compatibility option --tab requested this facet; " if facet is None and tab != "all" else ""
         raise ValueError(
             f"{compatibility}source {value!r} does not advertise facet {requested!r}; "
-            f"adapter {capabilities.adapter!r} advertises: {advertised}"
+            f"source family {capabilities.source_family!r} advertises: {advertised}"
         )
     return SourceSpec(
         classified.kind,
@@ -107,7 +107,7 @@ def _resolve_url(value: str) -> SourceSpec:
     parts = urlsplit(value)
     host = parts.netloc.lower().split(":", 1)[0]
     if host not in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}:
-        return SourceSpec("extractor", value, value, None)
+        return SourceSpec("url", value, value, None)
 
     query = parse_qs(parts.query)
     playlist_ids = query.get("list", [])

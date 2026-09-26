@@ -88,11 +88,11 @@ def test_source_capabilities_are_adapter_scoped_and_deterministic() -> None:
     playlist = source_capabilities(resolve_source("PL1234567890"))
     generic = source_capabilities(resolve_source("https://www.twitch.tv/example/videos"))
 
-    assert channel.adapter == "youtube-channel"
+    assert channel.source_family == "youtube-channel"
     assert channel.facets == ("videos", "shorts", "live")
-    assert playlist.adapter == "youtube-playlist"
+    assert playlist.source_family == "youtube-playlist"
     assert playlist.facets == ()
-    assert generic.adapter == "generic-url"
+    assert generic.source_family == "generic-url"
     assert generic.facets == ()
 
 
@@ -105,13 +105,13 @@ def test_legacy_tab_is_materialised_as_the_same_logical_facet() -> None:
     assert legacy.facet == "shorts"
 
 
-def test_capability_diagnostic_names_adapter_and_advertised_facets() -> None:
-    with pytest.raises(ValueError, match="adapter 'youtube-playlist' advertises: none"):
+def test_capability_diagnostic_names_source_family_and_advertised_facets() -> None:
+    with pytest.raises(ValueError, match="source family 'youtube-playlist' advertises: none"):
         resolve_source_request("PL1234567890", facet="videos")
 
 
 def test_channel_unknown_facet_lists_supported_facets() -> None:
-    with pytest.raises(ValueError, match="adapter 'youtube-channel' advertises: videos, shorts, live"):
+    with pytest.raises(ValueError, match="source family 'youtube-channel' advertises: videos, shorts, live"):
         resolve_source_request("@whatdamath", facet="archives")
 
 

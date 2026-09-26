@@ -32,7 +32,7 @@ def test_channel_declares_default_and_named_logical_collections() -> None:
     source = resolve_source("@whatdamath")
     capabilities = source_capabilities(source)
 
-    assert capabilities.adapter == "youtube-channel"
+    assert capabilities.source_family == "youtube-channel"
     assert capabilities.facets == ("videos", "shorts", "live")
     assert capabilities.facet_capabilities().name is None
     assert [capabilities.facet_capabilities(name).name for name in capabilities.facets] == [
@@ -60,9 +60,9 @@ def test_playlist_and_generic_extractors_have_distinct_adapter_contracts() -> No
     playlist = source_capabilities(resolve_source("PL1234567890"))
     generic = source_capabilities(resolve_source("https://www.twitch.tv/example/videos"))
 
-    assert playlist.adapter == "youtube-playlist"
+    assert playlist.source_family == "youtube-playlist"
     assert playlist.facet_capabilities().stable_collection
-    assert generic.adapter == "generic-url"
+    assert generic.source_family == "generic-url"
     assert not generic.facet_capabilities().stable_collection
     assert generic.facet_capabilities().trustworthy_order_field is None
     assert not generic.facet_capabilities().cheaply_enumerates_identities

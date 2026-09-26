@@ -10,6 +10,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 - Extend provider explain data to report service-family constraints explicitly without presenting backend evidence as logical source identity.
 
 ## Release history
+- Remove the remaining yt-dlp-shaped `extractor` logical source kind for generic URLs, and name source-resolution capability families explicitly without changing the compatibility machine explain field.
 
 ### Discover 0.29.10 - Acquisition Paths
 

@@ -50,7 +50,7 @@ def test_forced_playlist_accepts_unusual_id() -> None:
 
 def test_generic_extractor_url_is_accepted_in_auto_mode() -> None:
     spec = resolve_source("https://www.twitch.tv/example/videos")
-    assert spec.kind == "extractor"
+    assert spec.kind == "url"
     assert spec.canonical_url == "https://www.twitch.tv/example/videos"
 
 
