@@ -10,6 +10,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - Identify the source and facet in independent UNION acquisition progress messages so per-boundary counters are unambiguous.
 - Repeat large-source enumeration warnings at the configured per-source/facet interval and describe the setting as a warning interval.
 - Apply `SELECT DISTINCT` globally across a comma-separated `OF` facet set and preserve scalar-expression projection values through facet reconciliation.
+- Preserve comma-separated `OF` syntax in canonical formatting now that its global duplicate elimination and source-field ordering semantics are intentionally distinct from ordinary explicit `UNION ALL`.
+- Harden multi-facet `OF` conformance for duplicate preservation, global ordering and slicing, three-facet composition, independent source-boundary planning and optimiser-equivalent torture execution.
+- Serialise materialised compound-query expression outputs directly so scalar projections are not re-evaluated against rows that no longer contain their source fields.
 
 - Freeze the ordinary `SELECT` clause-order contract, retaining the established `LIMIT ... OFFSET ...` slicing order, standalone `OFFSET`, deterministic rejection of reordered or repeated clauses, and canonical formatting.
 

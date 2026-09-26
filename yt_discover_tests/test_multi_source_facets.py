@@ -17,7 +17,7 @@ def test_multi_facet_of_lowers_to_ordered_union_all_branches() -> None:
     query = parse_query("SELECT id FROM @example OF videos, live")
     assert query.from_facet == "videos"
     assert [(operation.query.from_facet, operation.all) for operation in query.set_operations] == [("live", True)]
-    assert format_query(query) == ("SELECT id FROM @example OF videos UNION ALL SELECT id FROM @example OF live")
+    assert format_query(query) == "SELECT id FROM @example OF videos, live"
 
 
 def test_multi_facet_of_repeats_branch_semantics_and_keeps_result_modifiers_outer() -> None:
@@ -26,8 +26,7 @@ def test_multi_facet_of_repeats_branch_semantics_and_keeps_result_modifiers_oute
         "WHERE title ILIKE '%welcome%' ORDER BY upload_date ASC LIMIT 40 OFFSET 2"
     )
     assert format_query(query) == (
-        "SELECT id, title FROM @example OF videos WHERE title ILIKE '%welcome%' "
-        "UNION ALL SELECT id, title FROM @example OF live WHERE title ILIKE '%welcome%' "
+        "SELECT id, title FROM @example OF videos, live WHERE title ILIKE '%welcome%' "
         "ORDER BY upload_date ASC LIMIT 40 OFFSET 2"
     )
 
@@ -164,3 +163,76 @@ def test_multi_facet_distinct_expression_projection_is_not_blank() -> None:
         {"CONCAT(id, ' # ', title)": "video-id # Welcome to the Game"},
         {"CONCAT(id, ' # ', title)": "live-id # Welcome to the Game 2"},
     ]
+
+
+def test_multi_facet_of_without_distinct_preserves_cross_facet_duplicates() -> None:
+    records = [
+        {
+            "id": "same-id",
+            "title": "Same",
+            "_yt_sql_source": "@example",
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "same-id",
+            "title": "Same",
+            "_yt_sql_source": "@example",
+            "_yt_sql_source_facet": "live",
+        },
+    ]
+    query = resolve_query(parse_query("SELECT id FROM @example OF videos, live"), QuerySchema(records), DateContext())
+    assert apply_query(records, query) == [{"id": "same-id"}, {"id": "same-id"}]
+
+
+def test_multi_facet_of_orders_and_slices_globally_across_three_facets() -> None:
+    records = [
+        {
+            "id": "video-early",
+            "upload_date": "20240101",
+            "release_timestamp": 10,
+            "_yt_sql_source": "@example",
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "short-middle",
+            "upload_date": "20240201",
+            "release_timestamp": 20,
+            "_yt_sql_source": "@example",
+            "_yt_sql_source_facet": "shorts",
+        },
+        {
+            "id": "live-late",
+            "upload_date": "20240301",
+            "release_timestamp": 30,
+            "_yt_sql_source": "@example",
+            "_yt_sql_source_facet": "live",
+        },
+        {
+            "id": "video-latest",
+            "upload_date": "20240401",
+            "release_timestamp": 40,
+            "_yt_sql_source": "@example",
+            "_yt_sql_source_facet": "videos",
+        },
+    ]
+    query = resolve_query(
+        parse_query(
+            "SELECT id FROM @example OF videos, shorts, live "
+            "ORDER BY upload_date ASC, release_timestamp ASC LIMIT 2 OFFSET 1"
+        ),
+        QuerySchema(records),
+        DateContext(),
+    )
+    assert apply_query(records, query) == [{"id": "short-middle"}, {"id": "live-late"}]
+
+
+def test_multi_facet_distinct_formatter_preserves_shorthand_semantics() -> None:
+    source = (
+        "SELECT DISTINCT CONCAT(id, ':', title) FROM @example OF videos, shorts, live "
+        "ORDER BY upload_date ASC LIMIT 5 OFFSET 1"
+    )
+    canonical = format_query(parse_query(source))
+    assert canonical == source
+    reparsed = parse_query(canonical)
+    assert format_query(reparsed) == canonical
+    assert all(operation.facet_expansion for operation in reparsed.set_operations)

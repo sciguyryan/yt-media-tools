@@ -272,10 +272,24 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
             ("SELECT DISTINCT " if query.distinct else "SELECT ")
             + ", ".join(_format_select_term(term) for term in query.select)
         )
+    facet_expansions = tuple(operation for operation in query.set_operations if operation.facet_expansion)
     if query.from_source is not None:
-        parts.append(
-            f"FROM {_format_relation_source(query.from_source, query.from_facet, query.from_alias, identifier_source=query.from_source in local_identifier_sources)}"
-        )
+        if facet_expansions:
+            source_text = _format_relation_source(
+                query.from_source,
+                identifier_source=query.from_source in local_identifier_sources,
+            )
+            facets = (query.from_facet,) + tuple(operation.query.from_facet for operation in facet_expansions)
+            source_text += " OF " + ", ".join(
+                _format_identifier_component(facet) for facet in facets if facet is not None
+            )
+            if query.from_alias is not None:
+                source_text += f" AS {_format_identifier_component(query.from_alias)}"
+            parts.append(f"FROM {source_text}")
+        else:
+            parts.append(
+                f"FROM {_format_relation_source(query.from_source, query.from_facet, query.from_alias, identifier_source=query.from_source in local_identifier_sources)}"
+            )
         parts.extend(_format_join(join, identifier_sources=local_identifier_sources) for join in query.joins)
     if query.predicate is not None:
         parts.append(f"WHERE {format_expression(query.predicate)}")
@@ -284,6 +298,8 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
     if query.having is not None:
         parts.append(f"HAVING {format_expression(query.having)}")
     for operation in query.set_operations:
+        if operation.facet_expansion:
+            continue
         parts.append(
             ("UNION ALL " if operation.all else "UNION ")
             + format_query(operation.query, _identifier_sources=local_identifier_sources)

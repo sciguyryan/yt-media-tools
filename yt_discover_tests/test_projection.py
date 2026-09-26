@@ -155,3 +155,44 @@ def test_structured_collection_output_uses_json_array_of_objects() -> None:
     query = resolve("SELECT formats FROM @channel", records)
 
     assert capture(records, query) == '[{"format_id": "18"}, {"format_id": "22"}]\n'
+
+
+def test_multi_facet_expression_result_is_serialised_from_materialised_row() -> None:
+    records = [
+        {
+            "id": "video-id",
+            "title": "Welcome to the Game",
+            "upload_date": "20240101",
+            "release_timestamp": 10,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "live-id",
+            "title": "Welcome to the Game 2",
+            "upload_date": "20240202",
+            "release_timestamp": 20,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "live",
+        },
+    ]
+    query = resolve(
+        "SELECT DISTINCT CONCAT(id, ' # ', title) FROM @Insym OF videos, live "
+        "WHERE title ILIKE '%welcome to the game%' "
+        "ORDER BY upload_date ASC, release_timestamp ASC",
+        records,
+    )
+    selected = apply_query(records, query)
+    assert capture(selected, query) == ("video-id # Welcome to the Game\nlive-id # Welcome to the Game 2\n")
+
+
+def test_explicit_union_expression_result_is_serialised_from_materialised_row() -> None:
+    records = [
+        {"id": "a", "title": "First", "_yt_sql_source": "@left", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Second", "_yt_sql_source": "@right", "_yt_sql_source_facet": None},
+    ]
+    query = resolve(
+        "SELECT CONCAT(id, ':', title) FROM @left UNION ALL SELECT CONCAT(id, ':', title) FROM @right",
+        records,
+    )
+    assert capture(apply_query(records, query), query) == "a:First\nb:Second\n"

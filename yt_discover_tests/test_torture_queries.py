@@ -271,3 +271,79 @@ def test_unicode_and_quoted_identifier_torture_across_cte_and_relation_qualifica
     optimised = optimise_query(query)
     assert apply_query(rows, optimised.query) == result
     assert optimise_query(optimised.query).query == optimised.query
+
+
+def test_multi_facet_of_tortures_global_distinct_order_projection_and_slicing() -> None:
+    source = "@facet_torture"
+    rows = [
+        {
+            "id": "same",
+            "title": "Welcome to the Game",
+            "upload_date": "20240101",
+            "release_timestamp": 10,
+            "_yt_sql_source": source,
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "short",
+            "title": "Welcome to the Game Short",
+            "upload_date": "20240201",
+            "release_timestamp": 20,
+            "_yt_sql_source": source,
+            "_yt_sql_source_facet": "shorts",
+        },
+        {
+            "id": "same",
+            "title": "Welcome to the Game",
+            "upload_date": "20240301",
+            "release_timestamp": 30,
+            "_yt_sql_source": source,
+            "_yt_sql_source_facet": "live",
+        },
+        {
+            "id": "live",
+            "title": "Welcome to the Game Live",
+            "upload_date": "20240401",
+            "release_timestamp": 40,
+            "_yt_sql_source": source,
+            "_yt_sql_source_facet": "live",
+        },
+        {
+            "id": "video",
+            "title": "Welcome to the Game Video",
+            "upload_date": "20240501",
+            "release_timestamp": 50,
+            "_yt_sql_source": source,
+            "_yt_sql_source_facet": "videos",
+        },
+        {
+            "id": "ignored",
+            "title": "Something Else",
+            "upload_date": "20231201",
+            "release_timestamp": 1,
+            "_yt_sql_source": source,
+            "_yt_sql_source_facet": "shorts",
+        },
+    ]
+    source_schemas = {
+        (source, facet): QuerySchema([row for row in rows if row["_yt_sql_source_facet"] == facet])
+        for facet in ("videos", "shorts", "live")
+    }
+    text = (
+        "SELECT DISTINCT CONCAT(UPPER(id), ' # ', title) FROM @facet_torture OF videos, shorts, live "
+        "WHERE title ILIKE '%welcome to the game%' "
+        "ORDER BY upload_date ASC, release_timestamp ASC LIMIT 3 OFFSET 1"
+    )
+    parsed = parse_query(text)
+    canonical = format_query(parsed)
+    assert canonical == text
+    query = resolve_query(parse_query(canonical), QuerySchema(rows), CONTEXT, source_schemas=source_schemas)
+    expected = [
+        {"CONCAT(UPPER(id), ' # ', title)": "SHORT # Welcome to the Game Short"},
+        {"CONCAT(UPPER(id), ' # ', title)": "LIVE # Welcome to the Game Live"},
+        {"CONCAT(UPPER(id), ' # ', title)": "VIDEO # Welcome to the Game Video"},
+    ]
+    assert apply_query(rows, query) == expected
+    optimised = optimise_query(query)
+    assert apply_query(rows, optimised.query) == expected
+    assert optimise_query(optimised.query).query == optimised.query
