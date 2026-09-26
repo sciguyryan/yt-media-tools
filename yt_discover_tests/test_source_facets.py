@@ -92,7 +92,7 @@ def test_source_capabilities_are_adapter_scoped_and_deterministic() -> None:
     assert channel.facets == ("videos", "shorts", "live")
     assert playlist.adapter == "youtube-playlist"
     assert playlist.facets == ()
-    assert generic.adapter == "yt-dlp-generic"
+    assert generic.adapter == "generic-url"
     assert generic.facets == ()
 
 

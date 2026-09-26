@@ -62,7 +62,7 @@ def test_playlist_and_generic_extractors_have_distinct_adapter_contracts() -> No
 
     assert playlist.adapter == "youtube-playlist"
     assert playlist.facet_capabilities().stable_collection
-    assert generic.adapter == "yt-dlp-generic"
+    assert generic.adapter == "generic-url"
     assert not generic.facet_capabilities().stable_collection
     assert generic.facet_capabilities().trustworthy_order_field is None
     assert not generic.facet_capabilities().cheaply_enumerates_identities
@@ -74,6 +74,7 @@ def test_logical_facet_identity_preserves_one_physical_channel_identity() -> Non
     shorts = logical_source_identity(resolve_source_request("@whatdamath", facet="shorts"))
 
     assert videos.physical == shorts.physical
+    assert not hasattr(videos.physical, "adapter")
     assert videos.canonical_url != shorts.canonical_url
     assert videos.cache_key != shorts.cache_key
     assert videos.provenance_key != shorts.provenance_key

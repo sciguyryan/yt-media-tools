@@ -2,6 +2,11 @@
 
 This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
 
+## Active development
+
+- Decouple stable physical source identity from source-resolution adapter identity so backend/provider choice cannot become part of logical source identity.
+- Move logical facet-to-physical-target mapping behind the source-family capability boundary and rename the generic URL source family so it no longer implies yt-dlp ownership.
+
 ## Release history
 
 ### Discover 0.29.10 - Acquisition Paths

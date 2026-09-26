@@ -57,7 +57,13 @@ def resolve_source_request(
             f"{compatibility}source {value!r} does not advertise facet {requested!r}; "
             f"adapter {capabilities.adapter!r} advertises: {advertised}"
         )
-    return _apply_facet(classified, requested)
+    return SourceSpec(
+        classified.kind,
+        classified.original,
+        capabilities.resolve_facet_target(classified.canonical_url, requested),
+        classified.identifier,
+        requested,
+    )
 
 
 def resolve_source(value: str, *, source_type: str = "auto", tab: str = "all") -> SourceSpec:
@@ -166,19 +172,3 @@ def _resolve_as_channel(value: str) -> SourceSpec:
 
 def _channel_from_id(channel_id: str) -> SourceSpec:
     return SourceSpec("channel", channel_id, f"{YOUTUBE_BASE_URL}/channel/{channel_id}", channel_id)
-
-
-def _apply_facet(source: SourceSpec, facet: str) -> SourceSpec:
-    """Map an advertised logical facet onto the adapter's physical target."""
-    if source.kind != "channel":
-        raise AssertionError(f"no facet mapper exists for source kind {source.kind!r}")
-    suffix = TAB_SUFFIXES[facet]
-    if suffix is None:
-        raise AssertionError("explicit facets must map to a physical suffix")
-    return SourceSpec(
-        source.kind,
-        source.original,
-        f"{source.canonical_url.rstrip('/')}/{suffix}",
-        source.identifier,
-        facet,
-    )

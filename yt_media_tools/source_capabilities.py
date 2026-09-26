@@ -123,16 +123,28 @@ class FacetCapabilities:
 
 @dataclass(frozen=True)
 class SourceCapabilities:
-    """Adapter-scoped logical collections and their stable acquisition contracts."""
+    """Source-family logical collections and their stable acquisition contracts.
+
+    ``adapter`` identifies the source-resolution family, not the acquisition backend.
+    Backends and metadata providers are selected separately from logical source identity.
+    """
 
     adapter: str
     facets: tuple[str, ...] = ()
     default_facet: str | None = None
     facet_profiles: tuple[FacetCapabilities, ...] = ()
+    facet_target_suffixes: tuple[tuple[str, str], ...] = ()
 
     def supports(self, facet: str) -> bool:
         """Return whether this source advertises the requested logical facet."""
         return facet.casefold() in self.facets
+
+    def resolve_facet_target(self, canonical_url: str, facet: str) -> str:
+        """Resolve one advertised logical facet to this source family's physical target."""
+        for name, suffix in self.facet_target_suffixes:
+            if name == facet.casefold():
+                return f"{canonical_url.rstrip('/')}/{suffix}"
+        raise ValueError(f"adapter {self.adapter!r} has no physical target mapping for facet {facet!r}")
 
     def facet_capabilities(self, facet: str | None = None) -> FacetCapabilities:
         """Return the declared capability contract for a selected logical collection."""
@@ -172,13 +184,14 @@ _YOUTUBE_CHANNEL_CAPABILITIES = SourceCapabilities(
     adapter="youtube-channel",
     facets=YOUTUBE_CHANNEL_FACETS,
     facet_profiles=(_facet_profile(None),) + tuple(_facet_profile(name) for name in YOUTUBE_CHANNEL_FACETS),
+    facet_target_suffixes=tuple(YOUTUBE_CHANNEL_FACET_SUFFIXES.items()),
 )
 _YOUTUBE_PLAYLIST_CAPABILITIES = SourceCapabilities(
     adapter="youtube-playlist",
     facet_profiles=(_facet_profile(None),),
 )
 _GENERIC_YTDLP_CAPABILITIES = SourceCapabilities(
-    adapter="yt-dlp-generic",
+    adapter="generic-url",
     facet_profiles=(
         _facet_profile(
             None,
@@ -254,11 +267,10 @@ def selected_facet_capabilities(source: SourceSpec) -> FacetCapabilities:
 
 def logical_source_identity(source: SourceSpec) -> LogicalSourceIdentity:
     """Return physical/logical identity without leaking adapter-specific details to callers."""
-    capabilities = source_capabilities(source)
     physical_url = source.canonical_url
     if source.kind == "channel" and source.facet is not None:
         suffix = "/" + YOUTUBE_CHANNEL_FACET_SUFFIXES[source.facet]
         if physical_url.endswith(suffix):
             physical_url = physical_url[: -len(suffix)]
-    physical = PhysicalSourceIdentity(source.kind, capabilities.adapter, physical_url, source.identifier)
+    physical = PhysicalSourceIdentity(source.kind, physical_url, source.identifier)
     return LogicalSourceIdentity(physical, source.canonical_url, source.facet)

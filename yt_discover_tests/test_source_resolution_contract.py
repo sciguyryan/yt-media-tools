@@ -21,5 +21,5 @@ def test_generic_source_does_not_inherit_youtube_capabilities_from_url_shape() -
     """Provider-specific capability selection must follow resolved source identity, not URL appearance."""
     source = SourceSpec("extractor", "https://www.youtube.com/example", "https://www.youtube.com/example", None)
     capabilities = source_capabilities(source)
-    assert capabilities.adapter == "yt-dlp-generic"
+    assert capabilities.adapter == "generic-url"
     assert not capabilities.facet_capabilities().cheaply_enumerates_identities

@@ -21,7 +21,6 @@ class PhysicalSourceIdentity:
     """Stable identity of the underlying physical collection before facet selection."""
 
     kind: str
-    adapter: str
     canonical_url: str
     identifier: str | None = None
 
