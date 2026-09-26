@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Freeze the ordinary `SELECT` clause-order contract, retaining the established `LIMIT ... OFFSET ...` slicing order, standalone `OFFSET`, deterministic rejection of reordered or repeated clauses, and canonical formatting.
+
 ## Release history
 
 ### Discover 0.29.11 - Backend Boundaries

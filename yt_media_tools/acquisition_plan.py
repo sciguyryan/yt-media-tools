@@ -50,7 +50,7 @@ _COLLECTION_STAGE = {
 
 @dataclass(frozen=True)
 class AcquisitionStage:
-    """One backend-neutral metadata acquisition stage."""
+    """One backend-agnostic metadata acquisition stage."""
 
     name: str
     required: bool
@@ -146,7 +146,7 @@ def plan_physical_acquisition(
     whole_fields: frozenset[str] | None = None,
     skip: bool = False,
 ) -> PhysicalAcquisitionPlan:
-    """Build an ordered backend-neutral acquisition plan from physical field needs.
+    """Build an ordered backend-agnostic acquisition plan from physical field needs.
 
     The plan describes semantic requirements only. It does not encode yt-dlp flags,
     YouTube.js calls, cache operations, or another backend's transport choices.

@@ -1,4 +1,4 @@
-"""Provider-capability contract tests for backend-neutral acquisition planning."""
+"""Provider-capability contract tests for backend-agnostic acquisition planning."""
 
 from itertools import combinations
 

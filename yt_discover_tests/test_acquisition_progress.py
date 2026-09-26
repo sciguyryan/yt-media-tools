@@ -1,4 +1,4 @@
-"""Contract tests for backend-neutral acquisition progress events."""
+"""Contract tests for backend-agnostic acquisition progress events."""
 
 from __future__ import annotations
 

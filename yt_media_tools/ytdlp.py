@@ -31,7 +31,7 @@ DEFAULT_EXTRACTOR_ARGS = "youtube:player-client=default,-android_sdkless"
 
 @dataclass(frozen=True)
 class YtDlpAcquisitionLowering:
-    """How a backend-neutral metadata plan maps onto yt-dlp execution phases."""
+    """How a backend-agnostic metadata plan maps onto yt-dlp execution phases."""
 
     flat_stages: tuple[str, ...]
     detailed_stages: tuple[str, ...]

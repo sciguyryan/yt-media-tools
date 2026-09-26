@@ -6,18 +6,27 @@ The preferred filename extension for saved query text is `.yt-sql`.
 
 ## Current grammar surface
 
-A complete yt-sql query has the following broad form:
+A non-compound yt-sql query has the following broad clause order:
 
 ```text
+[WITH <cte> [, ...]]
 [SELECT [DISTINCT] <projection> [, ...]]
-[FROM <source>]
+[FROM <relation> [<join> ...]]
 [WHERE <expression>]
+[GROUP BY <scalar-expression> [, ...]]
+[HAVING <aggregate-predicate>]
 [ORDER BY <scalar-expression> [ASC|DESC] [, ...]]
 [LIMIT <positive integer>]
 [OFFSET <non-negative integer>]
 ```
 
-If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested.
+This order is the language contract. Clauses cannot be repeated or reordered. In particular, slicing uses `LIMIT ... OFFSET ...`; the alternative `OFFSET ... LIMIT ...` spelling is not accepted. `OFFSET` may also be used without `LIMIT`, including `OFFSET 0`. Supporting multiple clause orders would add parser and formatter complexity without adding expressive power.
+
+If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested. The established predicate-only compatibility form also remains supported. `HAVING` is meaningful only for aggregate or grouped queries, subject to the aggregate rules below.
+
+`UNION` and `UNION ALL` introduce a compound-query boundary. The current parser places trailing `ORDER BY`, `LIMIT` and `OFFSET` after the complete set expression rather than inside an ungrouped branch. The detailed grouping and compound-query scope contract is deliberately handled separately from this simple-query clause-order contract.
+
+The canonical formatter emits clauses only in the order shown above, omits absent clauses, emits `LIMIT` before `OFFSET` when both are present, and does not preserve rejected alternative orderings.
 
 Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `IS DISTINCT FROM`, `IS NOT DISTINCT FROM`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS NOT TRUE`, `IS FALSE`, `IS NOT FALSE`, `IS UNKNOWN`, `IS NOT UNKNOWN`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons. `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` are NULL-safe comparisons and always return TRUE or FALSE: two NULL operands are not distinct, while exactly one NULL operand is distinct.
 

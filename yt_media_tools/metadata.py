@@ -12,7 +12,7 @@ SCALAR_TYPES = (str, int, float, bool, type(None))
 
 
 def _normalise_known_collection(name: str, value: Any) -> Any:
-    """Return a backend-neutral collection value for a declared metadata family."""
+    """Return a backend-agnostic collection value for a declared metadata family."""
     if value is None:
         return None
     if not isinstance(value, (list, tuple)):
