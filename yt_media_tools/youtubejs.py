@@ -256,3 +256,29 @@ def enumerate_until_date_boundary(
     if return_code not in (0, -15) and not stats.stopped_early:
         raise YouTubeJsError(f"YouTube.js bridge exited with status {return_code}")
     return entries, stats
+
+
+def enumerate_all(
+    project_root: Path,
+    source_url: str,
+    *,
+    dates: DateContext,
+    progress: ProgressCallback | None = None,
+    cookies_file: Path | None = None,
+) -> tuple[list[dict[str, Any]], EnumerationStats]:
+    """Enumerate a complete channel facet through YouTube.js.
+
+    Reuse the continuation-driven bounded enumerator with an unreachable lower
+    date boundary. This preserves one transport implementation while making the
+    distinction between complete enumeration and full detailed extraction
+    explicit to acquisition callers.
+    """
+    return enumerate_until_date_boundary(
+        project_root,
+        source_url,
+        stop_before=date.min,
+        confirmation_entries=1,
+        dates=dates,
+        progress=progress,
+        cookies_file=cookies_file,
+    )
