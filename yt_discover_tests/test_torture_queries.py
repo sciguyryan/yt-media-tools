@@ -347,3 +347,26 @@ def test_multi_facet_of_tortures_global_distinct_order_projection_and_slicing() 
     optimised = optimise_query(query)
     assert apply_query(rows, optimised.query) == expected
     assert optimise_query(optimised.query).query == optimised.query
+
+
+def test_grouped_compound_tortures_branch_scope_multiplicity_and_optimiser_equivalence() -> None:
+    rows = [
+        {"id": "same", "upload_date": "20240101", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "same", "upload_date": "20240201", "_yt_sql_source": "@b", "_yt_sql_source_facet": None},
+        {"id": "same", "upload_date": "20240301", "_yt_sql_source": "@c", "_yt_sql_source_facet": None},
+        {"id": "other", "upload_date": "20240401", "_yt_sql_source": "@c", "_yt_sql_source_facet": None},
+    ]
+    text = (
+        "SELECT id FROM @a "
+        "UNION ALL (SELECT id FROM @b UNION SELECT id FROM @c ORDER BY id ASC LIMIT 2) "
+        "ORDER BY id ASC OFFSET 1"
+    )
+    parsed = parse_query(text)
+    canonical = format_query(parsed)
+    assert canonical == text
+    query = resolve_query(parse_query(canonical), QuerySchema(rows), CONTEXT)
+    expected = [{"id": "same"}, {"id": "same"}]
+    assert apply_query(rows, query) == expected
+    optimised = optimise_query(query)
+    assert apply_query(rows, optimised.query) == expected
+    assert optimise_query(optimised.query).query == optimised.query

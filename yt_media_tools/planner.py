@@ -430,6 +430,8 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
         # Propagate that requirement into planning views without changing the
         # executable branch AST or assigning branch-local ordering semantics.
         effective_order_by = candidate.order_by or compound_order_by
+        if candidate.left_query is not None:
+            visit(candidate.left_query, owner_cte, effective_order_by)
         if candidate.from_source is not None and candidate.from_source not in cte_names:
             planning_candidate = replace(candidate, order_by=effective_order_by)
             if candidate.joins and candidate.from_alias is not None:

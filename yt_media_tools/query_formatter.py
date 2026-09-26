@@ -267,7 +267,9 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
             for cte in query.ctes
         )
         parts.append(f"WITH {cte_text}")
-    if query.select:
+    if query.left_query is not None:
+        parts.append(f"({format_query(query.left_query, _identifier_sources=local_identifier_sources)})")
+    elif query.select:
         parts.append(
             ("SELECT DISTINCT " if query.distinct else "SELECT ")
             + ", ".join(_format_select_term(term) for term in query.select)
@@ -300,10 +302,10 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
     for operation in query.set_operations:
         if operation.facet_expansion:
             continue
-        parts.append(
-            ("UNION ALL " if operation.all else "UNION ")
-            + format_query(operation.query, _identifier_sources=local_identifier_sources)
-        )
+        branch_text = format_query(operation.query, _identifier_sources=local_identifier_sources)
+        if operation.grouped:
+            branch_text = f"({branch_text})"
+        parts.append(("UNION ALL " if operation.all else "UNION ") + branch_text)
     if query.order_by:
         parts.append(
             "ORDER BY " + ", ".join(f"{term.field} {'DESC' if term.descending else 'ASC'}" for term in query.order_by)

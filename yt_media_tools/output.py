@@ -101,7 +101,7 @@ def write_records(
     if output_format == "lines" and len(terms) != 1:
         raise ValueError("--format lines requires exactly one selected field")
 
-    materialised = bool(query.set_operations)
+    materialised = bool(query.set_operations or query.left_query is not None)
     stream, close_stream = _open_output(output_path)
     try:
         if output_format == "lines":

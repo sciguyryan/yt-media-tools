@@ -84,6 +84,8 @@ def _query_relation_references(query: Query, relation: str) -> set[str]:
     fields: set[str] = set()
 
     def visit(candidate: Query) -> None:
+        if candidate.left_query is not None:
+            visit(candidate.left_query)
         if (candidate.from_source or "") == key:
             fields.update(_non_projection_fields(candidate))
             for term in candidate.select:

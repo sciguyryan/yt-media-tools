@@ -364,6 +364,20 @@ yt-sql does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arg
 
 General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, and the first aggregate query architecture are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
 
+## Compound query grouping and scope
+
+`UNION` and `UNION ALL` compose complete query primaries. Unparenthesised trailing `ORDER BY`, `LIMIT` and `OFFSET` apply to the completed compound result. Parentheses create an explicit query-expression boundary, allowing a branch to perform its own ordering and slicing before set composition.
+
+```text
+(SELECT id FROM @a ORDER BY upload_date DESC LIMIT 10)
+UNION ALL
+(SELECT id FROM @b ORDER BY upload_date DESC LIMIT 10)
+ORDER BY id ASC
+LIMIT 10
+```
+
+Branch-local `ORDER BY`, `LIMIT` or `OFFSET` therefore require parentheses. Parenthesised compound expressions may themselves participate as `UNION` branches, and canonical formatting preserves parentheses whenever they carry that grouping boundary. A leading `WITH` remains scoped to its complete following query expression; nested `WITH` clauses remain unsupported. Derived tables in `FROM (...)` are not part of this grammar.
+
 ## Common table expressions
 
 Non-recursive common table expressions use SQL-like `WITH name AS (query)` syntax:

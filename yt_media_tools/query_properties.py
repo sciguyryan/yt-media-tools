@@ -752,6 +752,8 @@ def required_query_fields(query: Query) -> set[str]:
     fields: set[str] = set()
 
     def visit(candidate: Query) -> None:
+        if candidate.left_query is not None:
+            visit(candidate.left_query)
         if (candidate.from_source or "") not in cte_names:
             fields.update(_required_body_fields(candidate))
         for operation in candidate.set_operations:
@@ -765,6 +767,8 @@ def required_query_fields(query: Query) -> set[str]:
 
 def _query_expressions(query: Query) -> tuple[Any, ...]:
     expressions: list[Any] = [query.predicate, query.having]
+    if query.left_query is not None:
+        expressions.extend(_query_expressions(query.left_query))
     expressions.extend(query.group_by)
     expressions.extend(term.expression for term in query.select if term.expression is not None)
     expressions.extend(term.expression for term in query.order_by if term.expression is not None)

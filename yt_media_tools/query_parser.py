@@ -383,6 +383,7 @@ class Parser:
         having = None
         ctes: list[CommonTableExpression] = []
         set_operations: list[SetOperation] = []
+        left_query: Query | None = None
 
         def at_end() -> bool:
             return self.current.kind == "EOF" or (stop_at_rparen and self.current.kind == "RPAREN")
@@ -419,11 +420,17 @@ class Parser:
             if not at_end():
                 predicate = self.parse_or()
         else:
-            if self.consume_keyword("SELECT"):
+            if self.current.kind == "LPAREN":
+                self.advance()
+                if self.current.kind == "RPAREN":
+                    raise QuerySyntaxError(self.source, "Parenthesised query cannot be empty.", self.current.position)
+                left_query = self.parse_query(stop_at_rparen=True, allow_with=False)
+                self.expect("RPAREN", "Expected ')' after parenthesised query.")
+            elif self.consume_keyword("SELECT"):
                 distinct = bool(self.consume_keyword("DISTINCT"))
                 select = self.parse_select_list()
 
-            if self.consume_keyword("FROM"):
+            if left_query is None and self.consume_keyword("FROM"):
                 relations = self.parse_relation_references()
                 relation = relations[0]
                 from_source = relation.source
@@ -435,7 +442,7 @@ class Parser:
                 while self._join_starts_here():
                     joins.append(self.parse_join_clause())
 
-            if self.consume_keyword("WHERE"):
+            if left_query is None and self.consume_keyword("WHERE"):
                 if (
                     at_end()
                     or self.keyword("GROUP")
@@ -464,11 +471,11 @@ class Parser:
                     )
                 predicate = self.parse_or()
 
-        if self.consume_keyword("GROUP"):
+        if left_query is None and self.consume_keyword("GROUP"):
             self.expect_keyword("BY", "Expected BY after GROUP.")
             group_by = self.parse_group_by()
 
-        if self.consume_keyword("HAVING"):
+        if left_query is None and self.consume_keyword("HAVING"):
             if not group_by and not select:
                 raise QuerySyntaxError(
                     self.source, "HAVING requires an aggregate SELECT or GROUP BY.", self.current.position
@@ -534,14 +541,24 @@ class Parser:
             while self.consume_keyword("UNION"):
                 union_position = self.tokens[self.index - 1].position
                 union_all = bool(self.consume_keyword("ALL"))
-                branch = self.parse_query(
-                    stop_at_rparen=stop_at_rparen,
-                    allow_with=False,
-                    set_branch=True,
-                )
-                if not branch.select:
+                grouped = self.current.kind == "LPAREN"
+                if grouped:
+                    self.advance()
+                    if self.current.kind == "RPAREN":
+                        raise QuerySyntaxError(
+                            self.source, "Parenthesised UNION branch cannot be empty.", self.current.position
+                        )
+                    branch = self.parse_query(stop_at_rparen=True, allow_with=False)
+                    self.expect("RPAREN", "Expected ')' after parenthesised UNION branch.")
+                else:
+                    branch = self.parse_query(
+                        stop_at_rparen=stop_at_rparen,
+                        allow_with=False,
+                        set_branch=True,
+                    )
+                if not branch.select and branch.left_query is None:
                     raise QuerySyntaxError(self.source, "UNION requires a SELECT query on both sides.", union_position)
-                set_operations.append(SetOperation(branch, union_all, union_position))
+                set_operations.append(SetOperation(branch, union_all, union_position, False, grouped))
 
         if self.consume_keyword("ORDER"):
             self.expect_keyword("BY", "Expected BY after ORDER.")
@@ -583,6 +600,7 @@ class Parser:
             from_facet,
             from_alias,
             tuple(joins),
+            left_query,
         )
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:

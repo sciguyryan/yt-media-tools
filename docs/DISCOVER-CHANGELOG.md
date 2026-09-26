@@ -4,6 +4,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Add explicit parenthesised compound-query grouping with branch-local ordering and slicing before outer set-result modifiers.
 - Add comma-separated multi-facet `OF` syntax for primary source relations, lowering it deterministically to ordered `UNION ALL` branches while preserving per-facet logical identity, provenance and acquisition semantics.
 - Preserve independent source-boundary acquisition and provider selection across UNION composition, avoiding an unnecessary full-source yt-dlp metadata path when lightweight enumeration and targeted detailed acquisition can satisfy each branch.
 - Preserve ordinary source-field `ORDER BY` semantics for comma-separated `OF` facet expansion, including ordering by fields that are not projected.

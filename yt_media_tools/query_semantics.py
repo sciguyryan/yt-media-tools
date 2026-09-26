@@ -137,7 +137,7 @@ def semantic_key(node: Any) -> Any:
     if isinstance(node, CommonTableExpression):
         return ("cte", node.name, semantic_key(node.query))
     if isinstance(node, SetOperation):
-        return ("set-operation", node.all, semantic_key(node.query))
+        return ("set-operation", node.all, node.grouped, semantic_key(node.query))
     if isinstance(node, Query):
         return (
             "query",
@@ -153,6 +153,7 @@ def semantic_key(node: Any) -> Any:
             tuple(semantic_key(cte) for cte in node.ctes),
             tuple(semantic_key(operation) for operation in node.set_operations),
             node.from_facet,
+            semantic_key(node.left_query),
         )
     return node
 
@@ -247,6 +248,8 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
     result: list[tuple[str, str | None]] = []
 
     def visit(candidate: Query) -> None:
+        if candidate.left_query is not None:
+            visit(candidate.left_query)
         direct: list[tuple[str, str | None]] = []
         if candidate.from_source is not None:
             direct.append((candidate.from_source, candidate.from_facet))
