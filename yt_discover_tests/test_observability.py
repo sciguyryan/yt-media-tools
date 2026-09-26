@@ -272,14 +272,11 @@ def test_normal_progress_does_not_contaminate_jsonl_stdout(tmp_path: Path) -> No
 
 def test_large_source_enumeration_warning_repeats_at_configured_interval(tmp_path: Path) -> None:
     result = run_cli(
-        [
-            "--source",
-            "https://www.youtube.com/@example/videos",
-            "--warn-source-size",
-            "500",
-            "--query",
-            "SELECT id",
-        ],
+        "--warn-source-size",
+        "500",
+        "--backend",
+        "ytdlp",
+        "SELECT id FROM @example",
         env=fake_ytdlp_env(tmp_path, count=1001),
     )
 
