@@ -56,6 +56,17 @@ def test_outer_limit_applies_after_grouped_branch_limits() -> None:
     assert apply_query(records, query) == [{"id": "a3"}, {"id": "b2"}, {"id": "b3"}]
 
 
+def test_grouped_branch_supports_standalone_offset_before_outer_slicing() -> None:
+    source = (
+        "(SELECT id FROM @a ORDER BY upload_date ASC OFFSET 1) "
+        "UNION ALL (SELECT id FROM @b ORDER BY upload_date ASC LIMIT 1) "
+        "ORDER BY id ASC LIMIT 2 OFFSET 1"
+    )
+    records, query = _resolve(source)
+    assert apply_query(records, query) == [{"id": "a3"}, {"id": "b1"}]
+    assert format_query(parse_query(format_query(query))) == format_query(query)
+
+
 def test_parenthesised_compound_branch_nests_without_flattening() -> None:
     source = "SELECT id FROM @a UNION ALL (SELECT id FROM @b UNION SELECT id FROM @a LIMIT 2) ORDER BY id ASC"
     query = parse_query(source)

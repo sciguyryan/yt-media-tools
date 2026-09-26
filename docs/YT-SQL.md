@@ -24,7 +24,7 @@ This order is the language contract. Clauses cannot be repeated or reordered. In
 
 If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested. The established predicate-only compatibility form also remains supported. `HAVING` is meaningful only for aggregate or grouped queries, subject to the aggregate rules below.
 
-`UNION` and `UNION ALL` introduce a compound-query boundary. The current parser places trailing `ORDER BY`, `LIMIT` and `OFFSET` after the complete set expression rather than inside an ungrouped branch. The detailed grouping and compound-query scope contract is deliberately handled separately from this simple-query clause-order contract.
+`UNION` and `UNION ALL` introduce a compound-query boundary. Trailing `ORDER BY`, `LIMIT` and `OFFSET` after an unparenthesised set expression apply to the complete compound result; parenthesised query-expression boundaries provide branch-local ordering and slicing. The full grouping and scope contract is described under Compound query grouping and scope below.
 
 The canonical formatter emits clauses only in the order shown above, omits absent clauses, emits `LIMIT` before `OFFSET` when both are present, and does not preserve rejected alternative orderings.
 
