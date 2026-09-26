@@ -333,19 +333,22 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Source facets with OF
 
-`OF` requests a logical collection or facet from a physical source without encoding an extractor-specific tab model into yt-sql:
+`OF` requests one or more logical collections or facets from a physical source without encoding a backend-specific tab model into yt-sql:
 
 ```text
 SELECT id FROM @whatdamath OF videos
 SELECT id FROM @whatdamath OF shorts
 SELECT id FROM @whatdamath OF live
+SELECT id FROM @whatdamath OF videos, live
 ```
 
-Bare `FROM @source` remains valid and requests the source's default collection. The YouTube channel adapter advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
+A comma-separated `OF` list is syntactic sugar for the corresponding facets composed with `UNION ALL` in the written order. Rows are not implicitly deduplicated, and every expanded branch retains its own logical source, cache and provenance identity. Query-level `WHERE`, grouping and projection semantics are applied to each expanded branch, while trailing `ORDER BY`, `LIMIT` and `OFFSET` apply to the completed result exactly as they do for the equivalent explicit compound query. The canonical formatter expands the shorthand to explicit `UNION ALL` branches so the relational semantics remain visible.
 
-The grammar is extractor-agnostic. Other yt-dlp extractors may advertise different logical facets in later adapter work without changing the core `OF` syntax.
+Bare `FROM @source` remains valid and requests the source's default collection. The YouTube channel source family advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. Duplicate facets in one `OF` list are rejected rather than acquiring the same logical relation twice accidentally. Multi-facet `OF` is supported only for the primary physical `FROM` relation; JOIN relations remain single-facet until compound relation operands have an explicit grammar contract. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
 
-Source resolution is deliberately layered. A physical source is classified first, an adapter advertises its deterministic logical capabilities, and only then is an explicit facet mapped to an acquisition target. `--tab` is translated into the same logical facet request for backwards compatibility rather than taking a second execution path. `--explain` reports the selected adapter and advertised facets.
+The grammar is backend-agnostic. Other source families may advertise different logical facets without changing the core `OF` syntax.
+
+Source resolution is deliberately layered. A physical source is classified first, its source family advertises deterministic logical capabilities, and only then is an explicit facet mapped to an acquisition target. `--tab` is translated into the same logical facet request for backwards compatibility rather than taking a second execution path. `--explain` reports the selected source family and advertised facets.
 
 ## Aggregate queries
 

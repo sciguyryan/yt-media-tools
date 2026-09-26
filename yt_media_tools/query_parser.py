@@ -374,6 +374,7 @@ class Parser:
         select: tuple[SelectTerm, ...] = ()
         from_source: str | None = None
         from_facet: str | None = None
+        additional_from_facets: tuple[tuple[str, int], ...] = ()
         from_alias: str | None = None
         joins: list[JoinClause] = []
         distinct = False
@@ -423,9 +424,13 @@ class Parser:
                 select = self.parse_select_list()
 
             if self.consume_keyword("FROM"):
-                relation = self.parse_relation_reference()
+                relations = self.parse_relation_references()
+                relation = relations[0]
                 from_source = relation.source
                 from_facet = relation.facet
+                additional_from_facets = tuple(
+                    (item.facet, item.position) for item in relations[1:] if item.facet is not None
+                )
                 from_alias = relation.alias
                 while self._join_starts_here():
                     joins.append(self.parse_join_clause())
@@ -500,6 +505,31 @@ class Parser:
             )
 
         if not where_only and not set_branch:
+            for facet, facet_position in additional_from_facets:
+                set_operations.append(
+                    SetOperation(
+                        Query(
+                            predicate,
+                            (),
+                            None,
+                            self.source,
+                            select,
+                            from_source,
+                            distinct,
+                            0,
+                            group_by,
+                            having,
+                            (),
+                            (),
+                            facet,
+                            from_alias,
+                            tuple(joins),
+                        ),
+                        True,
+                        facet_position,
+                    )
+                )
+
             while self.consume_keyword("UNION"):
                 union_position = self.tokens[self.index - 1].position
                 union_all = bool(self.consume_keyword("ALL"))
@@ -930,22 +960,54 @@ class Parser:
             token.position,
         )
 
-    def parse_relation_reference(self) -> RelationReference:
-        """Parse a source/facet relation and its optional explicit alias."""
+    def parse_relation_references(self) -> tuple[RelationReference, ...]:
+        """Parse one source with one or more logical facets and an optional alias.
+
+        Multiple ``OF`` facets are syntactic sugar for UNION ALL branches. Keeping
+        each returned relation single-facet preserves the established logical
+        source, cache and provenance identity model below the parser.
+        """
         position = self.current.position
         source = self.parse_from_source()
-        facet = None
+        facets: list[tuple[str | None, int]] = [(None, position)]
         if self.consume_keyword("OF"):
-            facet_token = self.current
-            if facet_token.kind not in {"IDENT", "QIDENT"}:
-                raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
-            facet = str(facet_token.value if facet_token.kind == "QIDENT" else facet_token.text).casefold()
-            self.advance()
+            facets = []
+            while True:
+                facet_token = self.current
+                if facet_token.kind not in {"IDENT", "QIDENT"}:
+                    raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
+                facet = str(facet_token.value if facet_token.kind == "QIDENT" else facet_token.text).casefold()
+                if any(existing == facet for existing, _ in facets):
+                    raise QuerySyntaxError(
+                        self.source,
+                        f"Duplicate facet {facet!r} in OF list.",
+                        facet_token.position,
+                    )
+                facets.append((facet, facet_token.position))
+                self.advance()
+                if self.current.kind != "COMMA":
+                    break
+                self.advance()
+
         alias = None
         if self.consume_keyword("AS"):
             alias_token = self.expect_identifier("Expected a relation alias after AS.")
             alias = alias_token.text
-        return RelationReference(source, facet, alias, position)
+        return tuple(
+            RelationReference(source, facet, alias, position if index == 0 else facet_position)
+            for index, (facet, facet_position) in enumerate(facets)
+        )
+
+    def parse_relation_reference(self) -> RelationReference:
+        """Parse one source/facet relation where multi-facet composition is not valid."""
+        relations = self.parse_relation_references()
+        if len(relations) != 1:
+            raise QuerySyntaxError(
+                self.source,
+                "Multiple OF facets are supported only for the primary FROM relation.",
+                relations[1].position,
+            )
+        return relations[0]
 
     def _join_starts_here(self) -> bool:
         return any(
