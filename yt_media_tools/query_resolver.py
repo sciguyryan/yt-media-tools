@@ -1225,6 +1225,16 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
 
     order_terms: list[OrderTerm] = []
     for term in query.order_by:
+        if (
+            isinstance(term.expression, Literal)
+            and isinstance(term.expression.value, int)
+            and not isinstance(term.expression.value, bool)
+        ):
+            raise QuerySemanticError(
+                source,
+                "ORDER BY ordinals are not supported; order by a field, alias or scalar expression instead.",
+                term.position,
+            )
         if term.expression is not None:
             expression = _resolve_scalar_expression(term.expression, schema, source, context, explicit_aliases)
             field_text = format_scalar_expression(expression)
@@ -1306,6 +1316,16 @@ def _resolve_union_order(
     """Resolve global UNION ordering against the reconciled result relation."""
     terms: list[OrderTerm] = []
     for term in order_by:
+        if (
+            isinstance(term.expression, Literal)
+            and isinstance(term.expression.value, int)
+            and not isinstance(term.expression.value, bool)
+        ):
+            raise QuerySemanticError(
+                source,
+                "ORDER BY ordinals are not supported; order by a field, alias or scalar expression instead.",
+                term.position,
+            )
         expression = _resolve_scalar_expression(term.expression, schema, source, context)
         field_text = format_scalar_expression(expression)
         kind = _scalar_kind(expression)
