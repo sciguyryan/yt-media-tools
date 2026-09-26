@@ -6,6 +6,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 - Add comma-separated multi-facet `OF` syntax for primary source relations, lowering it deterministically to ordered `UNION ALL` branches while preserving per-facet logical identity, provenance and acquisition semantics.
 - Preserve independent source-boundary acquisition and provider selection across UNION composition, avoiding an unnecessary full-source yt-dlp metadata path when lightweight enumeration and targeted detailed acquisition can satisfy each branch.
+- Preserve ordinary source-field `ORDER BY` semantics for comma-separated `OF` facet expansion, including ordering by fields that are not projected.
+- Identify the source and facet in independent UNION acquisition progress messages so per-boundary counters are unambiguous.
 
 - Freeze the ordinary `SELECT` clause-order contract, retaining the established `LIMIT ... OFFSET ...` slicing order, standalone `OFFSET`, deterministic rejection of reordered or repeated clauses, and canonical formatting.
 

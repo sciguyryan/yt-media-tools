@@ -1367,10 +1367,16 @@ def _resolve_composed_query(
                 ) from None
             reconciled.append(replace(left_term, kind=kind))
         common_terms = reconciled
-        resolved_ops.append(SetOperation(branch, operation.all, operation.position))
+        resolved_ops.append(SetOperation(branch, operation.all, operation.position, operation.facet_expansion))
 
     left = replace(left, select=tuple(common_terms))
-    result_schema = _query_result_schema(left)
+    pure_facet_expansion = bool(query.set_operations) and all(
+        operation.facet_expansion for operation in query.set_operations
+    )
+    # Multi-facet OF is source-relation sugar, so retain the ordinary source-field
+    # ORDER BY scope of the unexpanded query. Explicit UNION continues to order
+    # against its reconciled projected result until #121 defines broader rules.
+    result_schema = physical_schema if pure_facet_expansion else _query_result_schema(left)
     order_by = _resolve_union_order(query.order_by, result_schema, query.source, context)
     return replace(
         left,

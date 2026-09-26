@@ -527,6 +527,7 @@ class Parser:
                         ),
                         True,
                         facet_position,
+                        True,
                     )
                 )
 

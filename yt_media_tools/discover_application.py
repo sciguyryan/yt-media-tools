@@ -103,6 +103,11 @@ from yt_media_tools.ytdlp import (
 )
 
 
+def _source_boundary_label(source_value: str, facet: str | None) -> str:
+    """Return the user-facing identity of one independently acquired source boundary."""
+    return source_value + (f" OF {facet}" if facet is not None else "")
+
+
 def _metadata_provider_provenance(records: list[dict]) -> dict[str, object]:
     """Summarise explicit specialised-provider provenance without guessing cache origins."""
     operations: dict[tuple[str, str], int] = {}
@@ -666,9 +671,9 @@ def main(argv: list[str] | None = None) -> int:
                     progress = _enumeration_progress(
                         args.verbose,
                         context=(
-                            "Complete YouTube.js UNION source enumeration"
+                            f"Complete YouTube.js enumeration for {_source_boundary_label(source_value, request_facet)}"
                             if use_youtubejs
-                            else "Complete yt-dlp UNION source enumeration"
+                            else f"Complete yt-dlp enumeration for {_source_boundary_label(source_value, request_facet)}"
                         ),
                         warn_threshold=args.warn_source_size,
                         acquisition_observability=not branch_plan.physical_acquisition.requires_detailed_metadata,
@@ -677,8 +682,7 @@ def main(argv: list[str] | None = None) -> int:
                         if use_youtubejs:
                             _verbose(
                                 args.verbose,
-                                f"Enumerating UNION source {source_value}"
-                                + (f" OF {request_facet}" if request_facet is not None else "")
+                                f"Enumerating {_source_boundary_label(source_value, request_facet)}"
                                 + " completely with YouTube.js...",
                             )
                             flat_entries, enumeration_stats_for_source = enumerate_all_youtubejs(
@@ -692,8 +696,7 @@ def main(argv: list[str] | None = None) -> int:
                             flat_command = build_lazy_flat_command(source_spec.canonical_url, cookies_file=cookies_file)
                             _verbose(
                                 args.verbose,
-                                f"Enumerating UNION source {source_value}"
-                                + (f" OF {request_facet}" if request_facet is not None else "")
+                                f"Enumerating {_source_boundary_label(source_value, request_facet)}"
                                 + " completely with yt-dlp lightweight metadata...",
                             )
                             flat_entries, enumeration_stats_for_source = enumerate_all_flat(
@@ -705,7 +708,7 @@ def main(argv: list[str] | None = None) -> int:
                             print(f"Error: YouTube.js enumeration failed: {exc}.", file=sys.stderr)
                             return 1
                         print(
-                            f"yt-discover: YouTube.js enumeration failed for {source_value}; "
+                            f"yt-discover: YouTube.js enumeration failed for {_source_boundary_label(source_value, request_facet)}; "
                             f"falling back to yt-dlp lightweight enumeration ({exc}).",
                             file=sys.stderr,
                         )
@@ -715,7 +718,9 @@ def main(argv: list[str] | None = None) -> int:
                                 flat_command,
                                 progress=_enumeration_progress(
                                     args.verbose,
-                                    context="Complete yt-dlp UNION source enumeration",
+                                    context=(
+                                        f"Complete yt-dlp enumeration for {_source_boundary_label(source_value, request_facet)}"
+                                    ),
                                     warn_threshold=args.warn_source_size,
                                     acquisition_observability=not branch_plan.physical_acquisition.requires_detailed_metadata,
                                 ),

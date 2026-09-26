@@ -364,6 +364,7 @@ class SetOperation:
     query: "Query"
     all: bool = False
     position: int = 0
+    facet_expansion: bool = False
 
 
 class JoinKind(str, Enum):

@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from yt_media_tools.dates import DateContext
+from yt_media_tools.query_evaluator import apply_query
 from yt_media_tools.query_formatter import format_query
 from yt_media_tools.query_model import QuerySyntaxError
 from yt_media_tools.query_parser import parse_query
+from yt_media_tools.query_resolver import resolve_query
+from yt_media_tools.schema import QuerySchema
 
 
 def test_multi_facet_of_lowers_to_ordered_union_all_branches() -> None:
@@ -55,3 +59,45 @@ def test_multi_facet_of_is_not_accepted_for_join_relation() -> None:
         match="Multiple OF facets are supported only for the primary FROM relation",
     ):
         parse_query("SELECT l.id FROM @left OF videos AS l INNER JOIN @right OF videos, live AS r ON l.id = r.id")
+
+
+def test_multi_facet_of_retains_source_field_ordering_outside_projection() -> None:
+    source = (
+        "SELECT CONCAT(id, ' # ', title) FROM @Insym OF videos, live "
+        "WHERE title ILIKE 'welcome to the game' "
+        "ORDER BY upload_date ASC, release_timestamp ASC"
+    )
+    query = parse_query(source)
+    records = [
+        {
+            "id": "live-id",
+            "title": "Welcome to the Game",
+            "upload_date": "20240202",
+            "release_timestamp": 20,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "live",
+        },
+        {
+            "id": "video-id",
+            "title": "welcome to the game",
+            "upload_date": "20240101",
+            "release_timestamp": 10,
+            "_yt_sql_source": "@Insym",
+            "_yt_sql_source_facet": "videos",
+        },
+    ]
+    resolved = resolve_query(query, QuerySchema(records), DateContext())
+    assert [term.field for term in resolved.order_by] == ["upload_date", "release_timestamp"]
+    assert apply_query(records, resolved) == [
+        {"CONCAT(id, ' # ', title)": "video-id # welcome to the game"},
+        {"CONCAT(id, ' # ', title)": "live-id # Welcome to the Game"},
+    ]
+
+
+def test_explicit_union_does_not_gain_multi_facet_order_scope() -> None:
+    query = parse_query(
+        "SELECT id FROM @example OF videos UNION ALL SELECT id FROM @example OF live ORDER BY upload_date ASC"
+    )
+    assert not query.set_operations[0].facet_expansion
+    with pytest.raises(QuerySyntaxError, match="Unknown field 'upload_date'"):
+        resolve_query(query, QuerySchema(({"id": "x", "upload_date": "20240101"},)), DateContext())

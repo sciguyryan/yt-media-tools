@@ -1121,6 +1121,43 @@ def _apply_composed_query(
             )
         return _apply_query_body(input_records, query)
 
+    pure_facet_expansion = bool(query.set_operations) and all(
+        operation.facet_expansion for operation in query.set_operations
+    )
+    if pure_facet_expansion:
+        # Multi-facet OF is one logical source relation expanded across facets.
+        # Reconcile the unprojected rows so ordinary source-field ORDER BY terms
+        # remain available even when they are not part of the SELECT projection.
+        bodies = [replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())]
+        bodies.extend(
+            replace(operation.query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+            for operation in query.set_operations
+        )
+        rows: list[dict[str, Any]] = []
+        for body in bodies:
+            rows.extend(
+                _apply_composed_query(
+                    records,
+                    body,
+                    relations,
+                    physical_requests,
+                    relational_optimisation=relational_optimisation,
+                )
+            )
+        for term in reversed(query.order_by):
+            present = [row for row in rows if canonical_record_value(row, term) is not None]
+            missing = [row for row in rows if canonical_record_value(row, term) is None]
+            try:
+                present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
+            except TypeError:
+                present.sort(key=lambda row: str(canonical_record_value(row, term)), reverse=term.descending)
+            rows = present + missing
+        if query.offset:
+            rows = rows[query.offset :]
+        if query.limit is not None:
+            rows = rows[: query.limit]
+        return _project_result_rows(rows, replace(query, set_operations=(), order_by=(), limit=None, offset=0))
+
     left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
     # A UNION branch is a complete relational query body. Apply its JOIN before
     # projection just as we do for a standalone query rather than bypassing the
