@@ -72,7 +72,7 @@ Torture coverage chains filtered CTE materialisation into grouping, HAVING and o
 
 ## CTE and set composition
 
-Current coverage includes declaration-order CTE scoping, CTE schema export, SELECT * from CTEs, recursive/forward-reference rejection, UNION, UNION ALL, explicit parenthesised compound grouping, branch-local ordering and slicing, left-associative mixed set boundaries, heterogeneous schemas, global ordering/slicing, exported-result ORDER BY aliases and scalar expressions, numeric ordinal rejection, Unicode-sensitive deduplication and aggregate branches.
+Current coverage includes declaration-order CTE scoping, CTE schema export including explicit projection aliases, SELECT * from CTEs, recursive/forward-reference rejection, UNION, UNION ALL, explicit parenthesised compound grouping, branch-local ordering and slicing, left-associative mixed set boundaries, heterogeneous schemas, global ordering/slicing, exported-result ORDER BY aliases and scalar expressions, numeric ordinal rejection, Unicode-sensitive deduplication and aggregate branches.
 
 Torture coverage uses multiple CTE stages, UNION ALL inside a CTE, outer aggregation over the materialised relation, facet-distinct physical requests, Unicode values, mixed-base arithmetic and optimiser differential execution in one query. JOIN torture additionally combines cross-facet relation ownership with text, NULL-handling, numeric-selection and seeded functions, then feeds the materialised result through grouping, HAVING, aggregation and ordering. Dedicated composition coverage executes JOIN independently inside UNION branches and through CTE-produced relation inputs. Relational performance reconciliation additionally covers deterministic one-to-one, one-to-many, no-match, highly asymmetric, compound-equality and SEMI workloads through stable benchmark identifiers; optimised execution remains differentially checked against the nested-loop reference route.
 
@@ -84,7 +84,7 @@ The cross-facet torture query deliberately uses two facets of one physical sourc
 
 ## Ordering, DISTINCT and slicing
 
-Current coverage includes explicit projection-alias precedence in ORDER BY, aliases nested inside scalar ordering expressions, JOIN-qualified and ambiguous-name resolution, alias-aware acquisition-field attribution, numeric ordinal rejection, canonical ordering-expression round-trips, deterministic ties, DISTINCT, OFFSET, LIMIT, global set-operation ordering, early acquisition termination and OFFSET + LIMIT planning. RANDOM ordering has dedicated volatile and seeded coverage.
+Current coverage includes explicit projection-alias precedence in ORDER BY, aliases nested inside scalar ordering expressions, JOIN-qualified and ambiguous-name resolution, CTE-exported alias resolution, alias-aware acquisition-field attribution, numeric ordinal rejection, canonical ordering-expression round-trips, deterministic ties, DISTINCT, OFFSET, LIMIT, global set-operation ordering, early acquisition termination and OFFSET + LIMIT planning. RANDOM ordering has dedicated volatile and seeded coverage.
 
 Torture coverage combines computed aliases, multiple ORDER BY keys, LIMIT/OFFSET and large nested predicates, with optimiser differential equivalence checked after resolution.
 

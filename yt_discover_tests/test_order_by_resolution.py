@@ -149,3 +149,44 @@ def test_order_by_resolution_torture_across_join_alias_collisions_and_scalar_exp
     parsed = parse_query(canonical)
     assert required_query_fields(parsed) == {"l.id", "l.view_count", "l.title", "r.view_count"}
     assert "score Δ" not in analyse_query(parsed).dynamic_fields
+
+
+def test_order_by_resolves_cte_exported_projection_alias() -> None:
+    records = [
+        {"id": "a", "view_count": 10},
+        {"id": "b", "view_count": 30},
+    ]
+    query = resolve_query(
+        parse_query(
+            "WITH ranked AS (SELECT id, view_count * 2 AS score FROM @fixture) "
+            "SELECT id, score FROM ranked ORDER BY score DESC"
+        ),
+        QuerySchema(records),
+    )
+    assert apply_query(records, query) == [{"id": "b", "score": 60}, {"id": "a", "score": 20}]
+
+
+def test_cte_exported_alias_hides_unprojected_underlying_name() -> None:
+    records = [{"id": "a", "view_count": 10}]
+    with pytest.raises(QuerySemanticError, match="Unknown field 'view_count'"):
+        resolve_query(
+            parse_query("WITH ranked AS (SELECT id, view_count AS score FROM @fixture) SELECT view_count FROM ranked"),
+            QuerySchema(records),
+        )
+
+
+def test_order_by_chained_cte_alias_keeps_physical_dependencies_on_source_fields() -> None:
+    source = (
+        "WITH base AS (SELECT id, view_count * 2 AS score FROM @fixture), "
+        "ranked AS (SELECT id, score FROM base ORDER BY score DESC) "
+        "SELECT id, score FROM ranked ORDER BY score DESC"
+    )
+    query = parse_query(source)
+    assert required_query_fields(query) == {"id", "view_count"}
+
+    records = [
+        {"id": "a", "view_count": 10},
+        {"id": "b", "view_count": 30},
+    ]
+    resolved = resolve_query(query, QuerySchema(records))
+    assert apply_query(records, resolved) == [{"id": "b", "score": 60}, {"id": "a", "score": 20}]

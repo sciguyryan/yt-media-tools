@@ -4,6 +4,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Define `ORDER BY` resolution and canonicalisation across projection aliases, JOIN relation ownership, CTE-exported names and compound-result scope, while keeping aliases out of physical metadata requirements and rejecting numeric ordinals.
 - Add explicit parenthesised compound-query grouping with branch-local ordering and slicing before outer set-result modifiers.
 - Define compound-result `ORDER BY` against exported result columns, supporting aliases and scalar expressions while rejecting numeric ordinals and branch-internal field leakage.
 - Add comma-separated multi-facet `OF` syntax for primary source relations, lowering it deterministically to ordered `UNION ALL` branches while preserving per-facet logical identity, provenance and acquisition semantics.
