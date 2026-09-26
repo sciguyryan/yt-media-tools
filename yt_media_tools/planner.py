@@ -377,14 +377,25 @@ def _relation_fields(candidate: Query, alias: str, *, include_unqualified: bool 
     """Return physical fields consumed from one relation in a JOIN query body."""
     prefix = alias + "."
     fields: set[str] = set()
-    for node in walk_ast(candidate, descend=lambda item: not isinstance(item, Query) or item is candidate):
-        if not isinstance(node, Field):
-            continue
-        name = node.name
-        if name.startswith(prefix):
-            fields.add(name[len(prefix) :])
-        elif include_unqualified and "." not in name:
-            fields.add(name)
+
+    def collect(value: object, *, order_aliases: frozenset[str] = frozenset()) -> None:
+        for node in walk_ast(value, descend=lambda item: not isinstance(item, Query) or item is value):
+            if not isinstance(node, Field):
+                continue
+            name = node.name
+            if name in order_aliases:
+                # Explicit SELECT aliases have ORDER BY precedence. Their physical
+                # dependencies are already represented by the projection expression.
+                continue
+            if name.startswith(prefix):
+                fields.add(name[len(prefix) :])
+            elif include_unqualified and "." not in name:
+                fields.add(name)
+
+    collect(replace(candidate, order_by=()))
+    projection_aliases = frozenset(term.alias for term in candidate.select if term.alias is not None)
+    for term in candidate.order_by:
+        collect(term.expression if term.expression is not None else Field(term.field), order_aliases=projection_aliases)
     return frozenset(fields)
 
 

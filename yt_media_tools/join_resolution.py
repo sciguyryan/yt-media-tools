@@ -25,8 +25,17 @@ from .query_traversal import walk_ast
 from .schema import QuerySchema
 
 
-def _rewrite_value(value: Any, scope: SemanticScope, source: str) -> Any:
+def _rewrite_value(
+    value: Any,
+    scope: SemanticScope,
+    source: str,
+    *,
+    preserved_field_names: frozenset[str] = frozenset(),
+) -> Any:
+    """Bind relation-owned fields while preserving later-scope projection aliases."""
     if isinstance(value, Field):
+        if value.name in preserved_field_names:
+            return value
         parts = value.name.split(".", 1)
         if len(parts) == 2:
             qualifier, field_name = parts
@@ -63,16 +72,16 @@ def _rewrite_value(value: Any, scope: SemanticScope, source: str) -> Any:
         return RelationField(binding.qualifier or "", canonical, value.position, match.field.kind, match.relation.key)
 
     if isinstance(value, tuple):
-        return tuple(_rewrite_value(item, scope, source) for item in value)
+        return tuple(_rewrite_value(item, scope, source, preserved_field_names=preserved_field_names) for item in value)
     if isinstance(value, list):
-        return [_rewrite_value(item, scope, source) for item in value]
+        return [_rewrite_value(item, scope, source, preserved_field_names=preserved_field_names) for item in value]
     if is_dataclass(value):
         changes: dict[str, Any] = {}
         for field_info in fields(value):
             current = getattr(value, field_info.name)
             # Primitive metadata is left alone. AST children are dataclasses/tuples.
             if is_dataclass(current) or isinstance(current, (tuple, list)):
-                rewritten = _rewrite_value(current, scope, source)
+                rewritten = _rewrite_value(current, scope, source, preserved_field_names=preserved_field_names)
                 if rewritten != current:
                     changes[field_info.name] = rewritten
         return replace(value, **changes) if changes else value
@@ -233,7 +242,15 @@ def resolve_join_references(
     select = tuple(_rewrite_value(term, scope, query.source) for term in query.select)
     projection_query = replace(query, select=select)
     select = _expand_join_projection(projection_query, scope)
-    order_by = tuple(_rewrite_value(term, scope, query.source) for term in query.order_by)
+    # ORDER BY has a later name-resolution scope than relation-owned clauses:
+    # explicit SELECT aliases take precedence over input fields, including when an
+    # alias collides with an otherwise ambiguous unqualified JOIN field. Preserve
+    # those names here so the ordinary scalar resolver can expand the aliases after
+    # projection resolution. All other fields still receive strict JOIN ownership.
+    projection_aliases = frozenset(term.alias for term in query.select if term.alias is not None)
+    order_by = tuple(
+        _rewrite_value(term, scope, query.source, preserved_field_names=projection_aliases) for term in query.order_by
+    )
     group_by = tuple(_rewrite_value(item, scope, query.source) for item in query.group_by)
     predicate = _rewrite_value(query.predicate, scope, query.source) if query.predicate is not None else None
     having = _rewrite_value(query.having, scope, query.source) if query.having is not None else None

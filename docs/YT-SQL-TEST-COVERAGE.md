@@ -84,7 +84,7 @@ The cross-facet torture query deliberately uses two facets of one physical sourc
 
 ## Ordering, DISTINCT and slicing
 
-Current coverage includes aliases in ORDER BY, deterministic ties, DISTINCT, OFFSET, LIMIT, global set-operation ordering, early acquisition termination and OFFSET + LIMIT planning. RANDOM ordering has dedicated volatile and seeded coverage.
+Current coverage includes explicit projection-alias precedence in ORDER BY, aliases nested inside scalar ordering expressions, JOIN-qualified and ambiguous-name resolution, alias-aware acquisition-field attribution, numeric ordinal rejection, canonical ordering-expression round-trips, deterministic ties, DISTINCT, OFFSET, LIMIT, global set-operation ordering, early acquisition termination and OFFSET + LIMIT planning. RANDOM ordering has dedicated volatile and seeded coverage.
 
 Torture coverage combines computed aliases, multiple ORDER BY keys, LIMIT/OFFSET and large nested predicates, with optimiser differential equivalence checked after resolution.
 
