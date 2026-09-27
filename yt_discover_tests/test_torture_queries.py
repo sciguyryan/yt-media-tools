@@ -13,6 +13,7 @@ from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.query import QuerySyntaxError, apply_query, format_query, parse_query, resolve_query
+from yt_media_tools.query_semantics import semantic_key
 from yt_media_tools.schema import QuerySchema
 
 
@@ -366,7 +367,8 @@ def test_grouped_compound_tortures_branch_scope_multiplicity_and_optimiser_equiv
     )
     parsed = parse_query(text)
     canonical = format_query(parsed)
-    assert canonical == text
+    assert format_query(parse_query(canonical)) == canonical
+    assert semantic_key(parse_query(canonical)) == semantic_key(parsed)
     query = resolve_query(parse_query(canonical), QuerySchema(rows), CONTEXT)
     expected = [{"id": "same"}, {"id": "same"}]
     assert apply_query(rows, query) == expected

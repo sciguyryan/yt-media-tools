@@ -60,12 +60,39 @@ def _format_identifier(value: str) -> str:
     return ".".join(_format_identifier_component(component) for component in value.split("."))
 
 
+def _format_string(value: str) -> str:
+    """Render a string value using yt-sql's canonical single-quoted spelling."""
+
+    escaped = value.replace("\\", "\\\\").replace("\n", "\\n").replace("\t", "\\t").replace("'", "''")
+    return f"'{escaped}'"
+
+
+def _format_like_pattern(value: str) -> str:
+    """Render LIKE pattern text without consuming its pattern-level backslash escapes."""
+
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _canonical_numeric_raw(raw: str) -> str:
+    """Normalise numeric spelling while preserving a deliberately chosen integer base."""
+
+    compact = raw.replace("_", "")
+    match = re.fullmatch(r"(?P<sign>[+-]?)(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Fa-f]+)", compact)
+    if match is None:
+        return compact
+    prefix = match.group("prefix").lower()
+    digits = match.group("digits").lower() if prefix == "0x" else match.group("digits")
+    return f"{match.group('sign')}{prefix}{digits}"
+
+
 def _format_literal(literal: Literal, *, expected_kind: str | None = None) -> str:
     """Render a literal, normalising established temporal spellings where type information permits."""
     if literal.value is None:
         return "NULL"
     if isinstance(literal.value, bool):
         return "TRUE" if literal.value else "FALSE"
+    if literal.quoted and isinstance(literal.value, str):
+        return _format_string(literal.value)
 
     temporal_expression = canonicalise_temporal_expression(literal.raw)
     if temporal_expression is not None:
@@ -84,11 +111,28 @@ def _format_literal(literal: Literal, *, expected_kind: str | None = None) -> st
         if isinstance(literal.value, float) and not literal.value.is_integer():
             return f"{literal.value:g}s"
         return f"{int(literal.value)}s"
+    if isinstance(literal.value, (int, float)) and not isinstance(literal.value, bool):
+        return _canonical_numeric_raw(literal.raw)
     return literal.raw
 
 
 def _format_field_literal(field: Field | RelationField, literal: Literal) -> str:
     return _format_literal(literal, expected_kind=field.kind)
+
+
+def _scalar_binary_precedence(operator: str) -> int:
+    return 20 if operator in {"*", "/", "%"} else 10
+
+
+def _format_scalar_binary_child(expression: Any, *, parent_operator: str, right: bool) -> str:
+    text = format_scalar_expression(expression)
+    if not isinstance(expression, ScalarBinary):
+        return text
+    child_precedence = _scalar_binary_precedence(expression.operator)
+    parent_precedence = _scalar_binary_precedence(parent_operator)
+    if child_precedence < parent_precedence or (right and child_precedence == parent_precedence):
+        return f"({text})"
+    return text
 
 
 def format_scalar_expression(expression: Any) -> str:
@@ -107,12 +151,14 @@ def format_scalar_expression(expression: Any) -> str:
             operand = f"({operand})"
         return f"{expression.operator}{operand}"
     if isinstance(expression, ScalarBinary):
-        return (
-            f"({format_scalar_expression(expression.left)} {expression.operator} "
-            f"{format_scalar_expression(expression.right)})"
-        )
+        left = _format_scalar_binary_child(expression.left, parent_operator=expression.operator, right=False)
+        right = _format_scalar_binary_child(expression.right, parent_operator=expression.operator, right=True)
+        return f"{left} {expression.operator} {right}"
     if isinstance(expression, ScalarIndex):
-        return f"{format_scalar_expression(expression.collection)}[{format_scalar_expression(expression.index)}]"
+        collection = format_scalar_expression(expression.collection)
+        if isinstance(expression.collection, (ScalarBinary, ScalarUnary)):
+            collection = f"({collection})"
+        return f"{collection}[{format_scalar_expression(expression.index)}]"
     if isinstance(expression, ScalarMember):
         value = format_scalar_expression(expression.value)
         # Bare dotted identifiers are an established field-path syntax. Preserve the
@@ -187,7 +233,12 @@ def format_expression(node: Any) -> str:
         return f"{node.field.name} IS {'NOT ' if node.negated else ''}NULL"
     if isinstance(node, TextPredicate):
         not_part = " NOT" if node.negated else ""
-        return f"{node.field.name}{not_part} {node.operator} {_format_field_literal(node.field, node.value)}"
+        value = (
+            _format_like_pattern(str(node.value.value))
+            if node.operator in {"LIKE", "ILIKE"} and node.value.quoted
+            else _format_field_literal(node.field, node.value)
+        )
+        return f"{node.field.name}{not_part} {node.operator} {value}"
     if isinstance(node, CollectionPredicate):
         return (
             f"{node.quantifier}({format_scalar_expression(node.collection)} AS {node.binding} "
@@ -237,8 +288,9 @@ def _format_relation_source(
     return text
 
 
-def _format_join(join: JoinClause, *, identifier_sources: frozenset[str] = frozenset()) -> str:
-    """Render one parser-level JOIN clause canonically."""
+def _format_join_lines(join: JoinClause, *, identifier_sources: frozenset[str] = frozenset()) -> list[str]:
+    """Render one JOIN edge using the canonical relational layout."""
+
     keyword = "JOIN" if join.kind.value == "INNER" else f"{join.kind.value} JOIN"
     relation = _format_relation_source(
         join.relation.source,
@@ -246,7 +298,12 @@ def _format_join(join: JoinClause, *, identifier_sources: frozenset[str] = froze
         join.relation.alias,
         identifier_source=join.relation.source in identifier_sources,
     )
-    return f"{keyword} {relation} ON {format_expression(join.predicate)}"
+    return [f"{keyword} {relation}", f"  ON {format_expression(join.predicate)}"]
+
+
+def _indent(text: str, spaces: int = 2) -> str:
+    prefix = " " * spaces
+    return "\n".join(prefix + line for line in text.splitlines())
 
 
 def _format_select_term(term: Any) -> str:
@@ -259,22 +316,30 @@ def _format_select_term(term: Any) -> str:
 
 
 def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozenset()) -> str:
-    parts: list[str] = []
+    """Render a query in deterministic canonical yt-sql form."""
+
     local_identifier_sources = _identifier_sources | frozenset(cte.name for cte in query.ctes)
+    facet_expansions = tuple(operation for operation in query.set_operations if operation.facet_expansion)
+    set_operations = tuple(operation for operation in query.set_operations if not operation.facet_expansion)
+    multiline = bool(query.ctes or query.joins or set_operations or query.left_query is not None)
+    parts: list[str] = []
+
     if query.ctes:
-        cte_text = ", ".join(
-            f"{_format_identifier_component(cte.name)} AS ({format_query(cte.query, _identifier_sources=local_identifier_sources)})"
-            for cte in query.ctes
-        )
-        parts.append(f"WITH {cte_text}")
+        cte_blocks: list[str] = []
+        for cte in query.ctes:
+            body = format_query(cte.query, _identifier_sources=local_identifier_sources)
+            cte_blocks.append(f"{_format_identifier_component(cte.name)} AS (\n{_indent(body)}\n)")
+        parts.append("WITH " + ",\n".join(cte_blocks))
+
     if query.left_query is not None:
-        parts.append(f"({format_query(query.left_query, _identifier_sources=local_identifier_sources)})")
+        left = format_query(query.left_query, _identifier_sources=local_identifier_sources)
+        parts.append(f"(\n{_indent(left)}\n)")
     elif query.select:
         parts.append(
             ("SELECT DISTINCT " if query.distinct else "SELECT ")
             + ", ".join(_format_select_term(term) for term in query.select)
         )
-    facet_expansions = tuple(operation for operation in query.set_operations if operation.facet_expansion)
+
     if query.from_source is not None:
         if facet_expansions:
             source_text = _format_relation_source(
@@ -287,25 +352,32 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
             )
             if query.from_alias is not None:
                 source_text += f" AS {_format_identifier_component(query.from_alias)}"
-            parts.append(f"FROM {source_text}")
         else:
-            parts.append(
-                f"FROM {_format_relation_source(query.from_source, query.from_facet, query.from_alias, identifier_source=query.from_source in local_identifier_sources)}"
+            source_text = _format_relation_source(
+                query.from_source,
+                query.from_facet,
+                query.from_alias,
+                identifier_source=query.from_source in local_identifier_sources,
             )
-        parts.extend(_format_join(join, identifier_sources=local_identifier_sources) for join in query.joins)
+        parts.append(f"FROM {source_text}")
+        for join in query.joins:
+            parts.extend(_format_join_lines(join, identifier_sources=local_identifier_sources))
+
     if query.predicate is not None:
         parts.append(f"WHERE {format_expression(query.predicate)}")
     if query.group_by:
         parts.append("GROUP BY " + ", ".join(format_scalar_expression(item) for item in query.group_by))
     if query.having is not None:
         parts.append(f"HAVING {format_expression(query.having)}")
-    for operation in query.set_operations:
-        if operation.facet_expansion:
-            continue
-        branch_text = format_query(operation.query, _identifier_sources=local_identifier_sources)
+
+    for operation in set_operations:
+        parts.append("UNION ALL" if operation.all else "UNION")
+        branch = format_query(operation.query, _identifier_sources=local_identifier_sources)
         if operation.grouped:
-            branch_text = f"({branch_text})"
-        parts.append(("UNION ALL " if operation.all else "UNION ") + branch_text)
+            parts.append(f"(\n{_indent(branch)}\n)")
+        else:
+            parts.append(branch)
+
     if query.order_by:
         parts.append(
             "ORDER BY " + ", ".join(f"{term.field} {'DESC' if term.descending else 'ASC'}" for term in query.order_by)
@@ -314,4 +386,7 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
         parts.append(f"LIMIT {query.limit}")
     if query.offset:
         parts.append(f"OFFSET {query.offset}")
-    return " ".join(parts) if parts else "<no projection, source, filtering, ordering, or limit>"
+
+    if not parts:
+        return "<no projection, source, filtering, ordering, or limit>"
+    return "\n".join(parts) if multiline else " ".join(parts)

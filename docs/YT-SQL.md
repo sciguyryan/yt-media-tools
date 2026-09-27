@@ -166,9 +166,11 @@ Parameter substitution occurs immediately before parsing rather than creating pa
 
 ### Canonical formatting
 
-Parsed source literals retain the lexical spelling required for stable parse-format-parse behaviour. In particular, canonical formatting does not silently convert unchanged `0xff`, `0o755` or `0b101010` source literals to decimal, and unary signs do not erase the operand's base representation. Parsed string spellings are likewise retained where the parser-level literal survives unchanged. Reserved Boolean and NULL literals use their canonical uppercase forms.
+Canonical formatting is deterministic, semantics-preserving and idempotent for supported queries. The complete formatter and round-trip contract is defined in [YT-SQL-FORMATTING.md](YT-SQL-FORMATTING.md). Formatting operates on yt-sql structures rather than parser-specific trees and preserves every meaningful language distinction while intentionally normalising incidental source spelling.
 
-Optimiser-created constants are derived values rather than source literals and may therefore use a newly generated canonical representation, including decimal integers. This does not weaken the requirement that formatting an unchanged parsed source literal preserve its established lexical representation.
+Canonical strings use single quotes. Integer literals preserve their chosen decimal, hexadecimal, octal or binary base while normalising incidental prefix case, hexadecimal digit case and separator underscores. Redundant scalar parentheses are removed only where precedence and associativity prove that reparsing is unchanged, while meaningful compound-query grouping is retained. JOIN, CTE and explicit set-operation composition use the deterministic multiline layout defined by the formatting contract.
+
+Optimiser-created constants are derived values rather than source spellings and may therefore use a newly generated canonical representation. This does not weaken the requirement that the formatter preserve the semantic value and any language-level representation distinction, such as the chosen base of an unchanged parsed integer literal.
 
 ### Malformed literal and parameter behaviour
 

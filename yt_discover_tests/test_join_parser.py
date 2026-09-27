@@ -75,7 +75,7 @@ def test_join_composes_with_cte_union_and_row_clauses_at_parser_level() -> None:
 
 def test_join_formatter_is_canonical_and_round_trips() -> None:
     source = "SELECT id FROM @left AS l LEFT OUTER JOIN @right OF videos AS r ON l.id = r.id"
-    canonical = "SELECT id FROM @left AS l LEFT JOIN @right OF videos AS r ON l.id = r.id"
+    canonical = "SELECT id\nFROM @left AS l\nLEFT JOIN @right OF videos AS r\n  ON l.id = r.id"
     parsed = parse_query(source)
     assert format_query(parsed) == canonical
     assert parse_query(canonical) == parse_query(format_query(parsed))
@@ -165,7 +165,9 @@ def test_join_parser_accepts_relation_wildcards_in_projection() -> None:
     query = parse_query("SELECT l.*, r.title AS right_title FROM @left AS l JOIN @right AS r ON l.id = r.id")
     assert query.select[0].field == "l.*"
     assert query.select[0].expression.qualifier == "l"
-    assert format_query(query) == ("SELECT l.*, r.title AS right_title FROM @left AS l JOIN @right AS r ON l.id = r.id")
+    assert format_query(query) == (
+        "SELECT l.*, r.title AS right_title\nFROM @left AS l\nJOIN @right AS r\n  ON l.id = r.id"
+    )
 
 
 def test_relation_wildcard_cannot_have_output_alias() -> None:

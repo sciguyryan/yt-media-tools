@@ -192,13 +192,26 @@ _MEMBER_TERMINATOR_KEYWORDS = {
 
 
 def _unescape_string(text: str) -> str:
+    """Decode one quoted string without reinterpreting already-decoded escapes."""
+
     quote = text[0]
     body = text[1:-1]
-    body = body.replace(quote * 2, quote)
-    body = body.replace("\\\\", "\\")
-    body = body.replace(f"\\{quote}", quote)
-    body = body.replace("\\n", "\n").replace("\\t", "\t")
-    return body
+    result: list[str] = []
+    index = 0
+    while index < len(body):
+        character = body[index]
+        if character == quote and index + 1 < len(body) and body[index + 1] == quote:
+            result.append(quote)
+            index += 2
+            continue
+        if character == "\\" and index + 1 < len(body):
+            escaped = body[index + 1]
+            result.append({"n": "\n", "t": "\t", "\\": "\\", quote: quote}.get(escaped, "\\" + escaped))
+            index += 2
+            continue
+        result.append(character)
+        index += 1
+    return "".join(result)
 
 
 def tokenise(source: str) -> list[Token]:

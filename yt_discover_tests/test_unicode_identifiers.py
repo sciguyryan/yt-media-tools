@@ -61,7 +61,7 @@ def test_established_unquoted_hyphen_extension_is_retained() -> None:
 
 def test_spaced_hyphen_remains_subtraction() -> None:
     query = _resolve("SELECT alpha - beta FROM @fixture", [{"alpha": 7, "beta": 2}])
-    assert format_query(query).startswith("SELECT (alpha - beta)")
+    assert format_query(query) == "SELECT alpha - beta FROM @fixture"
 
 
 def test_unicode_identifier_resolution_remains_case_sensitive() -> None:

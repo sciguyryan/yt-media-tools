@@ -10,6 +10,8 @@ Dedicated coverage distinguishes lexical, syntax and semantic diagnostic categor
 
 A language feature is not considered thoroughly covered merely because its happy path parses. Where applicable, coverage should include parsing, semantic resolution, execution, formatting round-trips, malformed input, NULL behaviour, Unicode behaviour, optimiser differential equivalence, composition through CTEs and set operations, and observable CLI behaviour.
 
+Canonical-formatting conformance additionally requires semantic parse-format-parse equivalence and formatter idempotence. Dedicated coverage spans precedence-sensitive parentheses, compact postfix chains, canonical string quoting and escapes, base-preserving numeric normalisation, JOIN/CTE/set-operation layout, compound grouping boundaries and a relationally complete semantic round-trip oracle.
+
 Optimiser tests must compare the complete observable result of optimised and unoptimised execution. The routine conformance corpus also enforces optimiser idempotence across every directly resolved semantic case and canonical parse-format-parse stability across every directly parsed case. Parameter binding remains a CLI-boundary contract with dedicated tests before parsing.
 
 ## Grammar and scalar expressions

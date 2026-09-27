@@ -72,15 +72,19 @@ def test_parenthesised_compound_branch_nests_without_flattening() -> None:
     query = parse_query(source)
     assert query.set_operations[0].grouped
     assert query.set_operations[0].query.set_operations
-    assert format_query(query) == source
+    canonical = format_query(query)
+    assert "UNION ALL\n(" in canonical
+    assert format_query(parse_query(canonical)) == canonical
 
 
 def test_grouped_left_primary_is_structurally_distinct_and_round_trips() -> None:
     source = "(SELECT id FROM @a ORDER BY upload_date DESC LIMIT 2) UNION ALL SELECT id FROM @b ORDER BY id ASC"
     query = parse_query(source)
     assert query.left_query is not None
-    assert format_query(query) == source
-    assert semantic_key(parse_query(format_query(query))) == semantic_key(query)
+    canonical = format_query(query)
+    assert canonical.startswith("(\n")
+    assert semantic_key(parse_query(canonical)) == semantic_key(query)
+    assert format_query(parse_query(canonical)) == canonical
 
 
 def test_grouped_sources_remain_visible_to_physical_acquisition() -> None:
@@ -123,4 +127,6 @@ def test_leading_cte_scopes_over_grouped_compound_expression() -> None:
     query = parse_query(source)
     assert len(query.ctes) == 1
     assert query.left_query is not None
-    assert format_query(query) == source
+    canonical = format_query(query)
+    assert canonical.startswith("WITH a AS (\n")
+    assert format_query(parse_query(canonical)) == canonical

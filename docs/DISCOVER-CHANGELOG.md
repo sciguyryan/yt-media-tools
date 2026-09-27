@@ -6,6 +6,19 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Release history
 
+### Discover 0.29.14 - Canonical Form
+
+- Define canonical yt-sql formatting as a parser-independent language contract with semantic parse-format-parse equivalence and formatter idempotence.
+- Remove provably redundant scalar parentheses while retaining or adding grouping wherever precedence, associativity or compound-query scope requires it.
+- Keep postfix indexing and structured-member chains compact and preserve explicit grouping where a postfix base would otherwise be reparsed differently.
+- Canonicalise strings to deterministic single-quoted spelling and make ordinary string escape decoding single-pass so escaped backslashes cannot be reinterpreted as later escapes.
+- Preserve decimal, hexadecimal, octal and binary literal bases while normalising incidental base-prefix case, hexadecimal digit case and numeric separator underscores.
+- Add deterministic multiline layouts for JOINs, CTEs and explicit set operations while preserving source/facet identity, aliases and meaningful compound grouping boundaries.
+- Strengthen semantic round-trip identity to include relation aliases, JOIN structure and facet-expansion identity rather than ignoring meaningful relational structure.
+- Expand canonical-formatting conformance coverage across strings, LIKE patterns, numeric bases, precedence, postfix chains, JOINs, CTEs, set operations and grouped compounds.
+- Defer comment formatting until comments are deliberately added to the yt-sql lexical and grammatical language.
+- Close the canonical formatting and round-trip contract represented by issue #16.
+
 ### Discover 0.29.13 - Diagnostic Contract
 
 - Define a parser-independent yt-sql diagnostic contract distinguishing lexical, syntax and semantic failures while preserving the historical common exception boundary for callers.

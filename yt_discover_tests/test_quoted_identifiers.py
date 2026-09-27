@@ -39,7 +39,9 @@ def test_quoted_alias_and_cte_name_round_trip() -> None:
     assert query.ctes[0].name == "source name"
     assert query.from_source == "source name"
     assert query.select[0].alias == "output name"
-    assert format_query(query) == source
+    assert format_query(query) == (
+        "WITH `source name` AS (\n  SELECT id FROM @fixture\n)\nSELECT id AS `output name`\nFROM `source name`"
+    )
 
 
 def test_quoted_relation_alias_and_wildcard_round_trip() -> None:
@@ -119,7 +121,9 @@ def test_quoted_relation_alias_can_qualify_fields() -> None:
 def test_quoted_cte_reference_stays_quoted_across_set_branch() -> None:
     source = "WITH `true` AS (SELECT id FROM @fixture) SELECT id FROM `true` UNION SELECT id FROM `true`"
     canonical = format_query(parse_query(source))
-    assert canonical == source
+    assert canonical == (
+        "WITH `true` AS (\n  SELECT id FROM @fixture\n)\nSELECT id\nFROM `true`\nUNION\nSELECT id FROM `true`"
+    )
     assert format_query(parse_query(canonical)) == canonical
 
 

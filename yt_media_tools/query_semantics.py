@@ -23,9 +23,11 @@ from .query_model import (
     Field,
     InList,
     IsNull,
+    JoinClause,
     Literal,
     OrderTerm,
     Query,
+    RelationReference,
     ScalarBinary,
     ScalarCase,
     ScalarComparison,
@@ -137,7 +139,11 @@ def semantic_key(node: Any) -> Any:
     if isinstance(node, CommonTableExpression):
         return ("cte", node.name, semantic_key(node.query))
     if isinstance(node, SetOperation):
-        return ("set-operation", node.all, node.grouped, semantic_key(node.query))
+        return ("set-operation", node.all, node.grouped, node.facet_expansion, semantic_key(node.query))
+    if isinstance(node, RelationReference):
+        return ("relation", node.source, node.facet, node.alias)
+    if isinstance(node, JoinClause):
+        return ("join", node.kind.value, semantic_key(node.relation), semantic_key(node.predicate))
     if isinstance(node, Query):
         return (
             "query",
@@ -153,6 +159,8 @@ def semantic_key(node: Any) -> Any:
             tuple(semantic_key(cte) for cte in node.ctes),
             tuple(semantic_key(operation) for operation in node.set_operations),
             node.from_facet,
+            node.from_alias,
+            tuple(semantic_key(join) for join in node.joins),
             semantic_key(node.left_query),
         )
     return node

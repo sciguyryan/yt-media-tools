@@ -86,8 +86,10 @@ def test_compound_order_by_canonical_round_trip_preserves_expression() -> None:
     parsed = parse_query(source)
     canonical = format_query(parsed)
     assert canonical == (
-        "SELECT id, (view_count * 2) AS score FROM @a "
-        "UNION ALL SELECT id, (view_count * 2) AS ignored FROM @b "
-        "ORDER BY (score + 1) DESC"
+        "SELECT id, view_count * 2 AS score\n"
+        "FROM @a\n"
+        "UNION ALL\n"
+        "SELECT id, view_count * 2 AS ignored FROM @b\n"
+        "ORDER BY score + 1 DESC"
     )
     assert format_query(parse_query(canonical)) == canonical

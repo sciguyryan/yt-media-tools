@@ -84,8 +84,11 @@ def test_order_by_canonicalisation_preserves_alias_expression_and_explicit_direc
     )
     canonical = format_query(parse_query(source))
     assert canonical == (
-        "SELECT l.id, (l.view_count * 2) AS score FROM @left AS l "
-        "JOIN @right AS r ON l.id = r.id ORDER BY (score + 1) DESC, r.title ASC"
+        "SELECT l.id, l.view_count * 2 AS score\n"
+        "FROM @left AS l\n"
+        "JOIN @right AS r\n"
+        "  ON l.id = r.id\n"
+        "ORDER BY score + 1 DESC, r.title ASC"
     )
     assert format_query(parse_query(canonical)) == canonical
 

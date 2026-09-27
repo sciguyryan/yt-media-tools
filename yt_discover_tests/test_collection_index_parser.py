@@ -31,14 +31,14 @@ def test_indexing_binds_more_tightly_than_arithmetic() -> None:
     expression = _select_expression("SELECT tags[0] + 1 FROM @fixture")
     assert isinstance(expression, ScalarBinary)
     assert isinstance(expression.left, ScalarIndex)
-    assert format_scalar_expression(expression) == "(tags[0] + 1)"
+    assert format_scalar_expression(expression) == "tags[0] + 1"
 
 
 def test_index_expression_accepts_general_scalar_expression() -> None:
     expression = _select_expression("SELECT tags[1 + 2] FROM @fixture")
     assert isinstance(expression, ScalarIndex)
     assert isinstance(expression.index, ScalarBinary)
-    assert format_scalar_expression(expression) == "tags[(1 + 2)]"
+    assert format_scalar_expression(expression) == "tags[1 + 2]"
 
 
 def test_postfix_indexing_can_chain() -> None:
