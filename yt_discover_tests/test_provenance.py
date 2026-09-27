@@ -66,6 +66,10 @@ def test_composed_provenance_records_per_source_acquisition_counts(tmp_path: Pat
     env = os.environ.copy()
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
     proc = run_cli(
+        "--backend",
+        "ytdlp",
+        "--cache",
+        str(tmp_path / "cache.sqlite3"),
         "--provenance",
         str(provenance),
         "SELECT id FROM @example UNION ALL SELECT id FROM 'https://www.twitch.tv/example/videos'",
@@ -96,6 +100,10 @@ def test_of_provenance_records_logical_facet_and_adapter(tmp_path: Path) -> None
     env = os.environ.copy()
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
     proc = run_cli(
+        "--backend",
+        "ytdlp",
+        "--cache",
+        str(tmp_path / "cache.sqlite3"),
         "--provenance",
         str(provenance),
         "SELECT id FROM @example OF shorts",
@@ -130,6 +138,10 @@ def test_same_source_cross_facet_provenance_keeps_requests_independent(tmp_path:
     env = os.environ.copy()
     env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
     proc = run_cli(
+        "--backend",
+        "ytdlp",
+        "--cache",
+        str(tmp_path / "cache.sqlite3"),
         "--provenance",
         str(provenance),
         ("SELECT id, title FROM @example OF videos UNION ALL SELECT id, title FROM @example OF shorts ORDER BY title"),

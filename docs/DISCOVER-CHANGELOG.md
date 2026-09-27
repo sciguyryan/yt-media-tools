@@ -1,29 +1,21 @@
 # Discover changelog
 
-## Development
-
-- Reconcile accidental SELECT and compound-query compatibility behaviour by reporting repeated or backwards statement clauses as deterministic clause-order syntax errors while preserving contextual-keyword identifiers and established compound-query modifier scope.
-
 This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
 
 ## Active development
 
-- Define `ORDER BY` resolution and canonicalisation across projection aliases, JOIN relation ownership, CTE-exported names and compound-result scope, while keeping aliases out of physical metadata requirements and rejecting numeric ordinals.
-- Add explicit parenthesised compound-query grouping with branch-local ordering and slicing before outer set-result modifiers.
-- Define compound-result `ORDER BY` against exported result columns, supporting aliases and scalar expressions while rejecting numeric ordinals and branch-internal field leakage.
-- Add comma-separated multi-facet `OF` syntax for primary source relations, lowering it deterministically to ordered `UNION ALL` branches while preserving per-facet logical identity, provenance and acquisition semantics.
-- Preserve independent source-boundary acquisition and provider selection across UNION composition, avoiding an unnecessary full-source yt-dlp metadata path when lightweight enumeration and targeted detailed acquisition can satisfy each branch.
-- Preserve ordinary source-field `ORDER BY` semantics for comma-separated `OF` facet expansion, including ordering by fields that are not projected.
-- Identify the source and facet in independent UNION acquisition progress messages so per-boundary counters are unambiguous.
-- Repeat large-source enumeration warnings at the configured per-source/facet interval and describe the setting as a warning interval.
-- Apply `SELECT DISTINCT` globally across a comma-separated `OF` facet set and preserve scalar-expression projection values through facet reconciliation.
-- Preserve comma-separated `OF` syntax in canonical formatting now that its global duplicate elimination and source-field ordering semantics are intentionally distinct from ordinary explicit `UNION ALL`.
-- Harden multi-facet `OF` conformance for duplicate preservation, global ordering and slicing, three-facet composition, independent source-boundary planning and optimiser-equivalent torture execution.
-- Serialise materialised compound-query expression outputs directly so scalar projections are not re-evaluated against rows that no longer contain their source fields.
-
-- Freeze the ordinary `SELECT` clause-order contract, retaining the established `LIMIT ... OFFSET ...` slicing order, standalone `OFFSET`, deterministic rejection of reordered or repeated clauses, and canonical formatting.
-
 ## Release history
+
+### Discover 0.29.12 - Grammar Freeze
+
+- Finalise the `SELECT` and compound-query grammar review, preserving the established ordinary clause order, `LIMIT ... OFFSET ...` slicing, standalone `OFFSET`, contextual-keyword identifiers and deterministic rejection of repeated or reordered clauses.
+- Add explicit parenthesised compound-query grouping with branch-local ordering and slicing, while trailing `ORDER BY`, `LIMIT` and `OFFSET` on an unparenthesised set expression apply to the completed compound result.
+- Define compound-result `ORDER BY` against exported result columns, including projection aliases and scalar expressions, while rejecting numeric ordinals and branch-internal field leakage.
+- Add comma-separated multi-facet `OF` syntax for primary source relations with deterministic ordered facet composition, global `DISTINCT`, completed-result ordering and slicing, and preserved per-facet identity, provenance and acquisition semantics.
+- Preserve independent source-boundary acquisition and provider selection across compound composition, including source/facet-specific progress and large-source enumeration warnings.
+- Reconcile malformed-query diagnostics so accidental parser behaviour is not retained as a compatibility contract.
+- Expand grammar, formatter, optimiser-equivalence, acquisition-planning and torture coverage for grouping, clause ordering, result scope, multi-facet composition and malformed syntax.
+- Close the `SELECT` and compound-query grammar review represented by issue #9.
 
 ### Discover 0.29.11 - Backend Boundaries
 
