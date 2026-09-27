@@ -1,0 +1,53 @@
+(* yt-sql formal grammar draft
+ *
+ * Parser-neutral EBNF. This artefact is being built from the accepted yt-sql
+ * language surface before its authority and revision contract are finalised.
+ *)
+
+query                 = [ with-clause ], query-expression ;
+query-expression      = query-primary, { union-operator, query-primary },
+                        [ order-by-clause ], [ limit-clause ], [ offset-clause ] ;
+query-primary         = select-query | "(", query-expression, ")" ;
+union-operator        = "UNION", [ "ALL" ] ;
+
+with-clause           = "WITH", cte, { ",", cte } ;
+cte                   = identifier, "AS", "(", query-expression, ")" ;
+
+select-query          = [ select-clause ], [ from-clause ], [ where-clause ],
+                        [ group-by-clause ], [ having-clause ] ;
+select-clause         = "SELECT", [ "DISTINCT" ], select-term, { ",", select-term } ;
+select-term           = scalar-expression, [ "AS", identifier ] ;
+
+from-clause           = "FROM", relation-reference ;
+relation-reference    = relation-source, [ "OF", facet-reference, { ",", facet-reference } ],
+                        [ "AS", identifier ] ;
+facet-reference       = identifier ;
+relation-source       = at-identifier | identifier | string ;
+
+where-clause          = "WHERE", boolean-expression ;
+group-by-clause       = "GROUP", "BY", scalar-expression, { ",", scalar-expression } ;
+having-clause         = "HAVING", having-expression ;
+order-by-clause       = "ORDER", "BY", order-term, { ",", order-term } ;
+order-term            = scalar-expression, [ "ASC" | "DESC" ] ;
+limit-clause          = "LIMIT", positive-decimal-integer ;
+offset-clause         = "OFFSET", non-negative-decimal-integer ;
+
+(* FIXME: Expression productions to be added here later. *)
+
+(* Lexical foundation. Unicode identifier and literal boundary details remain
+ * language-level lexical contracts rather than parser-library notation. *)
+identifier            = ordinary-identifier | quoted-identifier ;
+ordinary-identifier   = xid-start, { xid-continue | "-" }, { ".", xid-start, { xid-continue | "-" } } ;
+quoted-identifier     = "`", quoted-identifier-character, { quoted-identifier-character }, "`" ;
+at-identifier         = "@", ascii-source-character, { ascii-source-character } ;
+
+number                = decimal-number | hexadecimal-integer | octal-integer | binary-integer ;
+decimal-number        = decimal-digits, [ ".", decimal-digits ], [ magnitude-suffix ] ;
+magnitude-suffix      = "k" | "K" | "m" | "M" | "b" | "B" ;
+hexadecimal-integer   = "0x", base16-digits ;
+octal-integer         = "0o", base8-digits ;
+binary-integer        = "0b", base2-digits ;
+positive-decimal-integer = decimal-digits ;
+non-negative-decimal-integer = decimal-digits ;
+
+string                = single-quoted-string | double-quoted-string ;
