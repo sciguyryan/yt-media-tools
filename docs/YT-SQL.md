@@ -366,7 +366,7 @@ yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`
 
 yt-sql does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arguments. Those may be considered separately if they fit the language cleanly. Aggregate queries require complete input groups, so the source-order early-LIMIT acquisition optimisation is disabled for them.
 
-## Planned analytical expansion
+## Analytical status and future expansion
 
 General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, and the first aggregate query architecture are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
 
