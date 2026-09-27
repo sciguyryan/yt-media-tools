@@ -5,8 +5,8 @@
 It is designed to pair naturally with `yt-discover.py`:
 
 ```bash
-./yt-discover.py --tab videos \
-  "FROM @channel WHERE upload_date >= TODAY()-6mo" \
+./yt-discover.py \
+  "FROM @channel OF videos WHERE upload_date >= TODAY()-6mo" \
 | ./yt-download.py -
 ```
 

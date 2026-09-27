@@ -156,8 +156,8 @@ Use `--explain` to inspect applicable rewrites and relation-level proofs. JSON e
 yt-discover implements proof-based LIMIT-aware acquisition termination. The planner uses `OFFSET + LIMIT` as the authoritative match target. When the complete predicate and selected output are authoritative in lightweight metadata, source enumeration itself can stop after enough emitted matching rows. Queries that require detailed metadata still enumerate the source conservatively, but detailed extraction may stop once the same target is satisfied.
 
 ```bash
-./yt-discover.py --tab videos \
-  "SELECT id FROM @whatdamath WHERE duration < 1h LIMIT 25" -v
+./yt-discover.py \
+  "SELECT id FROM @whatdamath OF videos WHERE duration < 1h LIMIT 25" -v
 ```
 
 Queries with an explicit `ORDER BY` remain exhaustive because a later row may still outrank an earlier match. `DISTINCT`, aggregation/HAVING, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields and volatile expressions such as unseeded `RANDOM()` are excluded. Archive exclusion disables the optimisation because archived rows are removed after acquisition. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
@@ -175,8 +175,8 @@ The frontier is separate from detailed-metadata coverage. An inaccessible or mem
 yt-discover also provides native persistent ID-list output:
 
 ```bash
-./yt-discover.py --tab videos \
-  "SELECT id FROM @whatdamath WHERE duration < 1h ORDER BY upload_date ASC, release_timestamp ASC" \
+./yt-discover.py \
+  "SELECT id FROM @whatdamath OF videos WHERE duration < 1h ORDER BY upload_date ASC, release_timestamp ASC" \
   --append ./ids/ids-anton
 ```
 
@@ -189,8 +189,8 @@ The frontier implementation uses yt-dlp's lazy flat feed for frontier overlap. T
 The persistent cache can be queried directly with `--offline`, which guarantees that yt-discover will not contact YouTube or refresh stale metadata. Offline mode uses the detailed records already stored for the resolved source. If the most recent recorded source coverage is incomplete or unknown, yt-discover says so explicitly on standard error rather than pretending the cached subset is the whole current source. Required fields that have exceeded their normal freshness policy are also reported as stale, but their cached values are still used because offline mode forbids refreshes.
 
 ```bash
-./yt-discover.py --offline --tab videos \
-  "SELECT id, title, upload_date FROM @whatdamath WHERE duration < 1h ORDER BY upload_date ASC, release_timestamp ASC"
+./yt-discover.py --offline \
+  "SELECT id, title, upload_date FROM @whatdamath OF videos WHERE duration < 1h ORDER BY upload_date ASC, release_timestamp ASC"
 ```
 
 A cache-only query fails clearly when there are no cached detailed records for the requested source. Source order observations are persisted separately so offline queries can preserve the most recently observed source order when no explicit `ORDER BY` is supplied. Trusted frontier state is recorded separately and is used only when its conservative overlap requirements are satisfied.
@@ -198,8 +198,8 @@ A cache-only query fails clearly when there are no cached detailed records for t
 `--explain` now has a versioned machine-readable form and a richer console presentation. Interactive console output uses conservative ANSI colour, Unicode box drawing and arrows when available. Redirected output automatically falls back to plain ASCII/no-colour presentation. Use `--colour auto|always|never` and `--unicode auto|always|never` to override those choices.
 
 ```bash
-./yt-discover.py --tab videos --explain-format json --explain \
-  "SELECT id FROM @whatdamath WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
+./yt-discover.py --explain-format json --explain \
+  "SELECT id FROM @whatdamath OF videos WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
 ```
 
 The JSON form remains free of console presentation sequences and exposes an explicit explanation schema version, deterministic planner decisions and the graph structure used by richer renderers. Applied, rejected, deferred and eliminated decisions include their reasons where the planner has an explicit proof or policy basis.
@@ -207,8 +207,8 @@ The JSON form remains free of console presentation sequences and exposes an expl
 Graphviz can render the same explanation model as SVG:
 
 ```bash
-./yt-discover.py --tab videos --explain-format svg --explain \
-  "SELECT id FROM @whatdamath WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25" > plan.svg
+./yt-discover.py --explain-format svg --explain \
+  "SELECT id FROM @whatdamath OF videos WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25" > plan.svg
 ```
 
 SVG rendering is optional presentation functionality. If Graphviz is not installed, normal text and JSON explain modes continue to work unchanged.
@@ -216,11 +216,11 @@ SVG rendering is optional presentation functionality. If Graphviz is not install
 B1 `EXPLAIN ANALYZE` is available as `--explain-analyze`. It executes the query but suppresses normal result rows, then reports the plan and actual execution outcome, including enumeration, lightweight rejection, detailed candidates, cache reuse, query-result statistics and timings. Use `--explain-format json` for structured output.
 
 ```bash
-./yt-discover.py --tab videos --explain-analyze \
-  "SELECT id FROM @whatdamath WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
+./yt-discover.py --explain-analyze \
+  "SELECT id FROM @whatdamath OF videos WHERE upload_date >= 2026-08-01 AND duration < 1h LIMIT 25"
 
-./yt-discover.py --offline --tab videos --explain-format json --explain-analyze \
-  "SELECT id FROM @whatdamath WHERE duration < 1h ORDER BY upload_date ASC"
+./yt-discover.py --offline --explain-format json --explain-analyze \
+  "SELECT id FROM @whatdamath OF videos WHERE duration < 1h ORDER BY upload_date ASC"
 ```
 
 The SQLite cache schema is version 3. Version 1 and 2 caches migrate through the supported conservative migration path, while unsupported schema versions fail closed. `--report` includes offline/cache coverage and timing information.
@@ -234,11 +234,11 @@ Freshness is field-aware. Stable identity and publication fields can be reused f
 The default cache follows the XDG cache convention and normally lives at `~/.cache/yt-discover/metadata.sqlite3`. Override it or disable it per run:
 
 ```bash
-./yt-discover.py --cache /path/to/metadata.sqlite3 --tab videos \
-  "SELECT id FROM @whatdamath WHERE duration < 1h"
+./yt-discover.py --cache /path/to/metadata.sqlite3 \
+  "SELECT id FROM @whatdamath OF videos WHERE duration < 1h"
 
-./yt-discover.py --no-cache --tab videos \
-  "SELECT id FROM @whatdamath WHERE duration < 1h"
+./yt-discover.py --no-cache \
+  "SELECT id FROM @whatdamath OF videos WHERE duration < 1h"
 ```
 
 The cache schema is explicitly versioned at version 3. Version 1 and 2 caches migrate through the supported conservative migration path, while unsupported schema versions fail closed. Source observations, trusted source ordering and detailed-metadata coverage remain distinct so stale cache state can cost extra work without being mistaken for proof of source completeness.
@@ -258,8 +258,8 @@ Bounded channel scans now use a general conservative lightweight predicate evalu
 For example:
 
 ```bash
-./yt-discover.py --tab videos --explain \
-  "SELECT id FROM @whatdamath WHERE upload_date BETWEEN 2026-04-01 AND 2026-06-30 AND duration < 1h LIMIT 25"
+./yt-discover.py --explain \
+  "SELECT id FROM @whatdamath OF videos WHERE upload_date BETWEEN 2026-04-01 AND 2026-06-30 AND duration < 1h LIMIT 25"
 ```
 
 The explanation shows why the date range can bound enumeration and prune provably out-of-range candidates, while `duration` still requires authoritative detailed metadata.
@@ -324,13 +324,13 @@ Backend selection is explicit:
 
 ```bash
 # Prefer YouTube.js bounded enumeration when available, otherwise fall back to yt-dlp.
-./yt-discover.py --backend auto --tab videos "FROM @channel WHERE upload_date >= TODAY()-6mo"
+./yt-discover.py --backend auto "FROM @channel OF videos WHERE upload_date >= TODAY()-6mo"
 
 # Never use YouTube.js.
-./yt-discover.py --backend ytdlp --tab videos "FROM @channel WHERE upload_date >= TODAY()-6mo"
+./yt-discover.py --backend ytdlp "FROM @channel OF videos WHERE upload_date >= TODAY()-6mo"
 
 # Require YouTube.js. Missing tools or runtime enumeration failures are fatal.
-./yt-discover.py --backend youtubejs --tab videos "FROM @channel WHERE upload_date >= TODAY()-6mo"
+./yt-discover.py --backend youtubejs "FROM @channel OF videos WHERE upload_date >= TODAY()-6mo"
 ```
 
 `--backend` controls the optional bounded enumeration stage. Full source acquisition and authoritative detailed metadata extraction continue to use yt-dlp.
@@ -719,7 +719,7 @@ If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to authent
 
 ```bash
 ./yt-discover.py --cookies /path/to/cookies.txt \
-  --tab videos "FROM @channel WHERE upload_date >= TODAY()-30d"
+  "FROM @channel OF videos WHERE upload_date >= TODAY()-30d"
 ```
 
 ## Live progress and acquisition reports
@@ -749,8 +749,8 @@ yt-discover can avoid walking an entire large channel in an important class of q
 For example:
 
 ```bash
-./yt-discover.py --tab videos \
-  "SELECT id FROM @whatdamath WHERE upload_date BETWEEN 2026-04-01 AND TODAY() ORDER BY upload_date ASC" \
+./yt-discover.py \
+  "SELECT id FROM @whatdamath OF videos WHERE upload_date BETWEEN 2026-04-01 AND TODAY() ORDER BY upload_date ASC" \
   -v --report
 ```
 
@@ -769,8 +769,8 @@ The acquisition report records the cost estimate, its reason, observed enumerati
 Examples:
 
 ```bash
-./yt-discover.py --tab videos \
-  "FROM @example WHERE upload_date >= TODAY()-6mo" -v --report
+./yt-discover.py \
+  "FROM @example OF videos WHERE upload_date >= TODAY()-6mo" -v --report
 ```
 
 ```bash
