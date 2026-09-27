@@ -6,6 +6,17 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Release history
 
+### Discover 0.29.13 - Diagnostic Contract
+
+- Define a parser-independent yt-sql diagnostic contract distinguishing lexical, syntax and semantic failures while preserving the historical common exception boundary for callers.
+- Add structured half-open diagnostic spans, exact token spans and curated expected-token metadata without exposing parser implementation details in terminal output.
+- Require deterministic primary line and column information, first-useful-error behaviour and source-origin retention for user-written syntax that can participate in diagnostics or tooling.
+- Define parser-migration equivalence around diagnostic category, primary source region, semantic meaning and broad human-facing intent rather than parser-library exception wording.
+- Preserve the established terminal source-line and caret rendering while allowing clearer yt-sql-owned wording and selectively useful expected-token information.
+- Reserve a future machine-readable diagnostic interface without adding a new public CLI surface as part of the parser contract work.
+- Expand diagnostic conformance coverage for lexical classification, semantic source locations, half-open spans, token spans and parser-independent expected-token vocabulary.
+- Close the parser diagnostic and source-span contract represented by issue #15.
+
 ### Discover 0.29.12 - Grammar Freeze
 
 - Finalise the `SELECT` and compound-query grammar review, preserving the established ordinary clause order, `LIMIT ... OFFSET ...` slicing, standalone `OFFSET`, contextual-keyword identifiers and deterministic rejection of repeated or reordered clauses.

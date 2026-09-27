@@ -26,6 +26,7 @@ from .query_model import (
     OrderTerm,
     Query,
     QuerySyntaxError,
+    QueryLexicalError,
     RelationReference,
     RelationWildcard,
     ScalarBinary,
@@ -206,7 +207,9 @@ def tokenise(source: str) -> list[Token]:
     while position < len(source):
         match = _TOKEN_RE.match(source, position)
         if match is None:
-            raise QuerySyntaxError(source, "Could not tokenise query.", position)
+            raise QueryLexicalError(
+                source, "Could not tokenise query.", position, end_position=min(position + 1, len(source))
+            )
         kind = match.lastgroup or ""
         text = match.group(0)
         if kind in {"IDENT", "MISMATCH"}:
@@ -228,29 +231,29 @@ def tokenise(source: str) -> list[Token]:
             continue
         if kind == "MISMATCH":
             if text == "`":
-                raise QuerySyntaxError(source, "Unterminated quoted identifier.", position)
+                raise QueryLexicalError(source, "Unterminated quoted identifier.", position, end_position=len(source))
             if text in {"'", '"'}:
                 remainder = source[position + 1 :]
                 trailing_backslashes = len(remainder) - len(remainder.rstrip("\\"))
                 if trailing_backslashes % 2 == 1:
-                    raise QuerySyntaxError(
+                    raise QueryLexicalError(
                         source,
                         "Incomplete escape sequence at end of string literal.",
                         len(source) - 1,
                     )
-                raise QuerySyntaxError(source, "Unterminated string literal.", position)
-            raise QuerySyntaxError(source, f"Unexpected character {text!r}.", position)
+                raise QueryLexicalError(source, "Unterminated string literal.", position, end_position=len(source))
+            raise QueryLexicalError(source, f"Unexpected character {text!r}.", position, end_position=match_end)
         if kind == "STRING":
             value: Any = _unescape_string(text)
         elif kind == "QIDENT":
             value = text[1:-1].replace("``", "`")
             if not value:
-                raise QuerySyntaxError(source, "Quoted identifier cannot be empty.", position)
+                raise QueryLexicalError(source, "Quoted identifier cannot be empty.", position, end_position=match_end)
         else:
             value = text
-        tokens.append(Token(kind, text, position, value))
+        tokens.append(Token(kind, text, position, value, match_end))
         position = match_end
-    tokens.append(Token("EOF", "", len(source), None))
+    tokens.append(Token("EOF", "", len(source), None, len(source)))
     return tokens
 
 
@@ -271,13 +274,13 @@ def _parse_integer_literal_text(text: str, source: str, position: int) -> int:
             2: r"[01]+",
         }[base]
         if not re.fullmatch(valid_digits, digits):
-            raise QuerySyntaxError(source, f"Invalid base-{base} integer literal {text!r}.", position)
+            raise QueryLexicalError(source, f"Invalid base-{base} integer literal {text!r}.", position)
         value = int(digits, base)
         return -value if match.group("sign") == "-" else value
 
     if re.match(r"[+-]?0[xXoObB]", compact):
-        raise QuerySyntaxError(source, f"Invalid non-decimal integer literal {text!r}.", position)
-    raise QuerySyntaxError(source, f"Could not understand integer value {text!r}.", position)
+        raise QueryLexicalError(source, f"Invalid non-decimal integer literal {text!r}.", position)
+    raise QueryLexicalError(source, f"Could not understand integer value {text!r}.", position)
 
 
 def _parse_number_text(text: str, source: str, position: int) -> int | float:
@@ -288,7 +291,7 @@ def _parse_number_text(text: str, source: str, position: int) -> int | float:
         return int(compact.replace("_", ""), 10)
     if _DECIMAL_NUMBER_RE.fullmatch(compact) and "." in compact:
         return float(compact.replace("_", ""))
-    raise QuerySyntaxError(source, f"Could not understand numeric value {text!r}.", position)
+    raise QueryLexicalError(source, f"Could not understand numeric value {text!r}.", position)
 
 
 def _parse_generic_numeric_literal(text: str, source: str, position: int) -> int | float:
@@ -311,6 +314,24 @@ def _validate_like_pattern(pattern: str, source: str, position: int) -> None:
             escaped = True
     if escaped:
         raise QuerySyntaxError(source, "LIKE pattern ends with an incomplete backslash escape.", position)
+
+
+_EXPECTED_TOKEN_LABELS = {
+    "LPAREN": "(",
+    "RPAREN": ")",
+    "LBRACKET": "[",
+    "RBRACKET": "]",
+    "COMMA": ",",
+    "DOT": ".",
+    "STAR": "*",
+    "EQ": "=",
+}
+
+
+def _expected_token_label(kind: str) -> str:
+    """Translate lexer token kinds to stable yt-sql diagnostic vocabulary."""
+
+    return _EXPECTED_TOKEN_LABELS.get(kind, kind.casefold().replace("_", " "))
 
 
 class Parser:
@@ -343,21 +364,39 @@ class Parser:
     def expect_keyword(self, word: str, message: str | None = None) -> Token:
         token = self.consume_keyword(word)
         if token is None:
-            raise QuerySyntaxError(self.source, message or f"Expected {word}.", self.current.position)
+            raise QuerySyntaxError(
+                self.source,
+                message or f"Expected {word}.",
+                self.current.position,
+                end_position=self.current.span[1],
+                expected=(word,),
+            )
         return token
 
     def expect(self, kind: str, message: str) -> Token:
         if self.current.kind != kind:
-            raise QuerySyntaxError(self.source, message, self.current.position)
+            raise QuerySyntaxError(
+                self.source,
+                message,
+                self.current.position,
+                end_position=self.current.span[1],
+                expected=(_expected_token_label(kind),),
+            )
         return self.advance()
 
     def expect_identifier(self, message: str) -> Token:
         """Consume an ordinary or backtick-quoted identifier token."""
         if self.current.kind not in {"IDENT", "QIDENT"}:
-            raise QuerySyntaxError(self.source, message, self.current.position)
+            raise QuerySyntaxError(
+                self.source,
+                message,
+                self.current.position,
+                end_position=self.current.span[1],
+                expected=("identifier",),
+            )
         token = self.advance()
         if token.kind == "QIDENT":
-            return Token(token.kind, str(token.value), token.position, token.value)
+            return Token(token.kind, str(token.value), token.position, token.value, token.end_position)
         return token
 
     def parse_query(
@@ -731,7 +770,13 @@ class Parser:
             member_token = self.advance()
             quoted_member = member_token.kind == "QIDENT"
             if quoted_member:
-                member_token = Token("QIDENT", str(member_token.value), member_token.position, member_token.value)
+                member_token = Token(
+                    "QIDENT",
+                    str(member_token.value),
+                    member_token.position,
+                    member_token.value,
+                    member_token.end_position,
+                )
                 if isinstance(node, Field) and (node.name == "raw" or node.name.startswith("raw.")):
                     node = Field(f"{node.name}.{member_token.text}", node.position)
                     continue

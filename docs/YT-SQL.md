@@ -110,6 +110,8 @@ Canonical parse-format-parse behaviour must preserve identifier identity exactly
 
 Malformed ordinary identifier boundaries and malformed quoted identifiers are rejected deterministically. Empty or unterminated backtick identifiers receive dedicated quoted-identifier diagnostics. Alternate parser implementations must preserve the same case sensitivity, reserved/contextual classification, Unicode acceptance boundary, quoting semantics and exact-spelling identity.
 
+The parser-independent lexical, syntax, semantic and source-span contract is defined in [`YT-SQL-DIAGNOSTICS.md`](YT-SQL-DIAGNOSTICS.md). Parser implementations must translate native failures into that yt-sql model rather than exposing parser-library exceptions or internal token names.
+
 ## Literal and parameter contract
 
 yt-sql has a deliberately small literal surface. The established forms are frozen for the current language: decimal, hexadecimal, octal and binary integers; decimal numeric forms already used by field-aware values; single-quoted and double-quoted strings; and the reserved literal words `TRUE`, `FALSE` and `NULL`. New literal or parameter spellings should be introduced only when a concrete language requirement cannot be expressed clearly through the existing forms.

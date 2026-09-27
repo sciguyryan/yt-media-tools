@@ -14,7 +14,7 @@ from typing import Any
 
 @dataclass(frozen=True, slots=True)
 class QuerySourceLocation:
-    """One deterministic source location for a query diagnostic."""
+    """One deterministic absolute and line/column location in query source."""
 
     position: int
     line: int
@@ -22,15 +22,48 @@ class QuerySourceLocation:
 
 
 @dataclass(frozen=True, slots=True)
+class QuerySourceSpan:
+    """Half-open source span owned by yt-sql rather than a parser implementation."""
+
+    start: QuerySourceLocation
+    end: QuerySourceLocation
+
+    @property
+    def start_position(self) -> int:
+        return self.start.position
+
+    @property
+    def end_position(self) -> int:
+        return self.end.position
+
+
+@dataclass(frozen=True, slots=True)
 class QueryDiagnosticContext:
-    """Structured context shared by syntax and semantic query diagnostics."""
+    """Parser-independent structured context for one yt-sql diagnostic."""
 
     category: str
-    location: QuerySourceLocation
+    span: QuerySourceSpan
+    expected: tuple[str, ...] = ()
+
+    @property
+    def location(self) -> QuerySourceLocation:
+        """Compatibility alias for the primary failure location."""
+
+        return self.span.start
+
+
+def _source_location(source: str, position: int) -> QuerySourceLocation:
+    bounded = max(0, min(position, len(source)))
+    line_start = source.rfind("\n", 0, bounded) + 1
+    return QuerySourceLocation(
+        bounded,
+        source.count("\n", 0, bounded) + 1,
+        bounded - line_start + 1,
+    )
 
 
 class QuerySyntaxError(ValueError):
-    """Raised when a query cannot be parsed or semantically resolved."""
+    """Raised when valid yt-sql tokens cannot form a legal grammatical structure."""
 
     diagnostic_category = "syntax"
 
@@ -40,19 +73,23 @@ class QuerySyntaxError(ValueError):
         message: str,
         position: int = 0,
         *,
+        end_position: int | None = None,
+        expected: tuple[str, ...] = (),
         category: str | None = None,
     ) -> None:
         super().__init__(message)
         self.source = source
         self.message = message
         self.position = max(0, min(position, len(source)))
-        line_start = self.source.rfind("\n", 0, self.position) + 1
-        self.location = QuerySourceLocation(
-            self.position,
-            self.source.count("\n", 0, self.position) + 1,
-            self.position - line_start + 1,
+        raw_end = self.position if end_position is None else end_position
+        self.end_position = max(self.position, min(raw_end, len(source)))
+        self.expected = tuple(dict.fromkeys(expected))
+        self.span = QuerySourceSpan(
+            _source_location(source, self.position),
+            _source_location(source, self.end_position),
         )
-        self.context = QueryDiagnosticContext(category or self.diagnostic_category, self.location)
+        self.location = self.span.start
+        self.context = QueryDiagnosticContext(category or self.diagnostic_category, self.span, self.expected)
 
     def format(self) -> str:
         line_start = self.source.rfind("\n", 0, self.position) + 1
@@ -62,6 +99,12 @@ class QuerySyntaxError(ValueError):
         line = self.source[line_start:line_end]
         column = self.location.column - 1
         return f"{self.message} (line {self.location.line}, column {self.location.column})\n  {line}\n  {' ' * column}^"
+
+
+class QueryLexicalError(QuerySyntaxError):
+    """Raised when source text cannot be tokenised as valid yt-sql lexical input."""
+
+    diagnostic_category = "lexical"
 
 
 class QuerySemanticError(QuerySyntaxError):
@@ -76,6 +119,13 @@ class Token:
     text: str
     position: int
     value: Any = None
+    end_position: int | None = None
+
+    @property
+    def span(self) -> tuple[int, int]:
+        """Return the token's half-open absolute source span."""
+
+        return self.position, self.position + len(self.text) if self.end_position is None else self.end_position
 
 
 @dataclass(frozen=True)

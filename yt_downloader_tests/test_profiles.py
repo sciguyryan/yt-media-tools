@@ -19,7 +19,7 @@ def write_defaults(
 
 def test_shipped_defaults_include_expected_profiles(downloader) -> None:
     profiles = downloader.load_profiles(downloader.DEFAULTS_FILE, allow_missing=False)
-    assert set(profiles) == {"default", "best", "4k", "1440p", "1440p-slow", "playlist"}
+    assert set(profiles) == {"default", "best", "4k", "1440p", "1440p-slow", "playlist", "playlist-slow"}
     standard_path = "/mnt/storage/Storage/YouTube/YouTube/"
     standard_output = "%(title)s [%(id)s] [%(uploader)s].%(ext)s"
     default_user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:147.0) Gecko/20100101 Firefox/147.0"
@@ -40,6 +40,9 @@ def test_shipped_defaults_include_expected_profiles(downloader) -> None:
     assert profiles["1440p-slow"].settings["user-agent"] == default_user_agent
     assert profiles["playlist"].settings["playlist"] is True
     assert profiles["playlist"].settings["path"].endswith("YouTube Playlists/")
+    assert profiles["playlist-slow"].settings["playlist"] is True
+    assert profiles["playlist-slow"].settings["resolution"] == "1080p"
+    assert profiles["playlist-slow"].settings["limit-rate"] == "2.5M"
 
 
 def test_default_profile_is_selected_implicitly(downloader) -> None:

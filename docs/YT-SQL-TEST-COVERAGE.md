@@ -2,6 +2,10 @@
 
 This document records the major yt-sql language and execution surfaces that must remain covered. It is the durable test-completeness inventory used when reviewing regressions and future language changes.
 
+## Diagnostic and source-span contract
+
+Dedicated coverage distinguishes lexical, syntax and semantic diagnostic categories while preserving the historical common exception boundary, requires deterministic line and column information, verifies absolute half-open spans for lexical input, preserves semantic source origins and checks that curated expected-token data remains structured rather than leaking parser-internal token dumps into terminal rendering. The parser-independent contract is documented in [`YT-SQL-DIAGNOSTICS.md`](YT-SQL-DIAGNOSTICS.md).
+
 ## Coverage standard
 
 A language feature is not considered thoroughly covered merely because its happy path parses. Where applicable, coverage should include parsing, semantic resolution, execution, formatting round-trips, malformed input, NULL behaviour, Unicode behaviour, optimiser differential equivalence, composition through CTEs and set operations, and observable CLI behaviour.

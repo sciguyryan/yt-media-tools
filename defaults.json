@@ -31,6 +31,13 @@
       "output": "$values.playlist.output",
       "resolution": "1080p",
       "playlist": true
+    },
+    "playlist-slow": {
+      "path": "$values.playlist.path",
+      "output": "$values.playlist.output",
+      "resolution": "1080p",
+      "limit-rate": "2.5M",
+      "playlist": true
     }
   },
   "values": {
