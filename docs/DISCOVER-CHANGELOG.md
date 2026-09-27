@@ -1,5 +1,9 @@
 # Discover changelog
 
+## Development
+
+- Reconcile accidental SELECT and compound-query compatibility behaviour by reporting repeated or backwards statement clauses as deterministic clause-order syntax errors while preserving contextual-keyword identifiers and established compound-query modifier scope.
+
 This file is the authoritative changelog for yt-discover. Active development and release history are kept here independently from yt-downloader.
 
 ## Active development

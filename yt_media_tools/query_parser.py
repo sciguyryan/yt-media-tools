@@ -583,6 +583,13 @@ class Parser:
             self.advance()
 
         if not at_end():
+            clause = self._statement_clause_at_current()
+            if clause is not None:
+                raise QuerySyntaxError(
+                    self.source,
+                    f"{clause} is repeated or appears outside the canonical SELECT clause order.",
+                    self.current.position,
+                )
             raise QuerySyntaxError(self.source, f"Unexpected token {self.current.text!r}.", self.current.position)
         return Query(
             predicate,
@@ -602,6 +609,32 @@ class Parser:
             tuple(joins),
             left_query,
         )
+
+    def _statement_clause_at_current(self) -> str | None:
+        """Return a statement-level clause introducer at the current token.
+
+        yt-sql keywords are contextual, so this deliberately runs only after
+        the parser has completed the legal statement shape. It improves
+        diagnostics for repeated or backwards clauses without reserving these
+        words inside ordinary expressions or quoted identifiers.
+        """
+        if self.keyword("WHERE"):
+            return "WHERE"
+        if self.keyword("GROUP") and self.index + 1 < len(self.tokens):
+            token = self.tokens[self.index + 1]
+            if token.kind == "IDENT" and token.text.upper() == "BY":
+                return "GROUP BY"
+        if self.keyword("HAVING"):
+            return "HAVING"
+        if self.keyword("ORDER") and self.index + 1 < len(self.tokens):
+            token = self.tokens[self.index + 1]
+            if token.kind == "IDENT" and token.text.upper() == "BY":
+                return "ORDER BY"
+        if self.keyword("LIMIT"):
+            return "LIMIT"
+        if self.keyword("OFFSET"):
+            return "OFFSET"
+        return None
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
         terms: list[SelectTerm] = []

@@ -145,7 +145,7 @@ def test_sadness_query_crosses_facets_ctes_unicode_random_and_aggregation() -> N
             "Expected a scalar field, literal, function, or parenthesised expression",
         ),
         ("SELECT id FROM @yt_sql_fixture ORDER BY id DESC ASC", "Unexpected token 'ASC'."),
-        ("SELECT id FROM @yt_sql_fixture LIMIT 1 OFFSET 1 OFFSET 2", "Unexpected token"),
+        ("SELECT id FROM @yt_sql_fixture LIMIT 1 OFFSET 1 OFFSET 2", "OFFSET is repeated or appears outside the canonical SELECT clause order"),
         ("WITH a AS () SELECT id FROM a", "CTE query cannot be empty."),
         ("WITH a AS (SELECT id FROM @yt_sql_fixture), SELECT id FROM a", "Expected AS after CTE name."),
         ("SELECT id FROM @yt_sql_fixture UNION", "UNION requires a SELECT query on both sides"),

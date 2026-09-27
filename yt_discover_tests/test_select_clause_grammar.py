@@ -41,7 +41,10 @@ def test_ordinary_select_clause_order_is_accepted(query: str) -> None:
     ),
 )
 def test_ordinary_select_clauses_cannot_be_reordered_or_repeated(query: str, token: str) -> None:
-    with pytest.raises(QuerySyntaxError, match=re.escape(f"Unexpected token '{token}'.")):
+    with pytest.raises(
+        QuerySyntaxError,
+        match=rf"{token}(?: BY)? is repeated or appears outside the canonical SELECT clause order",
+    ):
         parse_query(query)
 
 
