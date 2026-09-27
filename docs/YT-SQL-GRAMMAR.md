@@ -1,6 +1,6 @@
 # yt-sql formal grammar contract
 
-`YT-SQL-GRAMMAR.ebnf` is the authoritaive parser-neutral grammar for yt-sql syntax. It describes the accepted syntactic structure of the language independently of the current recursive-descent parser and independently of any future parser library. Parser-generator notation such as Lark or TatSu grammar syntax is therefore never the language specification merely because an implementation happens to use it.
+`YT-SQL-GRAMMAR.ebnf` is the authoritative parser-neutral grammar for yt-sql syntax. It describes the accepted syntactic structure of the language independently of the current recursive-descent parser and independently of any future parser library. Parser-generator notation such as Lark or TatSu grammar syntax is therefore never the language specification merely because an implementation happens to use it.
 
 The grammar has its own monotonic revision number recorded in the EBNF header. Grammar revision 1 is introduced by yt-discover 0.29.15. The grammar revision changes only when accepted yt-sql syntax changes; ordinary Discover implementation, optimiser, backend, diagnostic or semantic changes do not require a grammar revision. A syntax-changing release must update the EBNF, its revision, the conformance coverage and the language reference together.
 

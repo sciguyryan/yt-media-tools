@@ -6,6 +6,17 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Release history
 
+### Discover 0.29.15 - Grammar Authority
+
+- Add the first authoritative parser-neutral EBNF artefact for the accepted yt-sql syntax surface.
+- Define a monotonic yt-sql grammar revision independently of ordinary Discover implementation and semantic releases.
+- Make the formal grammar authoritative for syntactic structure while retaining the language reference as the authority for semantics and context-sensitive rules.
+- Document lexical boundaries, precedence and associativity, syntactic recognition versus executable support, and the treatment of pre-parse parameter substitution.
+- Keep speculative future syntax out of the formal grammar and distinguish unsupported conventional SQL forms from deliberately recognised yt-sql syntax.
+- Define conformance, malformed near-miss, canonical round-trip and future parser-differential testing as the grammar verification strategy.
+- Keep the grammar as a directly maintained first-class artefact rather than generating general user documentation from it.
+- Close the formal grammar format, authority and verification decision represented by issue #17.
+
 ### Discover 0.29.14 - Canonical Form
 
 - Define canonical yt-sql formatting as a parser-independent language contract with semantic parse-format-parse equivalence and formatter idempotence.
