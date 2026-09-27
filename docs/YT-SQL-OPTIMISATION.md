@@ -13,7 +13,7 @@ yt-sql currently distinguishes several related optimisation layers:
 - **Predicate optimisation** simplifies resolved Boolean predicate trees without changing TRUE, FALSE or UNKNOWN results.
 - **Scalar-expression optimisation** simplifies resolved scalar expressions used by projection, ordering and CASE results.
 - **Acquisition optimisation** reduces remote metadata work only where the planner can prove that doing so cannot change the final query result.
-- **Metadata planning** determines which fields and capabilities a query requires and lowers the pruned physical requirements into explicit backend-neutral acquisition stages. It remains separate from semantic query rewriting.
+- **Metadata planning** determines which fields and capabilities a query requires and lowers the pruned physical requirements into explicit backend-agnostic acquisition stages. It remains separate from semantic query rewriting.
 
 The optimiser records material rewrites deterministically. Applicable rewrites are exposed through verbose execution and explain output. The JSON explain field remains named `predicate_optimiser` for compatibility even though its rewrite list now also includes scalar-expression decisions; a future versioned explain schema may adopt a more general name.
 
@@ -288,7 +288,7 @@ The planner analyses required metadata fields recursively through scalar express
 
 Capability-aware planning distinguishes available acquisition stages and can select bounded acquisition only when its preconditions are proven.
 
-Discover now represents metadata work as an ordered backend-neutral physical plan. The semantic stages are `enumerate-identities`, `basic-metadata`, `complete-metadata`, `formats`, `subtitles`, `chapters`, `thumbnails`, `tags`, and `dynamic-raw`. Only stages required by the final physical field set are active, and a statically empty source boundary activates none of them.
+Discover now represents metadata work as an ordered backend-agnostic physical plan. The semantic stages are `enumerate-identities`, `basic-metadata`, `complete-metadata`, `formats`, `subtitles`, `chapters`, `thumbnails`, `tags`, and `dynamic-raw`. Only stages required by the final physical field set are active, and a statically empty source boundary activates none of them.
 
 This representation preserves distinctions even when a backend cannot honour them independently. The current yt-dlp lowering maps identity and basic metadata requirements to flat enumeration and collapses complete metadata plus nested collection/raw requirements into complete JSON extraction. Keeping lowering isolated prevents yt-dlp command-line details from becoming yt-sql semantics.
 
@@ -314,7 +314,7 @@ When the complete WHERE predicate is proven unable to evaluate TRUE, the physica
 
 Field/capability analysis can become more aggressive as the language grows. Potential work includes eliminating acquisition of fields made unnecessary by constant folding, source-boundary planning from inferred temporal predicates, and metadata-acquisition planning based on expression dependency sets.
 
-These optimisations remain separate from semantic rewrites so explain output can state whether a change alters the query tree or only the acquisition plan. The backend-neutral physical acquisition representation now preserves semantic metadata stages before adapter lowering; future backend work may lower safe subsets to youtube-dl, gallery-dl, indexed or API-backed sources while retaining unsupported semantics in the local evaluator. Acquisition scheduling should prefer expected information value per cost where enough evidence exists, and any future concurrent acquisition mode should be explicit, bounded and deterministic.
+These optimisations remain separate from semantic rewrites so explain output can state whether a change alters the query tree or only the acquisition plan. The backend-agnostic physical acquisition representation now preserves semantic metadata stages before adapter lowering; future backend work may lower safe subsets to youtube-dl, gallery-dl, indexed or API-backed sources while retaining unsupported semantics in the local evaluator. Acquisition scheduling should prefer expected information value per cost where enough evidence exists, and any future concurrent acquisition mode should be explicit, bounded and deterministic.
 
 ## Aggregates, GROUP BY, HAVING and FILTER
 

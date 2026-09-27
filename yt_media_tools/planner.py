@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from .acquisition_plan import PhysicalAcquisitionPlan, plan_physical_acquisition
 from .cte_dependencies import plan_cte_dependencies
 from .dates import DateContext
-from .query_model import Binary, Field, Query, SelectTerm
+from .query_model import Binary, Field, OrderTerm, Query, SelectTerm
 from .query_traversal import walk_ast
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .semantic_provability import prove_join_consequences
@@ -377,14 +377,25 @@ def _relation_fields(candidate: Query, alias: str, *, include_unqualified: bool 
     """Return physical fields consumed from one relation in a JOIN query body."""
     prefix = alias + "."
     fields: set[str] = set()
-    for node in walk_ast(candidate, descend=lambda item: not isinstance(item, Query) or item is candidate):
-        if not isinstance(node, Field):
-            continue
-        name = node.name
-        if name.startswith(prefix):
-            fields.add(name[len(prefix) :])
-        elif include_unqualified and "." not in name:
-            fields.add(name)
+
+    def collect(value: object, *, order_aliases: frozenset[str] = frozenset()) -> None:
+        for node in walk_ast(value, descend=lambda item: not isinstance(item, Query) or item is value):
+            if not isinstance(node, Field):
+                continue
+            name = node.name
+            if name in order_aliases:
+                # Explicit SELECT aliases have ORDER BY precedence. Their physical
+                # dependencies are already represented by the projection expression.
+                continue
+            if name.startswith(prefix):
+                fields.add(name[len(prefix) :])
+            elif include_unqualified and "." not in name:
+                fields.add(name)
+
+    collect(replace(candidate, order_by=()))
+    projection_aliases = frozenset(term.alias for term in candidate.select if term.alias is not None)
+    for term in candidate.order_by:
+        collect(term.expression if term.expression is not None else Field(term.field), order_aliases=projection_aliases)
     return frozenset(fields)
 
 
@@ -420,14 +431,36 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
     cte_names = {cte.name for cte in query.ctes}
     uses: list[tuple[str, str | None, Query, str | None]] = []
 
-    def visit(candidate: Query, owner_cte: str | None = None) -> None:
+    def visit(
+        candidate: Query,
+        owner_cte: str | None = None,
+        compound_order_by: tuple[OrderTerm, ...] = (),
+    ) -> None:
+        # Trailing ORDER BY belongs to the completed compound result, but every
+        # contributing branch must acquire the fields needed to evaluate it.
+        # Propagate that requirement into planning views without changing the
+        # executable branch AST or assigning branch-local ordering semantics.
+        effective_order_by = candidate.order_by or compound_order_by
+        if candidate.left_query is not None:
+            visit(candidate.left_query, owner_cte, effective_order_by)
         if candidate.from_source is not None and candidate.from_source not in cte_names:
+            planning_candidate = replace(candidate, order_by=effective_order_by)
             if candidate.joins and candidate.from_alias is not None:
                 local = _relation_use(
-                    candidate, candidate.from_source, candidate.from_facet, candidate.from_alias, primary=True
+                    planning_candidate,
+                    candidate.from_source,
+                    candidate.from_facet,
+                    candidate.from_alias,
+                    primary=True,
                 )
             else:
-                local = replace(candidate, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+                local = replace(
+                    planning_candidate,
+                    ctes=(),
+                    set_operations=(),
+                    limit=None,
+                    offset=0,
+                )
             uses.append((candidate.from_source, candidate.from_facet, local, owner_cte))
         for join in candidate.joins:
             if join.relation.source in cte_names:
@@ -435,11 +468,15 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
             if join.relation.alias is None:
                 continue
             local = _relation_use(
-                candidate, join.relation.source, join.relation.facet, join.relation.alias, primary=False
+                replace(candidate, order_by=effective_order_by),
+                join.relation.source,
+                join.relation.facet,
+                join.relation.alias,
+                primary=False,
             )
             uses.append((join.relation.source, join.relation.facet, local, owner_cte))
         for operation in candidate.set_operations:
-            visit(operation.query, owner_cte)
+            visit(operation.query, owner_cte, effective_order_by)
 
     for cte in query.ctes:
         visit(cte.query, cte.name)

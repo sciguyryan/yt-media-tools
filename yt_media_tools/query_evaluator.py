@@ -1105,6 +1105,21 @@ def _apply_composed_query(
     *,
     relational_optimisation: bool = True,
 ) -> list[dict[str, Any]]:
+    if not query.set_operations and query.left_query is not None:
+        rows = _apply_composed_query(
+            records, query.left_query, relations, physical_requests, relational_optimisation=relational_optimisation
+        )
+        for term in reversed(query.order_by):
+            present = [row for row in rows if canonical_record_value(row, term) is not None]
+            missing = [row for row in rows if canonical_record_value(row, term) is None]
+            present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
+            rows = present + missing
+        if query.offset:
+            rows = rows[query.offset :]
+        if query.limit is not None:
+            rows = rows[: query.limit]
+        return rows
+
     if not query.set_operations:
         if query.joins:
             if query.joins[0].kind in {JoinKind.INNER, JoinKind.LEFT}:
@@ -1121,23 +1136,111 @@ def _apply_composed_query(
             )
         return _apply_query_body(input_records, query)
 
-    left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
-    # A UNION branch is a complete relational query body. Apply its JOIN before
-    # projection just as we do for a standalone query rather than bypassing the
-    # relation operator through the older single-relation UNION path.
-    left_rows = _apply_composed_query(
-        records, left_body, relations, physical_requests, relational_optimisation=relational_optimisation
+    pure_facet_expansion = bool(query.set_operations) and all(
+        operation.facet_expansion for operation in query.set_operations
     )
-    rows = _project_result_rows(left_rows, left_body)
+    if pure_facet_expansion:
+        # Multi-facet OF is one logical source relation expanded across facets.
+        # Reconcile the unprojected rows so ordinary source-field ORDER BY terms
+        # remain available even when they are not part of the SELECT projection.
+        bodies = [replace(query, set_operations=(), order_by=(), limit=None, offset=0, distinct=False, ctes=())]
+        bodies.extend(
+            replace(
+                operation.query,
+                set_operations=(),
+                order_by=(),
+                limit=None,
+                offset=0,
+                distinct=False,
+                ctes=(),
+            )
+            for operation in query.set_operations
+        )
+        rows: list[dict[str, Any]] = []
+        for body in bodies:
+            rows.extend(
+                _apply_composed_query(
+                    records,
+                    body,
+                    relations,
+                    physical_requests,
+                    relational_optimisation=relational_optimisation,
+                )
+            )
+        for term in reversed(query.order_by):
+            present = [row for row in rows if canonical_record_value(row, term) is not None]
+            missing = [row for row in rows if canonical_record_value(row, term) is None]
+            try:
+                present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
+            except TypeError:
+                present.sort(key=lambda row: str(canonical_record_value(row, term)), reverse=term.descending)
+            rows = present + missing
+        if query.distinct:
+            seen: set[tuple[Any, ...]] = set()
+            distinct_rows: list[dict[str, Any]] = []
+            for row in rows:
+                key_values: list[Any] = []
+                for term in query.select:
+                    value = canonical_record_value(row, term)
+                    try:
+                        hash(value)
+                        key_values.append(value)
+                    except TypeError:
+                        key_values.append(repr(value))
+                key = tuple(key_values)
+                if key in seen:
+                    continue
+                seen.add(key)
+                distinct_rows.append(row)
+            rows = distinct_rows
+        if query.offset:
+            rows = rows[query.offset :]
+        if query.limit is not None:
+            rows = rows[: query.limit]
+        return _project_result_rows(
+            rows,
+            replace(query, set_operations=(), order_by=(), limit=None, offset=0, distinct=False),
+        )
+
+    if query.left_query is not None:
+        left_body = query.left_query
+        left_rows = _apply_composed_query(
+            records, left_body, relations, physical_requests, relational_optimisation=relational_optimisation
+        )
+        rows = (
+            list(left_rows)
+            if left_body.set_operations or left_body.left_query is not None
+            else _project_result_rows(left_rows, left_body)
+        )
+    else:
+        left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+        # A UNION branch is a complete relational query body. Apply its JOIN before
+        # projection just as we do for a standalone query rather than bypassing the
+        # relation operator through the older single-relation UNION path.
+        left_rows = _apply_composed_query(
+            records, left_body, relations, physical_requests, relational_optimisation=relational_optimisation
+        )
+        rows = _project_result_rows(left_rows, left_body)
     output_names = tuple(term.output_name for term in query.select)
 
     for operation in query.set_operations:
         branch = operation.query
-        branch_body = replace(branch, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
-        branch_result = _apply_composed_query(
-            records, branch_body, relations, physical_requests, relational_optimisation=relational_optimisation
-        )
-        branch_rows = _project_result_rows(branch_result, branch_body)
+        if operation.grouped or branch.set_operations or branch.left_query is not None:
+            branch_body = branch
+            branch_result = _apply_composed_query(
+                records, branch_body, relations, physical_requests, relational_optimisation=relational_optimisation
+            )
+            branch_rows = (
+                list(branch_result)
+                if branch_body.set_operations or branch_body.left_query is not None
+                else _project_result_rows(branch_result, branch_body)
+            )
+        else:
+            branch_body = replace(branch, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+            branch_result = _apply_composed_query(
+                records, branch_body, relations, physical_requests, relational_optimisation=relational_optimisation
+            )
+            branch_rows = _project_result_rows(branch_result, branch_body)
         branch_names = tuple(term.output_name for term in branch.select)
         remapped = [
             {

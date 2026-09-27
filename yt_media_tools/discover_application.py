@@ -84,6 +84,7 @@ from yt_media_tools.tools import ToolRegistry, ToolStatus, check_tools, format_t
 from yt_media_tools.ytdlp_runtime import resolve_cookie_file
 from yt_media_tools.youtubejs import (
     YouTubeJsError,
+    enumerate_all as enumerate_all_youtubejs,
     enumerate_until_date_boundary as enumerate_youtubejs_until_date_boundary,
 )
 from yt_media_tools.ytdlp import (
@@ -100,6 +101,11 @@ from yt_media_tools.ytdlp import (
     load_metadata,
     shell_join,
 )
+
+
+def _source_boundary_label(source_value: str, facet: str | None) -> str:
+    """Return the user-facing identity of one independently acquired source boundary."""
+    return source_value + (f" OF {facet}" if facet is not None else "")
 
 
 def _metadata_provider_provenance(records: list[dict]) -> dict[str, object]:
@@ -380,7 +386,7 @@ def main(argv: list[str] | None = None) -> int:
     if multi_source:
         plan = AcquisitionPlan(
             "full",
-            "UNION composition spans multiple physical source/facet requests; each request is acquired independently before logical reconciliation",
+            "UNION composition requires complete logical reconciliation; physical source/facet acquisition remains independently planned",
         )
     explicit_prefilters = bool(
         args.items or args.date or args.after or args.before or any(item.strip() for item in args.match_filter)
@@ -422,8 +428,8 @@ def main(argv: list[str] | None = None) -> int:
     if not args.offline and not args.dry_run and args.acquisition != "full" and cost_class == "very-high":
         if query.set_operations or any(cte.query.set_operations for cte in query.ctes):
             warning = (
-                "yt-discover: warning: UNION composition currently acquires each contributing physical source/facet request "
-                "conservatively before logical reconciliation; this may require substantial metadata acquisition."
+                "yt-discover: warning: UNION composition requires conservative logical reconciliation after its "
+                "independently planned source/facet acquisitions; this query may still require substantial metadata acquisition."
             )
         else:
             warning = (
@@ -652,26 +658,172 @@ def main(argv: list[str] | None = None) -> int:
                 source_records = [dict(item.record) for item in cached_items]
                 source_stats = AcquisitionStats()
             else:
-                source_command = build_metadata_command(
-                    source_spec.canonical_url,
-                    cookies_file=cookies_file,
-                    playlist_items=args.items,
-                    date=args.date,
-                    date_after=args.after,
-                    date_before=args.before,
-                    match_filters=tuple(item for item in args.match_filter if item.strip()),
-                )
-                _verbose(args.verbose, f"Acquiring UNION source {source_value} with yt-dlp...")
-                try:
-                    semantic_progress = _DetailedMetadataProgress(level=args.verbose, total=None)
-                    semantic_progress.start()
-                    source_records, source_stats = load_metadata(source_command, progress=semantic_progress.backend)
-                    semantic_progress.complete(source_stats.attempted)
-                except YtDlpError as exc:
-                    print(f"Error: {exc}.", file=sys.stderr)
-                    return 1
-                if metadata_cache is not None:
-                    metadata_cache.put_many(source_spec.canonical_url, source_records)
+                facet_capabilities = source_capabilities(source_spec).facet_capabilities(source_spec.facet)
+                can_enumerate = facet_capabilities.cheaply_enumerates_identities
+                flat_entries: list[dict] = []
+                enumeration_stats_for_source: EnumerationStats | None = None
+                if can_enumerate:
+                    use_youtubejs = (
+                        args.backend in {"auto", "youtubejs"}
+                        and tools.youtubejs_available
+                        and source_capabilities(source_spec).source_family == "youtube-channel"
+                    )
+                    progress = _enumeration_progress(
+                        args.verbose,
+                        context=(
+                            f"Complete YouTube.js enumeration for {_source_boundary_label(source_value, request_facet)}"
+                            if use_youtubejs
+                            else f"Complete yt-dlp enumeration for {_source_boundary_label(source_value, request_facet)}"
+                        ),
+                        warn_threshold=args.warn_source_size,
+                        acquisition_observability=not branch_plan.physical_acquisition.requires_detailed_metadata,
+                    )
+                    try:
+                        if use_youtubejs:
+                            _verbose(
+                                args.verbose,
+                                f"Enumerating {_source_boundary_label(source_value, request_facet)}"
+                                + " completely with YouTube.js...",
+                            )
+                            flat_entries, enumeration_stats_for_source = enumerate_all_youtubejs(
+                                project_root,
+                                source_spec.canonical_url,
+                                dates=date_context,
+                                progress=progress,
+                                cookies_file=cookies_file,
+                            )
+                        else:
+                            flat_command = build_lazy_flat_command(source_spec.canonical_url, cookies_file=cookies_file)
+                            _verbose(
+                                args.verbose,
+                                f"Enumerating {_source_boundary_label(source_value, request_facet)}"
+                                + " completely with yt-dlp lightweight metadata...",
+                            )
+                            flat_entries, enumeration_stats_for_source = enumerate_all_flat(
+                                flat_command,
+                                progress=progress,
+                            )
+                    except YouTubeJsError as exc:
+                        if args.backend == "youtubejs":
+                            print(f"Error: YouTube.js enumeration failed: {exc}.", file=sys.stderr)
+                            return 1
+                        print(
+                            f"yt-discover: YouTube.js enumeration failed for {_source_boundary_label(source_value, request_facet)}; "
+                            f"falling back to yt-dlp lightweight enumeration ({exc}).",
+                            file=sys.stderr,
+                        )
+                        flat_command = build_lazy_flat_command(source_spec.canonical_url, cookies_file=cookies_file)
+                        try:
+                            flat_entries, enumeration_stats_for_source = enumerate_all_flat(
+                                flat_command,
+                                progress=_enumeration_progress(
+                                    args.verbose,
+                                    context=(
+                                        f"Complete yt-dlp enumeration for {_source_boundary_label(source_value, request_facet)}"
+                                    ),
+                                    warn_threshold=args.warn_source_size,
+                                    acquisition_observability=not branch_plan.physical_acquisition.requires_detailed_metadata,
+                                ),
+                            )
+                        except YtDlpError as fallback_exc:
+                            print(f"Error: {fallback_exc}.", file=sys.stderr)
+                            return 1
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
+
+                    candidate_ids: list[str] = []
+                    seen_ids: set[str] = set()
+                    for entry in flat_entries:
+                        video_id = entry.get("id")
+                        if not (isinstance(video_id, str) and video_id and video_id not in seen_ids):
+                            continue
+                        seen_ids.add(video_id)
+                        if rejects_at_enumeration(branch_plan.predicate_stages, entry):
+                            continue
+                        candidate_ids.append(video_id)
+
+                    if branch_plan.physical_acquisition.requires_detailed_metadata:
+                        specialised_providers = _specialised_metadata_providers(
+                            physical_plan=branch_plan.physical_acquisition,
+                            resolution_records=flat_entries,
+                            cookies_file=cookies_file,
+                        )
+                        try:
+                            source_records, source_stats, branch_cache_stats = _cached_or_refresh_metadata(
+                                cache=metadata_cache,
+                                source_url=source_spec.canonical_url,
+                                video_ids=candidate_ids,
+                                required_fields=set(branch_plan.metadata_requirements.detailed_fields),
+                                verbose=args.verbose,
+                                cookies_file=cookies_file,
+                                specialised_provider=specialised_providers[0] if specialised_providers else None,
+                                specialised_fallback_providers=specialised_providers[1:],
+                                project_root=Path(__file__).resolve().parent.parent,
+                            )
+                        except YtDlpError as exc:
+                            print(f"Error: {exc}.", file=sys.stderr)
+                            return 1
+                        cache_stats = CacheStats(
+                            examined=cache_stats.examined + branch_cache_stats.examined,
+                            hits=cache_stats.hits + branch_cache_stats.hits,
+                            stale=cache_stats.stale + branch_cache_stats.stale,
+                            misses=cache_stats.misses + branch_cache_stats.misses,
+                            refreshed=cache_stats.refreshed + branch_cache_stats.refreshed,
+                            written=cache_stats.written + branch_cache_stats.written,
+                        )
+                        flat_by_id = {
+                            entry.get("id"): entry
+                            for entry in flat_entries
+                            if isinstance(entry.get("id"), str) and entry.get("id")
+                        }
+                        for raw in source_records:
+                            flat = flat_by_id.get(raw.get("id"))
+                            if flat is None:
+                                continue
+                            for field in branch_plan.metadata_requirements.enumeration_fields:
+                                if field == "source_index":
+                                    continue
+                                if field in flat:
+                                    raw[field] = flat[field]
+                    else:
+                        candidate_set = set(candidate_ids)
+                        source_records = [
+                            entry
+                            for entry in flat_entries
+                            if isinstance(entry.get("id"), str) and entry.get("id") in candidate_set
+                        ]
+                        source_stats = (
+                            enumeration_stats_for_source.acquisition
+                            if enumeration_stats_for_source is not None
+                            else AcquisitionStats(available=len(source_records))
+                        )
+                else:
+                    source_command = build_metadata_command(
+                        source_spec.canonical_url,
+                        cookies_file=cookies_file,
+                        playlist_items=args.items,
+                        date=args.date,
+                        date_after=args.after,
+                        date_before=args.before,
+                        match_filters=tuple(item for item in args.match_filter if item.strip()),
+                    )
+                    _verbose(
+                        args.verbose,
+                        f"Acquiring UNION source {source_value} with yt-dlp because the source/facet "
+                        "does not advertise authoritative lightweight identity enumeration...",
+                    )
+                    try:
+                        semantic_progress = _DetailedMetadataProgress(level=args.verbose, total=None)
+                        semantic_progress.start()
+                        source_records, source_stats = load_metadata(source_command, progress=semantic_progress.backend)
+                        semantic_progress.complete(source_stats.attempted)
+                    except YtDlpError as exc:
+                        print(f"Error: {exc}.", file=sys.stderr)
+                        return 1
+                    if metadata_cache is not None:
+                        metadata_cache.put_many(source_spec.canonical_url, source_records)
+
             source_record_counts[(source_value, request_facet)] = len(source_records)
             resolutions = observed_ytdlp_resolutions(source_records)
             source_backend_resolutions[(source_value, request_facet)] = resolutions

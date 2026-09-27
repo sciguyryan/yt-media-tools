@@ -6,6 +6,17 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Release history
 
+### Discover 0.29.12 - Grammar Freeze
+
+- Finalise the `SELECT` and compound-query grammar review, preserving the established ordinary clause order, `LIMIT ... OFFSET ...` slicing, standalone `OFFSET`, contextual-keyword identifiers and deterministic rejection of repeated or reordered clauses.
+- Add explicit parenthesised compound-query grouping with branch-local ordering and slicing, while trailing `ORDER BY`, `LIMIT` and `OFFSET` on an unparenthesised set expression apply to the completed compound result.
+- Define compound-result `ORDER BY` against exported result columns, including projection aliases and scalar expressions, while rejecting numeric ordinals and branch-internal field leakage.
+- Add comma-separated multi-facet `OF` syntax for primary source relations with deterministic ordered facet composition, global `DISTINCT`, completed-result ordering and slicing, and preserved per-facet identity, provenance and acquisition semantics.
+- Preserve independent source-boundary acquisition and provider selection across compound composition, including source/facet-specific progress and large-source enumeration warnings.
+- Reconcile malformed-query diagnostics so accidental parser behaviour is not retained as a compatibility contract.
+- Expand grammar, formatter, optimiser-equivalence, acquisition-planning and torture coverage for grouping, clause ordering, result scope, multi-facet composition and malformed syntax.
+- Close the `SELECT` and compound-query grammar review represented by issue #9.
+
 ### Discover 0.29.11 - Backend Boundaries
 
 - Confirm `OF` as the backend-agnostic yt-sql facet syntax and preserve its distinction between external source/facet selection and already-materialised CTE relations.

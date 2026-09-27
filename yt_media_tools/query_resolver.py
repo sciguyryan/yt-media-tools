@@ -1225,6 +1225,16 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
 
     order_terms: list[OrderTerm] = []
     for term in query.order_by:
+        if (
+            isinstance(term.expression, Literal)
+            and isinstance(term.expression.value, int)
+            and not isinstance(term.expression.value, bool)
+        ):
+            raise QuerySemanticError(
+                source,
+                "ORDER BY ordinals are not supported; order by a field, alias or scalar expression instead.",
+                term.position,
+            )
         if term.expression is not None:
             expression = _resolve_scalar_expression(term.expression, schema, source, context, explicit_aliases)
             field_text = format_scalar_expression(expression)
@@ -1306,6 +1316,16 @@ def _resolve_union_order(
     """Resolve global UNION ordering against the reconciled result relation."""
     terms: list[OrderTerm] = []
     for term in order_by:
+        if (
+            isinstance(term.expression, Literal)
+            and isinstance(term.expression.value, int)
+            and not isinstance(term.expression.value, bool)
+        ):
+            raise QuerySemanticError(
+                source,
+                "ORDER BY ordinals are not supported; order by a field, alias or scalar expression instead.",
+                term.position,
+            )
         expression = _resolve_scalar_expression(term.expression, schema, source, context)
         field_text = format_scalar_expression(expression)
         kind = _scalar_kind(expression)
@@ -1339,16 +1359,38 @@ def _resolve_composed_query(
             return replace(resolved_body, from_alias=prepared.from_alias, joins=prepared.joins)
         return _resolve_query_body(body, schema, context)
 
-    if not query.set_operations:
+    if not query.set_operations and query.left_query is None:
         return resolve_body(replace(query, ctes=(), set_operations=()))
 
-    # ORDER BY/LIMIT/OFFSET belong to the complete set result, not the first branch.
-    left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
-    left = resolve_body(left_body)
+    # A parenthesised left primary retains its own complete query semantics.
+    if query.left_query is not None:
+        left = _resolve_composed_query(
+            query.left_query,
+            physical_schema=physical_schema,
+            cte_schemas=cte_schemas,
+            context=context,
+            source_schemas=source_schemas,
+        )
+    else:
+        # Unparenthesised ORDER BY/LIMIT/OFFSET belong to the complete set result,
+        # not the first branch.
+        left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+        left = resolve_body(left_body)
     common_terms = list(left.select)
     resolved_ops: list[SetOperation] = []
     for operation in query.set_operations:
-        branch = resolve_body(replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0))
+        if operation.grouped or operation.query.set_operations or operation.query.left_query is not None:
+            branch = _resolve_composed_query(
+                operation.query,
+                physical_schema=physical_schema,
+                cte_schemas=cte_schemas,
+                context=context,
+                source_schemas=source_schemas,
+            )
+        else:
+            branch = resolve_body(
+                replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+            )
         if len(branch.select) != len(common_terms):
             raise QuerySemanticError(
                 query.source,
@@ -1367,11 +1409,30 @@ def _resolve_composed_query(
                 ) from None
             reconciled.append(replace(left_term, kind=kind))
         common_terms = reconciled
-        resolved_ops.append(SetOperation(branch, operation.all, operation.position))
+        resolved_ops.append(
+            SetOperation(branch, operation.all, operation.position, operation.facet_expansion, operation.grouped)
+        )
 
     left = replace(left, select=tuple(common_terms))
-    result_schema = _query_result_schema(left)
+    pure_facet_expansion = bool(query.set_operations) and all(
+        operation.facet_expansion for operation in query.set_operations
+    )
+    # Multi-facet OF is source-relation sugar, so retain the ordinary source-field
+    # ORDER BY scope of the unexpanded query. Explicit UNION continues to order
+    # against its reconciled projected result until #121 defines broader rules.
+    result_schema = physical_schema if pure_facet_expansion else _query_result_schema(left)
     order_by = _resolve_union_order(query.order_by, result_schema, query.source, context)
+    if query.left_query is not None:
+        return replace(
+            query,
+            ctes=(),
+            select=tuple(common_terms),
+            left_query=replace(left, select=tuple(common_terms)),
+            order_by=order_by,
+            limit=query.limit,
+            offset=query.offset,
+            set_operations=tuple(resolved_ops),
+        )
     return replace(
         left,
         order_by=order_by,
@@ -1395,7 +1456,13 @@ def resolve_query(
     # Preserve the historical direct resolver path for the overwhelmingly common
     # uncomposed query shape. Relational preparation is semantically unnecessary
     # when there is no source relation, CTE, JOIN or set composition.
-    if not query.ctes and not query.joins and not query.set_operations and query.from_source is None:
+    if (
+        not query.ctes
+        and not query.joins
+        and not query.set_operations
+        and query.left_query is None
+        and query.from_source is None
+    ):
         return _resolve_query_body(query, schema, context)
 
     resolved_ctes: list[CommonTableExpression] = []

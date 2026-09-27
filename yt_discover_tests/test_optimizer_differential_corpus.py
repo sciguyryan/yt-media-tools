@@ -347,7 +347,10 @@ def test_semantic_corpus_detects_representative_unsafe_mutants(original: str, mu
 MALFORMED = (
     ("SELECT id FROM @fixture WHERE title IN ('a',, 'b')", "Expected a value."),
     ("SELECT id FROM @fixture ORDER BY id DESC ASC", "Unexpected token 'ASC'."),
-    ("SELECT id FROM @fixture LIMIT 1 OFFSET 1 OFFSET 2", "Unexpected token"),
+    (
+        "SELECT id FROM @fixture LIMIT 1 OFFSET 1 OFFSET 2",
+        "OFFSET is repeated or appears outside the canonical SELECT clause order",
+    ),
     ("SELECT CASE ELSE 1 END FROM @fixture", "Only searched CASE is supported"),
     ("SELECT COUNT(*) FILTER (WHERE) FROM @fixture", "Expected a field name."),
     ("SELECT RANDOM(1, 2) FROM @fixture", "RANDOM accepts zero or one seed argument"),

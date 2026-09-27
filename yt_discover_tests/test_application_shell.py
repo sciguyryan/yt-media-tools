@@ -44,3 +44,9 @@ def test_parser_retains_established_programme_surface() -> None:
         "--offline",
         "--param",
     } <= option_strings
+
+
+def test_source_boundary_progress_label_distinguishes_facets() -> None:
+    assert discover_application._source_boundary_label("@Insym", "videos") == "@Insym OF videos"
+    assert discover_application._source_boundary_label("@Insym", "live") == "@Insym OF live"
+    assert discover_application._source_boundary_label("@Insym", None) == "@Insym"

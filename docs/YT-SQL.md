@@ -6,18 +6,27 @@ The preferred filename extension for saved query text is `.yt-sql`.
 
 ## Current grammar surface
 
-A complete yt-sql query has the following broad form:
+A non-compound yt-sql query has the following broad clause order:
 
 ```text
+[WITH <cte> [, ...]]
 [SELECT [DISTINCT] <projection> [, ...]]
-[FROM <source>]
+[FROM <relation> [<join> ...]]
 [WHERE <expression>]
+[GROUP BY <scalar-expression> [, ...]]
+[HAVING <aggregate-predicate>]
 [ORDER BY <scalar-expression> [ASC|DESC] [, ...]]
 [LIMIT <positive integer>]
 [OFFSET <non-negative integer>]
 ```
 
-If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested.
+This order is the language contract. Clauses cannot be repeated or reordered. In particular, slicing uses `LIMIT ... OFFSET ...`; the alternative `OFFSET ... LIMIT ...` spelling is not accepted. `OFFSET` may also be used without `LIMIT`, including `OFFSET 0`. Supporting multiple clause orders would add parser and formatter complexity without adding expressive power.
+
+If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested. The established predicate-only compatibility form also remains supported. `HAVING` is meaningful only for aggregate or grouped queries, subject to the aggregate rules below.
+
+`UNION` and `UNION ALL` introduce a compound-query boundary. Trailing `ORDER BY`, `LIMIT` and `OFFSET` after an unparenthesised set expression apply to the complete compound result; parenthesised query-expression boundaries provide branch-local ordering and slicing. The full grouping and scope contract is described under Compound query grouping and scope below.
+
+The canonical formatter emits clauses only in the order shown above, omits absent clauses, emits `LIMIT` before `OFFSET` when both are present, and does not preserve rejected alternative orderings.
 
 Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `IS DISTINCT FROM`, `IS NOT DISTINCT FROM`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS NOT TRUE`, `IS FALSE`, `IS NOT FALSE`, `IS UNKNOWN`, `IS NOT UNKNOWN`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons. `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` are NULL-safe comparisons and always return TRUE or FALSE: two NULL operands are not distinct, while exactly one NULL operand is distinct.
 
@@ -37,7 +46,7 @@ Truth-value inspection is total: `<predicate> IS TRUE`, `IS FALSE`, `IS UNKNOWN`
 
 `NOT` evaluates its operand normally and maps TRUE to FALSE, FALSE to TRUE, and UNKNOWN to UNKNOWN. Filtering contexts retain a row only when the final predicate is TRUE; FALSE and UNKNOWN do not pass the filter.
 
-Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Scalar functions `LOWER`, `UPPER`, `LENGTH`, `COALESCE`, `CONCAT`, `CHAR`, `NULLIF`, `GREATEST`, `LEAST`, and `RANDOM` may be nested and may accept scalar expressions as arguments. `CONCAT(text, text [, ...])` concatenates two or more textual expressions in argument order; NULL in any argument yields NULL and non-text arguments are rejected. `CHAR(codepoint [, ...])` constructs text from one or more Unicode scalar values; NULL in any argument yields NULL, and constant surrogate or out-of-range code points are rejected. `NULLIF(a, b)` returns NULL only when `a = b` is TRUE. `GREATEST` and `LEAST` require at least two compatible arguments and return NULL if any argument is NULL; textual extrema use exact normalisation-sensitive Unicode ordering. Projection aliases may be referenced by later `ORDER BY` expressions. Searched `CASE WHEN <predicate> THEN <scalar-expression> ... [ELSE <scalar-expression>] END` is also supported wherever scalar expressions are accepted. CASE conditions use the ordinary yt-sql Boolean predicate language; only TRUE selects a branch, while FALSE and UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL.
+Scalar expressions are accepted in `SELECT` and `ORDER BY`. Arithmetic operators are `+`, `-`, `*`, `/`, and `%`, with unary `+` and `-`, conventional arithmetic precedence, and parentheses. Arithmetic is numeric and NULL-propagating; division or modulo by zero yields NULL rather than aborting the query. Scalar functions `LOWER`, `UPPER`, `LENGTH`, `COALESCE`, `CONCAT`, `CHAR`, `NULLIF`, `GREATEST`, `LEAST`, and `RANDOM` may be nested and may accept scalar expressions as arguments. `CONCAT(text, text [, ...])` concatenates two or more textual expressions in argument order; NULL in any argument yields NULL and non-text arguments are rejected. `CHAR(codepoint [, ...])` constructs text from one or more Unicode scalar values; NULL in any argument yields NULL, and constant surrogate or out-of-range code points are rejected. `NULLIF(a, b)` returns NULL only when `a = b` is TRUE. `GREATEST` and `LEAST` require at least two compatible arguments and return NULL if any argument is NULL; textual extrema use exact normalisation-sensitive Unicode ordering. Explicit projection aliases may be referenced anywhere inside later `ORDER BY` expressions and take precedence over same-spelled input fields. In multi-relation queries, an unqualified `ORDER BY` name that is not a projection alias must resolve to exactly one visible input relation; otherwise it must be qualified with a relation alias. Bare integer `ORDER BY` terms are not positional ordinals and are rejected; use a field, alias or scalar expression instead. Other constant scalar expressions remain valid ordering expressions. Searched `CASE WHEN <predicate> THEN <scalar-expression> ... [ELSE <scalar-expression>] END` is also supported wherever scalar expressions are accepted. CASE conditions use the ordinary yt-sql Boolean predicate language; only TRUE selects a branch, while FALSE and UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL.
 
 Date/time helpers include `TODAY()` and `NOW()` together with yt-sql relative date/time syntax. Query parameters use `:name` placeholders bound with repeatable `--param name=value` options.
 
@@ -324,19 +333,22 @@ An explicit conformance feature manifest records the current language surface an
 
 ## Source facets with OF
 
-`OF` requests a logical collection or facet from a physical source without encoding an extractor-specific tab model into yt-sql:
+`OF` requests one or more logical collections or facets from a physical source without encoding a backend-specific tab model into yt-sql:
 
 ```text
 SELECT id FROM @whatdamath OF videos
 SELECT id FROM @whatdamath OF shorts
 SELECT id FROM @whatdamath OF live
+SELECT id FROM @whatdamath OF videos, live
 ```
 
-Bare `FROM @source` remains valid and requests the source's default collection. The YouTube channel adapter advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
+A comma-separated `OF` list is syntactic sugar for the corresponding facets composed with `UNION ALL` in the written order. Rows are not implicitly deduplicated, and every expanded branch retains its own logical source, cache and provenance identity. Physical acquisition remains independently planned for every contributing facet: compound composition may require complete logical reconciliation, but it does not by itself force full detailed yt-dlp extraction or disable an eligible specialised provider. Because the facet list is source-relation sugar rather than an explicit set-operation contract, trailing `ORDER BY` retains ordinary source-field visibility across the expanded facets, including fields that are not part of the projection. Query-level `WHERE` and grouping semantics are applied to each expanded facet input before composition. Projection is evaluated over the composed rows, and `SELECT DISTINCT` removes duplicate projected rows across the complete facet set rather than independently within each facet. Trailing `ORDER BY`, `LIMIT` and `OFFSET` apply to the completed result. The canonical formatter retains the comma-separated `OF` form because its surrounding-query semantics, including global `DISTINCT` and source-field `ORDER BY` visibility, are deliberately stronger than an ordinary explicit `UNION ALL` expansion.
 
-The grammar is extractor-agnostic. Other yt-dlp extractors may advertise different logical facets in later adapter work without changing the core `OF` syntax.
+Bare `FROM @source` remains valid and requests the source's default collection. The YouTube channel source family advertises `videos`, `shorts` and `live`; unsupported facets and source kinds fail explicitly. Duplicate facets in one `OF` list are rejected rather than acquiring the same logical relation twice accidentally. Multi-facet `OF` is supported only for the primary physical `FROM` relation; JOIN relations remain single-facet until compound relation operands have an explicit grammar contract. `OF` applies only to physical sources, not CTE result relations. The CLI `--tab` option remains a compatibility surface and conflicting `OF` and `--tab` requests are rejected rather than silently choosing one.
 
-Source resolution is deliberately layered. A physical source is classified first, an adapter advertises its deterministic logical capabilities, and only then is an explicit facet mapped to an acquisition target. `--tab` is translated into the same logical facet request for backwards compatibility rather than taking a second execution path. `--explain` reports the selected adapter and advertised facets.
+The grammar is backend-agnostic. Other source families may advertise different logical facets without changing the core `OF` syntax.
+
+Source resolution is deliberately layered. A physical source is classified first, its source family advertises deterministic logical capabilities, and only then is an explicit facet mapped to an acquisition target. `--tab` is translated into the same logical facet request for backwards compatibility rather than taking a second execution path. `--explain` reports the selected source family and advertised facets.
 
 ## Aggregate queries
 
@@ -351,6 +363,20 @@ yt-sql does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arg
 ## Planned analytical expansion
 
 General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, and the first aggregate query architecture are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+
+## Compound query grouping and scope
+
+`UNION` and `UNION ALL` compose complete query primaries. Unparenthesised trailing `ORDER BY`, `LIMIT` and `OFFSET` apply to the completed compound result. Parentheses create an explicit query-expression boundary, allowing a branch to perform its own ordering and slicing before set composition.
+
+```text
+(SELECT id FROM @a ORDER BY upload_date DESC LIMIT 10)
+UNION ALL
+(SELECT id FROM @b ORDER BY upload_date DESC LIMIT 10)
+ORDER BY id ASC
+LIMIT 10
+```
+
+Branch-local `ORDER BY`, `LIMIT` or `OFFSET` therefore require parentheses. Parenthesised compound expressions may themselves participate as `UNION` branches, and canonical formatting preserves parentheses whenever they carry that grouping boundary. A leading `WITH` remains scoped to its complete following query expression; nested `WITH` clauses remain unsupported. Derived tables in `FROM (...)` are not part of this grammar.
 
 ## Common table expressions
 
@@ -390,7 +416,7 @@ LIMIT 50
 
 All branches must project the same number of columns. The first branch defines the exported column names. Later aliases do not rename the set result. Compatible numeric kinds may reconcile to a common numeric kind; incompatible kinds are rejected. Plain `UNION` removes duplicate projected rows using exact yt-sql scalar values, including normalisation-sensitive Unicode strings. `UNION ALL` retains duplicates and branch order.
 
-`ORDER BY`, `OFFSET` and `LIMIT` written after the final branch apply to the complete composed result. Branch-local ordering and limiting are not a separate grammar surface. Set composition disables source-order early LIMIT acquisition because every contributing branch can affect the final result.
+`ORDER BY`, `OFFSET` and `LIMIT` written after the final branch apply to the complete composed result. Compound-result `ORDER BY` expressions are resolved against the exported result relation: the first branch defines the available result-column names, aliases may be ordered directly, and scalar expressions may use those exported columns. Fields that exist only inside a branch are not visible after the set boundary. Numeric `ORDER BY` ordinals are not supported; use a field, alias or scalar expression instead. Branch-local ordering and slicing require a parenthesised query-expression boundary. Set composition disables source-order early LIMIT acquisition because every contributing branch can affect the final result.
 
 Physical sources are acquired independently. In automatic source mode, a quoted non-YouTube URL is preserved as a generic yt-dlp extractor source, while YouTube handles, channel URLs and playlist URLs retain their existing specialised classification. Source identity remains attached internally through normalisation so each branch sees only the records belonging to its declared `FROM` source. A missing value from one extractor is NULL when the field is otherwise part of the logical schema. Dynamic fields are resolved per physical source so incompatible extractor-specific types are detected before composition.
 

@@ -28,13 +28,25 @@ def _serialisable(value: Any) -> Any:
     return value
 
 
-def project_record(record: dict[str, Any], terms: tuple[SelectTerm, ...]) -> dict[str, Any]:
+def _output_value(record: dict[str, Any], term: SelectTerm, *, materialised: bool) -> Any:
+    """Return a SELECT value without re-evaluating an already materialised result row."""
+    if materialised:
+        return record.get(term.output_name)
+    return canonical_record_value(record, term)
+
+
+def project_record(
+    record: dict[str, Any],
+    terms: tuple[SelectTerm, ...],
+    *,
+    materialised: bool = False,
+) -> dict[str, Any]:
     """Project one record onto the resolved SELECT list."""
-    return {term.output_name: _serialisable(canonical_record_value(record, term)) for term in terms}
+    return {term.output_name: _serialisable(_output_value(record, term, materialised=materialised)) for term in terms}
 
 
-def _line_value(record: dict[str, Any], term: SelectTerm) -> str:
-    value = _serialisable(canonical_record_value(record, term))
+def _line_value(record: dict[str, Any], term: SelectTerm, *, materialised: bool = False) -> str:
+    value = _serialisable(_output_value(record, term, materialised=materialised))
     if value is None:
         return ""
     if isinstance(value, bool):
@@ -89,18 +101,25 @@ def write_records(
     if output_format == "lines" and len(terms) != 1:
         raise ValueError("--format lines requires exactly one selected field")
 
+    materialised = bool(query.set_operations or query.left_query is not None)
     stream, close_stream = _open_output(output_path)
     try:
         if output_format == "lines":
             term = terms[0]
             for record in records:
-                stream.write(_line_value(record, term))
+                stream.write(_line_value(record, term, materialised=materialised))
                 stream.write("\n")
             return
 
         if output_format == "jsonl":
             for record in records:
-                stream.write(json.dumps(project_record(record, terms), ensure_ascii=False, sort_keys=False))
+                stream.write(
+                    json.dumps(
+                        project_record(record, terms, materialised=materialised),
+                        ensure_ascii=False,
+                        sort_keys=False,
+                    )
+                )
                 stream.write("\n")
             return
 
@@ -115,7 +134,7 @@ def write_records(
             )
             writer.writeheader()
             for record in records:
-                writer.writerow(project_record(record, terms))
+                writer.writerow(project_record(record, terms, materialised=materialised))
             return
 
         raise ValueError(f"unsupported output format: {output_format}")

@@ -99,10 +99,10 @@ def _enumeration_progress(
         if level >= 1
         else DEFAULT_ENUMERATION_PROGRESS_INTERVAL
     )
-    large_warning_emitted = False
+    next_large_warning = warn_threshold if warn_threshold > 0 else None
 
     def callback(event: str, stats: AcquisitionStats, detail: str | None) -> None:
-        nonlocal large_warning_emitted
+        nonlocal next_large_warning
         if event == "skipped":
             if acquisition_observability:
                 _verbose(level, f"Skipped inaccessible entry: {detail}.")
@@ -112,14 +112,14 @@ def _enumeration_progress(
         count = stats.available
         if acquisition_observability and level >= 2:
             _verbose(level, f"Available entry {count}: {detail}", minimum=2)
-        if warn_threshold and not large_warning_emitted and count >= warn_threshold:
+        if next_large_warning is not None and count >= next_large_warning:
             print(
                 f"yt-discover: large-source warning: {context} has already observed {count} items and is still enumerating "
-                f"(configured warning threshold: {warn_threshold}).",
+                f"(configured warning interval: {warn_threshold}).",
                 file=sys.stderr,
                 flush=True,
             )
-            large_warning_emitted = True
+            next_large_warning = ((count // warn_threshold) + 1) * warn_threshold
         if count == 1 and level >= 1:
             _verbose(level, f"{context}: observed first source item.")
         elif count and count % interval == 0:

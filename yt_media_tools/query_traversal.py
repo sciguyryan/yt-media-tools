@@ -91,6 +91,8 @@ def ast_children(node: Any) -> tuple[Any, ...]:
         return (node.predicate,)
     if isinstance(node, Query):
         children: list[Any] = []
+        if node.left_query is not None:
+            children.append(node.left_query)
         if node.predicate is not None:
             children.append(node.predicate)
         children.extend(node.order_by)

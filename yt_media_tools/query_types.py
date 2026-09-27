@@ -1,7 +1,7 @@
 """Resolved yt-sql type declarations shared by semantic layers.
 
 The language type model includes scalar, collection and structured values. Keep
-these contracts backend-neutral so source adapters can describe what they expose
+these contracts backend-agnostic so source adapters can describe what they expose
 without defining yt-sql semantics themselves.
 """
 

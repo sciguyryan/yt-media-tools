@@ -374,6 +374,7 @@ class Parser:
         select: tuple[SelectTerm, ...] = ()
         from_source: str | None = None
         from_facet: str | None = None
+        additional_from_facets: tuple[tuple[str, int], ...] = ()
         from_alias: str | None = None
         joins: list[JoinClause] = []
         distinct = False
@@ -382,6 +383,7 @@ class Parser:
         having = None
         ctes: list[CommonTableExpression] = []
         set_operations: list[SetOperation] = []
+        left_query: Query | None = None
 
         def at_end() -> bool:
             return self.current.kind == "EOF" or (stop_at_rparen and self.current.kind == "RPAREN")
@@ -418,19 +420,29 @@ class Parser:
             if not at_end():
                 predicate = self.parse_or()
         else:
-            if self.consume_keyword("SELECT"):
+            if self.current.kind == "LPAREN":
+                self.advance()
+                if self.current.kind == "RPAREN":
+                    raise QuerySyntaxError(self.source, "Parenthesised query cannot be empty.", self.current.position)
+                left_query = self.parse_query(stop_at_rparen=True, allow_with=False)
+                self.expect("RPAREN", "Expected ')' after parenthesised query.")
+            elif self.consume_keyword("SELECT"):
                 distinct = bool(self.consume_keyword("DISTINCT"))
                 select = self.parse_select_list()
 
-            if self.consume_keyword("FROM"):
-                relation = self.parse_relation_reference()
+            if left_query is None and self.consume_keyword("FROM"):
+                relations = self.parse_relation_references()
+                relation = relations[0]
                 from_source = relation.source
                 from_facet = relation.facet
+                additional_from_facets = tuple(
+                    (item.facet, item.position) for item in relations[1:] if item.facet is not None
+                )
                 from_alias = relation.alias
                 while self._join_starts_here():
                     joins.append(self.parse_join_clause())
 
-            if self.consume_keyword("WHERE"):
+            if left_query is None and self.consume_keyword("WHERE"):
                 if (
                     at_end()
                     or self.keyword("GROUP")
@@ -459,11 +471,11 @@ class Parser:
                     )
                 predicate = self.parse_or()
 
-        if self.consume_keyword("GROUP"):
+        if left_query is None and self.consume_keyword("GROUP"):
             self.expect_keyword("BY", "Expected BY after GROUP.")
             group_by = self.parse_group_by()
 
-        if self.consume_keyword("HAVING"):
+        if left_query is None and self.consume_keyword("HAVING"):
             if not group_by and not select:
                 raise QuerySyntaxError(
                     self.source, "HAVING requires an aggregate SELECT or GROUP BY.", self.current.position
@@ -500,17 +512,53 @@ class Parser:
             )
 
         if not where_only and not set_branch:
+            for facet, facet_position in additional_from_facets:
+                set_operations.append(
+                    SetOperation(
+                        Query(
+                            predicate,
+                            (),
+                            None,
+                            self.source,
+                            select,
+                            from_source,
+                            distinct,
+                            0,
+                            group_by,
+                            having,
+                            (),
+                            (),
+                            facet,
+                            from_alias,
+                            tuple(joins),
+                        ),
+                        True,
+                        facet_position,
+                        True,
+                    )
+                )
+
             while self.consume_keyword("UNION"):
                 union_position = self.tokens[self.index - 1].position
                 union_all = bool(self.consume_keyword("ALL"))
-                branch = self.parse_query(
-                    stop_at_rparen=stop_at_rparen,
-                    allow_with=False,
-                    set_branch=True,
-                )
-                if not branch.select:
+                grouped = self.current.kind == "LPAREN"
+                if grouped:
+                    self.advance()
+                    if self.current.kind == "RPAREN":
+                        raise QuerySyntaxError(
+                            self.source, "Parenthesised UNION branch cannot be empty.", self.current.position
+                        )
+                    branch = self.parse_query(stop_at_rparen=True, allow_with=False)
+                    self.expect("RPAREN", "Expected ')' after parenthesised UNION branch.")
+                else:
+                    branch = self.parse_query(
+                        stop_at_rparen=stop_at_rparen,
+                        allow_with=False,
+                        set_branch=True,
+                    )
+                if not branch.select and branch.left_query is None:
                     raise QuerySyntaxError(self.source, "UNION requires a SELECT query on both sides.", union_position)
-                set_operations.append(SetOperation(branch, union_all, union_position))
+                set_operations.append(SetOperation(branch, union_all, union_position, False, grouped))
 
         if self.consume_keyword("ORDER"):
             self.expect_keyword("BY", "Expected BY after ORDER.")
@@ -535,6 +583,13 @@ class Parser:
             self.advance()
 
         if not at_end():
+            clause = self._statement_clause_at_current()
+            if clause is not None:
+                raise QuerySyntaxError(
+                    self.source,
+                    f"{clause} is repeated or appears outside the canonical SELECT clause order.",
+                    self.current.position,
+                )
             raise QuerySyntaxError(self.source, f"Unexpected token {self.current.text!r}.", self.current.position)
         return Query(
             predicate,
@@ -552,7 +607,34 @@ class Parser:
             from_facet,
             from_alias,
             tuple(joins),
+            left_query,
         )
+
+    def _statement_clause_at_current(self) -> str | None:
+        """Return a statement-level clause introducer at the current token.
+
+        yt-sql keywords are contextual, so this deliberately runs only after
+        the parser has completed the legal statement shape. It improves
+        diagnostics for repeated or backwards clauses without reserving these
+        words inside ordinary expressions or quoted identifiers.
+        """
+        if self.keyword("WHERE"):
+            return "WHERE"
+        if self.keyword("GROUP") and self.index + 1 < len(self.tokens):
+            token = self.tokens[self.index + 1]
+            if token.kind == "IDENT" and token.text.upper() == "BY":
+                return "GROUP BY"
+        if self.keyword("HAVING"):
+            return "HAVING"
+        if self.keyword("ORDER") and self.index + 1 < len(self.tokens):
+            token = self.tokens[self.index + 1]
+            if token.kind == "IDENT" and token.text.upper() == "BY":
+                return "ORDER BY"
+        if self.keyword("LIMIT"):
+            return "LIMIT"
+        if self.keyword("OFFSET"):
+            return "OFFSET"
+        return None
 
     def parse_select_list(self) -> tuple[SelectTerm, ...]:
         terms: list[SelectTerm] = []
@@ -930,22 +1012,54 @@ class Parser:
             token.position,
         )
 
-    def parse_relation_reference(self) -> RelationReference:
-        """Parse a source/facet relation and its optional explicit alias."""
+    def parse_relation_references(self) -> tuple[RelationReference, ...]:
+        """Parse one source with one or more logical facets and an optional alias.
+
+        Multiple ``OF`` facets are syntactic sugar for UNION ALL branches. Keeping
+        each returned relation single-facet preserves the established logical
+        source, cache and provenance identity model below the parser.
+        """
         position = self.current.position
         source = self.parse_from_source()
-        facet = None
+        facets: list[tuple[str | None, int]] = [(None, position)]
         if self.consume_keyword("OF"):
-            facet_token = self.current
-            if facet_token.kind not in {"IDENT", "QIDENT"}:
-                raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
-            facet = str(facet_token.value if facet_token.kind == "QIDENT" else facet_token.text).casefold()
-            self.advance()
+            facets = []
+            while True:
+                facet_token = self.current
+                if facet_token.kind not in {"IDENT", "QIDENT"}:
+                    raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
+                facet = str(facet_token.value if facet_token.kind == "QIDENT" else facet_token.text).casefold()
+                if any(existing == facet for existing, _ in facets):
+                    raise QuerySyntaxError(
+                        self.source,
+                        f"Duplicate facet {facet!r} in OF list.",
+                        facet_token.position,
+                    )
+                facets.append((facet, facet_token.position))
+                self.advance()
+                if self.current.kind != "COMMA":
+                    break
+                self.advance()
+
         alias = None
         if self.consume_keyword("AS"):
             alias_token = self.expect_identifier("Expected a relation alias after AS.")
             alias = alias_token.text
-        return RelationReference(source, facet, alias, position)
+        return tuple(
+            RelationReference(source, facet, alias, position if index == 0 else facet_position)
+            for index, (facet, facet_position) in enumerate(facets)
+        )
+
+    def parse_relation_reference(self) -> RelationReference:
+        """Parse one source/facet relation where multi-facet composition is not valid."""
+        relations = self.parse_relation_references()
+        if len(relations) != 1:
+            raise QuerySyntaxError(
+                self.source,
+                "Multiple OF facets are supported only for the primary FROM relation.",
+                relations[1].position,
+            )
+        return relations[0]
 
     def _join_starts_here(self) -> bool:
         return any(

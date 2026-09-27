@@ -105,6 +105,21 @@ def optimise_query(query: Query, *, source: SourceSpec | None = None) -> Optimis
             for item in cte_result.decisions
         )
 
+    optimised_left_query = None
+    if query.left_query is not None:
+        left_result = optimise_query(query.left_query)
+        optimised_left_query = left_result.query
+        decisions.extend(
+            OptimisationDecision(
+                f"grouped-left-{item.rule}",
+                item.before,
+                item.after,
+                item.proofs,
+                item.evaluation_effect,
+            )
+            for item in left_result.decisions
+        )
+
     optimised_set_operations = []
     for index, operation in enumerate(query.set_operations, start=1):
         branch_result = optimise_query(operation.query)
@@ -162,6 +177,7 @@ def optimise_query(query: Query, *, source: SourceSpec | None = None) -> Optimis
             having=having,
             ctes=tuple(optimised_ctes),
             set_operations=tuple(optimised_set_operations),
+            left_query=optimised_left_query,
         ),
         tuple(decisions),
     )

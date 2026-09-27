@@ -106,6 +106,7 @@ def merge_queries(base: Query, extra: Query) -> Query:
         from_facet,
         extra.from_alias or base.from_alias,
         extra.joins or base.joins,
+        extra.left_query or base.left_query,
     )
 
 

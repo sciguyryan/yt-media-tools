@@ -364,6 +364,8 @@ class SetOperation:
     query: "Query"
     all: bool = False
     position: int = 0
+    facet_expansion: bool = False
+    grouped: bool = False
 
 
 class JoinKind(str, Enum):
@@ -412,3 +414,4 @@ class Query:
     from_facet: str | None = None
     from_alias: str | None = None
     joins: tuple[JoinClause, ...] = ()
+    left_query: "Query | None" = None

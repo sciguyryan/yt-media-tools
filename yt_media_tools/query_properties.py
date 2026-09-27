@@ -8,7 +8,7 @@ proofs rather than inferring safety from incidental execution behaviour.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields as dataclass_fields, is_dataclass, replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -732,10 +732,47 @@ def _fields_in_having(node: Any) -> set[str]:
     return set(analyse_expression(node).required_fields)
 
 
+def _order_aliases(query: Query) -> dict[str, Any]:
+    """Return explicit projection aliases as their pre-resolution scalar expressions."""
+    aliases: dict[str, Any] = {}
+    for term in query.select:
+        if term.alias is None:
+            continue
+        aliases[term.alias] = (
+            term.expression if term.expression is not None else Field(term.field, term.position, term.kind)
+        )
+    return aliases
+
+
+def _expand_order_aliases(expression: Any, aliases: dict[str, Any]) -> Any:
+    """Expand projection aliases for semantic analysis without changing the query AST."""
+    if isinstance(expression, Field) and expression.name in aliases:
+        return aliases[expression.name]
+    if isinstance(expression, tuple):
+        return tuple(_expand_order_aliases(item, aliases) for item in expression)
+    if isinstance(expression, list):
+        return [_expand_order_aliases(item, aliases) for item in expression]
+    if is_dataclass(expression):
+        changes: dict[str, Any] = {}
+        for field_info in dataclass_fields(expression):
+            current = getattr(expression, field_info.name)
+            if is_dataclass(current) or isinstance(current, (tuple, list)):
+                expanded = _expand_order_aliases(current, aliases)
+                if expanded != current:
+                    changes[field_info.name] = expanded
+        return replace(expression, **changes) if changes else expression
+    return expression
+
+
+def _order_expression(query: Query, term: Any) -> Any:
+    expression = term.expression if term.expression is not None else Field(term.field, term.position, term.kind)
+    return _expand_order_aliases(expression, _order_aliases(query))
+
+
 def _required_body_fields(query: Query) -> set[str]:
     fields = _fields_in_predicate(query.predicate)
     for term in query.order_by:
-        fields.update(_fields_in_scalar(term.expression) if term.expression is not None else {term.field})
+        fields.update(_fields_in_scalar(_order_expression(query, term)))
     for term in query.select or ():
         fields.update(_fields_in_scalar(term.expression) if term.expression is not None else {term.field})
     for expression in query.group_by:
@@ -752,6 +789,8 @@ def required_query_fields(query: Query) -> set[str]:
     fields: set[str] = set()
 
     def visit(candidate: Query) -> None:
+        if candidate.left_query is not None:
+            visit(candidate.left_query)
         if (candidate.from_source or "") not in cte_names:
             fields.update(_required_body_fields(candidate))
         for operation in candidate.set_operations:
@@ -765,9 +804,11 @@ def required_query_fields(query: Query) -> set[str]:
 
 def _query_expressions(query: Query) -> tuple[Any, ...]:
     expressions: list[Any] = [query.predicate, query.having]
+    if query.left_query is not None:
+        expressions.extend(_query_expressions(query.left_query))
     expressions.extend(query.group_by)
     expressions.extend(term.expression for term in query.select if term.expression is not None)
-    expressions.extend(term.expression for term in query.order_by if term.expression is not None)
+    expressions.extend(_order_expression(query, term) for term in query.order_by)
     for cte in query.ctes:
         expressions.extend(_query_expressions(cte.query))
     for operation in query.set_operations:
@@ -824,11 +865,7 @@ def analyse_query(query: Query, *, source: SourceSpec | None = None) -> QueryPro
         for term in select_terms
     )
     order_fields = frozenset(
-        field
-        for term in query.order_by
-        for field in (
-            properties_for(term.expression).required_fields if term.expression is not None else frozenset({term.field})
-        )
+        field for term in query.order_by for field in properties_for(_order_expression(query, term)).required_fields
     )
 
     metadata_depth = _max_metadata(*(item.metadata_depth for item in expression_properties))
