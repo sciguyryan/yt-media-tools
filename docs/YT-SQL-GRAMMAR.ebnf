@@ -32,6 +32,51 @@ order-term            = scalar-expression, [ "ASC" | "DESC" ] ;
 limit-clause          = "LIMIT", positive-decimal-integer ;
 offset-clause         = "OFFSET", non-negative-decimal-integer ;
 
+boolean-expression    = boolean-and, { "OR", boolean-and } ;
+boolean-and           = boolean-not, { "AND", boolean-not } ;
+boolean-not           = [ "NOT" ], boolean-primary ;
+boolean-primary       = predicate
+                      | collection-predicate
+                      | "(", boolean-expression, ")",
+                        [ truth-test ] ;
+collection-predicate  = ( "ANY" | "ALL" ), "(", scalar-expression, "AS", identifier,
+                        "WHERE", boolean-expression, ")" ;
+
+predicate             = scalar-expression, predicate-suffix ;
+predicate-suffix      = comparison-operator, scalar-expression
+                      | [ "NOT" ], "BETWEEN", literal-value, "AND", literal-value
+                      | [ "NOT" ], "IN", "(", literal-value, { ",", literal-value }, ")"
+                      | [ "NOT" ], "IS", [ "NOT" ], "DISTINCT", "FROM", scalar-expression
+                      | [ "NOT" ], "IS", [ "NOT" ], "NULL"
+                      | [ "NOT" ], "IS", [ "NOT" ], truth-value
+                      | [ "NOT" ], text-operator, text-value
+                      | "DOES", "NOT", text-operator, text-value
+                      | natural-comparison, literal-value
+                      | empty ;
+comparison-operator   = "=" | "!=" | "<>" | "<" | "<=" | ">" | ">=" ;
+truth-test            = "IS", [ "NOT" ], truth-value ;
+truth-value           = "TRUE" | "FALSE" | "UNKNOWN" ;
+text-operator         = "CONTAIN" | "CONTAINS" | "MATCH" | "MATCHES" | "LIKE" | "ILIKE" ;
+natural-comparison    = "AT", "LEAST" | "AT", "MOST"
+                      | "GREATER", "THAN" | "MORE", "THAN" | "LESS", "THAN"
+                      | "EQUAL", "TO" | "OVER" | "ABOVE" | "UNDER" | "BELOW" | "EQUALS" ;
+
+having-expression     = having-and, { "OR", having-and } ;
+having-and            = having-not, { "AND", having-not } ;
+having-not            = [ "NOT" ], having-primary ;
+having-primary        = having-predicate, [ truth-test ]
+                      | "(", having-expression, ")", [ truth-test ] ;
+having-predicate      = scalar-expression,
+                        ( comparison-operator, scalar-expression
+                        | "IS", [ "NOT" ], "DISTINCT", "FROM", scalar-expression
+                        | "IS", [ "NOT" ], "NULL"
+                        | "IS", [ "NOT" ], truth-value ) ;
+
+literal-value         = scalar-literal | identifier | literal-sequence ;
+text-value            = string | identifier | number | date-token | datetime-token | time-token | temporal-token ;
+literal-sequence      = literal-piece, { literal-piece } ;
+literal-piece         = identifier | number | date-token | datetime-token | time-token | temporal-token | "+" | "-" | "*" | "/" | "%" ;
+
 scalar-expression     = additive-expression ;
 additive-expression   = multiplicative-expression, { ( "+" | "-" ), multiplicative-expression } ;
 multiplicative-expression = unary-expression, { ( "*" | "/" | "%" ), unary-expression } ;
@@ -87,3 +132,9 @@ positive-decimal-integer = decimal-digits ;
 non-negative-decimal-integer = decimal-digits ;
 
 string                = single-quoted-string | double-quoted-string ;
+
+temporal-token        = today-or-now, [ signed-unit-quantity ] ;
+today-or-now          = "TODAY()" | "NOW()" ;
+infinity-token        = "INFINITY()" | "-INFINITY()" ;
+
+empty                 = ;
