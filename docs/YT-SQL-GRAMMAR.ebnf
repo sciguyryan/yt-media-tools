@@ -32,7 +32,43 @@ order-term            = scalar-expression, [ "ASC" | "DESC" ] ;
 limit-clause          = "LIMIT", positive-decimal-integer ;
 offset-clause         = "OFFSET", non-negative-decimal-integer ;
 
-(* FIXME: Expression productions to be added here later. *)
+scalar-expression     = additive-expression ;
+additive-expression   = multiplicative-expression, { ( "+" | "-" ), multiplicative-expression } ;
+multiplicative-expression = unary-expression, { ( "*" | "/" | "%" ), unary-expression } ;
+unary-expression      = [ "+" | "-" ], unary-expression | postfix-expression ;
+postfix-expression    = scalar-atom, { index-suffix | member-suffix } ;
+index-suffix          = "[", scalar-expression, "]" ;
+member-suffix         = ".", identifier ;
+
+scalar-atom           = identifier
+                      | scalar-literal
+                      | scalar-function
+                      | aggregate-function
+                      | collection-transform
+                      | case-expression
+                      | "(", scalar-expression, ")" ;
+case-expression       = "CASE", case-when, { case-when }, [ "ELSE", scalar-expression ], "END" ;
+case-when             = "WHEN", boolean-expression, "THEN", scalar-expression ;
+
+scalar-function       = unary-scalar-function, "(", scalar-expression, ")"
+                      | multi-scalar-function, "(", scalar-expression, ",", scalar-expression,
+                        { ",", scalar-expression }, ")"
+                      | "CHAR", "(", scalar-expression, { ",", scalar-expression }, ")"
+                      | "NULLIF", "(", scalar-expression, ",", scalar-expression, ")"
+                      | "RANDOM", "(", [ scalar-expression ], ")" ;
+unary-scalar-function = "LOWER" | "UPPER" | "LENGTH" | "CARDINALITY" ;
+multi-scalar-function = "COALESCE" | "CONCAT" | "GREATEST" | "LEAST" ;
+aggregate-function    = "COUNT", "(", ( "*" | scalar-expression
+                                      | scalar-expression, "AS", identifier, "WHERE", boolean-expression ), ")",
+                        [ aggregate-filter ]
+                      | aggregate-name, "(", scalar-expression, ")", [ aggregate-filter ] ;
+aggregate-name        = "SUM" | "MIN" | "MAX" | "AVG" ;
+aggregate-filter      = "FILTER", "(", "WHERE", boolean-expression, ")" ;
+collection-transform  = "FILTER", "(", scalar-expression, "AS", identifier, "WHERE", boolean-expression, ")"
+                      | "MAP", "(", scalar-expression, "AS", identifier, "SELECT", scalar-expression, ")" ;
+
+scalar-literal        = number | string | "TRUE" | "FALSE" | "NULL" ;
+
 
 (* Lexical foundation. Unicode identifier and literal boundary details remain
  * language-level lexical contracts rather than parser-library notation. *)
