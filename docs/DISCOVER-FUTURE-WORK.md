@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Discover 0.26.6 "No Loose Ends" is the accepted hardened baseline for the next stage of yt-sql development. The language is now broad enough that future additions should be chosen because they make media discovery more expressive, predictable or efficient, not simply because another SQL dialect happens to support them.
+Discover 0.29.15 "Grammar Authority" is the accepted language-review baseline for the next stage of yt-sql development. The language is now broad enough that future additions should be chosen because they make media discovery more expressive, predictable or efficient, not simply because another SQL dialect happens to support them.
 
 The next programme should borrow selectively from SQL, LINQ and yt-dlp's own data model. SQL provides a strong vocabulary for scalar expressions, grouping, set composition and analytical queries. LINQ is particularly interesting where Discover is dealing with an ordered, lazily acquired sequence rather than a conventional database table. yt-dlp exposes source and format metadata that can support queries ordinary SQL engines would never need to express.
 
@@ -234,7 +234,7 @@ The torture corpus should deliberately combine format predicates, set compositio
 
 Only after the preceding programme is hardened should the language reopen for another broad survey. Revisit PostgreSQL, SQLite, DuckDB, BigQuery, ClickHouse, LINQ, jq-like transformation ideas, yt-dlp's current metadata surface and the real queries accumulated during use.
 
-Additional syntax should still have to justify itself against Discover's own model. Recursive CTEs, DDL, DML, transactions, stored procedures and database schemas remain outside the intended language. Selected JOIN forms are the deliberate exception: their grammar is staged separately and their execution must continue to justify itself through concrete media-relation use cases rather than SQL completeness.
+Additional syntax should still have to justify itself against Discover's own model. Recursive CTEs, DDL, DML, transactions, stored procedures and database schemas remain outside the intended language. Selected JOIN forms are the deliberate exception: their grammar and single-JOIN execution are established, while any expansion of relational execution must continue to justify itself through concrete media-relation use cases rather than SQL completeness.
 
 ## Tooling and external integration investigations
 

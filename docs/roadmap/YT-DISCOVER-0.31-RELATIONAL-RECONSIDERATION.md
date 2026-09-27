@@ -6,7 +6,7 @@ The 0.31.x series reconsiders selected relational composition after the 0.27.x r
 
 JOIN was previously excluded because Discover primarily operated over one logical yt-dlp result stream. In that model there was rarely a meaningful independent relation to join, and implementing JOIN merely for SQL familiarity would have added parser, execution, cardinality and acquisition complexity without enough practical value.
 
-That premise no longer holds. Discover now has, or is planned to have, independently acquired physical sources, logical source/facet identity, CTEs, set composition, typed nested media collections, explicit acquisition planning and source-aware optimisation. Selected join forms can therefore express useful media discovery operations that are otherwise awkward or lossy.
+That premise no longer holds. Discover now has independently acquired physical sources, logical source/facet identity, CTEs, set composition, typed nested media collections, explicit acquisition planning and source-aware optimisation. Selected join forms can therefore express useful media discovery operations that are otherwise awkward or lossy.
 
 The purpose of this series is not SQL completeness. It is to add only relational composition that materially increases Discover's ability to combine and filter independently acquired media relations.
 
