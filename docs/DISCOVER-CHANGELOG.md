@@ -6,6 +6,16 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Release history
 
+### Discover 0.29.16 - Reconciled Reality
+
+- Reconcile current documentation with the accepted 0.29.15 grammar, parser, formatter, semantic and acquisition contracts without adding new yt-sql syntax.
+- Prefer `OF` source facets in current Discover and Downloader examples while retaining `--tab` as an explicit compatibility surface.
+- Use source-family terminology for logical source capabilities and reserve backend or adapter terminology for physical acquisition responsibilities.
+- Move the Discover future-work baseline forward from the obsolete 0.26.6 state and describe established JOIN, CTE, set-composition and typed-collection foundations as implemented.
+- Reconcile optimiser documentation with the implemented source-boundary capability planner and distinguish implemented analytical features from future expansion.
+- Add documentation regression checks for the current release baseline, preferred source-facet examples and source-family terminology.
+- Preserve grammar revision 1 because this reconciliation does not change accepted yt-sql syntax.
+
 ### Discover 0.29.15 - Grammar Authority
 
 - Add the first authoritative parser-neutral EBNF artefact for the accepted yt-sql syntax surface.

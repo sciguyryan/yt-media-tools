@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Discover 0.29.15 "Grammar Authority" is the accepted language-review baseline for the next stage of yt-sql development. The language is now broad enough that future additions should be chosen because they make media discovery more expressive, predictable or efficient, not simply because another SQL dialect happens to support them.
+Discover 0.29.16 "Reconciled Reality" is the accepted post-review baseline for the next stage of yt-sql development. The language is now broad enough that future additions should be chosen because they make media discovery more expressive, predictable or efficient, not simply because another SQL dialect happens to support them.
 
 The next programme should borrow selectively from SQL, LINQ and yt-dlp's own data model. SQL provides a strong vocabulary for scalar expressions, grouping, set composition and analytical queries. LINQ is particularly interesting where Discover is dealing with an ordered, lazily acquired sequence rather than a conventional database table. yt-dlp exposes source and format metadata that can support queries ordinary SQL engines would never need to express.
 
