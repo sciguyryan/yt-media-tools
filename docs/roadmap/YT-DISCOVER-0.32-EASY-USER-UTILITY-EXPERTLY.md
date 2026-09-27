@@ -63,7 +63,7 @@ Candidate settings may include:
 -   cache policy/location;
 -   output defaults;
 -   preferred explain verbosity;
--   common source adapter policy;
+-   common acquisition-backend policy;
 -   user interface defaults that do not alter the logical meaning of a query unexpectedly.
 
 ### Precedence

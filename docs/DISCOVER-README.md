@@ -791,7 +791,7 @@ yt-sql can request an extractor-agnostic logical facet with `OF`:
 ./yt-discover.py "SELECT id FROM @whatdamath OF videos WHERE duration < 1h"
 ```
 
-YouTube channel sources currently advertise `videos`, `shorts` and `live`. Bare `FROM @source` keeps the default collection. `--tab` remains available for compatibility and is translated into the same logical facet request as `OF`, so the two interfaces do not maintain separate acquisition behaviour. `--explain` reports the selected source adapter and the facets it advertises.
+YouTube channel sources currently advertise `videos`, `shorts` and `live`. Bare `FROM @source` keeps the default collection. `--tab` remains available for compatibility and is translated into the same logical facet request as `OF`, so the two interfaces do not maintain separate acquisition behaviour. `--explain` reports the selected source family and the facets it advertises.
 
 ## Composing source facets
 
