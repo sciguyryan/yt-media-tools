@@ -1,13 +1,14 @@
 (* yt-sql formal grammar draft
  *
- * Parser-neutral EBNF. This artefact is being built from the accepted yt-sql
- * language surface before its authority and revision contract are finalised.
+ * Parser-neutral EBNF. The accepted syntax surface is now represented here;
+ * authority, revisioning and verification are established separately.
  *)
 
 query                 = [ with-clause ], query-expression ;
 query-expression      = query-primary, { union-operator, query-primary },
                         [ order-by-clause ], [ limit-clause ], [ offset-clause ] ;
-query-primary         = select-query | "(", query-expression, ")" ;
+query-primary         = select-query | predicate-only-query | "(", query-expression, ")" ;
+predicate-only-query  = boolean-expression ;
 union-operator        = "UNION", [ "ALL" ] ;
 
 with-clause           = "WITH", cte, { ",", cte } ;
@@ -16,13 +17,20 @@ cte                   = identifier, "AS", "(", query-expression, ")" ;
 select-query          = [ select-clause ], [ from-clause ], [ where-clause ],
                         [ group-by-clause ], [ having-clause ] ;
 select-clause         = "SELECT", [ "DISTINCT" ], select-term, { ",", select-term } ;
-select-term           = scalar-expression, [ "AS", identifier ] ;
+select-term           = relation-wildcard | scalar-expression, [ "AS", identifier ] ;
+relation-wildcard     = identifier, ".", "*" ;
 
-from-clause           = "FROM", relation-reference ;
+from-clause           = "FROM", relation-reference, { join-clause } ;
 relation-reference    = relation-source, [ "OF", facet-reference, { ",", facet-reference } ],
                         [ "AS", identifier ] ;
 facet-reference       = identifier ;
 relation-source       = at-identifier | identifier | string ;
+join-clause           = join-kind, relation-reference-single, "ON", boolean-expression ;
+join-kind             = [ "INNER" ], "JOIN"
+                      | "LEFT", [ "OUTER" ], "JOIN"
+                      | "SEMI", "JOIN"
+                      | "ANTI", "JOIN" ;
+relation-reference-single = relation-source, [ "OF", facet-reference ], [ "AS", identifier ] ;
 
 where-clause          = "WHERE", boolean-expression ;
 group-by-clause       = "GROUP", "BY", scalar-expression, { ",", scalar-expression } ;
@@ -72,11 +80,6 @@ having-predicate      = scalar-expression,
                         | "IS", [ "NOT" ], "NULL"
                         | "IS", [ "NOT" ], truth-value ) ;
 
-literal-value         = scalar-literal | identifier | literal-sequence ;
-text-value            = string | identifier | number | date-token | datetime-token | time-token | temporal-token ;
-literal-sequence      = literal-piece, { literal-piece } ;
-literal-piece         = identifier | number | date-token | datetime-token | time-token | temporal-token | "+" | "-" | "*" | "/" | "%" ;
-
 scalar-expression     = additive-expression ;
 additive-expression   = multiplicative-expression, { ( "+" | "-" ), multiplicative-expression } ;
 multiplicative-expression = unary-expression, { ( "*" | "/" | "%" ), unary-expression } ;
@@ -113,10 +116,13 @@ collection-transform  = "FILTER", "(", scalar-expression, "AS", identifier, "WHE
                       | "MAP", "(", scalar-expression, "AS", identifier, "SELECT", scalar-expression, ")" ;
 
 scalar-literal        = number | string | "TRUE" | "FALSE" | "NULL" ;
+literal-value         = scalar-literal | identifier | literal-sequence ;
+text-value            = string | identifier | number | date-token | datetime-token | time-token | temporal-token ;
+literal-sequence      = literal-piece, { literal-piece } ;
+literal-piece         = identifier | number | date-token | datetime-token | time-token | temporal-token | "+" | "-" | "*" | "/" | "%" ;
 
-
-(* Lexical foundation. Unicode identifier and literal boundary details remain
- * language-level lexical contracts rather than parser-library notation. *)
+(* Lexical rules. Unicode XID_Start/XID_Continue use the Unicode properties
+ * provided by the implementation language, without Unicode normalisation. *)
 identifier            = ordinary-identifier | quoted-identifier ;
 ordinary-identifier   = xid-start, { xid-continue | "-" }, { ".", xid-start, { xid-continue | "-" } } ;
 quoted-identifier     = "`", quoted-identifier-character, { quoted-identifier-character }, "`" ;
@@ -132,9 +138,14 @@ positive-decimal-integer = decimal-digits ;
 non-negative-decimal-integer = decimal-digits ;
 
 string                = single-quoted-string | double-quoted-string ;
-
 temporal-token        = today-or-now, [ signed-unit-quantity ] ;
 today-or-now          = "TODAY()" | "NOW()" ;
 infinity-token        = "INFINITY()" | "-INFINITY()" ;
+
+(* DATE, DATETIME and TIME token shapes, numeric digit/separator validity,
+ * string escapes, parameter substitution, field-aware temporal collection,
+ * reserved/contextual keyword classification and malformed-token rejection are
+ * lexical contracts defined in docs/YT-SQL.md and docs/YT-SQL-DIAGNOSTICS.md.
+ * Parameters are substituted before parsing and therefore are not AST grammar. *)
 
 empty                 = ;
