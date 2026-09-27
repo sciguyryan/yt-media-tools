@@ -4,6 +4,8 @@ yt-sql is the SQL-inspired metadata query language used by `yt-discover`. It is 
 
 The preferred filename extension for saved query text is `.yt-sql`.
 
+The authoritative parser-neutral syntax specification is [`YT-SQL-GRAMMAR.ebnf`](YT-SQL-GRAMMAR.ebnf), with its authority, versioning and verification model described in [`YT-SQL-GRAMMAR.md`](YT-SQL-GRAMMAR.md). This reference remains authoritative for semantics and context-sensitive rules that the EBNF cannot express.
+
 ## Current grammar surface
 
 A non-compound yt-sql query has the following broad clause order:

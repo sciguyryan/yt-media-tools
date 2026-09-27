@@ -1,7 +1,11 @@
-(* yt-sql formal grammar draft
+(* yt-sql formal grammar
+ * Grammar revision: 1
+ * Introduced by: yt-discover 0.29.15
  *
- * Parser-neutral EBNF. The accepted syntax surface is now represented here;
- * authority, revisioning and verification are established separately.
+ * This parser-neutral EBNF is authoritative for yt-sql syntactic structure.
+ * docs/YT-SQL.md is authoritative for semantics and context-sensitive rules.
+ * Keywords are case-insensitive in grammar positions and are contextual unless
+ * the lexical rules below say otherwise.
  *)
 
 query                 = [ with-clause ], query-expression ;
