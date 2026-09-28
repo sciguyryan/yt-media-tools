@@ -1,7 +1,7 @@
 """Historical contract checks for the cache-v3 representation.
 
 These tests freeze facts that the v3 -> v4 migration will have to understand. They
-are intentionally about the accepted v3 representation, not the proposed v4 schema.
+are intentionally about the implemented v3 representation, not the proposed v4 schema.
 """
 
 from __future__ import annotations

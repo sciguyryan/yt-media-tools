@@ -1,6 +1,6 @@
 # Canonical cache-v3 fixture
 
-`canonical-valid-v3.sqlite3` is an immutable historical fixture for the cache-v3 migration contract. It was created with the accepted Discover 0.29.17 `MetadataCache` writer API during issue #126. Do not regenerate it from a later cache implementation. If the fixture ever needs to change, add a new explicitly versioned fixture and explain why.
+`canonical-valid-v3.sqlite3` is an immutable historical fixture for the cache-v3 migration contract. It was created with the Discover 0.29.17 `MetadataCache` writer API during issue #126. Do not regenerate it from a later cache implementation. If the fixture ever needs to change, add a new explicitly versioned fixture and explain why.
 
 The database is intentionally small, but it is not meant to look tidy. Each awkward record exists because it preserves a v3 distinction that later migration code must not flatten.
 
@@ -16,8 +16,8 @@ The database is intentionally small, but it is not meant to look tidy. Each awkw
 
 ## Things deliberately absent
 
-This fixture does not settle the validity of states that Part 1 left open. It therefore contains no malformed timestamp or JSON, row/JSON ID disagreement, negative counters, duplicate or non-contiguous source indexes, source-kind disagreement, or contradictory frontier/order state.
+This fixture predates the explicit validity-boundary tests and therefore keeps the questionable cases out of the canonical database itself. Part 3 classifies them with isolated mutations instead.
 
-Those cases belong to the explicit validity-boundary work rather than being smuggled into the canonical valid corpus because SQLite happens to permit them.
+Malformed timestamps or metadata JSON, broken source ordering and a frontier that disagrees with its stored ordering are outside the structural contract. Row/JSON ID disagreement and negative counters remain structurally valid because v3 never established the stronger constraints that would make them invalid. Keeping those decisions in mutation tests avoids making the canonical fixture itself harder to read.
 
 SHA-256: `d0d28d5c1f57d2b75026608999cfd398a4abd7e825cbac078ec86529c1012ae5`

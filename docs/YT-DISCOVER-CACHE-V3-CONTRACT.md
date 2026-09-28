@@ -19,7 +19,7 @@ cache_meta(
 )
 ```
 
-The `schema_version` value is the cache schema authority. A newly created cache is labelled `3`. Existing versions 1, 2 and 3 are accepted by the current opener. A non-integer version or any other integer fails closed.
+The `schema_version` value is the cache schema authority. A newly created cache is labelled `3`. The current opener recognises existing versions 1, 2 and 3. A non-integer version or any other integer fails closed.
 
 Opening versions 1 or 2 is an in-place migration to v3. Missing current tables and indexes are created. The migration may seed `source_frontiers`, but only for a source whose positive `source_observations.observed_entries` exactly equals the number of persisted `source_entries`. Its head is the lowest `source_index`, its verification time is inherited from the observation and `overlap_confirmations` starts at zero. This cardinality check is intentional: a partial historical ordering is not promoted into a trusted frontier. The schema version is then changed to 3.
 
@@ -41,7 +41,7 @@ with an additional index on `video_id`.
 
 Identity in this table is source scoped. The same media ID seen through two source URLs is two independent rows and may contain two complete copies of the same extractor response.
 
-`put_many()` accepts only records whose top-level `id` is a non-empty string. It serialises the complete record as compact UTF-8 JSON and assigns one UTC `fetched_at` to every accepted record in that call. Upserting the same `(source_url, video_id)` replaces both the timestamp and the complete JSON document.
+`put_many()` writes only records whose top-level `id` is a non-empty string. It serialises the complete record as compact UTF-8 JSON and assigns one UTC `fetched_at` to every record written in that call. Upserting the same `(source_url, video_id)` replaces both the timestamp and the complete JSON document.
 
 There is no SQL constraint requiring the JSON document's `id` to equal the row's `video_id`. The cache API creates that relationship by deriving `video_id` from `record['id']`. This is an example of an API invariant that later structural-validity work needs to make explicit.
 
@@ -155,7 +155,7 @@ That absence is part of the historical contract. A v3 migration cannot recover p
 
 ## `raw.*` is cache-visible state
 
-The complete decoded yt-dlp object is not merely an implementation backup. yt-sql can address nested backend values through `raw.*`, and cache freshness explicitly understands those paths. Consequently the raw JSON contains a mixture of query-visible state and backend material that no accepted query may care about.
+The complete decoded yt-dlp object is not merely an implementation backup. yt-sql can address nested backend values through `raw.*`, and cache freshness explicitly understands those paths. Consequently the raw JSON contains a mixture of query-visible state and backend material with no established query use.
 
 Issue #126 should preserve that distinction in its fixtures. Deciding which raw material receives a v4 representation belongs to the later `raw.*` compatibility work, not to this historical audit.
 
@@ -166,3 +166,13 @@ This audit intentionally stops short of declaring every SQLite-readable row comb
 In particular, we still need to classify malformed timestamps/JSON, disagreement between a row `video_id` and its JSON `id`, negative or inconsistent counters, duplicate/non-contiguous source indexes, cross-table source-kind disagreement and frontier/order disagreement. Some of those states are impossible through the public writer API but physically possible because v3 did not encode the rule in SQLite.
 
 That is exactly why the fixture work follows the audit rather than preceding it.
+
+## Structural validity boundary
+
+The historical validator used by issue #126 is intentionally narrower than a new runtime cache checker. It exists in the test suite so later migration work has a stable source contract without changing normal v3 opening behaviour.
+
+A structurally valid v3 database has the v3 table/column and required-index shape, one `schema_version=3` authority row, parseable stored timestamps and detailed metadata whose `raw_json` decodes to a JSON object. A stored source ordering uses one contiguous one-based `source_index` sequence. Where a frontier exists, it summarises that stored ordering: the ordering exists, `known_entries` is its cardinality and `head_video_id` is its first entry.
+
+The boundary is deliberately not stricter than the historical representation earns. In particular, v3 never constrained counters to non-negative values and never required a row's `video_id` to equal the top-level `id` inside `raw_json`. The validator therefore does not reject those states. Coverage counts remain historical snapshots and are not checked against current metadata counts. Observations are telemetry and need not imply entries, coverage or a frontier.
+
+Invalid test cases are produced as isolated mutations of the canonical fixture. Each mutation is expected to break one named invariant, which makes the reason for rejection reviewable instead of hiding it in an opaque collection of damaged databases.

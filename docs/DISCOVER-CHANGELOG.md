@@ -4,7 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-- Add an immutable canonical cache-v3 database fixture built through the accepted v3 writer API.
+- Define the cache-v3 structural validity boundary with a test-support validator rather than changing normal cache opening behaviour.
+- Exercise malformed metadata, schema drift, broken source ordering and contradictory frontier state as isolated mutations of the canonical fixture.
+- Keep row/JSON ID disagreement and unconstrained negative counters valid where v3 never established a stronger invariant.
+- Add an immutable canonical cache-v3 database fixture built through the v3 writer API.
 - Preserve source-scoped duplicate media, falsey/NULL/Unicode/raw values, observation-only state and historical coverage snapshots as valid migration inputs.
 - Document why each awkward fixture record exists and keep unresolved structural-validity cases out of the valid corpus until their boundary is decided.
 - Freeze the implemented cache-v3 schema and API semantics as the historical source contract for the cache-v4 migration programme.
