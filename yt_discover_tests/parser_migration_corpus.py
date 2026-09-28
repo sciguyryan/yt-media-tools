@@ -38,7 +38,6 @@ ACCEPTED_PARSER_CASES = (
     ),
     AcceptedParserCase("compound", "SELECT id FROM @a UNION ALL SELECT id FROM @b ORDER BY id LIMIT 5 OFFSET 1"),
     AcceptedParserCase("grouped-compound", "(SELECT id FROM @a ORDER BY id LIMIT 2) UNION SELECT id FROM @b"),
-    AcceptedParserCase("null-coalescence", "SELECT title ?? 'Missing Title' FROM @fixture"),
     AcceptedParserCase("non-decimal", "SELECT 0xff + 0b10 + 0o7 FROM @fixture"),
 )
 

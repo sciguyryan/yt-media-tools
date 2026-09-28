@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from yt_media_tools.query_model import QuerySyntaxError
+from yt_media_tools.query_parser import parse_query
+
 
 @dataclass(frozen=True, slots=True)
 class MalformedMutation:
@@ -35,4 +38,13 @@ def malformed_neighbours(source: str) -> tuple[MalformedMutation, ...]:
         )
     if "," in source:
         mutations.append(MalformedMutation("duplicate-delimiter", source.replace(",", ",,", 1)))
-    return tuple(dict.fromkeys(mutations))
+    # Mutation templates intentionally over-generate because contextual keywords
+    # and whitespace can make a textual perturbation remain legal yt-sql. Keep
+    # only neighbours that the frozen reference parser actually rejects.
+    rejected: list[MalformedMutation] = []
+    for mutation in dict.fromkeys(mutations):
+        try:
+            parse_query(mutation.source)
+        except QuerySyntaxError as error:
+            rejected.append(MalformedMutation(mutation.name, mutation.source, error.context.category))
+    return tuple(rejected)

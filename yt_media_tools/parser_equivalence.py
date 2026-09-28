@@ -84,3 +84,15 @@ def normalised_diagnostic(error: QuerySyntaxError) -> tuple[Any, ...]:
         context.span.end.column,
         context.expected,
     )
+
+
+def equivalent_diagnostic_location(reference: QuerySyntaxError, candidate: QuerySyntaxError) -> bool:
+    """Return whether two diagnostics identify the same category and source region.
+
+    Rejection reason is deliberately assessed by the differential corpus or a
+    parser-specific reason adapter because human-readable wording is not a stable
+    machine identifier under the diagnostic contract.
+    """
+    left = normalised_diagnostic(reference)
+    right = normalised_diagnostic(candidate)
+    return left[:7] == right[:7]

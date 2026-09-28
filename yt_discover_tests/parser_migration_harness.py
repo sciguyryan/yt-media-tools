@@ -53,7 +53,9 @@ def canonical_round_trip(parser: ParserCallable, source: str) -> tuple[object, s
     return normalised_parser_model(parsed), canonical
 
 
-def benchmark_parser(parser: ParserCallable, queries: tuple[str, ...], *, label: str, iterations: int = 100) -> ParserTiming:
+def benchmark_parser(
+    parser: ParserCallable, queries: tuple[str, ...], *, label: str, iterations: int = 100
+) -> ParserTiming:
     """Measure a parser workload without imposing a migration acceptance threshold."""
     started = perf_counter()
     for _ in range(iterations):

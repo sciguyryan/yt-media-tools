@@ -6,6 +6,17 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Release history
 
+### Discover 0.29.17 - Parser Proof
+
+- Define parser-neutral model, source-origin and diagnostic equivalence boundaries for replacement-parser migration.
+- Add deterministic accepted and malformed parser corpora spanning the formal grammar and significant rejection boundaries.
+- Add grammar-anchored valid generation and controlled malformed-neighbour mutation without introducing a second parser implementation.
+- Add bounded seeded grammar-aware fuzz inputs and deterministic failure-shrinking candidates.
+- Add reusable differential outcome, canonical round-trip and descriptive parser-performance oracles.
+- Define the migration gate for syntactic equivalence, semantic-validation boundaries, canonical convergence and performance review.
+- Preserve grammar revision 1 and the accepted hand-written parser as frozen migration references; no replacement parser or new yt-sql syntax is introduced.
+- Close the parser-equivalence and conformance-plan work represented by issue #18.
+
 ### Discover 0.29.16 - Reconciled Reality
 
 - Reconcile current documentation with the accepted 0.29.15 grammar, parser, formatter, semantic and acquisition contracts without adding new yt-sql syntax.
