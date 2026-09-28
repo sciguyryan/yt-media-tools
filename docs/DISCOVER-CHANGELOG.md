@@ -4,6 +4,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Add an immutable canonical cache-v3 database fixture built through the accepted v3 writer API.
+- Preserve source-scoped duplicate media, falsey/NULL/Unicode/raw values, observation-only state and historical coverage snapshots as valid migration inputs.
+- Document why each awkward fixture record exists and keep unresolved structural-validity cases out of the valid corpus until their boundary is decided.
 - Freeze the implemented cache-v3 schema and API semantics as the historical source contract for the cache-v4 migration programme.
 - Document source-scoped raw metadata, field-aware freshness, source observation/order/coverage/frontier distinctions and the conservative v1/v2 frontier migration rule.
 - Add focused regression checks for physical schema independence and non-obvious v3 snapshot/replacement semantics without changing production cache behaviour.

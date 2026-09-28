@@ -21,7 +21,7 @@ cache_meta(
 
 The `schema_version` value is the cache schema authority. A newly created cache is labelled `3`. Existing versions 1, 2 and 3 are accepted by the current opener. A non-integer version or any other integer fails closed.
 
-Opening versions 1 or 2 is an in-place migration to v3. Mising current tables and indexes are created. The migration may seed `source_frontiers`, but only for a source whose positive `source_observations.observed_entries` exactly equals the number of persisted `source_entries`. Its head is the lowest `source_index`, its verification time is inherited from the observation and `overlap_confirmations` starts at zero. This cardinality check is intentional: a partial historical ordering is not promoted into a trusted frontier. The schema version is then changed to 3.
+Opening versions 1 or 2 is an in-place migration to v3. Missing current tables and indexes are created. The migration may seed `source_frontiers`, but only for a source whose positive `source_observations.observed_entries` exactly equals the number of persisted `source_entries`. Its head is the lowest `source_index`, its verification time is inherited from the observation and `overlap_confirmations` starts at zero. This cardinality check is intentional: a partial historical ordering is not promoted into a trusted frontier. The schema version is then changed to 3.
 
 ## Detailed metadata
 
@@ -45,7 +45,7 @@ Identity in this table is source scoped. The same media ID seen through two sour
 
 There is no SQL constraint requiring the JSON document's `id` to equal the row's `video_id`. The cache API creates that relationship by deriving `video_id` from `record['id']`. This is an example of an API invariant that later structural-validity work needs to make explicit.
 
-Reads are deliberately tolerant of some bad physical rows. A detailed row is ignored by `get_many()`/`source_records()` if `fetched_at` cannot be parsed, `raw_json` cannot be decoded, or the decoded JSON is not an object. A timezone-naive parseable timestamp is interpreted as UTC. This tolerance does not by itself make an undecodable row a valid v3 state, issue #126 still needs to classify such rows when it defines structural validity.
+Reads are deliberately tolerant of some bad physical rows. A detailed row is ignored by `get_many()`/`source_records()` if `fetched_at` cannot be parsed, `raw_json` cannot be decoded, or the decoded JSON is not an object. A timezone-naive parseable timestamp is interpreted as UTC. This tolerance does not by itself make an undecodable row a valid v3 state; issue #126 still needs to classify such rows when it defines structural validity.
 
 ### Freshness
 

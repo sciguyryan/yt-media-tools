@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import shutil
 import sqlite3
 
 import pytest
@@ -116,3 +117,88 @@ def test_cache_get_many_ignores_missing_and_undecodable_rows(tmp_path: Path) -> 
         items = cache.get_many("source", ["good", "bad", "missing"])
 
     assert set(items) == {"good"}
+
+
+CACHE_V3_FIXTURE = Path(__file__).parent / "fixtures" / "cache_v3" / "canonical-valid-v3.sqlite3"
+
+
+def _copy_canonical_v3_fixture(tmp_path: Path) -> Path:
+    path = tmp_path / "canonical-valid-v3.sqlite3"
+    shutil.copyfile(CACHE_V3_FIXTURE, path)
+    return path
+
+
+def test_canonical_v3_fixture_is_schema_3_and_readable(tmp_path: Path) -> None:
+    path = _copy_canonical_v3_fixture(tmp_path)
+    with MetadataCache(path) as cache:
+        assert cache.get("https://www.youtube.com/@fixture/videos", "shared-video") is not None
+        assert cache.get("https://www.youtube.com/@fixture/shorts", "shared-video") is not None
+
+    db = sqlite3.connect(path)
+    try:
+        assert db.execute("SELECT value FROM cache_meta WHERE key='schema_version'").fetchone() == ("3",)
+        assert db.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+    finally:
+        db.close()
+
+
+def test_canonical_v3_fixture_preserves_source_scoped_duplicate_media(tmp_path: Path) -> None:
+    with MetadataCache(_copy_canonical_v3_fixture(tmp_path)) as cache:
+        videos = cache.get("https://www.youtube.com/@fixture/videos", "shared-video")
+        shorts = cache.get("https://www.youtube.com/@fixture/shorts", "shared-video")
+
+    assert videos is not None and shorts is not None
+    assert videos.record["title"] == "Shared from videos"
+    assert shorts.record["title"] == "Shared from shorts"
+    assert videos.record["duration"] == 0
+    assert shorts.record["duration"] == 12
+    assert videos.fetched_at != shorts.fetched_at
+
+
+def test_canonical_v3_fixture_keeps_falsey_null_unicode_and_raw_material(tmp_path: Path) -> None:
+    with MetadataCache(_copy_canonical_v3_fixture(tmp_path)) as cache:
+        shared = cache.get("https://www.youtube.com/@fixture/videos", "shared-video")
+        unicode_item = cache.get("https://www.youtube.com/@fixture/videos", "unicode-雪")
+        null_item = cache.get("https://www.youtube.com/@fixture/videos", "null-fields")
+
+    assert shared is not None and unicode_item is not None and null_item is not None
+    assert shared.record["duration"] == 0
+    assert shared.record["view_count"] == 0
+    assert shared.record["availability"] is None
+    assert shared.record["extra"] == {"score": 0, "note": None}
+    assert shared.record["formats"][0]["url"].endswith("token=discard-me")
+    assert unicode_item.record["title"] == "雪と星"
+    assert unicode_item.record["uploader"] == "Δοκιμή"
+    assert unicode_item.record["is_live"] is False
+    assert unicode_item.record["tags"] == []
+    assert null_item.record["title"] is None
+    assert null_item.record["extra"]["nested"]["value"] is None
+
+
+def test_canonical_v3_fixture_contains_valid_observation_only_state(tmp_path: Path) -> None:
+    source = "https://example.invalid/enumeration-only"
+    path = _copy_canonical_v3_fixture(tmp_path)
+    with MetadataCache(path) as cache:
+        assert cache.source_entry_ids(source) == []
+        assert cache.source_coverage(source) is None
+        assert cache.source_frontier(source) is None
+        assert cache.count_source_records(source) == 0
+    db = sqlite3.connect(path)
+    try:
+        assert db.execute(
+            "SELECT source_kind, observed_entries FROM source_observations WHERE source_url = ?",
+            (source,),
+        ).fetchone() == ("url", 5)
+    finally:
+        db.close()
+
+
+def test_canonical_v3_fixture_coverage_count_is_historical_snapshot(tmp_path: Path) -> None:
+    source = "https://example.invalid/partial"
+    with MetadataCache(_copy_canonical_v3_fixture(tmp_path)) as cache:
+        coverage = cache.source_coverage(source)
+        assert coverage is not None
+        assert coverage.cached_entries == 1
+        assert coverage.observed_entries == 4
+        assert coverage.complete is False
+        assert cache.count_source_records(source) == 2
