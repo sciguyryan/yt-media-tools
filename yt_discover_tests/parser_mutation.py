@@ -30,7 +30,9 @@ def malformed_neighbours(source: str) -> tuple[MalformedMutation, ...]:
             if candidate != source:
                 mutations.append(MalformedMutation(name, candidate))
     if "(" in source:
-        mutations.append(MalformedMutation("missing-closing-delimiter", source.rsplit(")", 1)[0] if ")" in source else source + "("))
+        mutations.append(
+            MalformedMutation("missing-closing-delimiter", source.rsplit(")", 1)[0] if ")" in source else source + "(")
+        )
     if "," in source:
         mutations.append(MalformedMutation("duplicate-delimiter", source.replace(",", ",,", 1)))
     return tuple(dict.fromkeys(mutations))
