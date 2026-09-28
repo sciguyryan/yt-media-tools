@@ -176,3 +176,13 @@ A structurally valid v3 database has the v3 table/column and required-index shap
 The boundary is deliberately not stricter than the historical representation earns. In particular, v3 never constrained counters to non-negative values and never required a row's `video_id` to equal the top-level `id` inside `raw_json`. The validator therefore does not reject those states. Coverage counts remain historical snapshots and are not checked against current metadata counts. Observations are telemetry and need not imply entries, coverage or a frontier.
 
 Invalid test cases are produced as isolated mutations of the canonical fixture. Each mutation is expected to break one named invariant, which makes the reason for rejection reviewable instead of hiding it in an opaque collection of damaged databases.
+
+## Migration oracle
+
+The canonical valid fixture has a versioned semantic companion at `yt_discover_tests/fixtures/cache_v3/canonical-valid-v3.oracle.json`. It freezes the source-side facts later migration code must account for without describing an expected v4 database.
+
+That separation is deliberate. Issue #126 can state that source-scoped detailed identity, acquisition times, source observations, trusted ordering, historical coverage snapshots and frontier state have established v3 meaning. It cannot yet state which v4 table, provider row or entity relationship should represent them. Those choices belong to the v4 registry and storage work.
+
+The oracle also refuses to settle `raw.*` by implication. Nested raw paths are query-visible in v3, while the same stored JSON contains backend material with no established query use. Known examples remain visible in the fixture and oracle, but their future representation is left to the dedicated compatibility audit. Specialised YouTube.js and ytmusicapi observations are separately recorded as unrecoverable because v3 never persisted them.
+
+Tests derive the corresponding facts directly from the immutable SQLite fixture and compare them with the JSON oracle. A later cache change therefore cannot quietly rewrite either the historical fixture or the story told about it. The oracle has its own format version so an incompatible change to the oracle itself must be deliberate.

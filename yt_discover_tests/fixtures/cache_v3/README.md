@@ -21,3 +21,7 @@ This fixture predates the explicit validity-boundary tests and therefore keeps t
 Malformed timestamps or metadata JSON, broken source ordering and a frontier that disagrees with its stored ordering are outside the structural contract. Row/JSON ID disagreement and negative counters remain structurally valid because v3 never established the stronger constraints that would make them invalid. Keeping those decisions in mutation tests avoids making the canonical fixture itself harder to read.
 
 SHA-256: `d0d28d5c1f57d2b75026608999cfd398a4abd7e825cbac078ec86529c1012ae5`
+
+## Semantic migration oracle
+
+`canonical-valid-v3.oracle.json` records the fixture's source-side semantic facts without specifying a cache-v4 storage layout. `ORACLE.md` explains the boundary. The oracle is checked independently against this SQLite database so later migration work can rely on it without turning a proposed v4 representation into historical v3 truth.

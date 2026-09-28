@@ -4,6 +4,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Add a versioned semantic migration oracle for the canonical cache-v3 fixture without prescribing a cache-v4 physical schema.
+- Verify oracle facts independently against the immutable SQLite fixture, including source-scoped duplicate media and historical coverage snapshots.
+- Keep `raw.*` compatibility unresolved where v3 mixes query-visible nested values with unclassified backend material.
 - Define the cache-v3 structural validity boundary with a test-support validator rather than changing normal cache opening behaviour.
 - Exercise malformed metadata, schema drift, broken source ordering and contradictory frontier state as isolated mutations of the canonical fixture.
 - Keep row/JSON ID disagreement and unconstrained negative counters valid where v3 never established a stronger invariant.
