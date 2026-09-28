@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Freeze the implemented cache-v3 schema and API semantics as the historical source contract for the cache-v4 migration programme.
+- Document source-scoped raw metadata, field-aware freshness, source observation/order/coverage/frontier distinctions and the conservative v1/v2 frontier migration rule.
+- Add focused regression checks for physical schema independence and non-obvious v3 snapshot/replacement semantics without changing production cache behaviour.
+
 ## Release history
 
 ### Discover 0.29.17 - Parser Proof
