@@ -4,6 +4,12 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+### Collection interchange contract
+
+- [docs] Audit yt-dlp playlist metadata and define how effective collection values will map into normal yt-dlp template processing.
+- [docs] Keep collection order stable across archive-backed resumption and reserve `--remove-completed-ids` from mutating collection files.
+- [docs] Define the initial backend-agnostic boundary for constructed collections and Discover-produced collection input.
+
 ### External tool invocation diagnostics
 
 - [feature] Add a shared registry and structured invocation model for external command, bridge and Python-library integrations.
