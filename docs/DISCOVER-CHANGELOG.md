@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Cache v4 registry persistence now preserves stable provider, group and field identities, database-owned policy and contract reconciliation independently of the active v3 runtime cache.
+
 - Add a versioned semantic migration oracle for the canonical cache-v3 fixture without prescribing a cache-v4 physical schema.
 - Verify oracle facts independently against the immutable SQLite fixture, including source-scoped duplicate media and historical coverage snapshots.
 - Keep `raw.*` compatibility unresolved where v3 mixes query-visible nested values with unclassified backend material.
