@@ -25,3 +25,15 @@ The stored rows also retain a snapshot of the provider contract needed to recogn
 Freshness defaults are code-owned and may evolve with a provider revision. Deployment choices remain database-owned. Reconciliation updates the default while retaining any field-specific override. Provider enabled state and priority behave the same way: reopening or reinstalling a provider does not reset them.
 
 These tables are deliberately isolated from the v3 runtime cache path. Part 2 establishes persistent registry behaviour for v4; it does not select a v4 database at startup, migrate a v3 database, create entity metadata, record acquisition state or resolve competing cached values.
+
+## Field-provider resolution metadata
+
+Part 3 makes provider precedence queryable without crossing into entity-value resolution. For a logical field, the registry can now return the enabled providers whose implementations are currently available, together with the provider and field identities, yt-sql type, acquisition group, effective priority and effective freshness policy.
+
+Effective priority is the field override when one exists and otherwise the provider priority. Candidates are ordered by effective priority descending and then by the provider's immutable persistent registration order ascending. Equal priorities are therefore deterministic across reopen and independent of the order in which installed provider declarations are presented.
+
+Implementation availability is supplied separately from persistent registration. A provider can remain registered, configured and historically identifiable while its implementation is absent. Disabled and unavailable providers do not appear in the active candidate list, but neither condition deletes their registry state.
+
+Providers may claim the same logical field only when they agree on its yt-sql type. Reconciliation rejects incompatible shared-field claims transactionally. This is a semantic compatibility check on the logical field contract, not a declaration that provider storage layouts or acquisition mechanisms are interchangeable.
+
+The candidate list is planning metadata. It does not inspect entity observations, acquisition state, SQL NULL, failure state or observation freshness. Consequently it does not choose the winning cached value for an entity. Dynamic value resolution remains #128 work.

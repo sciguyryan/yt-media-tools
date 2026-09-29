@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Cache v4 registry field-provider planning now applies deterministic persistent precedence, implementation availability, effective freshness and shared logical-field type compatibility without resolving entity values.
+
 - Cache v4 registry persistence now preserves stable provider, group and field identities, database-owned policy and contract reconciliation independently of the active v3 runtime cache.
 
 - Add a versioned semantic migration oracle for the canonical cache-v3 fixture without prescribing a cache-v4 physical schema.

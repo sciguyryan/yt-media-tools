@@ -8,6 +8,7 @@ import sqlite3
 from typing import Iterable
 
 from .cache_registry import (
+    FreshnessMode,
     FreshnessPolicy,
     ProviderDefinition,
     ProviderFieldDefinition,
@@ -31,6 +32,22 @@ class RegisteredProvider:
     enabled: bool
     priority: int
     schema_revision: int
+
+
+@dataclass(frozen=True)
+class FieldProviderCandidate:
+    """Registry metadata for one provider that can supply a logical field."""
+
+    provider_id: int
+    provider_key: str
+    provider_registration_order: int
+    field_id: int
+    field_name: str
+    field_type: QueryType
+    acquisition_group_id: int
+    acquisition_group: str
+    effective_priority: int
+    freshness: FreshnessPolicy
 
 
 def _type_payload(value_type: QueryType) -> dict[str, object]:
@@ -189,6 +206,7 @@ class CacheV4RegistryStore:
             self.connection.execute("BEGIN")
             for provider in definitions:
                 self._reconcile_provider(provider)
+            self._validate_shared_field_contracts()
             self.connection.commit()
         except Exception:
             self.connection.rollback()
@@ -335,6 +353,116 @@ class CacheV4RegistryStore:
                 """,
                 (freshness_mode, max_age, row["field_id"]),
             )
+
+    def _validate_shared_field_contracts(self) -> None:
+        """Require every shared logical-field claim to use one yt-sql type."""
+        rows = self.connection.execute(
+            """
+            SELECT field_name, type_json, p.provider_key
+            FROM cache_v4_fields AS f
+            JOIN cache_v4_providers AS p ON p.provider_id = f.provider_id
+            ORDER BY field_name, p.registration_order
+            """
+        ).fetchall()
+        by_field: dict[str, tuple[str, str]] = {}
+        for row in rows:
+            field_name = str(row["field_name"])
+            type_json = str(row["type_json"])
+            existing = by_field.get(field_name)
+            if existing is None:
+                by_field[field_name] = (type_json, str(row["provider_key"]))
+                continue
+            existing_type, existing_provider = existing
+            if type_json != existing_type:
+                raise RegistryContractError(
+                    f"Logical field {field_name!r} has incompatible type claims from "
+                    f"providers {existing_provider!r} and {row['provider_key']!r}."
+                )
+
+    @staticmethod
+    def _freshness_from_columns(mode: str, max_age_seconds: int | None) -> FreshnessPolicy:
+        freshness_mode = FreshnessMode(mode)
+        return FreshnessPolicy(freshness_mode, max_age_seconds)
+
+    def field_provider_candidates(
+        self,
+        field_name: str,
+        *,
+        available_provider_keys: Iterable[str],
+    ) -> tuple[FieldProviderCandidate, ...]:
+        """Return enabled, installed providers for a field in precedence order.
+
+        This is registry planning metadata only. It does not inspect entity values,
+        acquisition state or observation freshness and therefore cannot select the
+        winning cached value for an entity.
+        """
+        available = frozenset(available_provider_keys)
+        rows = self.connection.execute(
+            """
+            SELECT
+                p.provider_id,
+                p.provider_key,
+                p.registration_order AS provider_registration_order,
+                p.priority AS provider_priority,
+                p.enabled,
+                f.field_id,
+                f.field_name,
+                f.type_json,
+                f.priority_override,
+                f.default_freshness_mode,
+                f.default_max_age_seconds,
+                f.freshness_mode_override,
+                f.max_age_seconds_override,
+                g.acquisition_group_id,
+                g.group_key
+            FROM cache_v4_fields AS f
+            JOIN cache_v4_providers AS p ON p.provider_id = f.provider_id
+            JOIN cache_v4_acquisition_groups AS g
+              ON g.acquisition_group_id = f.acquisition_group_id
+            WHERE f.field_name = ?
+            """,
+            (field_name,),
+        ).fetchall()
+
+        candidates = []
+        for row in rows:
+            provider_key = str(row["provider_key"])
+            if not bool(row["enabled"]) or provider_key not in available:
+                continue
+            effective_priority = (
+                int(row["priority_override"]) if row["priority_override"] is not None else int(row["provider_priority"])
+            )
+            freshness_mode = (
+                str(row["freshness_mode_override"])
+                if row["freshness_mode_override"] is not None
+                else str(row["default_freshness_mode"])
+            )
+            max_age_seconds = (
+                row["max_age_seconds_override"]
+                if row["freshness_mode_override"] is not None
+                else row["default_max_age_seconds"]
+            )
+            candidates.append(
+                FieldProviderCandidate(
+                    provider_id=int(row["provider_id"]),
+                    provider_key=provider_key,
+                    provider_registration_order=int(row["provider_registration_order"]),
+                    field_id=int(row["field_id"]),
+                    field_name=str(row["field_name"]),
+                    field_type=_type_from_payload(json.loads(str(row["type_json"]))),
+                    acquisition_group_id=int(row["acquisition_group_id"]),
+                    acquisition_group=str(row["group_key"]),
+                    effective_priority=effective_priority,
+                    freshness=self._freshness_from_columns(freshness_mode, max_age_seconds),
+                )
+            )
+        candidates.sort(
+            key=lambda candidate: (
+                -candidate.effective_priority,
+                candidate.provider_registration_order,
+            )
+        )
+        return tuple(candidates)
 
     def registered_providers(self) -> tuple[RegisteredProvider, ...]:
         rows = self.connection.execute(
