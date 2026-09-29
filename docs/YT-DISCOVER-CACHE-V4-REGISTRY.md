@@ -10,7 +10,7 @@ Acquisition groups describe real provider fetch boundaries. A field must name a 
 
 Applicability records stable semantic constraints such as content service, logical source kind, facet and required source traits. It does not replace the existing physical provider-selection machinery. The two contracts can be reconciled as the v4 implementation moves into acquisition and persistence, but this part does not change current provider selection.
 
-Provider priority, enabled state, immutable registration order and user overrides are intentionally absent from the code-owned definition. They are persistent deployment state. Part 2 will define how SQLite stores and reconciles that state with the code-owned contract.
+Provider priority, enabled state, immutable registration order and user overrides are intentionally absent from the code-owned definition. They are persistent deployment state. SQLite stores and reconciles that state with the code-owned contract.
 
 Likewise, this part does not create `entity_id`, provider metadata rows or acquisition-state rows, and it does not resolve competing cached values. Those are #128 concerns. The purpose here is to give those later layers a small, validated vocabulary instead of letting table columns become the language contract by accident.
 
@@ -37,3 +37,13 @@ Implementation availability is supplied separately from persistent registration.
 Providers may claim the same logical field only when they agree on its yt-sql type. Reconciliation rejects incompatible shared-field claims transactionally. This is a semantic compatibility check on the logical field contract, not a declaration that provider storage layouts or acquisition mechanisms are interchangeable.
 
 The candidate list is planning metadata. It does not inspect entity observations, acquisition state, SQL NULL, failure state or observation freshness. Consequently it does not choose the winning cached value for an entity. Dynamic value resolution remains #128 work.
+
+## Registry lifecycle and #128 hand-off
+
+Part 4 makes declaration lifecycle explicit. Reconciliation marks providers, acquisition groups and fields as currently declared only when the installed code contract still contains them. Removing an implementation or field does not delete its persistent identity, registration order or database-owned policy. Reinstalling or re-adding the same compatible declaration recovers that history.
+
+Historical declarations do not participate in active shared-field compatibility or field-provider candidate planning. Current declarations still cannot reuse a stable provider or field identity incompatibly. Provider schema revisions move forwards only, and incompatible reconciliation remains transactional.
+
+This completes the registry boundary for #127. The registry can now answer which currently declared, enabled and available providers claim a logical field; whether those claims agree on the yt-sql type; their persistent precedence; their acquisition group; and their effective freshness policy. It still cannot answer whether an entity has a value, known SQL NULL, not-acquired state, failure, inapplicability or stale observation. It also cannot choose a value from provider observations. Those are the storage and resolution responsibilities of #128.
+
+The #128 implementation should consume registry identities and candidate metadata rather than duplicating precedence or field-contract rules. Entity and provider observation tables should reference the compact persistent identities established here, while acquisition-state semantics remain separate from registry declaration state.

@@ -149,7 +149,8 @@ class CacheV4RegistryStore:
                 priority INTEGER NOT NULL DEFAULT 0,
                 schema_revision INTEGER NOT NULL,
                 metadata_table TEXT NOT NULL,
-                applicability_json TEXT NOT NULL
+                applicability_json TEXT NOT NULL,
+                declared INTEGER NOT NULL DEFAULT 1 CHECK (declared IN (0, 1))
             );
 
             CREATE TABLE IF NOT EXISTS cache_v4_acquisition_groups (
@@ -157,6 +158,7 @@ class CacheV4RegistryStore:
                 provider_id INTEGER NOT NULL REFERENCES cache_v4_providers(provider_id),
                 group_key TEXT NOT NULL,
                 registration_order INTEGER NOT NULL,
+                declared INTEGER NOT NULL DEFAULT 1 CHECK (declared IN (0, 1)),
                 UNIQUE(provider_id, group_key),
                 UNIQUE(provider_id, registration_order)
             );
@@ -174,6 +176,7 @@ class CacheV4RegistryStore:
                 priority_override INTEGER,
                 freshness_mode_override TEXT,
                 max_age_seconds_override INTEGER,
+                declared INTEGER NOT NULL DEFAULT 1 CHECK (declared IN (0, 1)),
                 UNIQUE(provider_id, field_name),
                 UNIQUE(provider_id, storage_name),
                 UNIQUE(provider_id, registration_order)
@@ -204,6 +207,9 @@ class CacheV4RegistryStore:
         self.initialise()
         try:
             self.connection.execute("BEGIN")
+            self.connection.execute("UPDATE cache_v4_providers SET declared = 0")
+            self.connection.execute("UPDATE cache_v4_acquisition_groups SET declared = 0")
+            self.connection.execute("UPDATE cache_v4_fields SET declared = 0")
             for provider in definitions:
                 self._reconcile_provider(provider)
             self._validate_shared_field_contracts()
@@ -240,6 +246,10 @@ class CacheV4RegistryStore:
             provider_id = int(cursor.lastrowid)
         else:
             provider_id = int(row["provider_id"])
+            self.connection.execute(
+                "UPDATE cache_v4_providers SET declared = 1 WHERE provider_id = ?",
+                (provider_id,),
+            )
             if row["metadata_table"] != provider.metadata_table:
                 raise RegistryContractError(
                     f"Provider {provider.key!r} changed metadata_table from "
@@ -287,6 +297,10 @@ class CacheV4RegistryStore:
                 group_ids[group.key] = int(cursor.lastrowid)
             else:
                 group_ids[group.key] = int(existing["acquisition_group_id"])
+                self.connection.execute(
+                    "UPDATE cache_v4_acquisition_groups SET declared = 1 WHERE acquisition_group_id = ?",
+                    (group_ids[group.key],),
+                )
 
         for field in provider.fields:
             self._reconcile_field(provider_id, provider.key, field, group_ids[field.acquisition_group])
@@ -333,6 +347,10 @@ class CacheV4RegistryStore:
             )
             return
 
+        self.connection.execute(
+            "UPDATE cache_v4_fields SET declared = 1 WHERE field_id = ?",
+            (row["field_id"],),
+        )
         expected = {
             "storage_name": field.storage_name,
             "acquisition_group_id": acquisition_group_id,
@@ -361,6 +379,7 @@ class CacheV4RegistryStore:
             SELECT field_name, type_json, p.provider_key
             FROM cache_v4_fields AS f
             JOIN cache_v4_providers AS p ON p.provider_id = f.provider_id
+            WHERE f.declared = 1 AND p.declared = 1
             ORDER BY field_name, p.registration_order
             """
         ).fetchall()
@@ -420,6 +439,9 @@ class CacheV4RegistryStore:
             JOIN cache_v4_acquisition_groups AS g
               ON g.acquisition_group_id = f.acquisition_group_id
             WHERE f.field_name = ?
+              AND f.declared = 1
+              AND p.declared = 1
+              AND g.declared = 1
             """,
             (field_name,),
         ).fetchall()
@@ -484,6 +506,18 @@ class CacheV4RegistryStore:
             )
             for row in rows
         )
+
+    def declared_provider_keys(self) -> tuple[str, ...]:
+        """Return provider keys declared by the current installed registry contract."""
+        rows = self.connection.execute(
+            """
+            SELECT provider_key
+            FROM cache_v4_providers
+            WHERE declared = 1
+            ORDER BY registration_order
+            """
+        ).fetchall()
+        return tuple(str(row["provider_key"]) for row in rows)
 
     def set_provider_policy(
         self,
