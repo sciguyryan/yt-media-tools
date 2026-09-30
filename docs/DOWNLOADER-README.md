@@ -20,7 +20,7 @@ It is designed to pair naturally with `yt-discover.py`:
 The current built-in locations are:
 
 ```text
-Download archive: ./archive.txt beside yt-download.py
+Download archive: ./archive.txt relative to the working directory
 Cookies:          ./cookies.txt beside yt-download.py, when present
 Temporary files:  /mnt/storage/Temp/yt-dlp
 ```
@@ -323,7 +323,7 @@ The most common network and retry controls have first-class Downloader options:
 ./yt-download.py --archive ~/media/archive.txt --temp-path ~/media/tmp VIDEO_ID
 ```
 
-Downloader keeps its existing `20M` rate limit, script-local archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a profile or explicit CLI setting chooses them.
+Downloader keeps its existing `20M` rate limit, working-directory-relative archive, temporary path and extractor arguments as built-in defaults. Retry counts, throttled-rate detection and concurrent fragment downloads are left at yt-dlp's defaults unless a profile or explicit CLI setting chooses them.
 
 ## HTTP request and network policy
 

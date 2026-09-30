@@ -8,6 +8,7 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ### Downloader 1.23.0 - Collection Context
 
+- Use `./archive.txt` relative to the working directory as the portable built-in download-archive default instead of coupling persistent archive state to the source directory.
 - Add the shared versioned collection interchange and `--collection-file FILE` as a first-class ordered acquisition input.
 - Restore supported playlist context before yt-dlp output-template rendering while leaving normal yt-dlp formatting responsible for padding, paths and other presentation.
 - Preserve stable typed collection positions and counts across archive-skipped prefixes, failed or interrupted attempts, duplicate targets and constructed collections.

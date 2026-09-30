@@ -12,7 +12,8 @@ def test_version_is_current(downloader) -> None:
 
 
 def test_runtime_files_are_script_relative(downloader) -> None:
-    assert downloader.ARCHIVE_FILE == downloader.SCRIPT_DIR / "archive.txt"
+    assert downloader.DEFAULT_ARCHIVE_FILE == Path("./archive.txt")
+    assert not downloader.DEFAULT_ARCHIVE_FILE.is_absolute()
     assert downloader.COOKIES_FILE == downloader.SCRIPT_DIR / "cookies.txt"
     assert downloader.DEFAULTS_FILE == downloader.SCRIPT_DIR / "defaults.json"
 

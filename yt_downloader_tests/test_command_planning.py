@@ -13,7 +13,7 @@ def test_build_command_contains_core_policy(downloader) -> None:
     format_index = command.index("-f")
     assert command[format_index + 1] == "bv+ba/best"
     assert "--download-archive" in command
-    assert str(downloader.ARCHIVE_FILE) in command
+    assert str(downloader.DEFAULT_ARCHIVE_FILE) in command
     assert "--cookies" not in command
     assert "--playlist-reverse" in command
     assert command[-1] == "abc"

@@ -241,7 +241,7 @@ CLI_DESTINATION_CLASSES = {
 }
 
 DEFAULT_VIDEO_ID_FILE = Path("./ids.txt")
-ARCHIVE_FILE = SCRIPT_DIR / "archive.txt"
+DEFAULT_ARCHIVE_FILE = Path("./archive.txt")
 COOKIES_FILE = SCRIPT_DIR / "cookies.txt"
 TEMP_DIR = Path("/mnt/storage/Temp/yt-dlp")
 
@@ -529,7 +529,7 @@ class DownloadPolicy:
     file_access_retries: str | None = None
     extractor_retries: str | None = None
     retry_sleep: tuple[str, ...] = ()
-    archive_file: Path = ARCHIVE_FILE
+    archive_file: Path = DEFAULT_ARCHIVE_FILE
     temp_path: Path = TEMP_DIR
     extractor_args: tuple[str, ...] = DEFAULT_EXTRACTOR_ARGS
     min_resolution: int | None = None
@@ -1269,7 +1269,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--archive",
         type=Path,
         metavar="FILE",
-        help=f"Use FILE as the yt-dlp download archive (built-in default: {ARCHIVE_FILE}).",
+        help=f"Use FILE as the yt-dlp download archive (built-in default: {DEFAULT_ARCHIVE_FILE}).",
     )
     parser.add_argument(
         "--temp-path",
@@ -2990,7 +2990,7 @@ def resolve_profile_policy(
             file_access_retries=(str(settings["file-access-retries"]) if "file-access-retries" in settings else None),
             extractor_retries=(str(settings["extractor-retries"]) if "extractor-retries" in settings else None),
             retry_sleep=tuple(settings.get("retry-sleep", ())),
-            archive_file=Path(str(settings.get("archive", ARCHIVE_FILE))).expanduser(),
+            archive_file=Path(str(settings.get("archive", DEFAULT_ARCHIVE_FILE))).expanduser(),
             temp_path=Path(str(settings.get("temp-path", TEMP_DIR))).expanduser(),
             extractor_args=tuple(settings.get("extractor-args", DEFAULT_EXTRACTOR_ARGS)),
             min_resolution=min_resolution,
