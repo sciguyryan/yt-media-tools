@@ -4,7 +4,12 @@
   "title": "yt-media-tools collection interchange v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "version", "collection", "entries"],
+  "required": [
+    "schema",
+    "version",
+    "collection",
+    "entries"
+  ],
   "properties": {
     "schema": {
       "const": "yt-media-tools.collection"
@@ -15,7 +20,10 @@
     "collection": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "metadata"],
+      "required": [
+        "type",
+        "metadata"
+      ],
       "properties": {
         "type": {
           "const": "playlist"
@@ -24,13 +32,27 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "title": {"type": "string"},
-            "id": {"type": "string"},
-            "uploader": {"type": "string"},
-            "uploader_id": {"type": "string"},
-            "channel": {"type": "string"},
-            "channel_id": {"type": "string"},
-            "webpage_url": {"type": "string"}
+            "title": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "uploader": {
+              "type": "string"
+            },
+            "uploader_id": {
+              "type": "string"
+            },
+            "channel": {
+              "type": "string"
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "webpage_url": {
+              "type": "string"
+            }
           }
         }
       }
@@ -40,11 +62,17 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["target"],
+        "required": [
+          "target"
+        ],
         "properties": {
           "target": {
             "type": "string",
             "minLength": 1
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
           }
         }
       }

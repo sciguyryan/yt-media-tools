@@ -1536,11 +1536,16 @@ def load_collection_input(path: Path) -> InputSource:
         raise ValueError("collection.entries must contain at least one entry")
     targets: list[str] = []
     for index, entry in enumerate(entries, start=1):
-        if not isinstance(entry, dict) or set(entry) != {"target"}:
-            raise ValueError(f"collection entry {index} must contain only a target")
+        if not isinstance(entry, dict):
+            raise ValueError(f"collection entry {index} must be a JSON object")
+        unknown_fields = sorted(set(entry) - {"target", "metadata"})
+        if unknown_fields:
+            raise ValueError(f"collection entry {index} has unsupported field(s): {', '.join(unknown_fields)}")
         target = entry.get("target")
         if not isinstance(target, str) or not target:
             raise ValueError(f"collection entry {index} target must be a non-empty string")
+        if "metadata" in entry and not isinstance(entry["metadata"], dict):
+            raise ValueError(f"collection entry {index} metadata must be a JSON object")
         targets.append(target)
     return InputSource(collection_file=expanded, direct_targets=tuple(targets))
 

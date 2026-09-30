@@ -17,6 +17,7 @@ def _write_collection(
     *,
     targets=("first", "second", "third"),
     metadata=None,
+    entry_metadata=None,
 ) -> Path:
     if metadata is None:
         metadata = {
@@ -31,7 +32,13 @@ def _write_collection(
             "type": "playlist",
             "metadata": metadata,
         },
-        "entries": [{"target": target} for target in targets],
+        "entries": [
+            {
+                "target": target,
+                **({"metadata": entry_metadata[index]} if entry_metadata is not None else {}),
+            }
+            for index, target in enumerate(targets)
+        ],
     }
     path.write_text(json.dumps(payload), encoding="utf-8")
     return path
@@ -251,3 +258,29 @@ def test_collection_remove_completed_rows_is_rejected_without_mutation(
     assert exc.value.code == 2
     assert "--remove-completed-rows does not operate on collection files" in capsys.readouterr().err
     assert collection.read_bytes() == before
+
+
+def test_collection_entry_metadata_is_accepted_but_not_injected(tmp_path: Path) -> None:
+    collection = _write_collection(
+        tmp_path / "metadata.json",
+        targets=("first",),
+        entry_metadata=({"uploader": "Projected impostor", "custom": 0, "missing": None},),
+    )
+    plugin = _load_collection_plugin(collection)
+
+    _, info = plugin.run({"original_url": "first", "uploader": "Extractor uploader"})
+
+    assert info["uploader"] == "Extractor uploader"
+    assert "custom" not in info
+    assert "missing" not in info
+    assert info["playlist_uploader"] == "Example uploader"
+
+
+def test_collection_entry_metadata_must_be_an_object(downloader, tmp_path: Path) -> None:
+    collection = _write_collection(tmp_path / "invalid.json")
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    payload["entries"][0]["metadata"] = ["not", "an", "object"]
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="metadata must be a JSON object"):
+        downloader.load_collection_input(collection)

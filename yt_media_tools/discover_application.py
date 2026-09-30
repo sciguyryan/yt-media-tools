@@ -1510,7 +1510,7 @@ def main(argv: list[str] | None = None) -> int:
         if multi_source:
             parser.error("--collection-output currently requires exactly one playlist source")
         try:
-            collection_payload = build_playlist_collection(source, raw_records, selected)
+            collection_payload = build_playlist_collection(source, raw_records, selected, resolved_query)
             write_collection(args.collection_output, collection_payload)
         except ValueError as exc:
             parser.error(str(exc))

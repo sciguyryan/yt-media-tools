@@ -11,6 +11,8 @@ from .collection_interchange import (
     COLLECTION_INTERCHANGE_VERSION,
     COLLECTION_TYPE_PLAYLIST,
 )
+from .output import project_record
+from .query import Query
 from .source_model import SourceSpec
 
 _PLAYLIST_METADATA_FIELDS: tuple[tuple[str, str], ...] = (
@@ -53,27 +55,33 @@ def playlist_metadata(source: SourceSpec, raw_records: Sequence[Mapping[str, Any
     return metadata
 
 
-def collection_targets(selected_rows: Sequence[Mapping[str, Any]]) -> list[str]:
-    """Return ordered opaque targets from a target-bearing effective query result."""
-    targets: list[str] = []
-    for position, row in enumerate(selected_rows, start=1):
-        target = row.get("id")
-        if not isinstance(target, str) or not target:
-            raise ValueError(
-                "collection export requires every effective query row to expose a non-empty id field; "
-                f"row {position} does not"
-            )
-        targets.append(target)
-    return targets
+def _collection_entry(
+    row: Mapping[str, Any],
+    query: Query,
+    *,
+    position: int,
+) -> dict[str, object]:
+    """Build one acquisition entry while preserving the visible yt-sql projection."""
+    target = row.get("id")
+    if not isinstance(target, str) or not target:
+        raise ValueError(
+            "collection export cannot associate every effective query row with one acquisition target; "
+            f"row {position} has no retained non-empty acquisition id"
+        )
+
+    materialised = bool(query.set_operations or query.left_query is not None)
+    metadata = project_record(dict(row), query.select, materialised=materialised)
+    return {"target": target, "metadata": metadata}
 
 
 def build_playlist_collection(
     source: SourceSpec,
     raw_records: Sequence[Mapping[str, Any]],
     selected_rows: Sequence[Mapping[str, Any]],
+    query: Query,
 ) -> dict[str, object]:
-    """Build a v1 playlist collection from the effective ordered Discover result."""
-    targets = collection_targets(selected_rows)
+    """Build a v1 playlist collection without discarding the effective projection."""
+    entries = [_collection_entry(row, query, position=position) for position, row in enumerate(selected_rows, start=1)]
     return {
         "schema": COLLECTION_INTERCHANGE_SCHEMA,
         "version": COLLECTION_INTERCHANGE_VERSION,
@@ -81,7 +89,7 @@ def build_playlist_collection(
             "type": COLLECTION_TYPE_PLAYLIST,
             "metadata": playlist_metadata(source, raw_records),
         },
-        "entries": [{"target": target} for target in targets],
+        "entries": entries,
     }
 
 

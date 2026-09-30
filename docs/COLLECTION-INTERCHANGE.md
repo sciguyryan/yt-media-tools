@@ -40,6 +40,24 @@ A minimal file looks like this:
 
 The ordered `entries` array is authoritative for the effective collection. Derived positions and counts come from that order rather than being stored separately and allowed to disagree with it.
 
+Each Discover-exported entry also carries a `metadata` object containing the visible yt-sql projection for that result row. `target` is acquisition identity; `entries[].metadata` is query output. They are deliberately separate. A query does not need to select `id` merely so collection export can acquire the row when Discover still retains the underlying acquisition identity.
+
+For example, `SELECT title AS name, duration FROM @playlist` may produce:
+
+```json
+{
+  "target": "abc123",
+  "metadata": {
+    "name": "Example title",
+    "duration": 842
+  }
+}
+```
+
+The `id` is not added to `metadata` because the user did not select it. Aliases and calculated expressions retain their projected names and values. SQL `NULL` becomes JSON `null`; falsey values such as `0`, `false` and `""` remain values rather than being treated as absent. Typed date and datetime values use the same stable JSON representation as normal Discover output.
+
+Constructed v1 documents may omit per-entry `metadata`, preserving compatibility with the original minimal v1 shape. When `metadata` is present it is informational query-result material. Downloader validates that it is an object but does not copy arbitrary keys into yt-dlp's `info_dict`.
+
 The machine-readable v1 shape lives in `schemas/collection-interchange-v1.schema.json`.
 
 ## Playlist metadata audit
@@ -121,6 +139,8 @@ The fully developed version of this document should include a complete realistic
 
 Discover exports source metadata only when it remains truthful for the effective result, and Downloader consumes the document without treating it as arbitrary yt-dlp metadata injection. Archive-backed resumption, constructed collections, duplicate targets and collection immutability are now explicit parts of the v1 behaviour.
 
-One known design problem remains deliberately unresolved here: an exported entry currently preserves its acquisition target but not the arbitrary projected yt-sql values that produced the row. That information-loss problem is being handled as a separate follow-up so the correction remains visible in the development history. The final reconciliation should also replace the compact examples above with a fully fleshed-out, copyable playlist collection example once that correction has settled the entry shape.
+The first implementation discarded arbitrary projected yt-sql values after using the result row to identify the acquisition target. That information loss was found during hardening and corrected as a separate follow-up rather than being rewritten out of the development history. Discover now preserves the visible projection as per-entry metadata while keeping acquisition identity separate.
+
+A result which has genuinely lost unambiguous acquisition identity, such as a materialised aggregate or other synthetic relation without a retained target, still cannot be exported as an acquisition collection merely because it contains useful values. The final reconciliation should replace the compact examples above with a fully fleshed-out, copyable playlist collection example using the settled entry shape.
 
 The document should become more formal as those implementations establish stronger invariants. For now it records the boundary we intend the next pieces to implement without pretending that unimplemented behaviour has already become permanent.

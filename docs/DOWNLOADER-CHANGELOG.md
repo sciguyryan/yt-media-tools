@@ -4,6 +4,12 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+### Collection projection preservation
+
+- [maintenance] Accept optional per-entry projected metadata while keeping arbitrary values inert at the yt-dlp metadata boundary.
+- [test] Verify projected entry metadata cannot overwrite extractor metadata or become arbitrary `info_dict` fields.
+- [docs] Document Downloader's intentionally narrow treatment of projected collection metadata.
+
 ### Collection acquisition hardening
 
 - [maintenance] Keep collection documents immutable across archive-backed resumption and failed or interrupted acquisition attempts.

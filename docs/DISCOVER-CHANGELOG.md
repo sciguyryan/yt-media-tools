@@ -4,6 +4,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Collection projection preservation
+
+- [fix] Preserve the effective yt-sql projection as per-entry collection metadata instead of discarding explicitly selected values.
+- [maintenance] Keep acquisition target identity separate from visible projection so `id` need not be selected when the underlying result row still retains it.
+- [test] Cover aliases, calculated values, SQL NULL, falsey values, duplicate targets and rows without defensible acquisition identity.
+- [docs] Document the corrected distinction between acquisition identity and projected row metadata.
+
 - Add explicit collection export for effective single-playlist query results, preserving final target order while deriving collection positions and counts from the exported entries.
 - Keep collection targets backend-agnostic and reject result shapes which no longer expose acquisition identity rather than guessing at hidden source rows.
 
