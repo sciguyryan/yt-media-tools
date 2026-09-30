@@ -4,11 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-### Collection interchange contract
+- Add explicit collection export for effective single-playlist query results, preserving final target order while deriving collection positions and counts from the exported entries.
+- Keep collection targets backend-agnostic and reject result shapes which no longer expose acquisition identity rather than guessing at hidden source rows.
 
-- [docs] Audit yt-dlp playlist metadata and separate source collection facts from effective ordered-collection values.
-- [docs] Define the initial backend-agnostic collection interchange boundaries for Discover export and Downloader consumption.
-- [docs] Keep acquisition targets generic rather than assuming URLs or provider-specific identifiers.
+- Define the first backend-agnostic collection interchange contract for future Discover export, with opaque acquisition targets and effective-collection semantics after filtering or reordering.
 
 - Cache v4 registry reconciliation now preserves historical provider and field identities while excluding removed declarations from active compatibility and candidate planning, completing the registry contract for entity metadata work.
 

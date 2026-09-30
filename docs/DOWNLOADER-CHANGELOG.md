@@ -6,9 +6,10 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ### Collection interchange contract
 
-- [docs] Audit yt-dlp playlist metadata and define how effective collection values will map into normal yt-dlp template processing.
-- [docs] Keep collection order stable across archive-backed resumption and reserve `--remove-completed-ids` from mutating collection files.
-- [docs] Define the initial backend-agnostic boundary for constructed collections and Discover-produced collection input.
+- [feature] Define the versioned, backend-agnostic collection envelope shared by future Discover export and Downloader consumption.
+- [maintenance] Audit the playlist metadata deliberately supported by the first interchange version and separate supplied collection facts from derived queue values.
+- [docs] Document the initial collection format, metadata precedence and archive-backed resumption boundary without treating the format as arbitrary yt-dlp metadata injection.
+- [test] Pin the v1 schema identity, opaque target representation and supported playlist-field contract.
 
 ### External tool invocation diagnostics
 

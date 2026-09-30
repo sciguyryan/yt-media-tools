@@ -646,6 +646,12 @@ def build_parser() -> argparse.ArgumentParser:
     output_dest.add_argument(
         "--append", type=Path, metavar="FILE", help="atomically append only new video IDs not already present in FILE"
     )
+    output.add_argument(
+        "--collection-output",
+        type=Path,
+        metavar="FILE",
+        help="write the effective playlist result as a versioned collection interchange file",
+    )
 
     parser.add_argument(
         "--dry-run",

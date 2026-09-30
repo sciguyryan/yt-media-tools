@@ -28,6 +28,7 @@ from yt_media_tools.discover_cli import (
     looks_like_complete_query,
     parse_user_query,
 )
+from yt_media_tools.collection_export import build_playlist_collection, write_collection
 from yt_media_tools.discover_constants import (
     DEFAULT_ARCHIVE_FILE,
     FRONTIER_OVERLAP_CONFIRMATIONS,
@@ -1504,6 +1505,20 @@ def main(argv: list[str] | None = None) -> int:
             matched_before_limit if resolved_query.limit is None else matched_before_limit[: resolved_query.limit]
         )
     query_elapsed = perf_counter() - query_started
+
+    if args.collection_output is not None:
+        if multi_source:
+            parser.error("--collection-output currently requires exactly one playlist source")
+        try:
+            collection_payload = build_playlist_collection(source, raw_records, selected)
+            write_collection(args.collection_output, collection_payload)
+        except ValueError as exc:
+            parser.error(str(exc))
+        except OSError as exc:
+            print(f"Error: could not write collection output: {exc}", file=sys.stderr)
+            return 1
+        _verbose(args.verbose, f"Wrote collection output to {args.collection_output.expanduser()}.")
+
     _verbose(args.verbose, f"WHERE matched {len(where_matches)} of {before_query} entries.")
     if resolved_query.distinct:
         _verbose(

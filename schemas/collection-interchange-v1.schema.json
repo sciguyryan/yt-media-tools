@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yt-media-tools.invalid/schema/collection-interchange-v1.schema.json",
+  "title": "yt-media-tools collection interchange v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "collection", "entries"],
+  "properties": {
+    "schema": {
+      "const": "yt-media-tools.collection"
+    },
+    "version": {
+      "const": 1
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "metadata"],
+      "properties": {
+        "type": {
+          "const": "playlist"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {"type": "string"},
+            "id": {"type": "string"},
+            "uploader": {"type": "string"},
+            "uploader_id": {"type": "string"},
+            "channel": {"type": "string"},
+            "channel_id": {"type": "string"},
+            "webpage_url": {"type": "string"}
+          }
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target"],
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
