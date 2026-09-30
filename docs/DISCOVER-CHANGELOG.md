@@ -4,38 +4,20 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-### Collection projection preservation
-
-- [fix] Preserve the effective yt-sql projection as per-entry collection metadata instead of discarding explicitly selected values.
-- [maintenance] Keep acquisition target identity separate from visible projection so `id` need not be selected when the underlying result row still retains it.
-- [test] Cover aliases, calculated values, SQL NULL, falsey values, duplicate targets and rows without defensible acquisition identity.
-- [docs] Document the corrected distinction between acquisition identity and projected row metadata.
-
-- Add explicit collection export for effective single-playlist query results, preserving final target order while deriving collection positions and counts from the exported entries.
-- Keep collection targets backend-agnostic and reject result shapes which no longer expose acquisition identity rather than guessing at hidden source rows.
-
-- Define the first backend-agnostic collection interchange contract for future Discover export, with opaque acquisition targets and effective-collection semantics after filtering or reordering.
-
-- Cache v4 registry reconciliation now preserves historical provider and field identities while excluding removed declarations from active compatibility and candidate planning, completing the registry contract for entity metadata work.
-
-- Cache v4 registry field-provider planning now applies deterministic persistent precedence, implementation availability, effective freshness and shared logical-field type compatibility without resolving entity values.
-
-- Cache v4 registry persistence now preserves stable provider, group and field identities, database-owned policy and contract reconciliation independently of the active v3 runtime cache.
-
-- Add a versioned semantic migration oracle for the canonical cache-v3 fixture without prescribing a cache-v4 physical schema.
-- Verify oracle facts independently against the immutable SQLite fixture, including source-scoped duplicate media and historical coverage snapshots.
-- Keep `raw.*` compatibility unresolved where v3 mixes query-visible nested values with unclassified backend material.
-- Define the cache-v3 structural validity boundary with a test-support validator rather than changing normal cache opening behaviour.
-- Exercise malformed metadata, schema drift, broken source ordering and contradictory frontier state as isolated mutations of the canonical fixture.
-- Keep row/JSON ID disagreement and unconstrained negative counters valid where v3 never established a stronger invariant.
-- Add an immutable canonical cache-v3 database fixture built through the v3 writer API.
-- Preserve source-scoped duplicate media, falsey/NULL/Unicode/raw values, observation-only state and historical coverage snapshots as valid migration inputs.
-- Document why each awkward fixture record exists and keep unresolved structural-validity cases out of the valid corpus until their boundary is decided.
-- Freeze the implemented cache-v3 schema and API semantics as the historical source contract for the cache-v4 migration programme.
-- Document source-scoped raw metadata, field-aware freshness, source observation/order/coverage/frontier distinctions and the conservative v1/v2 frontier migration rule.
-- Add focused regression checks for physical schema independence and non-obvious v3 snapshot/replacement semantics without changing production cache behaviour.
-
 ## Release history
+
+### Discover 0.30.0 - Collection Export
+
+- Add the versioned backend-agnostic collection interchange and `--collection-output FILE` for effective single-playlist query results.
+- Preserve final yt-sql result ordering while deriving collection positions and counts from the exported entries rather than copying stale remote-playlist state.
+- Preserve each visible yt-sql projection as per-entry metadata while retaining acquisition identity separately, so ordinary projections do not need to select `id` merely for collection export.
+- Keep aliases, calculated values, SQL NULL and falsey projected values intact using the same stable JSON representation as normal Discover output.
+- Reject aggregate, synthetic or other result shapes which no longer retain a defensible one-entry-to-one-target acquisition identity.
+- Freeze the implemented cache-v3 contract and immutable migration fixtures, including awkward source-scoped metadata, observation, coverage and frontier cases required for later migration verification.
+- Add the versioned semantic cache-v3 migration oracle and structural validity boundary without changing normal cache-v3 opening behaviour.
+- Establish cache-v4 provider, acquisition-group and field registry contracts with persistent stable identities, database-owned policy, deterministic precedence, implementation availability and shared-field type compatibility.
+- Keep cache-v4 registry work foundational: the current runtime cache remains v3 and entity metadata, migration and cut-over work remain separate later phases.
+- Expand collection, cache-contract and registry regression coverage and reconcile the corresponding documentation.
 
 ### Discover 0.29.17 - Parser Proof
 

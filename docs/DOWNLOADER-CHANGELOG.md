@@ -4,51 +4,18 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
-### Collection projection preservation
-
-- [maintenance] Accept optional per-entry projected metadata while keeping arbitrary values inert at the yt-dlp metadata boundary.
-- [test] Verify projected entry metadata cannot overwrite extractor metadata or become arbitrary `info_dict` fields.
-- [docs] Document Downloader's intentionally narrow treatment of projected collection metadata.
-
-### Collection acquisition hardening
-
-- [maintenance] Keep collection documents immutable across archive-backed resumption and failed or interrupted acquisition attempts.
-- [maintenance] Preserve stable collection positions when earlier entries are archive-skipped and retain distinct ordered positions for duplicate targets.
-- [maintenance] Support constructed collections without inventing remote playlist identity metadata.
-- [test] Exercise archive-backed planning, skipped-prefix numbering, duplicate targets, constructed collections and queue-mutation boundaries.
-- [docs] Record the hardened resumption contract and the known projected-row information-loss issue reserved for the follow-up correction.
-
-### Collection consumption
-
-- [feature] Add `--collection-file FILE` as an ordered acquisition input and inject the supported playlist context before normal yt-dlp output-template processing.
-- [maintenance] Keep collection targets opaque, force one collection entry to one yt-dlp target, and preserve typed derived positions and counts.
-- [ux] Warn that `--remove-completed-ids` does not mutate collection documents and leave archive-backed completion handling intact.
-- [test] Cover collection validation, command planning, typed metadata injection and non-mutating queue-removal compatibility.
-- [docs] Document Downloader collection consumption and the yt-dlp metadata bridge.
-
-### Collection interchange contract
-
-- [feature] Define the versioned, backend-agnostic collection envelope shared by future Discover export and Downloader consumption.
-- [maintenance] Audit the playlist metadata deliberately supported by the first interchange version and separate supplied collection facts from derived queue values.
-- [docs] Document the initial collection format, metadata precedence and archive-backed resumption boundary without treating the format as arbitrary yt-dlp metadata injection.
-- [test] Pin the v1 schema identity, opaque target representation and supported playlist-field contract.
-
-### External tool invocation diagnostics
-
-- [feature] Add a shared registry and structured invocation model for external command, bridge and Python-library integrations.
-- [cli] Add `--debug-external` for safely redacted live invocation diagnostics and `--debug-external-unsafe` for deliberate unredacted diagnostics.
-- [security] Redact credential-bearing command options and sensitive annotated library arguments by default.
-- [test] Cover registry completeness, deterministic rendering, redaction and library-call annotation.
-
-### Hierarchical parameter-profile inheritance
-
-- [feature] Add optional `$defaults` shared profile policy and deterministic single-parent inheritance.
-- [cli] Add `--profile-tree [NAME]` for complete or focused hierarchy inspection.
-- [maintenance] Bump the profile format to version 3 while retaining version 2 non-hierarchical compatibility.
-- [test] Cover inheritance, cycles, missing parents, declaration-order independence, reusable values, provenance and tree rendering.
-- [docs] Document root-to-leaf precedence, `$defaults`, parent relationships and hierarchy inspection.
-
 ## Release history
+
+### Downloader 1.23.0 - Collection Context
+
+- Add the shared versioned collection interchange and `--collection-file FILE` as a first-class ordered acquisition input.
+- Restore supported playlist context before yt-dlp output-template rendering while leaving normal yt-dlp formatting responsible for padding, paths and other presentation.
+- Preserve stable typed collection positions and counts across archive-skipped prefixes, failed or interrupted attempts, duplicate targets and constructed collections.
+- Keep collection documents immutable, retain the yt-dlp download archive as successful-completion authority, neutralise `--remove-completed-ids` for collection input and reject row-removal mutation.
+- Accept optional projected per-entry metadata while deliberately keeping arbitrary values inert at the yt-dlp `info_dict` boundary.
+- Add shared structured external-tool invocation diagnostics with safe redaction by default and an explicit unsafe diagnostic mode.
+- Expand collection validation, acquisition, resumption, metadata-isolation, command-planning and external-diagnostic regression coverage.
+- Reconcile collection documentation and examples around the settled version 1 contract.
 
 ### Downloader 1.22.0 - Profile Hierarchy
 

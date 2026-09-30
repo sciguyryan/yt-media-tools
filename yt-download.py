@@ -52,7 +52,7 @@ from yt_media_tools.ytdlp_runtime import (
 
 
 PROGRAM_NAME = "yt-download.py"
-PROGRAM_VERSION = "1.22.0"
+PROGRAM_VERSION = "1.23.0"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_PROFILE_NAME = "default"
@@ -369,6 +369,9 @@ EXAMPLES = r"""Examples:
 
   Pipe discovery output directly into the downloader:
     yt-discover @SomeChannel --after 2025-01-01 | %(prog)s -
+
+  Consume an ordered collection exported by Discover while retaining playlist context:
+    %(prog)s --collection-file filtered-playlist.json
 
   Select a named profile from defaults.json:
     %(prog)s -p 4k VIDEO_ID

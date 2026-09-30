@@ -1,22 +1,20 @@
 # Collection interchange
 
-This document describes the collection file shared by Discover and Downloader. It starts deliberately small. The immediate problem is playlist metadata, but the outer format should not assume that every target is a URL, a YouTube ID, or even something interpreted by the same acquisition backend.
+The collection interchange is the versioned file format shared by Discover and Downloader when an ordered set of acquisition targets needs to retain collection context. Its first use is filtered playlists, but the format deliberately does not assume that every target is a URL, a YouTube ID, or interpreted by one particular acquisition backend.
 
-The format is versioned separately from Discover and Downloader. Version 1 supports playlist-like collections.
+The interchange version is independent of Discover and Downloader versions. Version 1 supports playlist-like collections.
 
-## Why this exists
+## Purpose
 
-Discover can turn a remote playlist into a different useful collection. A query might remove unwanted entries, change their order, or select only a small part of the original. Passing the resulting targets to Downloader as ordinary line-based input loses the playlist context which yt-dlp would normally provide while traversing the original playlist.
+Discover can turn a remote playlist into a different collection by filtering, reordering or slicing it. Passing only the resulting IDs or URLs to Downloader loses the playlist context which yt-dlp would normally provide while traversing the original playlist. Existing output templates which use fields such as `%(playlist)s` or `%(playlist_autonumber)03d` then lose information even though the user's output policy has not changed.
 
-That matters when an existing Downloader profile contains fields such as `%(playlist)s` or `%(playlist_autonumber|03d)s`. The profile is not the problem. The metadata has disappeared before yt-dlp gets to render it.
+A collection file carries the effective ordered targets and the small amount of collection context required to restore those semantics. Downloader injects only the supported playlist context before yt-dlp performs its normal output-template processing.
 
-The collection file carries that missing context alongside the ordered targets. Downloader can later turn the supported collection metadata into yt-dlp metadata and leave yt-dlp to perform its normal output-template work.
+The same format can describe a collection assembled by hand or by another program. A constructed collection does not need to claim that a corresponding remote playlist exists.
 
-The same format should also work for a collection assembled by hand or by another program. There does not need to be a real remote playlist behind it.
+## Version 1 structure
 
-## Version 1 shape
-
-A minimal file looks like this:
+A complete playlist-derived example looks like this:
 
 ```json
 {
@@ -25,24 +23,66 @@ A minimal file looks like this:
   "collection": {
     "type": "playlist",
     "metadata": {
-      "title": "Things I actually wanted"
+      "title": "Space documentaries under 30 minutes",
+      "id": "PL1234567890example",
+      "uploader": "Example Astronomy",
+      "uploader_id": "@exampleastronomy",
+      "channel": "Example Astronomy",
+      "channel_id": "UC1234567890example",
+      "webpage_url": "https://www.youtube.com/playlist?list=PL1234567890example"
     }
   },
   "entries": [
-    {"target": "first-target"},
-    {"target": "second-target"},
-    {"target": "third-target"}
+    {
+      "target": "a1b2c3d4e5F",
+      "metadata": {
+        "title": "A Tour of Mars",
+        "duration": 842,
+        "upload_date": "2026-02-14",
+        "views": 184203
+      }
+    },
+    {
+      "target": "f6g7h8i9j0K",
+      "metadata": {
+        "title": "Why Saturn Has Rings",
+        "duration": 1097,
+        "upload_date": "2026-01-28",
+        "views": 0
+      }
+    },
+    {
+      "target": "L1m2n3o4p5Q",
+      "metadata": {
+        "title": "The Quiet Side of the Moon",
+        "duration": 1274,
+        "upload_date": null,
+        "views": 93511
+      }
+    }
   ]
 }
 ```
 
-`target` is deliberately opaque. It might contain a URL, an ID, a backend-specific reference, or another target representation accepted by the eventual acquisition path. The collection format does not reinterpret it.
+This is a normal JSON document and can be copied as the starting point for a constructed collection. Only `schema`, `version`, `collection`, `entries`, each entry's non-empty `target`, and the collection type are structural requirements. `collection.metadata` may be empty when no truthful collection-level metadata exists. Per-entry `metadata` is optional so original minimal v1 documents remain valid.
 
-The ordered `entries` array is authoritative for the effective collection. Derived positions and counts come from that order rather than being stored separately and allowed to disagree with it.
+`target` is deliberately opaque. It may be an ID, URL, backend-specific reference or another value accepted by the eventual acquisition path. The interchange does not reinterpret it.
 
-Each Discover-exported entry also carries a `metadata` object containing the visible yt-sql projection for that result row. `target` is acquisition identity; `entries[].metadata` is query output. They are deliberately separate. A query does not need to select `id` merely so collection export can acquire the row when Discover still retains the underlying acquisition identity.
+The ordered `entries` array is authoritative. Positions and counts are derived from this order rather than stored separately and allowed to disagree with it. In the example above the third entry receives `playlist_index = 3`, `playlist_autonumber = 3`, `playlist_count = 3` and `n_entries = 3` when Downloader supplies playlist context to yt-dlp. Formatting such as `%(playlist_autonumber|03d)s` remains an output-template concern and is not stored in the interchange.
 
-For example, `SELECT title AS name, duration FROM @playlist` may produce:
+The machine-readable definition is `schemas/collection-interchange-v1.schema.json`.
+
+## Projected row metadata
+
+Discover exports the visible yt-sql projection for each result row in `entries[].metadata`. This data is distinct from the acquisition `target`.
+
+For example:
+
+```text
+SELECT title AS name, duration FROM PLxxxxxxxxxxxxxxxxxxxxxx
+```
+
+can produce:
 
 ```json
 {
@@ -54,15 +94,19 @@ For example, `SELECT title AS name, duration FROM @playlist` may produce:
 }
 ```
 
-The `id` is not added to `metadata` because the user did not select it. Aliases and calculated expressions retain their projected names and values. SQL `NULL` becomes JSON `null`; falsey values such as `0`, `false` and `""` remain values rather than being treated as absent. Typed date and datetime values use the same stable JSON representation as normal Discover output.
+The query did not select `id`, so `id` is not silently added to `metadata`. Discover can still use the underlying acquisition identity as `target` while that identity remains unambiguously associated with the effective row. This separation allows the collection to preserve what the user actually selected without requiring acquisition plumbing to become part of the visible projection.
 
-Constructed v1 documents may omit per-entry `metadata`, preserving compatibility with the original minimal v1 shape. When `metadata` is present it is informational query-result material. Downloader validates that it is an object but does not copy arbitrary keys into yt-dlp's `info_dict`.
+Aliases and calculated expressions retain their projected names and values. SQL `NULL` is represented as JSON `null`. Falsey values including `0`, `false` and `""` remain ordinary values. Typed date and datetime values use the same stable JSON representation as normal Discover output.
 
-The machine-readable v1 shape lives in `schemas/collection-interchange-v1.schema.json`.
+The first collection implementation discarded these projected values after identifying each target. That information-loss flaw was found during hardening and corrected before the first reconciled collection release. The distinction between `target` and `metadata` is therefore part of the settled v1 contract.
 
-## Playlist metadata audit
+A result which has genuinely lost unambiguous acquisition identity cannot be exported merely because it contains useful values. Aggregate, grouped, synthetic or other materialised results must retain a defensible one-entry-to-one-target association or collection export fails rather than inventing a target.
 
-The initial audit follows the playlist-related fields which yt-dlp exposes to output templates. They do not all mean the same sort of thing.
+Downloader validates optional entry metadata as an object but otherwise ignores it. Arbitrary projected values are not permission to patch yt-dlp's `info_dict`; only the explicit playlist metadata bridge described below can do that.
+
+## Playlist metadata contract
+
+Version 1 supports the following playlist-related yt-dlp fields:
 
 | yt-dlp field | v1 source | Collection value or rule |
 | --- | --- | --- |
@@ -74,73 +118,90 @@ The initial audit follows the playlist-related fields which yt-dlp exposes to ou
 | `playlist_channel` | supplied | `collection.metadata.channel` |
 | `playlist_channel_id` | supplied | `collection.metadata.channel_id` |
 | `playlist_webpage_url` | supplied | `collection.metadata.webpage_url` |
-| `playlist_index` | derived | one-based position in the effective ordered collection |
-| `playlist_autonumber` | derived | one-based position in the effective download queue |
+| `playlist_index` | derived | one-based position in the ordered collection |
+| `playlist_autonumber` | derived | one-based position in the ordered collection |
 | `playlist_count` | derived | number of entries in the effective collection |
-| `n_entries` | derived | number of entries supplied by the effective collection |
+| `n_entries` | derived | number of entries in the effective collection |
 
-`playlist_index` and `playlist_autonumber` are kept as separate yt-dlp fields even though a simple v1 collection initially gives them the same numeric sequence. yt-dlp gives them different meanings, and later Downloader policy must not collapse the two concepts merely because their values happen to agree in the first implementation.
+`playlist_index` and `playlist_autonumber` remain separate fields even though v1 gives them the same numeric sequence. They are distinct yt-dlp concepts and must not be collapsed merely because their values currently agree.
 
-Likewise, `playlist_count` and `n_entries` remain separate integration fields. For a complete v1 collection they are both derived from the effective entry count. This avoids carrying the original remote playlist's count into a filtered collection and then claiming it describes the new one.
+Likewise, `playlist_count` and `n_entries` remain separate integration fields even though both equal the effective entry count in v1. The original remote playlist's positions and count are not copied into a filtered collection.
 
-The general `autonumber` and `video_autonumber` fields are not collection metadata and are outside this contract.
+General `autonumber` and `video_autonumber` fields are outside the collection metadata contract.
 
-## Effective collection, not copied playlist state
+## Effective collection semantics
 
-A Discover export describes its result. If a source playlist contains 100 entries and a query produces 12, the exported collection has 12 entries. Its derived count and position fields must describe those 12 entries.
+A Discover export describes the effective query result. If a source playlist contains 100 entries and the final query produces 12, the collection has 12 entries and its derived counts and positions describe those 12 entries.
 
-Source facts may be copied into `metadata` only while they still mean what they say. A title, uploader or channel can remain useful after filtering. A remote playlist ID or webpage URL needs more care because a constructed collection is not necessarily the remote resource identified by those values. Discover export work must make that distinction deliberately rather than copying every source field by default.
+Discover applies normal yt-sql filtering, ordering, `DISTINCT`, `OFFSET` and `LIMIT` semantics before collection export. The exported entry order is therefore the final query order.
 
-A hand-built collection can omit metadata which has no honest value. Downloader should not need a fake remote ID or URL merely to supply a title and stable numbering.
+For the v1 export path, Discover supports one playlist source at a time. Stable source identity and repeated playlist metadata which agree across acquired entries may be promoted to `collection.metadata`. Conflicting repeated values are omitted rather than resolved arbitrarily. Values describing the effective result, especially positions and counts, are always derived from `entries`.
 
-## Metadata precedence
-
-Version 1 treats metadata explicitly present in the collection as the collection context requested by the caller. When Downloader consumes the format, supported supplied fields are intended to override conflicting playlist-context values returned incidentally while processing an individual target. Metadata not declared by the collection remains available for normal yt-dlp processing.
-
-This precedence applies only to the small supported playlist field set. The format is not an arbitrary yt-dlp info-dict patch mechanism.
-
-## Downloader consumption
-
-Downloader accepts a version 1 collection with `--collection-file FILE`. The collection is the input source for that invocation, so it cannot be combined with positional targets or `--input-file`. Each `entries[].target` value is passed to yt-dlp in document order without the interchange assigning URL or ID semantics to it.
-
-Downloader loads a small bundled yt-dlp pre-processing plugin for collection runs. The plugin runs after extraction and before yt-dlp performs its normal output-template work. It overlays only the supported playlist fields declared by this contract. Supplied collection metadata wins for the fields which are present, while unrelated extractor metadata is left alone. Positions and counts are injected as integers derived from the ordered `entries` array.
-
-For a three-entry collection, the second effective entry therefore receives `playlist_index = 2`, `playlist_autonumber = 2`, `playlist_count = 3` and `n_entries = 3`. `playlist` is derived from the supplied title when one exists, otherwise from the supplied collection ID. Downloader does not render `03d`, choose path separators or otherwise reproduce output-template formatting. Those remain normal yt-dlp responsibilities.
-
-Collection entries are treated as individual members of the effective collection. Downloader disables remote playlist expansion for these targets so an entry which happens to identify a remote playlist cannot unexpectedly expand into several media items and invalidate the one-entry/one-position relationship.
-
-The bridge is deliberately not a general yt-dlp metadata patch surface. Version 1 injects only the playlist fields listed in this document.
-
-## Resumption and mutation
-
-The collection document is acquisition input, not a progress file. Re-running it preserves the same entry order and therefore the same derived positions. Downloader's existing download archive remains the authority for media already downloaded successfully. An archived entry may be skipped before the collection metadata bridge runs; later entries still receive their original positions because the bridge resolves positions from the collection entry target rather than from the number of downloads completed in the current run.
-
-The collection file itself is immutable during acquisition. `--remove-completed-ids` warns and has no mutation effect for collection input. `--remove-completed-rows` is rejected because row removal is a batch-queue operation, not a collection operation. Failed or interrupted targets therefore remain present and are eligible on a later run unless the download archive proves them complete.
-
-Duplicate targets are permitted. They remain separate ordered collection entries. When the same target reaches the metadata bridge more than once in one run, its occurrences consume their recorded positions in order. If yt-dlp's archive identifies that media as already complete, archive policy may skip every occurrence of the same archived media identity; the collection document is still not rewritten.
-
-A constructed collection does not need to pretend that a remote playlist exists. Its `metadata` object may be empty. Downloader still derives position and count fields from the ordered entries while leaving remote playlist identity fields absent.
-
-Queue-mutation features such as `--remove-completed-ids` must not rewrite a collection document. Downloader should warn when that option is combined with collection input so it is clear that completed collection entries will not be removed from the file.
+Source facts are retained only while they remain truthful. A hand-built collection may use an empty metadata object rather than inventing a remote playlist ID, URL, uploader or channel.
 
 ## Discover export
 
-Discover can write the effective result of a single playlist query with `--collection-output FILE`. The ordinary query output is unchanged; the collection file is an additional machine-readable result.
+Use `--collection-output FILE` to write the effective playlist result as an additional machine-readable output:
 
-The `entries` array follows the final query result order after the query has applied its filtering, ordering, DISTINCT, OFFSET and LIMIT semantics. Original playlist positions and counts are not copied into the document. Downloader can therefore derive positions and counts from the collection that was actually selected rather than from the remote playlist before Discover changed it.
+```bash
+./yt-discover.py \
+  --collection-output filtered-playlist.json \
+  "SELECT title, duration, upload_date, view_count AS views FROM PLxxxxxxxxxxxxxxxxxxxxxx WHERE duration < 30m ORDER BY playlist_index ASC"
+```
 
-Version 1 collection export requires every final query row to expose a non-empty `id` field. This is deliberate. An aggregate or projection such as `SELECT uploader` does not identify an ordered set of acquisition targets, and Discover must not guess which underlying media the result represents. A query intended for collection export should retain `id` in its effective rows.
+Normal Discover output is still emitted. The collection file is additional output intended for later acquisition or another consumer which needs the effective ordered result and its selected metadata.
 
-For the first implementation, Discover exports one playlist source at a time. Stable source identity and repeated playlist metadata which agree across acquired entries may be retained as collection metadata. Conflicting repeated values are omitted rather than choosing one arbitrarily. Values which describe the effective result, including counts and positions, remain derived from `entries`.
+The visible projection does not need to contain `id` merely for collection export. Discover uses retained acquisition identity where the final row still has an unambiguous underlying target. It rejects result shapes where that association no longer exists.
 
-The fully developed version of this document should include a complete realistic playlist collection which can be copied and adapted directly. The example will be expanded as Downloader consumption and constructed-collection behaviour make the remaining semantics concrete.
+## Downloader consumption
 
-## Work still deliberately left for later issues
+Consume the exported or constructed document with:
 
-Discover exports source metadata only when it remains truthful for the effective result, and Downloader consumes the document without treating it as arbitrary yt-dlp metadata injection. Archive-backed resumption, constructed collections, duplicate targets and collection immutability are now explicit parts of the v1 behaviour.
+```bash
+./yt-download.py --collection-file filtered-playlist.json
+```
 
-The first implementation discarded arbitrary projected yt-sql values after using the result row to identify the acquisition target. That information loss was found during hardening and corrected as a separate follow-up rather than being rewritten out of the development history. Discover now preserves the visible projection as per-entry metadata while keeping acquisition identity separate.
+Collection input is a first-class input source and cannot be combined with positional targets or `--input-file`. Downloader passes each `entries[].target` to yt-dlp in document order without assigning URL or ID semantics to the value.
 
-A result which has genuinely lost unambiguous acquisition identity, such as a materialised aggregate or other synthetic relation without a retained target, still cannot be exported as an acquisition collection merely because it contains useful values. The final reconciliation should replace the compact examples above with a fully fleshed-out, copyable playlist collection example using the settled entry shape.
+For collection runs, Downloader loads its bundled yt-dlp pre-processing plugin. The plugin runs after extraction and before normal output-template rendering. It overlays only the supported playlist fields from this contract. Supplied collection metadata wins for those explicitly supported fields; unrelated extractor metadata remains untouched.
 
-The document should become more formal as those implementations establish stronger invariants. For now it records the boundary we intend the next pieces to implement without pretending that unimplemented behaviour has already become permanent.
+Collection positions and counts are injected as integers. Downloader does not perform output-template formatting itself. Padding, path separators, fallback syntax and other template behaviour remain yt-dlp responsibilities.
+
+Each collection entry represents one acquisition target. Downloader disables remote playlist expansion for collection targets so a target which happens to identify a remote playlist cannot unexpectedly expand into several media items and break the one-entry-to-one-position contract.
+
+## Metadata precedence
+
+Collection metadata explicitly supplied through the supported playlist field set represents the caller's requested collection context and overrides conflicting playlist-context values returned incidentally while processing an individual target.
+
+This precedence is deliberately narrow. `entries[].metadata` is informational projected row data and does not participate in yt-dlp metadata precedence. Undeclared or unrelated extractor metadata remains available for normal yt-dlp processing.
+
+## Resumption, duplicates and immutability
+
+The collection document is acquisition input, not a progress file. Re-running it preserves the same entry order and therefore the same derived positions.
+
+Downloader's configured yt-dlp download archive remains authoritative for media already downloaded successfully. If earlier entries are skipped because they are archived, later entries keep their original collection positions rather than being renumbered according to work performed during the current run. Failed or interrupted targets remain in the immutable collection and are eligible again unless the archive proves them complete.
+
+Duplicate targets are valid and remain distinct ordered entries. Their occurrences consume their recorded positions in order. Archive policy may skip multiple occurrences when they resolve to the same already-completed media identity, but the collection document is not rewritten.
+
+`--remove-completed-ids` warns and has no mutation effect with `--collection-file`. `--remove-completed-rows` is rejected because row removal is a batch-queue operation rather than a collection operation. Consumers which need a different collection should produce a new collection document instead of treating this interchange as mutable progress state.
+
+## Compatibility boundary
+
+Version 1 accepts both the original minimal entry form:
+
+```json
+{"target": "abc123"}
+```
+
+and the corrected projected-row form:
+
+```json
+{
+  "target": "abc123",
+  "metadata": {
+    "title": "Example title"
+  }
+}
+```
+
+The format remains intentionally small. It is not a generic database, a yt-dlp `info_dict` patch language or a progress ledger. Future interchange changes which require incompatible structure or semantics must use an explicit interchange-version change rather than silently changing the meaning of version 1.

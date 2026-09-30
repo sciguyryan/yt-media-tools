@@ -80,6 +80,11 @@ Examples:
   Query a playlist using the same language:
     yt-discover.py "SELECT playlist_index, id, title, duration FROM PLxxxxxxxxxxxxxxxxxxxxxx ORDER BY playlist_index ASC"
 
+  Filter a playlist and also export the effective ordered result as a collection
+  which Downloader can consume without losing playlist context:
+    yt-discover.py --collection-output filtered-playlist.json "SELECT title, duration FROM PLxxxxxxxxxxxxxxxxxxxxxx WHERE duration < 30m ORDER BY playlist_index ASC"
+    yt-download.py --collection-file filtered-playlist.json
+
   Quote full URLs in FROM:
     yt-discover.py "SELECT id, title FROM 'https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxxxxxxxx'"
 

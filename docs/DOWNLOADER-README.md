@@ -1,6 +1,6 @@
 # yt-download
 
-`yt-download.py` 1.22.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
+`yt-download.py` 1.23.0 is a small Python wrapper around `yt-dlp` for downloading video IDs, URLs, batch files, playlists, or newline-separated targets from standard input.
 
 It is designed to pair naturally with `yt-discover.py`:
 
@@ -72,6 +72,8 @@ Consume a versioned collection exported by Discover or constructed separately:
 ```
 
 Collection input preserves its ordered playlist context for existing output profiles. Downloader injects the supported playlist metadata before yt-dlp renders output templates, so fields such as `%(playlist)s` and `%(playlist_autonumber)03d` can be used without a collection-specific output profile. See `COLLECTION-INTERCHANGE.md` for the versioned format and field rules.
+
+Discover-exported entries may also contain the yt-sql values selected for that row. Downloader preserves and validates that interchange data but does not inject arbitrary projected fields into yt-dlp metadata. Only the documented playlist-context bridge affects `info_dict` values.
 
 A collection document remains immutable input. `--remove-completed-ids` warns and has no queue-removal effect for `--collection-file`; yt-dlp's configured download archive remains responsible for recognising media already acquired successfully.
 

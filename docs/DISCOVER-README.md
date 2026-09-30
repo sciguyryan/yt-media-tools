@@ -678,6 +678,26 @@ yt-discover.py "SELECT id, title, upload_date, views FROM @channel" --format csv
 
 The legacy `--format ids` and `--format urls` shortcuts remain supported only when `SELECT` is omitted. This prevents an explicit projection from being silently overridden.
 
+### Collection export
+
+For a single playlist source, `--collection-output FILE` writes the effective ordered query result as a versioned collection interchange document in addition to normal Discover output:
+
+```bash
+./yt-discover.py \
+  --collection-output filtered-playlist.json \
+  "SELECT title, duration, upload_date FROM PLxxxxxxxxxxxxxxxxxxxxxx WHERE duration < 30m ORDER BY playlist_index ASC"
+```
+
+The collection preserves the final target order and the visible yt-sql projection for each row. Acquisition identity is stored separately from projected metadata, so an ordinary query does not need to select `id` merely to remain downloadable when Discover can still associate the result row with one underlying target.
+
+The resulting document can be passed directly to Downloader:
+
+```bash
+./yt-download.py --collection-file filtered-playlist.json
+```
+
+See `COLLECTION-INTERCHANGE.md` for the versioned structure, supported playlist context, resumption semantics and constructed-collection rules.
+
 ## Validation and diagnostics
 
 Validate grammar without contacting YouTube:
