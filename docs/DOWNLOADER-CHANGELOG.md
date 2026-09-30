@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+### Collection consumption
+
+- [feature] Add `--collection-file FILE` as an ordered acquisition input and inject the supported playlist context before normal yt-dlp output-template processing.
+- [maintenance] Keep collection targets opaque, force one collection entry to one yt-dlp target, and preserve typed derived positions and counts.
+- [ux] Warn that `--remove-completed-ids` does not mutate collection documents and leave archive-backed completion handling intact.
+- [test] Cover collection validation, command planning, typed metadata injection and non-mutating queue-removal compatibility.
+- [docs] Document Downloader collection consumption and the yt-dlp metadata bridge.
+
 ### Collection interchange contract
 
 - [feature] Define the versioned, backend-agnostic collection envelope shared by future Discover export and Downloader consumption.

@@ -81,6 +81,18 @@ Version 1 treats metadata explicitly present in the collection as the collection
 
 This precedence applies only to the small supported playlist field set. The format is not an arbitrary yt-dlp info-dict patch mechanism.
 
+## Downloader consumption
+
+Downloader accepts a version 1 collection with `--collection-file FILE`. The collection is the input source for that invocation, so it cannot be combined with positional targets or `--input-file`. Each `entries[].target` value is passed to yt-dlp in document order without the interchange assigning URL or ID semantics to it.
+
+Downloader loads a small bundled yt-dlp pre-processing plugin for collection runs. The plugin runs after extraction and before yt-dlp performs its normal output-template work. It overlays only the supported playlist fields declared by this contract. Supplied collection metadata wins for the fields which are present, while unrelated extractor metadata is left alone. Positions and counts are injected as integers derived from the ordered `entries` array.
+
+For a three-entry collection, the second effective entry therefore receives `playlist_index = 2`, `playlist_autonumber = 2`, `playlist_count = 3` and `n_entries = 3`. `playlist` is derived from the supplied title when one exists, otherwise from the supplied collection ID. Downloader does not render `03d`, choose path separators or otherwise reproduce output-template formatting. Those remain normal yt-dlp responsibilities.
+
+Collection entries are treated as individual members of the effective collection. Downloader disables remote playlist expansion for these targets so an entry which happens to identify a remote playlist cannot unexpectedly expand into several media items and invalidate the one-entry/one-position relationship.
+
+The bridge is deliberately not a general yt-dlp metadata patch surface. Version 1 injects only the playlist fields listed in this document.
+
 ## Resumption and mutation
 
 The collection document is acquisition input, not a progress file. Re-running it should preserve the same entry order and therefore the same derived positions. Downloader's existing download archive is expected to remain the authority for media already downloaded successfully; the later Downloader work must verify that this gives correct and reasonably efficient resumption.
@@ -101,6 +113,6 @@ The fully developed version of this document should include a complete realistic
 
 ## Work still deliberately left for later issues
 
-This issue defines the first contract, not the whole feature. Discover export still needs to decide which source metadata remains truthful after each query result is formed. Downloader still needs to validate and consume the document, inject supported values at the right point in yt-dlp processing, and verify archive-backed resumption. Constructed collections and awkward cases then need hardening against the same contract.
+This issue defines the first contract, not the whole feature. Discover export still needs to decide which source metadata remains truthful after each query result is formed. Downloader now validates and consumes the document and injects the supported playlist values before normal yt-dlp template processing. Archive-backed resumption still needs deliberate verification. Constructed collections and awkward cases then need hardening against the same contract.
 
 The document should become more formal as those implementations establish stronger invariants. For now it records the boundary we intend the next pieces to implement without pretending that unimplemented behaviour has already become permanent.

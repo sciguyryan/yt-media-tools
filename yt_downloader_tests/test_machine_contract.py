@@ -95,8 +95,8 @@ def test_explain_json_contract_has_independent_schema_version(downloader, tmp_pa
     )
     payload = downloader.explain_plan_payload(plan)
     assert payload["kind"] == "yt-download-plan"
-    assert payload["schema_version"] == downloader.PLAN_SCHEMA_VERSION == 3
-    assert downloader.machine_contract()["machine_interfaces"]["explain"]["schema_version"] == 3
+    assert payload["schema_version"] == downloader.PLAN_SCHEMA_VERSION == 4
+    assert downloader.machine_contract()["machine_interfaces"]["explain"]["schema_version"] == 4
 
 
 def test_every_public_cli_destination_has_an_explicit_persistence_class(downloader) -> None:

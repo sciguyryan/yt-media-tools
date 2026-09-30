@@ -19,6 +19,7 @@ Downloader configuration uses one versioned JSON profile system:
 from __future__ import annotations
 
 import argparse
+import base64
 import copy
 import hashlib
 import json
@@ -28,6 +29,11 @@ import shlex
 import shutil
 import subprocess
 
+from yt_media_tools.collection_interchange import (
+    COLLECTION_INTERCHANGE_SCHEMA,
+    COLLECTION_INTERCHANGE_VERSION,
+    COLLECTION_TYPE_PLAYLIST,
+)
 from yt_media_tools.external_tools import ToolInvocation, configure_external_diagnostics, emit_invocation
 import sys
 import tempfile
@@ -55,7 +61,7 @@ PROFILE_VERSION = 3
 LEGACY_PROFILE_VERSIONS = frozenset({2})
 RUN_MANIFEST_SCHEMA_VERSION = 1
 MACHINE_CONTRACT_VERSION = 4
-PLAN_SCHEMA_VERSION = 3
+PLAN_SCHEMA_VERSION = 4
 CAPABILITIES_SCHEMA_VERSION = 1
 CONFIG_VALIDATION_SCHEMA_VERSION = 1
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
@@ -206,7 +212,7 @@ CLI_DESTINATION_CLASSES = {
             "auto_cookies",
         }
     ),
-    "input": frozenset({"targets", "input_file"}),
+    "input": frozenset({"targets", "input_file", "collection_file"}),
     "configuration-control": frozenset(
         {
             "profile",
@@ -654,12 +660,15 @@ class InputSource:
     """Describe how yt-dlp should receive download targets."""
 
     batch_file: Path | None = None
+    collection_file: Path | None = None
     stdin: bool = False
     direct_targets: tuple[str, ...] = ()
 
     def append_to(self, command: list[str]) -> None:
         """Append the input arguments represented by this source to a command."""
-        if self.batch_file is not None:
+        if self.collection_file is not None:
+            command.extend(self.direct_targets)
+        elif self.batch_file is not None:
             command.extend(("--batch-file", str(self.batch_file)))
         elif self.stdin:
             command.extend(("--batch-file", "-"))
@@ -1333,6 +1342,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="Read targets from FILE instead of positional targets or ./ids.txt.",
     )
+    parser.add_argument(
+        "--collection-file",
+        type=Path,
+        metavar="FILE",
+        help=(
+            "Read an ordered versioned collection from FILE and inject its supported "
+            "collection metadata before yt-dlp renders output templates."
+        ),
+    )
     cookie_group = parser.add_mutually_exclusive_group()
     cookie_group.add_argument(
         "--cookies",
@@ -1485,9 +1503,57 @@ def validate_resolution(value: str) -> str:
     return value
 
 
+def load_collection_input(path: Path) -> InputSource:
+    """Validate a v1 collection document and return its ordered acquisition targets."""
+    expanded = path.expanduser()
+    if not expanded.is_file():
+        raise ValueError(f"collection file not found: {expanded}")
+    try:
+        payload = json.loads(expanded.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"unable to read collection file {expanded}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("collection file root must be a JSON object")
+    if payload.get("schema") != COLLECTION_INTERCHANGE_SCHEMA:
+        raise ValueError(f"unsupported collection schema: {payload.get('schema')!r}")
+    if payload.get("version") != COLLECTION_INTERCHANGE_VERSION:
+        raise ValueError(f"unsupported collection version: {payload.get('version')!r}")
+    collection = payload.get("collection")
+    if not isinstance(collection, dict) or collection.get("type") != COLLECTION_TYPE_PLAYLIST:
+        raise ValueError("collection v1 requires collection.type to be 'playlist'")
+    metadata = collection.get("metadata")
+    if not isinstance(metadata, dict):
+        raise ValueError("collection.metadata must be a JSON object")
+    allowed_metadata = {"title", "id", "uploader", "uploader_id", "channel", "channel_id", "webpage_url"}
+    unknown_metadata = sorted(set(metadata) - allowed_metadata)
+    if unknown_metadata:
+        raise ValueError(f"unsupported collection metadata field(s): {', '.join(unknown_metadata)}")
+    for key, value in metadata.items():
+        if not isinstance(value, str):
+            raise ValueError(f"collection.metadata.{key} must be a JSON string")
+    entries = payload.get("entries")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("collection.entries must contain at least one entry")
+    targets: list[str] = []
+    for index, entry in enumerate(entries, start=1):
+        if not isinstance(entry, dict) or set(entry) != {"target"}:
+            raise ValueError(f"collection entry {index} must contain only a target")
+        target = entry.get("target")
+        if not isinstance(target, str) or not target:
+            raise ValueError(f"collection entry {index} target must be a non-empty string")
+        targets.append(target)
+    return InputSource(collection_file=expanded, direct_targets=tuple(targets))
+
+
 def resolve_input(args: argparse.Namespace) -> InputSource:
     """Resolve command-line input into one unambiguous source."""
     targets: list[str] = args.targets
+
+    collection_file = getattr(args, "collection_file", None)
+    if collection_file is not None:
+        if args.input_file is not None or targets:
+            raise ValueError("--collection-file cannot be combined with --input-file or positional targets")
+        return load_collection_input(collection_file)
 
     if args.input_file is not None:
         if targets:
@@ -3568,6 +3634,12 @@ def redact_command(command: Sequence[str]) -> list[str]:
 
 def _input_source_payload(source: InputSource) -> dict[str, object]:
     """Return a serialisable description of one resolved input source."""
+    if source.collection_file is not None:
+        return {
+            "kind": "collection",
+            "path": str(source.collection_file),
+            "targets": list(source.direct_targets),
+        }
     if source.batch_file is not None:
         return {"kind": "batch-file", "path": str(source.batch_file)}
     if source.stdin:
@@ -3706,7 +3778,9 @@ def format_plan_explanation(plan: DownloadPlan) -> str:
     else:
         output_text = "yt-dlp native defaults"
 
-    if isinstance(input_payload, dict) and input_payload.get("kind") == "batch-file":
+    if isinstance(input_payload, dict) and input_payload.get("kind") == "collection":
+        input_text = f"collection {input_payload['path']} ({len(input_payload.get('targets', []))} target(s))"
+    elif isinstance(input_payload, dict) and input_payload.get("kind") == "batch-file":
         input_text = f"batch file {input_payload['path']}"
     elif isinstance(input_payload, dict) and input_payload.get("kind") == "stdin":
         input_text = "standard input"
@@ -3941,7 +4015,20 @@ def build_yt_dlp_command(
     if policy.reverse_playlist:
         command.append("--playlist-reverse")
 
-    if policy.playlist is True:
+    if input_source.collection_file is not None:
+        # Each collection entry is already one member of the effective collection.
+        # Prevent an entry which happens to name a remote playlist from expanding and
+        # invalidating the collection's one-entry/one-position contract.
+        command.append("--no-playlist")
+        encoded_path = base64.urlsafe_b64encode(str(input_source.collection_file).encode("utf-8")).decode("ascii")
+        command.extend(("--plugin-dirs", str(SCRIPT_DIR / "yt_dlp_plugin_packages")))
+        command.extend(
+            (
+                "--use-postprocessor",
+                f"CollectionMetadata:when=pre_process;collection={encoded_path}",
+            )
+        )
+    elif policy.playlist is True:
         command.append("--yes-playlist")
     elif policy.playlist is False:
         command.append("--no-playlist")
@@ -4121,7 +4208,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         resolved_profile = resolve_profile_settings(selected_profile, cli_settings)
         input_source = resolve_input(args)
-        validate_remove_completed_ids(args, input_source)
+        collection_remove_warning = input_source.collection_file is not None and args.remove_completed_ids
+        if input_source.collection_file is not None and args.remove_completed_rows:
+            raise ValueError("--remove-completed-rows does not operate on collection files")
+        if collection_remove_warning:
+            print(
+                "Warning: --remove-completed-ids does not modify collection files; "
+                "the collection remains intact and the download archive handles completed media.",
+                file=sys.stderr,
+            )
+            args.remove_completed_ids = False
+        if input_source.collection_file is None:
+            validate_remove_completed_ids(args, input_source)
         output_profile = output_profile_from_settings(resolved_profile.settings, resolved_defaults)
         explanatory_only = args.dry_run or args.explain or args.explain_json
         executable = validate_environment(dry_run=explanatory_only)
@@ -4132,7 +4230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_profile=output_profile,
             defaults_file=resolved_defaults,
             profile=selected_profile,
-            remove_completed_ids=args.remove_completed_ids,
+            remove_completed_ids=args.remove_completed_ids and input_source.collection_file is None,
             remove_completed_rows=args.remove_completed_rows,
         )
     except (ValueError, RuntimeError) as exc:

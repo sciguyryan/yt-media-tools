@@ -17,6 +17,16 @@ def test_direct_targets_are_preserved(downloader) -> None:
     assert command == ["a", "b"]
 
 
+def test_direct_targets_accept_legacy_namespace_without_collection_file(downloader) -> None:
+    """Direct Namespace callers inherit the collection-file CLI default."""
+    args = argparse.Namespace(input_file=None, targets=["a", "b"])
+
+    source = downloader.resolve_input(args)
+
+    assert source.direct_targets == ("a", "b")
+    assert source.collection_file is None
+
+
 def test_stdin_is_exclusive(downloader) -> None:
     args = argparse.Namespace(input_file=None, targets=["-"])
     source = downloader.resolve_input(args)

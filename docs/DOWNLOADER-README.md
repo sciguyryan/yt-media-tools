@@ -65,6 +65,16 @@ Read targets from standard input:
 printf '%s\n' VIDEO_ID_1 VIDEO_ID_2 | ./yt-download.py -
 ```
 
+Consume a versioned collection exported by Discover or constructed separately:
+
+```bash
+./yt-download.py --collection-file filtered-playlist.json
+```
+
+Collection input preserves its ordered playlist context for existing output profiles. Downloader injects the supported playlist metadata before yt-dlp renders output templates, so fields such as `%(playlist)s` and `%(playlist_autonumber)03d` can be used without a collection-specific output profile. See `COLLECTION-INTERCHANGE.md` for the versioned format and field rules.
+
+A collection document remains immutable input. `--remove-completed-ids` warns and has no queue-removal effect for `--collection-file`; yt-dlp's configured download archive remains responsible for recognising media already acquired successfully.
+
 Select a preferred resolution:
 
 ```bash
