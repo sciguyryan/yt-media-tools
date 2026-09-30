@@ -1,11 +1,12 @@
 """Cache-v4 entity identity and provider metadata storage tests."""
 
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 import sqlite3
 
 import pytest
 
-from yt_media_tools.cache_entity_store import CacheV4EntityStore
+from yt_media_tools.cache_entity_store import AcquisitionOutcome, CacheV4EntityStore
 from yt_media_tools.cache_registry import (
     AcquisitionGroupDefinition,
     FreshnessPolicy,
@@ -112,7 +113,8 @@ def test_null_storage_does_not_create_acquisition_or_resolution_state() -> None:
     store.write_provider_metadata(provider, entity.entity_id, {"title": None})
     assert store.provider_metadata(provider, entity.entity_id)["title"] is None
     tables = {row[0] for row in store.connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
-    assert "cache_v4_acquisition_state" not in tables
+    assert "cache_v4_acquisition_state" in tables
+    assert store.acquisition_state(provider, entity.entity_id, "basic-info") is None
     assert "cache_v4_field_observations" not in tables
 
 
@@ -169,3 +171,143 @@ def test_provider_must_be_reconciled_before_metadata_storage() -> None:
     store = CacheV4EntityStore(connection, registry)
     with pytest.raises(RegistryContractError, match="must be reconciled"):
         store.initialise((provider,))
+
+
+def test_missing_acquisition_state_means_not_yet_acquired() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    assert store.acquisition_state(provider, entity.entity_id, "basic-info") is None
+
+
+def test_success_records_group_resolution_time() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 12, 30, tzinfo=timezone.utc)
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+    state = store.acquisition_state(provider, entity.entity_id, "basic-info")
+    assert state is not None
+    assert state.outcome is AcquisitionOutcome.SUCCESS
+    assert state.last_attempt_at == acquired_at
+    assert state.last_success_at == acquired_at
+    assert state.failure_category is None
+
+
+def test_failed_refresh_preserves_previous_success() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    success_at = datetime(2026, 9, 30, 12, 30, tzinfo=timezone.utc)
+    failed_at = success_at + timedelta(minutes=10)
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=success_at)
+    store.record_acquisition_failure(
+        provider, entity.entity_id, "basic-info", attempted_at=failed_at, category="provider-error"
+    )
+    state = store.acquisition_state(provider, entity.entity_id, "basic-info")
+    assert state is not None
+    assert state.outcome is AcquisitionOutcome.FAILED
+    assert state.last_attempt_at == failed_at
+    assert state.last_success_at == success_at
+    assert state.failure_category == "provider-error"
+
+
+def test_success_after_failure_clears_failure_state() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    failed_at = datetime(2026, 9, 30, 12, 30, tzinfo=timezone.utc)
+    success_at = failed_at + timedelta(minutes=10)
+    store.record_acquisition_failure(
+        provider, entity.entity_id, "basic-info", attempted_at=failed_at, category="provider-error"
+    )
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=success_at)
+    state = store.acquisition_state(provider, entity.entity_id, "basic-info")
+    assert state is not None
+    assert state.outcome is AcquisitionOutcome.SUCCESS
+    assert state.last_success_at == success_at
+    assert state.failure_category is None
+
+
+def test_acquisition_groups_are_independent() -> None:
+    basic = AcquisitionGroupDefinition("basic-info")
+    formats = AcquisitionGroupDefinition("formats")
+    provider = replace(
+        _provider(),
+        acquisition_groups=(basic, formats),
+    )
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 12, 30, tzinfo=timezone.utc)
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+    assert store.acquisition_state(provider, entity.entity_id, "basic-info") is not None
+    assert store.acquisition_state(provider, entity.entity_id, "formats") is None
+
+
+def test_acquisition_state_rejects_undeclared_group_and_naive_time() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    with pytest.raises(ValueError, match="does not declare acquisition group"):
+        store.record_acquisition_success(provider, entity.entity_id, "formats", acquired_at=datetime.now(timezone.utc))
+    with pytest.raises(ValueError, match="timezone-aware"):
+        store.record_acquisition_success(
+            provider, entity.entity_id, "basic-info", acquired_at=datetime(2026, 9, 30, 12, 30)
+        )
+
+
+def test_acquisition_attempt_time_cannot_move_backwards() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    later = datetime(2026, 9, 30, 13, 0, tzinfo=timezone.utc)
+    earlier = later - timedelta(minutes=1)
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=later)
+    with pytest.raises(ValueError, match="cannot be recorded earlier"):
+        store.record_acquisition_failure(
+            provider, entity.entity_id, "basic-info", attempted_at=earlier, category="provider-error"
+        )
+
+
+def test_acquisition_state_is_deleted_with_entity() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=datetime.now(timezone.utc))
+    store.connection.execute("DELETE FROM cache_v4_media_entities WHERE entity_id = ?", (entity.entity_id,))
+    store.connection.commit()
+    count = store.connection.execute("SELECT COUNT(*) FROM cache_v4_acquisition_state").fetchone()[0]
+    assert count == 0
+
+
+def test_database_rejects_provider_group_identity_mismatch() -> None:
+    first = _provider("first")
+    second = _provider("second")
+    connection = sqlite3.connect(":memory:")
+    connection.execute("PRAGMA foreign_keys = ON")
+    registry = CacheV4RegistryStore(connection)
+    registry.reconcile((first, second))
+    store = CacheV4EntityStore(connection, registry)
+    store.initialise((first, second))
+    entity = store.get_or_create_entity("youtube", "abc123")
+    provider_id = connection.execute(
+        "SELECT provider_id FROM cache_v4_providers WHERE provider_key = 'first'"
+    ).fetchone()[0]
+    group_id = connection.execute(
+        """
+        SELECT g.acquisition_group_id
+        FROM cache_v4_acquisition_groups AS g
+        JOIN cache_v4_providers AS p ON p.provider_id = g.provider_id
+        WHERE p.provider_key = 'second' AND g.group_key = 'basic-info'
+        """
+    ).fetchone()[0]
+    with pytest.raises(sqlite3.IntegrityError, match="does not belong"):
+        connection.execute(
+            """
+            INSERT INTO cache_v4_acquisition_state(
+                entity_id, provider_id, acquisition_group_id, outcome,
+                last_attempt_at, last_success_at, failure_category
+            ) VALUES (?, ?, ?, 'failed', ?, NULL, 'provider-error')
+            """,
+            (entity.entity_id, provider_id, group_id, "2026-09-30T12:30:00+00:00"),
+        )

@@ -84,7 +84,7 @@ One timestamp per provider/entity is still too coarse. Providers need named acqu
 
 There is a trap here. A successful group may imply value-or-NULL only for fields the acquisition genuinely resolved. If a backend can resolve fields independently, putting them in one group would manufacture known NULLs. Registration has to tell the truth about that boundary.
 
-TODO: trace the existing acquisition failure/retry paths before fixing the state columns. I don't want v4 to accidentally turn today's recoverable provider failure into absence.
+The existing acquisition paths treat provider failures as recoverable: specialised providers can fall through to another path, and per-video failures can be skipped without proving that metadata is absent. The v4 group state therefore keeps `last_attempt_at` separate from `last_success_at`. A failed refresh records its failure category and latest attempt time but preserves any earlier successful acquisition. A later success clears the failure marker. This gives later field resolution enough history to distinguish "the last refresh failed" from "this group has never succeeded" without turning either case into SQL NULL.
 
 ## Freshness is attached to an observation
 
