@@ -12,17 +12,24 @@ from pathlib import Path
 import pytest
 
 
-def _write_collection(path: Path, *, targets=("first", "second", "third")) -> Path:
+def _write_collection(
+    path: Path,
+    *,
+    targets=("first", "second", "third"),
+    metadata=None,
+) -> Path:
+    if metadata is None:
+        metadata = {
+            "title": "Filtered collection",
+            "id": "source-list",
+            "uploader": "Example uploader",
+        }
     payload = {
         "schema": "yt-media-tools.collection",
         "version": 1,
         "collection": {
             "type": "playlist",
-            "metadata": {
-                "title": "Filtered collection",
-                "id": "source-list",
-                "uploader": "Example uploader",
-            },
+            "metadata": metadata,
         },
         "entries": [{"target": target} for target in targets],
     }
@@ -130,3 +137,117 @@ def test_collection_remove_completed_ids_warns_without_mutating_collection(
     assert result == 0
     assert "does not modify collection files" in capsys.readouterr().err
     assert json.loads(collection.read_text(encoding="utf-8"))["entries"][0]["target"] == "first"
+
+
+def _load_collection_plugin(collection: Path):
+    """Load the bundled bridge without requiring yt-dlp in the test environment."""
+
+    class FakePostProcessor:
+        def __init__(self, downloader=None):
+            self.downloader = downloader
+
+    yt_dlp = types.ModuleType("yt_dlp")
+    postprocessor = types.ModuleType("yt_dlp.postprocessor")
+    common = types.ModuleType("yt_dlp.postprocessor.common")
+    common.PostProcessor = FakePostProcessor
+    sys.modules["yt_dlp"] = yt_dlp
+    sys.modules["yt_dlp.postprocessor"] = postprocessor
+    sys.modules["yt_dlp.postprocessor.common"] = common
+    try:
+        plugin_path = (
+            Path(__file__).resolve().parents[1]
+            / "yt_dlp_plugin_packages"
+            / "yt_media_tools"
+            / "yt_dlp_plugins"
+            / "postprocessor"
+            / "collection_metadata.py"
+        )
+        spec = importlib.util.spec_from_file_location("collection_metadata_hardening_plugin", plugin_path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        encoded = base64.urlsafe_b64encode(str(collection).encode("utf-8")).decode("ascii")
+        return module.CollectionMetadataPP(collection=encoded)
+    finally:
+        sys.modules.pop("yt_dlp.postprocessor.common", None)
+        sys.modules.pop("yt_dlp.postprocessor", None)
+        sys.modules.pop("yt_dlp", None)
+
+
+def test_constructed_collection_needs_no_remote_playlist_identity(tmp_path: Path) -> None:
+    collection = _write_collection(
+        tmp_path / "constructed.json",
+        targets=("custom:first", "custom:second"),
+        metadata={},
+    )
+    plugin = _load_collection_plugin(collection)
+
+    _, second = plugin.run({"original_url": "custom:second", "title": "Extractor title"})
+
+    assert second["title"] == "Extractor title"
+    assert "playlist" not in second
+    assert "playlist_id" not in second
+    assert second["playlist_index"] == second["playlist_autonumber"] == 2
+    assert second["playlist_count"] == second["n_entries"] == 2
+
+
+def test_archive_skipped_prefix_does_not_renumber_later_collection_entry(tmp_path: Path) -> None:
+    collection = _write_collection(tmp_path / "collection.json")
+    plugin = _load_collection_plugin(collection)
+
+    # yt-dlp may reject an archived target before pre_process.  The bridge must
+    # therefore derive position from collection identity rather than call count.
+    _, third = plugin.run({"original_url": "third"})
+
+    assert third["playlist_index"] == third["playlist_autonumber"] == 3
+    assert third["playlist_count"] == third["n_entries"] == 3
+
+
+def test_duplicate_targets_retain_distinct_ordered_positions(tmp_path: Path) -> None:
+    collection = _write_collection(
+        tmp_path / "duplicates.json",
+        targets=("same", "middle", "same"),
+    )
+    plugin = _load_collection_plugin(collection)
+
+    _, first = plugin.run({"original_url": "same"})
+    _, third = plugin.run({"original_url": "same"})
+
+    assert first["playlist_index"] == first["playlist_autonumber"] == 1
+    assert third["playlist_index"] == third["playlist_autonumber"] == 3
+
+
+def test_collection_command_keeps_download_archive_authoritative(downloader, tmp_path: Path) -> None:
+    collection = _write_collection(tmp_path / "collection.json")
+    source = downloader.load_collection_input(collection)
+    archive = tmp_path / "archive.txt"
+    policy = downloader.DownloadPolicy(
+        resolution="best",
+        format_selector="bv+ba/b",
+        reverse_playlist=False,
+        archive_file=archive,
+    )
+
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None)
+
+    archive_index = command.index("--download-archive")
+    assert command[archive_index + 1] == str(archive)
+    assert "--no-download-archive" not in command
+
+
+def test_collection_remove_completed_rows_is_rejected_without_mutation(
+    downloader,
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    collection = _write_collection(tmp_path / "collection.json")
+    before = collection.read_bytes()
+    monkeypatch.setattr(downloader, "validate_environment", lambda *, dry_run: "yt-dlp")
+
+    with pytest.raises(SystemExit) as exc:
+        downloader.main(["--collection-file", str(collection), "--remove-completed-rows", "--dry-run"])
+
+    assert exc.value.code == 2
+    assert "--remove-completed-rows does not operate on collection files" in capsys.readouterr().err
+    assert collection.read_bytes() == before

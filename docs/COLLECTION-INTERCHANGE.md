@@ -95,7 +95,13 @@ The bridge is deliberately not a general yt-dlp metadata patch surface. Version 
 
 ## Resumption and mutation
 
-The collection document is acquisition input, not a progress file. Re-running it should preserve the same entry order and therefore the same derived positions. Downloader's existing download archive is expected to remain the authority for media already downloaded successfully; the later Downloader work must verify that this gives correct and reasonably efficient resumption.
+The collection document is acquisition input, not a progress file. Re-running it preserves the same entry order and therefore the same derived positions. Downloader's existing download archive remains the authority for media already downloaded successfully. An archived entry may be skipped before the collection metadata bridge runs; later entries still receive their original positions because the bridge resolves positions from the collection entry target rather than from the number of downloads completed in the current run.
+
+The collection file itself is immutable during acquisition. `--remove-completed-ids` warns and has no mutation effect for collection input. `--remove-completed-rows` is rejected because row removal is a batch-queue operation, not a collection operation. Failed or interrupted targets therefore remain present and are eligible on a later run unless the download archive proves them complete.
+
+Duplicate targets are permitted. They remain separate ordered collection entries. When the same target reaches the metadata bridge more than once in one run, its occurrences consume their recorded positions in order. If yt-dlp's archive identifies that media as already complete, archive policy may skip every occurrence of the same archived media identity; the collection document is still not rewritten.
+
+A constructed collection does not need to pretend that a remote playlist exists. Its `metadata` object may be empty. Downloader still derives position and count fields from the ordered entries while leaving remote playlist identity fields absent.
 
 Queue-mutation features such as `--remove-completed-ids` must not rewrite a collection document. Downloader should warn when that option is combined with collection input so it is clear that completed collection entries will not be removed from the file.
 
@@ -113,6 +119,8 @@ The fully developed version of this document should include a complete realistic
 
 ## Work still deliberately left for later issues
 
-This issue defines the first contract, not the whole feature. Discover export still needs to decide which source metadata remains truthful after each query result is formed. Downloader now validates and consumes the document and injects the supported playlist values before normal yt-dlp template processing. Archive-backed resumption still needs deliberate verification. Constructed collections and awkward cases then need hardening against the same contract.
+Discover exports source metadata only when it remains truthful for the effective result, and Downloader consumes the document without treating it as arbitrary yt-dlp metadata injection. Archive-backed resumption, constructed collections, duplicate targets and collection immutability are now explicit parts of the v1 behaviour.
+
+One known design problem remains deliberately unresolved here: an exported entry currently preserves its acquisition target but not the arbitrary projected yt-sql values that produced the row. That information-loss problem is being handled as a separate follow-up so the correction remains visible in the development history. The final reconciliation should also replace the compact examples above with a fully fleshed-out, copyable playlist collection example once that correction has settled the entry shape.
 
 The document should become more formal as those implementations establish stronger invariants. For now it records the boundary we intend the next pieces to implement without pretending that unimplemented behaviour has already become permanent.

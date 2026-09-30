@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+### Collection acquisition hardening
+
+- [maintenance] Keep collection documents immutable across archive-backed resumption and failed or interrupted acquisition attempts.
+- [maintenance] Preserve stable collection positions when earlier entries are archive-skipped and retain distinct ordered positions for duplicate targets.
+- [maintenance] Support constructed collections without inventing remote playlist identity metadata.
+- [test] Exercise archive-backed planning, skipped-prefix numbering, duplicate targets, constructed collections and queue-mutation boundaries.
+- [docs] Record the hardened resumption contract and the known projected-row information-loss issue reserved for the follow-up correction.
+
 ### Collection consumption
 
 - [feature] Add `--collection-file FILE` as an ordered acquisition input and inject the supported playlist context before normal yt-dlp output-template processing.
