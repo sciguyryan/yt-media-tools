@@ -69,6 +69,25 @@ class ResolvedField:
 
 
 @dataclass(frozen=True)
+class SourceIdentity:
+    """Stable cache-v4 identity for one logical source/facet boundary."""
+
+    source_id: int
+    source_url: str
+    source_kind: str
+    facet: str | None
+
+
+@dataclass(frozen=True)
+class SourceObservation:
+    """Durable enumeration observation independent of provider metadata."""
+
+    source: SourceIdentity
+    last_observed_at: datetime
+    observed_entries: int
+
+
+@dataclass(frozen=True)
 class AcquisitionGroupState:
     """Persistent acquisition history for one entity/provider/group boundary."""
 
@@ -128,6 +147,51 @@ class CacheV4EntityStore:
                 external_id TEXT NOT NULL,
                 UNIQUE(service, external_id)
             )
+            """
+        )
+        self.connection.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS cache_v4_sources (
+                source_id INTEGER PRIMARY KEY,
+                source_url TEXT NOT NULL,
+                source_kind TEXT NOT NULL,
+                facet TEXT NOT NULL DEFAULT '',
+                UNIQUE(source_url, facet)
+            );
+
+            CREATE TABLE IF NOT EXISTS cache_v4_source_observations (
+                source_id INTEGER PRIMARY KEY REFERENCES cache_v4_sources(source_id) ON DELETE CASCADE,
+                last_observed_at TEXT NOT NULL,
+                observed_entries INTEGER NOT NULL CHECK (observed_entries >= 0)
+            );
+
+            CREATE TABLE IF NOT EXISTS cache_v4_source_entries (
+                source_id INTEGER NOT NULL REFERENCES cache_v4_sources(source_id) ON DELETE CASCADE,
+                entity_id INTEGER NOT NULL REFERENCES cache_v4_media_entities(entity_id) ON DELETE RESTRICT,
+                source_index INTEGER NOT NULL CHECK (source_index >= 0),
+                PRIMARY KEY(source_id, entity_id),
+                UNIQUE(source_id, source_index)
+            );
+
+            CREATE INDEX IF NOT EXISTS cache_v4_source_entries_entity
+            ON cache_v4_source_entries(entity_id);
+
+            CREATE TABLE IF NOT EXISTS cache_v4_source_coverage (
+                source_id INTEGER PRIMARY KEY REFERENCES cache_v4_sources(source_id) ON DELETE CASCADE,
+                observed_at TEXT NOT NULL,
+                observed_entries INTEGER NOT NULL CHECK (observed_entries >= 0),
+                cached_entries INTEGER NOT NULL CHECK (cached_entries >= 0),
+                complete INTEGER NOT NULL CHECK (complete IN (0, 1)),
+                reason TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS cache_v4_source_frontiers (
+                source_id INTEGER PRIMARY KEY REFERENCES cache_v4_sources(source_id) ON DELETE CASCADE,
+                verified_at TEXT NOT NULL,
+                known_entries INTEGER NOT NULL CHECK (known_entries >= 0),
+                head_entity_id INTEGER NOT NULL REFERENCES cache_v4_media_entities(entity_id) ON DELETE RESTRICT,
+                overlap_confirmations INTEGER NOT NULL CHECK (overlap_confirmations >= 0)
+            );
             """
         )
         self.connection.execute(
@@ -544,6 +608,98 @@ class CacheV4EntityStore:
             observed_at=state.last_success_at,
             latest_attempt_failed=failed,
             failure_category=failure_category,
+        )
+
+    def get_or_create_source(self, source_url: str, source_kind: str, *, facet: str | None = None) -> SourceIdentity:
+        """Return stable identity for one source/facet without implying observation trust."""
+        source_url = _require_identity_part(source_url, label="source_url")
+        source_kind = _require_identity_part(source_kind, label="source_kind")
+        if facet is not None:
+            facet = _require_identity_part(facet, label="facet")
+        stored_facet = facet or ""
+        self.connection.execute(
+            """
+            INSERT INTO cache_v4_sources(source_url, source_kind, facet)
+            VALUES (?, ?, ?)
+            ON CONFLICT(source_url, facet) DO UPDATE SET source_kind = excluded.source_kind
+            """,
+            (source_url, source_kind, stored_facet),
+        )
+        row = self.connection.execute(
+            """
+            SELECT source_id, source_url, source_kind, facet
+            FROM cache_v4_sources WHERE source_url = ? AND facet = ?
+            """,
+            (source_url, stored_facet),
+        ).fetchone()
+        assert row is not None
+        self.connection.commit()
+        return SourceIdentity(
+            int(row["source_id"]),
+            str(row["source_url"]),
+            str(row["source_kind"]),
+            str(row["facet"]) or None,
+        )
+
+    def record_source_observation(
+        self, source: SourceIdentity, observed_entries: int, *, observed_at: datetime
+    ) -> None:
+        """Persist enumeration knowledge without creating coverage or frontier trust."""
+        if observed_entries < 0:
+            raise ValueError("observed_entries must be non-negative.")
+        when = observed_at.astimezone(timezone.utc).isoformat()
+        self.connection.execute(
+            """
+            INSERT INTO cache_v4_source_observations(source_id, last_observed_at, observed_entries)
+            VALUES (?, ?, ?)
+            ON CONFLICT(source_id) DO UPDATE SET
+                last_observed_at = excluded.last_observed_at,
+                observed_entries = excluded.observed_entries
+            """,
+            (source.source_id, when, observed_entries),
+        )
+        self.connection.commit()
+
+    def replace_source_entries(self, source: SourceIdentity, entity_ids: Iterable[int]) -> int:
+        """Replace one trusted source/facet ordering using stable v4 entity identities."""
+        ids = tuple(dict.fromkeys(entity_ids))
+        with self.connection:
+            self.connection.execute("DELETE FROM cache_v4_source_entries WHERE source_id = ?", (source.source_id,))
+            self.connection.executemany(
+                """
+                INSERT INTO cache_v4_source_entries(source_id, entity_id, source_index)
+                VALUES (?, ?, ?)
+                """,
+                ((source.source_id, entity_id, index) for index, entity_id in enumerate(ids)),
+            )
+        return len(ids)
+
+    def source_entry_ids(self, source: SourceIdentity) -> tuple[int, ...]:
+        """Return the persisted newest-first entity ordering for one source/facet."""
+        rows = self.connection.execute(
+            """
+            SELECT entity_id FROM cache_v4_source_entries
+            WHERE source_id = ? ORDER BY source_index
+            """,
+            (source.source_id,),
+        ).fetchall()
+        return tuple(int(row["entity_id"]) for row in rows)
+
+    def source_observation(self, source: SourceIdentity) -> SourceObservation | None:
+        """Return durable enumeration telemetry without inferring coverage/frontier state."""
+        row = self.connection.execute(
+            """
+            SELECT last_observed_at, observed_entries
+            FROM cache_v4_source_observations WHERE source_id = ?
+            """,
+            (source.source_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return SourceObservation(
+            source,
+            datetime.fromisoformat(str(row["last_observed_at"])).astimezone(timezone.utc),
+            int(row["observed_entries"]),
         )
 
     def resolve_field(

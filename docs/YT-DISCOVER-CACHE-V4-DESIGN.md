@@ -122,6 +122,8 @@ Metadata pruning is independent. It removes a provider's contribution for an ent
 
 After either sort of pruning, `media_entities` becomes garbage only when nothing persistent still refers to it. Source state may legitimately keep an identity alive after all detailed metadata is gone.
 
+The #129 source-state audit keeps those boudaries literal in the v4 persistence model. A stable source and facet identity owns enumeration telemetry and ordered membership, while membership points to `media_entities` rather than to a provider record. Coverage and frontier remain separate stronger claims rather than being inferred from observation or membership. The ordered membership table deliberately has no per-entry pruning timestamp: source and facet retention can use the source-level observation time and remove the coherent source-state unit instead of rewriting millions of membership rows merely to age them.
+
 ## Invalidation, pruning and making the file smaller
 
 These turned out to be three operations, and keeping them separate avoids several odd policies.

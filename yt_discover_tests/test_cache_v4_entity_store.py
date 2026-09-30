@@ -611,3 +611,67 @@ def test_field_resolution_uses_registration_order_for_equal_priority() -> None:
     assert resolved.provider_key == "first"
     assert resolved.observation is not None
     assert resolved.observation.value == "First"
+
+
+def test_source_facet_identity_is_stable_and_distinct() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    videos = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    again = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    shorts = store.get_or_create_source("https://example.invalid/channel", "channel", facet="shorts")
+    assert again == videos
+    assert shorts.source_id != videos.source_id
+
+
+def test_source_observation_does_not_create_frontier_or_coverage_claim() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    observed_at = datetime(2026, 9, 30, 15, 0, tzinfo=timezone.utc)
+    store.record_source_observation(source, 3, observed_at=observed_at)
+
+    observation = store.source_observation(source)
+    assert observation is not None
+    assert observation.observed_entries == 3
+    assert observation.last_observed_at == observed_at
+    assert store.connection.execute("SELECT COUNT(*) FROM cache_v4_source_coverage").fetchone()[0] == 0
+    assert store.connection.execute("SELECT COUNT(*) FROM cache_v4_source_frontiers").fetchone()[0] == 0
+
+
+def test_source_entries_reference_stable_entities_not_provider_metadata() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    first = store.get_or_create_entity("youtube", "first")
+    second = store.get_or_create_entity("youtube", "second")
+
+    assert store.replace_source_entries(source, (first.entity_id, second.entity_id)) == 2
+    assert store.source_entry_ids(source) == (first.entity_id, second.entity_id)
+    assert store.provider_metadata(provider, first.entity_id) is None
+
+
+def test_pruning_provider_metadata_cannot_erase_source_membership() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    store.replace_source_entries(source, (entity.entity_id,))
+    store.write_provider_metadata(provider, entity.entity_id, {"title": "Temporary"})
+
+    store.connection.execute(f'DELETE FROM "{provider.metadata_table}" WHERE entity_id = ?', (entity.entity_id,))
+    store.connection.commit()
+
+    assert store.provider_metadata(provider, entity.entity_id) is None
+    assert store.source_entry_ids(source) == (entity.entity_id,)
+    assert store.entity("youtube", "abc123") == entity
+
+
+def test_source_membership_prevents_entity_cascade_deletion() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    store.replace_source_entries(source, (entity.entity_id,))
+
+    with pytest.raises(sqlite3.IntegrityError):
+        store.connection.execute("DELETE FROM cache_v4_media_entities WHERE entity_id = ?", (entity.entity_id,))

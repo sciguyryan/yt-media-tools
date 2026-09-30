@@ -26,6 +26,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Keep stale observations available for reacquisition and diagnostics without treating expired data as a current resolved value.
 - [test] Cover priority, deterministic ties, NULL fall-through, all-NULL resolution, fresh-over-stale selection, stale fallback and failed acquisition candidates.
 - [docs] Complete the #128 entity metadata, acquisition-state and scalar field-resolution boundary without claiming the separate v3-to-v4 migration or acquisition-pipeline cut-over.
+- [feature] Add stable cache-v4 source/facet identities and persist enumeration observations and ordered membership against v4 media entities.
+- [maintenance] Keep source enumeration state independent of provider metadata so pruning detailed metadata cannot erase previously observed membership.
+- [maintenance] Preserve coverage and frontier as separate stronger source/facet claims and avoid per-entry pruning timestamps in the v4 membership table.
+- [test] Cover source/facet identity, observation-without-frontier semantics, entity-backed membership, metadata-pruning independence and source-state entity retention.
+- [docs] Record the audited v3-to-v4 source-state mapping while leaving coherent retention and dependent-claim invalidation to the next #129 part.
 
 ## Release history
 
