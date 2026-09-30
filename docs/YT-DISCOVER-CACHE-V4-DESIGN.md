@@ -76,6 +76,8 @@ Core can provide migration plumbing. The provider owns the meaning of its histor
 
 The resolver is simple to describe: walk candidate providers by effective priority and registration order and take the first fresh, usable value. SQL NULL does not stop the walk. `0`, `false`, `''` and a valid empty collection do.
 
+The implemented scalar resolver follows that rule through the persistent registry rather than maintaining a second precedence policy. It retains the highest-precedence fresh known NULL while continuing to look for a lower-priority fresh value. If no fresh value exists, that known NULL becomes the resolved result. Stale observations are retained as unresolved fallback state for acquisition and diagnostics, but are not promoted over current information. The result keeps the winning provider key and full observation so provenance, age and failed-refresh context remain inspectable.
+
 Underneath that are distinctions we already rely on: value, known NULL, not acquired, unsupported, inapplicable, failed acquisition and stale observation. This is one of those lists that really does need to be complete. Collapsing "not acquired" into NULL would change query/acquisition semantics.
 
 It does not follow that we need seven status columns per field. In the common case the state can be derived. No acquisition record means not acquired. A successful acquisition group plus a NULL column can establish known NULL. Unsupported/inapplicable often comes from capabilities. Failures belong to acquisition state, not to the value column.

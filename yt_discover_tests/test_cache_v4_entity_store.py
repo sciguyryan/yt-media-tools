@@ -470,3 +470,144 @@ def test_unknown_source_context_does_not_manufacture_inapplicability() -> None:
         ).kind
         is FieldObservationKind.INAPPLICABLE
     )
+
+
+def _resolution_stores(
+    *providers: ProviderDefinition,
+) -> tuple[CacheV4RegistryStore, CacheV4EntityStore]:
+    connection = sqlite3.connect(":memory:")
+    connection.execute("PRAGMA foreign_keys = ON")
+    registry = CacheV4RegistryStore(connection)
+    registry.reconcile(providers)
+    store = CacheV4EntityStore(connection, registry)
+    store.initialise(providers)
+    return registry, store
+
+
+def test_field_resolution_uses_registry_priority_for_fresh_values() -> None:
+    first = _provider("first")
+    second = _provider("second")
+    registry, store = _resolution_stores(first, second)
+    registry.set_provider_policy("first", priority=10)
+    registry.set_provider_policy("second", priority=20)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    for provider, title in ((first, "First"), (second, "Second")):
+        store.write_provider_metadata(provider, entity.entity_id, {"title": title})
+        store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=now)
+
+    resolved = store.resolve_field((first, second), entity.entity_id, "title", as_of=now)
+    assert resolved.resolved
+    assert resolved.provider_key == "second"
+    assert resolved.observation is not None
+    assert resolved.observation.value == "Second"
+
+
+def test_field_resolution_known_null_does_not_hide_lower_priority_value() -> None:
+    first = _provider("first")
+    second = _provider("second")
+    registry, store = _resolution_stores(first, second)
+    registry.set_provider_policy("first", priority=20)
+    registry.set_provider_policy("second", priority=10)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.write_provider_metadata(first, entity.entity_id, {"title": None})
+    store.write_provider_metadata(second, entity.entity_id, {"title": "Fallback"})
+    for provider in (first, second):
+        store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=now)
+
+    resolved = store.resolve_field((first, second), entity.entity_id, "title", as_of=now)
+    assert resolved.provider_key == "second"
+    assert resolved.observation is not None
+    assert resolved.observation.kind is FieldObservationKind.VALUE
+    assert resolved.observation.value == "Fallback"
+
+
+def test_field_resolution_returns_known_null_when_no_fresh_value_exists() -> None:
+    first = _provider("first")
+    second = _provider("second")
+    registry, store = _resolution_stores(first, second)
+    registry.set_provider_policy("first", priority=20)
+    registry.set_provider_policy("second", priority=10)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    for provider in (first, second):
+        store.write_provider_metadata(provider, entity.entity_id, {"title": None})
+        store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=now)
+
+    resolved = store.resolve_field((first, second), entity.entity_id, "title", as_of=now)
+    assert resolved.resolved
+    assert resolved.provider_key == "first"
+    assert resolved.observation is not None
+    assert resolved.observation.kind is FieldObservationKind.KNOWN_NULL
+
+
+def test_field_resolution_prefers_fresh_lower_priority_value_over_stale_value() -> None:
+    first = _provider("first")
+    second = _provider("second")
+    registry, store = _resolution_stores(first, second)
+    registry.set_provider_policy("first", priority=20)
+    registry.set_provider_policy("second", priority=10)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+    store.write_provider_metadata(first, entity.entity_id, {"title": "Stale preferred"})
+    store.record_acquisition_success(first, entity.entity_id, "basic-info", acquired_at=now - timedelta(hours=2))
+    store.write_provider_metadata(second, entity.entity_id, {"title": "Fresh fallback"})
+    store.record_acquisition_success(second, entity.entity_id, "basic-info", acquired_at=now)
+
+    resolved = store.resolve_field((first, second), entity.entity_id, "title", as_of=now)
+    assert resolved.provider_key == "second"
+    assert resolved.observation is not None
+    assert resolved.observation.value == "Fresh fallback"
+
+
+def test_field_resolution_exposes_stale_fallback_as_unresolved() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.write_provider_metadata(provider, entity.entity_id, {"title": "Old"})
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+
+    resolved = store.resolve_field((provider,), entity.entity_id, "title", as_of=acquired_at + timedelta(hours=2))
+    assert not resolved.resolved
+    assert resolved.provider_key == "ytdlp"
+    assert resolved.observation is not None
+    assert resolved.observation.kind is FieldObservationKind.STALE
+    assert resolved.observation.value == "Old"
+
+
+def test_field_resolution_skips_failed_unacquired_and_inapplicable_candidates() -> None:
+    failed = _provider("failed")
+    fallback = _provider("fallback")
+    registry, store = _resolution_stores(failed, fallback)
+    registry.set_provider_policy("failed", priority=20)
+    registry.set_provider_policy("fallback", priority=10)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.record_acquisition_failure(
+        failed, entity.entity_id, "basic-info", attempted_at=now, category="provider-error"
+    )
+    store.write_provider_metadata(fallback, entity.entity_id, {"title": "Usable"})
+    store.record_acquisition_success(fallback, entity.entity_id, "basic-info", acquired_at=now)
+
+    resolved = store.resolve_field((failed, fallback), entity.entity_id, "title", as_of=now)
+    assert resolved.provider_key == "fallback"
+    assert resolved.observation is not None
+    assert resolved.observation.value == "Usable"
+
+
+def test_field_resolution_uses_registration_order_for_equal_priority() -> None:
+    first = _provider("first")
+    second = _provider("second")
+    _, store = _resolution_stores(first, second)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    for provider, title in ((first, "First"), (second, "Second")):
+        store.write_provider_metadata(provider, entity.entity_id, {"title": title})
+        store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=now)
+
+    resolved = store.resolve_field((second, first), entity.entity_id, "title", as_of=now)
+    assert resolved.provider_key == "first"
+    assert resolved.observation is not None
+    assert resolved.observation.value == "First"

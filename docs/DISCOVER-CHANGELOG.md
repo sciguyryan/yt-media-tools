@@ -21,6 +21,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Reject successful acquisition state that has no corresponding provider metadata row instead of manufacturing a known NULL.
 - [test] Cover the complete scalar observation-state set, falsey values, freshness boundaries and overrides, failed refreshes, incomplete applicability context and inconsistent persisted state.
 - [docs] Record the implemented field-observation semantics while leaving cross-provider winner resolution to the final #128 part.
+- [feature] Resolve cache-v4 scalar fields across enabled available providers using persistent effective priority and registration order.
+- [feature] Continue past fresh known NULL to lower-priority fresh values while retaining the highest-precedence NULL when no fresh value exists.
+- [maintenance] Keep stale observations available for reacquisition and diagnostics without treating expired data as a current resolved value.
+- [test] Cover priority, deterministic ties, NULL fall-through, all-NULL resolution, fresh-over-stale selection, stale fallback and failed acquisition candidates.
+- [docs] Complete the #128 entity metadata, acquisition-state and scalar field-resolution boundary without claiming the separate v3-to-v4 migration or acquisition-pipeline cut-over.
 
 ## Release history
 

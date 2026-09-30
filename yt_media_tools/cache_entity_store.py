@@ -52,6 +52,23 @@ class FieldObservation:
 
 
 @dataclass(frozen=True)
+class ResolvedField:
+    """Cross-provider resolution result for one logical scalar field."""
+
+    field_name: str
+    provider_key: str | None
+    observation: FieldObservation | None
+
+    @property
+    def resolved(self) -> bool:
+        """Whether resolution established a current value or known SQL NULL."""
+        return self.observation is not None and self.observation.kind in {
+            FieldObservationKind.VALUE,
+            FieldObservationKind.KNOWN_NULL,
+        }
+
+
+@dataclass(frozen=True)
 class AcquisitionGroupState:
     """Persistent acquisition history for one entity/provider/group boundary."""
 
@@ -528,6 +545,54 @@ class CacheV4EntityStore:
             latest_attempt_failed=failed,
             failure_category=failure_category,
         )
+
+    def resolve_field(
+        self,
+        providers: Iterable[ProviderDefinition],
+        entity_id: int,
+        field_name: str,
+        *,
+        as_of: datetime,
+        source_kind: str | None = None,
+        facet: str | None = None,
+        source_traits: frozenset[str] | None = None,
+    ) -> ResolvedField:
+        """Resolve one logical scalar field across enabled available providers.
+
+        Registry precedence orders candidates, but a fresh known NULL does not
+        stop traversal because a lower-priority provider may still hold a fresh
+        value. Stale observations remain diagnostic fallback state and are never
+        promoted over a current value or known NULL.
+        """
+        definitions = {provider.key: provider for provider in providers}
+        candidates = self.registry.field_provider_candidates(field_name, available_provider_keys=definitions)
+        known_null: tuple[str, FieldObservation] | None = None
+        stale: tuple[str, FieldObservation] | None = None
+        for candidate in candidates:
+            provider = definitions[candidate.provider_key]
+            observation = self.field_observation(
+                provider,
+                entity_id,
+                field_name,
+                as_of=as_of,
+                source_kind=source_kind,
+                facet=facet,
+                source_traits=source_traits,
+            )
+            if observation.kind is FieldObservationKind.VALUE:
+                return ResolvedField(field_name, provider.key, observation)
+            if observation.kind is FieldObservationKind.KNOWN_NULL and known_null is None:
+                known_null = (provider.key, observation)
+            elif observation.kind is FieldObservationKind.STALE and stale is None:
+                stale = (provider.key, observation)
+
+        if known_null is not None:
+            provider_key, observation = known_null
+            return ResolvedField(field_name, provider_key, observation)
+        if stale is not None:
+            provider_key, observation = stale
+            return ResolvedField(field_name, provider_key, observation)
+        return ResolvedField(field_name, None, None)
 
     def acquisition_state(
         self, provider: ProviderDefinition, entity_id: int, group_key: str
