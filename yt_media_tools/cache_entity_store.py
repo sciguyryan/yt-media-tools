@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import sqlite3
 from typing import Iterable, Mapping
 
-from .cache_registry import ProviderDefinition, ProviderFieldDefinition
+from .cache_registry import FreshnessMode, FreshnessPolicy, ProviderDefinition, ProviderFieldDefinition
 from .cache_registry_store import CacheV4RegistryStore, RegistryContractError
 
 
@@ -26,6 +26,29 @@ class AcquisitionOutcome(str, Enum):
 
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class FieldObservationKind(str, Enum):
+    """Derived state of one provider field for one cached entity."""
+
+    VALUE = "value"
+    KNOWN_NULL = "known-null"
+    NOT_ACQUIRED = "not-acquired"
+    UNSUPPORTED = "unsupported"
+    INAPPLICABLE = "inapplicable"
+    FAILED_ACQUISITION = "failed-acquisition"
+    STALE = "stale"
+
+
+@dataclass(frozen=True)
+class FieldObservation:
+    """Derived provider observation without selecting a cross-provider winner."""
+
+    kind: FieldObservationKind
+    value: object | None = None
+    observed_at: datetime | None = None
+    latest_attempt_failed: bool = False
+    failure_category: str | None = None
 
 
 @dataclass(frozen=True)
@@ -369,6 +392,142 @@ class CacheV4EntityStore:
             (entity_id, provider_id, group_id, encoded, category),
         )
         self.connection.commit()
+
+    def _effective_field_freshness(
+        self, provider: ProviderDefinition, field: ProviderFieldDefinition
+    ) -> FreshnessPolicy:
+        row = self.connection.execute(
+            """
+            SELECT f.default_freshness_mode, f.default_max_age_seconds,
+                   f.freshness_mode_override, f.max_age_seconds_override
+            FROM cache_v4_fields AS f
+            JOIN cache_v4_providers AS p ON p.provider_id = f.provider_id
+            WHERE p.provider_key = ? AND p.declared = 1
+              AND f.field_name = ? AND f.declared = 1
+            """,
+            (provider.key, field.name),
+        ).fetchone()
+        if row is None:
+            raise RegistryContractError(
+                f"Provider {provider.key!r} field {field.name!r} must be reconciled before observation state is read."
+            )
+        mode = (
+            str(row["freshness_mode_override"])
+            if row["freshness_mode_override"] is not None
+            else str(row["default_freshness_mode"])
+        )
+        max_age = (
+            row["max_age_seconds_override"]
+            if row["freshness_mode_override"] is not None
+            else row["default_max_age_seconds"]
+        )
+        return FreshnessPolicy(FreshnessMode(mode), max_age)
+
+    @staticmethod
+    def _observation_is_stale(observed_at: datetime, as_of: datetime, freshness: FreshnessPolicy) -> bool:
+        if freshness.mode is FreshnessMode.IMMUTABLE:
+            return False
+        if freshness.mode is FreshnessMode.ALWAYS_REFRESH:
+            return True
+        assert freshness.max_age_seconds is not None
+        return as_of > observed_at + timedelta(seconds=freshness.max_age_seconds)
+
+    @staticmethod
+    def _provider_is_inapplicable(
+        provider: ProviderDefinition,
+        entity: MediaEntity,
+        *,
+        source_kind: str | None,
+        facet: str | None,
+        source_traits: frozenset[str] | None,
+    ) -> bool:
+        applicability = provider.applicability
+        if applicability.services is not None and entity.service not in applicability.services:
+            return True
+        if (
+            source_kind is not None
+            and applicability.source_kinds is not None
+            and source_kind not in applicability.source_kinds
+        ):
+            return True
+        if facet is not None and applicability.facets is not None and facet not in applicability.facets:
+            return True
+        return source_traits is not None and not applicability.required_source_traits.issubset(source_traits)
+
+    def field_observation(
+        self,
+        provider: ProviderDefinition,
+        entity_id: int,
+        field_name: str,
+        *,
+        as_of: datetime,
+        source_kind: str | None = None,
+        facet: str | None = None,
+        source_traits: frozenset[str] | None = None,
+    ) -> FieldObservation:
+        """Derive one provider field state without selecting a provider winner.
+
+        Applicability dimensions are only used when the caller actually knows them.
+        Missing source context is not evidence that a provider is inapplicable.
+        """
+        as_of = self._normalise_acquisition_time(as_of)
+        field = provider.field(field_name)
+        if field is None:
+            return FieldObservation(FieldObservationKind.UNSUPPORTED)
+        entity_row = self.connection.execute(
+            "SELECT service, external_id FROM cache_v4_media_entities WHERE entity_id = ?",
+            (entity_id,),
+        ).fetchone()
+        if entity_row is None:
+            raise ValueError(f"Unknown cache-v4 entity_id {entity_id!r}.")
+        entity = MediaEntity(entity_id, str(entity_row["service"]), str(entity_row["external_id"]))
+        if self._provider_is_inapplicable(
+            provider,
+            entity,
+            source_kind=source_kind,
+            facet=facet,
+            source_traits=source_traits,
+        ):
+            return FieldObservation(FieldObservationKind.INAPPLICABLE)
+
+        state = self.acquisition_state(provider, entity_id, field.acquisition_group)
+        if state is None:
+            return FieldObservation(FieldObservationKind.NOT_ACQUIRED)
+        if state.last_success_at is None:
+            return FieldObservation(
+                FieldObservationKind.FAILED_ACQUISITION,
+                latest_attempt_failed=True,
+                failure_category=state.failure_category,
+            )
+
+        row = self.connection.execute(
+            f'SELECT "{field.storage_name}" FROM "{provider.metadata_table}" WHERE entity_id = ?',
+            (entity_id,),
+        ).fetchone()
+        if row is None:
+            raise RegistryContractError(
+                f"Provider {provider.key!r} has successful acquisition state for entity {entity_id} "
+                f"but no metadata row for field {field.name!r}."
+            )
+        value = row[field.storage_name]
+        failed = state.outcome is AcquisitionOutcome.FAILED
+        failure_category = state.failure_category if failed else None
+        freshness = self._effective_field_freshness(provider, field)
+        if self._observation_is_stale(state.last_success_at, as_of, freshness):
+            return FieldObservation(
+                FieldObservationKind.STALE,
+                value=value,
+                observed_at=state.last_success_at,
+                latest_attempt_failed=failed,
+                failure_category=failure_category,
+            )
+        return FieldObservation(
+            FieldObservationKind.KNOWN_NULL if value is None else FieldObservationKind.VALUE,
+            value=value,
+            observed_at=state.last_success_at,
+            latest_attempt_failed=failed,
+            failure_category=failure_category,
+        )
 
     def acquisition_state(
         self, provider: ProviderDefinition, entity_id: int, group_key: str

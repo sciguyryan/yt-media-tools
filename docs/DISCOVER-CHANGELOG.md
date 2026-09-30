@@ -16,6 +16,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Keep absent acquisition state, failed acquisition and provider metadata NULL storage distinct without selecting field winners prematurely.
 - [test] Cover acquisition success, recoverable failure, recovery, independent groups, timestamp validation and entity-cascade cleanup.
 - [docs] Record the entity-storage and acquisition-state hand-off while leaving field-observation and winner resolution to later #128 work.
+- [feature] Derive per-provider scalar field state as value, known NULL, not acquired, unsupported, inapplicable, failed acquisition or stale without adding a redundant field-status table.
+- [feature] Apply effective registry freshness overrides to observations and preserve failed-refresh diagnostics alongside any earlier successful observation.
+- [maintenance] Reject successful acquisition state that has no corresponding provider metadata row instead of manufacturing a known NULL.
+- [test] Cover the complete scalar observation-state set, falsey values, freshness boundaries and overrides, failed refreshes, incomplete applicability context and inconsistent persisted state.
+- [docs] Record the implemented field-observation semantics while leaving cross-provider winner resolution to the final #128 part.
 
 ## Release history
 

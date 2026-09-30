@@ -6,7 +6,11 @@ import sqlite3
 
 import pytest
 
-from yt_media_tools.cache_entity_store import AcquisitionOutcome, CacheV4EntityStore
+from yt_media_tools.cache_entity_store import (
+    AcquisitionOutcome,
+    CacheV4EntityStore,
+    FieldObservationKind,
+)
 from yt_media_tools.cache_registry import (
     AcquisitionGroupDefinition,
     FreshnessPolicy,
@@ -311,3 +315,158 @@ def test_database_rejects_provider_group_identity_mismatch() -> None:
             """,
             (entity.entity_id, provider_id, group_id, "2026-09-30T12:30:00+00:00"),
         )
+
+
+def test_field_observation_distinguishes_unsupported_inapplicable_and_not_acquired() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    youtube = store.get_or_create_entity("youtube", "abc123")
+    twitch = store.get_or_create_entity("twitch", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+
+    assert (
+        store.field_observation(provider, youtube.entity_id, "made_up", as_of=now).kind
+        is FieldObservationKind.UNSUPPORTED
+    )
+    assert (
+        store.field_observation(provider, twitch.entity_id, "duration", as_of=now).kind
+        is FieldObservationKind.INAPPLICABLE
+    )
+    assert (
+        store.field_observation(provider, youtube.entity_id, "duration", as_of=now).kind
+        is FieldObservationKind.NOT_ACQUIRED
+    )
+
+
+def test_successful_group_distinguishes_value_and_known_null() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.write_provider_metadata(provider, entity.entity_id, {"duration": 0, "title": None})
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+
+    duration = store.field_observation(provider, entity.entity_id, "duration", as_of=acquired_at)
+    title = store.field_observation(provider, entity.entity_id, "title", as_of=acquired_at)
+    assert duration.kind is FieldObservationKind.VALUE
+    assert duration.value == 0
+    assert duration.observed_at == acquired_at
+    assert title.kind is FieldObservationKind.KNOWN_NULL
+    assert title.value is None
+    assert title.observed_at == acquired_at
+
+
+def test_failed_first_acquisition_is_not_known_null() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    attempted_at = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.write_provider_metadata(provider, entity.entity_id, {"title": None})
+    store.record_acquisition_failure(
+        provider, entity.entity_id, "basic-info", attempted_at=attempted_at, category="provider-error"
+    )
+
+    observation = store.field_observation(provider, entity.entity_id, "title", as_of=attempted_at)
+    assert observation.kind is FieldObservationKind.FAILED_ACQUISITION
+    assert observation.observed_at is None
+    assert observation.latest_attempt_failed
+    assert observation.failure_category == "provider-error"
+
+
+def test_failed_refresh_preserves_fresh_observation_and_failure_fact() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    failed_at = acquired_at + timedelta(minutes=10)
+    store.write_provider_metadata(provider, entity.entity_id, {"title": "Still usable"})
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+    store.record_acquisition_failure(
+        provider, entity.entity_id, "basic-info", attempted_at=failed_at, category="timeout"
+    )
+
+    observation = store.field_observation(provider, entity.entity_id, "title", as_of=failed_at)
+    assert observation.kind is FieldObservationKind.VALUE
+    assert observation.value == "Still usable"
+    assert observation.observed_at == acquired_at
+    assert observation.latest_attempt_failed
+    assert observation.failure_category == "timeout"
+
+
+def test_field_freshness_is_derived_from_last_success_and_effective_policy() -> None:
+    provider = _provider()
+    registry, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.write_provider_metadata(provider, entity.entity_id, {"duration": 42})
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+
+    assert (
+        store.field_observation(
+            provider, entity.entity_id, "duration", as_of=acquired_at + timedelta(seconds=3600)
+        ).kind
+        is FieldObservationKind.VALUE
+    )
+    stale = store.field_observation(provider, entity.entity_id, "duration", as_of=acquired_at + timedelta(seconds=3601))
+    assert stale.kind is FieldObservationKind.STALE
+    assert stale.value == 42
+    assert stale.observed_at == acquired_at
+
+    registry.set_field_overrides("ytdlp", "duration", freshness=FreshnessPolicy.immutable())
+    assert (
+        store.field_observation(provider, entity.entity_id, "duration", as_of=acquired_at + timedelta(days=365)).kind
+        is FieldObservationKind.VALUE
+    )
+
+    registry.set_field_overrides("ytdlp", "duration", freshness=FreshnessPolicy.always_refresh())
+    assert (
+        store.field_observation(provider, entity.entity_id, "duration", as_of=acquired_at).kind
+        is FieldObservationKind.STALE
+    )
+
+
+def test_success_without_provider_metadata_row_is_rejected_as_inconsistent() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    acquired_at = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+    store.record_acquisition_success(provider, entity.entity_id, "basic-info", acquired_at=acquired_at)
+
+    with pytest.raises(RegistryContractError, match="successful acquisition state"):
+        store.field_observation(provider, entity.entity_id, "duration", as_of=acquired_at)
+
+
+def test_unknown_source_context_does_not_manufacture_inapplicability() -> None:
+    provider = replace(
+        _provider(),
+        applicability=ProviderApplicability(
+            services=frozenset({"youtube"}),
+            source_kinds=frozenset({"channel"}),
+            facets=frozenset({"videos"}),
+            required_source_traits=frozenset({"ordered"}),
+        ),
+    )
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 14, 0, tzinfo=timezone.utc)
+
+    assert (
+        store.field_observation(provider, entity.entity_id, "duration", as_of=now).kind
+        is FieldObservationKind.NOT_ACQUIRED
+    )
+    assert (
+        store.field_observation(provider, entity.entity_id, "duration", as_of=now, source_kind="playlist").kind
+        is FieldObservationKind.INAPPLICABLE
+    )
+    assert (
+        store.field_observation(
+            provider,
+            entity.entity_id,
+            "duration",
+            as_of=now,
+            source_kind="channel",
+            facet="videos",
+            source_traits=frozenset(),
+        ).kind
+        is FieldObservationKind.INAPPLICABLE
+    )
