@@ -47,3 +47,13 @@ Historical declarations do not participate in active shared-field compatibility 
 This completes the registry boundary for #127. The registry can now answer which currently declared, enabled and available providers claim a logical field; whether those claims agree on the yt-sql type; their persistent precedence; their acquisition group; and their effective freshness policy. It still cannot answer whether an entity has a value, known SQL NULL, not-acquired state, failure, inapplicability or stale observation. It also cannot choose a value from provider observations. Those are the storage and resolution responsibilities of #128.
 
 The #128 implementation should consume registry identities and candidate metadata rather than duplicating precedence or field-contract rules. Entity and provider observation tables should reference the compact persistent identities established here, while acquisition-state semantics remain separate from registry declaration state.
+
+## #128 entity-storage hand-off
+
+Issue #128 Part 1 now consumes the registry identities without extending their meaning. Cache-v4 media identity is `(service, external_id)` with a compact integer `entity_id`, so one service-owned item can be referenced by several logical sources without duplicating provider metadata. The same external identifier on another service remains a different entity.
+
+Each declared provider owns its metadata table and keys rows by `entity_id`. Scalar columns are derived from the provider's registered storage names and yt-sql types. Adding a compatible scalar field at a later provider schema revision appends its column without rebuilding existing rows. Removed historical columns may remain physically present, while the registry declaration continues to determine which fields are semantically active.
+
+Part 1 deliberately does not infer observation state from a provider row or column. A NULL column is not yet proof of known SQL NULL, and an absent row is not by itself the complete not-acquired model. Acquisition-group state and field-observation semantics remain the next #128 layers.
+
+Structured and collection fields are not serialised into a generic JSON or TEXT escape hatch. They require an explicit provider storage mapping before they can be persisted in v4. This keeps the query-material-only boundary intact while the field inventory determines which relational shapes are actually required.

@@ -4,6 +4,15 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Cache v4 entity storage
+
+- [feature] Add service-owned cache-v4 media identity using stable `(service, external_id)` uniqueness and compact `entity_id` references.
+- [feature] Add provider-owned scalar metadata tables keyed by entity identity and derived from reconciled registry storage contracts.
+- [maintenance] Allow compatible scalar field additions without rebuilding existing provider rows while retaining removed historical columns physically.
+- [maintenance] Keep NULL storage, acquisition state and field resolution semantically separate and reject structured values without an explicit storage design.
+- [test] Cover entity deduplication, cross-service identity, provider metadata updates, schema evolution, unsupported structured storage and the #127 registry boundary.
+- [docs] Record the entity-storage hand-off and the remaining acquisition-state boundary.
+
 ## Release history
 
 ### Discover 0.30.0 - Collection Export
