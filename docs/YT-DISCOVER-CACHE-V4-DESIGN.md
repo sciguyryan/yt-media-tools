@@ -271,3 +271,9 @@ The architecture is far enough along to stop debating principles and go back to 
 There will also be a provider-registry/schema design to write once the field inventory is in front of us. I don't think we know the right physical tables yet, and pretending otherwise would just make the first implementation issue spend its time undoing this document.
 
 Implementation should be split into GitHub issues after this design is accepted. The rough dependency is clear enough: freeze what v3 means; define the v4 representation; get provider metadata and source state onto it; resolve `raw.*`; add maintenance; build the migration machinery and v3 transition; then do startup/cut-over and realistic benchmarking/reconciliation. That is deliberately not an eleven-ticket specification. The source audit may give us better boundaries.
+
+### Transitional source-state integration
+
+The v3 source-state tables remain part of the live Discover cache while the wider cache-v4 acquisition cut-over is incomplete. Opening the cache imports existing source observations, ordered entries, coverage claims and trusted frontiers into the v4 entity-backed representation. The import is idempotent and does not promote an observation into coverage or frontier trust.
+
+During this compatibility period, source-state mutations are mirrored into v4. Provider metadata may therefore be pruned and reacquired without erasing enumeration knowledge or requiring the source to be enumerated again. The legacy source-state tables can be retired only as part of the wider runtime cut-over once no supported path depends on them.

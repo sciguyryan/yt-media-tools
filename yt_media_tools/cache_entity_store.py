@@ -843,6 +843,217 @@ class CacheV4EntityStore:
                 collected.append(entity_id)
         return tuple(collected)
 
+    def import_legacy_source_state(
+        self,
+        *,
+        service: str = "youtube",
+        source_urls: Iterable[str] | None = None,
+    ) -> int:
+        """Import v3 source state without promoting observations into stronger claims.
+
+        The bridge is intentionally idempotent. It preserves the legacy runtime during
+        the wider cache migration while making v4 media identity authoritative for
+        source membership and frontier heads.
+        """
+        service = _require_identity_part(service, label="service")
+        table_names = {
+            str(row["name"])
+            for row in self.connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+        }
+        required = {
+            "source_observations",
+            "source_entries",
+            "source_coverage",
+            "source_frontiers",
+        }
+        if not required.issubset(table_names):
+            return 0
+
+        selected = None if source_urls is None else tuple(dict.fromkeys(source_urls))
+        if selected == ():
+            return 0
+
+        where = ""
+        params: tuple[str, ...] = ()
+        if selected is not None:
+            placeholders = ", ".join("?" for _ in selected)
+            where = f" WHERE source_url IN ({placeholders})"
+            params = selected
+
+        kinds: dict[str, str] = {}
+        for table in ("source_observations", "source_coverage", "source_frontiers"):
+            for row in self.connection.execute(
+                f"SELECT source_url, source_kind FROM {table}{where}", params
+            ).fetchall():
+                kinds.setdefault(str(row["source_url"]), str(row["source_kind"]))
+
+        urls = set(kinds)
+        for row in self.connection.execute(f"SELECT DISTINCT source_url FROM source_entries{where}", params).fetchall():
+            urls.add(str(row["source_url"]))
+
+        imported = 0
+        with self.connection:
+            for source_url in sorted(urls):
+                source_kind = kinds.get(source_url, "unknown")
+                self.connection.execute(
+                    """
+                    INSERT INTO cache_v4_sources(source_url, source_kind, facet)
+                    VALUES (?, ?, '')
+                    ON CONFLICT(source_url, facet) DO UPDATE SET
+                        source_kind = excluded.source_kind
+                    """,
+                    (source_url, source_kind),
+                )
+                source_id = int(
+                    self.connection.execute(
+                        "SELECT source_id FROM cache_v4_sources WHERE source_url = ? AND facet = ''",
+                        (source_url,),
+                    ).fetchone()["source_id"]
+                )
+
+                observation = self.connection.execute(
+                    """
+                    SELECT last_observed_at, observed_entries
+                    FROM source_observations WHERE source_url = ?
+                    """,
+                    (source_url,),
+                ).fetchone()
+                if observation is not None:
+                    self.connection.execute(
+                        """
+                        INSERT INTO cache_v4_source_observations(
+                            source_id, last_observed_at, observed_entries
+                        ) VALUES (?, ?, ?)
+                        ON CONFLICT(source_id) DO UPDATE SET
+                            last_observed_at = excluded.last_observed_at,
+                            observed_entries = excluded.observed_entries
+                        """,
+                        (source_id, observation["last_observed_at"], observation["observed_entries"]),
+                    )
+                else:
+                    self.connection.execute(
+                        "DELETE FROM cache_v4_source_observations WHERE source_id = ?",
+                        (source_id,),
+                    )
+
+                entries = self.connection.execute(
+                    """
+                    SELECT video_id FROM source_entries
+                    WHERE source_url = ? ORDER BY source_index, video_id
+                    """,
+                    (source_url,),
+                ).fetchall()
+                self.connection.execute("DELETE FROM cache_v4_source_entries WHERE source_id = ?", (source_id,))
+                for index, row in enumerate(entries):
+                    video_id = str(row["video_id"])
+                    self.connection.execute(
+                        """
+                        INSERT INTO cache_v4_media_entities(service, external_id)
+                        VALUES (?, ?)
+                        ON CONFLICT(service, external_id) DO NOTHING
+                        """,
+                        (service, video_id),
+                    )
+                    entity_id = int(
+                        self.connection.execute(
+                            """
+                            SELECT entity_id FROM cache_v4_media_entities
+                            WHERE service = ? AND external_id = ?
+                            """,
+                            (service, video_id),
+                        ).fetchone()["entity_id"]
+                    )
+                    self.connection.execute(
+                        """
+                        INSERT INTO cache_v4_source_entries(source_id, entity_id, source_index)
+                        VALUES (?, ?, ?)
+                        """,
+                        (source_id, entity_id, index),
+                    )
+
+                coverage = self.connection.execute(
+                    """
+                    SELECT observed_at, observed_entries, cached_entries, complete, reason
+                    FROM source_coverage WHERE source_url = ?
+                    """,
+                    (source_url,),
+                ).fetchone()
+                if coverage is None:
+                    self.connection.execute("DELETE FROM cache_v4_source_coverage WHERE source_id = ?", (source_id,))
+                else:
+                    self.connection.execute(
+                        """
+                        INSERT INTO cache_v4_source_coverage(
+                            source_id, observed_at, observed_entries, cached_entries, complete, reason
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(source_id) DO UPDATE SET
+                            observed_at = excluded.observed_at,
+                            observed_entries = excluded.observed_entries,
+                            cached_entries = excluded.cached_entries,
+                            complete = excluded.complete,
+                            reason = excluded.reason
+                        """,
+                        (
+                            source_id,
+                            coverage["observed_at"],
+                            coverage["observed_entries"],
+                            coverage["cached_entries"],
+                            coverage["complete"],
+                            coverage["reason"],
+                        ),
+                    )
+
+                frontier = self.connection.execute(
+                    """
+                    SELECT verified_at, known_entries, head_video_id, overlap_confirmations
+                    FROM source_frontiers WHERE source_url = ?
+                    """,
+                    (source_url,),
+                ).fetchone()
+                if frontier is None:
+                    self.connection.execute("DELETE FROM cache_v4_source_frontiers WHERE source_id = ?", (source_id,))
+                else:
+                    head_id = str(frontier["head_video_id"])
+                    self.connection.execute(
+                        """
+                        INSERT INTO cache_v4_media_entities(service, external_id)
+                        VALUES (?, ?)
+                        ON CONFLICT(service, external_id) DO NOTHING
+                        """,
+                        (service, head_id),
+                    )
+                    head_entity_id = int(
+                        self.connection.execute(
+                            """
+                            SELECT entity_id FROM cache_v4_media_entities
+                            WHERE service = ? AND external_id = ?
+                            """,
+                            (service, head_id),
+                        ).fetchone()["entity_id"]
+                    )
+                    self.connection.execute(
+                        """
+                        INSERT INTO cache_v4_source_frontiers(
+                            source_id, verified_at, known_entries,
+                            head_entity_id, overlap_confirmations
+                        ) VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT(source_id) DO UPDATE SET
+                            verified_at = excluded.verified_at,
+                            known_entries = excluded.known_entries,
+                            head_entity_id = excluded.head_entity_id,
+                            overlap_confirmations = excluded.overlap_confirmations
+                        """,
+                        (
+                            source_id,
+                            frontier["verified_at"],
+                            frontier["known_entries"],
+                            head_entity_id,
+                            frontier["overlap_confirmations"],
+                        ),
+                    )
+                imported += 1
+        return imported
+
     def resolve_field(
         self,
         providers: Iterable[ProviderDefinition],

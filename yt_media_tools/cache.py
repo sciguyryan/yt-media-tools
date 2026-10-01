@@ -16,6 +16,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Self
 
+from .cache_entity_store import CacheV4EntityStore
+from .cache_registry_store import CacheV4RegistryStore
+
 
 SCHEMA_VERSION = 3
 DEFAULT_DYNAMIC_MAX_AGE = timedelta(days=1)
@@ -143,6 +146,14 @@ class MetadataCache:
         self.connection = connection
         self._initialise_schema()
 
+    def _sync_v4_source_state(self, source_url: str | None = None) -> None:
+        """Mirror transitional v3 source state into the v4 entity-backed model."""
+        registry = CacheV4RegistryStore(self._db())
+        registry.initialise()
+        store = CacheV4EntityStore(self._db(), registry)
+        store.initialise(())
+        store.import_legacy_source_state(source_urls=(source_url,) if source_url is not None else None)
+
     def close(self) -> None:
         if self.connection is not None:
             self.connection.close()
@@ -256,6 +267,8 @@ class MetadataCache:
                             (source_url, source_kind, observed_at, observed_entries, head_video_id),
                         )
                 db.execute("UPDATE cache_meta SET value = ? WHERE key = 'schema_version'", (str(SCHEMA_VERSION),))
+
+        self._sync_v4_source_state()
 
     def get(self, source_url: str, video_id: str) -> CachedMetadata | None:
         row = (
@@ -412,6 +425,7 @@ class MetadataCache:
                     """,
                     rows,
                 )
+        self._sync_v4_source_state(source_url)
         return len(rows)
 
     def source_entry_ids(self, source_url: str) -> list[str]:
@@ -467,6 +481,7 @@ class MetadataCache:
         if not ids:
             with self._db():
                 self._db().execute("DELETE FROM source_frontiers WHERE source_url = ?", (source_url,))
+            self._sync_v4_source_state(source_url)
             return
         when = (verified_at or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
         with self._db():
@@ -484,6 +499,7 @@ class MetadataCache:
                 """,
                 (source_url, source_kind, when, len(ids), ids[0], overlap_confirmations),
             )
+        self._sync_v4_source_state(source_url)
 
     def record_source_observation(
         self,
@@ -507,6 +523,7 @@ class MetadataCache:
                 """,
                 (source_url, source_kind, when, observed_entries),
             )
+        self._sync_v4_source_state(source_url)
 
     def record_source_coverage(
         self,
@@ -538,6 +555,7 @@ class MetadataCache:
                 """,
                 (source_url, source_kind, when, observed_entries, cached_entries, 1 if complete else 0, reason),
             )
+        self._sync_v4_source_state(source_url)
 
     def source_coverage(self, source_url: str) -> SourceCoverage | None:
         row = (
