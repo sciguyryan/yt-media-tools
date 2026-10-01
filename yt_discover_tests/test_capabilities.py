@@ -65,3 +65,16 @@ def test_or_requires_both_branches_to_be_provably_false() -> None:
     record = {"id": "abc", "title": "Venus"}
     # Duration is unavailable, so rejecting on the false title branch would be unsafe.
     assert not safely_reject_lightweight(query.predicate, record, DateContext())
+
+
+def test_lightweight_field_capabilities_preserve_authority_boundaries() -> None:
+    for field in ("id", "title", "source_index"):
+        capability = field_capability(field)
+        assert capability.ytdlp_flat == EXACT
+        assert not capability.requires_detailed_metadata
+
+    for field in ("upload_date", "date", "duration", "view_count", "views"):
+        capability = field_capability(field)
+        assert capability.ytdlp_flat == APPROXIMATE
+        assert capability.ytdlp_detailed == EXACT
+        assert capability.requires_detailed_metadata
