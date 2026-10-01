@@ -702,6 +702,147 @@ class CacheV4EntityStore:
             int(row["observed_entries"]),
         )
 
+    def record_source_coverage(
+        self,
+        source: SourceIdentity,
+        observed_entries: int,
+        cached_entries: int,
+        *,
+        complete: bool,
+        reason: str,
+        observed_at: datetime,
+    ) -> None:
+        """Persist an explicit coverage claim without promoting it to a frontier."""
+        if observed_entries < 0 or cached_entries < 0:
+            raise ValueError("Source coverage counts must be non-negative.")
+        reason = _require_identity_part(reason, label="reason")
+        when = self._normalise_acquisition_time(observed_at).isoformat()
+        self.connection.execute(
+            """
+            INSERT INTO cache_v4_source_coverage(
+                source_id, observed_at, observed_entries, cached_entries, complete, reason
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(source_id) DO UPDATE SET
+                observed_at = excluded.observed_at,
+                observed_entries = excluded.observed_entries,
+                cached_entries = excluded.cached_entries,
+                complete = excluded.complete,
+                reason = excluded.reason
+            """,
+            (source.source_id, when, observed_entries, cached_entries, int(complete), reason),
+        )
+        self.connection.commit()
+
+    def record_source_frontier(
+        self,
+        source: SourceIdentity,
+        head_entity_id: int,
+        known_entries: int,
+        *,
+        overlap_confirmations: int,
+        verified_at: datetime,
+    ) -> None:
+        """Persist a trusted frontier only when the caller has established one."""
+        if known_entries < 0 or overlap_confirmations < 0:
+            raise ValueError("Source frontier counts must be non-negative.")
+        when = self._normalise_acquisition_time(verified_at).isoformat()
+        self.connection.execute(
+            """
+            INSERT INTO cache_v4_source_frontiers(
+                source_id, verified_at, known_entries, head_entity_id, overlap_confirmations
+            ) VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(source_id) DO UPDATE SET
+                verified_at = excluded.verified_at,
+                known_entries = excluded.known_entries,
+                head_entity_id = excluded.head_entity_id,
+                overlap_confirmations = excluded.overlap_confirmations
+            """,
+            (source.source_id, when, known_entries, head_entity_id, overlap_confirmations),
+        )
+        self.connection.commit()
+
+    def _entity_has_provider_state(self, entity_id: int) -> bool:
+        if (
+            self.connection.execute(
+                "SELECT 1 FROM cache_v4_acquisition_state WHERE entity_id = ? LIMIT 1",
+                (entity_id,),
+            ).fetchone()
+            is not None
+        ):
+            return True
+        rows = self.connection.execute(
+            """
+            SELECT p.metadata_table
+            FROM cache_v4_providers AS p
+            JOIN sqlite_master AS m ON m.type = 'table' AND m.name = p.metadata_table
+            """
+        ).fetchall()
+        for row in rows:
+            table = str(row["metadata_table"]).replace('"', '""')
+            if (
+                self.connection.execute(
+                    f'SELECT 1 FROM "{table}" WHERE entity_id = ? LIMIT 1',
+                    (entity_id,),
+                ).fetchone()
+                is not None
+            ):
+                return True
+        return False
+
+    def _entity_has_source_state(self, entity_id: int) -> bool:
+        if (
+            self.connection.execute(
+                "SELECT 1 FROM cache_v4_source_entries WHERE entity_id = ? LIMIT 1",
+                (entity_id,),
+            ).fetchone()
+            is not None
+        ):
+            return True
+        return (
+            self.connection.execute(
+                "SELECT 1 FROM cache_v4_source_frontiers WHERE head_entity_id = ? LIMIT 1",
+                (entity_id,),
+            ).fetchone()
+            is not None
+        )
+
+    def collect_entity_if_unreferenced(self, entity_id: int) -> bool:
+        """Delete one entity only after provider and persistent source state release it."""
+        if self._entity_has_provider_state(entity_id) or self._entity_has_source_state(entity_id):
+            return False
+        cursor = self.connection.execute(
+            "DELETE FROM cache_v4_media_entities WHERE entity_id = ?",
+            (entity_id,),
+        )
+        self.connection.commit()
+        return cursor.rowcount > 0
+
+    def prune_source_state(self, source: SourceIdentity) -> tuple[int, ...]:
+        """Remove one source/facet boundary and dependent claims, then collect released entities."""
+        entry_rows = self.connection.execute(
+            "SELECT entity_id FROM cache_v4_source_entries WHERE source_id = ?",
+            (source.source_id,),
+        ).fetchall()
+        frontier = self.connection.execute(
+            "SELECT head_entity_id FROM cache_v4_source_frontiers WHERE source_id = ?",
+            (source.source_id,),
+        ).fetchone()
+        affected = {int(row["entity_id"]) for row in entry_rows}
+        if frontier is not None:
+            affected.add(int(frontier["head_entity_id"]))
+
+        with self.connection:
+            self.connection.execute(
+                "DELETE FROM cache_v4_sources WHERE source_id = ?",
+                (source.source_id,),
+            )
+
+        collected: list[int] = []
+        for entity_id in sorted(affected):
+            if self.collect_entity_if_unreferenced(entity_id):
+                collected.append(entity_id)
+        return tuple(collected)
+
     def resolve_field(
         self,
         providers: Iterable[ProviderDefinition],

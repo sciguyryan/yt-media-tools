@@ -675,3 +675,89 @@ def test_source_membership_prevents_entity_cascade_deletion() -> None:
 
     with pytest.raises(sqlite3.IntegrityError):
         store.connection.execute("DELETE FROM cache_v4_media_entities WHERE entity_id = ?", (entity.entity_id,))
+
+
+def test_prune_source_state_removes_dependent_claims_and_collects_released_entity() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+    store.record_source_observation(source, 1, observed_at=now)
+    store.replace_source_entries(source, (entity.entity_id,))
+    store.record_source_coverage(source, 1, 1, complete=True, reason="complete", observed_at=now)
+    store.record_source_frontier(source, entity.entity_id, 1, overlap_confirmations=2, verified_at=now)
+
+    assert store.prune_source_state(source) == (entity.entity_id,)
+    assert (
+        store.connection.execute(
+            "SELECT COUNT(*) FROM cache_v4_sources WHERE source_id = ?", (source.source_id,)
+        ).fetchone()[0]
+        == 0
+    )
+    assert store.connection.execute("SELECT COUNT(*) FROM cache_v4_source_coverage").fetchone()[0] == 0
+    assert store.connection.execute("SELECT COUNT(*) FROM cache_v4_source_frontiers").fetchone()[0] == 0
+    assert store.entity("youtube", "abc123") is None
+
+
+def test_prune_source_state_keeps_entity_referenced_by_another_source_facet() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    videos = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    shorts = store.get_or_create_source("https://example.invalid/channel", "channel", facet="shorts")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    store.replace_source_entries(videos, (entity.entity_id,))
+    store.replace_source_entries(shorts, (entity.entity_id,))
+
+    assert store.prune_source_state(videos) == ()
+    assert store.source_entry_ids(shorts) == (entity.entity_id,)
+    assert store.entity("youtube", "abc123") == entity
+
+
+def test_prune_source_state_keeps_entity_with_provider_scalar_metadata() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    store.replace_source_entries(source, (entity.entity_id,))
+    store.write_provider_metadata(provider, entity.entity_id, {"title": "Retained"})
+
+    assert store.prune_source_state(source) == ()
+    assert store.entity("youtube", "abc123") == entity
+
+
+def test_prune_source_state_keeps_entity_with_acquisition_history() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    store.replace_source_entries(source, (entity.entity_id,))
+    now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+    store.record_acquisition_failure(
+        provider, entity.entity_id, "basic-info", attempted_at=now, category="provider-error"
+    )
+
+    assert store.prune_source_state(source) == ()
+    assert store.entity("youtube", "abc123") == entity
+
+
+def test_frontier_reference_alone_prevents_entity_collection() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    source = store.get_or_create_source("https://example.invalid/channel", "channel", facet="videos")
+    entity = store.get_or_create_entity("youtube", "abc123")
+    now = datetime(2026, 9, 30, 16, 0, tzinfo=timezone.utc)
+    store.record_source_frontier(source, entity.entity_id, 1, overlap_confirmations=1, verified_at=now)
+
+    assert store.collect_entity_if_unreferenced(entity.entity_id) is False
+    assert store.entity("youtube", "abc123") == entity
+    assert store.prune_source_state(source) == (entity.entity_id,)
+
+
+def test_collect_entity_requires_provider_and_source_state_to_be_absent() -> None:
+    provider = _provider()
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+
+    assert store.collect_entity_if_unreferenced(entity.entity_id) is True
+    assert store.entity("youtube", "abc123") is None

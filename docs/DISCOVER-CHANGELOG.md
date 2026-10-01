@@ -31,6 +31,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Preserve coverage and frontier as separate stronger source/facet claims and avoid per-entry pruning timestamps in the v4 membership table.
 - [test] Cover source/facet identity, observation-without-frontier semantics, entity-backed membership, metadata-pruning independence and source-state entity retention.
 - [docs] Record the audited v3-to-v4 source-state mapping while leaving coherent retention and dependent-claim invalidation to the next #129 part.
+- [feature] Add transactional cache-v4 source/facet pruning that removes observations, ordered membership, coverage and frontier state as one retained boundary.
+- [maintenance] Garbage-collect media identities only after provider scalar state, acquisition history and persistent source references have all released them.
+- [maintenance] Invalidate dependent coverage and frontier claims with their source/facet state without adding per-entry pruning timestamps or write churn.
+- [test] Cover source-state claim invalidation, cross-facet retention, provider-state retention, frontier-only references and final unreferenced entity collection.
+- [docs] Record the #129 retention and entity-lifetime invariants while leaving runtime integration and legacy-state retirement to the final part.
 
 ## Release history
 
