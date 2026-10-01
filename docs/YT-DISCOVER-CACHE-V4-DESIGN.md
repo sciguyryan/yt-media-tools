@@ -62,7 +62,7 @@ Something provider-specific needs a stable namespace. We have not chosen the yt-
 
 There is no miscellaneous provider JSON type in this model. Persisted types are types yt-sql understands and can serialise, compare and migrate deterministically. Structured/list values need an explicit mapping rather than an escape hatch.
 
-TODO: make the current field/type inventory. This is one of the bits where reading the implementation is more useful than designing from memory.
+The current field/type inventory is now represented by the stable yt-sql schema and provider registry. Registered scalar fields carry explicit logical types; stable collections retain their established collection contracts while their first-class v4 persistence remains separate work.
 
 ### Provider schemas will move independently
 
@@ -138,7 +138,7 @@ Explicit pruning should be previewable. The preview and execution ought to come 
 
 For a large destructive operation an interactive `[y/N]` is sensible. Non-interactive use cannot sit waiting for a terminal that is not there; explicit authorisation will be needed when a configured threshold is crossed. Automatic retention is already authorised by configuration and therefore cannot prompt.
 
-TODO: inspect the existing cache CLI/config surfaces before naming these commands and thresholds. The concepts are settled; the spelling isn't.
+Command names and destructive-operation thresholds remain a maintenance-surface decision. They should be derived from the existing cache CLI/config conventions when that surface is implemented rather than being invented in this schema document.
 
 ## Cache status should explain what is on disk
 
@@ -152,9 +152,9 @@ v4 should not keep an arbitrary backend blob merely so `raw.foo.bar` can continu
 
 The replacement is registration: useful data becomes a field with a type, provider, acquisition behaviour and freshness. Dynamic extensions still work, but they register meaning instead of exposing the shape of an upstream response.
 
-What we have not done yet is the inventory. Some existing `raw.*` uses may correspond to fields that deserve first-class registration. Some may be obscure but nevertheless part of the accepted language. Others may only expose backend baggage that should disappear. We need to know which is which before choosing the compatibility path.
+The completed raw-metadata audit separates recognised scalar metadata, stable logical collections and genuinely dynamic compatibility material. Recognised scalars are registered and persisted through the provider model. Stable collections retain their established logical contracts while first-class v4 collection storage remains separate work. Genuinely dynamic nested material is retained only in the reduced source-scoped compatibility payload.
 
-This will probably be the most visible language change in the cache work. Treat it as such: parser/schema/evaluator/planner/help/docs/conformance changes belong together, and migration accounting should say what recognised queryable raw material was normalised and what backend-only baggage was intentionally discarded.
+Simple stable scalar `raw.*` spellings resolve through canonical metadata and no longer force open-ended dynamic acquisition. Nested and structured dynamic paths retain the compatibility path. No provider-specific namespace syntax has been introduced.
 
 ## Cache names and finding an old database
 
@@ -252,25 +252,13 @@ Migration happens before partial query/acquisition work. Discover remembers the 
 
 For an interactive run, show the migration policy before the expensive part. The defaults we discussed are to remove the old database after a fully verified successful cut-over and not to retain a failed transition database. The permanent migration log stays either way.
 
-One unresolved bit remains here:
+Non-interactive authorisation remains a startup/CLI policy decision. A script cannot hang on a prompt, so the migration surface must either have documented non-interactive defaults or require explicit authorisation. This document deliberately does not invent that CLI policy.
 
-TODO: decide non-interactive authorisation. A script cannot hang on a prompt. We still need to choose whether a supported mandatory migration proceeds using documented defaults or refuses until the caller explicitly authorises migration. I can see arguments for both; this wants a decision when we design the startup/CLI surface, not a guess in the schema document.
+## Current implementation boundary
 
-## Where we stopped
+The field/type inventory, v3 validity contract and historical fixture/oracle, provider registry, v4 entity metadata, source/facet persistence, registered scalar replacement and reduced `raw.*` compatibility representation are now implemented foundations.
 
-The architecture is far enough along to stop debating principles and go back to the tree. Before implementation we still need some dull but important inventories:
-
-- current yt-sql fields and logical types, including structured/list semantics;
-- the exact v3 validity rules and representative historical fixtures;
-- `raw.*` uses that have to become registered fields or deliberate compatibility changes;
-- current provider failure/retry behaviour;
-- current source/facet table invariants and the cleanest mapping to `entity_id`;
-- current cache path/config/CLI conventions;
-- realistic measurements for row sizes, migration batches/indexes/pragmas, disk-space estimation and semantic verification cost.
-
-There will also be a provider-registry/schema design to write once the field inventory is in front of us. I don't think we know the right physical tables yet, and pretending otherwise would just make the first implementation issue spend its time undoing this document.
-
-Implementation should be split into GitHub issues after this design is accepted. The rough dependency is clear enough: freeze what v3 means; define the v4 representation; get provider metadata and source state onto it; resolve `raw.*`; add maintenance; build the migration machinery and v3 transition; then do startup/cut-over and realistic benchmarking/reconciliation. That is deliberately not an eleven-ticket specification. The source audit may give us better boundaries.
+Remaining cache-v4 work belongs to later maintenance, migration and startup/cut-over issues. That includes first-class storage for stable collections where required, cache maintenance and pruning surfaces, migration execution and verification policy, cache selection/startup behaviour, and realistic migration/retention benchmarking. The accepted v3 contract remains the migration source oracle until that wider cut-over is complete.
 
 ### Transitional source-state integration
 

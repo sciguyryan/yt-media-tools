@@ -1,12 +1,12 @@
 # yt-discover raw metadata audit
 
-This document records the Part 1 audit for GitHub issue #130. It describes the accepted `raw.*` contract before storage or language changes are made.
+This document records the current `raw.*` compatibility boundary between registered cache-v4 metadata and unresolved dynamic backend material.
 
 ## Scope
 
 `raw.*` is an established yt-sql language surface, not merely the SQLite `raw_json` column. The accepted implementation stores the backend response in each normalised record as `_raw`, infers dynamic field structure from observed backend values, resolves `raw.*` paths at runtime, plans open-ended raw acquisition separately, and exercises the surface throughout parser, semantic, evaluator, projection, collection, conformance, help and documentation tests.
 
-Part 1 deliberately does not select provider-specific namespace syntax and does not remove `raw_json`.
+The compatibility model does not introduce provider-specific namespace syntax. The v3 `raw_json` column remains a legacy migration boundary rather than a v4 metadata primitive.
 
 ## Accepted language behaviour
 
@@ -76,13 +76,7 @@ A migration must not report successful normalisation merely because a legacy `ra
 
 Part 1 does not choose syntax for provider-specific or genuinely dynamic fields. If later work proves that such a language surface is required, its grammar must compose with existing qualification, quoted identifiers, member access, collection indexing and other postfix syntax. It requires parser, formatter, semantic, evaluator and conformance treatment equivalent to other yt-sql syntax.
 
-## Part 1 conclusion
-
-The arbitrary persisted backend response is not an appropriate cache-v4 storage primitive. However, deleting it before replacing the useful language-visible metadata would regress an established yt-sql contract.
-
-Part 2 should therefore build the concrete registered-metadata replacement and migration accounting from this inventory. Language compatibility decisions should follow the field inventory rather than precede it.
-
-## Part 2 registered-metadata implementation
+## Registered metadata replacement
 
 The first concrete replacement provider is now registered as `yt-dlp`. Stable scalar metadata is declared with yt-sql types, a detailed-metadata acquisition group, storage names and freshness policies instead of relying on an arbitrary backend response for v4 persistence. Typed datetime fields use lossless SQLite TEXT affinity while retaining their yt-sql datetime contract.
 
@@ -92,7 +86,7 @@ Migration accounting is persisted per source and media identity. It separately c
 
 The current stable collection fields remain an explicit follow-on storage concern. Part 2 accounts for `tags`, `categories`, `formats`, `chapters` and `thumbnails` as stable logical equivalents rather than serialising them into scalar provider columns or falsely reporting them as discarded baggage.
 
-## Part 3 compatibility transition
+## yt-sql compatibility transition
 
 Simple `raw.<field>` references now recognise stable logical metadata before consulting the arbitrary backend payload. This preserves established scalar query spellings such as `raw.title`, `raw.duration` and `raw.views` while allowing those expressions to be satisfied by the normal registered record representation.
 
@@ -100,9 +94,9 @@ The mapping is deliberately narrow. Only a single raw path component that resolv
 
 Acquisition planning applies the same distinction. Stable raw spellings are planned as their canonical logical field and therefore no longer force the open-ended `dynamic-raw` stage. Genuinely dynamic raw paths continue to require that stage.
 
-No provider-specific namespace syntax is introduced. The remaining dynamic raw surface still demonstrates a real compatibility requirement, but Part 3 does not establish that a new namespace is the correct long-term language design. That decision remains coupled to the final runtime cut-over and explicit compatibility policy.
+No provider-specific namespace syntax is introduced. The remaining dynamic raw surface demonstrates a compatibility requirement, but does not by itself establish that a new provider namespace is the correct long-term language design.
 
-## Part 4 runtime reconciliation
+## Runtime persistence boundary
 
 Cache v4 no longer treats a complete arbitrary backend response as registered metadata. Detailed-cache writes persist recognised scalar values through the provider registry and separately persist only the unresolved compatibility remainder required by the still-supported dynamic `raw.*` surface.
 
@@ -112,4 +106,4 @@ The legacy v3 `metadata_records.raw_json` column remains unchanged during this c
 
 Stable collections remain in the reduced compatibility payload because they do not yet have first-class v4 collection storage. Genuinely dynamic nested material remains there because `raw.*` is still accepted yt-sql surface. Registered scalar values and internal `_yt_sql_` provenance keys are not duplicated into that payload.
 
-No provider-specific namespace syntax is introduced by #130. The remaining dynamic surface is represented explicitly as compatibility state rather than being mistaken for registered metadata or silently discarded.
+The remaining dynamic surface is represented explicitly as compatibility state rather than being mistaken for registered metadata or silently discarded.
