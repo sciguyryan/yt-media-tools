@@ -103,3 +103,13 @@ def normalise_registered_metadata(
         stable_equivalent_fields=stable_equivalent,
         discarded_backend_fields=discarded,
     )
+
+
+def raw_compatibility_remainder(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Return backend material not represented by registered v4 scalar metadata."""
+    registered = {field.name for field in YTDLP_PROVIDER.fields}
+    return {
+        key: value
+        for key, value in record.items()
+        if isinstance(key, str) and key not in registered and not key.startswith("_yt_sql_")
+    }

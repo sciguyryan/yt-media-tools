@@ -101,3 +101,15 @@ The mapping is deliberately narrow. Only a single raw path component that resolv
 Acquisition planning applies the same distinction. Stable raw spellings are planned as their canonical logical field and therefore no longer force the open-ended `dynamic-raw` stage. Genuinely dynamic raw paths continue to require that stage.
 
 No provider-specific namespace syntax is introduced. The remaining dynamic raw surface still demonstrates a real compatibility requirement, but Part 3 does not establish that a new namespace is the correct long-term language design. That decision remains coupled to the final runtime cut-over and explicit compatibility policy.
+
+## Part 4 runtime reconciliation
+
+Cache v4 no longer treats a complete arbitrary backend response as registered metadata. Detailed-cache writes persist recognised scalar values through the provider registry and separately persist only the unresolved compatibility remainder required by the still-supported dynamic `raw.*` surface.
+
+The compatibility remainder is source-scoped because the accepted v3 contract permits the same media identity to have source-specific detailed observations. Registered scalar provider metadata remains entity-scoped. Keeping those identities distinct prevents a value acquired through one source from being substituted into another source's legacy cache row.
+
+The legacy v3 `metadata_records.raw_json` column remains unchanged during this compatibility period. It is explicitly a v3 boundary, not a v4 storage primitive. Removing or rewriting it inside #130 would break the accepted v3 migration oracle and source-scoped cache contract before the wider v3 runtime retirement is ready. The v4 representation therefore proves the intended cut-over shape without falsifying or silently mutating the legacy contract.
+
+Stable collections remain in the reduced compatibility payload because they do not yet have first-class v4 collection storage. Genuinely dynamic nested material remains there because `raw.*` is still accepted yt-sql surface. Registered scalar values and internal `_yt_sql_` provenance keys are not duplicated into that payload.
+
+No provider-specific namespace syntax is introduced by #130. The remaining dynamic surface is represented explicitly as compatibility state rather than being mistaken for registered metadata or silently discarded.

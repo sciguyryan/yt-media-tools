@@ -18,7 +18,12 @@ from typing import Any, Iterable, Self
 
 from .cache_entity_store import CacheV4EntityStore
 from .cache_registry_store import CacheV4RegistryStore
-from .cache_v4_ytdlp import YTDLP_PROVIDER, RawMigrationAccounting, normalise_registered_metadata
+from .cache_v4_ytdlp import (
+    YTDLP_PROVIDER,
+    RawMigrationAccounting,
+    normalise_registered_metadata,
+    raw_compatibility_remainder,
+)
 
 
 SCHEMA_VERSION = 3
@@ -204,6 +209,17 @@ class MetadataCache:
                     registered_fields INTEGER NOT NULL CHECK (registered_fields >= 0),
                     stable_equivalent_fields INTEGER NOT NULL CHECK (stable_equivalent_fields >= 0),
                     discarded_backend_fields INTEGER NOT NULL CHECK (discarded_backend_fields >= 0),
+                    PRIMARY KEY(source_url, video_id)
+                )
+                """
+            )
+            db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS cache_v4_raw_compatibility (
+                    source_url TEXT NOT NULL,
+                    video_id TEXT NOT NULL,
+                    acquired_at TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
                     PRIMARY KEY(source_url, video_id)
                 )
                 """
@@ -407,6 +423,22 @@ class MetadataCache:
             entity.entity_id,
             "detailed",
             acquired_at=acquired_at,
+        )
+        compatibility = raw_compatibility_remainder(record)
+        self._db().execute(
+            """
+            INSERT INTO cache_v4_raw_compatibility(source_url, video_id, acquired_at, payload_json)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(source_url, video_id) DO UPDATE SET
+                acquired_at = excluded.acquired_at,
+                payload_json = excluded.payload_json
+            """,
+            (
+                source_url,
+                video_id,
+                acquired_at.isoformat(),
+                json.dumps(compatibility, ensure_ascii=False, separators=(",", ":")),
+            ),
         )
         self._db().execute(
             """
