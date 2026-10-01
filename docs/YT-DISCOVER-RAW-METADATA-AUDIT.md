@@ -91,3 +91,13 @@ During the compatibility period, accepted v3 detailed-cache writes are also norm
 Migration accounting is persisted per source and media identity. It separately counts registered scalar fields, collection material already represented by stable logical fields, and backend-only fields deliberately discarded from v4 registered persistence. Internal `_yt_sql_` provenance keys are not counted as discarded backend material.
 
 The current stable collection fields remain an explicit follow-on storage concern. Part 2 accounts for `tags`, `categories`, `formats`, `chapters` and `thumbnails` as stable logical equivalents rather than serialising them into scalar provider columns or falsely reporting them as discarded baggage.
+
+## Part 3 compatibility transition
+
+Simple `raw.<field>` references now recognise stable logical metadata before consulting the arbitrary backend payload. This preserves established scalar query spellings such as `raw.title`, `raw.duration` and `raw.views` while allowing those expressions to be satisfied by the normal registered record representation.
+
+The mapping is deliberately narrow. Only a single raw path component that resolves to a known stable scalar field or alias is redirected. Stable collections are not redirected because their existing raw structured and indexing semantics are not interchangeable with the logical collection contract. Nested paths such as `raw.extra.score`, provider-shaped structured values and other genuinely dynamic raw material retain the legacy dynamic schema and evaluator path for this compatibility stage.
+
+Acquisition planning applies the same distinction. Stable raw spellings are planned as their canonical logical field and therefore no longer force the open-ended `dynamic-raw` stage. Genuinely dynamic raw paths continue to require that stage.
+
+No provider-specific namespace syntax is introduced. The remaining dynamic raw surface still demonstrates a real compatibility requirement, but Part 3 does not establish that a new namespace is the correct long-term language design. That decision remains coupled to the final runtime cut-over and explicit compatibility policy.

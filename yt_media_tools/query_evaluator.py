@@ -52,7 +52,7 @@ from .query_semantics import (
 )
 from .query_values import comparison_values as _comparison_values
 from .query_values import hashable_group_value as _hashable_group_value
-from .schema import raw_path_value
+from .schema import raw_path_value, raw_stable_field
 
 
 def _coerce_char_codepoint(value: Any) -> int:
@@ -339,9 +339,13 @@ def canonical_record_value(
         name, field_kind = field, kind
 
     if name.casefold().startswith("raw."):
-        found, value = raw_path_value(record, name[4:])
-        if not found:
-            return None
+        stable = raw_stable_field(name)
+        if stable is not None:
+            value = record.get(stable)
+        else:
+            found, value = raw_path_value(record, name[4:])
+            if not found:
+                return None
     else:
         value = record.get(name)
 

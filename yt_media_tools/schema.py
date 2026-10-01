@@ -125,6 +125,20 @@ ALIASES = {
 }
 
 
+def raw_stable_field(name: str) -> str | None:
+    """Return the stable logical field represented by a simple raw path, if any."""
+    lowered = name.casefold()
+    if not lowered.startswith("raw."):
+        return None
+    path = name[4:]
+    if not path or "." in path:
+        return None
+    canonical = ALIASES.get(path.casefold(), path.casefold())
+    if canonical in KNOWN_FIELD_TYPES:
+        return canonical
+    return None
+
+
 @dataclass(frozen=True)
 class FieldInfo:
     """Description of a field visible to the query language."""
@@ -346,6 +360,19 @@ class QuerySchema:
     def resolve(self, name: str) -> FieldInfo | None:
         """Resolve a field name, including raw dotted paths."""
         if name.casefold().startswith("raw."):
+            stable = raw_stable_field(name)
+            if stable is not None:
+                field = self._fields.get(stable)
+                if field is None:
+                    return None
+                return FieldInfo(
+                    name,
+                    field.kind,
+                    field.nullable,
+                    alias_of=stable,
+                    dynamic=False,
+                    resolved_type=field.query_type,
+                )
             path = name[4:]
             if not path:
                 return None

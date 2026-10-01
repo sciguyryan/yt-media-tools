@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .provider_capabilities import MetadataRequirement
+from .schema import raw_stable_field
 from .query_properties import (
     CollectionQueryRequirement,
     IndexedFieldRequirement,
@@ -130,8 +131,13 @@ def _collection_family(field: str) -> str | None:
 
 
 def _dynamic_raw(field: str) -> bool:
-    """Return whether a field belongs to the open-ended raw metadata namespace."""
-    return field.casefold().startswith("raw.")
+    """Return whether a field still requires the open-ended raw compatibility path."""
+    return field.casefold().startswith("raw.") and raw_stable_field(field) is None
+
+
+def _planning_field(field: str) -> str:
+    """Map a stable raw compatibility spelling onto its registered logical field."""
+    return raw_stable_field(field) or field
 
 
 def plan_physical_acquisition(
@@ -191,11 +197,12 @@ def plan_physical_acquisition(
     full_fields = detailed_fields if whole_fields is None else whole_fields
 
     for field in detailed_fields:
-        field_key = field.casefold()
-        family = _collection_family(field)
-        indexed = indexed_by_field.get(field_key, [])
-        members = members_by_field.get(field_key, [])
-        queries = queries_by_field.get(field_key, [])
+        planned_field = _planning_field(field)
+        field_key = planned_field.casefold()
+        family = _collection_family(planned_field)
+        indexed = indexed_by_field.get(field.casefold(), [])
+        members = members_by_field.get(field.casefold(), [])
+        queries = queries_by_field.get(field.casefold(), [])
         query_partial = (
             bool(queries)
             and field_key not in full_fields
@@ -228,7 +235,7 @@ def plan_physical_acquisition(
             ):
                 indexed_collection_fields[stage_name].extend(indexed)
             else:
-                collection_fields[stage_name].add(field)
+                collection_fields[stage_name].add(planned_field)
         elif _dynamic_raw(field):
             if query_partial:
                 dynamic_collection_queries.extend(queries)
@@ -241,7 +248,7 @@ def plan_physical_acquisition(
         elif member_partial:
             ordinary_member_fields.extend(members)
         else:
-            ordinary_detailed.add(field)
+            ordinary_detailed.add(planned_field)
 
     identity_fields = frozenset(field for field in required_fields if field.casefold() in {"id", "source_index"})
     basic_fields = frozenset(enumeration_fields - identity_fields)
