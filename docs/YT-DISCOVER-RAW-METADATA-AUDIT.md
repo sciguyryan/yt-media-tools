@@ -81,3 +81,13 @@ Part 1 does not choose syntax for provider-specific or genuinely dynamic fields.
 The arbitrary persisted backend response is not an appropriate cache-v4 storage primitive. However, deleting it before replacing the useful language-visible metadata would regress an established yt-sql contract.
 
 Part 2 should therefore build the concrete registered-metadata replacement and migration accounting from this inventory. Language compatibility decisions should follow the field inventory rather than precede it.
+
+## Part 2 registered-metadata implementation
+
+The first concrete replacement provider is now registered as `yt-dlp`. Stable scalar metadata is declared with yt-sql types, a detailed-metadata acquisition group, storage names and freshness policies instead of relying on an arbitrary backend response for v4 persistence. Typed datetime fields use lossless SQLite TEXT affinity while retaining their yt-sql datetime contract.
+
+During the compatibility period, accepted v3 detailed-cache writes are also normalised into the v4 yt-dlp provider table and successful detailed acquisition state is recorded. The legacy `raw_json` row remains in place for the existing `raw.*` language path until the later compatibility and runtime-cut-over parts.
+
+Migration accounting is persisted per source and media identity. It separately counts registered scalar fields, collection material already represented by stable logical fields, and backend-only fields deliberately discarded from v4 registered persistence. Internal `_yt_sql_` provenance keys are not counted as discarded backend material.
+
+The current stable collection fields remain an explicit follow-on storage concern. Part 2 accounts for `tags`, `categories`, `formats`, `chapters` and `thumbnails` as stable logical equivalents rather than serialising them into scalar provider columns or falsely reporting them as discarded baggage.

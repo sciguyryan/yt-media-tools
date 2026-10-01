@@ -118,7 +118,7 @@ def _sqlite_type(field: ProviderFieldDefinition) -> str:
         return "INTEGER"
     if kind == "number":
         return "REAL"
-    if kind in {"channel", "date", "playlist", "string", "text"}:
+    if kind in {"channel", "date", "datetime", "playlist", "string", "text"}:
         return "TEXT"
     raise RegistryContractError(f"Provider field {field.name!r} has unsupported cache-v4 storage type {kind!r}.")
 

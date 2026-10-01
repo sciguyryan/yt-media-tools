@@ -18,6 +18,7 @@ from typing import Any, Iterable, Self
 
 from .cache_entity_store import CacheV4EntityStore
 from .cache_registry_store import CacheV4RegistryStore
+from .cache_v4_ytdlp import YTDLP_PROVIDER, RawMigrationAccounting, normalise_registered_metadata
 
 
 SCHEMA_VERSION = 3
@@ -149,9 +150,9 @@ class MetadataCache:
     def _sync_v4_source_state(self, source_url: str | None = None) -> None:
         """Mirror transitional v3 source state into the v4 entity-backed model."""
         registry = CacheV4RegistryStore(self._db())
-        registry.initialise()
+        registry.reconcile((YTDLP_PROVIDER,))
         store = CacheV4EntityStore(self._db(), registry)
-        store.initialise(())
+        store.initialise((YTDLP_PROVIDER,))
         store.import_legacy_source_state(source_urls=(source_url,) if source_url is not None else None)
 
     def close(self) -> None:
@@ -194,6 +195,19 @@ class MetadataCache:
                 """
             )
             db.execute("CREATE INDEX IF NOT EXISTS metadata_records_video_id ON metadata_records(video_id)")
+            db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS cache_v4_raw_migration_accounting (
+                    source_url TEXT NOT NULL,
+                    video_id TEXT NOT NULL,
+                    migrated_at TEXT NOT NULL,
+                    registered_fields INTEGER NOT NULL CHECK (registered_fields >= 0),
+                    stable_equivalent_fields INTEGER NOT NULL CHECK (stable_equivalent_fields >= 0),
+                    discarded_backend_fields INTEGER NOT NULL CHECK (discarded_backend_fields >= 0),
+                    PRIMARY KEY(source_url, video_id)
+                )
+                """
+            )
             db.execute(
                 """
                 CREATE TABLE IF NOT EXISTS source_observations (
@@ -370,6 +384,54 @@ class MetadataCache:
                     current_value = current_value[part]
         return True
 
+    def _normalise_record_into_v4(
+        self,
+        source_url: str,
+        record: dict[str, Any],
+        *,
+        acquired_at: datetime,
+    ) -> RawMigrationAccounting | None:
+        """Normalise one accepted legacy backend record into registered v4 metadata."""
+        video_id = record.get("id")
+        if not isinstance(video_id, str) or not video_id:
+            return None
+        registry = CacheV4RegistryStore(self._db())
+        registry.reconcile((YTDLP_PROVIDER,))
+        store = CacheV4EntityStore(self._db(), registry)
+        store.initialise((YTDLP_PROVIDER,))
+        entity = store.get_or_create_entity("youtube", video_id)
+        values, accounting = normalise_registered_metadata(record)
+        store.write_provider_metadata(YTDLP_PROVIDER, entity.entity_id, values)
+        store.record_acquisition_success(
+            YTDLP_PROVIDER,
+            entity.entity_id,
+            "detailed",
+            acquired_at=acquired_at,
+        )
+        self._db().execute(
+            """
+            INSERT INTO cache_v4_raw_migration_accounting(
+                source_url, video_id, migrated_at, registered_fields,
+                stable_equivalent_fields, discarded_backend_fields
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(source_url, video_id) DO UPDATE SET
+                migrated_at = excluded.migrated_at,
+                registered_fields = excluded.registered_fields,
+                stable_equivalent_fields = excluded.stable_equivalent_fields,
+                discarded_backend_fields = excluded.discarded_backend_fields
+            """,
+            (
+                source_url,
+                video_id,
+                acquired_at.isoformat(),
+                len(accounting.registered_fields),
+                len(accounting.stable_equivalent_fields),
+                len(accounting.discarded_backend_fields),
+            ),
+        )
+        self._db().commit()
+        return accounting
+
     def put_many(
         self,
         source_url: str,
@@ -379,6 +441,7 @@ class MetadataCache:
     ) -> int:
         """Atomically upsert detailed metadata records, returning rows accepted."""
         when = (fetched_at or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
+        records = tuple(records)
         rows: list[tuple[str, str, str, str]] = []
         for record in records:
             video_id = record.get("id")
@@ -398,6 +461,9 @@ class MetadataCache:
                 """,
                 rows,
             )
+        acquired_at = datetime.fromisoformat(when)
+        for record in records:
+            self._normalise_record_into_v4(source_url, record, acquired_at=acquired_at)
         return len(rows)
 
     def record_source_entries(
