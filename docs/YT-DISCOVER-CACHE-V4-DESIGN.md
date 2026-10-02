@@ -287,3 +287,11 @@ Remaining cache-v4 work belongs to later maintenance, migration and startup/cut-
 The v3 source-state tables remain part of the live Discover cache while the wider cache-v4 acquisition cut-over is incomplete. Opening the cache imports existing source observations, ordered entries, coverage claims and trusted frontiers into the v4 entity-backed representation. The import is idempotent and does not promote an observation into coverage or frontier trust.
 
 During this compatibility period, source-state mutations are mirrored into v4. Provider metadata may therefore be pruned and reacquired without erasing enumeration knowledge or requiring the source to be enumerated again. The legacy source-state tables can be retired only as part of the wider runtime cut-over once no supported path depends on them.
+
+### Migration execution plumbing
+
+The migration coordinator remains deliberately ignorant of transition internals. Shared execution plumbing now covers the pieces that do not need schema knowledge: SQLite integrity checks, destination disk-space observations, bounded lazy batches, structured progress events and append-only migration logs.
+
+Progress and permanent logging use the same event object. A transition can emit an event once and attach terminal or other consumers alongside the permanent log sink, rather than maintaining a second account of migration progress. Each logged run is finalised as complete, incomplete, failed or interrupted. Exceptions and `KeyboardInterrupt` still propagate after the final record has been written.
+
+The disk-space helper reports available space against a requirement supplied by the transition. It does not decide how much space a migration ought to require. Likewise, the integrity helper exposes SQLite's result without deciding which transition phase should run it. Validation, historical repairs and migration phases remain transition-owned work for the next part of #132.
