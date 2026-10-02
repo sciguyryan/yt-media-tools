@@ -618,6 +618,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="check required and optional acquisition tools without contacting YouTube, then exit",
     )
+    introspection_mode.add_argument(
+        "--cache-status",
+        action="store_true",
+        help="report logical cache-v4 and SQLite storage status without contacting YouTube",
+    )
+    introspection.add_argument(
+        "--cache-status-format",
+        choices=("text", "json"),
+        default="text",
+        help="format for --cache-status (default: text)",
+    )
     introspection.add_argument(
         "--explain-format",
         choices=("text", "json", "svg"),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -11,6 +12,9 @@ from time import perf_counter
 
 from yt_media_tools.archive import exclude_archive, read_archive_ids
 from yt_media_tools.cache import CacheStats, MetadataCache, SourceCoverage
+from yt_media_tools.cache_maintenance import CacheRetentionPolicy
+from yt_media_tools.cache_status import collect_cache_status, format_cache_status
+from yt_media_tools.cache_v4_ytdlp import YTDLP_PROVIDER
 from yt_media_tools.capabilities import safely_reject_lightweight
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_acquisition import (
@@ -200,6 +204,29 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.examples:
         print(EXAMPLES)
+        return 0
+
+    if args.cache_status:
+        cache_path = args.cache.expanduser()
+        if not cache_path.exists():
+            parser.error(f"metadata cache does not exist: {cache_path}")
+        try:
+            connection = sqlite3.connect(f"file:{cache_path}?mode=ro", uri=True)
+            try:
+                status = collect_cache_status(
+                    connection,
+                    cache_path,
+                    (YTDLP_PROVIDER,),
+                    retention=CacheRetentionPolicy(),
+                )
+            finally:
+                connection.close()
+        except (sqlite3.Error, RuntimeError, ValueError) as exc:
+            parser.error(f"cannot read metadata-cache status: {exc}")
+        if args.cache_status_format == "json":
+            print(json.dumps(status.to_dict(), ensure_ascii=False, indent=2, sort_keys=True))
+        else:
+            print(format_cache_status(status))
         return 0
 
     if args.check_query is not None:

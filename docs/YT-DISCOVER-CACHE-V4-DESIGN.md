@@ -156,6 +156,10 @@ Compaction and cache status remain separate later maintenance layers.
 
 ## Cache status should explain what is on disk
 
+The maintenance status surface is read-only and has a structured representation independent of terminal formatting. It reports the legacy cache schema version and v4 registry revision, persistent provider registrations and revisions, provider metadata/acquisition counts, media-entity counts, coherent source-state counts, configured retention and retention-eligible counts, plus SQLite page, free-page, database-file and WAL observations. Persisted providers that are no longer installed/declared and provider revision mismatches are visible without reconciling the registry as a side effect of inspection.
+
+`--cache-status` presents this snapshot without requiring a source or contacting YouTube. `--cache-status-format json` exposes the same status model for machine consumers. The SQLite figures are observations only: free pages or WAL size do not imply that status should checkpoint, vacuum or otherwise compact the database. Those decisions remain part of the explicit compaction phase.
+
 Once provider schemas and maintenance exist, a useful status command becomes more important than it is today. At a minimum we will want cache schema/version, provider registrations/revisions, entity/provider-record counts, acquisition/source-state summaries, configured retention, stale/unavailable-provider information and SQLite file/free-page/WAL information. Verbose output can go deeper.
 
 Long operations such as migration, pruning verification and compaction should share progress/event plumbing. Normal mode needs enough progress to prove a multi-hour operation is alive. Verbose can add provider/table counters and timings. Debug remains implementation detail under the existing debug contract. Per-record chatter would make the useful messages disappear.
