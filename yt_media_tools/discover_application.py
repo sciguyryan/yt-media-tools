@@ -14,6 +14,7 @@ from yt_media_tools.archive import exclude_archive, read_archive_ids
 from yt_media_tools.cache import CacheStats, MetadataCache, SourceCoverage
 from yt_media_tools.cache_maintenance import CacheRetentionPolicy
 from yt_media_tools.cache_status import collect_cache_status, format_cache_status
+from yt_media_tools.cache_compaction import compact_cache
 from yt_media_tools.cache_v4_ytdlp import YTDLP_PROVIDER
 from yt_media_tools.capabilities import safely_reject_lightweight
 from yt_media_tools.dates import DateContext
@@ -204,6 +205,29 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.examples:
         print(EXAMPLES)
+        return 0
+
+    if args.cache_compact:
+        cache_path = args.cache.expanduser()
+        if not cache_path.exists():
+            parser.error(f"metadata cache does not exist: {cache_path}")
+        try:
+            connection = sqlite3.connect(cache_path)
+            try:
+                result = compact_cache(connection, cache_path)
+            finally:
+                connection.close()
+        except (sqlite3.Error, RuntimeError, ValueError) as exc:
+            parser.error(f"cannot compact metadata cache: {exc}")
+        reclaimed = (
+            max(0, result.before.database_bytes - result.after.database_bytes)
+            if (result.before.database_bytes is not None and result.after.database_bytes is not None)
+            else 0
+        )
+        print(
+            f"Cache compaction complete: checkpoint={'yes' if result.checkpoint_attempted else 'not needed'}, "
+            f"vacuum={'yes' if result.vacuum_performed else 'not needed'}, reclaimed={reclaimed} bytes."
+        )
         return 0
 
     if args.cache_status:

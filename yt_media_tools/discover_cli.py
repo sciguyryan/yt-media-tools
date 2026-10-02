@@ -623,6 +623,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="report logical cache-v4 and SQLite storage status without contacting YouTube",
     )
+    introspection_mode.add_argument(
+        "--cache-compact",
+        action="store_true",
+        help="explicitly checkpoint and compact the SQLite metadata cache, then report reclaimed storage",
+    )
     introspection.add_argument(
         "--cache-status-format",
         choices=("text", "json"),

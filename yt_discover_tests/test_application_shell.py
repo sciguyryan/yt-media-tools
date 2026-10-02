@@ -25,6 +25,13 @@ def test_cookie_override_is_parsed_as_path() -> None:
     assert args.cookies == Path("/tmp/example-cookies.txt")
 
 
+def test_cache_compaction_is_an_explicit_introspection_mode() -> None:
+    parser = discover_cli.build_parser()
+    args = parser.parse_args(["--cache-compact"])
+    assert args.cache_compact
+    assert not args.cache_status
+
+
 def test_cli_logic_lives_in_discover_cli_module() -> None:
     assert discover_cli.build_parser.__module__ == "yt_media_tools.discover_cli"
     assert discover_cli.parse_user_query.__module__ == "yt_media_tools.discover_cli"
