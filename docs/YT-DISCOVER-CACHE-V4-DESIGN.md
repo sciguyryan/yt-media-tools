@@ -146,7 +146,13 @@ Retention policy is opt-in. The default policy has no provider or source-state a
 
 The maintenance planner is read-only and returns an immutable selection plan. Provider metadata is selected as a coherent provider/entity contribution using the most recent successful acquisition for that provider/entity, not individual field freshness and not the most recent failed attempt. Source state is selected as a coherent source/facet unit using its source observation time. A timestamp exactly on the retention boundary is retained; selection requires it to be strictly older than the configured window.
 
-Preview and execution must consume this same plan object. Part 1 deliberately provides selection only: it does not delete rows, trigger automatic retention, compact SQLite, or add destructive CLI commands. Those operations build on the selection contract in the following maintenance parts.
+Preview and execution consume the same immutable plan object. The executor does not recalculate retention eligibility, so state that becomes eligible after a preview is not silently added to that execution. Provider pruning removes the selected provider metadata contribution and its acquisition history together. Provider-owned unresolved raw compatibility material is removed with the yt-dlp contribution. Source pruning removes the selected source/facet boundary, relying on foreign-key cascades to remove its observation, ordered membership, coverage and frontier claims. Entity garbage collection runs only after all selected contributions and source state have been released.
+
+Execution is transactional across the complete plan. A failure rolls back provider pruning, source pruning and entity collection together. Configured automatic retention calls the same planner and executor as explicit maintenance and is treated as pre-authorised by that configuration. It does not imply compaction.
+
+The maintenance core does not choose a destructive-operation threshold. The current Discover cache interface has no established retention or destructive-maintenance threshold to inherit. Instead, explicit callers supply the configured threshold to the authorisation helper. Plans below that threshold may proceed as an explicit maintenance request; plans at or above it require affirmative interactive confirmation or explicit non-interactive pre-authorisation. This keeps the eventual CLI/config spelling and threshold policy outside the persistence model while enforcing safe behaviour once a threshold is configured.
+
+Compaction and cache status remain separate later maintenance layers.
 
 ## Cache status should explain what is on disk
 
