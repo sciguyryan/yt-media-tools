@@ -198,7 +198,11 @@ Future upgrades should chain `v3 -> v4 -> v5 -> v6`, not teach v6 how every hist
 
 The coordinator only needs to select the next hop. Shared code can provide SQLite checks, progress/events, logging, batching and disk-space helpers, but I would resist building an elaborate migration framework whose abstractions are more complicated than the first two migrations using it.
 
-A transition roughly does this: validate the source; detect/apply its known pre-transition fixes to controlled migration state; run its phases; validate the target; return a successful database only at the end. Fixes should be independently testable, including already-fixed and unfixable cases.
+That coordinator boundary now exists. A registered transition says which schema version it consumes, which version it produces and how to execute that hop. The coordinator can plan and run a chain such as `v3 -> v4 -> v5`, but it cannot inspect or reproduce the transformation inside either transition. A completed hop supplies the source database for the next one. An incomplete destination stops the chain there.
+
+The result contract is intentionally small as well. A transition reports its source and target versions, destination path, explicit complete/incomplete destination state and an optional message. The coordinator checks that the returned versions and path agree with the hop it actually asked for. That catches a surprisingly dangerous class of wiring mistakes without making the coordinator understand migration internals.
+
+A transition roughly does this: validate the source; detect/apply its known pre-transition fixes to controlled migration state; run its phases; validate the target; return a successful database only at the end. Fixes should be independently testable, including already-fixed and unfixable cases. The shared workflow for those steps comes next; Part 1 deliberately does not invent phase, repair, progress or logging abstractions before the v3-to-v4 transition has exercised them.
 
 ### Keep v3 untouched
 

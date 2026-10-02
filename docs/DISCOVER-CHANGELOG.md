@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Common database migration workflow
+
+- [feature] Add a small migration transition contract with explicit source/target versions and complete/incomplete destination state.
+- [feature] Add a coordinator that plans ordered schema hops and passes each completed destination to the next transition without knowing how any transition transforms data.
+- [maintenance] Reject missing, duplicate, backwards, overshooting and inconsistent transition wiring before it can silently produce the wrong migration chain.
+- [test] Cover multi-hop planning/execution, incomplete-destination stopping, missing and duplicate hops, invalid versions, inconsistent results and no-op current-schema runs.
+- [docs] Record the implemented coordinator boundary while leaving repairs, phases, events, permanent logs and shared preflight plumbing to the next #132 parts.
+
 ### Cache v4 entity and acquisition storage
 
 - [feature] Add service-owned cache-v4 media identity using stable `(service, external_id)` uniqueness and compact `entity_id` references.
