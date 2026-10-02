@@ -295,3 +295,11 @@ The migration coordinator remains deliberately ignorant of transition internals.
 Progress and permanent logging use the same event object. A transition can emit an event once and attach terminal or other consumers alongside the permanent log sink, rather than maintaining a second account of migration progress. Each logged run is finalised as complete, incomplete, failed or interrupted. Exceptions and `KeyboardInterrupt` still propagate after the final record has been written.
 
 The disk-space helper reports available space against a requirement supplied by the transition. It does not decide how much space a migration ought to require. Likewise, the integrity helper exposes SQLite's result without deciding which transition phase should run it. Validation, historical repairs and migration phases remain transition-owned work for the next part of #132.
+
+### Transition-owned migration workflow
+
+A schema transition now has a small ordered workflow around its actual transformation: source validation, transition-owned historical repairs, named migration phases and target validation. The coordinator still knows none of those details. It selects the hop; the transition decides what makes its source valid, which old defects need repairing, how its data moves and what proves the destination is usable.
+
+Historical repairs make their state explicit. A repair reports either that it applies or that it has already been applied. Applicable repairs run before migration phases; already-applied repairs are recorded through the ordinary event stream and skipped. A failed applicability check or repair stops the transition rather than allowing later phases to guess what state the source is in.
+
+Completion is deliberately late. The workflow does not create a complete transition result until target validation has succeeded. Source-validation failure, repair failure, phase failure, target-validation failure and interruption therefore cannot leave a result that the coordinator could mistake for a usable next-hop source. The shared migration log still finalises those runs as failed or interrupted, while the underlying exception or interruption remains visible to the caller.
