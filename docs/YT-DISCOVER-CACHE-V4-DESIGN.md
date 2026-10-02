@@ -140,6 +140,14 @@ For a large destructive operation an interactive `[y/N]` is sensible. Non-intera
 
 Command names and destructive-operation thresholds remain a maintenance-surface decision. They should be derived from the existing cache CLI/config conventions when that surface is implemented rather than being invented in this schema document.
 
+### Maintenance planning contract
+
+Retention policy is opt-in. The default policy has no provider or source-state age limit and therefore selects nothing for deletion.
+
+The maintenance planner is read-only and returns an immutable selection plan. Provider metadata is selected as a coherent provider/entity contribution using the most recent successful acquisition for that provider/entity, not individual field freshness and not the most recent failed attempt. Source state is selected as a coherent source/facet unit using its source observation time. A timestamp exactly on the retention boundary is retained; selection requires it to be strictly older than the configured window.
+
+Preview and execution must consume this same plan object. Part 1 deliberately provides selection only: it does not delete rows, trigger automatic retention, compact SQLite, or add destructive CLI commands. Those operations build on the selection contract in the following maintenance parts.
+
 ## Cache status should explain what is on disk
 
 Once provider schemas and maintenance exist, a useful status command becomes more important than it is today. At a minimum we will want cache schema/version, provider registrations/revisions, entity/provider-record counts, acquisition/source-state summaries, configured retention, stale/unavailable-provider information and SQLite file/free-page/WAL information. Verbose output can go deeper.
