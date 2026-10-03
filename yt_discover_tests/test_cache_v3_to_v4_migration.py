@@ -209,14 +209,14 @@ def test_population_commits_only_complete_bounded_batches(tmp_path: Path, monkey
     original = MetadataCache._normalise_record_into_v4
     calls = 0
 
-    def fail_on_third_record(self, *args, **kwargs):
+    def fail_inside_second_batch(self, *args, **kwargs):
         nonlocal calls
         calls += 1
-        if calls == 3:
+        if calls == 4:
             raise RuntimeError("injected second-batch failure")
         return original(self, *args, **kwargs)
 
-    monkeypatch.setattr(MetadataCache, "_normalise_record_into_v4", fail_on_third_record)
+    monkeypatch.setattr(MetadataCache, "_normalise_record_into_v4", fail_inside_second_batch)
 
     with pytest.raises(Exception, match="injected second-batch failure"):
         execute_v3_to_v4(MigrationContext(source, destination, 3, 4), MigrationEventStream())

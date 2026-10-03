@@ -289,7 +289,7 @@ class CacheV4EntityStore:
                     f"{existing_type!r}, expected {sql_type!r}."
                 )
 
-    def get_or_create_entity(self, service: str, external_id: str) -> MediaEntity:
+    def get_or_create_entity(self, service: str, external_id: str, *, commit: bool = True) -> MediaEntity:
         """Return the stable identity for one service/external-id pair."""
         service = _require_identity_part(service, label="service")
         external_id = _require_identity_part(external_id, label="external_id")
@@ -310,7 +310,8 @@ class CacheV4EntityStore:
             (service, external_id),
         ).fetchone()
         assert row is not None
-        self.connection.commit()
+        if commit:
+            self.connection.commit()
         return MediaEntity(int(row["entity_id"]), str(row["service"]), str(row["external_id"]))
 
     def entity(self, service: str, external_id: str) -> MediaEntity | None:
@@ -334,6 +335,8 @@ class CacheV4EntityStore:
         provider: ProviderDefinition,
         entity_id: int,
         values: Mapping[str, object | None],
+        *,
+        commit: bool = True,
     ) -> None:
         """Store declared provider scalar columns without assigning observation state."""
         fields = {field.name: field for field in provider.fields}
@@ -345,7 +348,8 @@ class CacheV4EntityStore:
                 f'INSERT INTO "{provider.metadata_table}"(entity_id) VALUES (?) ON CONFLICT(entity_id) DO NOTHING',
                 (entity_id,),
             )
-            self.connection.commit()
+            if commit:
+                self.connection.commit()
             return
         storage = [(fields[name].storage_name, value) for name, value in values.items()]
         names = ["entity_id", *(name for name, _ in storage)]
@@ -357,7 +361,8 @@ class CacheV4EntityStore:
             f"ON CONFLICT(entity_id) DO UPDATE SET {assignments}",
             (entity_id, *(value for _, value in storage)),
         )
-        self.connection.commit()
+        if commit:
+            self.connection.commit()
 
     def provider_metadata(
         self,
@@ -417,6 +422,7 @@ class CacheV4EntityStore:
         group_key: str,
         *,
         acquired_at: datetime,
+        commit: bool = True,
     ) -> None:
         """Record a successful group resolution without assigning field winner semantics."""
         provider_id, group_id = self._acquisition_identity(provider, group_key)
@@ -439,7 +445,8 @@ class CacheV4EntityStore:
             """,
             (entity_id, provider_id, group_id, encoded, encoded),
         )
-        self.connection.commit()
+        if commit:
+            self.connection.commit()
 
     def record_acquisition_failure(
         self,

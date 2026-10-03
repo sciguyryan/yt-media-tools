@@ -408,24 +408,44 @@ class MetadataCache:
         acquired_at: datetime,
         entity_video_id: str | None = None,
         commit: bool = True,
+        historical_timestamp: str | None = None,
     ) -> RawMigrationAccounting | None:
         """Normalise one accepted legacy backend record into registered v4 metadata."""
         video_id = entity_video_id if entity_video_id is not None else record.get("id")
         if not isinstance(video_id, str) or not video_id:
             return None
         registry = CacheV4RegistryStore(self._db())
-        registry.reconcile((YTDLP_PROVIDER,))
+        if commit:
+            registry.reconcile((YTDLP_PROVIDER,))
         store = CacheV4EntityStore(self._db(), registry)
-        store.initialise((YTDLP_PROVIDER,))
-        entity = store.get_or_create_entity("youtube", video_id)
+        if commit:
+            store.initialise((YTDLP_PROVIDER,))
+        entity = store.get_or_create_entity("youtube", video_id, commit=commit)
         values, accounting = normalise_registered_metadata(record)
-        store.write_provider_metadata(YTDLP_PROVIDER, entity.entity_id, values)
+        store.write_provider_metadata(YTDLP_PROVIDER, entity.entity_id, values, commit=commit)
         store.record_acquisition_success(
             YTDLP_PROVIDER,
             entity.entity_id,
             "detailed",
             acquired_at=acquired_at,
+            commit=commit,
         )
+        stored_timestamp = historical_timestamp if historical_timestamp is not None else acquired_at.isoformat()
+        if historical_timestamp is not None:
+            self._db().execute(
+                """
+                UPDATE cache_v4_acquisition_state
+                SET last_attempt_at = ?, last_success_at = ?
+                WHERE entity_id = ?
+                  AND provider_id = (SELECT provider_id FROM cache_v4_providers WHERE provider_key = 'yt-dlp')
+                  AND acquisition_group_id = (
+                      SELECT g.acquisition_group_id FROM cache_v4_acquisition_groups AS g
+                      JOIN cache_v4_providers AS p USING(provider_id)
+                      WHERE p.provider_key = 'yt-dlp' AND g.group_key = 'detailed'
+                  )
+                """,
+                (historical_timestamp, historical_timestamp, entity.entity_id),
+            )
         compatibility = raw_compatibility_remainder(record)
         self._db().execute(
             """
@@ -438,7 +458,7 @@ class MetadataCache:
             (
                 source_url,
                 video_id,
-                acquired_at.isoformat(),
+                stored_timestamp,
                 json.dumps(compatibility, ensure_ascii=False, separators=(",", ":")),
             ),
         )
@@ -457,7 +477,7 @@ class MetadataCache:
             (
                 source_url,
                 video_id,
-                acquired_at.isoformat(),
+                stored_timestamp,
                 len(accounting.registered_fields),
                 len(accounting.stable_equivalent_fields),
                 len(accounting.discarded_backend_fields),

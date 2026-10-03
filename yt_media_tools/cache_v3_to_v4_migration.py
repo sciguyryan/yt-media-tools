@@ -9,6 +9,7 @@ import sqlite3
 from .cache import MetadataCache
 from .cache_v3_contract import validate_v3_database
 from .cache_v3_to_v4_analysis import estimate_v4_space
+from .cache_v3_to_v4_verification import MigrationVerificationMode, certify_v3_to_v4
 from .cache_migration import MigrationContext, MigrationTransition, MigrationTransitionResult
 from .cache_migration_support import (
     MigrationEvent,
@@ -185,6 +186,7 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
                         acquired_at=datetime.fromisoformat(str(fetched_at)),
                         entity_video_id=str(video_id),
                         commit=False,
+                        historical_timestamp=str(fetched_at),
                     )
                     if accounting is None:
                         raise RuntimeError("v3 metadata record has no usable media identity")
@@ -241,7 +243,10 @@ def _validate_v4_target(context: MigrationContext) -> None:
             "cache_v4_ytdlp_metadata",
             "cache_v4_acquisition_state",
             "cache_v4_sources",
+            "cache_v4_source_observations",
             "cache_v4_source_entries",
+            "cache_v4_source_coverage",
+            "cache_v4_source_frontiers",
             "cache_v4_raw_compatibility",
             "cache_v4_raw_migration_accounting",
         }
@@ -253,6 +258,7 @@ def _validate_v4_target(context: MigrationContext) -> None:
             raise RuntimeError("destination lost its incomplete migration marker before validation")
     finally:
         connection.close()
+    certify_v3_to_v4(context.source_path, context.destination_path, mode=MigrationVerificationMode.NORMAL)
 
 
 def _finalise_v4_destination(context: MigrationContext) -> None:
