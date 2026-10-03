@@ -166,6 +166,12 @@ def test_triggering_offline_query_continues_after_automatic_cutover(tmp_path: Pa
     assert not source.exists()
     assert (cache_directory / CURRENT_V4_FILENAME).is_file()
     assert (cache_directory / MIGRATION_LOG_FILENAME).is_file()
+    assert "yt-discover cache migration" in result.stderr
+    assert "[>] Preflight" in result.stderr
+    assert "[>] Migration" in result.stderr
+    assert "[>] Verification" in result.stderr
+    assert "[OK] Cut-over complete" in result.stderr
+    assert "Active cache:" in result.stderr
 
 
 def test_concurrent_managed_startup_serialises_migration(tmp_path: Path) -> None:

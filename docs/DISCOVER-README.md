@@ -223,7 +223,7 @@ B1 `EXPLAIN ANALYZE` is available as `--explain-analyze`. It executes the query 
   "SELECT id FROM @whatdamath OF videos WHERE duration < 1h ORDER BY upload_date ASC"
 ```
 
-The SQLite cache schema is version 3. Version 1 and 2 caches migrate through the supported conservative migration path, while unsupported schema versions fail closed. `--report` includes offline/cache coverage and timing information.
+The managed SQLite cache schema is version 4. A recognised historical schema-v3 managed cache is migrated side by side, verified and cut over before the triggering Discover operation continues; unsupported or structurally invalid recognised caches fail closed. `--report` includes offline/cache coverage and timing information.
 
 ## Persistent metadata cache
 
@@ -241,7 +241,7 @@ The default cache follows the XDG cache convention and normally lives at `~/.cac
   "SELECT id FROM @whatdamath OF videos WHERE duration < 1h"
 ```
 
-The cache schema is explicitly versioned at version 3. Version 1 and 2 caches migrate through the supported conservative migration path, while unsupported schema versions fail closed. Source observations, trusted source ordering and detailed-metadata coverage remain distinct so stale cache state can cost extra work without being mistaken for proof of source completeness.
+The managed cache schema is explicitly versioned at version 4. When the default cache family contains a supported historical v3 cache, interactive startup asks before migration and then shows ASCII progress through preflight, migration, indexing, verification and cut-over; non-interactive startup uses the documented automatic migration policy without reading stdin. The protected v3 source is removed only after the v4 destination has been certified and re-resolved as active, unless `--keep-old-cache` is requested. An explicit `--cache FILE` remains a direct single-file contract and does not implicitly discover or migrate sibling cache files. Source observations, trusted source ordering and detailed-metadata coverage remain distinct so stale cache state can cost extra work without being mistaken for proof of source completeness.
 
 `--report` includes cache hits, misses, stale entries, refreshes, and writes. `--explain` documents the cache-first detailed-metadata plan and the source-enumeration or frontier strategy used to establish source coverage.
 

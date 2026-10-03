@@ -363,6 +363,7 @@ Interactive startup is defined conservatively: both the input stream and the str
 Non-interactive startup never prompts or reads standard input. A supported mandatory migration is automatically authorised under the documented default policy so existing scripts do not hang or acquire a new mandatory confirmation flag merely because a host first encounters the v4 transition. Automatic authorisation changes only whether the supported migration may begin; it does not weaken discovery, integrity, disk-space, certification or cut-over safety checks.
 
 A blocked discovery result is never converted into a migration prompt. Corrupt, incomplete, structurally invalid and version-mismatched recognised candidates remain blocked, preserving the rule that authorisation cannot turn an unsafe candidate into an eligible cache.
+
 ### Verified startup cut-over and runtime adoption
 
 Authorised startup migration now runs as a gate before cache-backed Discover work. The certified v3-to-v4 transition writes the versioned destination and permanent JSON Lines migration log, then startup performs a fresh discovery pass and requires the destination to resolve as the complete active v4 cache before any destructive source cleanup occurs. A migration result alone is not sufficient evidence for cut-over.
@@ -378,3 +379,13 @@ The managed/default cache family and an explicitly supplied `--cache FILE` are d
 Managed startup is serialised across processes. Discovery occurs while holding the cache-family startup lock so a process that waits for another process to finish migration re-resolves the committed state instead of acting on a stale migration decision. This prevents concurrent invocations from racing creation, migration, certification or cut-over of the same cache family.
 
 The test suite has a stronger isolation boundary: every test receives an isolated default XDG cache root, inherited by child processes. Tests must never discover, read, migrate, certify, create, delete or otherwise influence the user's real cache unless a test explicitly opts into a controlled fixture path. Migration tests exercise the managed lifecycle only inside their temporary cache family; unrelated acquisition, planner and presentation tests cannot reach ambient production cache state.
+
+### Startup migration presentation
+
+The startup migration console is a presentation consumer of the same structured migration events used by the permanent migration log. It does not inspect migration internals, change workflow state or introduce a second progress model. Implementation phase names are mapped onto stable user-facing stages: preflight, migration, indexing, verification and cut-over.
+
+The initial presentation is deliberately ASCII and line-oriented. Interactive terminal output shows the migration source and destination, stage transitions, bounded batch progress, verification and the final active-cache cut-over. Repeated batch events are throttled by progress percentage so large migrations do not produce unbounded terminal output. The same representation remains deterministic and readable when stderr is redirected, and migration presentation never writes to machine-readable stdout.
+
+Failure presentation states that the protected v3 source remains unchanged, whether an incomplete v4 destination was discarded or retained for diagnostics, where the permanent migration log was written and that restart begins the migration again rather than resuming an incomplete destination. Successful presentation identifies the active v4 cache and whether the old v3 source was removed or explicitly retained.
+
+The presentation boundary is intentionally suitable for later enhancement. Unicode box drawing, semantic colour and richer terminal hierarchy can consume the same event model without changing migration semantics. ASCII and no-colour output remain the compatibility and accessibility fallback.

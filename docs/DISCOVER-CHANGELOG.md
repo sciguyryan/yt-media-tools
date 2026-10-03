@@ -15,6 +15,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [security] Isolate every pytest invocation and inherited child process from the user's real default cache location.
 - [security] Serialise managed cache startup across processes and re-resolve discovery while holding the startup lock before mutation.
 - [test] Cover concurrent managed startup and preserve direct explicit-cache status behaviour.
+- [feature] Present authorised startup migration through a deterministic ASCII console driven by the existing structured migration event stream.
+- [ux] Show stable preflight, migration, indexing, verification and cut-over stages with bounded batch progress, restart guidance and a final active-cache summary.
+- [test] Cover deterministic console rendering, bounded progress, failure guidance and real startup presentation without contaminating query stdout.
+- [docs] Reconcile the versioned startup design with the implemented ASCII presentation boundary and future richer terminal presentation.
 
 ### Common database migration workflow
 

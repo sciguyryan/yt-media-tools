@@ -13,8 +13,18 @@ from time import perf_counter
 from yt_media_tools.archive import exclude_archive, read_archive_ids
 from yt_media_tools.cache import CacheStats, MetadataCache, SourceCoverage
 from yt_media_tools.cache_discovery import CURRENT_V4_FILENAME, LEGACY_V3_FILENAME, discover_and_resolve
-from yt_media_tools.cache_startup import CacheMigrationRetentionPolicy, cache_startup_lock, execute_cache_startup
-from yt_media_tools.cache_startup_policy import decide_cache_startup, terminal_startup_is_interactive
+from yt_media_tools.cache_startup import (
+    MIGRATION_LOG_FILENAME,
+    CacheMigrationRetentionPolicy,
+    cache_startup_lock,
+    execute_cache_startup,
+)
+from yt_media_tools.cache_migration_console import AsciiMigrationConsole
+from yt_media_tools.cache_startup_policy import (
+    CacheStartupAction,
+    decide_cache_startup,
+    terminal_startup_is_interactive,
+)
 from yt_media_tools.cache_maintenance import CacheRetentionPolicy
 from yt_media_tools.cache_status import collect_cache_status, format_cache_status
 from yt_media_tools.cache_compaction import compact_cache
@@ -210,14 +220,40 @@ def _resolve_cache_startup(args, *, explicit_cache: bool) -> Path:
         decision = decide_cache_startup(
             resolution, interactive=interactive, input_stream=sys.stdin, output_stream=sys.stderr
         )
-        startup = execute_cache_startup(
-            cache_directory,
-            decision,
-            retention=CacheMigrationRetentionPolicy(
-                retain_source_after_cutover=args.keep_old_cache,
-                retain_failed_destination=args.keep_failed_cache_migration,
-            ),
+        retention = CacheMigrationRetentionPolicy(
+            retain_source_after_cutover=args.keep_old_cache,
+            retain_failed_destination=args.keep_failed_cache_migration,
         )
+        console = None
+        event_sinks = ()
+        if decision.action is CacheStartupAction.MIGRATE:
+            console = AsciiMigrationConsole(sys.stderr, interactive=interactive)
+            assert decision.path is not None
+            console.begin(decision.path, cache_directory / CURRENT_V4_FILENAME)
+            event_sinks = (console.event_sink,)
+        try:
+            startup = execute_cache_startup(
+                cache_directory,
+                decision,
+                retention=retention,
+                event_sinks=event_sinks,
+            )
+        except BaseException as exc:
+            if console is not None:
+                assert decision.path is not None
+                console.fail(
+                    error=exc,
+                    source_path=decision.path,
+                    destination_retained=retention.retain_failed_destination,
+                    log_path=cache_directory / MIGRATION_LOG_FILENAME,
+                )
+            raise
+        if console is not None:
+            console.finish(
+                active_path=startup.active_path,
+                source_retained=retention.retain_source_after_cutover,
+                log_path=startup.migration_log_path,
+            )
         return startup.active_path
 
 
