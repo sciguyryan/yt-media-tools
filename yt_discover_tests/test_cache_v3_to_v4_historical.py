@@ -98,11 +98,22 @@ def test_canonical_v3_fixture_matches_independently_authored_v4_expectations(tmp
             }
         assert frontiers == expected["source_frontiers"]
 
-        compatibility = {
-            f"{row['source_url']}|{row['video_id']}": json.loads(str(row["payload_json"]))
-            for row in connection.execute("SELECT source_url, video_id, payload_json FROM cache_v4_raw_compatibility")
-        }
-        assert compatibility == expected["compatibility_payloads"]
+        collections = {}
+        for row in connection.execute(
+            "SELECT e.external_id, c.tags_json, c.categories_json, c.formats_json, c.chapters_json, c.thumbnails_json "
+            "FROM cache_v4_ytdlp_collections c JOIN cache_v4_media_entities e USING(entity_id)"
+        ):
+            values = {}
+            for name in ("tags", "categories", "formats", "chapters", "thumbnails"):
+                payload = row[f"{name}_json"]
+                if payload is not None:
+                    values[name] = json.loads(str(payload))
+            if values:
+                collections[str(row["external_id"])] = values
+        assert collections == expected["registered_collections"]
+        tables = {str(row[0]) for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert "cache_v4_raw_compatibility" not in tables
+        assert "cache_v4_raw_migration_accounting" not in tables
     finally:
         connection.close()
 

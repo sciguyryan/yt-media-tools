@@ -32,8 +32,7 @@ _REQUIRED_V4_TABLES = frozenset(
         "cache_v4_source_entries",
         "cache_v4_source_coverage",
         "cache_v4_source_frontiers",
-        "cache_v4_raw_compatibility",
-        "cache_v4_raw_migration_accounting",
+        "cache_v4_ytdlp_collections",
     }
 )
 

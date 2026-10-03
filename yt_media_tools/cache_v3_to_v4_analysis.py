@@ -8,7 +8,7 @@ from pathlib import Path
 import sqlite3
 
 from .cache import MetadataCache
-from .cache_v4_ytdlp import raw_compatibility_remainder
+from .cache_v4_ytdlp import STABLE_COLLECTION_EQUIVALENTS, normalise_registered_metadata
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class V3Composition:
     source_frontiers: int
     raw_json_bytes: int
     registered_json_bytes: int
-    compatibility_json_bytes: int
+    registered_collection_json_bytes: int
 
 
 @dataclass(frozen=True)
@@ -41,28 +41,26 @@ class V4SpaceEstimate:
 
 
 def analyse_v3_composition(path: Path) -> V3Composition:
-    """Measure v3 facts and the compatibility material that survives into v4."""
+    """Measure v3 facts and the registered material that survives into v4."""
     connection = sqlite3.connect(f"file:{path.resolve().as_posix()}?mode=ro", uri=True)
     try:
         rows = connection.execute("SELECT raw_json FROM metadata_records").fetchall()
         raw_bytes = 0
         registered_bytes = 0
-        compatibility_bytes = 0
+        collection_bytes = 0
         for (raw_json,) in rows:
             encoded = str(raw_json).encode("utf-8")
             raw_bytes += len(encoded)
             record = json.loads(str(raw_json))
-            remainder = raw_compatibility_remainder(record)
-            registered = {
-                key: value for key, value in record.items() if key not in remainder and not key.startswith("_yt_sql_")
-            }
+            registered, _ = normalise_registered_metadata(record)
             if registered:
                 registered_bytes += len(
                     json.dumps(registered, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
                 )
-            if remainder:
-                compatibility_bytes += len(
-                    json.dumps(remainder, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            collections = {name: record[name] for name in STABLE_COLLECTION_EQUIVALENTS if name in record}
+            if collections:
+                collection_bytes += len(
+                    json.dumps(collections, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
                 )
 
         def scalar(sql: str) -> int:
@@ -77,7 +75,7 @@ def analyse_v3_composition(path: Path) -> V3Composition:
             source_frontiers=scalar("SELECT COUNT(*) FROM source_frontiers"),
             raw_json_bytes=raw_bytes,
             registered_json_bytes=registered_bytes,
-            compatibility_json_bytes=compatibility_bytes,
+            registered_collection_json_bytes=collection_bytes,
         )
     finally:
         connection.close()
@@ -109,12 +107,12 @@ def estimate_v4_space(path: Path) -> V4SpaceEstimate:
     fixed_schema_bytes, page_size = _empty_v4_schema_bytes(path.parent)
 
     # The variable estimate deliberately follows v4 representation rather than v3 file size.
-    # Registered scalar metadata is bounded here by the portion of raw JSON that does not
-    # survive as compatibility payload, while source and accounting rows use conservative
+    # Registered scalar and collection metadata are measured directly from the historical
+    # records, while source and acquisition rows use conservative
     # per-row allowances. Page/index reserve is tied to the rows v4 will actually index.
     migrated_data_bytes = (
         composition.registered_json_bytes
-        + composition.compatibility_json_bytes
+        + composition.registered_collection_json_bytes
         + composition.metadata_records * 192
         + composition.distinct_media * 128
         + composition.source_observations * 192

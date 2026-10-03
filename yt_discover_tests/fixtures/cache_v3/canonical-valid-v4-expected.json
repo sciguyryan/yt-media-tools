@@ -1,40 +1,4 @@
 {
-  "compatibility_payloads": {
-    "https://example.invalid/partial|partial-1": {},
-    "https://example.invalid/partial|partial-2": {},
-    "https://www.youtube.com/@fixture/shorts|shared-video": {
-      "extra": {
-        "score": 7
-      }
-    },
-    "https://www.youtube.com/@fixture/videos|null-fields": {
-      "extra": {
-        "nested": {
-          "value": null
-        }
-      }
-    },
-    "https://www.youtube.com/@fixture/videos|shared-video": {
-      "description": "Café 東京",
-      "extra": {
-        "note": null,
-        "score": 0
-      },
-      "formats": [
-        {
-          "format_id": "fixture",
-          "url": "https://example.invalid/signed?token=discard-me"
-        }
-      ]
-    },
-    "https://www.youtube.com/@fixture/videos|unicode-雪": {
-      "extra": {
-        "empty": "",
-        "enabled": false
-      },
-      "tags": []
-    }
-  },
   "entities": [
     "null-fields",
     "partial-1",
@@ -80,6 +44,11 @@
   },
   "oracle_version": 1,
   "purpose": "Independently authored semantic expectations for the certified v3-to-v4 migration. Surrogate SQLite IDs are intentionally excluded.",
+  "registered_collections": {
+    "unicode-雪": {
+      "tags": []
+    }
+  },
   "source_coverage": {
     "https://example.invalid/partial": {
       "cached_entries": 1,

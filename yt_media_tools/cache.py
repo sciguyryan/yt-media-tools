@@ -20,9 +20,9 @@ from .cache_entity_store import CacheV4EntityStore
 from .cache_registry_store import CacheV4RegistryStore
 from .cache_v4_ytdlp import (
     YTDLP_PROVIDER,
-    RawMigrationAccounting,
+    MetadataMigrationAccounting,
+    STABLE_COLLECTION_EQUIVALENTS,
     normalise_registered_metadata,
-    raw_compatibility_remainder,
 )
 
 
@@ -128,19 +128,12 @@ def initialise_v4_cache(path: Path) -> None:
         registry = CacheV4RegistryStore(connection)
         registry.reconcile((YTDLP_PROVIDER,))
         CacheV4EntityStore(connection, registry).initialise((YTDLP_PROVIDER,))
-        connection.executescript(
+        connection.execute(
             """
-            CREATE TABLE cache_v4_raw_migration_accounting (
-                source_url TEXT NOT NULL, video_id TEXT NOT NULL, migrated_at TEXT NOT NULL,
-                registered_fields INTEGER NOT NULL CHECK (registered_fields >= 0),
-                stable_equivalent_fields INTEGER NOT NULL CHECK (stable_equivalent_fields >= 0),
-                discarded_backend_fields INTEGER NOT NULL CHECK (discarded_backend_fields >= 0),
-                PRIMARY KEY(source_url, video_id)
-            );
-            CREATE TABLE cache_v4_raw_compatibility (
-                source_url TEXT NOT NULL, video_id TEXT NOT NULL, acquired_at TEXT NOT NULL,
-                payload_json TEXT NOT NULL, PRIMARY KEY(source_url, video_id)
-            );
+            CREATE TABLE cache_v4_ytdlp_collections (
+                entity_id INTEGER PRIMARY KEY REFERENCES cache_v4_media_entities(entity_id) ON DELETE CASCADE,
+                tags_json TEXT, categories_json TEXT, formats_json TEXT, chapters_json TEXT, thumbnails_json TEXT
+            )
             """
         )
         with connection:
@@ -243,7 +236,8 @@ class MetadataCache:
             self._db()
             .execute(
                 """
-            SELECT e.entity_id, a.last_success_at, m.*, c.payload_json
+            SELECT e.entity_id, a.last_success_at, m.*,
+                   c.tags_json, c.categories_json, c.formats_json, c.chapters_json, c.thumbnails_json
             FROM cache_v4_media_entities AS e
             JOIN cache_v4_providers AS p ON p.provider_key = 'yt-dlp'
             JOIN cache_v4_acquisition_groups AS g ON g.provider_id = p.provider_id AND g.group_key = 'detailed'
@@ -251,24 +245,23 @@ class MetadataCache:
               ON a.entity_id = e.entity_id AND a.provider_id = p.provider_id
              AND a.acquisition_group_id = g.acquisition_group_id AND a.last_success_at IS NOT NULL
             LEFT JOIN cache_v4_ytdlp_metadata AS m ON m.entity_id = e.entity_id
-            LEFT JOIN cache_v4_raw_compatibility AS c
-              ON c.source_url = ? AND c.video_id = e.external_id
+            LEFT JOIN cache_v4_ytdlp_collections AS c ON c.entity_id = e.entity_id
             WHERE e.service = 'youtube' AND e.external_id = ?
             """,
-                (source_url, video_id),
+                (video_id,),
             )
             .fetchone()
         )
         if row is None:
             return None
         record: dict[str, Any] = {}
-        if row["payload_json"]:
-            try:
-                payload = json.loads(str(row["payload_json"]))
-            except (TypeError, json.JSONDecodeError):
-                payload = {}
-            if isinstance(payload, dict):
-                record.update(payload)
+        for name in STABLE_COLLECTION_EQUIVALENTS:
+            payload = row[f"{name}_json"]
+            if payload is not None:
+                try:
+                    record[name] = json.loads(str(payload))
+                except (TypeError, json.JSONDecodeError):
+                    pass
         for field in YTDLP_PROVIDER.fields:
             if field.storage_name in row.keys():
                 record[field.name] = row[field.storage_name]
@@ -328,25 +321,9 @@ class MetadataCache:
             db.execute("CREATE INDEX IF NOT EXISTS metadata_records_video_id ON metadata_records(video_id)")
             db.execute(
                 """
-                CREATE TABLE IF NOT EXISTS cache_v4_raw_migration_accounting (
-                    source_url TEXT NOT NULL,
-                    video_id TEXT NOT NULL,
-                    migrated_at TEXT NOT NULL,
-                    registered_fields INTEGER NOT NULL CHECK (registered_fields >= 0),
-                    stable_equivalent_fields INTEGER NOT NULL CHECK (stable_equivalent_fields >= 0),
-                    discarded_backend_fields INTEGER NOT NULL CHECK (discarded_backend_fields >= 0),
-                    PRIMARY KEY(source_url, video_id)
-                )
-                """
-            )
-            db.execute(
-                """
-                CREATE TABLE IF NOT EXISTS cache_v4_raw_compatibility (
-                    source_url TEXT NOT NULL,
-                    video_id TEXT NOT NULL,
-                    acquired_at TEXT NOT NULL,
-                    payload_json TEXT NOT NULL,
-                    PRIMARY KEY(source_url, video_id)
+                CREATE TABLE IF NOT EXISTS cache_v4_ytdlp_collections (
+                    entity_id INTEGER PRIMARY KEY REFERENCES cache_v4_media_entities(entity_id) ON DELETE CASCADE,
+                    tags_json TEXT, categories_json TEXT, formats_json TEXT, chapters_json TEXT, thumbnails_json TEXT
                 )
                 """
             )
@@ -525,7 +502,20 @@ class MetadataCache:
         if self._is_v4():
             row = (
                 self._db()
-                .execute("""SELECT COUNT(*) FROM cache_v4_raw_compatibility WHERE source_url = ?""", (source_url,))
+                .execute(
+                    """
+                SELECT COUNT(*)
+                FROM cache_v4_sources AS s
+                JOIN cache_v4_source_entries AS se USING(source_id)
+                JOIN cache_v4_acquisition_state AS a USING(entity_id)
+                JOIN cache_v4_providers AS p USING(provider_id)
+                JOIN cache_v4_acquisition_groups AS g USING(acquisition_group_id)
+                WHERE s.source_url = ? AND s.facet = ''
+                  AND p.provider_key = 'yt-dlp' AND g.group_key = 'detailed'
+                  AND a.last_success_at IS NOT NULL
+                """,
+                    (source_url,),
+                )
                 .fetchone()
             )
             return int(row[0]) if row is not None else 0
@@ -549,14 +539,14 @@ class MetadataCache:
 
     def _normalise_record_into_v4(
         self,
-        source_url: str,
+        _source_url: str,
         record: dict[str, Any],
         *,
         acquired_at: datetime,
         entity_video_id: str | None = None,
         commit: bool = True,
         historical_timestamp: str | None = None,
-    ) -> RawMigrationAccounting | None:
+    ) -> MetadataMigrationAccounting | None:
         """Normalise one accepted legacy backend record into registered v4 metadata."""
         video_id = entity_video_id if entity_video_id is not None else record.get("id")
         if not isinstance(video_id, str) or not video_id:
@@ -577,7 +567,6 @@ class MetadataCache:
             acquired_at=acquired_at,
             commit=commit,
         )
-        stored_timestamp = historical_timestamp if historical_timestamp is not None else acquired_at.isoformat()
         if historical_timestamp is not None:
             self._db().execute(
                 """
@@ -593,41 +582,29 @@ class MetadataCache:
                 """,
                 (historical_timestamp, historical_timestamp, entity.entity_id),
             )
-        compatibility = raw_compatibility_remainder(record)
+        collections = {
+            name: (json.dumps(record[name], ensure_ascii=False, separators=(",", ":")) if name in record else None)
+            for name in STABLE_COLLECTION_EQUIVALENTS
+        }
         self._db().execute(
             """
-            INSERT INTO cache_v4_raw_compatibility(source_url, video_id, acquired_at, payload_json)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(source_url, video_id) DO UPDATE SET
-                acquired_at = excluded.acquired_at,
-                payload_json = excluded.payload_json
-            """,
-            (
-                source_url,
-                video_id,
-                stored_timestamp,
-                json.dumps(compatibility, ensure_ascii=False, separators=(",", ":")),
-            ),
-        )
-        self._db().execute(
-            """
-            INSERT INTO cache_v4_raw_migration_accounting(
-                source_url, video_id, migrated_at, registered_fields,
-                stable_equivalent_fields, discarded_backend_fields
+            INSERT INTO cache_v4_ytdlp_collections(
+                entity_id, tags_json, categories_json, formats_json, chapters_json, thumbnails_json
             ) VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(source_url, video_id) DO UPDATE SET
-                migrated_at = excluded.migrated_at,
-                registered_fields = excluded.registered_fields,
-                stable_equivalent_fields = excluded.stable_equivalent_fields,
-                discarded_backend_fields = excluded.discarded_backend_fields
+            ON CONFLICT(entity_id) DO UPDATE SET
+                tags_json = excluded.tags_json,
+                categories_json = excluded.categories_json,
+                formats_json = excluded.formats_json,
+                chapters_json = excluded.chapters_json,
+                thumbnails_json = excluded.thumbnails_json
             """,
             (
-                source_url,
-                video_id,
-                stored_timestamp,
-                len(accounting.registered_fields),
-                len(accounting.stable_equivalent_fields),
-                len(accounting.discarded_backend_fields),
+                entity.entity_id,
+                collections["tags"],
+                collections["categories"],
+                collections["formats"],
+                collections["chapters"],
+                collections["thumbnails"],
             ),
         )
         if commit:

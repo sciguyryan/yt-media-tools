@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import sqlite3
 
-from .cache_v4_ytdlp import YTDLP_PROVIDER, normalise_registered_metadata, raw_compatibility_remainder
+from .cache_v4_ytdlp import STABLE_COLLECTION_EQUIVALENTS, YTDLP_PROVIDER, normalise_registered_metadata
 
 
 class MigrationVerificationMode(str, Enum):
@@ -70,18 +70,6 @@ def _sample_keys(keys: list[str]) -> list[str]:
 
 def _verify_accounting(source: sqlite3.Connection, target: sqlite3.Connection) -> int:
     metadata_records = _scalar(source, "SELECT COUNT(*) FROM metadata_records")
-    accounting_records = _scalar(target, "SELECT COUNT(*) FROM cache_v4_raw_migration_accounting")
-    compatibility_records = _scalar(target, "SELECT COUNT(*) FROM cache_v4_raw_compatibility")
-    if accounting_records != metadata_records:
-        raise RuntimeError(
-            f"migration accounting mismatch: v3 has {metadata_records} detailed records, "
-            f"v4 accounts for {accounting_records}"
-        )
-    if compatibility_records != metadata_records:
-        raise RuntimeError(
-            f"compatibility accounting mismatch: v3 has {metadata_records} detailed records, "
-            f"v4 has {compatibility_records} source-scoped compatibility rows"
-        )
     expected_entities = {str(row[0]) for row in source.execute("SELECT video_id FROM metadata_records")}
     expected_entities.update(str(row[0]) for row in source.execute("SELECT video_id FROM source_entries"))
     expected_entities.update(str(row[0]) for row in source.execute("SELECT head_video_id FROM source_frontiers"))
@@ -124,6 +112,20 @@ def _verify_entity_metadata(source_row: sqlite3.Row, target: sqlite3.Connection)
     expected_tuple = tuple(_normalise_expected_value(expected_values[field.name]) for field in YTDLP_PROVIDER.fields)
     if actual_values != expected_tuple:
         raise RuntimeError(f"registered metadata mismatch for media identity {video_id!r}")
+    collection_row = target.execute(
+        "SELECT tags_json, categories_json, formats_json, chapters_json, thumbnails_json "
+        "FROM cache_v4_ytdlp_collections WHERE entity_id=("
+        "SELECT entity_id FROM cache_v4_media_entities WHERE service='youtube' AND external_id=?"
+        ")",
+        (video_id,),
+    ).fetchone()
+    if collection_row is None:
+        raise RuntimeError(f"v4 is missing registered collection storage for media identity {video_id!r}")
+    for index, name in enumerate(("tags", "categories", "formats", "chapters", "thumbnails")):
+        expected = record.get(name) if name in STABLE_COLLECTION_EQUIVALENTS else None
+        actual = json.loads(str(collection_row[index])) if collection_row[index] is not None else None
+        if actual != expected:
+            raise RuntimeError(f"registered collection mismatch for media identity {video_id!r}: {name}")
     acquisition = target.execute(
         "SELECT a.outcome, a.last_attempt_at, a.last_success_at FROM cache_v4_acquisition_state a "
         "JOIN cache_v4_media_entities e USING(entity_id) "
@@ -134,35 +136,6 @@ def _verify_entity_metadata(source_row: sqlite3.Row, target: sqlite3.Connection)
     ).fetchone()
     if acquisition is None or tuple(acquisition) != ("success", fetched_at, fetched_at):
         raise RuntimeError(f"acquisition provenance/timestamp mismatch for media identity {video_id!r}")
-
-
-def _verify_source_record(source_row: sqlite3.Row, target: sqlite3.Connection) -> None:
-    video_id = str(source_row["video_id"])
-    source_url = str(source_row["source_url"])
-    fetched_at = str(source_row["fetched_at"])
-    record = json.loads(str(source_row["raw_json"]))
-    _, expected_accounting = normalise_registered_metadata(record)
-    compatibility = target.execute(
-        "SELECT acquired_at, payload_json FROM cache_v4_raw_compatibility WHERE source_url=? AND video_id=?",
-        (source_url, video_id),
-    ).fetchone()
-    if compatibility is None or str(compatibility["acquired_at"]) != fetched_at:
-        raise RuntimeError(f"source-scoped compatibility timestamp mismatch for {source_url!r}/{video_id!r}")
-    if json.loads(str(compatibility["payload_json"])) != raw_compatibility_remainder(record):
-        raise RuntimeError(f"source-scoped compatibility payload mismatch for {source_url!r}/{video_id!r}")
-    accounting = target.execute(
-        "SELECT migrated_at, registered_fields, stable_equivalent_fields, discarded_backend_fields "
-        "FROM cache_v4_raw_migration_accounting WHERE source_url=? AND video_id=?",
-        (source_url, video_id),
-    ).fetchone()
-    expected_counts = (
-        fetched_at,
-        len(expected_accounting.registered_fields),
-        len(expected_accounting.stable_equivalent_fields),
-        len(expected_accounting.discarded_backend_fields),
-    )
-    if accounting is None or tuple(accounting) != expected_counts:
-        raise RuntimeError(f"migration accounting semantics mismatch for {source_url!r}/{video_id!r}")
 
 
 def _verify_source_state(source: sqlite3.Connection, target: sqlite3.Connection) -> int:
@@ -267,16 +240,8 @@ def certify_v3_to_v4(
         for video_id in selected_entities:
             _verify_entity_metadata(latest[video_id], target)
 
-        source_rows = source.execute(
-            "SELECT source_url, video_id, fetched_at, raw_json FROM metadata_records ORDER BY source_url, video_id"
-        ).fetchall()
-        source_keys = [f"{row['source_url']}\0{row['video_id']}" for row in source_rows]
-        selected_source_keys = set(source_keys if mode is MigrationVerificationMode.FULL else _sample_keys(source_keys))
-        for key, row in zip(source_keys, source_rows, strict=True):
-            if key in selected_source_keys:
-                _verify_source_record(row, target)
         source_states = _verify_source_state(source, target)
-        semantic_checked = len(selected_entities) + len(selected_source_keys)
+        semantic_checked = len(selected_entities)
         return MigrationCertification(mode, metadata_records, semantic_checked, source_states)
     finally:
         target.close()

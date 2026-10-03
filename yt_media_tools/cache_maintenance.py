@@ -280,10 +280,6 @@ def execute_cache_maintenance(
                 continue
             provider_id = int(row[0])
             metadata_table = str(row[1]).replace('"', '""')
-            external = connection.execute(
-                "SELECT external_id FROM cache_v4_media_entities WHERE entity_id = ?",
-                (selected.entity_id,),
-            ).fetchone()
             metadata_cursor = connection.execute(
                 f'DELETE FROM "{metadata_table}" WHERE entity_id = ?', (selected.entity_id,)
             )
@@ -294,12 +290,8 @@ def execute_cache_maintenance(
             if metadata_cursor.rowcount or acquisition_cursor.rowcount:
                 removed_provider += 1
                 affected_entities.add(selected.entity_id)
-            if (
-                provider.key == "yt-dlp"
-                and external is not None
-                and _table_exists(connection, "cache_v4_raw_compatibility")
-            ):
-                connection.execute("DELETE FROM cache_v4_raw_compatibility WHERE video_id = ?", (str(external[0]),))
+            if provider.key == "yt-dlp" and _table_exists(connection, "cache_v4_ytdlp_collections"):
+                connection.execute("DELETE FROM cache_v4_ytdlp_collections WHERE entity_id = ?", (selected.entity_id,))
 
         for selected in plan.source_states:
             rows = connection.execute(

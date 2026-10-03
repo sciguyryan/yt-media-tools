@@ -264,28 +264,11 @@ def test_configured_retention_plans_and_executes_through_shared_functions() -> N
     assert result.collected_entities == (entity_id,)
 
 
-def test_provider_pruning_removes_provider_owned_raw_compatibility_material() -> None:
+def test_provider_pruning_removes_provider_owned_registered_collections() -> None:
     connection, store = _stores()
     entity_id = _metadata(store, "old", 90)
-    connection.execute(
-        """
-        CREATE TABLE cache_v4_raw_compatibility (
-            source_url TEXT NOT NULL,
-            video_id TEXT NOT NULL,
-            acquired_at TEXT NOT NULL,
-            payload_json TEXT NOT NULL,
-            PRIMARY KEY(source_url, video_id)
-        )
-        """
-    )
-    connection.execute(
-        "INSERT INTO cache_v4_raw_compatibility VALUES (?, ?, ?, ?)",
-        ("source-a", "old", NOW.isoformat(), "{}"),
-    )
-    connection.execute(
-        "INSERT INTO cache_v4_raw_compatibility VALUES (?, ?, ?, ?)",
-        ("source-b", "old", NOW.isoformat(), "{}"),
-    )
+    connection.execute("CREATE TABLE cache_v4_ytdlp_collections (entity_id INTEGER PRIMARY KEY, tags_json TEXT)")
+    connection.execute("INSERT INTO cache_v4_ytdlp_collections VALUES (?, ?)", (entity_id, '["tag"]'))
     connection.commit()
     plan = plan_cache_retention(
         connection, (YTDLP_PROVIDER,), CacheRetentionPolicy(provider_max_age=timedelta(days=30)), now=NOW
@@ -296,8 +279,8 @@ def test_provider_pruning_removes_provider_owned_raw_compatibility_material() ->
     )
 
     assert (
-        connection.execute("SELECT COUNT(*) FROM cache_v4_raw_compatibility WHERE video_id = 'old'").fetchone()[0] == 0
-    )
-    assert (
-        connection.execute("SELECT 1 FROM cache_v4_media_entities WHERE entity_id = ?", (entity_id,)).fetchone() is None
+        connection.execute(
+            "SELECT COUNT(*) FROM cache_v4_ytdlp_collections WHERE entity_id = ?", (entity_id,)
+        ).fetchone()[0]
+        == 0
     )

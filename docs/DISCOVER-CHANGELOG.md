@@ -11,6 +11,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [cli] Keep `--schema` as field/type introspection without exposing nested extractor payload paths.
 - [test] Remove raw-only conformance cases and add deterministic rejection coverage for the removed namespace while preserving first-class collection and structured-member coverage.
 - [docs] Remove `raw.*` from the current yt-sql and Discover user-facing language contract; cache-v4 persistence and migration removal follows separately.
+- [maintenance] Remove the open-ended v4 raw compatibility payload and its persistent migration-accounting tables; arbitrary unregistered v3 backend material is now discarded during migration.
+- [feature] Persist the five supported yt-dlp collection families in closed entity-scoped v4 collection storage so removing arbitrary compatibility data does not remove first-class yt-sql collection semantics.
+- [migration] Reconcile preflight sizing and certification with registered scalar and collection facts only, and require fresh and migrated v4 databases to use the same final schema.
+- [test] Prove fresh-v4 collection persistence, arbitrary-material discard, collection certification, historical fixture outcomes and absence of the removed compatibility tables.
 
 ### Versioned cache startup and cut-over
 

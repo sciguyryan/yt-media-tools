@@ -46,7 +46,7 @@ def test_full_certification_checks_every_detailed_record_and_source_state(tmp_pa
     finally:
         connection.close()
     assert certification.metadata_records == detailed
-    assert certification.semantic_records_checked == detailed + identities
+    assert certification.semantic_records_checked == identities
     assert certification.source_states_checked == sources
 
 
@@ -100,13 +100,15 @@ def test_certification_rejects_frontier_identity_mismatch(tmp_path: Path) -> Non
         certify_v3_to_v4(source, target, mode=MigrationVerificationMode.FULL)
 
 
-def test_certification_rejects_source_scoped_compatibility_mismatch(tmp_path: Path) -> None:
+def test_certification_rejects_registered_collection_mismatch(tmp_path: Path) -> None:
     source, target = _migrate(tmp_path)
     connection = sqlite3.connect(target)
     with connection:
-        connection.execute("UPDATE cache_v4_raw_compatibility SET payload_json='{}' WHERE payload_json <> '{}'")
+        connection.execute(
+            "UPDATE cache_v4_ytdlp_collections SET tags_json='[\"corrupted\"]' WHERE tags_json IS NOT NULL"
+        )
     connection.close()
-    with pytest.raises(RuntimeError, match="source-scoped compatibility payload mismatch"):
+    with pytest.raises(RuntimeError, match="registered collection mismatch"):
         certify_v3_to_v4(source, target, mode=MigrationVerificationMode.FULL)
 
 
@@ -166,16 +168,6 @@ def test_migration_preserves_recorded_timestamp_text_precision(tmp_path: Path) -
             "JOIN cache_v4_media_entities e USING(entity_id) WHERE e.external_id=?",
             (str(row[1]),),
         ).fetchone()
-        compatibility = connection.execute(
-            "SELECT acquired_at FROM cache_v4_raw_compatibility WHERE source_url=? AND video_id=?",
-            (str(row[0]), str(row[1])),
-        ).fetchone()
-        accounting = connection.execute(
-            "SELECT migrated_at FROM cache_v4_raw_migration_accounting WHERE source_url=? AND video_id=?",
-            (str(row[0]), str(row[1])),
-        ).fetchone()
         assert acquisition == (precise,)
-        assert compatibility == (precise,)
-        assert accounting == (precise,)
     finally:
         connection.close()

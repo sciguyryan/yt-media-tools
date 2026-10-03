@@ -16,7 +16,7 @@ from .query_types import QueryType
 
 
 @dataclass(frozen=True)
-class RawMigrationAccounting:
+class MetadataMigrationAccounting:
     """Explain how one legacy backend record maps onto registered v4 metadata."""
 
     registered_fields: tuple[str, ...]
@@ -83,8 +83,8 @@ YTDLP_PROVIDER = ProviderDefinition(
 
 def normalise_registered_metadata(
     record: Mapping[str, Any],
-) -> tuple[dict[str, object | None], RawMigrationAccounting]:
-    """Split one backend record into registered scalar values and explicit remainder."""
+) -> tuple[dict[str, object | None], MetadataMigrationAccounting]:
+    """Split one backend record into registered scalar values and migration accounting."""
     registered: dict[str, object | None] = {}
     for field in YTDLP_PROVIDER.fields:
         value = record.get(field.name)
@@ -98,18 +98,8 @@ def normalise_registered_metadata(
             key for key in record if isinstance(key, str) and key not in accounted and not key.startswith("_yt_sql_")
         )
     )
-    return registered, RawMigrationAccounting(
+    return registered, MetadataMigrationAccounting(
         registered_fields=tuple(sorted(registered)),
         stable_equivalent_fields=stable_equivalent,
         discarded_backend_fields=discarded,
     )
-
-
-def raw_compatibility_remainder(record: Mapping[str, Any]) -> dict[str, Any]:
-    """Return backend material not represented by registered v4 scalar metadata."""
-    registered = {field.name for field in YTDLP_PROVIDER.fields}
-    return {
-        key: value
-        for key, value in record.items()
-        if isinstance(key, str) and key not in registered and not key.startswith("_yt_sql_")
-    }

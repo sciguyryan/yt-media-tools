@@ -54,7 +54,9 @@ def test_real_v3_to_v4_transition_preserves_source_and_certifies_new_destination
         assert "cache_v4_media_entities" in tables
         assert "cache_v4_ytdlp_metadata" in tables
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert connection.execute("SELECT COUNT(*) FROM cache_v4_raw_migration_accounting").fetchone()[0] > 0
+        assert "cache_v4_raw_compatibility" not in tables
+        assert "cache_v4_raw_migration_accounting" not in tables
+        assert "cache_v4_ytdlp_collections" in tables
         assert connection.execute("SELECT COUNT(*) FROM cache_v4_sources").fetchone()[0] > 0
     finally:
         connection.close()
@@ -224,7 +226,7 @@ def test_population_commits_only_complete_bounded_batches(tmp_path: Path, monkey
     connection = sqlite3.connect(destination)
     try:
         assert dict(connection.execute("SELECT key, value FROM cache_meta"))["migration_state"] == "incomplete"
-        assert connection.execute("SELECT COUNT(*) FROM cache_v4_raw_migration_accounting").fetchone()[0] == 2
+        assert connection.execute("SELECT COUNT(*) FROM cache_v4_acquisition_state").fetchone()[0] == 2
     finally:
         connection.close()
 
