@@ -10,7 +10,8 @@ from pathlib import Path
 import pytest
 
 from yt_media_tools.cache_migration import MigrationContext
-from yt_media_tools.cache_migration_support import MigrationEventStream
+from yt_media_tools.cache_migration_support import DiskSpacePreflight, MigrationEventStream
+from yt_media_tools.cache import MetadataCache
 from yt_media_tools.cache_v3_to_v4_migration import execute_v3_to_v4
 
 
@@ -123,3 +124,122 @@ def test_v3_row_identity_and_raw_id_disagreement_are_both_preserved(tmp_path: Pa
         assert row == ("partial-1", "raw-id-disagrees")
     finally:
         connection.close()
+
+
+def test_late_validation_failure_leaves_populated_destination_incomplete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "metadata.sqlite3"
+    destination = tmp_path / "metadata-v4.sqlite3"
+    shutil.copy2(FIXTURE, source)
+
+    def fail_after_population(context: MigrationContext) -> None:
+        connection = sqlite3.connect(context.destination_path)
+        try:
+            assert connection.execute("SELECT COUNT(*) FROM cache_v4_media_entities").fetchone()[0] > 0
+            assert dict(connection.execute("SELECT key, value FROM cache_meta"))["migration_state"] == "incomplete"
+        finally:
+            connection.close()
+        raise RuntimeError("injected late validation failure")
+
+    monkeypatch.setattr("yt_media_tools.cache_v3_to_v4_migration._validate_v4_target", fail_after_population)
+
+    with pytest.raises(Exception, match="injected late validation failure"):
+        execute_v3_to_v4(MigrationContext(source, destination, 3, 4), MigrationEventStream())
+
+    connection = sqlite3.connect(destination)
+    try:
+        meta = dict(connection.execute("SELECT key, value FROM cache_meta"))
+        assert meta["migration_state"] == "incomplete"
+        assert meta["schema_version"] == "3"
+        assert connection.execute("SELECT COUNT(*) FROM cache_v4_media_entities").fetchone()[0] > 0
+    finally:
+        connection.close()
+
+
+def test_incomplete_destination_is_restartable_only_after_disposal(tmp_path: Path) -> None:
+    source = tmp_path / "metadata.sqlite3"
+    destination = tmp_path / "metadata-v4.sqlite3"
+    shutil.copy2(FIXTURE, source)
+
+    destination.write_bytes(b"interrupted migration state")
+    with pytest.raises(Exception, match="destination already exists"):
+        execute_v3_to_v4(MigrationContext(source, destination, 3, 4), MigrationEventStream())
+
+    destination.unlink()
+    result = execute_v3_to_v4(MigrationContext(source, destination, 3, 4), MigrationEventStream())
+    assert result.succeeded
+    assert _version_and_state(destination) == ("4", "complete")
+
+
+def test_real_transition_reports_composition_aware_preflight_and_index_staging(tmp_path: Path) -> None:
+    source = tmp_path / "metadata.sqlite3"
+    destination = tmp_path / "metadata-v4.sqlite3"
+    shutil.copy2(FIXTURE, source)
+    events = []
+
+    result = execute_v3_to_v4(
+        MigrationContext(source, destination, 3, 4),
+        MigrationEventStream((events.append,)),
+    )
+
+    assert result.succeeded
+    stages = [event.stage for event in events if event.kind == "progress"]
+    assert "phase preflight destination space" in stages
+    assert "phase defer bulk indexes" in stages
+    assert "phase build bulk indexes" in stages
+    connection = sqlite3.connect(destination)
+    try:
+        indexes = {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='cache_v4_source_entries'"
+            )
+        }
+        assert "cache_v4_source_entries_entity" in indexes
+    finally:
+        connection.close()
+
+
+def test_population_commits_only_complete_bounded_batches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = tmp_path / "metadata.sqlite3"
+    destination = tmp_path / "metadata-v4.sqlite3"
+    shutil.copy2(FIXTURE, source)
+    monkeypatch.setattr("yt_media_tools.cache_v3_to_v4_migration._MIGRATION_BATCH_SIZE", 2)
+    original = MetadataCache._normalise_record_into_v4
+    calls = 0
+
+    def fail_on_third_record(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            raise RuntimeError("injected second-batch failure")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(MetadataCache, "_normalise_record_into_v4", fail_on_third_record)
+
+    with pytest.raises(Exception, match="injected second-batch failure"):
+        execute_v3_to_v4(MigrationContext(source, destination, 3, 4), MigrationEventStream())
+
+    connection = sqlite3.connect(destination)
+    try:
+        assert dict(connection.execute("SELECT key, value FROM cache_meta"))["migration_state"] == "incomplete"
+        assert connection.execute("SELECT COUNT(*) FROM cache_v4_raw_migration_accounting").fetchone()[0] == 2
+    finally:
+        connection.close()
+
+
+def test_failed_space_preflight_does_not_create_destination(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = tmp_path / "metadata.sqlite3"
+    destination = tmp_path / "metadata-v4.sqlite3"
+    shutil.copy2(FIXTURE, source)
+
+    def insufficient(path: Path, required_bytes: int) -> DiskSpacePreflight:
+        return DiskSpacePreflight(path, required_bytes - 1, required_bytes)
+
+    monkeypatch.setattr("yt_media_tools.cache_v3_to_v4_migration.check_disk_space", insufficient)
+
+    with pytest.raises(Exception, match="insufficient destination disk space"):
+        execute_v3_to_v4(MigrationContext(source, destination, 3, 4), MigrationEventStream())
+
+    assert not destination.exists()

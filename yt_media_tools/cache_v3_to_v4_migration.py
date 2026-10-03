@@ -8,8 +8,15 @@ import sqlite3
 
 from .cache import MetadataCache
 from .cache_v3_contract import validate_v3_database
+from .cache_v3_to_v4_analysis import estimate_v4_space
 from .cache_migration import MigrationContext, MigrationTransition, MigrationTransitionResult
-from .cache_migration_support import MigrationEvent, MigrationEventStream, bounded_batches, check_sqlite_integrity
+from .cache_migration_support import (
+    MigrationEvent,
+    MigrationEventStream,
+    bounded_batches,
+    check_disk_space,
+    check_sqlite_integrity,
+)
 from .cache_migration_workflow import MigrationPhase, MigrationWorkflow, run_migration_workflow
 
 
@@ -19,6 +26,8 @@ _REQUIRED_V3_TABLES = frozenset(
     {"cache_meta", "metadata_records", "source_observations", "source_entries", "source_coverage", "source_frontiers"}
 )
 _LEGACY_V3_TABLES = tuple(sorted(_REQUIRED_V3_TABLES - {"cache_meta"}))
+_MIGRATION_BATCH_SIZE = 500
+_DEFERRED_V4_INDEXES = (("cache_v4_source_entries_entity", "cache_v4_source_entries", "entity_id"),)
 
 
 def _read_schema_version(connection: sqlite3.Connection) -> int:
@@ -42,6 +51,69 @@ def _validate_v3_source(context: MigrationContext) -> None:
     if violations:
         summary = "; ".join(f"{item.code}: {item.detail}" for item in violations)
         raise RuntimeError(f"source database is outside the cache-v3 migration contract: {summary}")
+
+
+def _preflight_destination_space(context: MigrationContext, events: MigrationEventStream) -> None:
+    estimate = estimate_v4_space(context.source_path)
+    preflight = check_disk_space(context.destination_path, estimate.required_bytes)
+    events.emit(
+        MigrationEvent.create(
+            context,
+            stage="phase preflight destination space",
+            kind="progress",
+            message=(
+                f"Estimated {preflight.required_bytes} bytes for the v4 destination; "
+                f"{preflight.available_bytes} bytes are available"
+            ),
+            completed=preflight.available_bytes,
+            total=preflight.required_bytes,
+        )
+    )
+    if not preflight.sufficient:
+        raise RuntimeError(
+            f"insufficient destination disk space: need {preflight.required_bytes} bytes, "
+            f"have {preflight.available_bytes} bytes"
+        )
+
+
+def _defer_bulk_indexes(context: MigrationContext, events: MigrationEventStream) -> None:
+    connection = sqlite3.connect(context.destination_path)
+    try:
+        with connection:
+            for index_name, _, _ in _DEFERRED_V4_INDEXES:
+                connection.execute(f'DROP INDEX IF EXISTS "{index_name}"')
+    finally:
+        connection.close()
+    events.emit(
+        MigrationEvent.create(
+            context,
+            stage="phase defer bulk indexes",
+            kind="progress",
+            message=f"Deferred {len(_DEFERRED_V4_INDEXES)} v4 bulk index until after population",
+            completed=len(_DEFERRED_V4_INDEXES),
+            total=len(_DEFERRED_V4_INDEXES),
+        )
+    )
+
+
+def _build_bulk_indexes(context: MigrationContext, events: MigrationEventStream) -> None:
+    connection = sqlite3.connect(context.destination_path)
+    try:
+        with connection:
+            for index_name, table_name, column_name in _DEFERRED_V4_INDEXES:
+                connection.execute(f'CREATE INDEX IF NOT EXISTS "{index_name}" ON "{table_name}"("{column_name}")')
+    finally:
+        connection.close()
+    events.emit(
+        MigrationEvent.create(
+            context,
+            stage="phase build bulk indexes",
+            kind="progress",
+            message=f"Built {len(_DEFERRED_V4_INDEXES)} deferred v4 bulk index",
+            completed=len(_DEFERRED_V4_INDEXES),
+            total=len(_DEFERRED_V4_INDEXES),
+        )
+    )
 
 
 def _copy_source(context: MigrationContext, events: MigrationEventStream) -> None:
@@ -101,18 +173,26 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
         rows = cache._db().execute(
             "SELECT source_url, video_id, fetched_at, raw_json FROM metadata_records ORDER BY fetched_at, source_url, video_id"
         )
-        for batch in bounded_batches(rows, 500):
-            for source_url, video_id, fetched_at, raw_json in batch:
-                record = json.loads(str(raw_json))
-                accounting = cache._normalise_record_into_v4(
-                    str(source_url),
-                    record,
-                    acquired_at=datetime.fromisoformat(str(fetched_at)),
-                    entity_video_id=str(video_id),
-                )
-                if accounting is None:
-                    raise RuntimeError("v3 metadata record has no usable media identity")
-                migrated += 1
+        total = int(cache._db().execute("SELECT COUNT(*) FROM metadata_records").fetchone()[0])
+        for batch in bounded_batches(rows, _MIGRATION_BATCH_SIZE):
+            try:
+                cache._db().execute("BEGIN")
+                for source_url, video_id, fetched_at, raw_json in batch:
+                    record = json.loads(str(raw_json))
+                    accounting = cache._normalise_record_into_v4(
+                        str(source_url),
+                        record,
+                        acquired_at=datetime.fromisoformat(str(fetched_at)),
+                        entity_video_id=str(video_id),
+                        commit=False,
+                    )
+                    if accounting is None:
+                        raise RuntimeError("v3 metadata record has no usable media identity")
+                    migrated += 1
+                cache._db().commit()
+            except BaseException:
+                cache._db().rollback()
+                raise
             events.emit(
                 MigrationEvent.create(
                     context,
@@ -120,6 +200,7 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
                     kind="progress",
                     message=f"Migrated {migrated} detailed metadata records",
                     completed=migrated,
+                    total=total,
                 )
             )
     events.emit(
@@ -192,9 +273,12 @@ def execute_v3_to_v4(context: MigrationContext, events: MigrationEventStream) ->
     workflow = MigrationWorkflow.create(
         validate_source=_validate_v3_source,
         phases=(
+            MigrationPhase("preflight destination space", _preflight_destination_space),
             MigrationPhase("copy v3 database", _copy_source),
             MigrationPhase("reset transitional v4 state", _clear_transitional_v4_state),
+            MigrationPhase("defer bulk indexes", _defer_bulk_indexes),
             MigrationPhase("populate v4 representation", _populate_v4),
+            MigrationPhase("build bulk indexes", _build_bulk_indexes),
             MigrationPhase("remove legacy v3 tables", _remove_legacy_tables),
         ),
         validate_target=_validate_v4_target,

@@ -407,6 +407,7 @@ class MetadataCache:
         *,
         acquired_at: datetime,
         entity_video_id: str | None = None,
+        commit: bool = True,
     ) -> RawMigrationAccounting | None:
         """Normalise one accepted legacy backend record into registered v4 metadata."""
         video_id = entity_video_id if entity_video_id is not None else record.get("id")
@@ -462,7 +463,8 @@ class MetadataCache:
                 len(accounting.discarded_backend_fields),
             ),
         )
-        self._db().commit()
+        if commit:
+            self._db().commit()
         return accounting
 
     def put_many(
