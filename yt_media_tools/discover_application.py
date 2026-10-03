@@ -12,6 +12,9 @@ from time import perf_counter
 
 from yt_media_tools.archive import exclude_archive, read_archive_ids
 from yt_media_tools.cache import CacheStats, MetadataCache, SourceCoverage
+from yt_media_tools.cache_discovery import CURRENT_V4_FILENAME, LEGACY_V3_FILENAME, discover_and_resolve
+from yt_media_tools.cache_startup import CacheMigrationRetentionPolicy, cache_startup_lock, execute_cache_startup
+from yt_media_tools.cache_startup_policy import decide_cache_startup, terminal_startup_is_interactive
 from yt_media_tools.cache_maintenance import CacheRetentionPolicy
 from yt_media_tools.cache_status import collect_cache_status, format_cache_status
 from yt_media_tools.cache_compaction import compact_cache
@@ -193,9 +196,36 @@ def _specialised_metadata_provider(
     return providers[0] if providers else None
 
 
+def _resolve_cache_startup(args, *, explicit_cache: bool) -> Path:
+    """Resolve the managed cache family, preserving explicit single-file cache semantics."""
+    requested_cache = args.cache.expanduser()
+    if explicit_cache or requested_cache.name not in {CURRENT_V4_FILENAME, LEGACY_V3_FILENAME}:
+        return requested_cache
+    cache_directory = requested_cache.parent
+    with cache_startup_lock(cache_directory):
+        # Discovery must occur while holding the lock. A process that waited for another
+        # migration must resolve the newly committed state rather than act on stale facts.
+        _, resolution = discover_and_resolve(cache_directory)
+        interactive = terminal_startup_is_interactive(sys.stdin, sys.stderr)
+        decision = decide_cache_startup(
+            resolution, interactive=interactive, input_stream=sys.stdin, output_stream=sys.stderr
+        )
+        startup = execute_cache_startup(
+            cache_directory,
+            decision,
+            retention=CacheMigrationRetentionPolicy(
+                retain_source_after_cutover=args.keep_old_cache,
+                retain_failed_destination=args.keep_failed_cache_migration,
+            ),
+        )
+        return startup.active_path
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(raw_argv)
+    explicit_cache = any(item == "--cache" or item.startswith("--cache=") for item in raw_argv)
     configure_external_diagnostics(enabled=args.debug_external, unsafe=args.debug_external_unsafe)
 
     try:
@@ -208,7 +238,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cache_compact:
-        cache_path = args.cache.expanduser()
+        try:
+            cache_path = _resolve_cache_startup(args, explicit_cache=explicit_cache)
+        except (OSError, RuntimeError, sqlite3.Error) as exc:
+            parser.error(f"metadata-cache startup failed: {exc}")
         if not cache_path.exists():
             parser.error(f"metadata cache does not exist: {cache_path}")
         try:
@@ -231,7 +264,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cache_status:
-        cache_path = args.cache.expanduser()
+        try:
+            cache_path = _resolve_cache_startup(args, explicit_cache=explicit_cache)
+        except (OSError, RuntimeError, sqlite3.Error) as exc:
+            parser.error(f"metadata-cache startup failed: {exc}")
         if not cache_path.exists():
             parser.error(f"metadata cache does not exist: {cache_path}")
         try:
@@ -641,10 +677,15 @@ def main(argv: list[str] | None = None) -> int:
 
     metadata_cache: MetadataCache | None = None
     if not args.no_cache:
+        try:
+            args.cache = _resolve_cache_startup(args, explicit_cache=explicit_cache)
+        except (OSError, RuntimeError, sqlite3.Error) as exc:
+            print(f"Error: metadata-cache startup failed: {exc}", file=sys.stderr)
+            return 1
         metadata_cache = MetadataCache(args.cache)
         try:
             metadata_cache.open()
-        except (OSError, RuntimeError) as exc:
+        except (OSError, RuntimeError, sqlite3.Error) as exc:
             print(f"Error: could not open metadata cache {args.cache.expanduser()}: {exc}", file=sys.stderr)
             return 1
         _verbose(args.verbose, f"Metadata cache: {args.cache.expanduser()}.")

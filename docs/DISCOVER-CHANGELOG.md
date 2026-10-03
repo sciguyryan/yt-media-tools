@@ -4,6 +4,18 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Versioned cache startup and cut-over
+
+- [feature] Resolve the recognised cache family before cache-backed work, run authorised v3-to-v4 migration and continue the triggering Discover invocation against the verified v4 destination.
+- [feature] Create fresh caches directly as complete schema-v4 databases and make the metadata-cache runtime read and write the v4 provider, compatibility and source-state stores.
+- [maintenance] Remove the superseded v3 source only after verified v4 active-cache resolution, discard failed migration destinations by default and always retain the permanent migration log.
+- [cli] Add explicit options to retain the old v3 source after successful cut-over or retain a failed v4 destination for diagnostics.
+- [test] Cover successful cut-over, fresh-v4 startup, source and failed-destination retention, permanent logging and v4 runtime source-state persistence.
+- [fix] Preserve direct single-file semantics for explicit `--cache` paths instead of inferring managed migration authority from a recognised basename.
+- [security] Isolate every pytest invocation and inherited child process from the user's real default cache location.
+- [security] Serialise managed cache startup across processes and re-resolve discovery while holding the startup lock before mutation.
+- [test] Cover concurrent managed startup and preserve direct explicit-cache status behaviour.
+
 ### Common database migration workflow
 
 - [feature] Add a small migration transition contract with explicit source/target versions and complete/incomplete destination state.

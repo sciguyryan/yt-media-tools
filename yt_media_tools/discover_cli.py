@@ -581,7 +581,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=default_cache_path(),
         metavar="FILE",
-        help="SQLite metadata cache (default: XDG cache directory or ~/.cache/yt-discover/metadata.sqlite3)",
+        help="SQLite metadata cache (default: XDG cache directory or ~/.cache/yt-discover/metadata-v4.sqlite3)",
+    )
+    cache_group.add_argument(
+        "--keep-old-cache",
+        action="store_true",
+        help="retain a successfully migrated legacy cache after verified v4 cut-over",
+    )
+    cache_group.add_argument(
+        "--keep-failed-cache-migration",
+        action="store_true",
+        help="retain an incomplete v4 migration destination for diagnostics after failure",
     )
     cache_group.add_argument(
         "--no-cache",

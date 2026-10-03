@@ -27,6 +27,7 @@ from .cache_v4_ytdlp import (
 
 
 SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 DEFAULT_DYNAMIC_MAX_AGE = timedelta(days=1)
 
 _FIELD_MAX_AGE: dict[str, timedelta] = {
@@ -111,7 +112,47 @@ def default_cache_path() -> Path:
     """Return the XDG-compatible default metadata-cache path."""
     root = os.environ.get("XDG_CACHE_HOME")
     base = Path(root).expanduser() if root else Path.home() / ".cache"
-    return base / "yt-discover" / "metadata.sqlite3"
+    return base / "yt-discover" / "metadata-v4.sqlite3"
+
+
+def initialise_v4_cache(path: Path) -> None:
+    """Create a fresh complete cache-v4 database at a path that does not yet exist."""
+    target = path.expanduser()
+    if target.exists():
+        raise RuntimeError("cache-v4 destination already exists")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(target)
+    try:
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("CREATE TABLE cache_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        registry = CacheV4RegistryStore(connection)
+        registry.reconcile((YTDLP_PROVIDER,))
+        CacheV4EntityStore(connection, registry).initialise((YTDLP_PROVIDER,))
+        connection.executescript(
+            """
+            CREATE TABLE cache_v4_raw_migration_accounting (
+                source_url TEXT NOT NULL, video_id TEXT NOT NULL, migrated_at TEXT NOT NULL,
+                registered_fields INTEGER NOT NULL CHECK (registered_fields >= 0),
+                stable_equivalent_fields INTEGER NOT NULL CHECK (stable_equivalent_fields >= 0),
+                discarded_backend_fields INTEGER NOT NULL CHECK (discarded_backend_fields >= 0),
+                PRIMARY KEY(source_url, video_id)
+            );
+            CREATE TABLE cache_v4_raw_compatibility (
+                source_url TEXT NOT NULL, video_id TEXT NOT NULL, acquired_at TEXT NOT NULL,
+                payload_json TEXT NOT NULL, PRIMARY KEY(source_url, video_id)
+            );
+            """
+        )
+        with connection:
+            connection.execute("INSERT INTO cache_meta(key, value) VALUES('schema_version', '4')")
+            connection.execute("INSERT INTO cache_meta(key, value) VALUES('migration_state', 'complete')")
+    except BaseException:
+        connection.close()
+        target.unlink(missing_ok=True)
+        raise
+    finally:
+        if connection:
+            connection.close()
 
 
 def canonical_field(name: str) -> str:
@@ -133,6 +174,7 @@ class MetadataCache:
     def __init__(self, path: Path) -> None:
         self.path = path.expanduser()
         self.connection: sqlite3.Connection | None = None
+        self.schema_version: int | None = None
 
     def __enter__(self) -> Self:
         self.open()
@@ -149,8 +191,94 @@ class MetadataCache:
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA journal_mode = WAL")
         connection.execute("PRAGMA synchronous = NORMAL")
+        connection.row_factory = sqlite3.Row
         self.connection = connection
+        version = self._existing_schema_version()
+        if version == CURRENT_SCHEMA_VERSION:
+            state = connection.execute("SELECT value FROM cache_meta WHERE key = 'migration_state'").fetchone()
+            if state is None or str(state[0]) != "complete":
+                self.close()
+                raise RuntimeError("cache-v4 database is not a complete migration target")
+            self.schema_version = CURRENT_SCHEMA_VERSION
+            return
         self._initialise_schema()
+        self.schema_version = SCHEMA_VERSION
+
+    def _existing_schema_version(self) -> int | None:
+        """Return an existing schema version without creating or mutating cache state."""
+        db = self._db()
+        row = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cache_meta'").fetchone()
+        if row is None:
+            return None
+        version_row = db.execute("SELECT value FROM cache_meta WHERE key = 'schema_version'").fetchone()
+        if version_row is None:
+            return None
+        try:
+            return int(version_row[0])
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("invalid metadata-cache schema version") from exc
+
+    def _is_v4(self) -> bool:
+        return self.schema_version == CURRENT_SCHEMA_VERSION
+
+    def _v4_store(self) -> CacheV4EntityStore:
+        registry = CacheV4RegistryStore(self._db())
+        return CacheV4EntityStore(self._db(), registry)
+
+    def _v4_source(self, source_url: str):
+        row = (
+            self._db()
+            .execute(
+                "SELECT source_id, source_url, source_kind, facet FROM cache_v4_sources WHERE source_url = ? AND facet = ''",
+                (source_url,),
+            )
+            .fetchone()
+        )
+        if row is None:
+            return None
+        from .cache_entity_store import SourceIdentity
+
+        return SourceIdentity(int(row[0]), str(row[1]), str(row[2]), str(row[3]) or None)
+
+    def _v4_cached_item(self, source_url: str, video_id: str) -> CachedMetadata | None:
+        row = (
+            self._db()
+            .execute(
+                """
+            SELECT e.entity_id, a.last_success_at, m.*, c.payload_json
+            FROM cache_v4_media_entities AS e
+            JOIN cache_v4_providers AS p ON p.provider_key = 'yt-dlp'
+            JOIN cache_v4_acquisition_groups AS g ON g.provider_id = p.provider_id AND g.group_key = 'detailed'
+            JOIN cache_v4_acquisition_state AS a
+              ON a.entity_id = e.entity_id AND a.provider_id = p.provider_id
+             AND a.acquisition_group_id = g.acquisition_group_id AND a.last_success_at IS NOT NULL
+            LEFT JOIN cache_v4_ytdlp_metadata AS m ON m.entity_id = e.entity_id
+            LEFT JOIN cache_v4_raw_compatibility AS c
+              ON c.source_url = ? AND c.video_id = e.external_id
+            WHERE e.service = 'youtube' AND e.external_id = ?
+            """,
+                (source_url, video_id),
+            )
+            .fetchone()
+        )
+        if row is None:
+            return None
+        record: dict[str, Any] = {}
+        if row["payload_json"]:
+            try:
+                payload = json.loads(str(row["payload_json"]))
+            except (TypeError, json.JSONDecodeError):
+                payload = {}
+            if isinstance(payload, dict):
+                record.update(payload)
+        for field in YTDLP_PROVIDER.fields:
+            if field.storage_name in row.keys():
+                record[field.name] = row[field.storage_name]
+        record.setdefault("id", video_id)
+        fetched_at = datetime.fromisoformat(str(row["last_success_at"]))
+        if fetched_at.tzinfo is None:
+            fetched_at = fetched_at.replace(tzinfo=timezone.utc)
+        return CachedMetadata(video_id, record, fetched_at.astimezone(timezone.utc))
 
     def _sync_v4_source_state(self, source_url: str | None = None) -> None:
         """Mirror transitional v3 source state into the v4 entity-backed model."""
@@ -301,6 +429,8 @@ class MetadataCache:
         self._sync_v4_source_state()
 
     def get(self, source_url: str, video_id: str) -> CachedMetadata | None:
+        if self._is_v4():
+            return self._v4_cached_item(source_url, video_id)
         row = (
             self._db()
             .execute(
@@ -318,6 +448,12 @@ class MetadataCache:
         unique_ids = tuple(dict.fromkeys(video_ids))
         if not unique_ids:
             return {}
+        if self._is_v4():
+            return {
+                video_id: item
+                for video_id in unique_ids
+                if (item := self._v4_cached_item(source_url, video_id)) is not None
+            }
 
         # Stay below SQLite builds with the historical 999-variable default while leaving
         # one bind parameter available for the source URL.
@@ -352,6 +488,19 @@ class MetadataCache:
 
     def source_records(self, source_url: str) -> list[CachedMetadata]:
         """Return all decodable cached detailed records for one source."""
+        if self._is_v4():
+            rows = (
+                self._db()
+                .execute(
+                    """SELECT e.external_id FROM cache_v4_sources AS s
+                JOIN cache_v4_source_entries AS se USING(source_id)
+                JOIN cache_v4_media_entities AS e USING(entity_id)
+                WHERE s.source_url = ? AND s.facet = '' ORDER BY se.source_index""",
+                    (source_url,),
+                )
+                .fetchall()
+            )
+            return [item for row in rows if (item := self._v4_cached_item(source_url, str(row[0]))) is not None]
         rows = (
             self._db()
             .execute(
@@ -375,6 +524,13 @@ class MetadataCache:
         return items
 
     def count_source_records(self, source_url: str) -> int:
+        if self._is_v4():
+            row = (
+                self._db()
+                .execute("""SELECT COUNT(*) FROM cache_v4_raw_compatibility WHERE source_url = ?""", (source_url,))
+                .fetchone()
+            )
+            return int(row[0]) if row is not None else 0
         row = self._db().execute("SELECT COUNT(*) FROM metadata_records WHERE source_url = ?", (source_url,)).fetchone()
         return int(row[0]) if row is not None else 0
 
@@ -497,6 +653,13 @@ class MetadataCache:
         """Atomically upsert detailed metadata records, returning rows accepted."""
         when = (fetched_at or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
         records = tuple(records)
+        if self._is_v4():
+            acquired_at = datetime.fromisoformat(when)
+            accepted = 0
+            for record in records:
+                if self._normalise_record_into_v4(source_url, record, acquired_at=acquired_at) is not None:
+                    accepted += 1
+            return accepted
         rows: list[tuple[str, str, str, str]] = []
         for record in records:
             video_id = record.get("id")
@@ -534,7 +697,14 @@ class MetadataCache:
         than upsert, ensures IDs that disappeared from a later complete source observation do
         not survive as phantom frontier members.
         """
-        when = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
+        when_dt = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        if self._is_v4():
+            ids = [video_id for video_id in video_ids if video_id]
+            store = self._v4_store()
+            source = self._v4_source(source_url) or store.get_or_create_source(source_url, "unknown")
+            entity_ids = [store.get_or_create_entity("youtube", video_id).entity_id for video_id in ids]
+            return store.replace_source_entries(source, entity_ids)
+        when = when_dt.isoformat()
         rows = [(source_url, video_id, index, when) for index, video_id in enumerate(video_ids, start=1) if video_id]
         with self._db():
             self._db().execute("DELETE FROM source_entries WHERE source_url = ?", (source_url,))
@@ -551,6 +721,19 @@ class MetadataCache:
 
     def source_entry_ids(self, source_url: str) -> list[str]:
         """Return the persisted newest-first source ordering for one source."""
+        if self._is_v4():
+            rows = (
+                self._db()
+                .execute(
+                    """SELECT e.external_id FROM cache_v4_sources AS s
+                JOIN cache_v4_source_entries AS se USING(source_id)
+                JOIN cache_v4_media_entities AS e USING(entity_id)
+                WHERE s.source_url = ? AND s.facet = '' ORDER BY se.source_index""",
+                    (source_url,),
+                )
+                .fetchall()
+            )
+            return [str(row[0]) for row in rows]
         rows = (
             self._db()
             .execute(
@@ -563,6 +746,24 @@ class MetadataCache:
 
     def source_frontier(self, source_url: str) -> SourceFrontier | None:
         """Return a trusted incremental frontier when one has been established."""
+        if self._is_v4():
+            row = (
+                self._db()
+                .execute(
+                    """SELECT s.source_kind, f.verified_at, f.known_entries, e.external_id, f.overlap_confirmations
+                FROM cache_v4_sources AS s JOIN cache_v4_source_frontiers AS f USING(source_id)
+                JOIN cache_v4_media_entities AS e ON e.entity_id = f.head_entity_id
+                WHERE s.source_url = ? AND s.facet = ''""",
+                    (source_url,),
+                )
+                .fetchone()
+            )
+            if row is None:
+                return None
+            verified_at = datetime.fromisoformat(str(row[1]))
+            return SourceFrontier(
+                source_url, str(row[0]), verified_at.astimezone(timezone.utc), int(row[2]), str(row[3]), int(row[4])
+            )
         row = (
             self._db()
             .execute(
@@ -599,6 +800,22 @@ class MetadataCache:
     ) -> None:
         """Persist a trusted newest-first source ordering frontier transactionally."""
         ids = [video_id for video_id in video_ids if video_id]
+        if self._is_v4():
+            source = self._v4_store().get_or_create_source(source_url, source_kind)
+            if not ids:
+                with self._db():
+                    self._db().execute("DELETE FROM cache_v4_source_frontiers WHERE source_id = ?", (source.source_id,))
+                return
+            store = self._v4_store()
+            head = store.get_or_create_entity("youtube", ids[0])
+            store.record_source_frontier(
+                source,
+                head.entity_id,
+                len(ids),
+                overlap_confirmations=overlap_confirmations,
+                verified_at=(verified_at or datetime.now(timezone.utc)),
+            )
+            return
         if not ids:
             with self._db():
                 self._db().execute("DELETE FROM source_frontiers WHERE source_url = ?", (source_url,))
@@ -631,7 +848,13 @@ class MetadataCache:
         observed_at: datetime | None = None,
     ) -> None:
         """Record source observation telemetry without claiming frontier completeness."""
-        when = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
+        when_dt = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        if self._is_v4():
+            store = self._v4_store()
+            source = store.get_or_create_source(source_url, source_kind)
+            store.record_source_observation(source, observed_entries, observed_at=when_dt)
+            return
+        when = when_dt.isoformat()
         with self._db():
             self._db().execute(
                 """
@@ -657,8 +880,16 @@ class MetadataCache:
         observed_at: datetime | None = None,
     ) -> None:
         """Persist explicit source/cache coverage without implying a D8 frontier."""
-        when = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
+        when_dt = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
         cached_entries = self.count_source_records(source_url)
+        if self._is_v4():
+            store = self._v4_store()
+            source = store.get_or_create_source(source_url, source_kind)
+            store.record_source_coverage(
+                source, observed_entries, cached_entries, complete=complete, reason=reason, observed_at=when_dt
+            )
+            return
+        when = when_dt.isoformat()
         with self._db():
             self._db().execute(
                 """
@@ -679,6 +910,29 @@ class MetadataCache:
         self._sync_v4_source_state(source_url)
 
     def source_coverage(self, source_url: str) -> SourceCoverage | None:
+        if self._is_v4():
+            row = (
+                self._db()
+                .execute(
+                    """SELECT s.source_kind, c.observed_at, c.observed_entries, c.cached_entries, c.complete, c.reason
+                FROM cache_v4_sources AS s JOIN cache_v4_source_coverage AS c USING(source_id)
+                WHERE s.source_url = ? AND s.facet = ''""",
+                    (source_url,),
+                )
+                .fetchone()
+            )
+            if row is None:
+                return None
+            observed_at = datetime.fromisoformat(str(row[1]))
+            return SourceCoverage(
+                source_url,
+                str(row[0]),
+                observed_at.astimezone(timezone.utc),
+                int(row[2]),
+                int(row[3]),
+                bool(row[4]),
+                str(row[5]),
+            )
         row = (
             self._db()
             .execute(

@@ -231,7 +231,7 @@ yt-discover uses a persistent source-scoped SQLite metadata cache before asking 
 
 Freshness is field-aware. Stable identity and publication fields can be reused for much longer than mutable counters or availability state. If any field required by the current query has exceeded its freshness policy, yt-discover refreshes that video's complete authoritative yt-dlp record. Dynamic `raw.*` paths are only treated as cache hits when the path was actually present in the cached record.
 
-The default cache follows the XDG cache convention and normally lives at `~/.cache/yt-discover/metadata.sqlite3`. Override it or disable it per run:
+The default cache follows the XDG cache convention and normally lives at `~/.cache/yt-discover/metadata-v4.sqlite3`. Override it or disable it per run:
 
 ```bash
 ./yt-discover.py --cache /path/to/metadata.sqlite3 \
