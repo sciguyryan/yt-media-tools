@@ -790,10 +790,6 @@ class Parser:
                     member_token.value,
                     member_token.end_position,
                 )
-                if isinstance(node, Field) and (node.name == "raw" or node.name.startswith("raw.")):
-                    node = Field(f"{node.name}.{member_token.text}", node.position)
-                    continue
-            # IDENT deliberately retains legacy dotted field paths such as raw.extra.score.
             # After an explicit postfix dot, split any dotted token into successive member
             # operations so expressions such as formats[0].video.height remain composable
             # without changing the established parsing of bare dotted fields.
@@ -849,6 +845,12 @@ class Parser:
                 component = self.advance()
                 component_name = str(component.value if component.kind == "QIDENT" else component.text)
                 name += f".{component_name}"
+            if name.casefold().startswith("raw."):
+                raise QuerySyntaxError(
+                    self.source,
+                    "The raw.* metadata namespace has been removed; use a registered query field.",
+                    token.position,
+                )
             return Field(name, token.position)
         if token.kind == "IDENT":
             if any(part.upper() in _RESERVED_LITERAL_WORDS for part in token.text.split(".")):
@@ -860,6 +862,12 @@ class Parser:
             self.advance()
             if self.current.kind == "LPAREN":
                 return self.parse_scalar_function(token)
+            if token.text.casefold() == "raw" or token.text.casefold().startswith("raw."):
+                raise QuerySyntaxError(
+                    self.source,
+                    "The raw.* metadata namespace has been removed; use a registered query field.",
+                    token.position,
+                )
             bound = self._bound_collection_reference(token)
             return bound if bound is not None else Field(token.text, token.position)
         if token.kind == "STRING":

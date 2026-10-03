@@ -63,12 +63,6 @@ def test_parenthesised_expression_can_use_member_access() -> None:
     assert reparsed.member == "height"
 
 
-def test_existing_bare_dotted_field_paths_remain_fields() -> None:
-    expression = _select_expression("SELECT raw.extra.score FROM @fixture")
-    assert expression == Field("raw.extra.score", 7)
-    assert format_scalar_expression(expression) == "raw.extra.score"
-
-
 @pytest.mark.parametrize(
     "source",
     (

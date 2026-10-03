@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 import pytest
 
 from yt_media_tools.dates import DateContext
-from yt_media_tools.metadata import normalise_record
 from yt_media_tools.query import QuerySyntaxError, apply_query, parse_query, resolve_query
 from yt_media_tools.schema import QuerySchema
 
@@ -78,21 +77,6 @@ def test_dynamic_top_level_scalar() -> None:
     records = [{"channel_follower_count": 200_000}, {"channel_follower_count": 10_000}]
     query = resolved("WHERE channel_follower_count >= 100k", records)
     assert apply_query(records, query) == [records[0]]
-
-
-def test_nested_raw_scalar() -> None:
-    records = [
-        normalise_record({"id": "a", "extra": {"score": 12}}),
-        normalise_record({"id": "b", "extra": {"score": 4}}),
-    ]
-    query = resolved("WHERE raw.extra.score >= 10", records)
-    assert [record["id"] for record in apply_query(records, query)] == ["a"]
-
-
-def test_structured_raw_value_rejected() -> None:
-    records = [normalise_record({"id": "a", "formats": [{"format_id": "1"}]})]
-    with pytest.raises(QuerySyntaxError, match="structured"):
-        resolved("WHERE raw.formats = 1", records)
 
 
 def test_alias_resolves_to_canonical_field() -> None:

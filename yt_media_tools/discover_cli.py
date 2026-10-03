@@ -72,7 +72,6 @@ Examples:
   Index stable logical collections such as tags, or provider-specific ordered raw arrays:
     yt-discover.py "SELECT id, tags[0] AS first_tag FROM @example ORDER BY first_tag ASC"
     yt-discover.py --param needle=Astronomy "SELECT id FROM @example WHERE tags[0] = :needle"
-    yt-discover.py "SELECT id, raw.keywords[1] AS provider_keyword FROM @example"
 
   Write machine-readable provenance alongside normal query output:
     yt-discover.py --provenance ./query-provenance.json "SELECT id FROM @example WHERE duration < 1h"
@@ -200,7 +199,6 @@ Examples:
     url         -> webpage_url
 
   Select or filter scalar nested raw yt-dlp data with dotted paths:
-    yt-discover.py "SELECT id, raw.some_object.some_value AS score FROM @example WHERE raw.some_object.some_value >= 10"
 
   Objects and arrays are intentionally not assigned scalar semantics. Select a
   scalar child path instead.
@@ -610,7 +608,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--fields", action="store_true", help="acquire metadata, list queryable top-level fields and aliases, then exit"
     )
     introspection_mode.add_argument(
-        "--schema", action="store_true", help="like --fields, also listing scalar nested raw.* paths"
+        "--schema",
+        action="store_true",
+        help="acquire metadata, list queryable fields with their types and nullability, then exit",
     )
     introspection.add_argument(
         "--check-query", metavar="QUERY", help="check query grammar without acquiring metadata, then exit"

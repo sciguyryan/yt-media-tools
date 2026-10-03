@@ -4,6 +4,14 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Remove unused raw metadata compatibility
+
+- [breaking] Remove the unused `raw.*` yt-sql metadata namespace before public release rather than preserving an unneeded compatibility contract.
+- [maintenance] Remove dynamic raw schema inference, evaluation, acquisition planning and cache-freshness behaviour while retaining registered and observed top-level metadata semantics.
+- [cli] Keep `--schema` as field/type introspection without exposing nested extractor payload paths.
+- [test] Remove raw-only conformance cases and add deterministic rejection coverage for the removed namespace while preserving first-class collection and structured-member coverage.
+- [docs] Remove `raw.*` from the current yt-sql and Discover user-facing language contract; cache-v4 persistence and migration removal follows separately.
+
 ### Versioned cache startup and cut-over
 
 - [feature] Resolve the recognised cache family before cache-backed work, run authorised v3-to-v4 migration and continue the triggering Discover invocation against the verified v4 destination.

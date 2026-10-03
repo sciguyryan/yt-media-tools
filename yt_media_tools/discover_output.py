@@ -10,7 +10,7 @@ from yt_media_tools.cache import SourceCoverage
 from yt_media_tools.schema import QuerySchema
 
 
-def print_schema(schema: QuerySchema, *, include_raw: bool) -> None:
+def print_schema(schema: QuerySchema) -> None:
     print("Field\tType\tNullable\tNotes")
     for info in schema.available_fields():
         notes = []
@@ -19,9 +19,6 @@ def print_schema(schema: QuerySchema, *, include_raw: bool) -> None:
         elif info.dynamic:
             notes.append("dynamic yt-dlp scalar")
         print(f"{info.name}\t{info.kind}\t{'yes' if info.nullable else 'no'}\t{'; '.join(notes)}")
-    if include_raw:
-        for info in schema.raw_scalar_paths():
-            print(f"{info.name}\t{info.kind}\t{'yes' if info.nullable else 'no'}\traw nested scalar")
 
 
 def _effective_output_format(output_format: str, selected_count: int, *, explicit_select: bool) -> str:

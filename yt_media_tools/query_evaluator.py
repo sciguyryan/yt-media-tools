@@ -52,7 +52,6 @@ from .query_semantics import (
 )
 from .query_values import comparison_values as _comparison_values
 from .query_values import hashable_group_value as _hashable_group_value
-from .schema import raw_path_value, raw_stable_field
 
 
 def _coerce_char_codepoint(value: Any) -> int:
@@ -100,9 +99,9 @@ def _evaluate_random(function: ScalarFunction, record: dict[str, Any]) -> float:
 def _runtime_indexed_value(collection: Any, index: Any) -> Any:
     """Return one zero-based sequence element using yt-sql NULL semantics.
 
-    Resolved collection expressions guarantee the static operation is valid. Dynamic
-    ``raw.*`` values still need a runtime guard because provider data may be absent or
-    vary between records. Only ordered sequence containers are indexable: mappings,
+    Resolved collection expressions guarantee the static operation is valid. Runtime
+    provider data may still be absent or vary between records. Only ordered sequence
+    containers are indexable: mappings,
     sets, strings and arbitrary iterables are never treated as collections merely
     because Python can iterate over them.
     """
@@ -338,16 +337,7 @@ def canonical_record_value(
     else:
         name, field_kind = field, kind
 
-    if name.casefold().startswith("raw."):
-        stable = raw_stable_field(name)
-        if stable is not None:
-            value = record.get(stable)
-        else:
-            found, value = raw_path_value(record, name[4:])
-            if not found:
-                return None
-    else:
-        value = record.get(name)
+    value = record.get(name)
 
     if value is None:
         return None

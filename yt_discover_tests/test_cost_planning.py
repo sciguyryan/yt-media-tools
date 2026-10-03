@@ -12,7 +12,7 @@ def test_bounded_date_query_is_moderate():
 
 
 def test_dynamic_unbounded_query_is_very_high():
-    query = parse_query("FROM @example WHERE raw.extra.score >= 10")
+    query = parse_query("FROM @example WHERE provider_extra_score >= 10")
     plan = plan_acquisition(query, source_kind="channel", tab="videos", dates=DateContext())
     cost, reason = assess_cost(query, plan)
     assert cost == "very-high"

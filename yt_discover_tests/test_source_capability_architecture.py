@@ -81,7 +81,7 @@ def test_logical_facet_identity_preserves_one_physical_channel_identity() -> Non
 
 
 def test_dynamic_field_capability_is_unknown_not_structurally_unsupported() -> None:
-    capability = field_capability("raw.extra.score")
+    capability = field_capability("provider_extra_score")
 
     assert capability.ytdlp_flat == UNAVAILABLE
     assert capability.ytdlp_detailed == EXACT

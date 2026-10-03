@@ -19,14 +19,7 @@ Key = Callable[[Any], Any]
 
 
 def field(record: dict[str, Any], name: str) -> Any:
-    """Read a scalar field, including raw.* paths, without production helpers."""
-    if name.startswith("raw."):
-        current: Any = record
-        for part in name[4:].split("."):
-            if not isinstance(current, dict):
-                return None
-            current = current.get(part)
-        return current
+    """Read one scalar field without production helpers."""
     return record.get(name)
 
 

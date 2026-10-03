@@ -272,9 +272,3 @@ def test_case_condition_unknown_field_is_rejected_during_resolution() -> None:
     records = [{"id": "a", "view_count": 1}]
     with pytest.raises(QuerySyntaxError, match="Unknown field"):
         _resolve("SELECT CASE WHEN nonexistent = 1 THEN 1 ELSE 0 END AS x FROM @fixture", records)
-
-
-def test_case_result_structured_field_preserves_select_diagnostic() -> None:
-    records = [{"id": "a", "view_count": 1, "_raw": {"formats": [{"format_id": "1"}]}}]
-    with pytest.raises(QuerySyntaxError, match="Cannot SELECT structured"):
-        _resolve("SELECT CASE WHEN view_count = 1 THEN raw.formats ELSE NULL END AS x FROM @fixture", records)

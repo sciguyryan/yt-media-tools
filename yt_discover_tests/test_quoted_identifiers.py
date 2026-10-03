@@ -49,12 +49,6 @@ def test_quoted_relation_alias_and_wildcard_round_trip() -> None:
     assert format_query(parse_query(source)) == source
 
 
-def test_quoted_raw_backend_key_segment_round_trip() -> None:
-    query = parse_query("SELECT raw.`provider key` FROM @fixture")
-    assert query.select[0].expression == Field("raw.provider key", 7)
-    assert format_query(query) == "SELECT raw.`provider key` FROM @fixture"
-
-
 def test_quoted_structured_member_round_trip() -> None:
     query = parse_query("SELECT formats[0].`video height` FROM @fixture")
     expression = query.select[0].expression
@@ -85,15 +79,6 @@ def test_unterminated_quoted_identifier_has_dedicated_diagnostic() -> None:
 def test_cte_names_differing_only_by_case_can_coexist() -> None:
     query = parse_query("WITH Base AS (SELECT id FROM @fixture), base AS (SELECT id FROM @fixture) SELECT id FROM Base")
     assert [cte.name for cte in query.ctes] == ["Base", "base"]
-
-
-def test_quoted_raw_backend_key_resolves_exact_spelling() -> None:
-    from yt_media_tools.query import resolve_query
-    from yt_media_tools.schema import QuerySchema
-
-    parsed = parse_query("SELECT raw.`provider key` FROM @fixture")
-    resolved = resolve_query(parsed, QuerySchema([{"id": "a", "_raw": {"provider key": 3}}]))
-    assert resolved.select[0].expression == Field("raw.provider key", 7, "integer")
 
 
 def test_quoted_relation_alias_can_qualify_fields() -> None:

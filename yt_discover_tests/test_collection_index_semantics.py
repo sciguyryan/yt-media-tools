@@ -96,12 +96,6 @@ def test_unordered_collection_rejects_positional_indexing() -> None:
     assert exc_info.value.message == "Collection indexing requires a stable logical collection ordering."
 
 
-def test_raw_collection_path_can_be_indexed_when_runtime_value_is_ordered() -> None:
-    records = [{"_raw": {"keywords": ["alpha", "beta"]}}]
-    query = _resolve("SELECT raw.keywords[1] AS keyword", records)
-    assert evaluate_scalar_expression(query.select[0].expression, records[0]) == "beta"
-
-
 def test_collection_index_can_filter_rows_in_where_predicate() -> None:
     records = [
         {"id": "a", "tags": ["alpha", "beta"]},

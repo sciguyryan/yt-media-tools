@@ -1,9 +1,6 @@
 """Conservative cost and selectivity heuristics for physical planning."""
 
-from yt_media_tools.acquisition_plan import (
-    STAGE_COMPLETE_METADATA,
-    STAGE_DYNAMIC_RAW,
-)
+from yt_media_tools.acquisition_plan import STAGE_COMPLETE_METADATA
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_explain import explain_user_query, explain_user_query_json
 from yt_media_tools.planner import plan_query
@@ -52,15 +49,6 @@ def test_detailed_stage_is_deferred_behind_cheap_enumeration_filter() -> None:
     assert plan.heuristics.selectivity_tier == "high"
     assert plan.heuristics.information_value_tier == "high"
     assert plan.heuristics.deferred_expensive_stages == (STAGE_COMPLETE_METADATA,)
-
-
-def test_open_ended_raw_metadata_receives_very_high_cost_tier() -> None:
-    query = parse_query("SELECT raw.extra.score FROM @example OF videos")
-    plan = plan_query(query, source=_source(), dates=DateContext())
-
-    assert STAGE_DYNAMIC_RAW in plan.physical_acquisition.required_stage_names
-    assert plan.heuristics.cost_tier == "very-high"
-    assert plan.heuristics.information_value_tier == "none"
 
 
 def test_static_empty_boundary_has_no_cost_or_selectivity() -> None:

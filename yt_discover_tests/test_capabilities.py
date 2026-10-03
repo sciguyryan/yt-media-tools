@@ -15,8 +15,8 @@ def test_field_capability_model_is_conservative() -> None:
     assert field_capability("id").youtubejs == EXACT
     assert field_capability("upload_date").youtubejs == APPROXIMATE
     assert field_capability("duration").youtubejs == UNAVAILABLE
-    assert field_capability("raw.unknown").ytdlp_flat == UNAVAILABLE
-    assert field_capability("raw.unknown").ytdlp_detailed == EXACT
+    assert field_capability("provider_unknown").ytdlp_flat == UNAVAILABLE
+    assert field_capability("provider_unknown").ytdlp_detailed == EXACT
 
 
 def test_lightweight_rejection_can_prove_lower_date_failure() -> None:

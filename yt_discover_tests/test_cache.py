@@ -31,17 +31,6 @@ def test_cache_freshness_is_field_aware(tmp_path: Path):
         assert not cache.is_fresh(item, {"view_count"}, now=later)
 
 
-def test_missing_dynamic_raw_path_forces_refresh(tmp_path: Path):
-    path = tmp_path / "metadata.sqlite3"
-    now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
-    with MetadataCache(path) as cache:
-        cache.put_many("source", [{"id": "abc", "extra": {"score": 3}}], fetched_at=now)
-        item = cache.get("source", "abc")
-        assert item is not None
-        assert cache.is_fresh(item, {"raw.extra.score"}, now=now)
-        assert not cache.is_fresh(item, {"raw.extra.other"}, now=now)
-
-
 def test_cache_is_source_scoped(tmp_path: Path):
     path = tmp_path / "metadata.sqlite3"
     with MetadataCache(path) as cache:

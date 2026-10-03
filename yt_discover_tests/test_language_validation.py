@@ -86,7 +86,7 @@ def test_parser_rejects_malformed_supported_syntax(query: str, message: str) -> 
         ("SELECT id FROM @yt_sql_fixture WHERE duraton < 1h", "Unknown field 'duraton'"),
         (
             "SELECT id FROM @yt_sql_fixture WHERE raw.formats = 1",
-            "Field 'raw.formats' is structured; use a scalar nested path instead.",
+            "The raw.* metadata namespace has been removed",
         ),
         ("SELECT id FROM @yt_sql_fixture WHERE view_count CONTAINS '1'", "CONTAINS requires a text field"),
         ("SELECT id FROM @yt_sql_fixture WHERE is_live = maybe", "requires TRUE or FALSE"),

@@ -157,8 +157,6 @@ def _resolve_field(field: Field | RelationField, schema: QuerySchema, source: st
     info = schema.resolve(field.name)
     if info is None:
         candidates = [item.name for item in schema.available_fields()]
-        if field.name.casefold().startswith("raw."):
-            candidates.extend(item.name for item in schema.raw_scalar_paths())
         suggestion = difflib.get_close_matches(field.name, candidates, n=1, cutoff=0.6)
         message = f"Unknown field {field.name!r}."
         if suggestion:

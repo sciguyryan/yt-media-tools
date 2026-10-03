@@ -160,7 +160,7 @@ yt-discover implements proof-based LIMIT-aware acquisition termination. The plan
   "SELECT id FROM @whatdamath OF videos WHERE duration < 1h LIMIT 25" -v
 ```
 
-Queries with an explicit `ORDER BY` remain exhaustive because a later row may still outrank an earlier match. `DISTINCT`, aggregation/HAVING, CTE materialisation and UNION composition also remain conservative. Dynamic `raw.*` fields and volatile expressions such as unseeded `RANDOM()` are excluded. Archive exclusion disables the optimisation because archived rows are removed after acquisition. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
+Queries with an explicit `ORDER BY` remain exhaustive because a later row may still outrank an earlier match. `DISTINCT`, aggregation/HAVING, CTE materialisation and UNION composition also remain conservative. Volatile expressions such as unseeded `RANDOM()` are excluded. Archive exclusion disables the optimisation because archived rows are removed after acquisition. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
 
 `--explain` and JSON explain state whether LIMIT-aware acquisition is eligible, the selected termination mode and the authoritative match target. `--explain-analyze` and `--report` record whether source enumeration or detailed acquisition actually stopped early and how many candidates were examined. When acquisition stops after LIMIT is satisfied, result statistics explicitly mark the observed match count as a lower bound rather than pretending the unexamined tail has been counted.
 
@@ -229,7 +229,7 @@ The managed SQLite cache schema is version 4. A recognised historical schema-v3 
 
 yt-discover uses a persistent source-scoped SQLite metadata cache before asking yt-dlp to re-extract a known video. Normal online channel-video queries may also use the trusted incremental frontier when its eligibility and overlap requirements are satisfied. Fresh cache hits are reused; missing or stale records are refreshed and written back transactionally.
 
-Freshness is field-aware. Stable identity and publication fields can be reused for much longer than mutable counters or availability state. If any field required by the current query has exceeded its freshness policy, yt-discover refreshes that video's complete authoritative yt-dlp record. Dynamic `raw.*` paths are only treated as cache hits when the path was actually present in the cached record.
+Freshness is field-aware. Stable identity and publication fields can be reused for much longer than mutable counters or availability state. If any field required by the current query has exceeded its freshness policy, yt-discover refreshes that video's complete authoritative yt-dlp record.
 
 The default cache follows the XDG cache convention and normally lives at `~/.cache/yt-discover/metadata-v4.sqlite3`. Override it or disable it per run:
 
@@ -247,7 +247,7 @@ The managed cache schema is explicitly versioned at version 4. When the default 
 
 ## Capability-aware planning and explain output
 
-yt-discover uses an explicit acquisition capability model. yt-discover distinguishes metadata that is exact, approximate, or unavailable at the YouTube.js, yt-dlp flat, and yt-dlp detailed stages. Physical planning now also produces a backend-agnostic ordered metadata-acquisition plan for each source/facet boundary. The plan distinguishes identity enumeration, basic metadata, complete entry metadata, formats, subtitles and automatic captions, chapters, thumbnails, tags, and dynamic `raw.*` metadata.
+yt-discover uses an explicit acquisition capability model. yt-discover distinguishes metadata that is exact, approximate, or unavailable at the YouTube.js, yt-dlp flat, and yt-dlp detailed stages. Physical planning now also produces a backend-agnostic ordered metadata-acquisition plan for each source/facet boundary. The plan distinguishes identity enumeration, basic metadata, complete entry metadata, formats, subtitles and automatic captions, chapters, thumbnails, tags.
 
 The current yt-dlp adapter lowers identity/basic stages to flat enumeration where applicable and collapses deeper semantic stages into complete JSON extraction. Those distinctions remain visible in the physical plan so another backend can honour finer-grained capabilities without changing yt-sql semantics. The planner also attaches coarse cost, selectivity and information-value tiers to safe physical work. Deterministic enumeration-stage AND terms may be reordered so cheap high-information filters run before weaker or more expensive local tests, while ties preserve source order and residual query evaluation remains unchanged. `--explain` exposes the semantic stages, yt-dlp lowering, heuristic guidance, field capabilities, acquisition strategy, optimisation paths and estimated acquisition cost.
 
@@ -418,7 +418,6 @@ Arithmetic propagates NULL. Division or modulo by zero produces NULL, allowing t
 Explicit aliases may be referenced anywhere inside an `ORDER BY` scalar expression:
 
 ```bash
-yt-discover.py "SELECT id, raw.extra.score * 2 AS score FROM @channel ORDER BY score + 1 DESC"
 ```
 
 Searched `CASE` expressions provide conditional scalar values in both projection and ordering. Conditions use the ordinary yt-sql predicate language. Branches are tested in order; only TRUE selects a branch, while FALSE and SQL-like UNKNOWN fall through. If no branch matches and `ELSE` is omitted, the result is NULL:
@@ -430,7 +429,7 @@ yt-discover.py "SELECT id FROM @channel ORDER BY CASE WHEN is_live THEN 0 ELSE 1
 
 CASE result expressions may contain arithmetic, nested scalar functions, or nested CASE expressions. Known incompatible result types are rejected during semantic resolution; NULL branches do not force an otherwise consistent expression to mixed type.
 
-`SELECT *` expands to a deterministic scalar projection after the source schema has been resolved. Canonical built-in fields appear first in the documented schema order, followed by observed top-level dynamic scalar fields in case-insensitive lexical order. Aliases are not repeated and `raw.*` paths are excluded, so star expansion does not unexpectedly expose the extractor metadata tree. `SELECT *` must stand alone and cannot be mixed with explicit projection expressions or aliases. For staged JOIN syntax, plain `*` retains that rule and expands only the primary relation. A relation-qualified wildcard such as `r.*` may be combined with other projections and expands only the named relation. Joined projections do not implicitly include right-side fields, and colliding output names must be disambiguated with `AS`. Executable `INNER JOIN` and `LEFT JOIN` queries may expose fields from both relations, while `SEMI JOIN` and `ANTI JOIN` continue to expose only primary-relation fields. For an unmatched `LEFT JOIN` row, explicit right-side fields and `alias.*` projections evaluate as SQL NULL without flattening or fabricating a right metadata record. Multi-way JOIN execution remains unsupported until its relational execution phase is implemented.
+`SELECT *` expands to a deterministic scalar projection after the source schema has been resolved. Canonical built-in fields appear first in the documented schema order, followed by observed top-level dynamic scalar fields in case-insensitive lexical order. Aliases are not repeated. `SELECT *` must stand alone and cannot be mixed with explicit projection expressions or aliases. For staged JOIN syntax, plain `*` retains that rule and expands only the primary relation. A relation-qualified wildcard such as `r.*` may be combined with other projections and expands only the named relation. Joined projections do not implicitly include right-side fields, and colliding output names must be disambiguated with `AS`. Executable `INNER JOIN` and `LEFT JOIN` queries may expose fields from both relations, while `SEMI JOIN` and `ANTI JOIN` continue to expose only primary-relation fields. For an unmatched `LEFT JOIN` row, explicit right-side fields and `alias.*` projections evaluate as SQL NULL without flattening or fabricating a right metadata record. Multi-way JOIN execution remains unsupported until its relational execution phase is implemented.
 
 Because star expansion selects every available scalar field, it may require substantially more metadata acquisition than an explicit narrow projection. Use `--fields` or `--schema` when you want to inspect the available surface before choosing a smaller projection.
 
@@ -608,19 +607,7 @@ date      -> upload_date
 url       -> webpage_url
 ```
 
-The original yt-dlp JSON is retained internally, so nested scalar object paths can be used through `raw.*`:
-
-```text
-raw.some_object.some_value >= 10
-```
-
-They may also be selected:
-
-```text
-SELECT id, raw.some_object.some_value AS score
-```
-
-Objects and arrays themselves are deliberately not given invented scalar semantics. Compatible structured `raw.*` dictionaries can instead expose conservative typed members through postfix access. Use parentheses for a direct raw structured record, for example `(raw.provider_record).provider_id` or `(raw.provider_record).dimensions.height`; an ordered raw record sequence can combine indexing and member access, for example `raw.provider_formats[1].height`. Missing dynamic members propagate SQL `NULL`, incompatible members are not exposed, and unsafe structures remain opaque. First-class format, chapter and thumbnail records have closed yt-sql member schemas, but their collections remain non-positional while their logical ordering is unknown. Collections can be queried beyond positional indexing with `ANY(collection AS item WHERE predicate)`, `ALL(...)`, `CARDINALITY(collection)`, scoped `COUNT(collection AS item WHERE predicate)`, `FILTER(collection AS item WHERE predicate)` and `MAP(collection AS item SELECT expression)`. Bindings are lexical, NULL and empty collections have explicit SQL three-valued semantics, and filtering or mapping preserves the source collection's logical ordering contract rather than inventing positional guarantees.
+Arbitrary nested extractor payloads are not part of the yt-sql query surface. Query supported registered fields and first-class structured collections instead.
 
 Use introspection to inspect actual metadata:
 
@@ -791,12 +778,6 @@ Examples:
 ```bash
 ./yt-discover.py \
   "FROM @example OF videos WHERE upload_date >= TODAY()-6mo" -v --report
-```
-
-```bash
-./yt-discover.py \
-  "FROM @example WHERE raw.some_field = 'value'" \
-  --warn-source-size 1000 -v
 ```
 
 ## Documentation linting

@@ -125,20 +125,6 @@ ALIASES = {
 }
 
 
-def raw_stable_field(name: str) -> str | None:
-    """Return the stable logical field represented by a simple raw path, if any."""
-    lowered = name.casefold()
-    if not lowered.startswith("raw."):
-        return None
-    path = name[4:]
-    if not path or "." in path:
-        return None
-    canonical = ALIASES.get(path.casefold(), path.casefold())
-    if canonical in KNOWN_FIELD_TYPES:
-        return canonical
-    return None
-
-
 @dataclass(frozen=True)
 class FieldInfo:
     """Description of a field visible to the query language."""
@@ -174,7 +160,7 @@ def _infer_dynamic_value_type(
 ) -> QueryType | None:
     """Infer one provider-derived value type without weakening yt-sql boundaries.
 
-    Dynamic ``raw.*`` structure is inferred only when every observed non-NULL value has
+    Provider-derived structure is inferred only when every observed non-NULL value has
     one compatible runtime shape. Mixed scalar/container shapes and heterogeneous
     container kinds remain unresolved rather than being coerced into a portable type.
     """
@@ -252,8 +238,8 @@ def infer_collection_type(
 ) -> QueryType | None:
     """Infer a collection type conservatively from observed runtime values.
 
-    Provider-derived structured elements are admitted only for dynamic ``raw.*`` paths.
-    Their members are inferred recursively when all observed records have compatible
+    Provider-derived structured elements are admitted only where the caller explicitly
+    permits them. Their members are inferred recursively when observed records have compatible
     shapes; otherwise the element stays opaque rather than gaining accidental scalar
     semantics.
     """
@@ -358,86 +344,12 @@ class QuerySchema:
                 )
 
     def resolve(self, name: str) -> FieldInfo | None:
-        """Resolve a field name, including raw dotted paths."""
-        if name.casefold().startswith("raw."):
-            stable = raw_stable_field(name)
-            if stable is not None:
-                field = self._fields.get(stable)
-                if field is None:
-                    return None
-                return FieldInfo(
-                    name,
-                    field.kind,
-                    field.nullable,
-                    alias_of=stable,
-                    dynamic=False,
-                    resolved_type=field.query_type,
-                )
-            path = name[4:]
-            if not path:
-                return None
-            values: list[Any] = []
-            present = 0
-            structured = False
-            for record in self.records:
-                found, value = raw_path_value(record, path)
-                if not found:
-                    continue
-                present += 1
-                if isinstance(value, (dict, list, tuple, set)):
-                    structured = True
-                values.append(value)
-            if present == 0:
-                return None
-            nullable = present < len(self.records) or any(v is None for v in values)
-            collection_type = infer_collection_type(path.split(".")[-1], values, nullable=nullable)
-            if collection_type is not None:
-                return FieldInfo(name, "collection", nullable, dynamic=True, resolved_type=collection_type)
-            concrete = [value for value in values if value is not None]
-            if concrete and all(isinstance(value, dict) for value in concrete):
-                structured_type = infer_dynamic_structured_type(concrete, nullable=nullable)
-                return FieldInfo(
-                    name,
-                    "structured",
-                    nullable,
-                    dynamic=True,
-                    resolved_type=structured_type,
-                )
-            kind = "structured" if structured else infer_kind(path.split(".")[-1], values)
-            return FieldInfo(name, kind, nullable, dynamic=True)
+        """Resolve one field from the registered or observed query schema."""
         return self._fields.get(name)
 
     def resolve_index_operand(self, name: str) -> FieldInfo | None:
-        """Resolve a field specifically for collection indexing.
-
-        Ordinary ``raw.*`` resolution keeps arrays of records non-selectable as whole
-        structured values. Indexing may recognise such an array as an ordered provider
-        sequence and infer a conservative dynamic member schema for compatible records.
-        """
-        field = self.resolve(name)
-        if field is None or field.kind != "structured" or not name.casefold().startswith("raw."):
-            return field
-        path = name[4:]
-        values: list[Any] = []
-        present = 0
-        for record in self.records:
-            found, value = raw_path_value(record, path)
-            if not found:
-                continue
-            present += 1
-            values.append(value)
-        if present == 0:
-            return field
-        nullable = present < len(self.records) or any(value is None for value in values)
-        collection_type = infer_collection_type(
-            path.split(".")[-1],
-            values,
-            nullable=nullable,
-            allow_structured_elements=True,
-        )
-        if collection_type is None:
-            return field
-        return FieldInfo(name, "collection", nullable, dynamic=True, resolved_type=collection_type)
+        """Resolve a field specifically for collection indexing."""
+        return self.resolve(name)
 
     def available_fields(self) -> list[FieldInfo]:
         """Return non-raw fields in deterministic display order."""
@@ -451,8 +363,7 @@ class QuerySchema:
 
         Canonical built-in fields retain ``KNOWN_FIELD_TYPES`` declaration order.
         Observed top-level dynamic scalar fields follow in case-insensitive lexical
-        order. Aliases and ``raw.*`` paths are excluded so star expansion does not
-        duplicate values or unexpectedly expose the entire extractor metadata tree.
+        order. Aliases are excluded so star expansion does not duplicate values.
         """
         if self._logical_fields is not None:
             return list(self._logical_fields)
@@ -470,32 +381,6 @@ class QuerySchema:
             key=lambda item: item.name.casefold(),
         )
         return builtins + dynamic
-
-    def raw_scalar_paths(self, max_depth: int = 6) -> list[FieldInfo]:
-        """Catalogue scalar raw JSON paths without descending through arrays."""
-        paths: dict[str, list[Any]] = {}
-        presence: dict[str, int] = {}
-        for record in self.records:
-            raw = record.get("_raw")
-            if not isinstance(raw, dict):
-                continue
-            seen_for_record: set[str] = set()
-            for path, value in walk_scalar_paths(raw, max_depth=max_depth):
-                paths.setdefault(path, []).append(value)
-                if path not in seen_for_record:
-                    presence[path] = presence.get(path, 0) + 1
-                    seen_for_record.add(path)
-        result = []
-        for path, values in paths.items():
-            result.append(
-                FieldInfo(
-                    f"raw.{path}",
-                    infer_kind(path.split(".")[-1], values),
-                    presence.get(path, 0) < len(self.records) or any(v is None for v in values),
-                    dynamic=True,
-                )
-            )
-        return sorted(result, key=lambda item: item.name.casefold())
 
 
 def infer_kind(name: str, values: Iterable[Any]) -> str:
@@ -532,29 +417,3 @@ def infer_kind(name: str, values: Iterable[Any]) -> str:
     if len(kinds) == 1:
         return next(iter(kinds))
     return "mixed"
-
-
-def raw_path_value(record: dict[str, Any], path: str) -> tuple[bool, Any]:
-    current: Any = record.get("_raw")
-    if not isinstance(current, dict):
-        return False, None
-    for part in path.split("."):
-        if not isinstance(current, dict) or part not in current:
-            return False, None
-        current = current[part]
-    return True, current
-
-
-def walk_scalar_paths(value: dict[str, Any], *, max_depth: int, prefix: str = ""):
-    if max_depth < 1:
-        return
-    for key, child in value.items():
-        if not isinstance(key, str):
-            continue
-        path = f"{prefix}.{key}" if prefix else key
-        if isinstance(child, dict):
-            yield from walk_scalar_paths(child, max_depth=max_depth - 1, prefix=path)
-        elif isinstance(child, (list, tuple, set)):
-            continue
-        elif isinstance(child, SCALAR_TYPES):
-            yield path, child

@@ -40,7 +40,6 @@ def test_reserved_literal_words_have_dedicated_tokens_and_remain_literals(
         "SELECT FILTER(formats AS FALSE WHERE TRUE) FROM @fixture",
         "SELECT MAP(formats AS NULL SELECT id) FROM @fixture",
         "SELECT id FROM NULL",
-        "SELECT raw.TRUE FROM @fixture",
     ],
 )
 def test_reserved_literal_words_are_rejected_in_identifier_only_positions(query: str) -> None:

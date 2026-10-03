@@ -55,18 +55,6 @@ def test_select_alias_controls_output_name() -> None:
     assert query.select[0].output_name == "views"
 
 
-def test_select_nested_scalar() -> None:
-    records = [{"id": "a", "_raw": {"extra": {"score": 12}}}]
-    query = resolve("SELECT raw.extra.score AS score FROM @channel", records)
-    assert capture(records, query) == "12\n"
-
-
-def test_select_structured_value_rejected() -> None:
-    records = [{"id": "a", "_raw": {"formats": [{"format_id": "1"}]}}]
-    with pytest.raises(QuerySyntaxError, match="Cannot SELECT structured"):
-        resolve("SELECT raw.formats FROM @channel", records)
-
-
 def test_select_star_expands_deterministically() -> None:
     records = [
         {
@@ -84,7 +72,6 @@ def test_select_star_expands_deterministically() -> None:
     assert names[-2:] == ["alpha", "zeta"]
     assert "views" not in names
     assert "dynamic_collection" not in names
-    assert "raw.secret" not in names
     projected = capture(records, query)
     assert '"id": "a"' in projected and '"alpha": "A"' in projected and '"zeta": 9' in projected
 
@@ -125,15 +112,6 @@ def test_legacy_ids_format_rejects_explicit_select() -> None:
     query = resolve("SELECT id FROM @channel", records)
     with pytest.raises(ValueError, match="cannot be combined with SELECT"):
         capture(records, query, "ids")
-
-
-def test_order_by_explicit_select_alias() -> None:
-    records = [
-        {"id": "a", "_raw": {"extra": {"score": 2}}},
-        {"id": "b", "_raw": {"extra": {"score": 9}}},
-    ]
-    query = resolve("SELECT id, raw.extra.score AS score FROM @channel ORDER BY score DESC", records)
-    assert [record["id"] for record in apply_query(records, query)] == ["b", "a"]
 
 
 def test_single_collection_output_uses_json_array_syntax() -> None:

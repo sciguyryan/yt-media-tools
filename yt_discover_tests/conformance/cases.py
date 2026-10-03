@@ -408,18 +408,6 @@ def _count_enum(rows: Rows) -> list[Any]:
     )
 
 
-def _raw_dynamic(rows: Rows) -> list[Any]:
-    return (
-        OracleQuery(rows)
-        .where(lambda r: field(r, "raw.fixture_group") in {1, 3})
-        .order_by(lambda r: field(r, "raw.fixture_group"))
-        .then_by(lambda r: r["source_index"])
-        .select(lambda r: {"id": r["id"], "bucket": field(r, "raw.fixture_group")})
-        .take(8)
-        .to_list()
-    )
-
-
 def _convoluted(rows: Rows) -> list[Any]:
     def predicate(r: dict[str, Any]) -> bool:
         duration_branch = (
@@ -893,46 +881,6 @@ def _structured_collection_count(rows: Rows) -> list[Any]:
     )
 
 
-def _dynamic_raw_filter_map(rows: Rows) -> list[Any]:
-    """Exercise FILTER and MAP over backend-specific ordered raw scalar collections."""
-
-    def projected(row: dict[str, Any]) -> dict[str, Any]:
-        sequence = _structured_member_or_null(row.get("fixture_raw"), "sequence")
-        kept = _collection_filter(sequence, lambda item: _sql_ne(item, "skip"))
-        upper = _collection_map(kept, lambda item: None if item is None else str(item).upper())
-        return {"id": row["id"], "raw_upper": upper}
-
-    return (
-        OracleQuery(rows)
-        .where(lambda r: int(r["source_index"]) <= 12)
-        .order_by(lambda r: r["source_index"])
-        .select(projected)
-        .to_list()
-    )
-
-
-def _nested_collection_scope(rows: Rows) -> list[Any]:
-    """Exercise nested collection bindings with an inner reference to the outer element."""
-
-    def matches(row: dict[str, Any]) -> bool:
-        tags = _logical_taxonomy(row.get("tags"))
-        sequence = _structured_member_or_null(row.get("fixture_raw"), "sequence")
-        result = _collection_any(
-            sequence,
-            lambda raw_item: _collection_any(tags, lambda tag: _sql_eq(tag, raw_item)),
-        )
-        return result is True
-
-    return (
-        OracleQuery(rows)
-        .where(matches)
-        .order_by(lambda r: r["source_index"])
-        .select(lambda r: r["id"])
-        .take(8)
-        .to_list()
-    )
-
-
 def _collection_index_projection(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -960,16 +908,6 @@ def _collection_output(rows: Rows) -> list[Any]:
     )
 
 
-def _raw_collection_index(rows: Rows) -> list[Any]:
-    return (
-        OracleQuery(rows)
-        .where(lambda r: int(r["source_index"]) <= 12)
-        .order_by(lambda r: r["source_index"])
-        .select(lambda r: {"id": r["id"], "raw_item": _index_or_null(r.get("fixture_raw", {}).get("sequence"), 1)})
-        .to_list()
-    )
-
-
 def _collection_parameter(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -991,7 +929,6 @@ def _collection_cli_integration(rows: Rows) -> list[Any]:
                 "id": r["id"],
                 "tags": _logical_taxonomy(r.get("tags")),
                 "first_tag": _index_or_null(_logical_taxonomy(r.get("tags")), 0),
-                "raw_item": _index_or_null(r.get("fixture_raw", {}).get("sequence"), 1),
             }
         )
         .take(5)
@@ -1009,101 +946,40 @@ def _structured_member_or_null(value: Any, *members: str) -> Any:
     return current
 
 
-def _raw_structured_members(rows: Rows) -> list[Any]:
-    def projected(row: dict[str, Any]) -> dict[str, Any]:
-        fixture = row.get("fixture_raw")
-        record = _structured_member_or_null(fixture, "record")
-        records = _structured_member_or_null(fixture, "records")
-        second = _index_or_null(records, 1)
-        return {
-            "id": row["id"],
-            "provider_id": _structured_member_or_null(record, "provider_id"),
-            "label": _structured_member_or_null(record, "label"),
-            "nested_height": _structured_member_or_null(record, "dimensions", "height"),
-            "second_provider": _structured_member_or_null(second, "provider_id"),
-            "second_height": _structured_member_or_null(second, "height"),
-        }
-
-    return (
-        OracleQuery(rows)
-        .where(lambda r: int(r["source_index"]) <= 12)
-        .order_by(lambda r: r["source_index"])
-        .select(projected)
-        .to_list()
-    )
-
-
-def _raw_structured_member_predicate(rows: Rows) -> list[Any]:
-    return (
-        OracleQuery(rows)
-        .where(
-            lambda r: (
-                _structured_member_or_null(_structured_member_or_null(r.get("fixture_raw"), "record"), "provider_id")
-                == "provider-1"
-            )
-        )
-        .order_by(lambda r: r["source_index"])
-        .select(lambda r: r["id"])
-        .take(8)
-        .to_list()
-    )
-
-
 LANGUAGE_FEATURES = frozenset(
     {
+        "aggregate.avg",
+        "aggregate.count_expression",
+        "aggregate.count_star",
+        "aggregate.empty_input",
+        "aggregate.filter",
+        "aggregate.group_by",
+        "aggregate.having",
+        "aggregate.max",
+        "aggregate.min",
+        "aggregate.sum",
         "boolean.and",
         "boolean.bare",
-        "date.relative_ago",
-        "from.identifier",
-        "from.quoted_source",
-        "limit.underscore",
-        "offset.underscore",
-        "order.default_asc",
-        "projection.coalesce_fallback",
-        "scalar.random_seeded",
-        "projection.field",
-        "string.double_quote",
-        "string.doubled_quote",
-        "temporal.localised",
-        "temporal.unit_baktun",
-        "temporal.unit_decade",
-        "temporal.infinity_between",
-        "temporal.infinity_negative",
-        "temporal.infinity_positive",
-        "temporal.now_fixed",
-        "temporal.today_calendar",
-        "temporal.today_fixed",
-        "text.unquoted_literal",
-        "value.number.negative",
         "boolean.not",
         "boolean.or",
         "boolean.parentheses",
         "boolean.precedence",
-        "collection.index",
-        "collection.null",
         "collection.bounds",
-        "collection.raw",
+        "collection.cardinality",
+        "collection.composition",
+        "collection.count",
+        "collection.empty",
+        "collection.filter",
+        "collection.index",
+        "collection.map",
+        "collection.null",
+        "collection.null_element",
         "collection.output",
         "collection.parameter",
-        "collection.quantifier.any",
         "collection.quantifier.all",
-        "collection.cardinality",
-        "collection.count",
-        "collection.filter",
-        "collection.map",
-        "collection.scope.nested",
-        "collection.scope.outer",
-        "collection.three_valued",
-        "collection.empty",
-        "collection.null_element",
-        "collection.composition",
-        "collection.raw_dynamic",
+        "collection.quantifier.any",
         "collection.structured",
-        "structured.member",
-        "structured.member.indexed",
-        "structured.member.nested",
-        "structured.member.null",
-        "structured.member.raw_dynamic",
+        "collection.three_valued",
         "comparison.eq",
         "comparison.ge",
         "comparison.gt",
@@ -1111,12 +987,16 @@ LANGUAGE_FEATURES = frozenset(
         "comparison.lt",
         "comparison.ne",
         "comparison.ne_alt",
+        "cte.chained",
+        "cte.logical_schema",
+        "cte.non_recursive",
         "date.compact",
         "date.dot",
         "date.iso",
         "date.local_dmy",
         "date.local_mdy",
         "date.named",
+        "date.relative_ago",
         "date.slash",
         "datetime.offset",
         "datetime.zulu",
@@ -1129,12 +1009,8 @@ LANGUAGE_FEATURES = frozenset(
         "duration.short_alias",
         "field.alias",
         "from.handle",
-        "cte.non_recursive",
-        "cte.chained",
-        "cte.logical_schema",
-        "set.union",
-        "set.union_all",
-        "set.global_order_limit",
+        "from.identifier",
+        "from.quoted_source",
         "in",
         "in.not",
         "is.false",
@@ -1147,6 +1023,7 @@ LANGUAGE_FEATURES = frozenset(
         "is.true",
         "is.unknown",
         "limit",
+        "limit.underscore",
         "natural.above",
         "natural.at_least",
         "natural.at_most",
@@ -1160,10 +1037,14 @@ LANGUAGE_FEATURES = frozenset(
         "natural.under",
         "null.three_valued",
         "offset",
+        "offset.underscore",
         "offset.without_limit",
         "order.alias",
         "order.asc",
+        "order.default_asc",
         "order.desc",
+        "order.expression",
+        "order.expression_alias",
         "order.mixed",
         "order.multi",
         "order.null_last",
@@ -1181,76 +1062,82 @@ LANGUAGE_FEATURES = frozenset(
         "predicate.not_between",
         "projection.alias",
         "projection.coalesce",
+        "projection.coalesce_fallback",
         "projection.default_id",
+        "projection.field",
         "projection.length",
         "projection.lower",
-        "projection.raw",
         "projection.star",
         "projection.upper",
         "scalar.arithmetic.add",
         "scalar.arithmetic.divide",
         "scalar.arithmetic.multiply",
         "scalar.arithmetic.parentheses",
-        "scalar.function_nested",
+        "scalar.case",
+        "scalar.case.nested_result",
+        "scalar.case.no_else",
+        "scalar.case.null_fallthrough",
+        "scalar.case.order",
         "scalar.char",
         "scalar.concat",
-        "scalar.nullif",
+        "scalar.constant_fold",
+        "scalar.function_nested",
         "scalar.greatest",
         "scalar.least",
-        "scalar.constant_fold",
-        "scalar.case",
-        "scalar.case.null_fallthrough",
-        "scalar.case.no_else",
-        "scalar.case.nested_result",
-        "scalar.case.order",
-        "order.expression",
-        "order.expression_alias",
+        "scalar.mixed_base",
+        "scalar.nullif",
+        "scalar.random_seeded",
+        "set.global_order_limit",
+        "set.union",
+        "set.union_all",
         "string.case_sensitive",
+        "string.double_quote",
+        "string.doubled_quote",
+        "structured.member",
+        "temporal.infinity_between",
+        "temporal.infinity_negative",
+        "temporal.infinity_positive",
+        "temporal.localised",
+        "temporal.now_fixed",
+        "temporal.today_calendar",
+        "temporal.today_fixed",
+        "temporal.unit_baktun",
+        "temporal.unit_decade",
         "text.contain",
         "text.contains",
         "text.does_not_contain",
         "text.does_not_match",
-        "text.match",
-        "text.matches",
-        "text.like",
         "text.ilike",
-        "text.not_like",
-        "text.not_ilike",
+        "text.like",
         "text.like.escape",
         "text.like.single",
+        "text.match",
+        "text.matches",
         "text.not_contains",
+        "text.not_ilike",
+        "text.not_like",
         "text.not_matches",
+        "text.unquoted_literal",
+        "unicode.case_mapping",
+        "unicode.casefold_contains",
+        "unicode.codepoint_length",
+        "unicode.ilike_case",
+        "unicode.like_codepoint",
+        "unicode.normalisation_sensitive",
+        "unicode.ordering",
+        "unicode.regex",
         "value.count_b",
         "value.count_decimal_suffix",
         "value.count_k",
         "value.count_m",
         "value.count_underscore",
+        "value.enum_case_insensitive",
+        "value.integer.binary",
         "value.integer.hex",
         "value.integer.octal",
-        "value.integer.binary",
-        "scalar.mixed_base",
-        "value.enum_case_insensitive",
-        "unicode.normalisation_sensitive",
-        "unicode.codepoint_length",
-        "unicode.casefold_contains",
-        "unicode.ilike_case",
-        "unicode.like_codepoint",
-        "unicode.case_mapping",
-        "unicode.regex",
-        "unicode.ordering",
-        "aggregate.count_star",
-        "aggregate.count_expression",
-        "aggregate.sum",
-        "aggregate.avg",
-        "aggregate.min",
-        "aggregate.max",
-        "aggregate.group_by",
-        "aggregate.having",
-        "aggregate.filter",
-        "aggregate.empty_input",
+        "value.number.negative",
     }
 )
-
 
 CASES = (
     ConformanceCase(
@@ -1421,14 +1308,6 @@ CASES = (
         features=("collection.output",),
     ),
     ConformanceCase(
-        "dynamic_raw_collection_index",
-        "SELECT id, raw.fixture_raw.sequence[1] AS raw_item FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
-        _raw_collection_index,
-        ("id", "raw_item"),
-        "jsonl",
-        features=("collection.raw",),
-    ),
-    ConformanceCase(
         "collection_index_with_bound_parameter",
         "SELECT id FROM @yt_sql_fixture WHERE tags[0] = :needle ORDER BY source_index ASC LIMIT 8",
         _collection_parameter,
@@ -1438,14 +1317,13 @@ CASES = (
     ),
     ConformanceCase(
         "collection_cli_integration",
-        "SELECT id, tags, tags[0] AS first_tag, raw.fixture_raw.sequence[1] AS raw_item FROM @yt_sql_fixture WHERE tags[0] = :needle ORDER BY source_index ASC LIMIT 5",
+        "SELECT id, tags, tags[0] AS first_tag FROM @yt_sql_fixture WHERE tags[0] = :needle ORDER BY source_index ASC LIMIT 5",
         _collection_cli_integration,
-        ("id", "tags", "first_tag", "raw_item"),
+        ("id", "tags", "first_tag"),
         "jsonl",
         params=("needle=group-1",),
         features=(
             "collection.index",
-            "collection.raw",
             "collection.output",
             "collection.parameter",
             "parameter.binding",
@@ -1509,65 +1387,12 @@ CASES = (
         features=("collection.count", "collection.structured", "structured.member"),
     ),
     ConformanceCase(
-        "dynamic_raw_filter_map",
-        "SELECT id, MAP(FILTER(raw.fixture_raw.sequence AS item WHERE item != 'skip') AS kept SELECT UPPER(kept)) AS raw_upper FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
-        _dynamic_raw_filter_map,
-        ("id", "raw_upper"),
-        "jsonl",
-        features=(
-            "collection.filter",
-            "collection.map",
-            "collection.composition",
-            "collection.raw_dynamic",
-        ),
-    ),
-    ConformanceCase(
-        "nested_collection_scope_outer_reference",
-        "SELECT id FROM @yt_sql_fixture WHERE ANY(raw.fixture_raw.sequence AS raw_item WHERE ANY(tags AS tag WHERE tag = raw_item)) ORDER BY source_index ASC LIMIT 8",
-        _nested_collection_scope,
-        features=(
-            "collection.quantifier.any",
-            "collection.scope.nested",
-            "collection.scope.outer",
-            "collection.raw_dynamic",
-        ),
-    ),
-    ConformanceCase(
-        "dynamic_raw_structured_members",
-        "SELECT id, (raw.fixture_raw.record).provider_id AS provider_id, (raw.fixture_raw.record).label AS label, (raw.fixture_raw.record).dimensions.height AS nested_height, raw.fixture_raw.records[1].provider_id AS second_provider, raw.fixture_raw.records[1].height AS second_height FROM @yt_sql_fixture WHERE source_index <= 12 ORDER BY source_index ASC",
-        _raw_structured_members,
-        ("id", "provider_id", "label", "nested_height", "second_provider", "second_height"),
-        "jsonl",
-        features=(
-            "structured.member",
-            "structured.member.indexed",
-            "structured.member.nested",
-            "structured.member.null",
-            "structured.member.raw_dynamic",
-        ),
-    ),
-    ConformanceCase(
-        "dynamic_raw_structured_member_predicate",
-        "SELECT id FROM @yt_sql_fixture WHERE (raw.fixture_raw.record).provider_id = 'provider-1' ORDER BY source_index ASC LIMIT 8",
-        _raw_structured_member_predicate,
-        features=("structured.member", "structured.member.raw_dynamic"),
-        execution="cli",
-    ),
-    ConformanceCase(
         "count_suffix_and_enum_case",
         "SELECT id, view_count, availability FROM @yt_sql_fixture WHERE view_count >= 1m AND availability = 'PUBLIC' ORDER BY view_count DESC, id ASC",
         _count_enum,
         ("id", "view_count", "availability"),
         "csv",
         features=("value.count_m", "value.enum_case_insensitive", "output.csv"),
-    ),
-    ConformanceCase(
-        "raw_dynamic_field",
-        "SELECT id, raw.fixture_group AS bucket FROM @yt_sql_fixture WHERE raw.fixture_group IN (1, 3) ORDER BY raw.fixture_group ASC, source_index ASC LIMIT 8",
-        _raw_dynamic,
-        ("id", "bucket"),
-        "tsv",
-        features=("projection.raw",),
     ),
     # Comparison operators and their natural-language aliases.
     ConformanceCase(

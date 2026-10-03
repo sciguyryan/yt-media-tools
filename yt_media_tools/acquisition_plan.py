@@ -1,11 +1,10 @@
-"""Backend-neutral physical metadata acquisition planning for yt-discover."""
+"""Backend-agnostic physical metadata acquisition planning for yt-discover."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 from .provider_capabilities import MetadataRequirement
-from .schema import raw_stable_field
 from .query_properties import (
     CollectionQueryRequirement,
     IndexedFieldRequirement,
@@ -23,7 +22,6 @@ STAGE_CHAPTERS = "chapters"
 STAGE_THUMBNAILS = "thumbnails"
 STAGE_TAGS = "tags"
 STAGE_CATEGORIES = "categories"
-STAGE_DYNAMIC_RAW = "dynamic-raw"
 
 _STAGE_ORDER = (
     STAGE_ENUMERATE_IDENTITIES,
@@ -35,7 +33,6 @@ _STAGE_ORDER = (
     STAGE_THUMBNAILS,
     STAGE_TAGS,
     STAGE_CATEGORIES,
-    STAGE_DYNAMIC_RAW,
 )
 
 _COLLECTION_STAGE = {
@@ -111,7 +108,6 @@ class PhysicalAcquisitionPlan:
                 STAGE_THUMBNAILS,
                 STAGE_TAGS,
                 STAGE_CATEGORIES,
-                STAGE_DYNAMIC_RAW,
             }
             for stage in self.stages
         )
@@ -128,16 +124,6 @@ def _collection_family(field: str) -> str | None:
     """Return the supported first-class or nested metadata collection family."""
     family = field.split(".", 1)[0].casefold()
     return family if family in _COLLECTION_STAGE else None
-
-
-def _dynamic_raw(field: str) -> bool:
-    """Return whether a field still requires the open-ended raw compatibility path."""
-    return field.casefold().startswith("raw.") and raw_stable_field(field) is None
-
-
-def _planning_field(field: str) -> str:
-    """Map a stable raw compatibility spelling onto its registered logical field."""
-    return raw_stable_field(field) or field
 
 
 def plan_physical_acquisition(
@@ -181,9 +167,6 @@ def plan_physical_acquisition(
     }
     ordinary_member_fields: list[StructuredMemberRequirement] = []
     ordinary_collection_queries: list[CollectionQueryRequirement] = []
-    dynamic_member_fields: list[StructuredMemberRequirement] = []
-    dynamic_collection_queries: list[CollectionQueryRequirement] = []
-    dynamic_fields: set[str] = set()
     ordinary_detailed: set[str] = set()
     indexed_by_field: dict[str, list[IndexedFieldRequirement]] = {}
     members_by_field: dict[str, list[StructuredMemberRequirement]] = {}
@@ -197,7 +180,7 @@ def plan_physical_acquisition(
     full_fields = detailed_fields if whole_fields is None else whole_fields
 
     for field in detailed_fields:
-        planned_field = _planning_field(field)
+        planned_field = field
         field_key = planned_field.casefold()
         family = _collection_family(planned_field)
         indexed = indexed_by_field.get(field.casefold(), [])
@@ -236,13 +219,6 @@ def plan_physical_acquisition(
                 indexed_collection_fields[stage_name].extend(indexed)
             else:
                 collection_fields[stage_name].add(planned_field)
-        elif _dynamic_raw(field):
-            if query_partial:
-                dynamic_collection_queries.extend(queries)
-            elif member_partial:
-                dynamic_member_fields.extend(members)
-            else:
-                dynamic_fields.add(field)
         elif query_partial:
             ordinary_collection_queries.extend(queries)
         elif member_partial:
@@ -376,34 +352,6 @@ def plan_physical_acquisition(
                 collection_queries,
             )
         )
-
-    stages.append(
-        AcquisitionStage(
-            STAGE_DYNAMIC_RAW,
-            bool(dynamic_fields or dynamic_member_fields or dynamic_collection_queries),
-            frozenset(dynamic_fields),
-            (
-                "open-ended raw metadata is required for: " + ", ".join(sorted(dynamic_fields))
-                if dynamic_fields
-                else (
-                    "exact structured member acquisition is permitted for: "
-                    + ", ".join(
-                        (f"{item.field}[{item.index}]" if item.indexed else item.field) + "." + ".".join(item.members)
-                        for item in dynamic_member_fields
-                    )
-                    if dynamic_member_fields
-                    else (
-                        "exact collection-query pushdown is permitted for: "
-                        + ", ".join(f"{item.field}:{item.operation}" for item in dynamic_collection_queries)
-                        if dynamic_collection_queries
-                        else "no open-ended raw metadata is required"
-                    )
-                )
-            ),
-            member_fields=tuple(dynamic_member_fields),
-            collection_queries=tuple(dynamic_collection_queries),
-        )
-    )
 
     required_names = [stage.name for stage in stages if stage.required]
     adapter_note = (

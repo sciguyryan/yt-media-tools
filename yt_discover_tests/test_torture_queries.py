@@ -214,14 +214,10 @@ def test_unicode_and_quoted_identifier_torture_round_trip_execution_and_optimise
             "Select": 66,
             "true": 77,
             "release-title": "hyphenated",
-            "_raw": {"provider key": "provider", "odd`key": "embedded"},
         }
     ]
     schema = QuerySchema(rows)
-    source = (
-        "SELECT café, café, Δata, δata, select, Select, `true`, release-title, "
-        "raw.`provider key`, raw.`odd``key` FROM @unicode_fixture"
-    )
+    source = "SELECT café, café, Δata, δata, select, Select, `true`, release-title FROM @unicode_fixture"
     parsed = parse_query(source)
     canonical = format_query(parsed)
     reparsed = parse_query(canonical)

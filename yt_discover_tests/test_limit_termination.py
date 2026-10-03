@@ -59,12 +59,6 @@ def test_limit_planner_allows_source_order_only() -> None:
     assert "ORDER BY" in ordered.reason
 
 
-def test_limit_planner_rejects_dynamic_fields() -> None:
-    plan = plan_limit_termination(parse_query("SELECT id FROM @example WHERE raw.extra.score > 1 LIMIT 2"))
-    assert not plan.eligible
-    assert "dynamic fields" in plan.reason
-
-
 def test_cli_limit_stops_detailed_acquisition_in_source_order(tmp_path: Path) -> None:
     env, log = fake_limit_env(tmp_path)
     result = run_cli(

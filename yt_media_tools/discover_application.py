@@ -1569,7 +1569,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     _verbose(args.verbose, f"Built query schema from {len(records)} normalised records.")
     if args.fields or args.schema:
-        print_schema(schema, include_raw=args.schema)
+        print_schema(schema)
         return 0
 
     try:

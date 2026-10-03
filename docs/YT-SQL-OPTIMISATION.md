@@ -162,8 +162,6 @@ Safe identity elimination may be introduced selectively where the operand's reso
 
 ### Implemented
 
-Direct indexes on ordered `raw.*` list or tuple values are retained as precise indexed requirements for analysis and explainability, including constant positions where available. The raw namespace remains backend-specific: its sequence order is the provider's explicit raw array order and is not promoted into the logical ordering contract of a first-class yt-sql collection field.
-
 Physical planning remains conservative. Raw indexed access is evaluated locally unless a backend capability explicitly proves that a partial indexed acquisition is semantically identical to indexing the complete raw sequence. Dynamic indexes, inconsistent raw value shapes and non-sequence values never justify partial acquisition.
 
 ### Deliberately not implemented
@@ -288,7 +286,7 @@ The planner analyses required metadata fields recursively through scalar express
 
 Capability-aware planning distinguishes available acquisition stages and can select bounded acquisition only when its preconditions are proven.
 
-Discover now represents metadata work as an ordered backend-agnostic physical plan. The semantic stages are `enumerate-identities`, `basic-metadata`, `complete-metadata`, `formats`, `subtitles`, `chapters`, `thumbnails`, `tags`, and `dynamic-raw`. Only stages required by the final physical field set are active, and a statically empty source boundary activates none of them.
+Discover now represents metadata work as an ordered backend-agnostic physical plan. The semantic stages are `enumerate-identities`, `basic-metadata`, `complete-metadata`, `formats`, `subtitles`, `chapters`, `thumbnails`, `tags`, and `categories`. Only stages required by the final physical field set are active, and a statically empty source boundary activates none of them.
 
 This representation preserves distinctions even when a backend cannot honour them independently. The current yt-dlp lowering maps identity and basic metadata requirements to flat enumeration and collapses complete metadata plus nested collection/raw requirements into complete JSON extraction. Keeping lowering isolated prevents yt-dlp command-line details from becoming yt-sql semantics.
 

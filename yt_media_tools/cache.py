@@ -158,8 +158,6 @@ def initialise_v4_cache(path: Path) -> None:
 def canonical_field(name: str) -> str:
     """Return a canonical metadata field for freshness decisions."""
     lowered = name.casefold()
-    if lowered.startswith("raw."):
-        return "raw." + name[4:]
     return _ALIASES.get(lowered, lowered)
 
 
@@ -547,13 +545,6 @@ class MetadataCache:
         for field in required_fields:
             if age > field_max_age(field):
                 return False
-            canonical = canonical_field(field)
-            if canonical.startswith("raw."):
-                current_value: Any = item.record
-                for part in canonical[4:].split("."):
-                    if not isinstance(current_value, dict) or part not in current_value:
-                        return False
-                    current_value = current_value[part]
         return True
 
     def _normalise_record_into_v4(

@@ -473,7 +473,6 @@ def test_huge_profile_filter_sort_limit_matches_oracle(conformance_huge: Any) ->
         "source_order_limit",
         "contains_case_insensitive",
         "scalar_functions_and_alias_order",
-        "raw_dynamic_field",
         "date_local_mdy",
         "auto_multiple_output",
         "legacy_urls_output",

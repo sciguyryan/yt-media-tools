@@ -103,13 +103,6 @@ def test_reused_source_combines_requirements_without_inventing_safe_frontier() -
     assert plan.temporal_bounds.for_field("upload_date") is None
 
 
-def test_dynamic_raw_requirement_is_not_treated_as_structurally_unavailable() -> None:
-    plan = _single_plan("SELECT raw.extractor_specific FROM @alpha")
-    assert "dynamic-raw" in plan.physical_acquisition.required_stage_names
-    assert plan.metadata_requirements.requires_detailed_metadata
-    assert plan.cost_class == "very-high"
-
-
 def test_volatile_random_order_rejects_early_limit_termination() -> None:
     plan = _single_plan("SELECT id FROM @whatdamath OF videos ORDER BY RANDOM() LIMIT 3")
     assert not plan.limit_termination.eligible

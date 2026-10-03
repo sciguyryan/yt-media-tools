@@ -4,7 +4,6 @@ from yt_media_tools.acquisition_plan import (
     STAGE_BASIC_METADATA,
     STAGE_CHAPTERS,
     STAGE_COMPLETE_METADATA,
-    STAGE_DYNAMIC_RAW,
     STAGE_ENUMERATE_IDENTITIES,
     STAGE_FORMATS,
     STAGE_SUBTITLES,
@@ -54,7 +53,7 @@ def test_ordinary_detailed_field_adds_complete_metadata_stage() -> None:
     assert plan.physical_acquisition.requires_detailed_metadata
 
 
-def test_nested_and_dynamic_fields_get_distinct_semantic_stages() -> None:
+def test_nested_fields_get_distinct_semantic_stages() -> None:
     plan = plan_physical_acquisition(
         source=_source(),
         required_fields=frozenset(
@@ -65,7 +64,6 @@ def test_nested_and_dynamic_fields_get_distinct_semantic_stages() -> None:
                 "subtitles.en",
                 "automatic_captions.en",
                 "thumbnails.url",
-                "raw.extra.score",
             }
         ),
         enumeration_fields=frozenset({"id"}),
@@ -76,7 +74,6 @@ def test_nested_and_dynamic_fields_get_distinct_semantic_stages() -> None:
                 "subtitles.en",
                 "automatic_captions.en",
                 "thumbnails.url",
-                "raw.extra.score",
             }
         ),
     )
@@ -87,7 +84,6 @@ def test_nested_and_dynamic_fields_get_distinct_semantic_stages() -> None:
         STAGE_SUBTITLES,
         STAGE_CHAPTERS,
         STAGE_THUMBNAILS,
-        STAGE_DYNAMIC_RAW,
     )
     assert plan.stage(STAGE_SUBTITLES).fields == frozenset({"subtitles.en", "automatic_captions.en"})
 
@@ -122,18 +118,15 @@ def test_union_boundaries_keep_independent_acquisition_stage_plans() -> None:
 def test_ytdlp_lowering_keeps_semantic_collection_stages_visible() -> None:
     plan = plan_physical_acquisition(
         source=_source(),
-        required_fields=frozenset({"id", "formats.video_ext", "raw.extra.score"}),
+        required_fields=frozenset({"id", "formats.video_ext"}),
         enumeration_fields=frozenset({"id"}),
-        detailed_fields=frozenset({"formats.video_ext", "raw.extra.score"}),
+        detailed_fields=frozenset({"formats.video_ext"}),
     )
     lowering = lower_acquisition_plan_to_ytdlp(plan)
 
     assert lowering.flat_stages == (STAGE_ENUMERATE_IDENTITIES,)
-    assert lowering.detailed_stages == (STAGE_FORMATS, STAGE_DYNAMIC_RAW)
-    assert lowering.collapsed_detailed_stages == (
-        STAGE_FORMATS,
-        STAGE_DYNAMIC_RAW,
-    )
+    assert lowering.detailed_stages == (STAGE_FORMATS,)
+    assert lowering.collapsed_detailed_stages == (STAGE_FORMATS,)
     assert lowering.requires_flat_enumeration
     assert lowering.requires_detailed_extraction
 

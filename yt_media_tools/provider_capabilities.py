@@ -1,4 +1,4 @@
-"""Backend-neutral metadata provider capability and selection contracts."""
+"""Backend-agnostic metadata provider capability and selection contracts."""
 
 from __future__ import annotations
 
