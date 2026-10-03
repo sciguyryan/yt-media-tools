@@ -19,7 +19,7 @@ from yt_media_tools.cache_startup import (
     cache_startup_lock,
     execute_cache_startup,
 )
-from yt_media_tools.cache_migration_console import AsciiMigrationConsole
+from yt_media_tools.cache_migration_console import create_migration_console
 from yt_media_tools.cache_startup_policy import (
     CacheStartupAction,
     decide_cache_startup,
@@ -227,7 +227,17 @@ def _resolve_cache_startup(args, *, explicit_cache: bool) -> Path:
         console = None
         event_sinks = ()
         if decision.action is CacheStartupAction.MIGRATE:
-            console = AsciiMigrationConsole(sys.stderr, interactive=interactive)
+            colour, unicode = resolve_console_modes(
+                stream=sys.stderr,
+                colour_mode=args.colour,
+                unicode_mode=args.unicode,
+            )
+            console = create_migration_console(
+                sys.stderr,
+                interactive=interactive,
+                colour=colour,
+                unicode=unicode,
+            )
             assert decision.path is not None
             console.begin(decision.path, cache_directory / CURRENT_V4_FILENAME)
             event_sinks = (console.event_sink,)

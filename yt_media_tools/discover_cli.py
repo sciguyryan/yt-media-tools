@@ -654,13 +654,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--colour",
         choices=("auto", "always", "never"),
         default="auto",
-        help="colour mode for console explain output (default: auto; NO_COLOR is respected)",
+        help="colour mode for terminal presentation, including explain and cache migration output (default: auto; NO_COLOR is respected)",
     )
     introspection.add_argument(
         "--unicode",
         choices=("auto", "always", "never"),
         default="auto",
-        help="Unicode tree/arrow mode for console explain output (default: auto)",
+        help="Unicode mode for terminal presentation, including explain and cache migration output (default: auto)",
     )
 
     output = parser.add_argument_group("output")

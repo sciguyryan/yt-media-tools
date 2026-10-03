@@ -204,3 +204,41 @@ def test_concurrent_managed_startup_serialises_migration(tmp_path: Path) -> None
         assert stdout.splitlines() == ["null-fields", "shared-video", "unicode-雪"]
     assert not source.exists()
     assert (cache_directory / CURRENT_V4_FILENAME).is_file()
+
+
+def test_triggering_query_can_force_rich_migration_presentation(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    cache_directory = tmp_path / "yt-discover"
+    cache_directory.mkdir()
+    shutil.copy2(FIXTURE, cache_directory / "metadata.sqlite3")
+    environment = os.environ.copy()
+    environment["XDG_CACHE_HOME"] = str(tmp_path)
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).parents[1] / "yt-discover.py"),
+            "--unicode",
+            "always",
+            "--colour",
+            "always",
+            "--offline",
+            "--tab",
+            "videos",
+            "SELECT id FROM @fixture ORDER BY id ASC",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=environment,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["null-fields", "shared-video", "unicode-雪"]
+    assert "┌─ " in result.stderr
+    assert "├─ " in result.stderr
+    assert "└─ " in result.stderr
+    assert "[RUN]" in result.stderr
+    assert "[OK]" in result.stderr
+    assert "\x1b[" in result.stderr

@@ -19,6 +19,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [ux] Show stable preflight, migration, indexing, verification and cut-over stages with bounded batch progress, restart guidance and a final active-cache summary.
 - [test] Cover deterministic console rendering, bounded progress, failure guidance and real startup presentation without contaminating query stdout.
 - [docs] Reconcile the versioned startup design with the implemented ASCII presentation boundary and future richer terminal presentation.
+- [feature] Upgrade interactive cache migration presentation with Unicode box-drawing hierarchy, bounded progress bars and explicit textual lifecycle states while preserving the structured migration event model.
+- [ux] Apply the existing console `--unicode` and `--colour` policy to migration output, including `NO_COLOR`, automatic terminal capability detection and deterministic ASCII/no-colour fallback for redirected output.
+- [test] Cover rich Unicode rendering, colour-independent semantics, forced rich subprocess presentation and the preserved automatic ASCII fallback.
+- [docs] Reconcile the completed rich migration presentation with the cache-v4 design and managed-cache user documentation.
 
 ### Common database migration workflow
 
