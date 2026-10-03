@@ -343,3 +343,13 @@ Normal verification uses deterministic stratified sampling for the potentially e
 ### Permanent historical migration evidence
 
 The accepted v3 fixture, its source-fact oracle and the independently authored v4 semantic expectation are permanent migration evidence rather than temporary implementation scaffolding. Regression coverage verifies the expected v4 identity, latest registered metadata, acquisition times, source ordering, coverage, frontiers and source-scoped compatibility material without depending on SQLite surrogate identifiers. Separate cases preserve rejection of invalid historical states, restart-only handling after interruption and late failure, and the rule that permanent migration logs contain progress and outcome information rather than raw historical payloads or representative secret-bearing material.
+
+### Versioned startup discovery and active-cache resolution
+
+From schema v4 onwards the ordinary cache filename identifies its schema generation. The current v4 candidate is `metadata-v4.sqlite3`; the historical unversioned `metadata.sqlite3` filename identifies the legacy v3 candidate. The filename establishes only which schema the candidate claims to contain. Startup must inspect the database read-only and require its internal schema and migration state to agree before the candidate can be trusted.
+
+Discovery and active-cache selection are separate concepts. Discovery reports recognised files in current-to-historical precedence order. Resolution may identify a complete current candidate as active, identify a valid historical candidate as requiring migration, report that no recognised cache exists and a fresh current cache is required, or block startup because the newest recognised candidate is corrupt, incomplete or mismatched. A historical candidate is never itself returned as the active current cache.
+
+The newest recognised candidate controls resolution. If `metadata-v4.sqlite3` exists but is corrupt, incomplete, structurally invalid or internally reports another schema version, startup must report that problem rather than silently falling back to `metadata.sqlite3`. Likewise, an invalid recognised historical cache blocks fresh-cache creation because historical state still requires explicit handling. A fresh v4 cache is appropriate only when no recognised candidate exists.
+
+Discovery is deliberately read-only. Migration execution, interactive or non-interactive authorisation, clean-up policy, active runtime opening and terminal presentation are separate startup responsibilities built on the discovery result.
