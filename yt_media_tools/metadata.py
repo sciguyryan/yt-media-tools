@@ -26,10 +26,9 @@ def _normalise_known_collection(name: str, value: Any) -> Any:
 
 
 def normalise_record(info: dict[str, Any]) -> dict[str, Any]:
-    """Normalise query-visible metadata while retaining the original JSON for raw paths."""
+    """Normalise one backend record into the metadata surface exposed to yt-sql."""
     record = {key: value for key, value in info.items() if isinstance(key, str) and isinstance(value, SCALAR_TYPES)}
     for name in KNOWN_COLLECTION_TYPES:
         if name in info:
             record[name] = _normalise_known_collection(name, info[name])
-    record["_raw"] = deepcopy(info)
     return record

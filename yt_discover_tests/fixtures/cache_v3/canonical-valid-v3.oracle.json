@@ -203,14 +203,14 @@
       "Historical source coverage snapshots, including their recorded reason.",
       "Incremental frontier state where present."
     ],
-    "unresolved_raw_compatibility": [
-      "Nested raw.* values are query-visible in v3, but #126 does not choose their v4 representation.",
-      "The formats payload and its fake signed URL demonstrate backend material retained by v3 raw_json; whether any such material has a future representation requires the later raw.* audit.",
-      "No arbitrary raw_json blob is declared a required v4 storage shape by this oracle."
-    ],
     "not_recoverable_from_v3": [
       "Independent persistent YouTube.js observations.",
       "Independent persistent ytmusicapi observations."
+    ],
+    "historical_raw_json_boundary": [
+      "v3 raw_json may contain nested values that were query-visible through the former raw.* namespace.",
+      "Migration reconstructs supported registered scalars and collection families from raw_json, then deliberately discards arbitrary unregistered remainder.",
+      "The formats fixture includes a fake signed URL to prove historical backend baggage is not treated as a generic v4 storage requirement."
     ]
   }
 }

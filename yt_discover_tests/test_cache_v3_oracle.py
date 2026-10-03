@@ -93,12 +93,12 @@ def test_v3_oracle_preserves_source_scoped_duplicate_media_and_snapshot_meaning(
     assert len(detailed_partial) == 2
 
 
-def test_v3_oracle_leaves_raw_compatibility_for_later_work() -> None:
+def test_v3_oracle_records_the_resolved_historical_raw_json_boundary() -> None:
     classification = _oracle()["semantic_classification"]
-    unresolved = " ".join(classification["unresolved_raw_compatibility"])
-    assert "raw.*" in unresolved
-    assert "formats" in unresolved
-    assert "future representation" in unresolved
+    historical = " ".join(classification["historical_raw_json_boundary"])
+    assert "former raw.* namespace" in historical
+    assert "registered scalars and collection families" in historical
+    assert "discards arbitrary unregistered remainder" in historical
     absent = " ".join(classification["not_recoverable_from_v3"])
     assert "YouTube.js" in absent
     assert "ytmusicapi" in absent

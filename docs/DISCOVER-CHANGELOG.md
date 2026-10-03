@@ -15,6 +15,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Persist the five supported yt-dlp collection families in closed entity-scoped v4 collection storage so removing arbitrary compatibility data does not remove first-class yt-sql collection semantics.
 - [migration] Reconcile preflight sizing and certification with registered scalar and collection facts only, and require fresh and migrated v4 databases to use the same final schema.
 - [test] Prove fresh-v4 collection persistence, arbitrary-material discard, collection certification, historical fixture outcomes and absence of the removed compatibility tables.
+- [maintenance] Stop normalised runtime records from retaining a private copy of the complete extractor response now that no production query path consumes it.
+- [maintenance] Remove migration-accounting abstractions and conformance-generator material that existed only to classify or exercise arbitrary raw metadata.
+- [docs] Reconcile current cache-v4, yt-sql, optimisation, test-coverage and historical migration documentation with the final registered-metadata boundary while preserving the superseded design history explicitly.
+- [test] Resolve the historical v3 oracle's former raw-compatibility question and keep negative schema/migration assertions that prevent generic raw storage from returning.
 
 ### Versioned cache startup and cut-over
 

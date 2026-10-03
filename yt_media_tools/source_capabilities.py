@@ -236,8 +236,8 @@ def field_capability(field: str) -> FieldCapability:
             logical_kind="collection",
             logical_type=KNOWN_COLLECTION_TYPES[key],
         )
-    # Dynamic/raw fields are not part of the stable logical schema. Detailed yt-dlp
-    # metadata may expose them, but no source adapter promises that they exist.
+    # Unregistered fields are not part of the stable logical schema. A source adapter
+    # cannot promise their existence merely because a backend may return them.
     return FieldCapability(
         field,
         UNAVAILABLE,

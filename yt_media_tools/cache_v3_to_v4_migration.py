@@ -180,7 +180,7 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
                 cache._db().execute("BEGIN")
                 for source_url, video_id, fetched_at, raw_json in batch:
                     record = json.loads(str(raw_json))
-                    accounting = cache._normalise_record_into_v4(
+                    accepted = cache._normalise_record_into_v4(
                         str(source_url),
                         record,
                         acquired_at=datetime.fromisoformat(str(fetched_at)),
@@ -188,7 +188,7 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
                         commit=False,
                         historical_timestamp=str(fetched_at),
                     )
-                    if accounting is None:
+                    if not accepted:
                         raise RuntimeError("v3 metadata record has no usable media identity")
                     migrated += 1
                 cache._db().commit()

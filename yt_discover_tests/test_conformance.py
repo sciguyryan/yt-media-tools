@@ -318,16 +318,6 @@ def test_dataset_contains_required_semantic_edge_classes() -> None:
         and any(format_record.get("height") is None for format_record in row["formats"])
         for row in rows
     )
-    structured = [row["fixture_raw"]["record"] for row in rows if row["fixture_raw"]["record"] is not None]
-    assert structured
-    assert any(record.get("label") is None for record in structured)
-    assert any("height" not in record["dimensions"] for record in structured)
-    assert any(row["fixture_raw"]["record"] is None for row in rows)
-    assert any(row["fixture_raw"]["records"] is None for row in rows)
-    assert any(
-        isinstance(row["fixture_raw"]["records"], list) and "height" not in row["fixture_raw"]["records"][1]
-        for row in rows
-    )
 
 
 @pytest.mark.scale

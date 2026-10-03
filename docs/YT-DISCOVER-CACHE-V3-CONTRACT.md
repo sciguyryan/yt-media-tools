@@ -65,7 +65,7 @@ The v3 defaults are:
 
 The aliases `views`, `likes`, `comments`, `date` and `url` share the policy of their canonical fields.
 
-A record is fresh only when every field required by the query is within its maximum age. For a `raw.*` requirement, freshness additionally requires every named dictionary segment to exist in the cached raw object. The value at the end of the path may itself be `null`; path presence, not truthiness, is what this check establishes.
+A record is fresh only when every field required by the query is within its maximum age. Historically, a `raw.*` requirement additionally required every named dictionary segment to exist in the cached raw object. The value at the end of the path could itself be `null`; path presence, not truthiness, was what this check established. Issue #142 removed that unused language surface before release, but the rule remains part of the frozen v3 behavioural record.
 
 When one required field is stale, normal online acquisition refreshes the complete authoritative yt-dlp record rather than updating one field in isolation. Offline mode can still use stale cached values because it forbids network refresh and reports that limitation separately.
 
@@ -153,11 +153,11 @@ The v3 persistent detailed cache is an authoritative yt-dlp JSON cache. Speciali
 
 That absence is part of the historical contract. A v3 migration cannot recover provider-owned observations that v3 never stored.
 
-## `raw.*` is cache-visible state
+## `raw.*` was cache-visible v3 state
 
-The complete decoded yt-dlp object is not merely an implementation backup. yt-sql can address nested backend values through `raw.*`, and cache freshness explicitly understands those paths. Consequently the raw JSON contains a mixture of query-visible state and backend material with no established query use.
+At the time this historical contract was frozen, the complete decoded yt-dlp object was not merely an implementation backup. yt-sql could address nested backend values through `raw.*`, and cache freshness understood those paths. Consequently the raw JSON mixed then-query-visible state with backend material that had no established query use.
 
-Issue #126 should preserve that distinction in its fixtures. Deciding which raw material receives a v4 representation belongs to the later `raw.*` compatibility work, not to this historical audit.
+The fixtures preserve that distinction as historical evidence. The later compatibility work initially retained unresolved material conservatively, but issue #142 resolved the pre-release language decision by removing unused `raw.*` support. The final v4 migration reconstructs supported registered facts and deliberately discards arbitrary unregistered remainder.
 
 ## What this commit does not decide
 
@@ -183,6 +183,6 @@ The canonical valid fixture has a versioned semantic companion at `yt_discover_t
 
 That separation is deliberate. Issue #126 can state that source-scoped detailed identity, acquisition times, source observations, trusted ordering, historical coverage snapshots and frontier state have established v3 meaning. It cannot yet state which v4 table, provider row or entity relationship should represent them. Those choices belong to the v4 registry and storage work.
 
-The oracle also refuses to settle `raw.*` by implication. Nested raw paths are query-visible in v3, while the same stored JSON contains backend material with no established query use. Known examples remain visible in the fixture and oracle, but their future representation is left to the dedicated compatibility audit. Specialised YouTube.js and ytmusicapi observations are separately recorded as unrecoverable because v3 never persisted them.
+The oracle records that nested raw paths were query-visible in v3 while the same stored JSON contained backend material with no established query use. Known examples remain visible as historical evidence, but the final pre-release decision is now explicit: issue #142 removed `raw.*`, supported registered facts migrate, and arbitrary unregistered remainder has no v4 representation. Specialised YouTube.js and ytmusicapi observations are separately recorded as unrecoverable because v3 never persisted them.
 
 Tests derive the corresponding facts directly from the immutable SQLite fixture and compare them with the JSON oracle. A later cache change therefore cannot quietly rewrite either the historical fixture or the story told about it. The oracle has its own format version so an incompatible change to the oracle itself must be deliberate.

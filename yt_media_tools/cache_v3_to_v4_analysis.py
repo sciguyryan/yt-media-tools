@@ -52,7 +52,7 @@ def analyse_v3_composition(path: Path) -> V3Composition:
             encoded = str(raw_json).encode("utf-8")
             raw_bytes += len(encoded)
             record = json.loads(str(raw_json))
-            registered, _ = normalise_registered_metadata(record)
+            registered = normalise_registered_metadata(record)
             if registered:
                 registered_bytes += len(
                     json.dumps(registered, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")

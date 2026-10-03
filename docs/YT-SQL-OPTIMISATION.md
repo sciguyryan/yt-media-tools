@@ -158,16 +158,6 @@ Floating-point reassociation is not performed. Reordering arithmetic could chang
 
 Safe identity elimination may be introduced selectively where the operand's resolved type and NULL behaviour prove equivalence. Constant-expression canonicalisation may also be useful for query caching or a future compiled representation.
 
-## Dynamic raw collection indexing
-
-### Implemented
-
-Physical planning remains conservative. Raw indexed access is evaluated locally unless a backend capability explicitly proves that a partial indexed acquisition is semantically identical to indexing the complete raw sequence. Dynamic indexes, inconsistent raw value shapes and non-sequence values never justify partial acquisition.
-
-### Deliberately not implemented
-
-Mappings, sets, strings and arbitrary iterables are not treated as indexable raw collections. The planner does not infer stable first-class collection ordering from raw extractor array order, and it does not assume that an indexed raw record can be lowered merely because the provider exposes a list-like Python value.
-
 ## Scalar functions
 
 ### Implemented
@@ -272,7 +262,7 @@ Discover implements a stage-aware proof-based acquisition optimisation for eligi
 
 ### Deliberately not implemented
 
-`LIMIT` is not pushed through arbitrary ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, dynamic raw fields, volatile expressions or archive exclusion. These cases can change which rows survive, how they are ordered, or which evaluations remain observable. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
+`LIMIT` is not pushed through arbitrary ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, volatile expressions or archive exclusion. These cases can change which rows survive, how they are ordered, or which evaluations remain observable. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
 
 ### Future candidates
 
@@ -288,7 +278,7 @@ Capability-aware planning distinguishes available acquisition stages and can sel
 
 Discover now represents metadata work as an ordered backend-agnostic physical plan. The semantic stages are `enumerate-identities`, `basic-metadata`, `complete-metadata`, `formats`, `subtitles`, `chapters`, `thumbnails`, `tags`, and `categories`. Only stages required by the final physical field set are active, and a statically empty source boundary activates none of them.
 
-This representation preserves distinctions even when a backend cannot honour them independently. The current yt-dlp lowering maps identity and basic metadata requirements to flat enumeration and collapses complete metadata plus nested collection/raw requirements into complete JSON extraction. Keeping lowering isolated prevents yt-dlp command-line details from becoming yt-sql semantics.
+This representation preserves distinctions even when a backend cannot honour them independently. The current yt-dlp lowering maps identity and basic metadata requirements to flat enumeration and collapses complete metadata plus nested collection requirements into complete JSON extraction. Keeping lowering isolated prevents yt-dlp command-line details from becoming yt-sql semantics.
 
 Direct constant collection indexes are preserved as indexed acquisition requirements rather than being flattened immediately to whole-field requirements. A backend may lower an indexed requirement to partial acquisition only when its declared capability proves that the result matches indexing the complete yt-sql logical collection, including the logical ordering contract. If the index is dynamic, the collection is also required whole elsewhere, or the backend lacks that proof, planning widens conservatively to full collection acquisition and local indexing.
 
@@ -296,7 +286,7 @@ Collection-query expressions retain operation-specific acquisition requirements 
 
 The planner applies only coarse deterministic cost/selectivity heuristics. Safe enumeration-stage top-level AND terms are ranked by information value per local evaluation cost, with equality and small positive membership treated as stronger candidate-rejection tests than broad inequalities or negated forms. No numeric selectivity percentages or extractor timing predictions are invented. Equal-ranked terms retain query order.
 
-These heuristics affect only independently safe pre-acquisition work. They do not reorder volatile predicates, residual detailed predicates, UNION evaluation, or source acquisition. When cheap authoritative filters are available, the physical plan records deeper complete, collection and dynamic/raw stages as deferrable until candidate rows survive those filters. The current runtime already observes this gate for staged lightweight-to-detailed acquisition paths.
+These heuristics affect only independently safe pre-acquisition work. They do not reorder volatile predicates, residual detailed predicates, UNION evaluation, or source acquisition. When cheap authoritative filters are available, the physical plan records deeper complete and collection stages as deferrable until candidate rows survive those filters. The current runtime already observes this gate for staged lightweight-to-detailed acquisition paths.
 
 Composed queries are planned through independent source/facet boundaries. A boundary carries only the fields, predicate constraints, temporal bounds, metadata depth and ordering assumptions required by its physical uses. Reuse of one source/facet unions field requirements and combines branch predicates with OR; heterogeneous source/facet boundaries are not merged or cross-optimised without proof.
 
@@ -362,7 +352,7 @@ The reconciliation corpus deliberately composes previously separate semantic sur
 
 Generated transformation checks build semantically equivalent Boolean forms such as duplicate AND/OR terms and double negation across several predicate families. A deterministic mutation-style matrix also confirms that the fixture corpus distinguishes representative unsafe comparison, Boolean and NULL mutations. These focused checks supplement the ordinary golden corpus without making Hypothesis or a full mutation runner a routine dependency.
 
-Physical-planning torture tests extend the same reconciliation boundary through source planning. They cover static branch elimination, safe and rejected LIMIT termination, detailed metadata stages, temporal frontiers, metadata deferral, CTE requirement pruning, source/facet isolation, reused-source union requirements, dynamic raw metadata and volatile random ordering. Planning tests must continue to distinguish metadata that is structurally unavailable from metadata that is simply not yet acquired.
+Physical-planning torture tests extend the same reconciliation boundary through source planning. They cover static branch elimination, safe and rejected LIMIT termination, detailed metadata stages, temporal frontiers, metadata deferral, CTE requirement pruning, source/facet isolation, reused-source union requirements and volatile random ordering. Planning tests must continue to distinguish metadata that is structurally unavailable from metadata that is simply not yet acquired.
 
 ## Compiled-query investigation
 

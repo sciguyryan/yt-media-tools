@@ -1,109 +1,35 @@
 # yt-discover raw metadata audit
 
-This document records the current `raw.*` compatibility boundary between registered cache-v4 metadata and unresolved dynamic backend material.
+This document records the architectural history of the former `raw.*` yt-sql surface and explains why it was removed before release.
 
-## Scope
+## Historical problem
 
-`raw.*` is an established yt-sql language surface, not merely the SQLite `raw_json` column. The accepted implementation stores the backend response in each normalised record as `_raw`, infers dynamic field structure from observed backend values, resolves `raw.*` paths at runtime, plans open-ended raw acquisition separately, and exercises the surface throughout parser, semantic, evaluator, projection, collection, conformance, help and documentation tests.
+Cache v3 stores the complete yt-dlp response in `metadata_records.raw_json`. During the cache-v4 design work, `raw.*` was a real yt-sql feature rather than a debugging convenience: parsing, schema inference, evaluation, acquisition planning, collections, examples and tests could expose arbitrary nested extractor material.
 
-The compatibility model does not introduce provider-specific namespace syntax. The v3 `raw_json` column remains a legacy migration boundary rather than a v4 metadata primitive.
+That created a genuine migration question. Removing the v3 JSON blob without making an explicit language decision would have changed query behaviour accidentally, so the early v4 work audited raw metadata and temporarily preserved unresolved source-scoped compatibility material while registered metadata moved into the provider model.
 
-## Accepted language behaviour
+## What the audit established
 
-The current contract includes dotted paths such as `raw.extra.score`, quoted identifiers below `raw`, postfix structured-member access such as `(raw.record).provider_id`, collection indexing such as `raw.keywords[0]`, nested collection indexing, and collection expressions over raw values.
+The useful long-lived boundary is registered metadata, not arbitrary extractor response shape. Stable scalar fields belong to provider definitions with explicit yt-sql types, acquisition groups and freshness policies. The supported collection families `tags`, `categories`, `formats`, `chapters` and `thumbnails` likewise have explicit language contracts and closed v4 persistence.
 
-Dynamic raw structure is inferred conservatively from observed records. Compatible scalar values, structured records and collections can become queryable. Mixed or incompatible runtime shapes remain unresolved rather than being silently coerced. Structured collections have separate restrictions around whole-value projection and positional access.
+The audit also exercised synthetic dynamic scalar, structured and collection values. Those cases proved that the language machinery could support open-ended backend data, but they did not establish a production need for doing so. An extensive pre-release usage review found no actual use of `raw.*` in this internal tool.
 
-Star expansion excludes `raw.*`, while explicit raw projections remain supported when their resolved type is selectable.
+Preserving the feature would therefore have required Discover to retain arbitrary backend-shaped material, provenance and freshness semantics, migration and certification rules, maintenance handling, dynamic schema behaviour and a substantial test surface without a demonstrated use case. That cost conflicts with the central v4 rule: this is a Discover cache, not a general provider object store.
 
-## Planner and acquisition behaviour
+## Final decision
 
-The acquisition planner recognises `raw.*` as open-ended metadata and assigns it to the `dynamic-raw` stage. This means removing raw persistence cannot be treated as a cache-only refactor. A replacement must give registered fields sufficient provider, acquisition-group and freshness information for the planner to request the same useful metadata deliberately.
+Issue #142 removes `raw.*` before public release. There is no deprecation mode or replacement generic provider namespace. A query that attempts to use the removed namespace is rejected and should use a registered yt-sql field instead.
 
-## Persistence boundary
+Normal runtime records no longer retain a private copy of the complete extractor response for raw-path evaluation. Cache v4 contains no generic raw compatibility payload or migration-accounting table. Unknown backend fields have no v4 persistence merely because yt-dlp returned them.
 
-v3 persists the complete authoritative backend response in `metadata_records.raw_json`. Normalisation retains that response as `_raw`, which is the data source used by dynamic `raw.*` schema inference and evaluation.
+Historical v3 `raw_json` remains valid migration input. The v3-to-v4 transition reads it to reconstruct supported registered scalar facts and the five supported collection families, then deliberately discards unregistered remainder. This is a one-way interpretation of historical source facts, not a promise to preserve the v3 representation.
 
-Cache v4 already has a different model: logical fields are registered by providers with explicit yt-sql types, storage names, acquisition groups and freshness policies. Provider metadata tables store declared scalar fields rather than arbitrary backend responses. Issue #130 should move useful queryable metadata towards that registered model instead of recreating a generic raw-response blob.
+Fresh-v4 and migrated-v4 databases therefore converge on the same target schema. Registered metadata, provider/acquisition state, source state, provenance and supported collections survive according to their explicit contracts; arbitrary backend baggage does not.
 
-## Inventory classification
+## Why the history remains documented
 
-### Existing registered or stable logical metadata
+The temporary compatibility design was useful. It prevented the cache migration from silently deciding a language question, forced a concrete inventory of registered versus arbitrary metadata, and gave the migration work a conservative intermediate boundary while v4 storage was still being built.
 
-The ordinary schema already exposes stable scalar fields including identity, title, upload/release timestamps, duration, engagement counts, channel/uploader identity, live/availability state, URL and playlist/source position. It also has stable collection contracts for `tags`, `categories`, `formats`, `chapters` and `thumbnails`.
+Removing that compatibility layer later in development does not make the earlier reasoning wrong. The evidence changed: once the complete v4 path existed and actual usage was reviewed, the open-ended feature no longer justified its continuing architectural cost. Keeping this history makes the final schema easier to understand without presenting superseded compatibility machinery as current behaviour.
 
-Where a real `raw.*` query merely reaches data that has an equivalent stable logical field, the registered logical field is the preferred v4 destination. The migration must not duplicate such material solely to preserve its backend spelling.
-
-### Useful metadata requiring registry work
-
-The audit finds accepted tests and examples using dynamic scalar, structured and collection material that is not represented by the current stable field catalogue. Representative shapes include `raw.extra.score`, `raw.keywords`, provider records with nested members, nested scalar collections and fixture-specific raw fields.
-
-These examples prove language capabilities, but they do not by themselves prove that every fixture field deserves production registration. Part 2 must inventory real backend metadata separately from synthetic conformance fields and register only useful queryable metadata with an explicit type, provider, acquisition group and freshness policy.
-
-### Backend baggage eligible for deliberate discard
-
-Backend response material with no accepted query/documentation use and no justified registered metadata role should not be carried into v4 merely because it existed in `raw_json`. Discarding it is an explicit compatibility decision and must be counted separately from material normalised into registered v4 metadata.
-
-No Part 1 evidence supports retaining an arbitrary backend-response blob as a v4 escape hatch.
-
-## Surfaces that must change together
-
-A complete #130 implementation must reconcile all of the following surfaces:
-
-- v3 cache persistence and migration accounting;
-- cache-v4 provider field registration and typed provider storage;
-- dynamic schema inference and raw-path resolution;
-- parser qualification, quoted identifiers and postfix/member syntax;
-- evaluator runtime lookup and missing-value guards;
-- projection and collection semantics;
-- acquisition planning and the `dynamic-raw` stage;
-- CLI schema/help/examples;
-- yt-sql documentation and optimisation documentation;
-- deterministic conformance fixtures and parser/evaluator/planner regression tests.
-
-## Migration accounting requirement
-
-Migration must distinguish at least these outcomes:
-
-1. recognised backend material normalised into registered v4 metadata;
-2. recognised material already represented by an equivalent stable logical field;
-3. backend-only material deliberately discarded;
-4. material that cannot yet be classified safely and therefore blocks destructive retirement.
-
-A migration must not report successful normalisation merely because a legacy `raw_json` row was read or deleted.
-
-## Namespace decision
-
-Part 1 does not choose syntax for provider-specific or genuinely dynamic fields. If later work proves that such a language surface is required, its grammar must compose with existing qualification, quoted identifiers, member access, collection indexing and other postfix syntax. It requires parser, formatter, semantic, evaluator and conformance treatment equivalent to other yt-sql syntax.
-
-## Registered metadata replacement
-
-The first concrete replacement provider is now registered as `yt-dlp`. Stable scalar metadata is declared with yt-sql types, a detailed-metadata acquisition group, storage names and freshness policies instead of relying on an arbitrary backend response for v4 persistence. Typed datetime fields use lossless SQLite TEXT affinity while retaining their yt-sql datetime contract.
-
-During the compatibility period, accepted v3 detailed-cache writes are also normalised into the v4 yt-dlp provider table and successful detailed acquisition state is recorded. The legacy `raw_json` row remains in place for the existing `raw.*` language path until the later compatibility and runtime-cut-over parts.
-
-Migration accounting is persisted per source and media identity. It separately counts registered scalar fields, collection material already represented by stable logical fields, and backend-only fields deliberately discarded from v4 registered persistence. Internal `_yt_sql_` provenance keys are not counted as discarded backend material.
-
-The current stable collection fields remain an explicit follow-on storage concern. Part 2 accounts for `tags`, `categories`, `formats`, `chapters` and `thumbnails` as stable logical equivalents rather than serialising them into scalar provider columns or falsely reporting them as discarded baggage.
-
-## yt-sql compatibility transition
-
-Simple `raw.<field>` references now recognise stable logical metadata before consulting the arbitrary backend payload. This preserves established scalar query spellings such as `raw.title`, `raw.duration` and `raw.views` while allowing those expressions to be satisfied by the normal registered record representation.
-
-The mapping is deliberately narrow. Only a single raw path component that resolves to a known stable scalar field or alias is redirected. Stable collections are not redirected because their existing raw structured and indexing semantics are not interchangeable with the logical collection contract. Nested paths such as `raw.extra.score`, provider-shaped structured values and other genuinely dynamic raw material retain the legacy dynamic schema and evaluator path for this compatibility stage.
-
-Acquisition planning applies the same distinction. Stable raw spellings are planned as their canonical logical field and therefore no longer force the open-ended `dynamic-raw` stage. Genuinely dynamic raw paths continue to require that stage.
-
-No provider-specific namespace syntax is introduced. The remaining dynamic raw surface demonstrates a compatibility requirement, but does not by itself establish that a new provider namespace is the correct long-term language design.
-
-## Runtime persistence boundary
-
-Cache v4 no longer treats a complete arbitrary backend response as registered metadata. Detailed-cache writes persist recognised scalar values through the provider registry and separately persist only the unresolved compatibility remainder required by the still-supported dynamic `raw.*` surface.
-
-The compatibility remainder is source-scoped because the accepted v3 contract permits the same media identity to have source-specific detailed observations. Registered scalar provider metadata remains entity-scoped. Keeping those identities distinct prevents a value acquired through one source from being substituted into another source's legacy cache row.
-
-The legacy v3 `metadata_records.raw_json` column remains unchanged during this compatibility period. It is explicitly a v3 boundary, not a v4 storage primitive. Removing or rewriting it inside #130 would break the accepted v3 migration oracle and source-scoped cache contract before the wider v3 runtime retirement is ready. The v4 representation therefore proves the intended cut-over shape without falsifying or silently mutating the legacy contract.
-
-Stable collections remain in the reduced compatibility payload because they do not yet have first-class v4 collection storage. Genuinely dynamic nested material remains there because `raw.*` is still accepted yt-sql surface. Registered scalar values and internal `_yt_sql_` provenance keys are not duplicated into that payload.
-
-The remaining dynamic surface is represented explicitly as compatibility state rather than being mistaken for registered metadata or silently discarded.
+Any future proposal for provider-specific or otherwise dynamic metadata should start from a demonstrated query use case and define its type, acquisition, freshness, persistence and migration semantics explicitly. It should not restore arbitrary backend-response access as an escape hatch.

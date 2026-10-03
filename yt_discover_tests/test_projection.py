@@ -63,7 +63,7 @@ def test_select_star_expands_deterministically() -> None:
             "zeta": 9,
             "alpha": "A",
             "dynamic_collection": ["x", "y"],
-            "_raw": {"secret": "raw"},
+            "_internal": {"secret": "hidden"},
         }
     ]
     query = resolve("SELECT * FROM @channel", records)

@@ -162,28 +162,6 @@ def _anchor_records(seed: int) -> list[dict[str, object]]:
                         {"format_id": f"high-{index}", "height": None if index % 6 == 0 else 720, "width": 1280},
                     ]
                 ),
-                "fixture_raw": {
-                    "sequence": None if index % 11 == 0 else [f"raw-{index}-b", f"raw-{index}-a"],
-                    "record": None
-                    if index % 13 == 0
-                    else {
-                        "provider_id": f"provider-{index % 4}",
-                        "label": None if index % 7 == 0 else f"record-{index}",
-                        "dimensions": {
-                            "width": 640 + (index % 4) * 320,
-                            **({} if index % 6 == 0 else {"height": 360 + (index % 3) * 180}),
-                        },
-                    },
-                    "records": None
-                    if index % 17 == 0
-                    else [
-                        {"provider_id": f"provider-{index % 4}-a", "height": 360},
-                        {
-                            "provider_id": f"provider-{index % 4}-b",
-                            **({} if index % 8 == 0 else {"height": 720}),
-                        },
-                    ],
-                },
             }
         )
     return rows
@@ -281,28 +259,6 @@ def _generated_record(index: int, rng: random.Random) -> dict[str, object]:
                 {"format_id": f"high-{index}", "height": None if index % 67 == 0 else 720, "width": 1280},
             ]
         ),
-        "fixture_raw": {
-            "sequence": None if index % 31 == 0 else [f"raw-{index}-b", f"raw-{index}-a"],
-            "record": None
-            if index % 37 == 0
-            else {
-                "provider_id": f"provider-{index % 11}",
-                "label": None if index % 41 == 0 else f"record-{index}",
-                "dimensions": {
-                    "width": 640 + (index % 5) * 320,
-                    **({} if index % 43 == 0 else {"height": 360 + (index % 4) * 180}),
-                },
-            },
-            "records": None
-            if index % 47 == 0
-            else [
-                {"provider_id": f"provider-{index % 11}-a", "height": 360},
-                {
-                    "provider_id": f"provider-{index % 11}-b",
-                    **({} if index % 53 == 0 else {"height": 720}),
-                },
-            ],
-        },
     }
 
 

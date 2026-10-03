@@ -69,7 +69,7 @@ Examples:
   Bind reusable typed values without editing the query text:
     yt-discover.py --param start=2026-08-01 --param maximum=1h "SELECT id FROM @example WHERE upload_date >= :start AND duration < :maximum"
 
-  Index stable logical collections such as tags, or provider-specific ordered raw arrays:
+  Index stable logical collections such as tags:
     yt-discover.py "SELECT id, tags[0] AS first_tag FROM @example ORDER BY first_tag ASC"
     yt-discover.py --param needle=Astronomy "SELECT id FROM @example WHERE tags[0] = :needle"
 
@@ -198,10 +198,8 @@ Examples:
     date        -> upload_date
     url         -> webpage_url
 
-  Select or filter scalar nested raw yt-dlp data with dotted paths:
-
-  Objects and arrays are intentionally not assigned scalar semantics. Select a
-  scalar child path instead.
+  Arbitrary nested extractor payloads are not a query namespace. Useful metadata
+  must be exposed through a registered field or supported collection contract.
 
   Discover available fields from real metadata:
     yt-discover.py @example --items 1 --fields

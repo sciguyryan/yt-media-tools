@@ -283,7 +283,7 @@ def infer_collection_type(
 
 
 class QuerySchema:
-    """Resolve known, aliased, dynamic, and raw nested metadata fields."""
+    """Resolve known, aliased and observed top-level metadata fields."""
 
     def __init__(self, records: Iterable[dict[str, Any]]) -> None:
         self.records = tuple(records)
@@ -352,7 +352,7 @@ class QuerySchema:
         return self.resolve(name)
 
     def available_fields(self) -> list[FieldInfo]:
-        """Return non-raw fields in deterministic display order."""
+        """Return visible fields in deterministic display order."""
         unique: dict[tuple[str, str | None], FieldInfo] = {}
         for info in self._fields.values():
             unique[(info.name, info.alias_of)] = info

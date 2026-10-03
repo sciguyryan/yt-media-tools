@@ -6,7 +6,7 @@ The oracle is deliberately not an expected v4 database. It does not name v4 tabl
 
 The `facts` object mirrors the meaningful v3 rows in deterministic order. Tests independently read the SQLite fixture and require those facts to agree, so the JSON cannot become a second hand-maintained version of history.
 
-`semantic_classification.established` records distinctions Discover already gives meaning to. `unresolved_raw_compatibility` is different: v3 made nested `raw.*` query-visible, but the same `raw_json` also contains backend material. This oracle keeps that tension visible rather than declaring the whole blob permanent or disposable. The later `raw.*` compatibility work must make that decision with evidence.
+`semantic_classification.established` records distinctions Discover already gives meaning to. `historical_raw_json_boundary` records the resolved pre-release decision for the old JSON representation: v3 made nested `raw.*` query-visible, but issue #142 removed that unused namespace and v4 generic compatibility storage. Migration may reconstruct supported registered scalars and collections from `raw_json`; arbitrary unregistered remainder is deliberately discarded.
 
 `not_recoverable_from_v3` records specialised provider observations that v3 never persisted. A migration cannot reconstruct information that is absent from its source database.
 

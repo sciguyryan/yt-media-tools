@@ -1,9 +1,7 @@
 """Persistent SQLite metadata cache for yt-discover.
 
-The cache stores authoritative yt-dlp JSON per source/video pair. Source completeness
-is tracked separately from record freshness so cached metadata cannot silently stand
-in for a current source listing. D8 will later add a conservative incremental frontier
-on top of these persisted source observations and coverage facts.
+Schema v3 stores source-scoped yt-dlp JSON records. Schema v4 stores registered
+provider metadata and source state against deduplicated media identities.
 """
 
 from __future__ import annotations
@@ -20,7 +18,6 @@ from .cache_entity_store import CacheV4EntityStore
 from .cache_registry_store import CacheV4RegistryStore
 from .cache_v4_ytdlp import (
     YTDLP_PROVIDER,
-    MetadataMigrationAccounting,
     STABLE_COLLECTION_EQUIVALENTS,
     normalise_registered_metadata,
 )
@@ -546,11 +543,11 @@ class MetadataCache:
         entity_video_id: str | None = None,
         commit: bool = True,
         historical_timestamp: str | None = None,
-    ) -> MetadataMigrationAccounting | None:
+    ) -> bool:
         """Normalise one accepted legacy backend record into registered v4 metadata."""
         video_id = entity_video_id if entity_video_id is not None else record.get("id")
         if not isinstance(video_id, str) or not video_id:
-            return None
+            return False
         registry = CacheV4RegistryStore(self._db())
         if commit:
             registry.reconcile((YTDLP_PROVIDER,))
@@ -558,7 +555,7 @@ class MetadataCache:
         if commit:
             store.initialise((YTDLP_PROVIDER,))
         entity = store.get_or_create_entity("youtube", video_id, commit=commit)
-        values, accounting = normalise_registered_metadata(record)
+        values = normalise_registered_metadata(record)
         store.write_provider_metadata(YTDLP_PROVIDER, entity.entity_id, values, commit=commit)
         store.record_acquisition_success(
             YTDLP_PROVIDER,
@@ -609,7 +606,7 @@ class MetadataCache:
         )
         if commit:
             self._db().commit()
-        return accounting
+        return True
 
     def put_many(
         self,

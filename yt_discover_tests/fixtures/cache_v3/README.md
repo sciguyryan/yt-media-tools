@@ -6,7 +6,7 @@ The database is intentionally small, but it is not meant to look tidy. Each awkw
 
 ## What is in it
 
-`https://www.youtube.com/@fixture/videos` is a complete three-entry source. It has an observation, trusted newest-first entries, complete coverage, a frontier and three detailed metadata records. Its metadata includes Unicode, empty collections and strings, false Boolean and numeric values, SQL-relevant JSON `null` values, nested `raw.*` paths and a fake format URL representing backend material that v3 retains inside `raw_json`.
+`https://www.youtube.com/@fixture/videos` is a complete three-entry source. It has an observation, trusted newest-first entries, complete coverage, a frontier and three detailed metadata records. Its metadata includes Unicode, empty collections and strings, false Boolean and numeric values, SQL-relevant JSON `null` values, historical nested backend values and a fake format URL representing baggage that v3 retains inside `raw_json` but v4 does not preserve generically.
 
 `shared-video` also appears under `https://www.youtube.com/@fixture/shorts`. The two detailed rows intentionally disagree on title, duration, view count, nested raw data and acquisition time. That is valid v3: detailed identity is `(source_url, video_id)`, not media identity alone.
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Mapping
 
 from .cache_registry import (
@@ -13,23 +12,6 @@ from .cache_registry import (
     ProviderFieldDefinition,
 )
 from .query_types import QueryType
-
-
-@dataclass(frozen=True)
-class MetadataMigrationAccounting:
-    """Explain how one legacy backend record maps onto registered v4 metadata."""
-
-    registered_fields: tuple[str, ...]
-    stable_equivalent_fields: tuple[str, ...]
-    discarded_backend_fields: tuple[str, ...]
-
-    @property
-    def recognised_count(self) -> int:
-        return len(self.registered_fields) + len(self.stable_equivalent_fields)
-
-    @property
-    def discarded_count(self) -> int:
-        return len(self.discarded_backend_fields)
 
 
 _STABLE_SCALARS: tuple[tuple[str, str, FreshnessPolicy], ...] = (
@@ -83,23 +65,12 @@ YTDLP_PROVIDER = ProviderDefinition(
 
 def normalise_registered_metadata(
     record: Mapping[str, Any],
-) -> tuple[dict[str, object | None], MetadataMigrationAccounting]:
-    """Split one backend record into registered scalar values and migration accounting."""
+) -> dict[str, object | None]:
+    """Extract the registered scalar values represented by one backend record."""
     registered: dict[str, object | None] = {}
     for field in YTDLP_PROVIDER.fields:
         value = record.get(field.name)
         if value is None or isinstance(value, (str, int, float, bool)):
             registered[field.name] = value
 
-    stable_equivalent = tuple(sorted(name for name in STABLE_COLLECTION_EQUIVALENTS if name in record))
-    accounted = set(registered) | set(stable_equivalent)
-    discarded = tuple(
-        sorted(
-            key for key in record if isinstance(key, str) and key not in accounted and not key.startswith("_yt_sql_")
-        )
-    )
-    return registered, MetadataMigrationAccounting(
-        registered_fields=tuple(sorted(registered)),
-        stable_equivalent_fields=stable_equivalent,
-        discarded_backend_fields=discarded,
-    )
+    return registered

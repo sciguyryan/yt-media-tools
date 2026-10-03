@@ -51,8 +51,8 @@ def _rewrite_value(
                 canonical = info.alias_of or info.name
                 return RelationField(qualifier, canonical, value.position, info.kind, binding.identity.key)
 
-            # A dotted identifier can still be an established structured/raw field
-            # path. Diagnose an unknown relation qualifier only when the suffix is a
+            # A dotted identifier can still be an established structured field path.
+            # Diagnose an unknown relation qualifier only when the suffix is a
             # visible row field, making the user's relational intent unambiguous.
             if any(binding.schema.resolve(field_name) is not None for binding in scope.relations):
                 raise QuerySemanticError(source, f"Unknown relation alias {qualifier!r}.", value.position)

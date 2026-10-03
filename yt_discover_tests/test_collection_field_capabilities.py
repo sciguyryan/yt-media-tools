@@ -33,7 +33,7 @@ def test_scalar_taxonomy_collections_use_backend_independent_lexical_order() -> 
 
     assert record["tags"] == ["Beta", "Zulu", "alpha"]
     assert record["categories"] == ["Art", "Education", "Science"]
-    assert record["_raw"]["tags"] == ["Zulu", "alpha", "Beta"]
+    assert "_raw" not in record
 
 
 def test_structured_collection_backend_order_is_not_promoted_to_logical_order() -> None:

@@ -98,7 +98,7 @@ def _verify_entity_metadata(source_row: sqlite3.Row, target: sqlite3.Connection)
     video_id = str(source_row["video_id"])
     fetched_at = str(source_row["fetched_at"])
     record = json.loads(str(source_row["raw_json"]))
-    expected_values, _ = normalise_registered_metadata(record)
+    expected_values = normalise_registered_metadata(record)
     columns = ", ".join(f'm."{field.storage_name}"' for field in YTDLP_PROVIDER.fields)
     row = target.execute(
         f"SELECT {columns} FROM cache_v4_media_entities e "
