@@ -11,6 +11,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Reject missing, duplicate, backwards, overshooting and inconsistent transition wiring before it can silently produce the wrong migration chain.
 - [test] Cover multi-hop planning/execution, incomplete-destination stopping, missing and duplicate hops, invalid versions, inconsistent results and no-op current-schema runs.
 - [docs] Record the implemented coordinator boundary while leaving repairs, phases, events, permanent logs and shared preflight plumbing to the next #132 parts.
+- [feature] Add shared SQLite integrity and disk-space preflight helpers, bounded lazy batches, one structured progress-event stream and append-only permanent migration logging.
+- [feature] Add the transition-owned source validation, historical repair, migration phase, target validation and destination-finalisation workflow.
+- [feature] Integrate the workflow with a real side-by-side v3-to-v4 transition that rebuilds v4 from the frozen v3 contract rather than trusting transitional bridge state.
+- [maintenance] Keep the source database read-only and withhold the v4 schema/completion markers until target validation has succeeded.
+- [maintenance] Preserve the live schema-v3 runtime and existing v4 compatibility mirroring until later startup/cut-over work selects v4 for ordinary use.
+- [test] Cover migration logging/finalisation, workflow failures and interruption, the production v3 validity contract, canonical v3-to-v4 migration and source immutability.
+- [docs] Reconcile the cache-v4 migration design with the implemented common workflow and real v3-to-v4 transition.
 
 ### Cache v4 entity and acquisition storage
 

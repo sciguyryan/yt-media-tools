@@ -150,3 +150,23 @@ def test_interruption_during_phase_is_logged_and_propagated(tmp_path: Path) -> N
     records = [json.loads(line) for line in (tmp_path / "migration.jsonl").read_text().splitlines()]
     assert records[-1]["status"] == "interrupted"
     assert calls == ["source", "phase"]
+
+
+def test_destination_finalisation_failure_cannot_produce_complete_result(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    def fail(context: MigrationContext) -> None:
+        calls.append("finalise")
+        raise RuntimeError("marker write failed")
+
+    workflow = MigrationWorkflow.create(
+        validate_source=lambda context: calls.append("source"),
+        validate_target=lambda context: calls.append("target"),
+        finalise_destination=fail,
+    )
+    with pytest.raises(MigrationWorkflowFailure, match="destination finalisation"):
+        _run_logged(tmp_path, workflow)
+    records = [json.loads(line) for line in (tmp_path / "migration.jsonl").read_text().splitlines()]
+    assert calls == ["source", "target", "finalise"]
+    assert records[-1]["status"] == "failed"
+    assert "destination_state" not in records[-1]

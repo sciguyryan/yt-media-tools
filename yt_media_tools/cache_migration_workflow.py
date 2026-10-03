@@ -54,6 +54,7 @@ class MigrationWorkflow:
     repairs: tuple[MigrationRepair, ...]
     phases: tuple[MigrationPhase, ...]
     validate_target: ValidationCheck
+    finalise_destination: ValidationCheck
 
     @classmethod
     def create(
@@ -63,12 +64,14 @@ class MigrationWorkflow:
         repairs: Iterable[MigrationRepair] = (),
         phases: Iterable[MigrationPhase] = (),
         validate_target: ValidationCheck,
+        finalise_destination: ValidationCheck = lambda context: None,
     ) -> "MigrationWorkflow":
         return cls(
             validate_source=validate_source,
             repairs=tuple(repairs),
             phases=tuple(phases),
             validate_target=validate_target,
+            finalise_destination=finalise_destination,
         )
 
 
@@ -161,6 +164,12 @@ def run_migration_workflow(
         events,
         stage="target validation",
         action=lambda: workflow.validate_target(context),
+    )
+    _run_stage(
+        context,
+        events,
+        stage="destination finalisation",
+        action=lambda: workflow.finalise_destination(context),
     )
     return MigrationTransitionResult(
         source_version=context.source_version,

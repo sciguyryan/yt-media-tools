@@ -202,7 +202,7 @@ That coordinator boundary now exists. A registered transition says which schema 
 
 The result contract is intentionally small as well. A transition reports its source and target versions, destination path, explicit complete/incomplete destination state and an optional message. The coordinator checks that the returned versions and path agree with the hop it actually asked for. That catches a surprisingly dangerous class of wiring mistakes without making the coordinator understand migration internals.
 
-A transition roughly does this: validate the source; detect/apply its known pre-transition fixes to controlled migration state; run its phases; validate the target; return a successful database only at the end. Fixes should be independently testable, including already-fixed and unfixable cases. The shared workflow for those steps comes next; Part 1 deliberately does not invent phase, repair, progress or logging abstractions before the v3-to-v4 transition has exercised them.
+A transition roughly does this: validate the source; detect/apply its known pre-transition fixes to controlled migration state; run its phases; validate the target; return a successful database only at the end. Fixes should be independently testable, including already-fixed and unfixable cases. The shared workflow now represents those steps directly, but the transition still owns their meaning. The real v3-to-v4 integration also exposed one necessary final boundary: target validation runs before destination finalisation, so a database is not marked complete merely because its transformation phases finished.
 
 ### Keep v3 untouched
 
@@ -280,7 +280,7 @@ Non-interactive authorisation remains a startup/CLI policy decision. A script ca
 
 The field/type inventory, v3 validity contract and historical fixture/oracle, provider registry, v4 entity metadata, source/facet persistence, registered scalar replacement and reduced `raw.*` compatibility representation are now implemented foundations.
 
-Remaining cache-v4 work belongs to later maintenance, migration and startup/cut-over issues. That includes first-class storage for stable collections where required, cache maintenance and pruning surfaces, migration execution and verification policy, cache selection/startup behaviour, and realistic migration/retention benchmarking. The accepted v3 contract remains the migration source oracle until that wider cut-over is complete.
+Remaining cache-v4 work belongs to later startup/cut-over and follow-on issues. That includes first-class storage for stable collections where required, cache selection/startup behaviour, user-facing migration policy, cut-over/old-cache cleanup and realistic migration/retention benchmarking. The common migration workflow and the durable v3-to-v4 transformation now exist, but normal Discover startup does not invoke that transition yet. The accepted v3 contract remains the migration source oracle until that wider cut-over is complete.
 
 ### Transitional source-state integration
 
@@ -294,7 +294,7 @@ The migration coordinator remains deliberately ignorant of transition internals.
 
 Progress and permanent logging use the same event object. A transition can emit an event once and attach terminal or other consumers alongside the permanent log sink, rather than maintaining a second account of migration progress. Each logged run is finalised as complete, incomplete, failed or interrupted. Exceptions and `KeyboardInterrupt` still propagate after the final record has been written.
 
-The disk-space helper reports available space against a requirement supplied by the transition. It does not decide how much space a migration ought to require. Likewise, the integrity helper exposes SQLite's result without deciding which transition phase should run it. Validation, historical repairs and migration phases remain transition-owned work for the next part of #132.
+The disk-space helper reports available space against a requirement supplied by the transition. It does not decide how much space a migration ought to require. Likewise, the integrity helper exposes SQLite's result without deciding which transition phase should run it. Validation, historical repairs and migration phases remain transition-owned rather than becoming coordinator policy.
 
 ### Transition-owned migration workflow
 
@@ -303,3 +303,15 @@ A schema transition now has a small ordered workflow around its actual transform
 Historical repairs make their state explicit. A repair reports either that it applies or that it has already been applied. Applicable repairs run before migration phases; already-applied repairs are recorded through the ordinary event stream and skipped. A failed applicability check or repair stops the transition rather than allowing later phases to guess what state the source is in.
 
 Completion is deliberately late. The workflow does not create a complete transition result until target validation has succeeded. Source-validation failure, repair failure, phase failure, target-validation failure and interruption therefore cannot leave a result that the coordinator could mistake for a usable next-hop source. The shared migration log still finalises those runs as failed or interrupted, while the underlying exception or interruption remains visible to the caller.
+
+### The real v3-to-v4 transition
+
+The common workflow is now exercised by a real side-by-side v3-to-v4 transition rather than only synthetic test hops. The transition opens the v3 source read-only, checks SQLite integrity and the frozen v3 structural boundary, then uses SQLite backup to create a separate destination. All transformation work happens against that destination.
+
+Current v3 databases can already contain transitional `cache_v4_*` tables because #128-#130 mirror new writes and source state while the runtime still uses schema v3. Those tables are useful compatibility scaffolding, but they are not authoritative migration input. The durable transition therefore discards copied transitional v4 tables and rebuilds the target from the v3 facts. That avoids allowing the age or completeness of bridge material to change the result of a later migration.
+
+Detailed records are replayed in acquisition-time order into the registered yt-dlp provider representation. This matters when the same media identity exists under several v3 source URLs: v3 stores those records separately, while v4 provider metadata is entity-scoped. Processing older acquisitions before newer ones preserves the newest provider observation without violating acquisition chronology, while the source-scoped compatibility remainder is still retained for each legacy `(source_url, video_id)` record. Equal timestamps use source URL and video ID as deterministic tie-breakers.
+
+The source-state bridge then imports observations, membership, coverage and frontiers into v4 entity identity without strengthening their meaning. Once the v4 representation has been built, the destination drops the copied legacy runtime tables. Structural validation checks SQLite integrity, required v4 tables and the explicit incomplete marker. Only after that validation succeeds does destination finalisation write schema version 4 and change the migration marker to `complete`.
+
+This does not switch normal Discover startup to v4. `MetadataCache` deliberately remains the schema-v3 runtime during the compatibility programme, and its existing v4 mirroring remains in place. Startup selection, user-facing migration policy, cut-over and old-cache cleanup are separate work; #132 supplies the durable transition and the common machinery those later steps can invoke.

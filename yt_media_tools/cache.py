@@ -406,9 +406,10 @@ class MetadataCache:
         record: dict[str, Any],
         *,
         acquired_at: datetime,
+        entity_video_id: str | None = None,
     ) -> RawMigrationAccounting | None:
         """Normalise one accepted legacy backend record into registered v4 metadata."""
-        video_id = record.get("id")
+        video_id = entity_video_id if entity_video_id is not None else record.get("id")
         if not isinstance(video_id, str) or not video_id:
             return None
         registry = CacheV4RegistryStore(self._db())
