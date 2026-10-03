@@ -25,3 +25,9 @@ SHA-256: `d0d28d5c1f57d2b75026608999cfd398a4abd7e825cbac078ec86529c1012ae5`
 ## Semantic migration oracle
 
 `canonical-valid-v3.oracle.json` records the fixture's source-side semantic facts without specifying a cache-v4 storage layout. `ORACLE.md` explains the boundary. The oracle is checked independently against this SQLite database so later migration work can rely on it without turning a proposed v4 representation into historical v3 truth.
+
+## Permanent v4 migration expectation
+
+`canonical-valid-v4-expected.json` is an independently authored semantic expectation for the v3-to-v4 transition. It deliberately describes stable identities and values rather than copying SQLite surrogate IDs or serialising the migration implementation's output. The historical migration suite compares the migrated database with this expectation so implementation and oracle cannot silently share the same transformation logic.
+
+The permanent suite also mutates copies of the accepted v3 fixture into states the frozen v3 contract rejects, exercises interruption and restart-only behaviour after destination work has occurred, and audits the permanent JSON Lines migration log for historical payload material and representative sensitive values. These cases are regression evidence for the historical transition and should remain after v4 becomes the ordinary runtime schema.

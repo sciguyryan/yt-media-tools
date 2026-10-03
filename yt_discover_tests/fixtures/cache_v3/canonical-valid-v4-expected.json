@@ -1,0 +1,126 @@
+{
+  "compatibility_payloads": {
+    "https://example.invalid/partial|partial-1": {},
+    "https://example.invalid/partial|partial-2": {},
+    "https://www.youtube.com/@fixture/shorts|shared-video": {
+      "extra": {
+        "score": 7
+      }
+    },
+    "https://www.youtube.com/@fixture/videos|null-fields": {
+      "extra": {
+        "nested": {
+          "value": null
+        }
+      }
+    },
+    "https://www.youtube.com/@fixture/videos|shared-video": {
+      "description": "Café 東京",
+      "extra": {
+        "note": null,
+        "score": 0
+      },
+      "formats": [
+        {
+          "format_id": "fixture",
+          "url": "https://example.invalid/signed?token=discard-me"
+        }
+      ]
+    },
+    "https://www.youtube.com/@fixture/videos|unicode-雪": {
+      "extra": {
+        "empty": "",
+        "enabled": false
+      },
+      "tags": []
+    }
+  },
+  "entities": [
+    "null-fields",
+    "partial-1",
+    "partial-2",
+    "shared-video",
+    "unicode-雪"
+  ],
+  "latest_acquisition_times": {
+    "null-fields": "2025-06-07T08:09:10+00:00",
+    "partial-1": "2024-01-02T03:04:05+00:00",
+    "partial-2": "2026-08-09T10:11:12+00:00",
+    "shared-video": "2026-02-03T04:05:06+00:00",
+    "unicode-雪": "2025-06-07T08:09:10+00:00"
+  },
+  "latest_registered_metadata": {
+    "null-fields": {
+      "comment_count": null,
+      "id": "null-fields",
+      "title": null,
+      "webpage_url": "https://example.invalid/watch?v=null-fields"
+    },
+    "partial-1": {
+      "id": "partial-1",
+      "title": "First"
+    },
+    "partial-2": {
+      "id": "partial-2",
+      "title": "Second",
+      "view_count": 0
+    },
+    "shared-video": {
+      "duration": 12,
+      "id": "shared-video",
+      "title": "Shared from shorts",
+      "view_count": 99
+    },
+    "unicode-雪": {
+      "id": "unicode-雪",
+      "is_live": false,
+      "title": "雪と星",
+      "uploader": "Δοκιμή"
+    }
+  },
+  "oracle_version": 1,
+  "purpose": "Independently authored semantic expectations for the certified v3-to-v4 migration. Surrogate SQLite IDs are intentionally excluded.",
+  "source_coverage": {
+    "https://example.invalid/partial": {
+      "cached_entries": 1,
+      "complete": false,
+      "observed_entries": 4,
+      "reason": "bounded fixture acquisition"
+    },
+    "https://www.youtube.com/@fixture/shorts": {
+      "cached_entries": 1,
+      "complete": true,
+      "observed_entries": 1,
+      "reason": "fixture shorts view"
+    },
+    "https://www.youtube.com/@fixture/videos": {
+      "cached_entries": 3,
+      "complete": true,
+      "observed_entries": 3,
+      "reason": "fixture complete view"
+    }
+  },
+  "source_entries": {
+    "https://www.youtube.com/@fixture/shorts": [
+      "shared-video"
+    ],
+    "https://www.youtube.com/@fixture/videos": [
+      "shared-video",
+      "unicode-雪",
+      "null-fields"
+    ]
+  },
+  "source_fixture": "canonical-valid-v3.sqlite3",
+  "source_frontiers": {
+    "https://www.youtube.com/@fixture/shorts": {
+      "head_video_id": "shared-video",
+      "known_entries": 1,
+      "overlap_confirmations": 0
+    },
+    "https://www.youtube.com/@fixture/videos": {
+      "head_video_id": "shared-video",
+      "known_entries": 3,
+      "overlap_confirmations": 2
+    }
+  }
+}
