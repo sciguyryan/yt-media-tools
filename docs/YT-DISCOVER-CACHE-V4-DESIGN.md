@@ -274,7 +274,7 @@ Migration happens before partial query/acquisition work. Discover remembers the 
 
 For an interactive run, show the migration policy before the expensive part. The defaults we discussed are to remove the old database after a fully verified successful cut-over and not to retain a failed transition database. The permanent migration log stays either way.
 
-Non-interactive authorisation remains a startup/CLI policy decision. A script cannot hang on a prompt, so the migration surface must either have documented non-interactive defaults or require explicit authorisation. This document deliberately does not invent that CLI policy.
+Startup authorisation is now explicit. Interactive startup requires an affirmative confirmation before a supported mandatory migration begins. Non-interactive startup never reads from standard input and automatically authorises the supported mandatory migration under the documented default policy. Corrupt, incomplete, mismatched or otherwise blocked candidates are not authorisation questions and remain fatal startup conditions.
 
 ## Current implementation boundary
 
@@ -353,3 +353,13 @@ Discovery and active-cache selection are separate concepts. Discovery reports re
 The newest recognised candidate controls resolution. If `metadata-v4.sqlite3` exists but is corrupt, incomplete, structurally invalid or internally reports another schema version, startup must report that problem rather than silently falling back to `metadata.sqlite3`. Likewise, an invalid recognised historical cache blocks fresh-cache creation because historical state still requires explicit handling. A fresh v4 cache is appropriate only when no recognised candidate exists.
 
 Discovery is deliberately read-only. Migration execution, interactive or non-interactive authorisation, clean-up policy, active runtime opening and terminal presentation are separate startup responsibilities built on the discovery result.
+
+### Startup migration authorisation policy
+
+Cache discovery and migration authorisation remain separate stages. A complete current cache is immediately eligible for ordinary work, while a valid historical cache produces a migration requirement that must be resolved before cache-backed query or acquisition work begins. The authorisation decision itself does not execute migration, perform cut-over, delete either database or render migration progress.
+
+Interactive startup is defined conservatively: both the input stream and the stream carrying the prompt must be terminals. In that case Discover explains the historical source, required schema transition and separate verified destination, then requires an explicit affirmative `y` or `yes`. Empty input, end-of-file and every other answer decline migration. A declined migration does not permit ordinary work to continue against the historical cache.
+
+Non-interactive startup never prompts or reads standard input. A supported mandatory migration is automatically authorised under the documented default policy so existing scripts do not hang or acquire a new mandatory confirmation flag merely because a host first encounters the v4 transition. Automatic authorisation changes only whether the supported migration may begin; it does not weaken discovery, integrity, disk-space, certification or cut-over safety checks.
+
+A blocked discovery result is never converted into a migration prompt. Corrupt, incomplete, structurally invalid and version-mismatched recognised candidates remain blocked, preserving the rule that authorisation cannot turn an unsafe candidate into an eligible cache.
