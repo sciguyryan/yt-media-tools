@@ -66,9 +66,7 @@ class _LarkModelBuilder:
         return self.source[node.meta.start_pos : node.meta.end_pos]
 
     def _trees(self, node, name: str | None = None):
-        return [
-            child for child in node.children if isinstance(child, self.Tree) and (name is None or child.data == name)
-        ]
+        return [child for child in node.children if isinstance(child, self.Tree) and (name is None or child.data == name)]
 
     def _first(self, node, name: str):
         for child in node.children:
@@ -88,18 +86,9 @@ class _LarkModelBuilder:
         expression = self._first(root, "query_expression")
         if expression is None:
             raise QuerySyntaxError(self.source, "Unsupported experimental query shape.", 0)
-        primary = next(
-            (
-                c
-                for c in expression.children
-                if isinstance(c, self.Tree) and c.data in {"select_query", "predicate_only_query"}
-            ),
-            None,
-        )
+        primary = next((c for c in expression.children if isinstance(c, self.Tree) and c.data in {"select_query", "predicate_only_query"}), None)
         if primary is None:
-            raise QuerySyntaxError(
-                self.source, "Grouped and compound queries are not yet modelled by the prototype.", 0
-            )
+            raise QuerySyntaxError(self.source, "Grouped and compound queries are not yet modelled by the prototype.", 0)
         if primary.data == "predicate_only_query":
             predicate_tree = next(c for c in primary.children if isinstance(c, self.Tree))
             query = Query(predicate=self.boolean(predicate_tree), source=self.source)
@@ -122,9 +111,9 @@ class _LarkModelBuilder:
         select_clause = self._first(node, "select_clause")
         from_clause = self._first(node, "from_clause")
         where_clause = self._first(node, "where_clause")
-        select = (
-            tuple(self.select_term(term) for term in self._trees(select_clause, "select_term")) if select_clause else ()
-        )
+        group_clause = self._first(node, "group_by_clause")
+        having_clause = self._first(node, "having_clause")
+        select = tuple(self.select_term(term) for term in self._trees(select_clause, "select_term")) if select_clause else ()
         distinct = bool(select_clause and self._slice(select_clause).lstrip().upper().startswith("SELECT DISTINCT"))
         from_source = from_facet = from_alias = None
         if from_clause:
@@ -133,21 +122,13 @@ class _LarkModelBuilder:
                 from_source, facets, from_alias = self.relation_reference(relation)
                 from_facet = facets[0] if facets else None
                 if len(facets) > 1:
-                    raise QuerySyntaxError(
-                        self.source, "Facet expansion is not yet modelled by the prototype.", relation.meta.start_pos
-                    )
+                    raise QuerySyntaxError(self.source, "Facet expansion is not yet modelled by the prototype.", relation.meta.start_pos)
         predicate = None
         if where_clause:
             predicate = self.boolean(next(c for c in where_clause.children if isinstance(c, self.Tree)))
-        return Query(
-            predicate=predicate,
-            source=self.source,
-            select=select,
-            from_source=from_source,
-            distinct=distinct,
-            from_facet=from_facet,
-            from_alias=from_alias,
-        )
+        group_by = tuple(self.scalar(child) for child in (group_clause.children if group_clause else ()))
+        having = self.having(self._trees(having_clause)[0]) if having_clause else None
+        return Query(predicate=predicate, source=self.source, select=select, from_source=from_source, distinct=distinct, from_facet=from_facet, from_alias=from_alias, group_by=group_by, having=having)
 
     def relation_reference(self, node):
         trees = self._trees(node)
@@ -157,7 +138,6 @@ class _LarkModelBuilder:
         alias = None
         text = self._slice(node)
         import re
-
         match = re.search(r"\bAS\s+(`(?:``|[^`])+`|[^\s,]+)\s*$", text, re.IGNORECASE)
         if match:
             alias = match.group(1).replace("``", "`").strip("`")
@@ -171,7 +151,6 @@ class _LarkModelBuilder:
         expr = self.scalar(expr_node)
         text = self._slice(node)
         import re
-
         match = re.search(r"\s+AS\s+(`(?:``|[^`])+`|[^\s]+)\s*$", text, re.IGNORECASE)
         alias = match.group(1).replace("``", "`").strip("`") if match else None
         return SelectTerm(format_scalar_expression(expr), alias, self._node_start(expr_node), expression=expr)
@@ -182,15 +161,10 @@ class _LarkModelBuilder:
 
         expr_node = next(c for c in node.children if isinstance(c, self.Tree) or hasattr(c, "value"))
         expr = self.scalar(expr_node)
-        return OrderTerm(
-            format_scalar_expression(expr),
-            self._slice(node).rstrip().upper().endswith(" DESC"),
-            self._node_start(expr_node),
-            expression=expr,
-        )
+        return OrderTerm(format_scalar_expression(expr), self._slice(node).rstrip().upper().endswith(" DESC"), self._node_start(expr_node), expression=expr)
 
     def scalar(self, node):
-        from .query_model import Field, ScalarBinary, ScalarIndex, ScalarMember, ScalarUnary
+        from .query_model import Field, Literal, ScalarBinary, ScalarIndex, ScalarMember, ScalarUnary
 
         if not isinstance(node, self.Tree):
             token_type = getattr(node, "type", "")
@@ -226,6 +200,10 @@ class _LarkModelBuilder:
                     member = self._token_text(suffix.children[0])
                     value = ScalarMember(value, member, suffix.meta.start_pos)
             return value
+        if data in {"scalar_function", "aggregate_function", "collection_transform"}:
+            return self.function(node)
+        if data == "case_expression":
+            return self.case_expression(node)
         if data in {"NUMBER", "UNIT_LITERAL", "STRING"}:
             return self.literal_token(node)
         if not node.children:
@@ -238,19 +216,93 @@ class _LarkModelBuilder:
             if getattr(token, "type", "") in {"NUMBER", "UNIT_LITERAL", "STRING"}:
                 return self.literal_token(token)
             return Field(str(token).strip("`").replace("``", "`"), getattr(token, "start_pos", node.meta.start_pos))
-        raise QuerySyntaxError(
-            self.source, f"Experimental model construction does not yet support {data}.", node.meta.start_pos
+        raise QuerySyntaxError(self.source, f"Experimental model construction does not yet support {data}.", node.meta.start_pos)
+
+
+    def function(self, node):
+        from .query_model import AggregateFunction, CollectionFilter, CollectionProjection, ScalarFunction
+
+        text = self._slice(node)
+        name = text[: text.index("(")].strip().upper()
+        trees = self._trees(node)
+        if node.data == "collection_transform":
+            collection = self.scalar(trees[0])
+            binding_node = next(child for child in trees[1:] if child.data == "identifier")
+            binding = self._token_text(binding_node.children[0] if binding_node.children else binding_node)
+            body = trees[-1]
+            if name == "FILTER":
+                return CollectionFilter(collection, binding, self.boolean(body), node.meta.start_pos)
+            return CollectionProjection(collection, binding, self.scalar(body), node.meta.start_pos)
+        if node.data == "aggregate_function":
+            count_star = name == "COUNT" and "*" in text[text.index("(") + 1 : text.rfind(")")]
+            args = tuple(self.scalar(child) for child in trees if child.data not in {"aggregate_name", "aggregate_filter"})
+            filter_node = self._first(node, "aggregate_filter")
+            filter_predicate = self.boolean(self._trees(filter_node)[0]) if filter_node else None
+            return AggregateFunction(name, args, count_star, filter_predicate, node.meta.start_pos)
+        args = tuple(
+            self.scalar(child)
+            for child in node.children
+            if not (isinstance(child, self.Tree) and child.data in {"unary_scalar_function", "multi_scalar_function"})
         )
+        return ScalarFunction(name, args, node.meta.start_pos)
+
+    def case_expression(self, node):
+        from .query_model import CaseWhen, ScalarCase
+
+        whens = []
+        else_result = None
+        for child in self._trees(node):
+            if child.data == "case_when":
+                parts = [part for part in child.children if isinstance(part, self.Tree) or hasattr(part, "value")]
+                whens.append(CaseWhen(self.boolean(parts[0]), self.scalar(parts[1]), child.meta.start_pos))
+            else:
+                else_result = self.scalar(child)
+        if node.children and not isinstance(node.children[-1], self.Tree):
+            else_result = self.scalar(node.children[-1])
+        return ScalarCase(tuple(whens), else_result, node.meta.start_pos)
+
+
+    def having(self, node):
+        from .query_model import Binary, ScalarComparison, ScalarIsNull
+
+        if node.data in {"having_expression", "having_and"}:
+            children = self._trees(node)
+            value = self.having(children[0])
+            operator = "OR" if node.data == "having_expression" else "AND"
+            for child in children[1:]:
+                value = Binary(operator, value, self.having(child))
+            return value
+        if node.data == "having_not":
+            child = self._trees(node)[0]
+            value = self.having(child)
+            if self._slice(node).lstrip().upper().startswith("NOT "):
+                from .query_model import Unary
+                return Unary("NOT", value)
+            return value
+        if node.data == "having_predicate":
+            values = [child for child in node.children if isinstance(child, self.Tree) or hasattr(child, "value")]
+            left = self.scalar(values[0])
+            text = self._slice(node).upper()
+            if "IS NOT NULL" in text:
+                return ScalarIsNull(left, True)
+            if "IS NULL" in text:
+                return ScalarIsNull(left, False)
+            right = self.scalar(values[-1])
+            import re
+            match = re.search(r"<=|>=|!=|<>|=|<|>", self._slice(node))
+            if not match:
+                raise QuerySyntaxError(self.source, "Unsupported experimental HAVING predicate.", node.meta.start_pos)
+            return ScalarComparison(match.group(0), left, right)
+        return self.boolean(node)
 
     def boolean(self, node):
-        from .query_model import Binary, IsNull
+        from .query_model import Between, Binary, InList, IsNull, TextPredicate
 
         if node.data == "boolean_not":
             child = next(c for c in node.children if isinstance(c, self.Tree))
             value = self.boolean(child)
             if self._slice(node).lstrip().upper().startswith("NOT "):
                 from .query_model import Unary
-
                 return Unary("NOT", value)
             return value
         if node.data in {"boolean_expression", "boolean_and"}:
@@ -269,21 +321,34 @@ class _LarkModelBuilder:
                 return IsNull(left, True)
             if "IS NULL" in upper:
                 return IsNull(left, False)
-            right_node = next(
-                (c for c in reversed(suffix.children) if isinstance(c, self.Tree) or hasattr(c, "value")), None
-            )
-            right = self.scalar(right_node)
+            values = [c for c in suffix.children if isinstance(c, self.Tree) or hasattr(c, "value")]
+            if "BETWEEN" in upper:
+                return Between(left, self.predicate_literal(values[-2]), self.predicate_literal(values[-1]), "NOT BETWEEN" in upper)
+            if " IN" in f" {upper}":
+                return InList(left, tuple(self.predicate_literal(value) for value in values), "NOT IN" in upper)
+            for spelling, canonical in (("CONTAINS", "CONTAINS"), ("CONTAIN", "CONTAINS"), ("MATCHES", "MATCHES"), ("MATCH", "MATCHES"), ("ILIKE", "ILIKE"), ("LIKE", "LIKE")):
+                if spelling in upper:
+                    return TextPredicate(canonical, left, self.scalar(values[-1]), "NOT" in upper or upper.startswith("DOES"))
+            right_node = values[-1]
+            right = self.predicate_literal(right_node)
             import re
-
             match = re.search(r"<=|>=|!=|<>|=|<|>", text)
             if not match:
                 raise QuerySyntaxError(self.source, "Unsupported experimental predicate.", suffix.meta.start_pos)
             return Binary(match.group(0), left, right)
         if node.data == "boolean_primary":
             return self.boolean(next(c for c in node.children if isinstance(c, self.Tree)))
-        raise QuerySyntaxError(
-            self.source, f"Experimental Boolean construction does not yet support {node.data}.", node.meta.start_pos
-        )
+        raise QuerySyntaxError(self.source, f"Experimental Boolean construction does not yet support {node.data}.", node.meta.start_pos)
+
+
+    def predicate_literal(self, node):
+        """Build legacy predicate literals, whose unquoted values remain textual."""
+        from .query_model import Literal
+
+        value = self.scalar(node)
+        if isinstance(value, Literal) and not value.quoted:
+            return Literal(value.raw, value.raw, value.position, False)
+        return value
 
     def literal_token(self, token):
         return self.literal_text(str(token), getattr(token, "start_pos", 0))
@@ -291,7 +356,6 @@ class _LarkModelBuilder:
     def literal_text(self, text: str, position: int):
         from .query_model import Literal
         import re
-
         raw = text
         if text.startswith(("'", '"')):
             quote = text[0]

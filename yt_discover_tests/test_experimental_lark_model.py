@@ -19,6 +19,12 @@ from yt_media_tools.query_parser import parse_query
         "duration < 1h AND title IS NOT NULL",
         "SELECT DISTINCT id FROM @fixture ORDER BY id DESC LIMIT 5 OFFSET 1",
         "SELECT 0xff + 0b10 + 0o7 FROM @fixture",
+        "SELECT LOWER(title), COALESCE(title, 'untitled') FROM @fixture",
+        "SELECT CASE WHEN duration > 10 THEN 'long' ELSE 'short' END AS bucket FROM @fixture",
+        "FROM @fixture WHERE duration BETWEEN 10 AND 20",
+        "FROM @fixture WHERE id IN (1, 2, 3)",
+        "FROM @fixture WHERE title ILIKE 'demo%'",
+        "SELECT uploader_id, COUNT(*) AS n FROM @fixture GROUP BY uploader_id HAVING COUNT(*) > 1",
     ),
 )
 def test_lark_model_matches_reference_parser_for_initial_model_slice(source: str) -> None:
