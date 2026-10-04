@@ -18,8 +18,11 @@ union-operator        = "UNION", [ "ALL" ] ;
 with-clause           = "WITH", cte, { ",", cte } ;
 cte                   = identifier, "AS", "(", query-expression, ")" ;
 
-select-query          = [ select-clause ], [ from-clause ], [ where-clause ],
-                        [ group-by-clause ], [ having-clause ] ;
+select-query          = select-clause, [ from-clause ], [ where-clause ], [ group-by-clause ], [ having-clause ]
+                      | from-clause, [ where-clause ], [ group-by-clause ], [ having-clause ]
+                      | where-clause, [ group-by-clause ], [ having-clause ]
+                      | group-by-clause, [ having-clause ]
+                      | having-clause ;
 select-clause         = "SELECT", [ "DISTINCT" ], select-term, { ",", select-term } ;
 select-term           = relation-wildcard | scalar-expression, [ "AS", identifier ] ;
 relation-wildcard     = identifier, ".", "*" ;
@@ -119,11 +122,11 @@ aggregate-filter      = "FILTER", "(", "WHERE", boolean-expression, ")" ;
 collection-transform  = "FILTER", "(", scalar-expression, "AS", identifier, "WHERE", boolean-expression, ")"
                       | "MAP", "(", scalar-expression, "AS", identifier, "SELECT", scalar-expression, ")" ;
 
-scalar-literal        = number | string | "TRUE" | "FALSE" | "NULL" ;
+scalar-literal        = unit-literal | number | string | "TRUE" | "FALSE" | "NULL" ;
 literal-value         = scalar-literal | identifier | literal-sequence ;
 text-value            = string | identifier | number | date-token | datetime-token | time-token | temporal-token ;
 literal-sequence      = literal-piece, { literal-piece } ;
-literal-piece         = identifier | number | date-token | datetime-token | time-token | temporal-token | "+" | "-" | "*" | "/" | "%" ;
+literal-piece         = identifier | unit-literal | number | date-token | datetime-token | time-token | temporal-token | "+" | "-" | "*" | "/" | "%" ;
 
 (* Lexical rules. Unicode XID_Start/XID_Continue use the Unicode properties
  * provided by the implementation language, without Unicode normalisation. *)
@@ -132,6 +135,9 @@ ordinary-identifier   = xid-start, { xid-continue | "-" }, { ".", xid-start, { x
 quoted-identifier     = "`", quoted-identifier-character, { quoted-identifier-character }, "`" ;
 at-identifier         = "@", ascii-source-character, { ascii-source-character } ;
 
+unit-literal          = decimal-digits, [ ".", decimal-digits ], unit-name,
+                        { decimal-digits, [ ".", decimal-digits ], unit-name } ;
+unit-name             = xid-start, { xid-continue | "-" } ;
 number                = decimal-number | hexadecimal-integer | octal-integer | binary-integer ;
 decimal-number        = decimal-digits, [ ".", decimal-digits ], [ magnitude-suffix ] ;
 magnitude-suffix      = "k" | "K" | "m" | "M" | "b" | "B" ;

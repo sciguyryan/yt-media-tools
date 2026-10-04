@@ -1,10 +1,7 @@
 // Experimental Lark grammar for yt-sql grammar revision 1.
 // The authoritative language grammar remains docs/YT-SQL-GRAMMAR.ebnf.
 //
-// Two compatibility corrections are deliberately local to this prototype:
-// select_query must contain at least one clause because the accepted parser rejects
-// empty query bodies, and UNIT_LITERAL recognises established literals such as 1h.
-// Both expose revision-1 EBNF defects that must be reconciled before migration.
+// This transcription follows the reconciled revision-1 EBNF.
 
 ?start: query
 query: with_clause? query_expression

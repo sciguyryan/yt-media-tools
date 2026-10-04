@@ -7,6 +7,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 ### Discover 0.31.0 - Cache v4
 
 - [experimental] Begin the declarative-parser investigation with an isolated Lark grammar recogniser and deterministic corpus coverage; the transcription exposes revision-1 EBNF mismatches around empty query bodies and established unit literals that must be reconciled before parser migration.
+- [docs] Reconcile grammar revision 1 with established parser behaviour by requiring a non-empty select query and formally representing accepted unit literals without changing yt-sql syntax.
 - [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.
 - [migration] Migrate recognised managed v3 caches side by side into a fresh v4 destination, keep the source read-only, and cut over only after structural and semantic certification succeeds.
 - [migration] Preserve registered scalar metadata, supported collections, source ordering, coverage, frontiers, provenance and timestamp precision while deliberately discarding arbitrary unregistered historical `raw_json` remainder.
