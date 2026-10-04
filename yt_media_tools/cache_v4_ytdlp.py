@@ -46,7 +46,7 @@ STABLE_COLLECTION_EQUIVALENTS = frozenset({"tags", "categories", "formats", "cha
 
 YTDLP_PROVIDER = ProviderDefinition(
     key="yt-dlp",
-    schema_revision=1,
+    schema_revision=2,
     metadata_table="cache_v4_ytdlp_metadata",
     acquisition_groups=(AcquisitionGroupDefinition("detailed"),),
     fields=tuple(

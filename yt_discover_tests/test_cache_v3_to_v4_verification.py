@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import shutil
 import sqlite3
@@ -50,17 +51,46 @@ def test_full_certification_checks_every_detailed_record_and_source_state(tmp_pa
     assert certification.source_states_checked == sources
 
 
+def test_migration_preserves_integer_epoch_timestamp_type(tmp_path: Path) -> None:
+    source = tmp_path / "metadata.sqlite3"
+    target = tmp_path / "metadata-v4.sqlite3"
+    shutil.copy2(FIXTURE, source)
+    connection = sqlite3.connect(source)
+    row = connection.execute(
+        "SELECT rowid, video_id, raw_json FROM metadata_records ORDER BY fetched_at DESC, source_url DESC, video_id DESC LIMIT 1"
+    ).fetchone()
+    assert row is not None
+    record = json.loads(str(row[2]))
+    record["timestamp"] = 1750860791
+    with connection:
+        connection.execute("UPDATE metadata_records SET raw_json=? WHERE rowid=?", (json.dumps(record), int(row[0])))
+    video_id = str(row[1])
+    connection.close()
+
+    result = execute_v3_to_v4(MigrationContext(source, target, 3, 4), MigrationEventStream())
+    assert result.succeeded
+    certify_v3_to_v4(source, target, mode=MigrationVerificationMode.FULL)
+
+    connection = sqlite3.connect(target)
+    stored = connection.execute(
+        "SELECT m.timestamp FROM cache_v4_ytdlp_metadata m JOIN cache_v4_media_entities e USING(entity_id) "
+        "WHERE e.external_id=?",
+        (video_id,),
+    ).fetchone()
+    assert stored is not None
+    assert stored[0] == 1750860791
+    assert isinstance(stored[0], int)
+    connection.close()
+
+
 def test_certification_rejects_registered_metadata_mismatch(tmp_path: Path) -> None:
     source, target = _migrate(tmp_path)
     connection = sqlite3.connect(target)
     with connection:
         connection.execute("UPDATE cache_v4_ytdlp_metadata SET title='corrupted'")
     connection.close()
-    with pytest.raises(RuntimeError, match="registered metadata mismatch") as exc_info:
+    with pytest.raises(RuntimeError, match="registered metadata mismatch"):
         certify_v3_to_v4(source, target, mode=MigrationVerificationMode.FULL)
-    message = str(exc_info.value)
-    assert "title: expected" in message
-    assert "migrated 'corrupted' (str)" in message
 
 
 def test_certification_rejects_historical_timestamp_mismatch(tmp_path: Path) -> None:

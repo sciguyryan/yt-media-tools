@@ -110,17 +110,16 @@ def _verify_entity_metadata(source_row: sqlite3.Row, target: sqlite3.Connection)
         raise RuntimeError(f"v4 is missing registered metadata for media identity {video_id!r}")
     actual_values = tuple(row)
     expected_tuple = tuple(_normalise_expected_value(expected_values[field.name]) for field in YTDLP_PROVIDER.fields)
-    if actual_values != expected_tuple:
-        mismatches = [
-            (field.name, expected, actual)
-            for field, expected, actual in zip(YTDLP_PROVIDER.fields, expected_tuple, actual_values, strict=True)
-            if expected != actual
-        ]
-        details = "; ".join(
-            f"{name}: expected {expected!r} ({type(expected).__name__}), migrated {actual!r} ({type(actual).__name__})"
-            for name, expected, actual in mismatches
-        )
-        raise RuntimeError(f"registered metadata mismatch for media identity {video_id!r}: {details}")
+    differences = []
+    for field, expected, actual in zip(YTDLP_PROVIDER.fields, expected_tuple, actual_values, strict=True):
+        if expected != actual or type(expected) is not type(actual):
+            differences.append(
+                f"{field.name}: expected {expected!r} ({type(expected).__name__}), "
+                f"migrated {actual!r} ({type(actual).__name__})"
+            )
+    if differences:
+        detail = "; ".join(differences)
+        raise RuntimeError(f"registered metadata mismatch for media identity {video_id!r}: {detail}")
     collection_row = target.execute(
         "SELECT tags_json, categories_json, formats_json, chapters_json, thumbnails_json "
         "FROM cache_v4_ytdlp_collections WHERE entity_id=("

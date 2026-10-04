@@ -19,6 +19,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [maintenance] Remove migration-accounting abstractions and conformance-generator material that existed only to classify or exercise arbitrary raw metadata.
 - [docs] Reconcile current cache-v4, yt-sql, optimisation, test-coverage and historical migration documentation with the final registered-metadata boundary while preserving the superseded design history explicitly.
 - [test] Resolve the historical v3 oracle's former raw-compatibility question and keep negative schema/migration assertions that prevent generic raw storage from returning.
+- [fix] Preserve numeric Unix epoch types for registered datetime metadata in cache v4 so v3-to-v4 certification does not fail after SQLite TEXT-affinity coercion.
+- [migration] Report field-level registered scalar differences when certification fails without exposing arbitrary historical backend payloads.
+- [test] Cover integer datetime storage and a historical v3-to-v4 epoch migration matching the real certification failure shape.
 
 ### Versioned cache startup and cut-over
 

@@ -114,11 +114,11 @@ def _sqlite_type(field: ProviderFieldDefinition) -> str:
             f"Provider field {field.name!r} requires explicit structured storage; "
             "cache-v4 does not serialise structured values into a scalar column."
         )
-    if kind in {"boolean", "count", "duration", "integer"}:
+    if kind in {"boolean", "count", "datetime", "duration", "integer"}:
         return "INTEGER"
     if kind == "number":
         return "REAL"
-    if kind in {"channel", "date", "datetime", "playlist", "string", "text"}:
+    if kind in {"channel", "date", "playlist", "string", "text"}:
         return "TEXT"
     raise RegistryContractError(f"Provider field {field.name!r} has unsupported cache-v4 storage type {kind!r}.")
 

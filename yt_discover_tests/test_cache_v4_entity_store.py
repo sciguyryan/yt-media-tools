@@ -122,6 +122,20 @@ def test_null_storage_does_not_create_acquisition_or_resolution_state() -> None:
     assert "cache_v4_field_observations" not in tables
 
 
+def test_datetime_scalar_uses_integer_storage_and_preserves_epoch_type() -> None:
+    provider = _provider(fields=(_field("timestamp", "datetime"),))
+    _, store = _stores(provider)
+    entity = store.get_or_create_entity("youtube", "abc123")
+    epoch = 1750860791
+
+    store.write_provider_metadata(provider, entity.entity_id, {"timestamp": epoch})
+
+    assert store.provider_metadata(provider, entity.entity_id) == {"timestamp": epoch}
+    column = store.connection.execute('PRAGMA table_info("provider_ytdlp")').fetchall()[1]
+    assert column[1] == "timestamp"
+    assert str(column[2]).upper() == "INTEGER"
+
+
 def test_unknown_provider_field_is_rejected() -> None:
     provider = _provider()
     _, store = _stores(provider)
