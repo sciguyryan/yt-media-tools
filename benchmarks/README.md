@@ -65,3 +65,21 @@ Run the complete relational group with:
 ```bash
 python benchmark.py relational
 ```
+
+## Cache-v4 reconciliation measurements
+
+Issue #135 uses `benchmarks/cache_v4_reconciliation.py` for deterministic cache-shape and physical-storage measurements that do not belong in the statistical timing suite. The harness generates controlled source overlap, representative registered scalar and collection metadata, and machine-readable SQLite page, freelist, table and index measurements. Its `small`, `normal`, `large` and `huge` profiles are deterministic; `--media-count` supports an exact local size. Large and huge profiles are opt-in and are not part of routine pytest or CI.
+
+Run the normal profile without retaining its generated database:
+
+```bash
+python benchmarks/cache_v4_reconciliation.py --profile normal --json cache-v4-normal.json
+```
+
+Retain a generated database for independent inspection with:
+
+```bash
+python benchmarks/cache_v4_reconciliation.py --profile large --database /tmp/cache-v4-large.sqlite3 --json /tmp/cache-v4-large.json
+```
+
+Use `--sources` and `--overlap-percent` to measure repeated-media deduplication under different source shapes. Benchmark JSON and generated databases are local measurement artefacts and must not be treated as canonical source files.
