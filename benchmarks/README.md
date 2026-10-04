@@ -66,66 +66,24 @@ Run the complete relational group with:
 python benchmark.py relational
 ```
 
-## Cache-v4 reconciliation measurements
+## Cache-v4 reconciliation
 
-Issue #135 uses `benchmarks/cache_v4_reconciliation.py` for deterministic cache-shape and physical-storage measurements that do not belong in the statistical timing suite. The harness generates controlled source overlap, representative registered scalar and collection metadata, and machine-readable SQLite page, freelist, table and index measurements. Its `small`, `normal`, `large` and `huge` profiles are deterministic; `--media-count` supports an exact local size. Large and huge profiles are opt-in and are not part of routine pytest or CI.
+The cache-v4 benchmark tools are retained as reproducible engineering evidence rather than as a release diary. They use deterministic profiles so storage and timing changes can be compared without depending on a developer's real cache.
 
-Run the normal profile without retaining its generated database:
+`cache_v4_reconciliation.py` builds v4 databases directly and reports logical population, repeated-media deduplication, SQLite allocation and table/index storage. `cache_v4_migration_reconciliation.py` derives historical v3 shapes from the permanent fixture and measures the real v3-to-v4 path, including preflight sizing, phase timings, peak destination size, certification time and final storage. `cache_v4_runtime_reconciliation.py` exercises provider precedence, freshness fallback, retention and explicit compaction.
 
-```bash
-python benchmarks/cache_v4_reconciliation.py --profile normal --json cache-v4-normal.json
-```
+The standard profiles are `small`, `normal`, `large` and `huge`. Small and normal are suitable for quick comparisons; large and huge are opt-in local workloads and stay outside routine CI. Exact-size overrides are available where a benchmark supports them.
 
-Retain a generated database for independent inspection with:
+Typical runs are:
 
 ```bash
-python benchmarks/cache_v4_reconciliation.py --profile large --database /tmp/cache-v4-large.sqlite3 --json /tmp/cache-v4-large.json
+python benchmarks/cache_v4_reconciliation.py --profile normal
+python benchmarks/cache_v4_migration_reconciliation.py --profile normal
+python benchmarks/cache_v4_runtime_reconciliation.py --profile normal
 ```
 
-Use `--sources` and `--overlap-percent` to measure repeated-media deduplication under different source shapes. Benchmark JSON and generated databases are local measurement artefacts and must not be treated as canonical source files.
+Machine-readable JSON can be written with `--output` where supported. Migration benchmarking also preserves a source hash before and after the run so the benchmark itself verifies that the historical source remained unchanged.
 
-### Migration reconciliation
+Interpret storage numbers with SQLite's allocation model in mind. Deleting rows may create reusable pages without reducing the main file. WAL may contain committed pages that are not yet reflected in the main database size. The runtime benchmark therefore distinguishes WAL allocation from main-database freelist space, while explicit compaction checkpoints WAL where applicable and vacuums only when reusable main-database pages exist.
 
-`benchmarks/cache_v4_migration_reconciliation.py` exercises the production v3-to-v4 migration against deterministic shapes derived from the permanent historical v3 fixture. It records the composition-aware preflight estimate, total migration time, structured phase timings, the largest destination size observed at migration stage boundaries, final page and freelist usage, and the size after an observational `VACUUM`. The source hash is recorded before and after migration so benchmark runs also prove source immutability.
-
-Run the normal migration profile with:
-
-```bash
-python benchmarks/cache_v4_migration_reconciliation.py --profile normal --output /tmp/cache-v4-migration-normal.json
-```
-
-Use `--additional-records` for an exact deterministic metadata-record count. `--keep-database` retains the compacted generated v4 destination for independent inspection. The benchmark never changes production migration compaction behaviour: its `VACUUM` runs only against the generated benchmark destination after the real migration has completed, so Part 2 can measure reclaimable space before deciding whether production migration should prevent churn or compact explicitly.
-
-The `large` and `huge` profiles remain opt-in local workloads and are excluded from routine pytest and CI. Compare `preflight_required_bytes` with `peak_observed_file_bytes` when evaluating disk-space safety, and compare `before_compaction.freelist_bytes` with `after_compaction.file_bytes` when evaluating transient migration churn. Stage-boundary peak measurement is deliberately conservative in what it claims: it observes sizes when structured migration events are emitted rather than sampling the database continuously.
-
-### Migration churn attribution
-
-Part 3 extends the migration reconciliation output with `stage_storage`, recording SQLite file, live-page and freelist measurements at structured migration boundaries. Measurements on the deterministic profiles showed that the former copy-then-drop strategy accumulated reclaimable space when the copied v3 runtime tables were removed. Population and deferred-index construction were not the source of the persistent freelist.
-
-The production v3-to-v4 transition therefore now creates a fresh v4 destination and reads the protected v3 source separately. Historical source-state rows and detailed metadata are copied semantically into the v4 representation rather than copying legacy SQLite pages into the destination and dropping them later. The destination retains the established schema-v3/incomplete marker until target certification and finalisation, preserving restart-only and cut-over safety semantics.
-
-The migration benchmark continues to run an observational `VACUUM` after migration. With the fresh-destination strategy, final freelist usage should be zero; any remaining file-size difference after `VACUUM` is SQLite page-layout compaction rather than legacy-table reclamation. This evidence does not justify adding production `VACUUM` behaviour.
-
-### Migration tuning measurements
-
-Part 4 records target-verification time separately and re-evaluates preflight sizing against the fresh-destination migration introduced in Part 3. The previous sizing allowances were intentionally conservative for the older copy-and-drop construction and materially overstated the new migration's peak destination size. The revised estimator retains measured registered scalar and collection payload sizes, source-state allowances, current schema size and explicit page/index headroom while removing allowances that duplicated costs already represented by those measurements.
-
-Across the deterministic small, normal and large profiles used during Part 4, the revised preflight estimate remained above observed peak destination size while reducing the prior multi-fold overestimate. The large profile also showed target verification as a small fraction of total migration time; population remained the dominant phase. The existing 500-row bounded transaction size and deferred source-entry index are therefore retained rather than changed without evidence of a material benefit.
-
-These measurements are implementation evidence, not a promise that every possible historical cache shape has the same ratio. Preflight remains deliberately conservative and the large/huge profiles remain outside routine CI.
-
-### Runtime and maintenance reconciliation
-
-`benchmarks/cache_v4_runtime_reconciliation.py` measures the production cache-v4 provider-resolution, retention and explicit-compaction paths against deterministic entity populations. The benchmark deliberately mixes fresh primary values, fresh known NULLs with specialised-provider fallback, stale primary values with fresh specialised-provider fallback, and old primary-only contributions selected by retention. This makes provider precedence, freshness and fallback behaviour part of the measured workload rather than timing a trivial single-provider lookup.
-
-Run the normal profile with:
-
-```bash
-python benchmarks/cache_v4_runtime_reconciliation.py --profile normal --output /tmp/cache-v4-runtime-normal.json
-```
-
-Use `--entity-count` for an exact deterministic population. The `large` and `huge` profiles are opt-in local workloads and remain outside routine CI.
-
-Storage figures before explicit compaction include both the main SQLite database and WAL because WAL-backed caches can hold most recently committed pages outside the main file until checkpointing. `reusable_bytes_after_maintenance` reports the main database freelist specifically. Explicit compaction first checkpoints WAL where possible and only runs `VACUUM` when the main database has reusable pages, so a small maintenance operation may correctly require no vacuum while a checkpoint alone still changes physical allocation.
-
-Issue #135 measurements showed provider resolution remaining approximately linear across the small, normal and large deterministic profiles, with no evidence justifying a provider-resolution cache or precedence shortcut. Retention planning and execution likewise remained small relative to the measured workloads. The existing semantic rules are therefore retained: a fresh known NULL does not hide a lower-priority fresh value, a stale higher-priority value does not outrank a fresh lower-priority value, retention remains opt-in, and compaction remains explicit rather than automatic.
+The issue #135 measurements established three useful baselines. Fresh-destination migration avoids the old copy-and-drop freelist growth; the current 500-row migration transaction bound and deferred source-entry index did not show a material reason to change; and provider resolution remained stable enough that a separate resolution cache would add semantic risk without measured benefit. These are measured implementation choices, not promises about every future workload, so the benchmark tools remain available for retuning.

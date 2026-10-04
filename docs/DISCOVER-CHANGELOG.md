@@ -4,102 +4,20 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-### Benchmark and reconcile Discover cache v4
+### Discover 0.31.0 - Cache v4
 
-- [benchmark] Add deterministic cache-v4 storage, migration, runtime, provider-resolution, retention and compaction benchmark profiles, with large workloads kept outside routine CI.
-- [migration] Build v3-to-v4 migration into a fresh v4 destination so copied legacy tables no longer leave large persistent freelists after cut-over.
-- [migration] Retune composition-aware disk preflight against measured fresh-destination storage while retaining conservative headroom and the established bounded transaction and deferred-index strategy.
-- [maintenance] Preserve provider precedence, freshness fallback, opt-in retention and explicit compaction where measurements do not justify semantic shortcuts or automatic vacuuming.
-- [cli] Retain `--cache-compact` as the explicit Discover operation for checkpointing and compacting the active metadata cache, including direct `--cache FILE` use.
-- [test] Add command-level coverage proving `--cache-compact` reclaims reusable pages and reports when no vacuum is required.
-- [docs] Reconcile the cache-v4 design and benchmark guidance with measured migration, runtime, retention and compaction behaviour.
-
-### Remove unused raw metadata compatibility
-
-- [breaking] Remove the unused `raw.*` yt-sql metadata namespace before public release rather than preserving an unneeded compatibility contract.
-- [maintenance] Remove dynamic raw schema inference, evaluation, acquisition planning and cache-freshness behaviour while retaining registered and observed top-level metadata semantics.
-- [cli] Keep `--schema` as field/type introspection without exposing nested extractor payload paths.
-- [test] Remove raw-only conformance cases and add deterministic rejection coverage for the removed namespace while preserving first-class collection and structured-member coverage.
-- [docs] Remove `raw.*` from the current yt-sql and Discover user-facing language contract; cache-v4 persistence and migration removal follows separately.
-- [maintenance] Remove the open-ended v4 raw compatibility payload and its persistent migration-accounting tables; arbitrary unregistered v3 backend material is now discarded during migration.
-- [feature] Persist the five supported yt-dlp collection families in closed entity-scoped v4 collection storage so removing arbitrary compatibility data does not remove first-class yt-sql collection semantics.
-- [migration] Reconcile preflight sizing and certification with registered scalar and collection facts only, and require fresh and migrated v4 databases to use the same final schema.
-- [test] Prove fresh-v4 collection persistence, arbitrary-material discard, collection certification, historical fixture outcomes and absence of the removed compatibility tables.
-- [maintenance] Stop normalised runtime records from retaining a private copy of the complete extractor response now that no production query path consumes it.
-- [maintenance] Remove migration-accounting abstractions and conformance-generator material that existed only to classify or exercise arbitrary raw metadata.
-- [docs] Reconcile current cache-v4, yt-sql, optimisation, test-coverage and historical migration documentation with the final registered-metadata boundary while preserving the superseded design history explicitly.
-- [test] Resolve the historical v3 oracle's former raw-compatibility question and keep negative schema/migration assertions that prevent generic raw storage from returning.
-- [fix] Preserve numeric Unix epoch types for registered datetime metadata in cache v4 so v3-to-v4 certification does not fail after SQLite TEXT-affinity coercion.
-- [migration] Report field-level registered scalar differences when certification fails without exposing arbitrary historical backend payloads.
-- [test] Cover integer datetime storage and a historical v3-to-v4 epoch migration matching the real certification failure shape.
-
-### Versioned cache startup and cut-over
-
-- [feature] Resolve the recognised cache family before cache-backed work, run authorised v3-to-v4 migration and continue the triggering Discover invocation against the verified v4 destination.
-- [feature] Create fresh caches directly as complete schema-v4 databases and make the metadata-cache runtime read and write the v4 provider, compatibility and source-state stores.
-- [maintenance] Remove the superseded v3 source only after verified v4 active-cache resolution, discard failed migration destinations by default and always retain the permanent migration log.
-- [cli] Add explicit options to retain the old v3 source after successful cut-over or retain a failed v4 destination for diagnostics.
-- [test] Cover successful cut-over, fresh-v4 startup, source and failed-destination retention, permanent logging and v4 runtime source-state persistence.
-- [fix] Preserve direct single-file semantics for explicit `--cache` paths instead of inferring managed migration authority from a recognised basename.
-- [security] Isolate every pytest invocation and inherited child process from the user's real default cache location.
-- [security] Serialise managed cache startup across processes and re-resolve discovery while holding the startup lock before mutation.
-- [test] Cover concurrent managed startup and preserve direct explicit-cache status behaviour.
-- [feature] Present authorised startup migration through a deterministic ASCII console driven by the existing structured migration event stream.
-- [ux] Show stable preflight, migration, indexing, verification and cut-over stages with bounded batch progress, restart guidance and a final active-cache summary.
-- [test] Cover deterministic console rendering, bounded progress, failure guidance and real startup presentation without contaminating query stdout.
-- [docs] Reconcile the versioned startup design with the implemented ASCII presentation boundary and future richer terminal presentation.
-- [feature] Upgrade interactive cache migration presentation with Unicode box-drawing hierarchy, bounded progress bars and explicit textual lifecycle states while preserving the structured migration event model.
-- [ux] Apply the existing console `--unicode` and `--colour` policy to migration output, including `NO_COLOR`, automatic terminal capability detection and deterministic ASCII/no-colour fallback for redirected output.
-- [test] Cover rich Unicode rendering, colour-independent semantics, forced rich subprocess presentation and the preserved automatic ASCII fallback.
-- [docs] Reconcile the completed rich migration presentation with the cache-v4 design and managed-cache user documentation.
-
-### Common database migration workflow
-
-- [feature] Add a small migration transition contract with explicit source/target versions and complete/incomplete destination state.
-- [feature] Add a coordinator that plans ordered schema hops and passes each completed destination to the next transition without knowing how any transition transforms data.
-- [maintenance] Reject missing, duplicate, backwards, overshooting and inconsistent transition wiring before it can silently produce the wrong migration chain.
-- [test] Cover multi-hop planning/execution, incomplete-destination stopping, missing and duplicate hops, invalid versions, inconsistent results and no-op current-schema runs.
-- [docs] Record the implemented coordinator boundary while leaving repairs, phases, events, permanent logs and shared preflight plumbing to the next #132 parts.
-- [feature] Add shared SQLite integrity and disk-space preflight helpers, bounded lazy batches, one structured progress-event stream and append-only permanent migration logging.
-- [feature] Add the transition-owned source validation, historical repair, migration phase, target validation and destination-finalisation workflow.
-- [feature] Integrate the workflow with a real side-by-side v3-to-v4 transition that rebuilds v4 from the frozen v3 contract rather than trusting transitional bridge state.
-- [maintenance] Keep the source database read-only and withhold the v4 schema/completion markers until target validation has succeeded.
-- [maintenance] Preserve the live schema-v3 runtime and existing v4 compatibility mirroring until later startup/cut-over work selects v4 for ordinary use.
-- [test] Cover migration logging/finalisation, workflow failures and interruption, the production v3 validity contract, canonical v3-to-v4 migration and source immutability.
-- [docs] Reconcile the cache-v4 migration design with the implemented common workflow and real v3-to-v4 transition.
-
-### Cache v4 entity and acquisition storage
-
-- [feature] Add service-owned cache-v4 media identity using stable `(service, external_id)` uniqueness and compact `entity_id` references.
-- [feature] Add provider-owned scalar metadata tables keyed by entity identity and derived from reconciled registry storage contracts.
-- [maintenance] Allow compatible scalar field additions without rebuilding existing provider rows while retaining removed historical columns physically.
-- [maintenance] Keep NULL storage, acquisition state and field resolution semantically separate and reject structured values without an explicit storage design.
-- [test] Cover entity deduplication, cross-service identity, provider metadata updates, schema evolution, unsupported structured storage and the #127 registry boundary.
-- [feature] Add persistent acquisition-group state keyed by entity, provider and registered acquisition group.
-- [feature] Record successful group resolution separately from failed refresh attempts so recoverable failures retain the previous successful acquisition time.
-- [maintenance] Keep absent acquisition state, failed acquisition and provider metadata NULL storage distinct without selecting field winners prematurely.
-- [test] Cover acquisition success, recoverable failure, recovery, independent groups, timestamp validation and entity-cascade cleanup.
-- [docs] Record the entity-storage and acquisition-state hand-off while leaving field-observation and winner resolution to later #128 work.
-- [feature] Derive per-provider scalar field state as value, known NULL, not acquired, unsupported, inapplicable, failed acquisition or stale without adding a redundant field-status table.
-- [feature] Apply effective registry freshness overrides to observations and preserve failed-refresh diagnostics alongside any earlier successful observation.
-- [maintenance] Reject successful acquisition state that has no corresponding provider metadata row instead of manufacturing a known NULL.
-- [test] Cover the complete scalar observation-state set, falsey values, freshness boundaries and overrides, failed refreshes, incomplete applicability context and inconsistent persisted state.
-- [docs] Record the implemented field-observation semantics while leaving cross-provider winner resolution to the final #128 part.
-- [feature] Resolve cache-v4 scalar fields across enabled available providers using persistent effective priority and registration order.
-- [feature] Continue past fresh known NULL to lower-priority fresh values while retaining the highest-precedence NULL when no fresh value exists.
-- [maintenance] Keep stale observations available for reacquisition and diagnostics without treating expired data as a current resolved value.
-- [test] Cover priority, deterministic ties, NULL fall-through, all-NULL resolution, fresh-over-stale selection, stale fallback and failed acquisition candidates.
-- [docs] Complete the #128 entity metadata, acquisition-state and scalar field-resolution boundary without claiming the separate v3-to-v4 migration or acquisition-pipeline cut-over.
-- [feature] Add stable cache-v4 source/facet identities and persist enumeration observations and ordered membership against v4 media entities.
-- [maintenance] Keep source enumeration state independent of provider metadata so pruning detailed metadata cannot erase previously observed membership.
-- [maintenance] Preserve coverage and frontier as separate stronger source/facet claims and avoid per-entry pruning timestamps in the v4 membership table.
-- [test] Cover source/facet identity, observation-without-frontier semantics, entity-backed membership, metadata-pruning independence and source-state entity retention.
-- [docs] Record the audited v3-to-v4 source-state mapping while leaving coherent retention and dependent-claim invalidation to the next #129 part.
-- [feature] Add transactional cache-v4 source/facet pruning that removes observations, ordered membership, coverage and frontier state as one retained boundary.
-- [maintenance] Garbage-collect media identities only after provider scalar state, acquisition history and persistent source references have all released them.
-- [maintenance] Invalidate dependent coverage and frontier claims with their source/facet state without adding per-entry pruning timestamps or write churn.
-- [test] Cover source-state claim invalidation, cross-facet retention, provider-state retention, frontier-only references and final unreferenced entity collection.
-- [docs] Record the #129 retention and entity-lifetime invariants while leaving runtime integration and legacy-state retirement to the final part.
+- [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.
+- [migration] Migrate recognised managed v3 caches side by side into a fresh v4 destination, keep the source read-only, and cut over only after structural and semantic certification succeeds.
+- [migration] Preserve registered scalar metadata, supported collections, source ordering, coverage, frontiers, provenance and timestamp precision while deliberately discarding arbitrary unregistered historical `raw_json` remainder.
+- [security] Serialise managed migration across processes and keep pytest and inherited subprocesses isolated from the user's real cache.
+- [cli] Add cache status and explicit compaction controls, including `--cache-compact` for the managed cache or `--cache-compact --cache FILE` for a deliberately selected database.
+- [maintenance] Keep retention opt-in, preserve provider freshness and fallback semantics, and run `VACUUM` only through explicit compaction when SQLite has reusable pages.
+- [performance] Replace copy-and-drop migration with fresh-destination construction, removing the large legacy-table freelist seen in real migrations and retuning preflight sizing against measured v4 storage.
+- [benchmark] Add deterministic storage, migration and runtime benchmark profiles so migration sizing, provider resolution, retention and compaction choices can be remeasured without using a developer's real cache.
+- [test] Preserve the historical v3 boundary with permanent fixtures, independent expected v4 outcomes, invalid-state cases, interruption/restart coverage and issue-wide cache-v4 regression tests.
+- [docs] Replace cache-v4 implementation diary material with the durable migration, runtime and maintenance contracts and retain the benchmark tools as reproducible engineering evidence.
+- [breaking] Remove the unused `raw.*` yt-sql namespace and its open-ended v4 compatibility storage before public release; supported registered metadata and collection semantics remain first class.
+- [release] Release yt-discover 0.31.0 with the reconciled cache-v4 architecture.
 
 ## Release history
 

@@ -1,6 +1,6 @@
 # yt-discover cache v4 provider registry
 
-This document records the cache-v4 provider-registry contract and its hand-off to entity metadata and source-state persistence. It is deliberately narrower than the complete v4 database design.
+This document records the cache-v4 provider-registry contract. Entity metadata and source-state persistence are covered by the complete v4 database design.
 
 A provider definition has a stable textual key, an independently versioned provider schema revision, a provider-owned metadata table identity, named acquisition groups, logical field claims and applicability. Field claims use the existing yt-sql `QueryType` model rather than creating a cache-specific type system. They also name the provider storage field and carry a default freshness policy.
 
@@ -37,31 +37,3 @@ Implementation availability is supplied separately from persistent registration.
 Providers may claim the same logical field only when they agree on its yt-sql type. Reconciliation rejects incompatible shared-field claims transactionally. This is a semantic compatibility check on the logical field contract, not a declaration that provider storage layouts or acquisition mechanisms are interchangeable.
 
 The candidate list is planning metadata. It does not inspect entity observations, acquisition state, SQL NULL, failure state or observation freshness. Consequently it does not choose the winning cached value for an entity. Dynamic value resolution remains #128 work.
-
-## Registry lifecycle and #128 hand-off
-
-Part 4 makes declaration lifecycle explicit. Reconciliation marks providers, acquisition groups and fields as currently declared only when the installed code contract still contains them. Removing an implementation or field does not delete its persistent identity, registration order or database-owned policy. Reinstalling or re-adding the same compatible declaration recovers that history.
-
-Historical declarations do not participate in active shared-field compatibility or field-provider candidate planning. Current declarations still cannot reuse a stable provider or field identity incompatibly. Provider schema revisions move forwards only, and incompatible reconciliation remains transactional.
-
-This completes the registry boundary for #127. The registry can now answer which currently declared, enabled and available providers claim a logical field; whether those claims agree on the yt-sql type; their persistent precedence; their acquisition group; and their effective freshness policy. It still cannot answer whether an entity has a value, known SQL NULL, not-acquired state, failure, inapplicability or stale observation. It also cannot choose a value from provider observations. Those are the storage and resolution responsibilities of #128.
-
-The #128 implementation should consume registry identities and candidate metadata rather than duplicating precedence or field-contract rules. Entity and provider observation tables should reference the compact persistent identities established here, while acquisition-state semantics remain separate from registry declaration state.
-
-## #128 entity-storage hand-off
-
-Issue #128 Part 1 now consumes the registry identities without extending their meaning. Cache-v4 media identity is `(service, external_id)` with a compact integer `entity_id`, so one service-owned item can be referenced by several logical sources without duplicating provider metadata. The same external identifier on another service remains a different entity.
-
-Each declared provider owns its metadata table and keys rows by `entity_id`. Scalar columns are derived from the provider's registered storage names and yt-sql types. Adding a compatible scalar field at a later provider schema revision appends its column without rebuilding existing rows. Removed historical columns may remain physically present, while the registry declaration continues to determine which fields are semantically active.
-
-Part 1 deliberately does not infer observation state from a provider row or column. A NULL column is not proof of known SQL NULL. Part 2 adds acquisition-group state keyed by `(entity_id, provider_id, acquisition_group_id)`: no state row means the group has not yet been acquired, a successful attempt records the last successful resolution time, and a failed refresh records the failed attempt without erasing an earlier success. Part 3 derives scalar field observation state from that history, the provider contract, applicability, the stored value and effective freshness policy. A failed refresh after an earlier success remains visible as an acquisition fact without erasing or automatically staling the earlier observation. Part 4 completes #128's scalar resolution boundary by consuming the registry's effective priority and registration order, continuing past known NULL in search of a fresh value, and retaining stale observations only as unresolved fallback state.
-
-Structured and collection fields are not serialised into a generic JSON or TEXT escape hatch. They require an explicit provider storage mapping before they can be persisted in v4. This keeps the query-material-only boundary intact while the field inventory determines which relational shapes are actually required.
-
-## #129 source-state retention hand-off
-
-Issue #129 Part 1 moves durable source/facet identity, enumeration observations and ordered membership onto stable v4 media identities without treating provider metadata as the owner of enumeration knowledge. Coverage and frontier remain separate stronger claims rather than consequences of observing membership.
-
-Part 2 makes retention operate on that source/facet boundary. Pruning a retained source/facet removes its observation, ordered membership, coverage and frontier state in one transaction, so a completeness or trusted-frontier claim cannot survive after the persistent source state supporting it has been removed. The v4 membership table deliberately has no per-entry pruning timestamp because coherent source/facet retention does not require that additional write churn.
-
-Media-entity collection is conservative. Source membership and a frontier head are persistent source references, while any provider scalar row or acquisition-group history is provider state. An entity is deleted only after none of those references remain. Removing provider metadata alone therefore cannot erase enumeration knowledge, and removing one source/facet cannot collect an identity that another source/facet still retains. Runtime migration, consumer cut-over and retirement of the v3 source-state path remain Part 3 work.

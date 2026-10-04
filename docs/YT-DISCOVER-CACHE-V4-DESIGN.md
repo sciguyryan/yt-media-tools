@@ -274,140 +274,22 @@ For an interactive run, show the migration policy before the expensive part. The
 
 Startup authorisation is now explicit. Interactive startup requires an affirmative confirmation before a supported mandatory migration begins. Non-interactive startup never reads from standard input and automatically authorises the supported mandatory migration under the documented default policy. Corrupt, incomplete, mismatched or otherwise blocked candidates are not authorisation questions and remain fatal startup conditions.
 
-## Current implementation boundary
+## Implemented migration and startup contract
 
-The complete v4 path now includes the frozen v3 validity contract and historical fixture/oracle, provider registry, deduplicated entity metadata, acquisition state, source/facet persistence, registered scalar storage, closed storage for the five supported yt-dlp collection families, durable v3-to-v4 migration, managed startup discovery/cut-over and migration presentation. The former `raw.*` language and compatibility representation were removed before release after usage review found no actual use sufficient to justify their continuing cost.
+A recognised managed v3 cache is migrated before the triggering cache-backed operation continues. The source remains read-only, migration writes a separate destination, and an incomplete destination is never treated as a usable v4 cache. Managed startup serialises migration across processes, re-resolves cache state while holding the lock, and cuts over only after structural and semantic certification succeeds. Explicit `--cache FILE` paths keep direct single-file semantics rather than inheriting managed-cache migration authority.
 
-The remaining cache-v4 work is measurement and reconciliation. Issue #135 benchmarks the representation and migration path we actually intend to keep, then uses those measurements to revisit provisional sizing, batching, verification, SQLite, pruning and compaction choices. The accepted v3 contract remains permanent migration evidence rather than an active runtime design target.
+The destination is built as a fresh v4 database rather than as a copy of v3. Supported registered facts, collections and source state are reconstructed from the protected source; arbitrary unregistered historical `raw_json` remainder is discarded. During construction the destination retains the schema-v3/incomplete marker, so interruption or failure cannot make a partial database look current. The source is removed only after verified cut-over unless retention was explicitly requested, while failed destinations are discarded by default and may be retained deliberately for diagnostics.
 
-### Transitional source-state integration
+Migration certification checks the whole database rather than relying on one checksum. It covers schema and accounting invariants, registered metadata and collections, source observations and ordering, coverage and frontiers, provenance, timestamp precision and deterministic semantic samples. Permanent historical fixtures, independently authored expected outcomes, invalid-state cases and interruption/restart tests preserve the v3-to-v4 boundary after the migration code stops changing frequently.
 
-The v3 source-state tables remain part of the live Discover cache while the wider cache-v4 acquisition cut-over is incomplete. Opening the cache imports existing source observations, ordered entries, coverage claims and trusted frontiers into the v4 entity-backed representation. The import is idempotent and does not promote an observation into coverage or frontier trust.
+Startup presentation is derived from the structured migration event stream. Interactive terminals may use the richer Unicode/colour renderer, while redirected output, `NO_COLOR`, accessibility requirements and unsuitable terminals retain deterministic plain text. Presentation never changes migration semantics.
 
-During this compatibility period, source-state mutations are mirrored into v4. Provider metadata may therefore be pruned and reacquired without erasing enumeration knowledge or requiring the source to be enumerated again. The legacy source-state tables can be retired only as part of the wider runtime cut-over once no supported path depends on them.
+## Measured migration and maintenance choices
 
-### Migration execution plumbing
+Issue #135 measured the production design rather than treating its tuning constants as permanent truths. Fresh-destination migration removed the large freelist previously caused by copying the complete v3 database and then dropping legacy tables. Preflight sizing now reflects the surviving v4 representation, including measured registered payloads, source-state allowances, schema size and conservative page/index headroom.
 
-The migration coordinator remains deliberately ignorant of transition internals. Shared execution plumbing now covers the pieces that do not need schema knowledge: SQLite integrity checks, destination disk-space observations, bounded lazy batches, structured progress events and append-only migration logs.
+The migration keeps bounded 500-row metadata transactions and defers the source-entry entity index until bulk population is complete. Measurements showed population dominating migration time and certification remaining comparatively small, so there was no evidence for changing those defaults. They remain named tuning choices that can be revisited if future cache shapes provide better evidence.
 
-Progress and permanent logging use the same event object. A transition can emit an event once and attach terminal or other consumers alongside the permanent log sink, rather than maintaining a second account of migration progress. Each logged run is finalised as complete, incomplete, failed or interrupted. Exceptions and `KeyboardInterrupt` still propagate after the final record has been written.
+Runtime measurements likewise did not justify a provider-resolution cache or shortcuts around precedence and freshness. A fresh known NULL, a stale value and an unavailable value remain distinct states, and a fresh lower-priority provider can still supply the effective value when appropriate.
 
-The disk-space helper reports available space against a requirement supplied by the transition. It does not decide how much space a migration ought to require. Likewise, the integrity helper exposes SQLite's result without deciding which transition phase should run it. Validation, historical repairs and migration phases remain transition-owned rather than becoming coordinator policy.
-
-### Transition-owned migration workflow
-
-A schema transition now has a small ordered workflow around its actual transformation: source validation, transition-owned historical repairs, named migration phases and target validation. The coordinator still knows none of those details. It selects the hop; the transition decides what makes its source valid, which old defects need repairing, how its data moves and what proves the destination is usable.
-
-Historical repairs make their state explicit. A repair reports either that it applies or that it has already been applied. Applicable repairs run before migration phases; already-applied repairs are recorded through the ordinary event stream and skipped. A failed applicability check or repair stops the transition rather than allowing later phases to guess what state the source is in.
-
-Completion is deliberately late. The workflow does not create a complete transition result until target validation has succeeded. Source-validation failure, repair failure, phase failure, target-validation failure and interruption therefore cannot leave a result that the coordinator could mistake for a usable next-hop source. The shared migration log still finalises those runs as failed or interrupted, while the underlying exception or interruption remains visible to the caller.
-
-### The real v3-to-v4 transition
-
-The common workflow is now exercised by a real side-by-side v3-to-v4 transition rather than only synthetic test hops. The transition opens the v3 source read-only, checks SQLite integrity and the frozen v3 structural boundary, then uses SQLite backup to create a separate destination. All transformation work happens against that destination.
-
-Current v3 databases can already contain transitional `cache_v4_*` tables because #128-#130 mirror new writes and source state while the runtime still uses schema v3. Those tables are useful compatibility scaffolding, but they are not authoritative migration input. The durable transition therefore discards copied transitional v4 tables and rebuilds the target from the v3 facts. That avoids allowing the age or completeness of bridge material to change the result of a later migration.
-
-Detailed records are replayed in acquisition-time order into the registered yt-dlp provider representation. This matters when the same media identity exists under several v3 source URLs: v3 stores those records separately, while v4 provider metadata is entity-scoped. Processing older acquisitions before newer ones preserves the newest provider observation without violating acquisition chronology. Supported collection families are persisted through their closed entity-scoped representation; arbitrary unregistered backend material is discarded. Equal timestamps use source URL and video ID as deterministic tie-breakers.
-
-The source-state bridge then imports observations, membership, coverage and frontiers into v4 entity identity without strengthening their meaning. Once the v4 representation has been built, the destination drops the copied legacy runtime tables. Structural validation checks SQLite integrity, required v4 tables and the explicit incomplete marker. Only after that validation succeeds does destination finalisation write schema version 4 and change the migration marker to `complete`.
-
-The transition itself remains separate from startup selection and cut-over policy. Managed startup now invokes this durable transition when discovery resolves a supported historical v3 cache, verifies the resulting v4 candidate, re-resolves it as active and only then applies the configured old-cache cleanup policy.
-
-### Historical v3-to-v4 fact and sizing contract
-
-The durable migration treats v3 as a historical fact source rather than as a representation to copy mechanically. A v3 `metadata_records` row contributes its row `video_id` to v4 media identity, its queryable registered scalar metadata to the yt-dlp provider representation, its supported collection values to the closed yt-dlp collection representation, and its `fetched_at` value as the acquisition time at exactly the precision v3 recorded. Arbitrary unregistered backend material and internal `_yt_sql_` material are discarded rather than retained merely because they occupied space in `raw_json`. The migration must not infer per-field acquisition times or other finer history that v3 never stored.
-
-Source state maps independently of detailed metadata. `source_observations` becomes v4 source observation state; `source_entries` preserves source ordering against v4 media identities; `source_coverage` preserves the recorded coverage observation, counts, completeness and reason; and `source_frontiers` preserves the verified frontier, known-entry count, head identity and overlap confirmations. Registry/provider declarations and v4 indexes are target-schema structure rather than historical v3 facts.
-
-Preflight sizing therefore measures v3 composition rather than multiplying the old database size by a constant. The analysis records detailed-record and distinct-media counts, each source-state cardinality, total historical raw JSON bytes, registered scalar material and supported collection material. The estimate combines the surviving registered representation with the materialised current v4 schema size, conservative row allowances and a page/index reserve derived from rows the v4 schema will actually index. The estimate is deliberately explainable and conservative; #135 must replace provisional allowances where measurements justify better defaults.
-
-### Historical migration execution contract
-
-The v3-to-v4 transition is restartable rather than resumable. Preflight validates the protected v3 source and checks the composition-aware v4 space estimate before a destination is created. The original v3 database is opened read-only and remains authoritative throughout the transition. A newly copied destination is marked `migration_state=incomplete` before any v4 population work is allowed to commit, and an existing destination is never reused as a checkpoint.
-
-Detailed metadata population commits in bounded batches. A failure within a batch rolls that batch back, while earlier committed batches may remain in the disposable incomplete destination. This is intentional: committed work makes migration progress durable enough for predictable failure behaviour, but the incomplete marker prevents that partial database from becoming a usable cache. Restart requires disposal of the incomplete destination and a fresh migration from the unchanged v3 source.
-
-Indexes whose maintenance would add unnecessary work during bulk population may be deferred and rebuilt after population. Target validation still requires the finished structural state, including rebuilt indexes where applicable. Schema version 4 and `migration_state=complete` remain finalisation facts written only after all migration phases and target validation succeed. A late failure can therefore leave substantial v4 data on disk, but it cannot produce a destination that advertises itself as complete or as schema v4.
-
-### Historical migration certification
-
-A v3-to-v4 destination is not eligible for finalisation merely because its tables were populated successfully. Target validation first applies exhaustive inexpensive invariants to the whole database, including detailed-record accounting, the complete set of media identities represented by v3, registered collection storage, and the cardinalities of source observations, entries, coverage and frontiers. These checks are intended to catch loss, duplication and structural disagreement before more expensive semantic comparison.
-
-Semantic certification compares the protected v3 facts with their actual v4 representations. Registered scalar metadata, supported collections and detailed acquisition provenance are compared against the appropriate historical v3 facts, preserving the exact `fetched_at` value as the v4 acquisition timestamp rather than manufacturing finer history. Source identity, source kind, observations, ordering, coverage and frontiers are compared exhaustively, including frontier head identity and all recorded timestamps and counts. Arbitrary unregistered backend material has no target representation to certify. Registered yt-dlp datetime fields retain their numeric Unix epoch representation in INTEGER-affinity columns; the logical `datetime` type governs query semantics and must not silently coerce those provider values to text.
-
-Normal verification uses deterministic stratified sampling for the potentially expensive detailed metadata comparisons while retaining exhaustive structural/accounting and source-state checks. The sample combines lexical positions with stable SHA-256 identity ordering so the same database produces the same verification set independently of process ordering. Full verification compares every latest media record and every supported collection representation. Any semantic mismatch is fatal and occurs while the destination is still marked incomplete, so schema-v4 finalisation cannot follow a failed certification.
-
-### Permanent historical migration evidence
-
-The accepted v3 fixture, its source-fact oracle and the independently authored v4 semantic expectation are permanent migration evidence rather than temporary implementation scaffolding. Regression coverage verifies the expected v4 identity, latest registered metadata, supported collections, acquisition times, source ordering, coverage and frontiers without depending on SQLite surrogate identifiers. The fixture deliberately retains arbitrary historical backend material so regression coverage can prove that unsupported remainder is discarded rather than smuggled into v4. Separate cases preserve rejection of invalid historical states, restart-only handling after interruption and late failure, and the rule that permanent migration logs contain progress and outcome information rather than raw historical payloads or representative secret-bearing material.
-
-### Versioned startup discovery and active-cache resolution
-
-From schema v4 onwards the ordinary cache filename identifies its schema generation. The current v4 candidate is `metadata-v4.sqlite3`; the historical unversioned `metadata.sqlite3` filename identifies the legacy v3 candidate. The filename establishes only which schema the candidate claims to contain. Startup must inspect the database read-only and require its internal schema and migration state to agree before the candidate can be trusted.
-
-Discovery and active-cache selection are separate concepts. Discovery reports recognised files in current-to-historical precedence order. Resolution may identify a complete current candidate as active, identify a valid historical candidate as requiring migration, report that no recognised cache exists and a fresh current cache is required, or block startup because the newest recognised candidate is corrupt, incomplete or mismatched. A historical candidate is never itself returned as the active current cache.
-
-The newest recognised candidate controls resolution. If `metadata-v4.sqlite3` exists but is corrupt, incomplete, structurally invalid or internally reports another schema version, startup must report that problem rather than silently falling back to `metadata.sqlite3`. Likewise, an invalid recognised historical cache blocks fresh-cache creation because historical state still requires explicit handling. A fresh v4 cache is appropriate only when no recognised candidate exists.
-
-Discovery is deliberately read-only. Migration execution, interactive or non-interactive authorisation, clean-up policy, active runtime opening and terminal presentation are separate startup responsibilities built on the discovery result.
-
-### Startup migration authorisation policy
-
-Cache discovery and migration authorisation remain separate stages. A complete current cache is immediately eligible for ordinary work, while a valid historical cache produces a migration requirement that must be resolved before cache-backed query or acquisition work begins. The authorisation decision itself does not execute migration, perform cut-over, delete either database or render migration progress.
-
-Interactive startup is defined conservatively: both the input stream and the stream carrying the prompt must be terminals. In that case Discover explains the historical source, required schema transition and separate verified destination, then requires an explicit affirmative `y` or `yes`. Empty input, end-of-file and every other answer decline migration. A declined migration does not permit ordinary work to continue against the historical cache.
-
-Non-interactive startup never prompts or reads standard input. A supported mandatory migration is automatically authorised under the documented default policy so existing scripts do not hang or acquire a new mandatory confirmation flag merely because a host first encounters the v4 transition. Automatic authorisation changes only whether the supported migration may begin; it does not weaken discovery, integrity, disk-space, certification or cut-over safety checks.
-
-A blocked discovery result is never converted into a migration prompt. Corrupt, incomplete, structurally invalid and version-mismatched recognised candidates remain blocked, preserving the rule that authorisation cannot turn an unsafe candidate into an eligible cache.
-
-### Verified startup cut-over and runtime adoption
-
-Authorised startup migration now runs as a gate before cache-backed Discover work. The certified v3-to-v4 transition writes the versioned destination and permanent JSON Lines migration log, then startup performs a fresh discovery pass and requires the destination to resolve as the complete active v4 cache before any destructive source cleanup occurs. A migration result alone is not sufficient evidence for cut-over.
-
-The default successful policy removes the superseded v3 database only after that verified active-cache resolution. `--keep-old-cache` retains the v3 source when an operator wants a post-cut-over copy. Failed or interrupted destinations are disposable by default because the accepted migration contract is restart-by-disposal rather than resume; `--keep-failed-cache-migration` preserves that destination for diagnostics. The migration log is retained in either case.
-
-A fresh cache family now creates `metadata-v4.sqlite3` directly as a complete v4 database. The ordinary `MetadataCache` runtime recognises complete schema-v4 databases without recreating removed v3 tables, reads registered yt-dlp scalars and supported collections, and writes metadata and source state through the v4 stores. The legacy v3 runtime path remains available only where historical migration and explicit non-versioned compatibility paths still require it.
-
-Normal cache-backed execution resolves startup first and then continues the same parsed Discover invocation with the selected v4 path. Cache status and compaction use the same startup gate when operating on the recognised versioned cache family. Syntax-only and cache-disabled operations do not trigger migration merely by starting the program.
-
-The managed/default cache family and an explicitly supplied `--cache FILE` are deliberately different contracts. Automatic version discovery and migration apply only to the managed cache location selected by Discover. An explicit cache path remains a direct single-file request even when its basename matches a recognised managed-cache filename; startup must not infer permission to inspect, migrate or delete sibling files merely from that basename.
-
-Managed startup is serialised across processes. Discovery occurs while holding the cache-family startup lock so a process that waits for another process to finish migration re-resolves the committed state instead of acting on a stale migration decision. This prevents concurrent invocations from racing creation, migration, certification or cut-over of the same cache family.
-
-The test suite has a stronger isolation boundary: every test receives an isolated default XDG cache root, inherited by child processes. Tests must never discover, read, migrate, certify, create, delete or otherwise influence the user's real cache unless a test explicitly opts into a controlled fixture path. Migration tests exercise the managed lifecycle only inside their temporary cache family; unrelated acquisition, planner and presentation tests cannot reach ambient production cache state.
-
-### Startup migration presentation
-
-The startup migration console is a presentation consumer of the same structured migration events used by the permanent migration log. It does not inspect migration internals, change workflow state or introduce a second progress model. Implementation phase names are mapped onto stable user-facing stages: preflight, migration, indexing, verification and cut-over.
-
-The compatibility presentation is deliberately ASCII and line-oriented. Redirected stderr and terminals where Unicode presentation is disabled use this deterministic form, showing the migration source and destination, stage transitions, bounded batch progress, verification and the final active-cache cut-over. Repeated batch events are throttled by progress percentage so large migrations do not produce unbounded output, and migration presentation never writes to machine-readable stdout.
-
-Interactive terminals use the same console capability policy as Discover's explain presentation. When Unicode is available, migration output adds box-drawing hierarchy, explicit textual status markers and bounded progress bars. Semantic ANSI colour strengthens headings and RUN, OK, STOP and FAIL states when colour is enabled, but no state depends on colour alone. `NO_COLOR` disables colour in automatic mode while retaining Unicode structure where the terminal supports it. `--colour auto|always|never` and `--unicode auto|always|never` provide the same explicit overrides for migration and explain presentation.
-
-Failure presentation states that the protected v3 source remains unchanged, whether an incomplete v4 destination was discarded or retained for diagnostics, where the permanent migration log was written and that restart begins the migration again rather than resuming an incomplete destination. Successful presentation identifies the active v4 cache and whether the old v3 source was removed or explicitly retained.
-
-Both renderers consume the same structured event model and apply the same bounded progress policy, so presentation capability cannot change migration semantics. ASCII/no-colour output remains the compatibility, redirected-output and accessibility fallback even as the richer terminal renderer evolves.
-
-## Migration storage construction
-
-The v3-to-v4 migration builds a fresh v4 destination while keeping the v3 source read-only and separate. It does not copy the complete v3 SQLite database into the destination and later drop the legacy runtime tables. Source-state rows and detailed metadata are translated directly into the v4 representation. This avoids retaining a large freelist composed of pages formerly occupied by copied v3 tables.
-
-During construction the destination remains explicitly incomplete and retains the historical source schema-version marker until target validation and certification succeed. Finalisation changes the destination to schema v4 and complete only after certification, preserving the restart-by-disposal and verified cut-over contract.
-
-Issue #135 migration measurements attribute the former persistent freelist to legacy-table removal rather than metadata batching or deferred index construction. Fresh-destination construction therefore prevents the measured churn at its source. Production migration does not run `VACUUM`; the reconciliation benchmark may compact its generated destination after measurement to quantify any residual SQLite page-layout difference.
-
-## Migration sizing and tuning
-
-The migration preflight estimate is based on the current v4 representation rather than the historical v3 database file size. It combines the materialised v4 schema size, measured registered scalar and collection payload sizes, conservative source-state row allowances, and explicit page/index headroom. Issue #135 remeasured these terms after fresh-destination migration removed the old copy-and-drop storage churn and reduced allowances that duplicated costs already represented by the surviving v4 payload.
-
-The migration continues to use bounded 500-row metadata transactions and defers the source-entry entity index until after bulk population. Reconciliation measurements found population to be the dominant migration phase, with target certification a comparatively small part of total runtime, and did not establish a material benefit that justified changing those production defaults. The constants remain named and measurable rather than semantic requirements so future evidence can justify retuning them.
-
-## Runtime resolution and maintenance measurements
-
-Issue #135 benchmarks exercise provider precedence, freshness fallback, retention and explicit compaction using deterministic cache-v4 populations. Resolution continues to traverse registered providers in effective precedence order and preserves the established semantic distinction between a fresh value, a fresh known NULL, stale state and unavailable state. Measurements did not justify introducing a separate resolution cache or a shortcut that could weaken those semantics.
-
-Retention remains disabled unless explicitly configured or invoked. Planning selects coherent provider/entity contributions and source/facet state using the existing age rules, execution consumes the immutable plan transactionally, and orphan entities are collected only when no provider or source state still references them. Reconciliation measurements did not justify changing those semantics or enabling age-based deletion by default.
-
-Compaction also remains explicit. Runtime measurements distinguish the main database freelist from WAL allocation: a small prune may create no reusable main-database pages, while checkpointing can still fold WAL content into the database. `VACUUM` is therefore not tied automatically to every retention operation. The explicit compaction path checkpoints WAL where possible and vacuums only when reusable main-database pages exist.
+Retention remains opt-in and compaction remains explicit. `yt-discover.py --cache-compact` operates on the managed/default cache; `yt-discover.py --cache-compact --cache FILE` deliberately selects another cache. The operation checkpoints WAL where applicable and runs `VACUUM` only when the main database has reusable pages. This keeps expensive file rewriting out of ordinary queries and retention work.

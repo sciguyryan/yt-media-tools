@@ -159,14 +159,6 @@ At the time this historical contract was frozen, the complete decoded yt-dlp obj
 
 The fixtures preserve that distinction as historical evidence. The later compatibility work initially retained unresolved material conservatively, but issue #142 resolved the pre-release language decision by removing unused `raw.*` support. The final v4 migration reconstructs supported registered facts and deliberately discards arbitrary unregistered remainder.
 
-## What this commit does not decide
-
-This audit intentionally stops short of declaring every SQLite-readable row combination valid or invalid. The next fixture work needs to turn the implementation facts above into a machine-testable validity boundary.
-
-In particular, we still need to classify malformed timestamps/JSON, disagreement between a row `video_id` and its JSON `id`, negative or inconsistent counters, duplicate/non-contiguous source indexes, cross-table source-kind disagreement and frontier/order disagreement. Some of those states are impossible through the public writer API but physically possible because v3 did not encode the rule in SQLite.
-
-That is exactly why the fixture work follows the audit rather than preceding it.
-
 ## Structural validity boundary
 
 The historical validator used by issue #126 is intentionally narrower than a new runtime cache checker. It exists in the test suite so later migration work has a stable source contract without changing normal v3 opening behaviour.
