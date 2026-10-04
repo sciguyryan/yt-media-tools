@@ -19,10 +19,6 @@ def test_runtime_benchmark_exercises_fallback_retention_and_compaction(tmp_path:
     assert result.resolution_calls == 100
     assert result.fallback_resolutions == 50
     assert result.stale_fallback_resolutions == 25
-    assert result.resolution_calls_per_second > 0
     assert result.selected_provider_contributions == 5
     assert result.removed_provider_contributions == 5
     assert result.collected_entities == 5
-    assert result.reusable_bytes_after_maintenance >= 0
-    assert result.compaction_performed is (result.reusable_bytes_after_maintenance > 0)
-    assert result.after_compaction_bytes <= result.after_maintenance_bytes

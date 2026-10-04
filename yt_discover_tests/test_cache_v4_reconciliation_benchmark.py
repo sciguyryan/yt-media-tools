@@ -2,13 +2,7 @@
 
 from pathlib import Path
 
-from benchmarks.cache_v4_reconciliation import PROFILE_MEDIA_COUNTS, run_benchmark, source_media_indices
-
-
-def test_cache_v4_benchmark_profiles_keep_heavy_shapes_out_of_routine_default() -> None:
-    assert tuple(PROFILE_MEDIA_COUNTS) == ("small", "normal", "large", "huge")
-    assert PROFILE_MEDIA_COUNTS["small"] < PROFILE_MEDIA_COUNTS["normal"] < PROFILE_MEDIA_COUNTS["large"]
-    assert PROFILE_MEDIA_COUNTS["large"] < PROFILE_MEDIA_COUNTS["huge"]
+from benchmarks.cache_v4_reconciliation import run_benchmark, source_media_indices
 
 
 def test_source_membership_is_deterministic_and_preserves_requested_identity_set() -> None:

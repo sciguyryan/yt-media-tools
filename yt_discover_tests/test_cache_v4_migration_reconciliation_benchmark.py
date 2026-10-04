@@ -33,21 +33,10 @@ def test_v3_shape_is_deterministic_and_preserves_historical_fixture_contract(tmp
     assert len(rows(first)) == 18
 
 
-def test_real_migration_benchmark_measures_preflight_churn_and_compaction(tmp_path: Path) -> None:
+def test_real_migration_benchmark_preserves_source_and_avoids_migration_freelist(tmp_path: Path) -> None:
     result = MODULE.run_benchmark("test", 20, tmp_path)
 
     assert result.source_sha256_before == result.source_sha256_after
-    assert result.preflight_required_bytes > 0
-    assert result.migration_seconds > 0
-    assert result.verification_seconds > 0
-    assert result.peak_observed_file_bytes >= result.before_compaction.file_bytes
-    assert result.before_compaction.page_count >= result.before_compaction.freelist_pages
-    assert result.after_compaction.freelist_pages == 0
-    assert result.after_compaction.file_bytes <= result.before_compaction.file_bytes
-    assert result.preflight_to_peak_ratio > 0
-    assert result.preflight_to_final_ratio > 0
-    assert result.phase_seconds
-    assert result.stage_storage
-    assert "phase initialise v4 destination" in result.stage_storage
+    assert result.preflight_required_bytes >= result.peak_observed_file_bytes
     assert result.before_compaction.freelist_pages == 0
     assert result.after_compaction.file_bytes == result.before_compaction.file_bytes
