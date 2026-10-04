@@ -16,6 +16,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [benchmark] Add deterministic storage, migration and runtime benchmark profiles so migration sizing, provider resolution, retention and compaction choices can be remeasured without using a developer's real cache.
 - [test] Preserve the historical v3 boundary with permanent fixtures, independent expected v4 outcomes, invalid-state cases, interruption/restart coverage and issue-wide cache-v4 regression tests.
 - [test] Trim reconciliation benchmark tests to durable semantic smoke contracts, removing checks that only restated profile constants, timing positivity or SQLite mechanics already covered by production tests.
+- [maintenance] Remove dead migration helpers, an unused cache-status property and obsolete console mappings for the superseded copy-and-drop migration phases; also remove two definition-only helpers exposed by the release-wide static audit.
 - [docs] Replace cache-v4 implementation diary material with the durable migration, runtime and maintenance contracts and retain the benchmark tools as reproducible engineering evidence.
 - [breaking] Remove the unused `raw.*` yt-sql namespace and its open-ended v4 compatibility storage before public release; supported registered metadata and collection semantics remain first class.
 - [release] Release yt-discover 0.31.0 with the reconciled cache-v4 architecture.

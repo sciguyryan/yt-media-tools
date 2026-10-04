@@ -69,21 +69,6 @@ def _accepted_specialised_records(
     return accepted
 
 
-def _acquisition_progress(level: int):
-    """Create a yt-dlp progress callback for concise (-v) or detailed (-vv) telemetry."""
-
-    def callback(event: str, stats: AcquisitionStats, detail: str | None) -> None:
-        if event == "available":
-            if level >= 2:
-                _verbose(level, f"Available entry {stats.available}: {detail}", minimum=2)
-            elif level >= 1 and (stats.available == 1 or stats.available % 10 == 0):
-                _verbose(level, f"Acquired {stats.available} available entries; {stats.skipped} skipped so far.")
-        elif event == "skipped":
-            _verbose(level, f"Skipped inaccessible entry: {detail}.")
-
-    return callback
-
-
 def _enumeration_progress(
     level: int,
     *,

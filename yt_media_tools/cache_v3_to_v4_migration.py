@@ -10,7 +10,7 @@ from .cache import MetadataCache, initialise_v4_cache
 from .cache_v3_contract import validate_v3_database
 from .cache_v3_to_v4_analysis import estimate_v4_space
 from .cache_v3_to_v4_verification import MigrationVerificationMode, certify_v3_to_v4
-from .cache_migration import MigrationContext, MigrationTransition, MigrationTransitionResult
+from .cache_migration import MigrationContext, MigrationTransitionResult
 from .cache_migration_support import (
     MigrationEvent,
     MigrationEventStream,
@@ -32,16 +32,6 @@ _MIGRATION_BATCH_SIZE = 500
 # This remains a conservative transaction bound; tuning showed population dominates runtime,
 # while transaction batching is not a material source of storage churn after fresh-destination construction.
 _DEFERRED_V4_INDEXES = (("cache_v4_source_entries_entity", "cache_v4_source_entries", "entity_id"),)
-
-
-def _read_schema_version(connection: sqlite3.Connection) -> int:
-    row = connection.execute("SELECT value FROM cache_meta WHERE key = 'schema_version'").fetchone()
-    if row is None:
-        raise RuntimeError("metadata cache has no schema version")
-    try:
-        return int(row[0])
-    except (TypeError, ValueError) as exc:
-        raise RuntimeError("metadata cache has an invalid schema version") from exc
 
 
 def _table_names(connection: sqlite3.Connection) -> set[str]:
@@ -380,12 +370,3 @@ def execute_v3_to_v4(context: MigrationContext, events: MigrationEventStream) ->
         finalise_destination=_finalise_v4_destination,
     )
     return run_migration_workflow(context, workflow, events)
-
-
-def v3_to_v4_transition(events: MigrationEventStream) -> MigrationTransition:
-    """Return the registered v3-to-v4 transition using the supplied event stream."""
-    return MigrationTransition(
-        V3_SCHEMA_VERSION,
-        V4_SCHEMA_VERSION,
-        lambda context: execute_v3_to_v4(context, events),
-    )

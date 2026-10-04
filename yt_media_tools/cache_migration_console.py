@@ -11,12 +11,11 @@ from .cache_migration_support import MigrationEvent
 _STAGE_LABELS = {
     "source validation": "Preflight",
     "phase preflight destination space": "Preflight",
-    "phase copy v3 database": "Migration",
-    "phase reset transitional v4 state": "Migration",
+    "phase initialise v4 destination": "Migration",
     "phase defer bulk indexes": "Migration",
+    "phase populate v4 source state": "Migration",
     "phase populate v4 representation": "Migration",
     "phase build bulk indexes": "Indexing",
-    "phase remove legacy v3 tables": "Migration",
     "target validation": "Verification",
     "destination finalisation": "Cut-over",
 }

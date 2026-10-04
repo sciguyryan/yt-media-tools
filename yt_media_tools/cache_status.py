@@ -64,10 +64,6 @@ class SQLiteCacheStatus:
     shm_bytes: int | None
 
     @property
-    def allocated_bytes(self) -> int:
-        return self.page_size * self.page_count
-
-    @property
     def reusable_bytes(self) -> int:
         return self.page_size * self.free_pages
 

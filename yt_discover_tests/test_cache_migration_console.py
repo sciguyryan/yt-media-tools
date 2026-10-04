@@ -208,9 +208,9 @@ def test_rich_console_never_moves_backwards_between_user_facing_stages() -> None
     console = RichMigrationConsole(output, interactive=True, colour=False, unicode=True)
     stages = (
         "source validation",
-        "phase copy v3 database",
+        "phase initialise v4 destination",
+        "phase populate v4 source state",
         "phase build bulk indexes",
-        "phase remove legacy v3 tables",
         "target validation",
         "destination finalisation",
     )
