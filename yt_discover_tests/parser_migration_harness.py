@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from time import perf_counter
 from typing import Callable
 
@@ -18,6 +19,46 @@ class ParserOutcome:
     model: object | None
     origins: tuple[tuple[str, int], ...]
     diagnostic: tuple[object, ...] | None
+    unexpected_error: tuple[str, str] | None = None
+
+    @property
+    def kind(self) -> str:
+        """Return the public outcome class used by differential comparison."""
+        if self.unexpected_error is not None:
+            return "error"
+        if self.diagnostic is not None:
+            return "rejected"
+        return "accepted"
+
+
+class ParserDifference(str, Enum):
+    """Independent parser-equivalence boundaries exposed by the harness."""
+
+    ACCEPTANCE = "acceptance"
+    MODEL = "model"
+    ORIGINS = "origins"
+    DIAGNOSTIC = "diagnostic"
+    UNEXPECTED_ERROR = "unexpected-error"
+
+
+@dataclass(frozen=True, slots=True)
+class ParserComparison:
+    """The reference and candidate outcomes for one source string."""
+
+    source: str
+    reference: ParserOutcome
+    candidate: ParserOutcome
+    differences: tuple[ParserDifference, ...]
+
+    @property
+    def equivalent(self) -> bool:
+        return not self.differences
+
+    def describe(self) -> str:
+        """Render a compact classification without implementation-native trees."""
+        if self.equivalent:
+            return "equivalent"
+        return ", ".join(difference.value for difference in self.differences)
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +79,32 @@ def capture_outcome(parser: ParserCallable, source: str) -> ParserOutcome:
         query = parser(source)
     except QuerySyntaxError as error:
         return ParserOutcome(None, (), normalised_diagnostic(error))
+    except Exception as error:
+        return ParserOutcome(None, (), None, (type(error).__name__, str(error)))
     return ParserOutcome(normalised_parser_model(query), user_origin_positions(query), None)
+
+
+def compare_parsers(
+    reference_parser: ParserCallable, candidate_parser: ParserCallable, source: str
+) -> ParserComparison:
+    """Compare two parsers across each applicable migration contract."""
+    reference = capture_outcome(reference_parser, source)
+    candidate = capture_outcome(candidate_parser, source)
+    differences: list[ParserDifference] = []
+
+    if reference.unexpected_error is not None or candidate.unexpected_error is not None:
+        differences.append(ParserDifference.UNEXPECTED_ERROR)
+    elif reference.kind != candidate.kind:
+        differences.append(ParserDifference.ACCEPTANCE)
+    elif reference.kind == "accepted":
+        if reference.model != candidate.model:
+            differences.append(ParserDifference.MODEL)
+        if reference.origins != candidate.origins:
+            differences.append(ParserDifference.ORIGINS)
+    elif reference.diagnostic != candidate.diagnostic:
+        differences.append(ParserDifference.DIAGNOSTIC)
+
+    return ParserComparison(source, reference, candidate, tuple(differences))
 
 
 def canonical_round_trip(parser: ParserCallable, source: str) -> tuple[object, str]:
