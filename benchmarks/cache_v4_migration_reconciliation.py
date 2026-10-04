@@ -54,6 +54,7 @@ class MigrationBenchmarkResult:
     preflight_required_bytes: int
     migration_seconds: float
     phase_seconds: dict[str, float]
+    stage_storage: dict[str, StorageMetrics]
     peak_observed_file_bytes: int
     before_compaction: StorageMetrics
     after_compaction: StorageMetrics
@@ -134,6 +135,7 @@ def run_benchmark(profile: str, additional_records: int, directory: Path) -> Mig
 
     stage_started: dict[str, float] = {}
     phase_seconds: dict[str, float] = {}
+    stage_storage: dict[str, StorageMetrics] = {}
     peak_observed_file_bytes = 0
 
     def observe(event: Any) -> None:
@@ -145,6 +147,8 @@ def run_benchmark(profile: str, additional_records: int, directory: Path) -> Mig
             phase_seconds[event.stage] = now - stage_started[event.stage]
         if destination.exists():
             peak_observed_file_bytes = max(peak_observed_file_bytes, destination.stat().st_size)
+            if event.kind in {"progress", "complete"}:
+                stage_storage[event.stage] = _storage_metrics(destination)
 
     started = time.perf_counter()
     result = execute_v3_to_v4(
@@ -174,6 +178,7 @@ def run_benchmark(profile: str, additional_records: int, directory: Path) -> Mig
         preflight_required_bytes=required,
         migration_seconds=migration_seconds,
         phase_seconds=dict(sorted(phase_seconds.items())),
+        stage_storage=dict(sorted(stage_storage.items())),
         peak_observed_file_bytes=peak_observed_file_bytes,
         before_compaction=before,
         after_compaction=after,

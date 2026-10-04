@@ -389,3 +389,11 @@ Interactive terminals use the same console capability policy as Discover's expla
 Failure presentation states that the protected v3 source remains unchanged, whether an incomplete v4 destination was discarded or retained for diagnostics, where the permanent migration log was written and that restart begins the migration again rather than resuming an incomplete destination. Successful presentation identifies the active v4 cache and whether the old v3 source was removed or explicitly retained.
 
 Both renderers consume the same structured event model and apply the same bounded progress policy, so presentation capability cannot change migration semantics. ASCII/no-colour output remains the compatibility, redirected-output and accessibility fallback even as the richer terminal renderer evolves.
+
+## Migration storage construction
+
+The v3-to-v4 migration builds a fresh v4 destination while keeping the v3 source read-only and separate. It does not copy the complete v3 SQLite database into the destination and later drop the legacy runtime tables. Source-state rows and detailed metadata are translated directly into the v4 representation. This avoids retaining a large freelist composed of pages formerly occupied by copied v3 tables.
+
+During construction the destination remains explicitly incomplete and retains the historical source schema-version marker until target validation and certification succeed. Finalisation changes the destination to schema v4 and complete only after certification, preserving the restart-by-disposal and verified cut-over contract.
+
+Issue #135 migration measurements attribute the former persistent freelist to legacy-table removal rather than metadata batching or deferred index construction. Fresh-destination construction therefore prevents the measured churn at its source. Production migration does not run `VACUUM`; the reconciliation benchmark may compact its generated destination after measurement to quantify any residual SQLite page-layout difference.

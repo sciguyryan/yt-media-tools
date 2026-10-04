@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 import sqlite3
 
-from .cache import MetadataCache
+from .cache import MetadataCache, initialise_v4_cache
 from .cache_v3_contract import validate_v3_database
 from .cache_v3_to_v4_analysis import estimate_v4_space
 from .cache_v3_to_v4_verification import MigrationVerificationMode, certify_v3_to_v4
@@ -117,64 +117,160 @@ def _build_bulk_indexes(context: MigrationContext, events: MigrationEventStream)
     )
 
 
-def _copy_source(context: MigrationContext, events: MigrationEventStream) -> None:
-    if context.destination_path.exists():
-        raise RuntimeError("migration destination already exists")
-    context.destination_path.parent.mkdir(parents=True, exist_ok=True)
+def _initialise_destination(context: MigrationContext, events: MigrationEventStream) -> None:
+    """Create a fresh incomplete v4 destination without copying legacy v3 pages."""
+    initialise_v4_cache(context.destination_path)
+    connection = sqlite3.connect(context.destination_path)
+    try:
+        with connection:
+            connection.execute(
+                "UPDATE cache_meta SET value = ? WHERE key = 'schema_version'", (str(V3_SCHEMA_VERSION),)
+            )
+            connection.execute("UPDATE cache_meta SET value = 'incomplete' WHERE key = 'migration_state'")
+    finally:
+        connection.close()
+    events.emit(
+        MigrationEvent.create(
+            context,
+            stage="phase initialise v4 destination",
+            kind="progress",
+            message="Created a fresh incomplete v4 migration destination",
+        )
+    )
+
+
+def _populate_source_state(context: MigrationContext, events: MigrationEventStream) -> None:
+    """Import v3 source state directly into the fresh v4 destination."""
     source = sqlite3.connect(f"file:{context.source_path.resolve().as_posix()}?mode=ro", uri=True)
     destination = sqlite3.connect(context.destination_path)
+    source.row_factory = sqlite3.Row
+    destination.row_factory = sqlite3.Row
     try:
-        source.backup(destination)
-        destination.execute("INSERT OR REPLACE INTO cache_meta(key, value) VALUES('migration_state', 'incomplete')")
-        destination.commit()
+        kinds: dict[str, str] = {}
+        for table in ("source_observations", "source_coverage", "source_frontiers"):
+            for row in source.execute(f"SELECT source_url, source_kind FROM {table}"):
+                kinds.setdefault(str(row["source_url"]), str(row["source_kind"]))
+        urls = set(kinds)
+        urls.update(str(row["source_url"]) for row in source.execute("SELECT DISTINCT source_url FROM source_entries"))
+        with destination:
+            for source_url in sorted(urls):
+                destination.execute(
+                    """INSERT INTO cache_v4_sources(source_url, source_kind, facet) VALUES (?, ?, '')
+                    ON CONFLICT(source_url, facet) DO UPDATE SET source_kind = excluded.source_kind""",
+                    (source_url, kinds.get(source_url, "unknown")),
+                )
+                source_id = int(
+                    destination.execute(
+                        "SELECT source_id FROM cache_v4_sources WHERE source_url = ? AND facet = ''", (source_url,)
+                    ).fetchone()["source_id"]
+                )
+                observation = source.execute(
+                    "SELECT last_observed_at, observed_entries FROM source_observations WHERE source_url = ?",
+                    (source_url,),
+                ).fetchone()
+                if observation is not None:
+                    destination.execute(
+                        "INSERT INTO cache_v4_source_observations(source_id, last_observed_at, observed_entries) VALUES (?, ?, ?)",
+                        (source_id, observation["last_observed_at"], observation["observed_entries"]),
+                    )
+                entries = source.execute(
+                    "SELECT video_id FROM source_entries WHERE source_url = ? ORDER BY source_index, video_id",
+                    (source_url,),
+                ).fetchall()
+                for index, row in enumerate(entries):
+                    video_id = str(row["video_id"])
+                    destination.execute(
+                        "INSERT INTO cache_v4_media_entities(service, external_id) VALUES ('youtube', ?) "
+                        "ON CONFLICT(service, external_id) DO NOTHING",
+                        (video_id,),
+                    )
+                    entity_id = int(
+                        destination.execute(
+                            "SELECT entity_id FROM cache_v4_media_entities WHERE service = 'youtube' AND external_id = ?",
+                            (video_id,),
+                        ).fetchone()["entity_id"]
+                    )
+                    destination.execute(
+                        "INSERT INTO cache_v4_source_entries(source_id, entity_id, source_index) VALUES (?, ?, ?)",
+                        (source_id, entity_id, index),
+                    )
+                coverage = source.execute(
+                    "SELECT observed_at, observed_entries, cached_entries, complete, reason FROM source_coverage WHERE source_url = ?",
+                    (source_url,),
+                ).fetchone()
+                if coverage is not None:
+                    destination.execute(
+                        """INSERT INTO cache_v4_source_coverage(
+                        source_id, observed_at, observed_entries, cached_entries, complete, reason
+                        ) VALUES (?, ?, ?, ?, ?, ?)""",
+                        (
+                            source_id,
+                            coverage["observed_at"],
+                            coverage["observed_entries"],
+                            coverage["cached_entries"],
+                            coverage["complete"],
+                            coverage["reason"],
+                        ),
+                    )
+                frontier = source.execute(
+                    "SELECT verified_at, known_entries, head_video_id, overlap_confirmations FROM source_frontiers WHERE source_url = ?",
+                    (source_url,),
+                ).fetchone()
+                if frontier is not None:
+                    head_id = str(frontier["head_video_id"])
+                    destination.execute(
+                        "INSERT INTO cache_v4_media_entities(service, external_id) VALUES ('youtube', ?) "
+                        "ON CONFLICT(service, external_id) DO NOTHING",
+                        (head_id,),
+                    )
+                    head_entity_id = int(
+                        destination.execute(
+                            "SELECT entity_id FROM cache_v4_media_entities WHERE service = 'youtube' AND external_id = ?",
+                            (head_id,),
+                        ).fetchone()["entity_id"]
+                    )
+                    destination.execute(
+                        """INSERT INTO cache_v4_source_frontiers(
+                        source_id, verified_at, known_entries, head_entity_id, overlap_confirmations
+                        ) VALUES (?, ?, ?, ?, ?)""",
+                        (
+                            source_id,
+                            frontier["verified_at"],
+                            frontier["known_entries"],
+                            head_entity_id,
+                            frontier["overlap_confirmations"],
+                        ),
+                    )
     finally:
         destination.close()
         source.close()
     events.emit(
         MigrationEvent.create(
             context,
-            stage="phase copy v3 database",
+            stage="phase populate v4 source state",
             kind="progress",
-            message="Copied the protected v3 source into the migration destination",
-        )
-    )
-
-
-def _clear_transitional_v4_state(context: MigrationContext, events: MigrationEventStream) -> None:
-    """Discard live-v3 bridge material so the durable migration rebuilds v4 from v3 facts."""
-    connection = sqlite3.connect(context.destination_path)
-    try:
-        names = [
-            str(row[0])
-            for row in connection.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'cache_v4_%'"
-            ).fetchall()
-        ]
-        connection.execute("PRAGMA foreign_keys = OFF")
-        with connection:
-            for name in names:
-                connection.execute(f'DROP TABLE "{name}"')
-    finally:
-        connection.close()
-    events.emit(
-        MigrationEvent.create(
-            context,
-            stage="phase reset transitional v4 state",
-            kind="progress",
-            message=f"Removed {len(names)} transitional v4 tables before rebuilding the durable target",
-            completed=len(names),
-            total=len(names),
+            message=f"Migrated {len(urls)} source-state records into the v4 representation",
+            completed=len(urls),
+            total=len(urls),
         )
     )
 
 
 def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> None:
     migrated = 0
-    with MetadataCache(context.destination_path) as cache:
-        rows = cache._db().execute(
+    source = sqlite3.connect(f"file:{context.source_path.resolve().as_posix()}?mode=ro", uri=True)
+    cache = MetadataCache(context.destination_path)
+    cache.connection = sqlite3.connect(context.destination_path)
+    cache.connection.execute("PRAGMA foreign_keys = ON")
+    cache.connection.execute("PRAGMA journal_mode = WAL")
+    cache.connection.execute("PRAGMA synchronous = NORMAL")
+    cache.connection.row_factory = sqlite3.Row
+    cache.schema_version = V4_SCHEMA_VERSION
+    try:
+        rows = source.execute(
             "SELECT source_url, video_id, fetched_at, raw_json FROM metadata_records ORDER BY fetched_at, source_url, video_id"
         )
-        total = int(cache._db().execute("SELECT COUNT(*) FROM metadata_records").fetchone()[0])
+        total = int(source.execute("SELECT COUNT(*) FROM metadata_records").fetchone()[0])
         for batch in bounded_batches(rows, _MIGRATION_BATCH_SIZE):
             try:
                 cache._db().execute("BEGIN")
@@ -205,6 +301,9 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
                     total=total,
                 )
             )
+    finally:
+        cache.close()
+        source.close()
     events.emit(
         MigrationEvent.create(
             context,
@@ -215,17 +314,6 @@ def _populate_v4(context: MigrationContext, events: MigrationEventStream) -> Non
             total=migrated,
         )
     )
-
-
-def _remove_legacy_tables(context: MigrationContext, events: MigrationEventStream) -> None:
-    connection = sqlite3.connect(context.destination_path)
-    try:
-        connection.execute("PRAGMA foreign_keys = ON")
-        with connection:
-            for table in _LEGACY_V3_TABLES:
-                connection.execute(f'DROP TABLE "{table}"')
-    finally:
-        connection.close()
 
 
 def _validate_v4_target(context: MigrationContext) -> None:
@@ -279,12 +367,11 @@ def execute_v3_to_v4(context: MigrationContext, events: MigrationEventStream) ->
         validate_source=_validate_v3_source,
         phases=(
             MigrationPhase("preflight destination space", _preflight_destination_space),
-            MigrationPhase("copy v3 database", _copy_source),
-            MigrationPhase("reset transitional v4 state", _clear_transitional_v4_state),
+            MigrationPhase("initialise v4 destination", _initialise_destination),
             MigrationPhase("defer bulk indexes", _defer_bulk_indexes),
+            MigrationPhase("populate v4 source state", _populate_source_state),
             MigrationPhase("populate v4 representation", _populate_v4),
             MigrationPhase("build bulk indexes", _build_bulk_indexes),
-            MigrationPhase("remove legacy v3 tables", _remove_legacy_tables),
         ),
         validate_target=_validate_v4_target,
         finalise_destination=_finalise_v4_destination,

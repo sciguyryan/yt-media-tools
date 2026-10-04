@@ -46,3 +46,7 @@ def test_real_migration_benchmark_measures_preflight_churn_and_compaction(tmp_pa
     assert result.preflight_to_peak_ratio > 0
     assert result.preflight_to_final_ratio > 0
     assert result.phase_seconds
+    assert result.stage_storage
+    assert "phase initialise v4 destination" in result.stage_storage
+    assert result.before_compaction.freelist_pages == 0
+    assert result.after_compaction.file_bytes == result.before_compaction.file_bytes
