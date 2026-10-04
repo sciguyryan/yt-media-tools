@@ -56,8 +56,11 @@ def test_certification_rejects_registered_metadata_mismatch(tmp_path: Path) -> N
     with connection:
         connection.execute("UPDATE cache_v4_ytdlp_metadata SET title='corrupted'")
     connection.close()
-    with pytest.raises(RuntimeError, match="registered metadata mismatch"):
+    with pytest.raises(RuntimeError, match="registered metadata mismatch") as exc_info:
         certify_v3_to_v4(source, target, mode=MigrationVerificationMode.FULL)
+    message = str(exc_info.value)
+    assert "title: expected" in message
+    assert "migrated 'corrupted' (str)" in message
 
 
 def test_certification_rejects_historical_timestamp_mismatch(tmp_path: Path) -> None:
