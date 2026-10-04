@@ -11,6 +11,11 @@ from .cache import MetadataCache
 from .cache_v4_ytdlp import STABLE_COLLECTION_EQUIVALENTS, normalise_registered_metadata
 
 
+_MIGRATION_FIXED_HEADROOM_PAGES = 16
+_MIGRATION_SOURCE_STATE_ROW_BYTES = 16
+_MIGRATION_INDEXED_ROWS_PER_PAGE = 256
+
+
 @dataclass(frozen=True)
 class V3Composition:
     """Facts that materially affect the size of a v4 destination."""
@@ -113,12 +118,13 @@ def estimate_v4_space(path: Path) -> V4SpaceEstimate:
     migrated_data_bytes = (
         composition.registered_json_bytes
         + composition.registered_collection_json_bytes
-        + composition.metadata_records * 192
-        + composition.distinct_media * 128
-        + composition.source_observations * 192
-        + composition.source_entries * 128
-        + composition.source_coverage * 160
-        + composition.source_frontiers * 160
+        + (
+            composition.source_observations
+            + composition.source_entries
+            + composition.source_coverage
+            + composition.source_frontiers
+        )
+        * _MIGRATION_SOURCE_STATE_ROW_BYTES
     )
     indexed_rows = (
         composition.distinct_media
@@ -128,7 +134,10 @@ def estimate_v4_space(path: Path) -> V4SpaceEstimate:
         + composition.source_coverage
         + composition.source_frontiers
     )
-    reserve_pages = max(8, (indexed_rows + 31) // 32)
+    reserve_pages = (
+        _MIGRATION_FIXED_HEADROOM_PAGES
+        + (indexed_rows + _MIGRATION_INDEXED_ROWS_PER_PAGE - 1) // _MIGRATION_INDEXED_ROWS_PER_PAGE
+    )
     return V4SpaceEstimate(
         composition=composition,
         fixed_schema_bytes=fixed_schema_bytes,

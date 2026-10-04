@@ -53,6 +53,7 @@ class MigrationBenchmarkResult:
     source_sha256_after: str
     preflight_required_bytes: int
     migration_seconds: float
+    verification_seconds: float
     phase_seconds: dict[str, float]
     stage_storage: dict[str, StorageMetrics]
     peak_observed_file_bytes: int
@@ -177,6 +178,7 @@ def run_benchmark(profile: str, additional_records: int, directory: Path) -> Mig
         source_sha256_after=_sha256(source),
         preflight_required_bytes=required,
         migration_seconds=migration_seconds,
+        verification_seconds=phase_seconds.get("target validation", 0.0),
         phase_seconds=dict(sorted(phase_seconds.items())),
         stage_storage=dict(sorted(stage_storage.items())),
         peak_observed_file_bytes=peak_observed_file_bytes,

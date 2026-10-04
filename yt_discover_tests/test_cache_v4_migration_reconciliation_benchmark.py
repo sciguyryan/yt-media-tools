@@ -39,6 +39,7 @@ def test_real_migration_benchmark_measures_preflight_churn_and_compaction(tmp_pa
     assert result.source_sha256_before == result.source_sha256_after
     assert result.preflight_required_bytes > 0
     assert result.migration_seconds > 0
+    assert result.verification_seconds > 0
     assert result.peak_observed_file_bytes >= result.before_compaction.file_bytes
     assert result.before_compaction.page_count >= result.before_compaction.freelist_pages
     assert result.after_compaction.freelist_pages == 0

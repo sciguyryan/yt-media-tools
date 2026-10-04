@@ -397,3 +397,9 @@ The v3-to-v4 migration builds a fresh v4 destination while keeping the v3 source
 During construction the destination remains explicitly incomplete and retains the historical source schema-version marker until target validation and certification succeed. Finalisation changes the destination to schema v4 and complete only after certification, preserving the restart-by-disposal and verified cut-over contract.
 
 Issue #135 migration measurements attribute the former persistent freelist to legacy-table removal rather than metadata batching or deferred index construction. Fresh-destination construction therefore prevents the measured churn at its source. Production migration does not run `VACUUM`; the reconciliation benchmark may compact its generated destination after measurement to quantify any residual SQLite page-layout difference.
+
+## Migration sizing and tuning
+
+The migration preflight estimate is based on the current v4 representation rather than the historical v3 database file size. It combines the materialised v4 schema size, measured registered scalar and collection payload sizes, conservative source-state row allowances, and explicit page/index headroom. Issue #135 remeasured these terms after fresh-destination migration removed the old copy-and-drop storage churn and reduced allowances that duplicated costs already represented by the surviving v4 payload.
+
+The migration continues to use bounded 500-row metadata transactions and defers the source-entry entity index until after bulk population. Reconciliation measurements found population to be the dominant migration phase, with target certification a comparatively small part of total runtime, and did not establish a material benefit that justified changing those production defaults. The constants remain named and measurable rather than semantic requirements so future evidence can justify retuning them.

@@ -28,6 +28,9 @@ _REQUIRED_V3_TABLES = frozenset(
 )
 _LEGACY_V3_TABLES = tuple(sorted(_REQUIRED_V3_TABLES - {"cache_meta"}))
 _MIGRATION_BATCH_SIZE = 500
+# Measured in issue #135 against deterministic small, normal and large migration shapes.
+# This remains a conservative transaction bound; tuning showed population dominates runtime,
+# while transaction batching is not a material source of storage churn after fresh-destination construction.
 _DEFERRED_V4_INDEXES = (("cache_v4_source_entries_entity", "cache_v4_source_entries", "entity_id"),)
 
 

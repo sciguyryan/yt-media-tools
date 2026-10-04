@@ -105,3 +105,11 @@ Part 3 extends the migration reconciliation output with `stage_storage`, recordi
 The production v3-to-v4 transition therefore now creates a fresh v4 destination and reads the protected v3 source separately. Historical source-state rows and detailed metadata are copied semantically into the v4 representation rather than copying legacy SQLite pages into the destination and dropping them later. The destination retains the established schema-v3/incomplete marker until target certification and finalisation, preserving restart-only and cut-over safety semantics.
 
 The migration benchmark continues to run an observational `VACUUM` after migration. With the fresh-destination strategy, final freelist usage should be zero; any remaining file-size difference after `VACUUM` is SQLite page-layout compaction rather than legacy-table reclamation. This evidence does not justify adding production `VACUUM` behaviour.
+
+### Migration tuning measurements
+
+Part 4 records target-verification time separately and re-evaluates preflight sizing against the fresh-destination migration introduced in Part 3. The previous sizing allowances were intentionally conservative for the older copy-and-drop construction and materially overstated the new migration's peak destination size. The revised estimator retains measured registered scalar and collection payload sizes, source-state allowances, current schema size and explicit page/index headroom while removing allowances that duplicated costs already represented by those measurements.
+
+Across the deterministic small, normal and large profiles used during Part 4, the revised preflight estimate remained above observed peak destination size while reducing the prior multi-fold overestimate. The large profile also showed target verification as a small fraction of total migration time; population remained the dominant phase. The existing 500-row bounded transaction size and deferred source-entry index are therefore retained rather than changed without evidence of a material benefit.
+
+These measurements are implementation evidence, not a promise that every possible historical cache shape has the same ratio. Preflight remains deliberately conservative and the large/huge profiles remain outside routine CI.
