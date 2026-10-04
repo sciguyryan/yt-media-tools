@@ -113,3 +113,19 @@ Part 4 records target-verification time separately and re-evaluates preflight si
 Across the deterministic small, normal and large profiles used during Part 4, the revised preflight estimate remained above observed peak destination size while reducing the prior multi-fold overestimate. The large profile also showed target verification as a small fraction of total migration time; population remained the dominant phase. The existing 500-row bounded transaction size and deferred source-entry index are therefore retained rather than changed without evidence of a material benefit.
 
 These measurements are implementation evidence, not a promise that every possible historical cache shape has the same ratio. Preflight remains deliberately conservative and the large/huge profiles remain outside routine CI.
+
+### Runtime and maintenance reconciliation
+
+`benchmarks/cache_v4_runtime_reconciliation.py` measures the production cache-v4 provider-resolution, retention and explicit-compaction paths against deterministic entity populations. The benchmark deliberately mixes fresh primary values, fresh known NULLs with specialised-provider fallback, stale primary values with fresh specialised-provider fallback, and old primary-only contributions selected by retention. This makes provider precedence, freshness and fallback behaviour part of the measured workload rather than timing a trivial single-provider lookup.
+
+Run the normal profile with:
+
+```bash
+python benchmarks/cache_v4_runtime_reconciliation.py --profile normal --output /tmp/cache-v4-runtime-normal.json
+```
+
+Use `--entity-count` for an exact deterministic population. The `large` and `huge` profiles are opt-in local workloads and remain outside routine CI.
+
+Storage figures before explicit compaction include both the main SQLite database and WAL because WAL-backed caches can hold most recently committed pages outside the main file until checkpointing. `reusable_bytes_after_maintenance` reports the main database freelist specifically. Explicit compaction first checkpoints WAL where possible and only runs `VACUUM` when the main database has reusable pages, so a small maintenance operation may correctly require no vacuum while a checkpoint alone still changes physical allocation.
+
+Issue #135 measurements showed provider resolution remaining approximately linear across the small, normal and large deterministic profiles, with no evidence justifying a provider-resolution cache or precedence shortcut. Retention planning and execution likewise remained small relative to the measured workloads. The existing semantic rules are therefore retained: a fresh known NULL does not hide a lower-priority fresh value, a stale higher-priority value does not outrank a fresh lower-priority value, retention remains opt-in, and compaction remains explicit rather than automatic.
