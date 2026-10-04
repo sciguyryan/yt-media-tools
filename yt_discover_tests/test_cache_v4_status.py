@@ -161,3 +161,46 @@ def test_cache_status_cli_can_emit_machine_readable_json(tmp_path: Path, capsys)
     assert payload["providers"][0]["revision_current"] is True
     assert payload["retention"]["provider_max_age"] is None
     assert payload["sqlite"]["journal_mode"] == "wal"
+
+
+def test_cache_compact_cli_compacts_explicit_cache_without_source(tmp_path: Path, capsys) -> None:
+    from yt_media_tools.discover_application import main
+
+    path = tmp_path / "metadata.sqlite3"
+    connection = _populated_cache(path)
+    connection.execute("CREATE TABLE compaction_payload(value TEXT)")
+    connection.executemany(
+        "INSERT INTO compaction_payload(value) VALUES (?)",
+        (("x" * 2048,) for _ in range(128)),
+    )
+    connection.commit()
+    connection.execute("DELETE FROM compaction_payload")
+    connection.commit()
+    free_pages = int(connection.execute("PRAGMA freelist_count").fetchone()[0])
+    connection.close()
+    assert free_pages > 0
+
+    before = path.stat().st_size
+    assert main(["--cache-compact", "--cache", str(path)]) == 0
+    output = capsys.readouterr().out
+    after = path.stat().st_size
+
+    assert "Cache compaction complete:" in output
+    assert "vacuum=yes" in output
+    assert "reclaimed=" in output
+    assert after < before
+
+
+def test_cache_compact_cli_reports_when_vacuum_is_not_needed(tmp_path: Path, capsys) -> None:
+    from yt_media_tools.discover_application import main
+
+    path = tmp_path / "metadata.sqlite3"
+    connection = _populated_cache(path)
+    connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    connection.close()
+
+    assert main(["--cache-compact", "--cache", str(path)]) == 0
+    output = capsys.readouterr().out
+
+    assert "Cache compaction complete:" in output
+    assert "vacuum=not needed" in output

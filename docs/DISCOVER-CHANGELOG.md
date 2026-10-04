@@ -4,6 +4,16 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+### Benchmark and reconcile Discover cache v4
+
+- [benchmark] Add deterministic cache-v4 storage, migration, runtime, provider-resolution, retention and compaction benchmark profiles, with large workloads kept outside routine CI.
+- [migration] Build v3-to-v4 migration into a fresh v4 destination so copied legacy tables no longer leave large persistent freelists after cut-over.
+- [migration] Retune composition-aware disk preflight against measured fresh-destination storage while retaining conservative headroom and the established bounded transaction and deferred-index strategy.
+- [maintenance] Preserve provider precedence, freshness fallback, opt-in retention and explicit compaction where measurements do not justify semantic shortcuts or automatic vacuuming.
+- [cli] Retain `--cache-compact` as the explicit Discover operation for checkpointing and compacting the active metadata cache, including direct `--cache FILE` use.
+- [test] Add command-level coverage proving `--cache-compact` reclaims reusable pages and reports when no vacuum is required.
+- [docs] Reconcile the cache-v4 design and benchmark guidance with measured migration, runtime, retention and compaction behaviour.
+
 ### Remove unused raw metadata compatibility
 
 - [breaking] Remove the unused `raw.*` yt-sql metadata namespace before public release rather than preserving an unneeded compatibility contract.
