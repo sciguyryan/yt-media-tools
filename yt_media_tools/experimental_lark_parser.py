@@ -66,7 +66,9 @@ class _LarkModelBuilder:
         return self.source[node.meta.start_pos : node.meta.end_pos]
 
     def _trees(self, node, name: str | None = None):
-        return [child for child in node.children if isinstance(child, self.Tree) and (name is None or child.data == name)]
+        return [
+            child for child in node.children if isinstance(child, self.Tree) and (name is None or child.data == name)
+        ]
 
     def _first(self, node, name: str):
         for child in node.children:
@@ -80,25 +82,70 @@ class _LarkModelBuilder:
         return self._slice(node)
 
     def query(self, root):
+        """Build a complete prototype query, including CTE and UNION composition."""
         from dataclasses import replace
-        from .query_model import Query
+        from .query_model import CommonTableExpression
 
         expression = self._first(root, "query_expression")
         if expression is None:
             raise QuerySyntaxError(self.source, "Unsupported experimental query shape.", 0)
-        primary = next((c for c in expression.children if isinstance(c, self.Tree) and c.data in {"select_query", "predicate_only_query"}), None)
-        if primary is None:
-            raise QuerySyntaxError(self.source, "Grouped and compound queries are not yet modelled by the prototype.", 0)
-        if primary.data == "predicate_only_query":
-            predicate_tree = next(c for c in primary.children if isinstance(c, self.Tree))
-            query = Query(predicate=self.boolean(predicate_tree), source=self.source)
-        else:
-            query = self.select_query(primary)
+        query = self.query_expression(expression)
+        with_clause = self._first(root, "with_clause")
+        if with_clause:
+            ctes = []
+            for cte in self._trees(with_clause, "cte"):
+                name_node = cte.children[0]
+                nested = self._first(cte, "query_expression")
+                ctes.append(
+                    CommonTableExpression(
+                        self._token_text(name_node).strip("`").replace("``", "`"),
+                        self.query_expression(nested),
+                        self._node_start(name_node),
+                    )
+                )
+            query = replace(query, ctes=tuple(ctes))
+        return replace(query, source=self.source)
+
+    def query_expression(self, expression):
+        from dataclasses import replace
+        from .query_model import Query, SetOperation
+
+        primaries = [
+            child
+            for child in expression.children
+            if isinstance(child, self.Tree)
+            and child.data in {"select_query", "predicate_only_query", "query_expression"}
+        ]
+        if not primaries:
+            raise QuerySyntaxError(self.source, "Unsupported experimental query shape.", expression.meta.start_pos)
+
+        def build_primary(primary):
+            if primary.data == "predicate_only_query":
+                predicate_tree = next(c for c in primary.children if isinstance(c, self.Tree))
+                return Query(predicate=self.boolean(predicate_tree), source=self.source)
+            if primary.data == "query_expression":
+                return replace(self.query_expression(primary), left_query=self.query_expression(primary))
+            return self.select_query(primary)
+
+        query = build_primary(primaries[0])
+        union_nodes = self._trees(expression, "union_operator")
+        operations = []
+        for union, primary in zip(union_nodes, primaries[1:]):
+            operations.append(
+                SetOperation(
+                    build_primary(primary),
+                    "ALL" in self._slice(union).upper(),
+                    union.meta.start_pos,
+                    False,
+                    primary.data == "query_expression",
+                )
+            )
         order = self._first(expression, "order_by_clause")
         limit = self._first(expression, "limit_clause")
         offset = self._first(expression, "offset_clause")
         return replace(
             query,
+            set_operations=tuple(query.set_operations) + tuple(operations),
             order_by=tuple(self.order_term(term) for term in self._trees(order, "order_term")) if order else (),
             limit=int(str(limit.children[0]).replace("_", "")) if limit else None,
             offset=int(str(offset.children[0]).replace("_", "")) if offset else 0,
@@ -113,35 +160,98 @@ class _LarkModelBuilder:
         where_clause = self._first(node, "where_clause")
         group_clause = self._first(node, "group_by_clause")
         having_clause = self._first(node, "having_clause")
-        select = tuple(self.select_term(term) for term in self._trees(select_clause, "select_term")) if select_clause else ()
+        select = (
+            tuple(self.select_term(term) for term in self._trees(select_clause, "select_term")) if select_clause else ()
+        )
         distinct = bool(select_clause and self._slice(select_clause).lstrip().upper().startswith("SELECT DISTINCT"))
         from_source = from_facet = from_alias = None
+        joins = ()
+        additional_facets = ()
         if from_clause:
             relation = self._first(from_clause, "relation_reference")
             if relation:
                 from_source, facets, from_alias = self.relation_reference(relation)
-                from_facet = facets[0] if facets else None
-                if len(facets) > 1:
-                    raise QuerySyntaxError(self.source, "Facet expansion is not yet modelled by the prototype.", relation.meta.start_pos)
+                from_facet = facets[0][0] if facets else None
+                additional_facets = tuple(facets[1:])
+            joins = tuple(self.join_clause(join) for join in self._trees(from_clause, "join_clause"))
         predicate = None
         if where_clause:
             predicate = self.boolean(next(c for c in where_clause.children if isinstance(c, self.Tree)))
         group_by = tuple(self.scalar(child) for child in (group_clause.children if group_clause else ()))
         having = self.having(self._trees(having_clause)[0]) if having_clause else None
-        return Query(predicate=predicate, source=self.source, select=select, from_source=from_source, distinct=distinct, from_facet=from_facet, from_alias=from_alias, group_by=group_by, having=having)
+        query = Query(
+            predicate=predicate,
+            source=self.source,
+            select=select,
+            from_source=from_source,
+            distinct=distinct,
+            from_facet=from_facet,
+            from_alias=from_alias,
+            group_by=group_by,
+            having=having,
+            joins=joins,
+        )
+        if additional_facets:
+            from dataclasses import replace
+            from .query_model import SetOperation
+
+            operations = tuple(
+                SetOperation(replace(query, from_facet=facet, set_operations=()), True, position, True)
+                for facet, position in additional_facets
+            )
+            query = replace(query, set_operations=operations)
+        return query
 
     def relation_reference(self, node):
         trees = self._trees(node)
-        source_node = trees[0] if trees else node.children[0]
+        source_node = trees[0] if trees and trees[0].data not in {"facet_reference"} else node.children[0]
         source = self._token_text(source_node)
-        facets = [self._token_text(f.children[0] if f.children else f) for f in self._trees(node, "facet_reference")]
+        if source.startswith(("'", '"')):
+            source = source[1:-1].replace(source[0] * 2, source[0])
+        elif source.startswith("`"):
+            source = source[1:-1].replace("``", "`")
+        facets = []
+        for facet_node in self._trees(node, "facet_reference"):
+            child = facet_node.children[0] if facet_node.children else facet_node
+            facets.append((self._token_text(child).strip("`").replace("``", "`").casefold(), self._node_start(child)))
         alias = None
         text = self._slice(node)
         import re
+
         match = re.search(r"\bAS\s+(`(?:``|[^`])+`|[^\s,]+)\s*$", text, re.IGNORECASE)
         if match:
             alias = match.group(1).replace("``", "`").strip("`")
         return source, facets, alias
+
+    def join_clause(self, node):
+        from .query_model import JoinClause, JoinKind, RelationReference
+
+        kind_text = self._slice(self._first(node, "join_kind")).upper()
+        if kind_text.startswith("LEFT"):
+            kind = JoinKind.LEFT
+        elif kind_text.startswith("SEMI"):
+            kind = JoinKind.SEMI
+        elif kind_text.startswith("ANTI"):
+            kind = JoinKind.ANTI
+        else:
+            kind = JoinKind.INNER
+        relation_node = self._first(node, "relation_reference_single")
+        source, facets, alias = self.relation_reference(relation_node)
+        facet = facets[0][0] if facets else None
+        relation = RelationReference(source, facet, alias, relation_node.meta.start_pos)
+        predicate_node = next(
+            child
+            for child in node.children
+            if isinstance(child, self.Tree) and child.data not in {"join_kind", "relation_reference_single"}
+        )
+        if predicate_node.data == "boolean_not" and not self._slice(predicate_node).lstrip().upper().startswith("NOT "):
+            predicate_node = self._trees(predicate_node)[0]
+        predicate = self.boolean(predicate_node)
+        from .query_model import Binary, ScalarComparison
+
+        if isinstance(predicate, Binary) and predicate.operator in {"=", "!=", "<>", "<", "<=", ">", ">="}:
+            predicate = ScalarComparison(predicate.operator, predicate.left, predicate.right)
+        return JoinClause(kind, relation, predicate, node.meta.start_pos)
 
     def select_term(self, node):
         from .query_formatter import format_scalar_expression
@@ -151,6 +261,7 @@ class _LarkModelBuilder:
         expr = self.scalar(expr_node)
         text = self._slice(node)
         import re
+
         match = re.search(r"\s+AS\s+(`(?:``|[^`])+`|[^\s]+)\s*$", text, re.IGNORECASE)
         alias = match.group(1).replace("``", "`").strip("`") if match else None
         return SelectTerm(format_scalar_expression(expr), alias, self._node_start(expr_node), expression=expr)
@@ -161,10 +272,15 @@ class _LarkModelBuilder:
 
         expr_node = next(c for c in node.children if isinstance(c, self.Tree) or hasattr(c, "value"))
         expr = self.scalar(expr_node)
-        return OrderTerm(format_scalar_expression(expr), self._slice(node).rstrip().upper().endswith(" DESC"), self._node_start(expr_node), expression=expr)
+        return OrderTerm(
+            format_scalar_expression(expr),
+            self._slice(node).rstrip().upper().endswith(" DESC"),
+            self._node_start(expr_node),
+            expression=expr,
+        )
 
     def scalar(self, node):
-        from .query_model import Field, Literal, ScalarBinary, ScalarIndex, ScalarMember, ScalarUnary
+        from .query_model import Field, ScalarBinary, ScalarIndex, ScalarMember, ScalarUnary
 
         if not isinstance(node, self.Tree):
             token_type = getattr(node, "type", "")
@@ -216,8 +332,9 @@ class _LarkModelBuilder:
             if getattr(token, "type", "") in {"NUMBER", "UNIT_LITERAL", "STRING"}:
                 return self.literal_token(token)
             return Field(str(token).strip("`").replace("``", "`"), getattr(token, "start_pos", node.meta.start_pos))
-        raise QuerySyntaxError(self.source, f"Experimental model construction does not yet support {data}.", node.meta.start_pos)
-
+        raise QuerySyntaxError(
+            self.source, f"Experimental model construction does not yet support {data}.", node.meta.start_pos
+        )
 
     def function(self, node):
         from .query_model import AggregateFunction, CollectionFilter, CollectionProjection, ScalarFunction
@@ -235,7 +352,9 @@ class _LarkModelBuilder:
             return CollectionProjection(collection, binding, self.scalar(body), node.meta.start_pos)
         if node.data == "aggregate_function":
             count_star = name == "COUNT" and "*" in text[text.index("(") + 1 : text.rfind(")")]
-            args = tuple(self.scalar(child) for child in trees if child.data not in {"aggregate_name", "aggregate_filter"})
+            args = tuple(
+                self.scalar(child) for child in trees if child.data not in {"aggregate_name", "aggregate_filter"}
+            )
             filter_node = self._first(node, "aggregate_filter")
             filter_predicate = self.boolean(self._trees(filter_node)[0]) if filter_node else None
             return AggregateFunction(name, args, count_star, filter_predicate, node.meta.start_pos)
@@ -261,7 +380,6 @@ class _LarkModelBuilder:
             else_result = self.scalar(node.children[-1])
         return ScalarCase(tuple(whens), else_result, node.meta.start_pos)
 
-
     def having(self, node):
         from .query_model import Binary, ScalarComparison, ScalarIsNull
 
@@ -277,6 +395,7 @@ class _LarkModelBuilder:
             value = self.having(child)
             if self._slice(node).lstrip().upper().startswith("NOT "):
                 from .query_model import Unary
+
                 return Unary("NOT", value)
             return value
         if node.data == "having_predicate":
@@ -289,6 +408,7 @@ class _LarkModelBuilder:
                 return ScalarIsNull(left, False)
             right = self.scalar(values[-1])
             import re
+
             match = re.search(r"<=|>=|!=|<>|=|<|>", self._slice(node))
             if not match:
                 raise QuerySyntaxError(self.source, "Unsupported experimental HAVING predicate.", node.meta.start_pos)
@@ -303,6 +423,7 @@ class _LarkModelBuilder:
             value = self.boolean(child)
             if self._slice(node).lstrip().upper().startswith("NOT "):
                 from .query_model import Unary
+
                 return Unary("NOT", value)
             return value
         if node.data in {"boolean_expression", "boolean_and"}:
@@ -323,23 +444,36 @@ class _LarkModelBuilder:
                 return IsNull(left, False)
             values = [c for c in suffix.children if isinstance(c, self.Tree) or hasattr(c, "value")]
             if "BETWEEN" in upper:
-                return Between(left, self.predicate_literal(values[-2]), self.predicate_literal(values[-1]), "NOT BETWEEN" in upper)
+                return Between(
+                    left, self.predicate_literal(values[-2]), self.predicate_literal(values[-1]), "NOT BETWEEN" in upper
+                )
             if " IN" in f" {upper}":
                 return InList(left, tuple(self.predicate_literal(value) for value in values), "NOT IN" in upper)
-            for spelling, canonical in (("CONTAINS", "CONTAINS"), ("CONTAIN", "CONTAINS"), ("MATCHES", "MATCHES"), ("MATCH", "MATCHES"), ("ILIKE", "ILIKE"), ("LIKE", "LIKE")):
+            for spelling, canonical in (
+                ("CONTAINS", "CONTAINS"),
+                ("CONTAIN", "CONTAINS"),
+                ("MATCHES", "MATCHES"),
+                ("MATCH", "MATCHES"),
+                ("ILIKE", "ILIKE"),
+                ("LIKE", "LIKE"),
+            ):
                 if spelling in upper:
-                    return TextPredicate(canonical, left, self.scalar(values[-1]), "NOT" in upper or upper.startswith("DOES"))
+                    return TextPredicate(
+                        canonical, left, self.scalar(values[-1]), "NOT" in upper or upper.startswith("DOES")
+                    )
             right_node = values[-1]
             right = self.predicate_literal(right_node)
             import re
+
             match = re.search(r"<=|>=|!=|<>|=|<|>", text)
             if not match:
                 raise QuerySyntaxError(self.source, "Unsupported experimental predicate.", suffix.meta.start_pos)
             return Binary(match.group(0), left, right)
         if node.data == "boolean_primary":
             return self.boolean(next(c for c in node.children if isinstance(c, self.Tree)))
-        raise QuerySyntaxError(self.source, f"Experimental Boolean construction does not yet support {node.data}.", node.meta.start_pos)
-
+        raise QuerySyntaxError(
+            self.source, f"Experimental Boolean construction does not yet support {node.data}.", node.meta.start_pos
+        )
 
     def predicate_literal(self, node):
         """Build legacy predicate literals, whose unquoted values remain textual."""
@@ -356,6 +490,7 @@ class _LarkModelBuilder:
     def literal_text(self, text: str, position: int):
         from .query_model import Literal
         import re
+
         raw = text
         if text.startswith(("'", '"')):
             quote = text[0]

@@ -33,3 +33,25 @@ def test_lark_model_matches_reference_parser_for_initial_model_slice(source: str
 
     assert normalised_parser_model(actual) == normalised_parser_model(expected)
     assert user_origin_positions(actual) == user_origin_positions(expected)
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "WITH x AS (SELECT id FROM @a) SELECT id FROM x",
+        "WITH x AS (SELECT id FROM @a), y AS (SELECT id FROM @b) SELECT id FROM x",
+        "SELECT id FROM @a UNION SELECT id FROM @b",
+        "SELECT id FROM @a UNION ALL SELECT id FROM @b",
+        "SELECT id FROM @a OF videos, shorts",
+        "SELECT a.id FROM @a AS a JOIN @b AS b ON a.id = b.id",
+        "SELECT a.id FROM @a AS a LEFT JOIN @b OF videos AS b ON a.id = b.id",
+        "SELECT a.id FROM @a AS a SEMI JOIN @b AS b ON a.id = b.id",
+        "SELECT a.id FROM @a AS a ANTI JOIN @b AS b ON a.id = b.id",
+    ),
+)
+def test_lark_model_matches_reference_parser_for_structural_query_families(source: str) -> None:
+    expected = parse_query(source)
+    actual = parse_lark_query(source)
+
+    assert normalised_parser_model(actual) == normalised_parser_model(expected)
+    assert user_origin_positions(actual) == user_origin_positions(expected)
