@@ -11,12 +11,12 @@ from dataclasses import fields, is_dataclass
 from enum import Enum
 from typing import Any
 
-from .query_model import QuerySyntaxError
+from .query_model import Literal, QuerySyntaxError
 
 # Construction metadata is not part of the normalised language model. Source
 # origins are compared separately because they have a different equivalence
 # contract from semantic structure.
-_INCIDENTAL_MODEL_FIELDS = frozenset({"position", "source", "span", "location", "context"})
+_INCIDENTAL_MODEL_FIELDS = frozenset({"position", "source", "span", "location", "context", "raw"})
 
 
 def normalised_parser_model(value: Any) -> Any:
@@ -31,6 +31,10 @@ def normalised_parser_model(value: Any) -> Any:
         return tuple(normalised_parser_model(item) for item in value)
     if isinstance(value, dict):
         return tuple(sorted((key, normalised_parser_model(item)) for key, item in value.items()))
+    if isinstance(value, Literal):
+        from .query_formatter import _format_literal
+
+        return ("Literal", (("canonical", _format_literal(value)), ("value_type", type(value.value).__name__)))
     if is_dataclass(value):
         members = tuple(
             (field.name, normalised_parser_model(getattr(value, field.name)))

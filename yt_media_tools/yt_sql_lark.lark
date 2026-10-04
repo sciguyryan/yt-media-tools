@@ -19,7 +19,8 @@ select_query: select_clause from_clause? where_clause? group_by_clause? having_c
             | group_by_clause having_clause?
             | having_clause
 select_clause: "SELECT"i "DISTINCT"i? select_term ("," select_term)*
-select_term: relation_wildcard | scalar_expression ("AS"i identifier)?
+select_term: projection_wildcard | relation_wildcard | scalar_expression ("AS"i identifier)?
+projection_wildcard: "*"
 relation_wildcard: identifier "." "*"
 
 from_clause: "FROM"i relation_reference join_clause*
@@ -40,12 +41,12 @@ offset_clause: "OFFSET"i DECIMAL_INTEGER
 
 ?boolean_expression: boolean_and ("OR"i boolean_and)*
 ?boolean_and: boolean_not ("AND"i boolean_not)*
-boolean_not: "NOT"i? boolean_primary
+boolean_not: "NOT"i boolean_not | boolean_primary
 ?boolean_primary: predicate | collection_predicate | "(" boolean_expression ")" truth_test?
 collection_predicate: ("ANY"i | "ALL"i) "(" scalar_expression "AS"i identifier "WHERE"i boolean_expression ")"
 
 predicate: scalar_expression predicate_suffix
-?predicate_suffix: comparison_operator scalar_expression
+?predicate_suffix: comparison_operator comparison_value
                  | "NOT"i? "BETWEEN"i literal_value "AND"i literal_value
                  | "NOT"i? "IN"i "(" literal_value ("," literal_value)* ")"
                  | "NOT"i? "IS"i "NOT"i? "DISTINCT"i "FROM"i scalar_expression
@@ -56,6 +57,7 @@ predicate: scalar_expression predicate_suffix
                  | natural_comparison literal_value
                  |
 comparison_operator: "=" | "!=" | "<>" | "<" | "<=" | ">" | ">="
+?comparison_value: temporal_literal | literal_sequence | scalar_expression
 truth_test: "IS"i "NOT"i? truth_value
 truth_value: "TRUE"i | "FALSE"i | "UNKNOWN"i
 text_operator: "CONTAIN"i | "CONTAINS"i | "MATCH"i | "MATCHES"i | "LIKE"i | "ILIKE"i
@@ -70,7 +72,7 @@ having_predicate: scalar_expression (comparison_operator scalar_expression | "IS
 ?scalar_expression: additive_expression
 ?additive_expression: multiplicative_expression (("+" | "-") multiplicative_expression)*
 ?multiplicative_expression: unary_expression (("*" | "/" | "%") unary_expression)*
-?unary_expression: ("+" | "-") unary_expression | postfix_expression
+?unary_expression: UNARY_OPERATOR unary_expression | postfix_expression
 ?postfix_expression: scalar_atom (index_suffix | member_suffix)*
 index_suffix: "[" scalar_expression "]"
 member_suffix: "." identifier
@@ -79,11 +81,11 @@ member_suffix: "." identifier
 case_expression: "CASE"i case_when+ ("ELSE"i scalar_expression)? "END"i
 case_when: "WHEN"i boolean_expression "THEN"i scalar_expression
 
-?scalar_function: unary_scalar_function "(" scalar_expression ")"
-                | multi_scalar_function "(" scalar_expression "," scalar_expression ("," scalar_expression)* ")"
-                | "CHAR"i "(" scalar_expression ("," scalar_expression)* ")"
-                | "NULLIF"i "(" scalar_expression "," scalar_expression ")"
-                | "RANDOM"i "(" scalar_expression? ")"
+scalar_function: unary_scalar_function "(" scalar_expression ")"
+               | multi_scalar_function "(" scalar_expression "," scalar_expression ("," scalar_expression)* ")"
+               | "CHAR"i "(" scalar_expression ("," scalar_expression)* ")"
+               | "NULLIF"i "(" scalar_expression "," scalar_expression ")"
+               | "RANDOM"i "(" scalar_expression? ")"
 unary_scalar_function: "LOWER"i | "UPPER"i | "LENGTH"i | "CARDINALITY"i
 multi_scalar_function: "COALESCE"i | "CONCAT"i | "GREATEST"i | "LEAST"i
 aggregate_function: "COUNT"i "(" ("*" | scalar_expression | scalar_expression "AS"i identifier "WHERE"i boolean_expression) ")" aggregate_filter?
@@ -93,8 +95,9 @@ aggregate_filter: "FILTER"i "(" "WHERE"i boolean_expression ")"
 collection_transform: "FILTER"i "(" scalar_expression "AS"i identifier "WHERE"i boolean_expression ")"
                     | "MAP"i "(" scalar_expression "AS"i identifier "SELECT"i scalar_expression ")"
 
-?scalar_literal: UNIT_LITERAL | NUMBER | STRING | "TRUE"i | "FALSE"i | "NULL"i
-?literal_value: scalar_literal | identifier | literal_sequence
+scalar_literal: UNIT_LITERAL | NUMBER | STRING | "TRUE"i | "FALSE"i | "NULL"i
+temporal_literal: INFINITY | TEMPORAL | DATETIME | DATE | TIME
+?literal_value: scalar_literal | temporal_literal | identifier | literal_sequence
 ?text_value: STRING | identifier | UNIT_LITERAL | NUMBER | DATE | DATETIME | TIME | TEMPORAL
 literal_sequence: literal_piece+
 ?literal_piece: identifier | UNIT_LITERAL | NUMBER | DATE | DATETIME | TIME | TEMPORAL | "+" | "-" | "*" | "/" | "%"
@@ -108,10 +111,12 @@ UNIT_LITERAL: /\d+(?:\.\d+)?[^\W\d_]+(?:-[^\W\d_]+)*(?:\d+(?:\.\d+)?[^\W\d_]+(?:
 NUMBER: /(?:0[xX][0-9A-Za-z_]+|0[oO][0-9A-Za-z_]+|0[bB][0-9A-Za-z_]+|\d[\d_]*(?:\.\d[\d_]*)?(?:[kKmMbB])?)/
 DECIMAL_INTEGER: /\d[\d_]*/
 STRING: /'(?:''|\\.|[^'\\])*'|"(?:""|\\.|[^"\\])*"/
-TEMPORAL: /(?i:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[^\W\d_]+(?:-[^\W\d_]+)*)?/
-DATETIME: /\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/
-DATE: /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}[-\/.]\d{1,2}[-\/.]\d{4}/
-TIME: /\d{1,3}:\d{1,2}(?::\d{1,2})?/
+INFINITY.4: /(?i:-?INFINITY\(\))/
+TEMPORAL.4: /(?i:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[^\W\d_]+(?:-[^\W\d_]+)*)?/
+DATETIME.3: /\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/
+DATE.2: /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}[-\/.]\d{1,2}[-\/.]\d{4}/
+TIME.2: /\d{1,3}:\d{1,2}(?::\d{1,2})?/
+UNARY_OPERATOR: "+" | "-"
 
 %import common.WS
 %ignore WS

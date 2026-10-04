@@ -24,7 +24,8 @@ select-query          = select-clause, [ from-clause ], [ where-clause ], [ grou
                       | group-by-clause, [ having-clause ]
                       | having-clause ;
 select-clause         = "SELECT", [ "DISTINCT" ], select-term, { ",", select-term } ;
-select-term           = relation-wildcard | scalar-expression, [ "AS", identifier ] ;
+select-term           = projection-wildcard | relation-wildcard | scalar-expression, [ "AS", identifier ] ;
+projection-wildcard  = "*" ;
 relation-wildcard     = identifier, ".", "*" ;
 
 from-clause           = "FROM", relation-reference, { join-clause } ;
@@ -49,7 +50,7 @@ offset-clause         = "OFFSET", non-negative-decimal-integer ;
 
 boolean-expression    = boolean-and, { "OR", boolean-and } ;
 boolean-and           = boolean-not, { "AND", boolean-not } ;
-boolean-not           = [ "NOT" ], boolean-primary ;
+boolean-not           = { "NOT" }, boolean-primary ;
 boolean-primary       = predicate
                       | collection-predicate
                       | "(", boolean-expression, ")",
@@ -58,7 +59,7 @@ collection-predicate  = ( "ANY" | "ALL" ), "(", scalar-expression, "AS", identif
                         "WHERE", boolean-expression, ")" ;
 
 predicate             = scalar-expression, predicate-suffix ;
-predicate-suffix      = comparison-operator, scalar-expression
+predicate-suffix      = comparison-operator, ( scalar-expression | temporal-literal | literal-sequence )
                       | [ "NOT" ], "BETWEEN", literal-value, "AND", literal-value
                       | [ "NOT" ], "IN", "(", literal-value, { ",", literal-value }, ")"
                       | [ "NOT" ], "IS", [ "NOT" ], "DISTINCT", "FROM", scalar-expression
@@ -69,6 +70,7 @@ predicate-suffix      = comparison-operator, scalar-expression
                       | natural-comparison, literal-value
                       | empty ;
 comparison-operator   = "=" | "!=" | "<>" | "<" | "<=" | ">" | ">=" ;
+temporal-literal      = infinity-token | temporal-token | datetime-token | date-token | time-token ;
 truth-test            = "IS", [ "NOT" ], truth-value ;
 truth-value           = "TRUE" | "FALSE" | "UNKNOWN" ;
 text-operator         = "CONTAIN" | "CONTAINS" | "MATCH" | "MATCHES" | "LIKE" | "ILIKE" ;
@@ -123,7 +125,7 @@ collection-transform  = "FILTER", "(", scalar-expression, "AS", identifier, "WHE
                       | "MAP", "(", scalar-expression, "AS", identifier, "SELECT", scalar-expression, ")" ;
 
 scalar-literal        = unit-literal | number | string | "TRUE" | "FALSE" | "NULL" ;
-literal-value         = scalar-literal | identifier | literal-sequence ;
+literal-value         = scalar-literal | temporal-literal | identifier | literal-sequence ;
 text-value            = string | identifier | number | date-token | datetime-token | time-token | temporal-token ;
 literal-sequence      = literal-piece, { literal-piece } ;
 literal-piece         = identifier | unit-literal | number | date-token | datetime-token | time-token | temporal-token | "+" | "-" | "*" | "/" | "%" ;

@@ -8,6 +8,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 - [experimental] Begin the declarative-parser investigation with an isolated Lark grammar recogniser and deterministic corpus coverage; the transcription exposes revision-1 EBNF mismatches around empty query bodies and established unit literals that must be reconciled before parser migration.
 - [test] Establish a two-parser differential harness that classifies acceptance, normalised-model, source-origin, diagnostic and unexpected-error differences across the migration, conformance and generated syntax corpora.
+- [test] Require the hand-written and Lark parsers to produce equivalent models and source origins across the complete accepted differential inventory, with same-parser and cross-parser canonical convergence.
+- [experimental] Reconcile Lark model construction across temporal literals, truth tests, collection scopes, scalar and aggregate functions, joins, CTEs and set composition without changing the production parser path.
+- [docs] Record revision-1 grammar corrections for established projection wildcard, repeated Boolean negation and temporal-token syntax exposed by differential conformance.
 - [docs] Reconcile grammar revision 1 with established parser behaviour by requiring a non-empty select query and formally representing accepted unit literals without changing yt-sql syntax.
 - [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.
 - [migration] Migrate recognised managed v3 caches side by side into a fresh v4 destination, keep the source read-only, and cut over only after structural and semantic certification succeeds.
