@@ -183,3 +183,26 @@ def test_mixed_music_and_ordinary_origins_do_not_prove_batch_music_trait() -> No
         ]
     )
     assert resolved_source_traits(resolutions) == frozenset()
+
+
+def test_observed_resolutions_order_optional_provenance_without_type_errors() -> None:
+    records = [
+        {"webpage_url_domain": "www.youtube.com"},
+        {"extractor": "youtube", "extractor_key": "Youtube", "webpage_url_domain": "www.youtube.com"},
+        {"extractor": "youtube", "webpage_url_domain": "www.youtube.com"},
+        {
+            "extractor": "youtube",
+            "extractor_key": "Youtube",
+            "original_url": "https://music.youtube.com/watch?v=example",
+        },
+        {"extractor": "youtube", "extractor_key": "Youtube", "_type": "playlist"},
+    ]
+
+    first = observed_ytdlp_resolutions(records)
+    second = observed_ytdlp_resolutions(list(reversed(records)))
+
+    assert first == second
+    assert len(first) == len(records)
+    assert any(item.extractor is None for item in first)
+    assert any(item.extractor_key is None for item in first)
+    assert any(item.original_domain is None for item in first)

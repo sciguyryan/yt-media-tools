@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from urllib.parse import urlsplit
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class BackendSourceResolution:
     """One distinct source-resolution observation reported by an acquisition backend.
 
@@ -72,10 +72,28 @@ def resolution_from_ytdlp_record(record: dict) -> BackendSourceResolution | None
     )
 
 
+def _optional_text_sort_key(value: str | None) -> tuple[bool, str]:
+    """Return a total-order key for optional text without comparing ``None`` to text."""
+    return value is not None, value or ""
+
+
+def _resolution_sort_key(resolution: BackendSourceResolution) -> tuple[object, ...]:
+    """Return deterministic ordering for backend provenance with optional dimensions."""
+    return (
+        resolution.provider,
+        _optional_text_sort_key(resolution.extractor),
+        _optional_text_sort_key(resolution.extractor_key),
+        _optional_text_sort_key(resolution.extractor_family),
+        _optional_text_sort_key(resolution.result_type),
+        _optional_text_sort_key(resolution.webpage_domain),
+        _optional_text_sort_key(resolution.original_domain),
+    )
+
+
 def observed_ytdlp_resolutions(records: list[dict]) -> tuple[BackendSourceResolution, ...]:
     """Return deterministic distinct backend-resolution observations from records."""
     observed = {resolution for record in records if (resolution := resolution_from_ytdlp_record(record)) is not None}
-    return tuple(sorted(observed))
+    return tuple(sorted(observed, key=_resolution_sort_key))
 
 
 def format_backend_resolution(resolution: BackendSourceResolution) -> str:
