@@ -83,3 +83,17 @@ python benchmarks/cache_v4_reconciliation.py --profile large --database /tmp/cac
 ```
 
 Use `--sources` and `--overlap-percent` to measure repeated-media deduplication under different source shapes. Benchmark JSON and generated databases are local measurement artefacts and must not be treated as canonical source files.
+
+### Migration reconciliation
+
+`benchmarks/cache_v4_migration_reconciliation.py` exercises the production v3-to-v4 migration against deterministic shapes derived from the permanent historical v3 fixture. It records the composition-aware preflight estimate, total migration time, structured phase timings, the largest destination size observed at migration stage boundaries, final page and freelist usage, and the size after an observational `VACUUM`. The source hash is recorded before and after migration so benchmark runs also prove source immutability.
+
+Run the normal migration profile with:
+
+```bash
+python benchmarks/cache_v4_migration_reconciliation.py --profile normal --output /tmp/cache-v4-migration-normal.json
+```
+
+Use `--additional-records` for an exact deterministic metadata-record count. `--keep-database` retains the compacted generated v4 destination for independent inspection. The benchmark never changes production migration compaction behaviour: its `VACUUM` runs only against the generated benchmark destination after the real migration has completed, so Part 2 can measure reclaimable space before deciding whether production migration should prevent churn or compact explicitly.
+
+The `large` and `huge` profiles remain opt-in local workloads and are excluded from routine pytest and CI. Compare `preflight_required_bytes` with `peak_observed_file_bytes` when evaluating disk-space safety, and compare `before_compaction.freelist_bytes` with `after_compaction.file_bytes` when evaluating transient migration churn. Stage-boundary peak measurement is deliberately conservative in what it claims: it observes sizes when structured migration events are emitted rather than sampling the database continuously.
