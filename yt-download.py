@@ -3283,6 +3283,20 @@ def queue_targets(path: Path) -> tuple[str, ...]:
     return tuple(targets)
 
 
+def yt_dlp_positional_target(target: str) -> str:
+    """Return a target that yt-dlp cannot mistake for a command-line option.
+
+    Bare YouTube video IDs are convenient queue targets, but the ID alphabet includes
+    ``-``.  When row-removal mode expands a queue into positional yt-dlp arguments,
+    an ID beginning with ``-`` would therefore be parsed as an option.  Canonicalise
+    only that unambiguous YouTube-ID case; leave URLs and other extractor targets
+    untouched.
+    """
+    if target.startswith("-") and re.fullmatch(r"[A-Za-z0-9_-]{11}", target):
+        return f"https://www.youtube.com/watch?v={target}"
+    return target
+
+
 def queue_row_targets(path: Path) -> tuple[str, ...]:
     """Return first-field targets from annotated queue rows in stable order."""
     try:
@@ -4053,7 +4067,8 @@ def build_yt_dlp_command(
 
     if remove_completed_rows:
         assert input_source.batch_file is not None
-        InputSource(direct_targets=queue_row_targets(input_source.batch_file)).append_to(command)
+        row_targets = tuple(yt_dlp_positional_target(target) for target in queue_row_targets(input_source.batch_file))
+        InputSource(direct_targets=row_targets).append_to(command)
     else:
         input_source.append_to(command)
     return command

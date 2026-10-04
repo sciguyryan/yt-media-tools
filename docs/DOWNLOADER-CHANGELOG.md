@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+- Prevent annotated row-removal queues from passing leading-hyphen bare YouTube video IDs to yt-dlp as option-like positional arguments; canonicalise only those IDs to watch URLs before invocation.
+
 ## Release history
 
 ### Downloader 1.23.0 - Collection Context

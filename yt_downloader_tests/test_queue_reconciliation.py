@@ -360,6 +360,24 @@ def test_queue_row_targets_uses_first_field_and_preserves_order(downloader, tmp_
     assert downloader.queue_row_targets(queue) == ("abc", "def")
 
 
+def test_row_mode_canonicalises_leading_hyphen_youtube_id_before_yt_dlp(downloader, tmp_path: Path) -> None:
+    queue = tmp_path / "annotated.txt"
+    queue.write_text("-i-Gxbd5bVw # Leading hyphen ID\nordinary123 # Ordinary target\n", encoding="utf-8")
+    policy = downloader.DownloadPolicy(resolution="1080", format_selector="bv+ba/best", reverse_playlist=False)
+
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        policy,
+        downloader.InputSource(batch_file=queue),
+        None,
+        remove_completed_rows=True,
+    )
+
+    assert "-i-Gxbd5bVw" not in command
+    assert "https://www.youtube.com/watch?v=-i-Gxbd5bVw" in command
+    assert "ordinary123" in command
+
+
 def test_remove_archived_rows_reconciles_annotated_queue(downloader, tmp_path: Path) -> None:
     queue = tmp_path / "annotated.txt"
     archive = tmp_path / "archive.txt"
