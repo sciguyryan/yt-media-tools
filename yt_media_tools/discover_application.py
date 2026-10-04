@@ -1262,8 +1262,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 cache_first_full = (
                     metadata_cache is not None
-                    and source.kind == "channel"
-                    and args.tab == "videos"
+                    and ((source.kind == "channel" and source.facet == "videos") or source.kind == "playlist")
                     and args.items is None
                     and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
                 )
@@ -1273,7 +1272,9 @@ def main(argv: list[str] | None = None) -> int:
                         _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
                     prior_order = metadata_cache.source_entry_ids(source.canonical_url)
                     frontier = (
-                        metadata_cache.source_frontier(source.canonical_url) if args.acquisition != "full" else None
+                        metadata_cache.source_frontier(source.canonical_url)
+                        if source.kind == "channel" and args.acquisition != "full"
+                        else None
                     )
                     if frontier is not None and prior_order:
                         frontier_attempted = True
@@ -1299,14 +1300,22 @@ def main(argv: list[str] | None = None) -> int:
                     else:
                         _verbose(
                             args.verbose,
-                            "No trusted incremental frontier is available; enumerating the complete channel videos source.",
+                            (
+                                "No trusted incremental frontier is available; enumerating the complete channel videos source."
+                                if source.kind == "channel"
+                                else "Enumerating the complete playlist source before cache resolution."
+                            ),
                         )
                         try:
                             flat_entries, enumeration_stats = enumerate_all_flat(
                                 flat_command,
                                 progress=_enumeration_progress(
                                     args.verbose,
-                                    context="Full channel enumeration",
+                                    context=(
+                                        "Full channel enumeration"
+                                        if source.kind == "channel"
+                                        else "Full playlist enumeration"
+                                    ),
                                     warn_threshold=args.warn_source_size,
                                 ),
                             )

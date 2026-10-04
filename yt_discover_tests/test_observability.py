@@ -18,6 +18,7 @@ def fake_ytdlp_env(tmp_path: Path, *, with_error: bool = False, count: int = 2) 
             "id": f"vid{index:08d}",
             "title": f"Video {index}",
             "upload_date": "20260401",
+            "release_timestamp": 1775001600 + index,
             "view_count": 2000 + index,
         }
         for index in range(1, count + 1)
@@ -206,6 +207,47 @@ def test_channel_video_query_reuses_fresh_metadata_cache(tmp_path: Path) -> None
     assert second.stdout == first.stdout
     assert "Cache outcome: 2 fresh hits, 0 stale, 0 misses" in second.stderr
     assert "Refreshing detailed metadata" not in second.stderr
+
+
+def test_of_videos_unbounded_query_reuses_fresh_metadata_cache(tmp_path: Path) -> None:
+    env = fake_ytdlp_env(tmp_path)
+    cache_path = tmp_path / "cache" / "metadata.sqlite3"
+    query = "SELECT CONCAT(id, ' # ', title) FROM @example OF videos ORDER BY upload_date ASC, release_timestamp ASC"
+
+    first = run_cli("--backend", "ytdlp", "--cache", str(cache_path), "-v", query, env=env)
+    assert first.returncode == 0, first.stderr
+    assert "Full channel enumeration" in first.stderr
+    assert "Refreshing detailed metadata for 2 cache-miss/stale videos" in first.stderr
+
+    second = run_cli("--backend", "ytdlp", "--cache", str(cache_path), "-v", query, env=env)
+    assert second.returncode == 0, second.stderr
+    assert second.stdout == first.stdout
+    assert "Cache outcome: 2 fresh hits, 0 stale, 0 misses" in second.stderr
+    assert "Refreshing detailed metadata" not in second.stderr
+    assert "Acquiring full video metadata with yt-dlp" not in second.stderr
+
+
+def test_playlist_unbounded_query_reuses_fresh_metadata_cache(tmp_path: Path) -> None:
+    env = fake_ytdlp_env(tmp_path)
+    cache_path = tmp_path / "cache" / "metadata.sqlite3"
+    query = (
+        "SELECT CONCAT(id, ' # ', title) FROM PL0B8vmRvtPxz_cNoQzs6Rd1czBtBpejNJ "
+        "ORDER BY upload_date ASC, release_timestamp ASC"
+    )
+
+    first = run_cli("--backend", "ytdlp", "--cache", str(cache_path), "-v", query, env=env)
+    assert first.returncode == 0, first.stderr
+    assert "Full playlist enumeration" in first.stderr
+    assert "Refreshing detailed metadata for 2 cache-miss/stale videos" in first.stderr
+
+    second = run_cli("--backend", "ytdlp", "--cache", str(cache_path), "-v", query, env=env)
+    assert second.returncode == 0, second.stderr
+    assert second.stdout == first.stdout
+    assert "Full playlist enumeration" in second.stderr
+    assert "Cache outcome: 2 fresh hits, 0 stale, 0 misses" in second.stderr
+    assert "Refreshing detailed metadata" not in second.stderr
+    assert "Acquiring full video metadata with yt-dlp" not in second.stderr
+    assert "Incremental source frontier" not in second.stderr
 
 
 def test_report_includes_cache_outcome(tmp_path: Path) -> None:

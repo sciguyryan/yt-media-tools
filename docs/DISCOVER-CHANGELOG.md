@@ -6,6 +6,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ### Discover 0.31.0 - Cache v4
 
+- [fix] Route unbounded playlist queries through cache-first flat identity enumeration and per-entry cache resolution, refreshing detailed metadata only for stale or missing requirements while preserving complete playlist membership enumeration.
+- [fix] Route yt-sql `OF videos` channel queries through the same cache-first identity-enumeration path as legacy `--tab videos`, so fresh cached detailed metadata is reused before external per-video refresh.
 - [experimental] Begin the declarative-parser investigation with an isolated Lark grammar recogniser and deterministic corpus coverage; the transcription exposes revision-1 EBNF mismatches around empty query bodies and established unit literals that must be reconciled before parser migration.
 - [test] Establish a two-parser differential harness that classifies acceptance, normalised-model, source-origin, diagnostic and unexpected-error differences across the migration, conformance and generated syntax corpora.
 - [test] Require the hand-written and Lark parsers to produce equivalent models and source origins across the complete accepted differential inventory, with same-parser and cross-parser canonical convergence.
