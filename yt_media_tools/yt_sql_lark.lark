@@ -1,0 +1,120 @@
+// Experimental Lark grammar for yt-sql grammar revision 1.
+// The authoritative language grammar remains docs/YT-SQL-GRAMMAR.ebnf.
+//
+// Two compatibility corrections are deliberately local to this prototype:
+// select_query must contain at least one clause because the accepted parser rejects
+// empty query bodies, and UNIT_LITERAL recognises established literals such as 1h.
+// Both expose revision-1 EBNF defects that must be reconciled before migration.
+
+?start: query
+query: with_clause? query_expression
+query_expression: query_primary (union_operator query_primary)* order_by_clause? limit_clause? offset_clause?
+?query_primary: select_query | predicate_only_query | "(" query_expression ")"
+predicate_only_query: boolean_expression
+union_operator: "UNION"i "ALL"i?
+
+with_clause: "WITH"i cte ("," cte)*
+cte: identifier "AS"i "(" query_expression ")"
+
+select_query: select_clause from_clause? where_clause? group_by_clause? having_clause?
+            | from_clause where_clause? group_by_clause? having_clause?
+            | where_clause group_by_clause? having_clause?
+            | group_by_clause having_clause?
+            | having_clause
+select_clause: "SELECT"i "DISTINCT"i? select_term ("," select_term)*
+select_term: relation_wildcard | scalar_expression ("AS"i identifier)?
+relation_wildcard: identifier "." "*"
+
+from_clause: "FROM"i relation_reference join_clause*
+relation_reference: relation_source ("OF"i facet_reference ("," facet_reference)*)? ("AS"i identifier)?
+facet_reference: identifier
+?relation_source: AT_IDENTIFIER | identifier | STRING
+join_clause: join_kind relation_reference_single "ON"i boolean_expression
+join_kind: "INNER"i? "JOIN"i | "LEFT"i "OUTER"i? "JOIN"i | "SEMI"i "JOIN"i | "ANTI"i "JOIN"i
+relation_reference_single: relation_source ("OF"i facet_reference)? ("AS"i identifier)?
+
+where_clause: "WHERE"i boolean_expression
+group_by_clause: "GROUP"i "BY"i scalar_expression ("," scalar_expression)*
+having_clause: "HAVING"i having_expression
+order_by_clause: "ORDER"i "BY"i order_term ("," order_term)*
+order_term: scalar_expression ("ASC"i | "DESC"i)?
+limit_clause: "LIMIT"i DECIMAL_INTEGER
+offset_clause: "OFFSET"i DECIMAL_INTEGER
+
+?boolean_expression: boolean_and ("OR"i boolean_and)*
+?boolean_and: boolean_not ("AND"i boolean_not)*
+boolean_not: "NOT"i? boolean_primary
+?boolean_primary: predicate | collection_predicate | "(" boolean_expression ")" truth_test?
+collection_predicate: ("ANY"i | "ALL"i) "(" scalar_expression "AS"i identifier "WHERE"i boolean_expression ")"
+
+predicate: scalar_expression predicate_suffix
+?predicate_suffix: comparison_operator scalar_expression
+                 | "NOT"i? "BETWEEN"i literal_value "AND"i literal_value
+                 | "NOT"i? "IN"i "(" literal_value ("," literal_value)* ")"
+                 | "NOT"i? "IS"i "NOT"i? "DISTINCT"i "FROM"i scalar_expression
+                 | "NOT"i? "IS"i "NOT"i? "NULL"i
+                 | "NOT"i? "IS"i "NOT"i? truth_value
+                 | "NOT"i? text_operator text_value
+                 | "DOES"i "NOT"i text_operator text_value
+                 | natural_comparison literal_value
+                 |
+comparison_operator: "=" | "!=" | "<>" | "<" | "<=" | ">" | ">="
+truth_test: "IS"i "NOT"i? truth_value
+truth_value: "TRUE"i | "FALSE"i | "UNKNOWN"i
+text_operator: "CONTAIN"i | "CONTAINS"i | "MATCH"i | "MATCHES"i | "LIKE"i | "ILIKE"i
+natural_comparison: "AT"i "LEAST"i | "AT"i "MOST"i | "GREATER"i "THAN"i | "MORE"i "THAN"i | "LESS"i "THAN"i | "EQUAL"i "TO"i | "OVER"i | "ABOVE"i | "UNDER"i | "BELOW"i | "EQUALS"i
+
+?having_expression: having_and ("OR"i having_and)*
+?having_and: having_not ("AND"i having_not)*
+having_not: "NOT"i? having_primary
+?having_primary: having_predicate truth_test? | "(" having_expression ")" truth_test?
+having_predicate: scalar_expression (comparison_operator scalar_expression | "IS"i "NOT"i? "DISTINCT"i "FROM"i scalar_expression | "IS"i "NOT"i? "NULL"i | "IS"i "NOT"i? truth_value)
+
+?scalar_expression: additive_expression
+?additive_expression: multiplicative_expression (("+" | "-") multiplicative_expression)*
+?multiplicative_expression: unary_expression (("*" | "/" | "%") unary_expression)*
+?unary_expression: ("+" | "-") unary_expression | postfix_expression
+?postfix_expression: scalar_atom (index_suffix | member_suffix)*
+index_suffix: "[" scalar_expression "]"
+member_suffix: "." identifier
+
+?scalar_atom: identifier | scalar_literal | scalar_function | aggregate_function | collection_transform | case_expression | "(" scalar_expression ")"
+case_expression: "CASE"i case_when+ ("ELSE"i scalar_expression)? "END"i
+case_when: "WHEN"i boolean_expression "THEN"i scalar_expression
+
+?scalar_function: unary_scalar_function "(" scalar_expression ")"
+                | multi_scalar_function "(" scalar_expression "," scalar_expression ("," scalar_expression)* ")"
+                | "CHAR"i "(" scalar_expression ("," scalar_expression)* ")"
+                | "NULLIF"i "(" scalar_expression "," scalar_expression ")"
+                | "RANDOM"i "(" scalar_expression? ")"
+unary_scalar_function: "LOWER"i | "UPPER"i | "LENGTH"i | "CARDINALITY"i
+multi_scalar_function: "COALESCE"i | "CONCAT"i | "GREATEST"i | "LEAST"i
+aggregate_function: "COUNT"i "(" ("*" | scalar_expression | scalar_expression "AS"i identifier "WHERE"i boolean_expression) ")" aggregate_filter?
+                  | aggregate_name "(" scalar_expression ")" aggregate_filter?
+aggregate_name: "SUM"i | "MIN"i | "MAX"i | "AVG"i
+aggregate_filter: "FILTER"i "(" "WHERE"i boolean_expression ")"
+collection_transform: "FILTER"i "(" scalar_expression "AS"i identifier "WHERE"i boolean_expression ")"
+                    | "MAP"i "(" scalar_expression "AS"i identifier "SELECT"i scalar_expression ")"
+
+?scalar_literal: UNIT_LITERAL | NUMBER | STRING | "TRUE"i | "FALSE"i | "NULL"i
+?literal_value: scalar_literal | identifier | literal_sequence
+?text_value: STRING | identifier | UNIT_LITERAL | NUMBER | DATE | DATETIME | TIME | TEMPORAL
+literal_sequence: literal_piece+
+?literal_piece: identifier | UNIT_LITERAL | NUMBER | DATE | DATETIME | TIME | TEMPORAL | "+" | "-" | "*" | "/" | "%"
+
+?identifier: IDENTIFIER | QUOTED_IDENTIFIER
+
+AT_IDENTIFIER: /@[A-Za-z0-9_.-]+/
+QUOTED_IDENTIFIER: /`(?:``|[^`])+`/
+IDENTIFIER: /[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*/u
+UNIT_LITERAL: /\d+(?:\.\d+)?[^\W\d_]+(?:-[^\W\d_]+)*(?:\d+(?:\.\d+)?[^\W\d_]+(?:-[^\W\d_]+)*)*/u
+NUMBER: /(?:0[xX][0-9A-Za-z_]+|0[oO][0-9A-Za-z_]+|0[bB][0-9A-Za-z_]+|\d[\d_]*(?:\.\d[\d_]*)?(?:[kKmMbB])?)/
+DECIMAL_INTEGER: /\d[\d_]*/
+STRING: /'(?:''|\\.|[^'\\])*'|"(?:""|\\.|[^"\\])*"/
+TEMPORAL: /(?i:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[^\W\d_]+(?:-[^\W\d_]+)*)?/
+DATETIME: /\d{4}-\d{1,2}-\d{1,2}T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/
+DATE: /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}[-\/.]\d{1,2}[-\/.]\d{4}/
+TIME: /\d{1,3}:\d{1,2}(?::\d{1,2})?/
+
+%import common.WS
+%ignore WS
