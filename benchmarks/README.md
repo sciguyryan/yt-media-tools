@@ -66,6 +66,16 @@ Run the complete relational group with:
 python benchmark.py relational
 ```
 
+## Parser comparison
+
+The `parser` group contains matching simple, complex and collection-heavy workloads for the production hand-written parser and the experimental Lark parser. The experimental surfaces use stable `parser.lark.*` names and remain advisory until parser migration is decided.
+
+Run both parser implementations with:
+
+```bash
+python benchmark.py parser
+```
+
 ## Cache-v4 reconciliation
 
 The cache-v4 benchmark tools are retained as reproducible engineering evidence rather than as a release diary. They use deterministic profiles so storage and timing changes can be compared without depending on a developer's real cache.

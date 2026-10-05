@@ -32,6 +32,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [experimental] Reconcile Lark model construction across temporal literals, truth tests, collection scopes, scalar and aggregate functions, joins, CTEs and set composition without changing the production parser path.
 - [test] Require malformed corpus and controlled-neighbour differential cases to agree on rejection, diagnostic category, stable reason, source span and curated expected tokens.
 - [experimental] Translate Lark failures into parser-independent yt-sql diagnostics and enforce identifier boundaries on contextual grammar keywords without exposing library-native exceptions.
+- [performance] Replace the experimental Earley parser with a conflict-free LALR grammar and contextual lexer, factor repeated query-head productions and retain exact differential conformance.
+- [maintenance] Replace duplicated Lark keyword-terminal declarations with readable grammar literals and one parser-construction boundary rule for identifier continuations.
+- [fix] Preserve field-literal comparison semantics and whitespace-insensitive `SELECT DISTINCT` model construction through the optimised Lark grammar.
+- [benchmark] Add matching simple, complex and collection-heavy Lark parser surfaces alongside the established production-parser benchmarks.
+- [docs] Record the measured Lark parser, lexer and grammar alternatives, including why LALR, basic and dynamic-complete configurations were not retained.
 - [docs] Record revision-1 grammar corrections for established projection wildcard, repeated Boolean negation and temporal-token syntax exposed by differential conformance.
 - [docs] Reconcile grammar revision 1 with established parser behaviour by requiring a non-empty select query and formally representing accepted unit literals without changing yt-sql syntax.
 - [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.

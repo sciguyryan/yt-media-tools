@@ -49,6 +49,24 @@ TARGETS = (
         "Parse a collection-heavy yt-sql query.",
     ),
     BenchmarkTarget(
+        "parser.lark.simple",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[simple]",
+        "parser",
+        "Parse a simple yt-sql query with the experimental Lark parser.",
+    ),
+    BenchmarkTarget(
+        "parser.lark.complex",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[complex]",
+        "parser",
+        "Parse a representative complex query with the experimental Lark parser.",
+    ),
+    BenchmarkTarget(
+        "parser.lark.collection",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[collection]",
+        "parser",
+        "Parse a collection-heavy query with the experimental Lark parser.",
+    ),
+    BenchmarkTarget(
         "resolution.simple",
         "benchmarks/test_query_pipeline_benchmarks.py::test_resolve_query[simple]",
         "resolution",

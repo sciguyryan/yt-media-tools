@@ -13,15 +13,31 @@ import re
 
 from lark import Lark
 from lark.exceptions import LarkError
+from lark.lexer import PatternRE, PatternStr
 
 from .query_model import QueryLexicalError, QuerySyntaxError
+
+
+def _bound_keyword_terminal(terminal) -> None:
+    """Keep case-insensitive grammar words from consuming identifier prefixes."""
+    pattern = terminal.pattern
+    if isinstance(pattern, PatternStr) and "i" in pattern.flags and pattern.value.isalpha():
+        terminal.pattern = PatternRE(f"{pattern.to_regexp()}(?![\\w-])")
+        terminal.priority = 2
 
 
 @lru_cache(maxsize=1)
 def _parser() -> Lark:
     """Build the experimental parser once per process."""
     grammar = files("yt_media_tools").joinpath("yt_sql_lark.lark").read_text(encoding="utf-8")
-    return Lark(grammar, parser="earley", propagate_positions=True, maybe_placeholders=False)
+    return Lark(
+        grammar,
+        parser="lalr",
+        lexer="contextual",
+        propagate_positions=True,
+        maybe_placeholders=False,
+        edit_terminals=_bound_keyword_terminal,
+    )
 
 
 def recognise_lark_query(source: str) -> None:
@@ -51,33 +67,67 @@ def _parse_lark_tree(source: str):
 
 
 def _validate_lark_tree(source: str, tree) -> None:
-    """Reject a clause keyword swallowed as part of a literal sequence."""
-    if any(node.data == "order_by_clause" for node in tree.iter_subtrees()):
-        return
-    for node in tree.iter_subtrees():
-        if node.data not in {"where_clause", "predicate_only_query"}:
+    """Validate reference boundaries shared grammar productions cannot express."""
+    nodes = tuple(tree.iter_subtrees())
+    if not any(node.data == "order_by_clause" for node in nodes):
+        for node in nodes:
+            if node.data not in {"where_clause", "predicate_only_query"}:
+                continue
+            start = node.meta.start_pos
+            segment = source[start : node.meta.end_pos]
+            malformed_order = re.search(r"\bORDER\s+(?!BY(?:\s|$))(?P<term>[^\s,()]+)", segment, re.IGNORECASE)
+            if malformed_order:
+                term_start = start + malformed_order.start("term")
+                term_end = start + malformed_order.end("term")
+                raise QuerySyntaxError(
+                    source,
+                    "Expected BY after ORDER.",
+                    term_start,
+                    end_position=term_end,
+                    expected=("BY",),
+                )
+
+    for node in nodes:
+        if node.data != "predicate" or not node.children:
             continue
-        start = node.meta.start_pos
-        segment = source[start : node.meta.end_pos]
-        malformed_order = re.search(r"\bORDER\s+(?!BY(?:\s|$))(?P<term>[^\s,()]+)", segment, re.IGNORECASE)
-        if malformed_order:
-            term_start = start + malformed_order.start("term")
-            term_end = start + malformed_order.end("term")
+        left = node.children[0]
+        if hasattr(left, "data") and left.data != "identifier":
+            continue
+        comparison = next((child for child in node.iter_subtrees() if child.data == "comparison_value"), None)
+        if comparison is None:
+            continue
+        right_text = source[comparison.meta.start_pos : comparison.meta.end_pos]
+        if "(" in right_text and not re.fullmatch(
+            r"(?i)(?:-?INFINITY\(\)|(?:TODAY|NOW)\(\)(?:\s*[+-].*)?)",
+            right_text,
+        ):
             raise QuerySyntaxError(
                 source,
-                "Expected BY after ORDER.",
-                term_start,
-                end_position=term_end,
-                expected=("BY",),
+                "A field comparison requires a literal value.",
+                comparison.meta.start_pos + right_text.index("("),
             )
 
 
 def _translated_lark_error(source: str, error: LarkError) -> QuerySyntaxError:
     """Translate one implementation-native failure into yt-sql vocabulary."""
     native_position = getattr(error, "pos_in_stream", None)
-    position = native_position if isinstance(native_position, int) and native_position >= 0 else len(source)
+    native_token = getattr(error, "token", None)
+    at_end = getattr(native_token, "type", None) in {"$END", "<EOF>"}
+    if at_end or not isinstance(native_position, int) or native_position < 0:
+        position = len(source)
+    else:
+        position = native_position
     stripped = source.rstrip()
     expected = set(getattr(error, "expected", ()) or ())
+
+    if expected == {"BY"} and native_token is not None:
+        return QuerySyntaxError(
+            source,
+            "Expected BY after ORDER.",
+            position,
+            end_position=getattr(native_token, "end_pos", position),
+            expected=("BY",),
+        )
 
     if re.match(r"(?i)^SELECT(?:COALESCE|COUNT)\b", source):
         return QuerySyntaxError(source, "A function name cannot include SELECT.", 0)
@@ -272,15 +322,18 @@ class _LarkModelBuilder:
     def select_query(self, node):
         from .query_model import Query
 
-        select_clause = self._first(node, "select_clause")
-        from_clause = self._first(node, "from_clause")
+        select_head = self._first(node, "select_head") or node
+        select_clause = self._first(select_head, "select_clause")
+        from_clause = self._first(select_head, "from_clause")
         where_clause = self._first(node, "where_clause")
         group_clause = self._first(node, "group_by_clause")
         having_clause = self._first(node, "having_clause")
         select = (
             tuple(self.select_term(term) for term in self._trees(select_clause, "select_term")) if select_clause else ()
         )
-        distinct = bool(select_clause and self._slice(select_clause).lstrip().upper().startswith("SELECT DISTINCT"))
+        distinct = bool(
+            select_clause and re.match(r"SELECT\s+DISTINCT\b", self._slice(select_clause).lstrip(), re.IGNORECASE)
+        )
         from_source = from_facet = from_alias = None
         joins = ()
         additional_facets = ()
@@ -435,6 +488,8 @@ class _LarkModelBuilder:
             return self.scalar(node.children[0])
         if data in {"scalar_literal", "temporal_literal", "literal_sequence"}:
             return self.literal_text(self._slice(node), self._node_start(node))
+        if data == "comparison_value":
+            return self.scalar(node.children[0])
         if data in {"additive_expression", "multiplicative_expression"}:
             parts = [c for c in node.children if isinstance(c, self.Tree) or hasattr(c, "value")]
             value = self.scalar(parts[0])
@@ -732,7 +787,10 @@ class _LarkModelBuilder:
         from .query_model import Field, Literal
         import re
 
-        value = self.scalar(node)
+        if isinstance(node, self.Tree) and node.data == "comparison_value":
+            value = self.literal_text(self._slice(node), self._node_start(node))
+        else:
+            value = self.scalar(node)
         if isinstance(value, Field):
             return Literal(value.name, value.name, value.position, False)
         if isinstance(value, Literal) and not value.quoted:

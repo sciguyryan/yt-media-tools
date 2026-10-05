@@ -34,6 +34,15 @@ def test_lark_prototype_translates_native_failure_without_exposing_it() -> None:
     assert captured.value.__cause__ is None
 
 
+def test_lark_prototype_preserves_field_literal_comparison_boundary() -> None:
+    source = "SELECT id FROM @fixture WHERE id = LOWER(title)"
+
+    with pytest.raises(QuerySyntaxError) as captured:
+        recognise_lark_query(source)
+
+    assert captured.value.position == source.index("(", source.index("LOWER"))
+
+
 @pytest.mark.parametrize(
     "source",
     (

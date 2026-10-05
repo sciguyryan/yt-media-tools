@@ -12,4 +12,16 @@ Syntax that is intentionally parsed but rejected semantically is compared at the
 
 Performance comparison uses recorded reference workloads covering ordinary, complex, malformed and deeply nested bounded inputs. Sustained regressions, scaling, memory where measurable and pathological behaviour are reviewed before cut-over. A repeatable slowdown around twofold is an investigation trigger rather than a hard-coded pass/fail rule.
 
+## Experimental Lark optimisation review
+
+The issue #144 candidate review replaces Earley parsing with LALR and Lark's contextual lexer. The initial revision-1 transcription could not construct an LALR parser because separate scalar, temporal and literal-sequence alternatives described the same token reductions. Comparison values now use one shared syntactic path: field comparisons retain the established literal model, while scalar comparisons retain scalar-expression construction. This removes the parser conflict rather than silencing it with rule priorities or compatibility normalisation.
+
+Earley with the basic lexer cannot preserve contextual keywords and overlapping numeric tokens without duplicating parsing policy outside the grammar. Earley's dynamic-complete lexer and the optional third-party regular-expression engine were also measured and were slower than the original dynamic configuration on the deterministic generated inventory. These alternatives are rejected implementation experiments, not language limitations.
+
+Repeated `SELECT` and `FROM` alternatives are factored through a shared query-head production. Case-insensitive grammar words remain ordinary readable literals in the Lark source; parser construction adds their identifier-continuation boundary and structural priority centrally. This replaces a large duplicated terminal block while allowing the contextual lexer to retain the same words as identifiers in unambiguous positions.
+
+Local repeated measurements over the three-round generated inventory improved median grammar-recognition throughput from approximately 127 to 9,800 parses per second, roughly a 75-fold improvement. LALR grammar construction took about three times as long, but construction remains cached once per process. The complete candidate model builder remains slower than the hand-written parser on the representative benchmark surfaces, so this is retained as an explicit migration concern rather than hidden by the grammar improvement. These figures are review evidence rather than a portable performance promise. Stable `parser.lark.*` benchmark targets preserve simple, complex and collection-heavy candidate workloads for later comparison with the hand-written `parser.*` surfaces.
+
+Accepting arbitrary function names in the grammar and rejecting unknown calls later was deliberately excluded. That proposal changes the syntax-versus-semantic rejection boundary and requires a separate language-design decision rather than being introduced as parser optimisation.
+
 During migration, grammar revision 1 and the accepted hand-written parser remain frozen references. Any discrepancy is classified before either reference is changed. Unrelated grammar evolution is outside the migration.

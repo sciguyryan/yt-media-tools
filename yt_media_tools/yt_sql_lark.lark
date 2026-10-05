@@ -2,75 +2,74 @@
 // The authoritative language grammar remains docs/YT-SQL-GRAMMAR.ebnf.
 //
 // This transcription follows the reconciled revision-1 EBNF.
-//
-// Note: I really... really... need to optimise this. It is a true horror
-// and will be a nightmare to maintain in its current form. Eww.
+// Case-insensitive word literals are bounded during parser construction so a
+// contextual keyword cannot consume the prefix of an ordinary identifier.
 
 ?start: query
 query: with_clause? query_expression
 query_expression: query_primary (union_operator query_primary)* order_by_clause? limit_clause? offset_clause?
 ?query_primary: select_query | predicate_only_query | "(" query_expression ")"
 predicate_only_query: boolean_expression
-union_operator: _UNION _ALL?
+union_operator: "UNION"i "ALL"i?
 
-with_clause: _WITH cte ("," cte)*
-cte: identifier _AS "(" query_expression ")"
+with_clause: "WITH"i cte ("," cte)*
+cte: identifier "AS"i "(" query_expression ")"
 
-select_query: select_clause from_clause? where_clause? group_by_clause? having_clause?
-            | from_clause where_clause? group_by_clause? having_clause?
+select_query: select_head where_clause? group_by_clause? having_clause?
             | where_clause group_by_clause? having_clause?
             | group_by_clause having_clause?
             | having_clause
-select_clause: _SELECT _DISTINCT? select_term ("," select_term)*
-select_term: projection_wildcard | relation_wildcard | scalar_expression (_AS identifier)?
+?select_head: select_clause from_clause? | from_clause
+select_clause: "SELECT"i "DISTINCT"i? select_term ("," select_term)*
+select_term: projection_wildcard | relation_wildcard | scalar_expression ("AS"i identifier)?
 projection_wildcard: "*"
 relation_wildcard: identifier "." "*"
 
-from_clause: _FROM relation_reference join_clause*
-relation_reference: relation_source (_OF facet_reference ("," facet_reference)*)? (_AS identifier)?
+from_clause: "FROM"i relation_reference join_clause*
+relation_reference: relation_source ("OF"i facet_reference ("," facet_reference)*)? ("AS"i identifier)?
 facet_reference: identifier
 ?relation_source: AT_IDENTIFIER | identifier | STRING
-join_clause: join_kind relation_reference_single _ON boolean_expression
-join_kind: _INNER? _JOIN | _LEFT _OUTER? _JOIN | _SEMI _JOIN | _ANTI _JOIN
-relation_reference_single: relation_source (_OF facet_reference)? (_AS identifier)?
+join_clause: join_kind relation_reference_single "ON"i boolean_expression
+join_kind: "INNER"i? "JOIN"i | "LEFT"i "OUTER"i? "JOIN"i | "SEMI"i "JOIN"i | "ANTI"i "JOIN"i
+relation_reference_single: relation_source ("OF"i facet_reference)? ("AS"i identifier)?
 
-where_clause: _WHERE boolean_expression
-group_by_clause: _GROUP _BY scalar_expression ("," scalar_expression)*
-having_clause: _HAVING having_expression
-order_by_clause: _ORDER _BY order_term ("," order_term)*
-order_term: scalar_expression (_ASC | _DESC)?
-limit_clause: _LIMIT DECIMAL_INTEGER
-offset_clause: _OFFSET DECIMAL_INTEGER
+where_clause: "WHERE"i boolean_expression
+group_by_clause: "GROUP"i "BY"i scalar_expression ("," scalar_expression)*
+having_clause: "HAVING"i having_expression
+order_by_clause: "ORDER"i "BY"i order_term ("," order_term)*
+order_term: scalar_expression ("ASC"i | "DESC"i)?
+limit_clause: "LIMIT"i DECIMAL_INTEGER
+offset_clause: "OFFSET"i DECIMAL_INTEGER
 
-?boolean_expression: boolean_and (_OR boolean_and)*
-?boolean_and: boolean_not (_AND boolean_not)*
-boolean_not: _NOT boolean_not | boolean_primary
+?boolean_expression: boolean_and ("OR"i boolean_and)*
+?boolean_and: boolean_not ("AND"i boolean_not)*
+boolean_not: "NOT"i boolean_not | boolean_primary
 ?boolean_primary: predicate | collection_predicate | "(" boolean_expression ")" truth_test?
-collection_predicate: (_ANY | _ALL) "(" scalar_expression _AS identifier _WHERE boolean_expression ")"
+collection_predicate: ("ANY"i | "ALL"i) "(" scalar_expression "AS"i identifier "WHERE"i boolean_expression ")"
 
 predicate: scalar_expression predicate_suffix
 ?predicate_suffix: comparison_operator comparison_value
-                 | _NOT? _BETWEEN literal_value _AND literal_value
-                 | _NOT? _IN "(" literal_value ("," literal_value)* ")"
-                 | _NOT? _IS _NOT? _DISTINCT _FROM scalar_expression
-                 | _NOT? _IS _NOT? _NULL
-                 | _NOT? _IS _NOT? truth_value
-                 | _NOT? text_operator text_value
-                 | _DOES _NOT text_operator text_value
+                 | "NOT"i? "BETWEEN"i literal_value "AND"i literal_value
+                 | "NOT"i? "IN"i "(" literal_value ("," literal_value)* ")"
+                 | "NOT"i? "IS"i "NOT"i? "DISTINCT"i "FROM"i scalar_expression
+                 | "NOT"i? "IS"i "NOT"i? "NULL"i
+                 | "NOT"i? "IS"i "NOT"i? truth_value
+                 | "NOT"i? text_operator text_value
+                 | "DOES"i "NOT"i text_operator text_value
                  | natural_comparison literal_value
                  |
 comparison_operator: "=" | "!=" | "<>" | "<" | "<=" | ">" | ">="
-?comparison_value: temporal_literal | literal_sequence | scalar_expression
-truth_test: _IS _NOT? truth_value
-truth_value: _TRUE | _FALSE | _UNKNOWN
-text_operator: _CONTAIN | _CONTAINS | _MATCH | _MATCHES | _LIKE | _ILIKE
-natural_comparison: _AT _LEAST | _AT _MOST | _GREATER _THAN | _MORE _THAN | _LESS _THAN | _EQUAL _TO | _OVER | _ABOVE | _UNDER | _BELOW | _EQUALS
+comparison_value: scalar_expression literal_piece*
+truth_test: "IS"i "NOT"i? truth_value
+truth_value: "TRUE"i | "FALSE"i | "UNKNOWN"i
+text_operator: "CONTAIN"i | "CONTAINS"i | "MATCH"i | "MATCHES"i | "LIKE"i | "ILIKE"i
+natural_comparison: "AT"i "LEAST"i | "AT"i "MOST"i | "GREATER"i "THAN"i | "MORE"i "THAN"i | "LESS"i "THAN"i | "EQUAL"i "TO"i | "OVER"i | "ABOVE"i | "UNDER"i | "BELOW"i | "EQUALS"i
 
-?having_expression: having_and (_OR having_and)*
-?having_and: having_not (_AND having_not)*
-having_not: _NOT? having_primary
+?having_expression: having_and ("OR"i having_and)*
+?having_and: having_not ("AND"i having_not)*
+having_not: "NOT"i? having_primary
 ?having_primary: having_predicate truth_test? | "(" having_expression ")" truth_test?
-having_predicate: scalar_expression (comparison_operator scalar_expression | _IS _NOT? _DISTINCT _FROM scalar_expression | _IS _NOT? _NULL | _IS _NOT? truth_value)
+having_predicate: scalar_expression (comparison_operator scalar_expression | "IS"i "NOT"i? "DISTINCT"i "FROM"i scalar_expression | "IS"i "NOT"i? "NULL"i | "IS"i "NOT"i? truth_value)
 
 ?scalar_expression: additive_expression
 ?additive_expression: multiplicative_expression (("+" | "-") multiplicative_expression)*
@@ -80,114 +79,32 @@ having_predicate: scalar_expression (comparison_operator scalar_expression | _IS
 index_suffix: "[" scalar_expression "]"
 member_suffix: "." identifier
 
-?scalar_atom: identifier | scalar_literal | scalar_function | aggregate_function | collection_transform | case_expression | "(" scalar_expression ")"
-case_expression: _CASE case_when+ (_ELSE scalar_expression)? _END
-case_when: _WHEN boolean_expression _THEN scalar_expression
+?scalar_atom: identifier | scalar_literal | temporal_literal | scalar_function | aggregate_function | collection_transform | case_expression | "(" scalar_expression ")"
+case_expression: "CASE"i case_when+ ("ELSE"i scalar_expression)? "END"i
+case_when: "WHEN"i boolean_expression "THEN"i scalar_expression
 
 scalar_function: unary_scalar_function "(" scalar_expression ")"
                | multi_scalar_function "(" scalar_expression "," scalar_expression ("," scalar_expression)* ")"
-               | _CHAR "(" scalar_expression ("," scalar_expression)* ")"
-               | _NULLIF "(" scalar_expression "," scalar_expression ")"
-               | _RANDOM "(" scalar_expression? ")"
-unary_scalar_function: _LOWER | _UPPER | _LENGTH | _CARDINALITY
-multi_scalar_function: _COALESCE | _CONCAT | _GREATEST | _LEAST
-aggregate_function: _COUNT "(" ("*" | scalar_expression | scalar_expression _AS identifier _WHERE boolean_expression) ")" aggregate_filter?
+               | "CHAR"i "(" scalar_expression ("," scalar_expression)* ")"
+               | "NULLIF"i "(" scalar_expression "," scalar_expression ")"
+               | "RANDOM"i "(" scalar_expression? ")"
+unary_scalar_function: "LOWER"i | "UPPER"i | "LENGTH"i | "CARDINALITY"i
+multi_scalar_function: "COALESCE"i | "CONCAT"i | "GREATEST"i | "LEAST"i
+aggregate_function: "COUNT"i "(" ("*" | scalar_expression | scalar_expression "AS"i identifier "WHERE"i boolean_expression) ")" aggregate_filter?
                   | aggregate_name "(" scalar_expression ")" aggregate_filter?
-aggregate_name: _SUM | _MIN | _MAX | _AVG
-aggregate_filter: _FILTER "(" _WHERE boolean_expression ")"
-collection_transform: _FILTER "(" scalar_expression _AS identifier _WHERE boolean_expression ")"
-                    | _MAP "(" scalar_expression _AS identifier _SELECT scalar_expression ")"
+aggregate_name: "SUM"i | "MIN"i | "MAX"i | "AVG"i
+aggregate_filter: "FILTER"i "(" "WHERE"i boolean_expression ")"
+collection_transform: "FILTER"i "(" scalar_expression "AS"i identifier "WHERE"i boolean_expression ")"
+                    | "MAP"i "(" scalar_expression "AS"i identifier "SELECT"i scalar_expression ")"
 
-scalar_literal: UNIT_LITERAL | NUMBER | STRING | _TRUE | _FALSE | _NULL
+scalar_literal: UNIT_LITERAL | NUMBER | STRING | "TRUE"i | "FALSE"i | "NULL"i
 temporal_literal: INFINITY | TEMPORAL | DATETIME | DATE | TIME
-?literal_value: scalar_literal | temporal_literal | identifier | literal_sequence
-?text_value: STRING | identifier | UNIT_LITERAL | NUMBER | DATE | DATETIME | TIME | TEMPORAL
+?literal_value: literal_sequence
+?text_value: literal_sequence
 literal_sequence: literal_piece+
-?literal_piece: identifier | UNIT_LITERAL | NUMBER | DATE | DATETIME | TIME | TEMPORAL | "+" | "-" | "*" | "/" | "%"
+?literal_piece: identifier | scalar_literal | temporal_literal | "+" | "-" | "*" | "/" | "%"
 
 ?identifier: IDENTIFIER | QUOTED_IDENTIFIER
-
-// Structural words are contextual, but may not be consumed as prefixes of an
-// ordinary identifier. Leading underscores keep these terminals out of the
-// parser tree consumed by the experimental model builder.
-_ABOVE: /(?i:ABOVE)(?![\w-])/u
-_ALL: /(?i:ALL)(?![\w-])/u
-_AND: /(?i:AND)(?![\w-])/u
-_ANTI: /(?i:ANTI)(?![\w-])/u
-_ANY: /(?i:ANY)(?![\w-])/u
-_AS: /(?i:AS)(?![\w-])/u
-_ASC: /(?i:ASC)(?![\w-])/u
-_AT: /(?i:AT)(?![\w-])/u
-_AVG: /(?i:AVG)(?![\w-])/u
-_BELOW: /(?i:BELOW)(?![\w-])/u
-_BETWEEN: /(?i:BETWEEN)(?![\w-])/u
-_BY: /(?i:BY)(?![\w-])/u
-_CARDINALITY: /(?i:CARDINALITY)(?![\w-])/u
-_CASE: /(?i:CASE)(?![\w-])/u
-_CHAR: /(?i:CHAR)(?![\w-])/u
-_COALESCE: /(?i:COALESCE)(?![\w-])/u
-_CONCAT: /(?i:CONCAT)(?![\w-])/u
-_CONTAIN: /(?i:CONTAIN)(?![\w-])/u
-_CONTAINS: /(?i:CONTAINS)(?![\w-])/u
-_COUNT: /(?i:COUNT)(?![\w-])/u
-_DESC: /(?i:DESC)(?![\w-])/u
-_DISTINCT: /(?i:DISTINCT)(?![\w-])/u
-_DOES: /(?i:DOES)(?![\w-])/u
-_ELSE: /(?i:ELSE)(?![\w-])/u
-_END: /(?i:END)(?![\w-])/u
-_EQUAL: /(?i:EQUAL)(?![\w-])/u
-_EQUALS: /(?i:EQUALS)(?![\w-])/u
-_FALSE: /(?i:FALSE)(?![\w-])/u
-_FILTER: /(?i:FILTER)(?![\w-])/u
-_FROM: /(?i:FROM)(?![\w-])/u
-_GREATER: /(?i:GREATER)(?![\w-])/u
-_GREATEST: /(?i:GREATEST)(?![\w-])/u
-_GROUP: /(?i:GROUP)(?![\w-])/u
-_HAVING: /(?i:HAVING)(?![\w-])/u
-_ILIKE: /(?i:ILIKE)(?![\w-])/u
-_IN: /(?i:IN)(?![\w-])/u
-_INNER: /(?i:INNER)(?![\w-])/u
-_IS: /(?i:IS)(?![\w-])/u
-_JOIN: /(?i:JOIN)(?![\w-])/u
-_LEAST: /(?i:LEAST)(?![\w-])/u
-_LEFT: /(?i:LEFT)(?![\w-])/u
-_LENGTH: /(?i:LENGTH)(?![\w-])/u
-_LESS: /(?i:LESS)(?![\w-])/u
-_LIKE: /(?i:LIKE)(?![\w-])/u
-_LIMIT: /(?i:LIMIT)(?![\w-])/u
-_LOWER: /(?i:LOWER)(?![\w-])/u
-_MAP: /(?i:MAP)(?![\w-])/u
-_MATCH: /(?i:MATCH)(?![\w-])/u
-_MATCHES: /(?i:MATCHES)(?![\w-])/u
-_MAX: /(?i:MAX)(?![\w-])/u
-_MIN: /(?i:MIN)(?![\w-])/u
-_MORE: /(?i:MORE)(?![\w-])/u
-_MOST: /(?i:MOST)(?![\w-])/u
-_NOT: /(?i:NOT)(?![\w-])/u
-_NULL: /(?i:NULL)(?![\w-])/u
-_NULLIF: /(?i:NULLIF)(?![\w-])/u
-_OF: /(?i:OF)(?![\w-])/u
-_OFFSET: /(?i:OFFSET)(?![\w-])/u
-_ON: /(?i:ON)(?![\w-])/u
-_OR: /(?i:OR)(?![\w-])/u
-_ORDER: /(?i:ORDER)(?![\w-])/u
-_OUTER: /(?i:OUTER)(?![\w-])/u
-_OVER: /(?i:OVER)(?![\w-])/u
-_RANDOM: /(?i:RANDOM)(?![\w-])/u
-_SELECT: /(?i:SELECT)(?![\w-])/u
-_SEMI: /(?i:SEMI)(?![\w-])/u
-_SUM: /(?i:SUM)(?![\w-])/u
-_THAN: /(?i:THAN)(?![\w-])/u
-_THEN: /(?i:THEN)(?![\w-])/u
-_TO: /(?i:TO)(?![\w-])/u
-_TRUE: /(?i:TRUE)(?![\w-])/u
-_UNDER: /(?i:UNDER)(?![\w-])/u
-_UNION: /(?i:UNION)(?![\w-])/u
-_UNKNOWN: /(?i:UNKNOWN)(?![\w-])/u
-_UPPER: /(?i:UPPER)(?![\w-])/u
-_WHEN: /(?i:WHEN)(?![\w-])/u
-_WHERE: /(?i:WHERE)(?![\w-])/u
-_WITH: /(?i:WITH)(?![\w-])/u
 
 AT_IDENTIFIER: /@[A-Za-z0-9_.-]+/
 QUOTED_IDENTIFIER: /`(?:``|[^`])+`/

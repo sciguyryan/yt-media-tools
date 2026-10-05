@@ -18,6 +18,7 @@ from yt_media_tools.query_parser import parse_query
         "FROM @fixture WHERE duration < 1h",
         "duration < 1h AND title IS NOT NULL",
         "SELECT DISTINCT id FROM @fixture ORDER BY id DESC LIMIT 5 OFFSET 1",
+        "SELECT\nDISTINCT\ttitle, duration FROM @fixture",
         "SELECT 0xff + 0b10 + 0o7 FROM @fixture",
         "SELECT LOWER(title), COALESCE(title, 'untitled') FROM @fixture",
         "SELECT CASE WHEN duration > 10 THEN 'long' ELSE 'short' END AS bucket FROM @fixture",
