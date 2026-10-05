@@ -81,6 +81,8 @@ from yt_media_tools.provider_capabilities import (
     eligible_provider_candidates,
     lower_provider_requirements,
     production_provider_capabilities,
+    MetadataRequirement,
+    select_provider_capability,
     selection_context_from_backend_resolution,
 )
 from yt_media_tools.query import (
@@ -189,6 +191,41 @@ def _specialised_metadata_providers(
     ordered = [primary_provider]
     ordered.extend(sorted(common - {primary_provider}))
     return tuple(ordered)
+
+
+def _specialised_provider_field_coverage(
+    *,
+    physical_plan,
+    resolution_records: list[dict],
+    cookies_file: Path | None,
+) -> tuple[tuple[str, frozenset[str]], ...]:
+    """Return eligible specialised providers and their exact field coverage.
+
+    Unlike complete-plan lowering, this inventory is intentionally allowed to cover only
+    a subset of the query requirement. Cache-aware acquisition can then select a provider
+    after subtracting fields already satisfied by fresh cached metadata.
+    """
+    context = selection_context_from_backend_resolution(
+        observed_ytdlp_resolutions(resolution_records),
+        source=getattr(physical_plan, "source", None),
+        authentication=AUTH_COOKIES if cookies_file is not None else "anonymous",
+    )
+    required = frozenset().union(*(requirement.fields for requirement in physical_plan.provider_requirements))
+    coverage: dict[str, set[str]] = {}
+    ranks: dict[str, int] = {}
+    for capability in production_provider_capabilities():
+        fields = required if capability.fields is None else required & capability.fields
+        if not fields:
+            continue
+        requirement = MetadataRequirement(capability.stage, frozenset(fields))
+        candidate = select_provider_capability(requirement, (capability,), context=context)
+        if candidate is None:
+            continue
+        coverage.setdefault(capability.provider, set()).update(fields)
+        ranks[capability.provider] = min(ranks.get(capability.provider, capability.cost_rank), capability.cost_rank)
+    return tuple(
+        (provider, frozenset(coverage[provider])) for provider in sorted(coverage, key=lambda key: (ranks[key], key))
+    )
 
 
 def _specialised_metadata_provider(
@@ -888,6 +925,11 @@ def main(argv: list[str] | None = None) -> int:
                             resolution_records=flat_entries,
                             cookies_file=cookies_file,
                         )
+                        specialised_coverage = _specialised_provider_field_coverage(
+                            physical_plan=branch_plan.physical_acquisition,
+                            resolution_records=flat_entries,
+                            cookies_file=cookies_file,
+                        )
                         try:
                             source_records, source_stats, branch_cache_stats = _cached_or_refresh_metadata(
                                 cache=metadata_cache,
@@ -898,6 +940,7 @@ def main(argv: list[str] | None = None) -> int:
                                 cookies_file=cookies_file,
                                 specialised_provider=specialised_providers[0] if specialised_providers else None,
                                 specialised_fallback_providers=specialised_providers[1:],
+                                specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                         except YtDlpError as exc:
@@ -1140,6 +1183,11 @@ def main(argv: list[str] | None = None) -> int:
                         resolution_records=flat_entries,
                         cookies_file=cookies_file,
                     )
+                    specialised_coverage = _specialised_provider_field_coverage(
+                        physical_plan=query_plan.physical_acquisition,
+                        resolution_records=flat_entries,
+                        cookies_file=cookies_file,
+                    )
                     try:
                         if limit_plan.eligible:
                             (
@@ -1160,6 +1208,7 @@ def main(argv: list[str] | None = None) -> int:
                                 cookies_file=cookies_file,
                                 specialised_provider=specialised_providers[0] if specialised_providers else None,
                                 specialised_fallback_providers=specialised_providers[1:],
+                                specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                         else:
@@ -1172,6 +1221,7 @@ def main(argv: list[str] | None = None) -> int:
                                 cookies_file=cookies_file,
                                 specialised_provider=specialised_providers[0] if specialised_providers else None,
                                 specialised_fallback_providers=specialised_providers[1:],
+                                specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                     except YtDlpError as exc:
@@ -1368,6 +1418,11 @@ def main(argv: list[str] | None = None) -> int:
                         resolution_records=list(entry_by_id.values()),
                         cookies_file=cookies_file,
                     )
+                    specialised_coverage = _specialised_provider_field_coverage(
+                        physical_plan=query_plan.physical_acquisition,
+                        resolution_records=list(entry_by_id.values()),
+                        cookies_file=cookies_file,
+                    )
                     try:
                         if limit_plan.eligible:
                             (
@@ -1388,6 +1443,7 @@ def main(argv: list[str] | None = None) -> int:
                                 cookies_file=cookies_file,
                                 specialised_provider=specialised_providers[0] if specialised_providers else None,
                                 specialised_fallback_providers=specialised_providers[1:],
+                                specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                         else:
@@ -1400,6 +1456,7 @@ def main(argv: list[str] | None = None) -> int:
                                 cookies_file=cookies_file,
                                 specialised_provider=specialised_providers[0] if specialised_providers else None,
                                 specialised_fallback_providers=specialised_providers[1:],
+                                specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
                             )
                     except YtDlpError as exc:

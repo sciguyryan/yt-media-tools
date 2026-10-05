@@ -203,3 +203,85 @@ def test_specialised_youtubejs_success_and_ytdlp_fallback_preserve_requested_ord
     assert [record["id"] for record in records] == ["a", "b", "c"]
     assert [record["title"] for record in records] == ["A", "B", "C"]
     assert stats.available == 3
+
+
+def test_minimum_sufficient_provider_uses_only_stale_required_subset(monkeypatch) -> None:
+    from datetime import datetime, timedelta, timezone
+    from yt_media_tools.cache import CachedMetadata
+
+    now = datetime.now(timezone.utc)
+
+    class Cache:
+        def get_many(self, source_url, video_ids):
+            return {
+                "abc": CachedMetadata(
+                    "abc",
+                    {"id": "abc", "title": "Old title", "upload_date": "20260101"},
+                    now - timedelta(days=8),
+                )
+            }
+
+        def is_fresh(self, item, required_fields, *, now=None):
+            from yt_media_tools.cache import field_max_age
+
+            current = now or datetime.now(timezone.utc)
+            age = current - item.fetched_at
+            return all(age <= field_max_age(field) for field in required_fields)
+
+        def put_many(self, source_url, records):
+            raise AssertionError("specialised partial refresh must not be misattributed to yt-dlp cache storage")
+
+    def fake_acquire(project_root, video_ids, *, cookies_file=None):
+        assert video_ids == ["abc"]
+        return (
+            [
+                {
+                    "id": "abc",
+                    "title": "Fresh title",
+                    "_yt_sql_metadata_provider": "youtubejs",
+                    "_yt_sql_metadata_operation": "getBasicInfo",
+                }
+            ],
+            AcquisitionStats(available=1),
+        )
+
+    def fail_ytdlp(*args, **kwargs):
+        raise AssertionError("yt-dlp must not run when the unresolved field subset is covered exactly")
+
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fail_ytdlp)
+    records, stats, cache_stats = _cached_or_refresh_metadata(
+        cache=Cache(),
+        source_url="https://www.youtube.com/@example/videos",
+        video_ids=["abc"],
+        required_fields={"title", "upload_date"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider_coverage=(("youtubejs", frozenset({"title"})),),
+        project_root=Path("/project"),
+    )
+
+    assert records[0]["title"] == "Fresh title"
+    assert records[0]["upload_date"] == "20260101"
+    assert stats.available == 1
+    assert cache_stats.stale == 1
+    assert cache_stats.refreshed == 1
+
+
+def test_provider_coverage_retains_supported_subset_of_mixed_query_requirement() -> None:
+    from yt_media_tools.acquisition_plan import AcquisitionStage, PhysicalAcquisitionPlan
+    from yt_media_tools.discover_application import _specialised_provider_field_coverage
+    from yt_media_tools.source_model import SourceSpec
+
+    source = SourceSpec("youtube", "@example", "https://www.youtube.com/@example/videos")
+    complete = AcquisitionStage("complete-metadata", True, frozenset({"title", "upload_date"}), "test")
+    plan = PhysicalAcquisitionPlan(source, (complete,), "test")
+    records = [{"extractor": "youtube:tab", "extractor_key": "YoutubeTab"}]
+
+    coverage = _specialised_provider_field_coverage(
+        physical_plan=plan,
+        resolution_records=records,
+        cookies_file=None,
+    )
+
+    assert coverage[0] == ("youtubejs", frozenset({"title"}))

@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Select specialised metadata providers against each stale entity's unresolved required-field subset, preserving fresh cached fields and falling back to yt-dlp only when the remaining requirements are not covered exactly.
+- [test] Cover mixed fresh/stale requirements where YouTube.js can refresh the stale subset without reacquiring immutable cached metadata.
 - [test] Lock field-aware cache satisfaction so stale unrelated metadata cannot force refresh when every field required by the current query remains fresh.
 - [fix] Generalise single-source cache-first acquisition across all explicit channel facets that advertise authoritative lightweight identity enumeration, including `OF shorts` and `OF live`, while retaining incremental frontier stopping only for `OF videos`.
 
