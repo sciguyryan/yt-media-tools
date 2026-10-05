@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Deduplicate repeated media entity IDs before specialised-provider or yt-dlp refresh within each cache-aware acquisition request while preserving every logical source occurrence for later relational evaluation.
+- [test] Cover duplicate cache-miss entities so external detailed acquisition occurs once per entity without collapsing duplicate logical rows or cache examination accounting.
 - [test] Lock fresh cache-v4 known-NULL registered scalar metadata as reusable negative fact knowledge so an authoritatively resolved NULL does not trigger repeated detailed refresh until its freshness window expires.
 - [performance] Treat a single ascending `ORDER BY source_index` as equivalent to a stable source's declared trustworthy forward ordering, allowing existing LIMIT-aware acquisition to stop once OFFSET + LIMIT authoritative matches are complete.
 - [test] Cover explicit forward source-order LIMIT termination while keeping reverse `source_index` and metadata ordering exhaustive.

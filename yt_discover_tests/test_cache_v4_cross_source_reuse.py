@@ -91,3 +91,70 @@ def test_fresh_known_null_required_field_avoids_repeat_refresh(tmp_path, monkeyp
     assert first_cache.refreshed == 1
     assert second_cache.hits == 1
     assert second_cache.refreshed == 0
+
+
+def test_duplicate_entity_occurrences_refresh_once_but_preserve_rows(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "metadata-v4.sqlite3"
+    initialise_v4_cache(path)
+    calls: list[list[str]] = []
+
+    def fake_load(command, *, progress=None):
+        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
+        calls.append(video_ids)
+        return (
+            [{"id": video_id, "title": f"Title {video_id}"} for video_id in video_ids],
+            AcquisitionStats(available=len(video_ids)),
+        )
+
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
+
+    with MetadataCache(path) as cache:
+        records, _, cache_stats = _cached_or_refresh_metadata(
+            cache=cache,
+            source_url="https://www.youtube.com/playlist?list=DUPLICATES",
+            video_ids=["same-video", "same-video", "other-video", "same-video"],
+            required_fields={"title"},
+            verbose=0,
+            cookies_file=None,
+        )
+
+    assert calls == [["same-video", "other-video"]]
+    assert [record["id"] for record in records] == [
+        "same-video",
+        "same-video",
+        "other-video",
+        "same-video",
+    ]
+    assert cache_stats.examined == 4
+    assert cache_stats.refreshed == 2
+
+
+def test_duplicate_entities_without_cache_refresh_once_and_preserve_rows(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_load(command, *, progress=None):
+        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
+        calls.append(video_ids)
+        return (
+            [{"id": video_id, "title": f"Title {video_id}"} for video_id in video_ids],
+            AcquisitionStats(available=len(video_ids)),
+        )
+
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
+    records, _, cache_stats = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://www.youtube.com/playlist?list=DUPLICATES",
+        video_ids=["same-video", "same-video", "other-video", "same-video"],
+        required_fields={"title"},
+        verbose=0,
+        cookies_file=None,
+    )
+
+    assert calls == [["same-video", "other-video"]]
+    assert [record["id"] for record in records] == [
+        "same-video",
+        "same-video",
+        "other-video",
+        "same-video",
+    ]
+    assert cache_stats.refreshed == 2

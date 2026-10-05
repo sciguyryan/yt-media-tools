@@ -240,6 +240,10 @@ def _cached_or_refresh_metadata(
             age = now - item.fetched_at
             unresolved_fields_by_id[video_id] = frozenset(field for field in cache_fields if age > field_max_age(field))
 
+    # Logical source rows may repeat the same media entity. Preserve those occurrences
+    # for relational evaluation, but refresh each entity at most once in this acquisition
+    # call so provider and yt-dlp work is not duplicated.
+    refresh_ids = list(dict.fromkeys(refresh_ids))
     fetched_records: list[dict] = []
     ytdlp_records: list[dict] = []
     acquisition_stats = AcquisitionStats()
