@@ -177,6 +177,19 @@ def _translated_lark_error(source: str, error: LarkError) -> QuerySyntaxError:
     if re.match(r"(?i)^SELECT(?:COALESCE|COUNT)\b", source):
         return QuerySyntaxError(source, "A function name cannot include SELECT.", 0)
 
+    missing_distinct_from = re.search(
+        r"(?i)\bIS\s+(?:NOT\s+)?DISTINCT\s+(?P<term>FROM[\w-]+)",
+        source,
+    )
+    if missing_distinct_from and position == missing_distinct_from.start("term"):
+        return QuerySyntaxError(
+            source,
+            "Expected FROM after IS DISTINCT.",
+            position,
+            end_position=missing_distinct_from.end("term"),
+            expected=("FROM",),
+        )
+
     if position < len(source) and source[position] in {"'", '"'}:
         return QueryLexicalError(
             source,
@@ -442,7 +455,7 @@ class _LarkModelBuilder:
             for child in node.children
             if isinstance(child, self.Tree) and child.data not in {"join_kind", "relation_reference_single"}
         )
-        if predicate_node.data == "boolean_not" and not self._slice(predicate_node).lstrip().upper().startswith("NOT "):
+        if predicate_node.data == "boolean_not" and not self._starts_with_keyword(predicate_node, "NOT"):
             predicate_node = self._trees(predicate_node)[0]
         predicate = self.boolean(predicate_node)
 
@@ -475,7 +488,7 @@ class _LarkModelBuilder:
         expr = self.scalar(expr_node)
         return OrderTerm(
             format_scalar_expression(expr),
-            self._slice(node).rstrip().upper().endswith(" DESC"),
+            self._keyword_text(node).endswith(" DESC"),
             self._node_start(expr_node),
             expression=expr,
         )
@@ -584,7 +597,7 @@ class _LarkModelBuilder:
                 for child in node.children
                 if not (isinstance(child, self.Tree) and child.data in {"aggregate_name", "aggregate_filter"})
             ]
-            if name == "COUNT" and " AS " in text.upper():
+            if name == "COUNT" and " AS " in " ".join(text.upper().split()):
                 collection = self.scalar(values[0])
                 binding_node = values[1]
                 binding = self._token_text(binding_node.children[0] if self._trees(binding_node) else binding_node)
@@ -629,13 +642,13 @@ class _LarkModelBuilder:
         if node.data == "having_not":
             child = self._trees(node)[0]
             value = self.having(child)
-            if self._slice(node).lstrip().upper().startswith("NOT "):
+            if self._starts_with_keyword(node, "NOT"):
                 return Unary("NOT", value)
             return value
         if node.data == "having_predicate":
             values = [child for child in node.children if isinstance(child, self.Tree) or hasattr(child, "value")]
             left = self.scalar(values[0])
-            text = self._slice(node).upper()
+            text = self._keyword_text(node)
             if "IS NOT NULL" in text:
                 return ScalarIsNull(left, True)
             if "IS NULL" in text:
@@ -651,7 +664,7 @@ class _LarkModelBuilder:
         if node.data == "boolean_not":
             child = next(c for c in node.children if isinstance(c, self.Tree))
             value = self.boolean(child)
-            if self._slice(node).lstrip().upper().startswith("NOT "):
+            if self._starts_with_keyword(node, "NOT"):
                 return Unary("NOT", value)
             return value
         if node.data in {"boolean_expression", "boolean_and"}:
@@ -675,19 +688,26 @@ class _LarkModelBuilder:
             return CollectionPredicate(quantifier, collection, binding, predicate, self._node_start(node))
         if node.data == "predicate":
             left = self.scalar(node.children[0])
-            suffix = next((c for c in node.children[1:] if isinstance(c, self.Tree)), None)
+            suffix = next(
+                (c for c in node.children[1:] if isinstance(c, self.Tree) or isinstance(c, Token)),
+                None,
+            )
             text = self.source[self._end(left) : self._node_end(node)].strip()
             if suffix is None or not text:
                 return Binary("=", left, Literal(True, "TRUE", self._start(left)))
-            upper = text.upper()
+            upper = " ".join(text.upper().split())
             if upper.startswith(("IS", "NOT IS")):
                 negated = "IS NOT" in upper or upper.startswith("NOT IS")
                 if "DISTINCT FROM" in upper:
                     operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
-                    right_node = next(
-                        child
-                        for child in reversed(suffix.children)
-                        if isinstance(child, self.Tree) or hasattr(child, "value")
+                    right_node = (
+                        next(
+                            child
+                            for child in reversed(suffix.children)
+                            if isinstance(child, self.Tree) or hasattr(child, "value")
+                        )
+                        if isinstance(suffix, self.Tree)
+                        else suffix
                     )
                     return ScalarComparison(operator, left, self.scalar(right_node))
                 if upper.endswith("NULL"):
@@ -757,7 +777,7 @@ class _LarkModelBuilder:
             return Binary(operator, left, right)
         if node.data == "boolean_primary":
             value = self.boolean(next(c for c in node.children if isinstance(c, self.Tree)))
-            upper = self._slice(node).upper()
+            upper = self._keyword_text(node)
             if " IS " in upper:
                 negated = " IS NOT " in upper
                 truth = next(item for item in ("TRUE", "FALSE", "UNKNOWN") if upper.rstrip().endswith(item))
@@ -825,6 +845,14 @@ class _LarkModelBuilder:
                 offset += len(member) + 1
             return value
         return None
+
+    def _keyword_text(self, node) -> str:
+        """Normalise insignificant spacing for keyword-shape inspection."""
+        return " ".join(self._slice(node).upper().split())
+
+    def _starts_with_keyword(self, node, keyword: str) -> bool:
+        text = self._slice(node).lstrip()
+        return re.match(rf"{keyword}(?=$|[^\w-])", text, re.IGNORECASE) is not None
 
     @staticmethod
     def _node_start(node) -> int:

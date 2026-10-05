@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
+
 from yt_discover_tests.conformance.cases import CASES
+from yt_discover_tests.parser_fuzzing import seeded_parser_fuzz_inputs, shrink_by_token_deletion
 from yt_discover_tests.parser_grammar_generation import generated_valid_queries
 from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
 from yt_discover_tests.parser_migration_harness import ParserDifference, canonical_round_trip, compare_parsers
@@ -135,3 +138,22 @@ def test_lark_controlled_malformed_neighbours_are_diagnostically_equivalent() ->
         assert comparison.reference.kind == "rejected", name
         assert comparison.candidate.kind == "rejected", name
         assert comparison.equivalent, f"{name}: {comparison.describe()} for {source!r}"
+
+
+@pytest.mark.parametrize("seed", (0, 1, 2, 3, 31415926, 27182818, 16180339, 14142135))
+def test_lark_seeded_fuzz_inputs_are_differentially_equivalent(seed: int) -> None:
+    inputs = seeded_parser_fuzz_inputs(seed=seed, limit=128)
+    assert inputs
+
+    for index, source in enumerate(inputs):
+        comparison = compare_parsers(parse_query, parse_lark_query, source)
+        smaller = shrink_by_token_deletion(source)[:3]
+        context = f"seed={seed}, case={index}, source={source!r}, smaller={smaller!r}"
+        assert comparison.equivalent, f"{context}: {comparison.describe()}"
+
+        if comparison.reference.kind != "accepted":
+            continue
+        reference_model, reference_canonical = canonical_round_trip(parse_query, source)
+        candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
+        assert candidate_model == reference_model, context
+        assert candidate_canonical == reference_canonical, context

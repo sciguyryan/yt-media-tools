@@ -39,6 +39,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [performance] Remove repeated model-builder imports and redundant validation-tree walks from the experimental Lark hot path while preserving independent recogniser validation.
 - [docs] Record the measured Lark parser, lexer and grammar alternatives, including why LALR, basic and dynamic-complete configurations were not retained.
 - [docs] Record the raw Lark tree-construction lower bound, the retained source-position cost and the remaining parser-replacement performance concern.
+- [test] Compare the parsers across fixed seeded grammar-aware fuzz inputs, requiring acceptance, diagnostics, models, source origins and canonical round trips to remain equivalent.
+- [test] Promote fuzz-discovered negation, distinct-comparison and missing-separator cases into deterministic parser regressions.
+- [fix] Preserve Boolean negation across every accepted whitespace separator and construct direct-token `IS NOT DISTINCT FROM` operands correctly in the Lark model.
+- [fix] Align the malformed `IS DISTINCT FROM` keyword-boundary diagnostic span and expected token without hiding the parser difference.
+- [docs] Classify the bounded Lark candidate as behaviourally conformant while retaining its measured performance gap as a production cut-over concern.
 - [docs] Record revision-1 grammar corrections for established projection wildcard, repeated Boolean negation and temporal-token syntax exposed by differential conformance.
 - [docs] Reconcile grammar revision 1 with established parser behaviour by requiring a non-empty select query and formally representing accepted unit literals without changing yt-sql syntax.
 - [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.

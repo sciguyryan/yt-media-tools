@@ -17,6 +17,7 @@ from yt_media_tools.query_parser import parse_query
         "SELECT formats[0].height FROM @fixture",
         "FROM @fixture WHERE duration < 1h",
         "duration < 1h AND title IS NOT NULL",
+        "NOT\t(title IS NULL\nOR duration < 60)",
         "SELECT DISTINCT id FROM @fixture ORDER BY id DESC LIMIT 5 OFFSET 1",
         "SELECT\nDISTINCT\ttitle, duration FROM @fixture",
         "SELECT 0xff + 0b10 + 0o7 FROM @fixture",
@@ -25,6 +26,7 @@ from yt_media_tools.query_parser import parse_query
         "FROM @fixture WHERE duration BETWEEN 10 AND 20",
         "FROM @fixture WHERE id IN (1, 2, 3)",
         "FROM @fixture WHERE title ILIKE 'demo%'",
+        "FROM @fixture WHERE title IS NOT DISTINCT FROM other",
         "SELECT uploader_id, COUNT(*) AS n FROM @fixture GROUP BY uploader_id HAVING COUNT(*) > 1",
     ),
 )

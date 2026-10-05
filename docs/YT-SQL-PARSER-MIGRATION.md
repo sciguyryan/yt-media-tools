@@ -28,4 +28,14 @@ Disabling propagated tree positions reduced raw Lark time, but was rejected beca
 
 Accepting arbitrary function names in the grammar and rejecting unknown calls later was deliberately excluded. That proposal changes the syntax-versus-semantic rejection boundary and requires a separate language-design decision rather than being introduced as parser optimisation.
 
+## Lark differential conclusion
+
+The bounded issue #144 gate now compares the complete migration and established conformance corpora, three rounds of grammar-anchored generation, controlled malformed neighbours and a slew of fuzz seeds. The permanent suite exercises more than 200 accepted inventory entries, the established malformed corpus, 39 generated malformed neighbours and more than 800 seeded fuzz executions. Every accepted fuzz result also passes same-parser canonical round trips and cross-parser canonical convergence. The seed and failing source are reported with deterministic token-deletion candidates when a property fails.
+
+The fuzz phase achieved its goals and exposed three material implementation defects rather than normalising them away: negation detection assumed an ASCII space after `NOT`; an `IS [NOT] DISTINCT FROM` right operand could be reduced directly to a token instead of a wrapper tree; and a missing separator after the required `FROM` keyword had a different diagnostic span and expected-token set. Each defect is corrected and represented by a deterministic corpus or model-construction regression.
+
+No behavioural differences remain within the bounded gate across acceptance, normalised models, user-written source origins, canonical formatting or normalised diagnostics.
+
+The remaining concern is compatibility at the operational boundary: complete Lark parsing is still approximately 3.5 to 5.4 times slower on the representative workloads, and raw Lark tree construction alone exceeds the complete hand-written parser. The Lark candidate is therefore behaviourally conformant within the issue #144 gate but is not recommended for production cut-over. Investigation of another declarative engine is separate work and does not alter this conclusion.
+
 During migration, grammar revision 1 and the accepted hand-written parser remain frozen references. Any discrepancy is classified before either reference is changed. Unrelated grammar evolution is outside the migration.

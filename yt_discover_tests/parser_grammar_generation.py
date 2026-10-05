@@ -28,6 +28,13 @@ _FAMILIES: dict[str, tuple[str, ...]] = {
         "SELECT DISTINCT title, duration FROM @fixture WHERE duration > 0 ORDER BY title LIMIT 5 OFFSET 1",
     ),
     "predicate-only-query": ("duration >= 1h", "NOT (title IS NULL OR duration < 60)"),
+    "predicate-suffix": (
+        "FROM @fixture WHERE duration NOT BETWEEN 10 AND 20",
+        "FROM @fixture WHERE title NOT IN ('a', 'b')",
+        "FROM @fixture WHERE title DOES NOT CONTAIN 'x'",
+        "FROM @fixture WHERE title IS NOT DISTINCT FROM other",
+    ),
+    "truth-test": ("FROM @fixture WHERE (title IS NULL) IS NOT FALSE",),
     "postfix-expression": ("SELECT formats[0].height FROM @fixture", "SELECT thumbnails[1].url FROM @fixture"),
     "case-expression": ("SELECT CASE WHEN duration > 1h THEN 'long' ELSE 'short' END FROM @fixture",),
     "collection-predicate": ("SELECT id FROM @fixture WHERE ANY(formats AS f WHERE f.height >= 1080)",),
@@ -37,6 +44,11 @@ _FAMILIES: dict[str, tuple[str, ...]] = {
     "union-operator": ("SELECT id FROM @a UNION ALL SELECT id FROM @b",),
     "scalar-function": ("SELECT COALESCE(title, 'missing'), RANDOM(7) FROM @fixture",),
     "aggregate-function": ("SELECT COUNT(*), AVG(duration) FROM @fixture",),
+    "aggregate-filter": ("SELECT COUNT(*) FILTER (WHERE duration > 10) FROM @fixture",),
+    "having-expression": (
+        "SELECT uploader_id, COUNT(*) FROM @fixture GROUP BY uploader_id HAVING NOT COUNT(*) > 1",
+    ),
+    "order-by-clause": ("SELECT id FROM @fixture ORDER BY id DESC",),
     "number": ("SELECT 255, 0xff, 0o377, 0b11111111 FROM @fixture",),
 }
 

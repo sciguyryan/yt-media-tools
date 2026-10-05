@@ -26,6 +26,8 @@ class RejectedParserCase:
 ACCEPTED_PARSER_CASES = (
     AcceptedParserCase("implicit-select", "FROM @fixture WHERE duration < 1h"),
     AcceptedParserCase("predicate-only", "duration < 1h AND title IS NOT NULL"),
+    AcceptedParserCase("whitespace-negation", "NOT\t(title IS NULL\nOR duration < 60)"),
+    AcceptedParserCase("distinct-from-field", "FROM @fixture WHERE title IS NOT DISTINCT FROM other"),
     AcceptedParserCase("unicode-identifiers", "SELECT Δelta, δelta FROM @fixture"),
     AcceptedParserCase("precedence", "SELECT alpha + beta * gamma FROM @fixture"),
     AcceptedParserCase("postfix-chain", "SELECT formats[0].height FROM @fixture"),
@@ -57,4 +59,10 @@ REJECTED_PARSER_CASES = (
     ),
     RejectedParserCase("backwards-limit", "SELECT id FROM @fixture LIMIT 2 ORDER BY id", "syntax", "clause-order"),
     RejectedParserCase("broken-postfix", "SELECT formats[].height FROM @fixture", "syntax", "missing-index-expression"),
+    RejectedParserCase(
+        "missing-distinct-from-separator",
+        "FROM @fixture WHERE title IS NOT DISTINCT FROMother",
+        "syntax",
+        "invalid",
+    ),
 )
