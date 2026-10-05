@@ -1262,7 +1262,8 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 cache_first_full = (
                     metadata_cache is not None
-                    and ((source.kind == "channel" and source.facet == "videos") or source.kind == "playlist")
+                    and (source.kind == "playlist" or source.facet is not None)
+                    and source_capabilities(source).facet_capabilities(source.facet).cheaply_enumerates_identities
                     and args.items is None
                     and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
                 )
@@ -1301,7 +1302,7 @@ def main(argv: list[str] | None = None) -> int:
                         _verbose(
                             args.verbose,
                             (
-                                "No trusted incremental frontier is available; enumerating the complete channel videos source."
+                                f"No trusted incremental frontier is available; enumerating the complete channel {source.facet or 'default'} source."
                                 if source.kind == "channel"
                                 else "Enumerating the complete playlist source before cache resolution."
                             ),

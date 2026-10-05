@@ -227,6 +227,29 @@ def test_of_videos_unbounded_query_reuses_fresh_metadata_cache(tmp_path: Path) -
     assert "Acquiring full video metadata with yt-dlp" not in second.stderr
 
 
+def test_other_channel_facets_reuse_fresh_metadata_cache(tmp_path: Path) -> None:
+    for facet in ("shorts", "live"):
+        facet_dir = tmp_path / facet
+        facet_dir.mkdir()
+        env = fake_ytdlp_env(facet_dir)
+        cache_path = facet_dir / "cache" / "metadata.sqlite3"
+        query = (
+            f"SELECT CONCAT(id, ' # ', title) FROM @example OF {facet} ORDER BY upload_date ASC, release_timestamp ASC"
+        )
+
+        first = run_cli("--backend", "ytdlp", "--cache", str(cache_path), "-v", query, env=env)
+        assert first.returncode == 0, first.stderr
+        assert "Refreshing detailed metadata for 2 cache-miss/stale videos" in first.stderr
+        assert "Acquiring full video metadata with yt-dlp" not in first.stderr
+
+        second = run_cli("--backend", "ytdlp", "--cache", str(cache_path), "-v", query, env=env)
+        assert second.returncode == 0, second.stderr
+        assert second.stdout == first.stdout
+        assert "Cache outcome: 2 fresh hits, 0 stale, 0 misses" in second.stderr
+        assert "Refreshing detailed metadata" not in second.stderr
+        assert "Acquiring full video metadata with yt-dlp" not in second.stderr
+
+
 def test_playlist_unbounded_query_reuses_fresh_metadata_cache(tmp_path: Path) -> None:
     env = fake_ytdlp_env(tmp_path)
     cache_path = tmp_path / "cache" / "metadata.sqlite3"

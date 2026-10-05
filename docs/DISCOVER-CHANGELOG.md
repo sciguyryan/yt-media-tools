@@ -4,6 +4,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [fix] Generalise single-source cache-first acquisition across all explicit channel facets that advertise authoritative lightweight identity enumeration, including `OF shorts` and `OF live`, while retaining incremental frontier stopping only for `OF videos`.
 ### Discover 0.31.0 - Cache v4
 
 - [fix] Route unbounded playlist queries through cache-first flat identity enumeration and per-entry cache resolution, refreshing detailed metadata only for stale or missing requirements while preserving complete playlist membership enumeration.
