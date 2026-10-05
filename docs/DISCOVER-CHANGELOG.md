@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Prune unreachable CTEs from query-wide acquisition planning so physical sources referenced only by unused CTEs are no longer enumerated or acquired.
+- [performance] Project physical metadata requirements only through CTEs reachable from the executable relation graph, avoiding metadata acquisition for fields that cannot contribute to the query result.
+- [fix] Preserve transitive physical-source and metadata dependency propagation through reachable CTE chains while excluding independent unused CTE branches.
+- [test] Cover unused and transitively reachable CTEs so physical source discovery and metadata requirement projection remain aligned with the executable relation graph.
 - [test] Lock cache-v4 cross-source entity reuse so detailed metadata acquired through one source satisfies the same video entity in another source without a duplicate external refresh.
 - [performance] Select specialised metadata providers against each stale entity's unresolved required-field subset, preserving fresh cached fields and falling back to yt-dlp only when the remaining requirements are not covered exactly.
 - [test] Cover mixed fresh/stale requirements where YouTube.js can refresh the stale subset without reacquiring immutable cached metadata.

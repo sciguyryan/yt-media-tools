@@ -15,6 +15,7 @@ from yt_media_tools.query import (
     apply_query,
     format_query,
     parse_query,
+    query_physical_source_requests,
     query_single_physical_source,
     resolve_query,
 )
@@ -103,6 +104,27 @@ def test_multiple_physical_sources_can_back_independent_ctes() -> None:
     query = parse_query("WITH a AS (SELECT id FROM @one), b AS (SELECT id FROM @two) SELECT id FROM a")
     resolved = resolve_query(query, QuerySchema(records()), CONTEXT)
     assert len(resolved.ctes) == 2
+
+
+def test_unused_cte_does_not_project_physical_source_or_metadata_requirements() -> None:
+    query = parse_query(
+        "WITH used AS (SELECT id, duration FROM @used), "
+        "unused AS (SELECT id, description, view_count FROM @unused) "
+        "SELECT id FROM used WHERE duration < 10m"
+    )
+    assert query_physical_source_requests(query) == (("@used", None),)
+    assert required_query_fields(query) == {"id", "duration"}
+
+
+def test_reachable_cte_chain_projects_only_transitive_physical_sources() -> None:
+    query = parse_query(
+        "WITH base AS (SELECT id, title FROM @base), "
+        "used AS (SELECT id FROM base WHERE title ILIKE '%space%'), "
+        "unused AS (SELECT id, description FROM @unused) "
+        "SELECT id FROM used"
+    )
+    assert query_physical_source_requests(query) == (("@base", None),)
+    assert required_query_fields(query) == {"id", "title"}
 
 
 @pytest.mark.parametrize(

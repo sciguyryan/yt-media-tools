@@ -784,20 +784,30 @@ def _required_body_fields(query: Query) -> set[str]:
 
 
 def required_query_fields(query: Query) -> set[str]:
-    """Return physical-source fields needed by a query, CTEs and UNION branches."""
-    cte_names = {cte.name for cte in query.ctes}
+    """Return physical-source fields needed by reachable query, CTE and UNION branches."""
+    cte_map = {cte.name: cte.query for cte in query.ctes}
+    seen_ctes: set[str] = set()
     fields: set[str] = set()
+
+    def visit_relation(source_name: str | None) -> bool:
+        if source_name is None or source_name not in cte_map:
+            return False
+        if source_name not in seen_ctes:
+            seen_ctes.add(source_name)
+            visit(cte_map[source_name])
+        return True
 
     def visit(candidate: Query) -> None:
         if candidate.left_query is not None:
             visit(candidate.left_query)
-        if (candidate.from_source or "") not in cte_names:
+        logical_primary = visit_relation(candidate.from_source)
+        for join in candidate.joins:
+            visit_relation(join.relation.source)
+        if not logical_primary:
             fields.update(_required_body_fields(candidate))
         for operation in candidate.set_operations:
             visit(operation.query)
 
-    for cte in query.ctes:
-        visit(cte.query)
     visit(query)
     return fields
 

@@ -250,40 +250,42 @@ def _direct_from_sources(query: Query) -> tuple[str, ...]:
 
 
 def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None], ...]:
-    """Return physical source/facet requests in deterministic first-use order."""
-    cte_names = {cte.name for cte in query.ctes}
+    """Return reachable physical source/facet requests in deterministic first-use order."""
+    cte_map = {cte.name: cte.query for cte in query.ctes}
+    seen_ctes: set[str] = set()
     seen: set[tuple[str, str | None]] = set()
     result: list[tuple[str, str | None]] = []
+
+    def visit_relation(source_name: str, facet: str | None) -> None:
+        cte_query = cte_map.get(source_name)
+        if cte_query is not None:
+            if facet is not None:
+                raise QuerySemanticError(
+                    query.source,
+                    "OF applies only to physical sources, not CTE result relations.",
+                    0,
+                )
+            if source_name not in seen_ctes:
+                seen_ctes.add(source_name)
+                visit(cte_query)
+            return
+        key = (source_name, facet)
+        if key not in seen:
+            seen.add(key)
+            result.append(key)
 
     def visit(candidate: Query) -> None:
         if candidate.left_query is not None:
             visit(candidate.left_query)
-        direct: list[tuple[str, str | None]] = []
         if candidate.from_source is not None:
-            direct.append((candidate.from_source, candidate.from_facet))
+            visit_relation(candidate.from_source, candidate.from_facet)
         for join in candidate.joins:
-            direct.append((join.relation.source, join.relation.facet))
-        for source_name, facet in direct:
-            if source_name in cte_names:
-                if facet is not None:
-                    raise QuerySemanticError(
-                        query.source,
-                        "OF applies only to physical sources, not CTE result relations.",
-                        0,
-                    )
-                continue
-            key = (source_name, facet)
-            if key in seen:
-                continue
-            seen.add(key)
-            result.append(key)
+            visit_relation(join.relation.source, join.relation.facet)
         # Set branches are complete relation expressions in their own right. Recurse
         # so JOIN inputs inside a later UNION branch participate in acquisition.
         for operation in candidate.set_operations:
             visit(operation.query)
 
-    for cte in query.ctes:
-        visit(cte.query)
     visit(query)
     return tuple(result)
 
