@@ -31,6 +31,32 @@ def test_cache_freshness_is_field_aware(tmp_path: Path):
         assert not cache.is_fresh(item, {"view_count"}, now=later)
 
 
+def test_unrelated_stale_fields_do_not_invalidate_fresh_query_requirements(tmp_path: Path):
+    path = tmp_path / "metadata.sqlite3"
+    now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
+    with MetadataCache(path) as cache:
+        cache.put_many(
+            "source",
+            [
+                {
+                    "id": "abc",
+                    "title": "Title",
+                    "upload_date": "20260701",
+                    "release_timestamp": 1782864000,
+                    "view_count": 10,
+                    "availability": "public",
+                }
+            ],
+            fetched_at=now,
+        )
+        item = cache.get("source", "abc")
+        assert item is not None
+        later = now + timedelta(days=2)
+        assert cache.is_fresh(item, {"id", "upload_date", "release_timestamp"}, now=later)
+        assert not cache.is_fresh(item, {"view_count"}, now=later)
+        assert not cache.is_fresh(item, {"availability"}, now=later)
+
+
 def test_cache_is_source_scoped(tmp_path: Path):
     path = tmp_path / "metadata.sqlite3"
     with MetadataCache(path) as cache:
