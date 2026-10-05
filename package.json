@@ -9,6 +9,6 @@
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\""
   },
   "devDependencies": {
-    "markdownlint-cli2": "^0.23.2"
+    "markdownlint-cli2": "0.23.2"
   }
 }

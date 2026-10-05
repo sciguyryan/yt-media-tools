@@ -258,11 +258,11 @@ Relation contradiction proofs operate only on forms whose truth conditions are e
 
 No local AST rewrites currently change `DISTINCT`, `LIMIT` or `OFFSET`.
 
-Discover implements a stage-aware proof-based acquisition optimisation for eligible `LIMIT` queries. The planner computes `OFFSET + LIMIT` as the authoritative match target and records the earliest safe termination stage. If the complete predicate and projection are authoritative in lightweight metadata, source enumeration itself may stop after enough emitted matching rows. If detailed metadata is still required, source enumeration remains exhaustive but detailed acquisition may stop after the same authoritative target.
+Discover implements a stage-aware proof-based acquisition optimisation for eligible `LIMIT` queries. The planner computes `OFFSET + LIMIT` as the authoritative match target and records the earliest safe termination stage. If the complete predicate and projection are authoritative in lightweight metadata, source enumeration itself may stop after enough emitted matching rows. If detailed metadata is still required, source enumeration remains exhaustive but detailed acquisition may stop after the same authoritative target. A single ascending `ORDER BY source_index` is also eligible when the selected stable source/facet explicitly declares `source_index` as its trustworthy forward ordering; reverse source order and all other explicit ordering remain exhaustive.
 
 ### Deliberately not implemented
 
-`LIMIT` is not pushed through arbitrary ordering, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, volatile expressions or archive exclusion. These cases can change which rows survive, how they are ordered, or which evaluations remain observable. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
+`LIMIT` is not pushed through arbitrary ordering beyond the proven forward `source_index` case, DISTINCT, aggregation/HAVING, CTE materialisation, UNION composition, volatile expressions or archive exclusion. These cases can change which rows survive, how they are ordered, or which evaluations remain observable. yt-dlp positional item ranges are not treated as final-row limits because unavailable or skipped source positions may not correspond to emitted query rows.
 
 ### Future candidates
 
@@ -287,6 +287,12 @@ Collection-query expressions retain operation-specific acquisition requirements 
 The planner applies only coarse deterministic cost/selectivity heuristics. Safe enumeration-stage top-level AND terms are ranked by information value per local evaluation cost, with equality and small positive membership treated as stronger candidate-rejection tests than broad inequalities or negated forms. No numeric selectivity percentages or extractor timing predictions are invented. Equal-ranked terms retain query order.
 
 These heuristics affect only independently safe pre-acquisition work. They do not reorder volatile predicates, residual detailed predicates, UNION evaluation, or source acquisition. When cheap authoritative filters are available, the physical plan records deeper complete and collection stages as deferrable until candidate rows survive those filters. The current runtime already observes this gate for staged lightweight-to-detailed acquisition paths.
+
+Query-wide physical source discovery and metadata projection follow only CTEs reachable from the executable relation graph. Unused CTE branches therefore cannot introduce acquisition work, while transitive dependencies through reachable CTE chains remain preserved.
+
+Cache-aware detailed acquisition is field-sensitive: fresh required fields are preserved while only stale required fields drive provider escalation. Specialised providers may satisfy an exact unresolved subset when their declared capability covers it, with yt-dlp retained as the conservative fallback for requirements that remain unresolved. Fresh cache-v4 known-NULL registered scalar observations satisfy the corresponding required fact until their freshness window expires.
+
+Authoritative enumeration-stage predicate conjuncts are evaluated before cache resolution and detailed refresh in cache-first channel and playlist paths. Approximate enumeration metadata is not promoted into an authoritative rejection proof. Repeated media entity IDs are deduplicated at the external refresh boundary while logical source occurrences remain intact for relational evaluation.
 
 Composed queries are planned through independent source/facet boundaries. A boundary carries only the fields, predicate constraints, temporal bounds, metadata depth and ordering assumptions required by its physical uses. Reuse of one source/facet unions field requirements and combines branch predicates with OR; heterogeneous source/facet boundaries are not merged or cross-optimised without proof.
 

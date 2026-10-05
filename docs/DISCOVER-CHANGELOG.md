@@ -4,6 +4,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [docs] Reconcile the optimisation strategy with reachable-CTE projection, field-sensitive provider escalation, cache-v4 known-NULL reuse, staged cache-first rejection, proven forward source-order LIMIT termination and refresh deduplication.
 - [performance] Deduplicate repeated media entity IDs before specialised-provider or yt-dlp refresh within each cache-aware acquisition request while preserving every logical source occurrence for later relational evaluation.
 - [test] Cover duplicate cache-miss entities so external detailed acquisition occurs once per entity without collapsing duplicate logical rows or cache examination accounting.
 - [test] Lock fresh cache-v4 known-NULL registered scalar metadata as reusable negative fact knowledge so an authoritatively resolved NULL does not trigger repeated detailed refresh until its freshness window expires.
