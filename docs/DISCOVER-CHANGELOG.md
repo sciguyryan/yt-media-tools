@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Evaluate authoritative enumeration-stage WHERE conjuncts before cache resolution or detailed refresh in the full cache-first channel and playlist path, so rows already proven unable to match do not trigger expensive metadata acquisition.
+- [test] Cover mixed lightweight/detailed predicates in cache-first acquisition and require enumeration-rejected rows to avoid detailed yt-dlp refresh entirely.
 - [performance] Prune unreachable CTEs from query-wide acquisition planning so physical sources referenced only by unused CTEs are no longer enumerated or acquired.
 - [performance] Project physical metadata requirements only through CTEs reachable from the executable relation graph, avoiding metadata acquisition for fields that cannot contribute to the query result.
 - [fix] Preserve transitive physical-source and metadata dependency propagation through reachable CTE chains while excluding independent unused CTE branches.

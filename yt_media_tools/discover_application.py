@@ -1408,6 +1408,9 @@ def main(argv: list[str] | None = None) -> int:
                     candidate_ids = []
                     for video_id in observed_ids_for_cache:
                         entry = entry_by_id.get(video_id)
+                        if entry is not None and rejects_at_enumeration(predicate_stages, entry):
+                            lightweight_rejected += 1
+                            continue
                         if entry is not None and safely_reject_lightweight(query.predicate, entry, date_context):
                             lightweight_rejected += 1
                             continue

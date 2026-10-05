@@ -136,3 +136,53 @@ def test_frontier_no_overlap_falls_back_to_complete_rebuild(tmp_path: Path) -> N
         frontier = cache.source_frontier(SOURCE)
         assert frontier is not None
         assert frontier.head_video_id == "fresh3"
+
+
+def fake_progressive_predicate_env(tmp_path: Path) -> tuple[dict[str, str], Path]:
+    fake_bin = tmp_path / "bin-progressive-predicate"
+    fake_bin.mkdir()
+    log_path = tmp_path / "detailed-ids.txt"
+    fake = fake_bin / "yt-dlp"
+    fake.write_text(
+        """#!/usr/bin/env python3
+import json, os, sys
+if '--version' in sys.argv:
+    print('2026.08.30')
+    raise SystemExit(0)
+if '--flat-playlist' in sys.argv:
+    print(json.dumps({'id': 'reject-me', 'title': 'reject', 'view_count': 10}), flush=True)
+    print(json.dumps({'id': 'keep-me', 'title': 'keep', 'view_count': 2000}), flush=True)
+else:
+    for arg in sys.argv:
+        if 'watch?v=' in arg:
+            vid = arg.rsplit('=', 1)[-1]
+            with open(os.environ['YT_DISCOVER_DETAILED_LOG'], 'a', encoding='utf-8') as handle:
+                handle.write(vid + '\\n')
+            print(json.dumps({'id': vid, 'title': 'keep' if vid == 'keep-me' else 'reject', 'view_count': 2000, 'description': 'space'}), flush=True)
+""",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
+    env["YT_DISCOVER_DETAILED_LOG"] = str(log_path)
+    return env, log_path
+
+
+def test_cache_first_progressive_predicate_rejects_before_detailed_refresh(tmp_path: Path) -> None:
+    cache_path = tmp_path / "cache.sqlite3"
+    env, log_path = fake_progressive_predicate_env(tmp_path)
+    result = run_cli(
+        "--cache",
+        str(cache_path),
+        "--tab",
+        "videos",
+        "--backend",
+        "ytdlp",
+        "-v",
+        "SELECT id FROM @example WHERE title = 'keep' AND description ILIKE '%space%'",
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["keep-me"]
+    assert log_path.read_text(encoding="utf-8").splitlines() == ["keep-me"]
