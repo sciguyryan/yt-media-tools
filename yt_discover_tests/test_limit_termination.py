@@ -59,6 +59,33 @@ def test_limit_planner_allows_source_order_only() -> None:
     assert "ORDER BY" in ordered.reason
 
 
+def test_limit_planner_allows_explicit_forward_source_order_with_resolved_capability() -> None:
+    from yt_media_tools.sources import resolve_source_request
+    from yt_media_tools.staged_predicates import plan_predicate_stages
+
+    query = parse_query("SELECT id FROM @example WHERE duration < 1h ORDER BY source_index ASC LIMIT 2")
+    source = resolve_source_request("@example", facet="videos")
+    plan = plan_limit_termination(query, source=source, predicate_stages=plan_predicate_stages(query, source=source))
+    assert plan.eligible
+    assert plan.mode == "detailed-match"
+
+
+def test_limit_planner_rejects_reverse_or_non_source_order() -> None:
+    from yt_media_tools.sources import resolve_source_request
+
+    source = resolve_source_request("@example", facet="videos")
+    reverse = plan_limit_termination(
+        parse_query("SELECT id FROM @example ORDER BY source_index DESC LIMIT 2"),
+        source=source,
+    )
+    metadata = plan_limit_termination(
+        parse_query("SELECT id FROM @example ORDER BY upload_date DESC LIMIT 2"),
+        source=source,
+    )
+    assert not reverse.eligible
+    assert not metadata.eligible
+
+
 def test_cli_limit_stops_detailed_acquisition_in_source_order(tmp_path: Path) -> None:
     env, log = fake_limit_env(tmp_path)
     result = run_cli(
@@ -243,3 +270,22 @@ def test_json_explain_distinguishes_enumeration_and_detailed_limit_modes() -> No
     assert payload["limit_aware_termination"]["mode"] == "detailed-match"
     assert payload["limit_aware_termination"]["stops_source_enumeration"] is False
     assert payload["limit_aware_termination"]["stops_detailed_acquisition"] is True
+
+
+def test_cli_forward_source_order_limit_stops_detailed_acquisition(tmp_path: Path) -> None:
+    env, log = fake_limit_env(tmp_path)
+    result = run_cli(
+        "--cache",
+        str(tmp_path / "cache.sqlite3"),
+        "--backend",
+        "ytdlp",
+        "--tab",
+        "videos",
+        "-v",
+        "SELECT id FROM @example WHERE duration < 1h ORDER BY source_index ASC LIMIT 2",
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["v000", "v001"]
+    assert len(log.read_text(encoding="utf-8").splitlines()) == 25
+    assert "LIMIT-aware detailed acquisition stopped after 25 candidate(s)" in result.stderr

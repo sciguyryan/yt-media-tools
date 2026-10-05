@@ -115,7 +115,23 @@ def plan_limit_termination(
             "aggregation requires complete input groups before LIMIT can be applied; HAVING is evaluated only after those groups are complete"
         )
     if query.order_by:
-        return blocked("explicit ORDER BY requires complete result ordering before LIMIT can be applied")
+        if source is None:
+            return blocked(
+                "explicit ORDER BY requires a resolved source-order capability before LIMIT can stop acquisition"
+            )
+        facet_capabilities = selected_facet_capabilities(source)
+        order_field = facet_capabilities.trustworthy_order_field
+        source_order_equivalent = (
+            facet_capabilities.stable_collection
+            and order_field is not None
+            and len(query.order_by) == 1
+            and query.order_by[0].field.casefold() == order_field.casefold()
+            and not query.order_by[0].descending
+        )
+        if not source_order_equivalent:
+            return blocked(
+                "explicit ORDER BY is not proven equivalent to the selected source's trustworthy forward ordering"
+            )
     if query.distinct:
         return blocked(
             "DISTINCT may discard earlier duplicate projections, so complete duplicate resolution is required"

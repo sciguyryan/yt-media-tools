@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Treat a single ascending `ORDER BY source_index` as equivalent to a stable source's declared trustworthy forward ordering, allowing existing LIMIT-aware acquisition to stop once OFFSET + LIMIT authoritative matches are complete.
+- [test] Cover explicit forward source-order LIMIT termination while keeping reverse `source_index` and metadata ordering exhaustive.
 - [performance] Evaluate authoritative enumeration-stage WHERE conjuncts before cache resolution or detailed refresh in the full cache-first channel and playlist path, so rows already proven unable to match do not trigger expensive metadata acquisition.
 - [test] Cover mixed lightweight/detailed predicates in cache-first acquisition and require enumeration-rejected rows to avoid detailed yt-dlp refresh entirely.
 - [performance] Prune unreachable CTEs from query-wide acquisition planning so physical sources referenced only by unused CTEs are no longer enumerated or acquired.
