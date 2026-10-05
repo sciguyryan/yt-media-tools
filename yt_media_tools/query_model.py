@@ -44,6 +44,7 @@ class QueryDiagnosticContext:
     category: str
     span: QuerySourceSpan
     expected: tuple[str, ...] = ()
+    reason: str = "invalid"
 
     @property
     def location(self) -> QuerySourceLocation:
@@ -76,6 +77,7 @@ class QuerySyntaxError(ValueError):
         end_position: int | None = None,
         expected: tuple[str, ...] = (),
         category: str | None = None,
+        reason: str = "invalid",
     ) -> None:
         super().__init__(message)
         self.source = source
@@ -89,7 +91,13 @@ class QuerySyntaxError(ValueError):
             _source_location(source, self.end_position),
         )
         self.location = self.span.start
-        self.context = QueryDiagnosticContext(category or self.diagnostic_category, self.span, self.expected)
+        self.reason = reason
+        self.context = QueryDiagnosticContext(
+            category or self.diagnostic_category,
+            self.span,
+            self.expected,
+            reason,
+        )
 
     def format(self) -> str:
         line_start = self.source.rfind("\n", 0, self.position) + 1

@@ -8,6 +8,7 @@ from yt_discover_tests.conformance.cases import CASES
 from yt_discover_tests.parser_grammar_generation import generated_valid_queries
 from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
 from yt_discover_tests.parser_migration_harness import ParserDifference, canonical_round_trip, compare_parsers
+from yt_discover_tests.parser_mutation import malformed_neighbours
 from yt_media_tools.discover_cli import bind_query_parameters
 from yt_media_tools.experimental_lark_parser import parse_lark_query
 from yt_media_tools.query_model import Query, QuerySyntaxError
@@ -27,6 +28,15 @@ def _accepted_inventory() -> tuple[tuple[str, str], ...]:
         for index, case in enumerate(generated_valid_queries(rounds=3))
     )
     return tuple(cases)
+
+
+def _malformed_mutation_inventory() -> tuple[tuple[str, str], ...]:
+    cases = {
+        mutation.source: mutation.name
+        for generated in generated_valid_queries(rounds=3)
+        for mutation in malformed_neighbours(generated.query)
+    }
+    return tuple((name, source) for source, name in cases.items())
 
 
 def test_differential_harness_reports_independent_model_and_origin_differences() -> None:
@@ -108,9 +118,20 @@ def test_lark_accepted_syntax_inventory_has_canonical_cross_parser_convergence()
         assert canonical_comparison.equivalent, f"{name}: {canonical_comparison.describe()}"
 
 
-def test_lark_malformed_syntax_inventory_has_no_unclassified_outcomes() -> None:
+def test_lark_malformed_syntax_inventory_is_diagnostically_equivalent() -> None:
     for case in REJECTED_PARSER_CASES:
         comparison = compare_parsers(parse_query, parse_lark_query, case.query)
         assert comparison.reference.kind == "rejected", case.name
-        assert comparison.describe(), case.name
-        assert comparison.equivalent == (not comparison.differences), case.name
+        assert comparison.candidate.kind == "rejected", case.name
+        assert comparison.equivalent, f"{case.name}: {comparison.describe()}"
+
+
+def test_lark_controlled_malformed_neighbours_are_diagnostically_equivalent() -> None:
+    cases = _malformed_mutation_inventory()
+    assert cases
+
+    for name, source in cases:
+        comparison = compare_parsers(parse_query, parse_lark_query, source)
+        assert comparison.reference.kind == "rejected", name
+        assert comparison.candidate.kind == "rejected", name
+        assert comparison.equivalent, f"{name}: {comparison.describe()} for {source!r}"

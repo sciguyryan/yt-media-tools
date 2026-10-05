@@ -254,7 +254,13 @@ def tokenise(source: str) -> list[Token]:
                         "Incomplete escape sequence at end of string literal.",
                         len(source) - 1,
                     )
-                raise QueryLexicalError(source, "Unterminated string literal.", position, end_position=len(source))
+                raise QueryLexicalError(
+                    source,
+                    "Unterminated string literal.",
+                    position,
+                    end_position=len(source),
+                    reason="unterminated-string",
+                )
             raise QueryLexicalError(source, f"Unexpected character {text!r}.", position, end_position=match_end)
         if kind == "STRING":
             value: Any = _unescape_string(text)
@@ -374,7 +380,7 @@ class Parser:
             return self.advance()
         return None
 
-    def expect_keyword(self, word: str, message: str | None = None) -> Token:
+    def expect_keyword(self, word: str, message: str | None = None, *, reason: str = "invalid") -> Token:
         token = self.consume_keyword(word)
         if token is None:
             raise QuerySyntaxError(
@@ -383,6 +389,7 @@ class Parser:
                 self.current.position,
                 end_position=self.current.span[1],
                 expected=(word,),
+                reason=reason,
             )
         return token
 
@@ -460,7 +467,12 @@ class Parser:
                 self.expect_keyword("AS", "Expected AS after CTE name.")
                 self.expect("LPAREN", "Expected '(' before CTE query.")
                 if self.current.kind == "RPAREN":
-                    raise QuerySyntaxError(self.source, "CTE query cannot be empty.", self.current.position)
+                    raise QuerySyntaxError(
+                        self.source,
+                        "CTE query cannot be empty.",
+                        self.current.position,
+                        reason="empty-query",
+                    )
                 subquery = self.parse_query(stop_at_rparen=True, allow_with=False)
                 self.expect("RPAREN", "Expected ')' after CTE query.")
                 ctes.append(CommonTableExpression(name_token.text, subquery, name_token.position))
@@ -520,6 +532,7 @@ class Parser:
                         self.source,
                         "Expected WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, OFFSET, or end of query.",
                         self.current.position,
+                        reason="missing-clause-separator",
                     )
                 predicate = self.parse_or()
 
@@ -609,7 +622,12 @@ class Parser:
                         set_branch=True,
                     )
                 if not branch.select and branch.left_query is None:
-                    raise QuerySyntaxError(self.source, "UNION requires a SELECT query on both sides.", union_position)
+                    raise QuerySyntaxError(
+                        self.source,
+                        "UNION requires a SELECT query on both sides.",
+                        union_position,
+                        reason="incomplete-union",
+                    )
                 set_operations.append(SetOperation(branch, union_all, union_position, False, grouped))
 
         if self.consume_keyword("ORDER"):
@@ -641,6 +659,7 @@ class Parser:
                     self.source,
                     f"{clause} is repeated or appears outside the canonical SELECT clause order.",
                     self.current.position,
+                    reason="clause-order",
                 )
             raise QuerySyntaxError(self.source, f"Unexpected token {self.current.text!r}.", self.current.position)
         return Query(
@@ -768,7 +787,10 @@ class Parser:
                 bracket = self.advance()
                 if self.current.kind == "RBRACKET":
                     raise QuerySyntaxError(
-                        self.source, "Collection indexing requires an index expression.", bracket.position
+                        self.source,
+                        "Collection indexing requires an index expression.",
+                        bracket.position,
+                        reason="missing-index-expression",
                     )
                 index = self.parse_scalar_expression()
                 self.expect("RBRACKET", "Expected ']' to close the collection index.")
@@ -1076,6 +1098,7 @@ class Parser:
             self.source,
             "Expected a channel/playlist identifier after FROM or JOIN. Quote full URLs.",
             token.position,
+            reason="missing-source",
         )
 
     def parse_relation_references(self) -> tuple[RelationReference, ...]:
@@ -1093,7 +1116,12 @@ class Parser:
             while True:
                 facet_token = self.current
                 if facet_token.kind not in {"IDENT", "QIDENT"}:
-                    raise QuerySyntaxError(self.source, "OF requires a collection/facet name.", facet_token.position)
+                    raise QuerySyntaxError(
+                        self.source,
+                        "OF requires a collection/facet name.",
+                        facet_token.position,
+                        reason="missing-facet",
+                    )
                 facet = str(facet_token.value if facet_token.kind == "QIDENT" else facet_token.text).casefold()
                 if any(existing == facet for existing, _ in facets):
                     raise QuerySyntaxError(
@@ -1157,7 +1185,7 @@ class Parser:
         self.expect_keyword("JOIN", "Expected JOIN after join kind.")
 
         relation = self.parse_relation_reference()
-        self.expect_keyword("ON", "JOIN requires an ON predicate.")
+        self.expect_keyword("ON", "JOIN requires an ON predicate.", reason="missing-join-on")
         if (
             self.current.kind == "EOF"
             or self.current.kind == "RPAREN"

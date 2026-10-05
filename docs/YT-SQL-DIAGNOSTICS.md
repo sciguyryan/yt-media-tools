@@ -38,4 +38,4 @@ Differential parser tests should compare structured diagnostic meaning rather th
 
 ## Machine-readable diagnostics
 
-The diagnostic model is intentionally structured so a future machine-readable interface can expose category, message, primary location, absolute span and curated expected tokens without parsing terminal prose. Issue #15 does not add a new public machine-readable CLI mode. Such a surface should be versioned and designed with the wider Discover machine-interface contract rather than introduced incidentally during parser preparation.
+The diagnostic model is intentionally structured so a future machine-readable interface can expose category, stable reason, message, primary location, absolute span and curated expected tokens without parsing terminal prose. The stable reason is parser-independent and deliberately separate from editable human-facing wording. Issue #15 does not add a new public machine-readable CLI mode. Such a surface should be versioned and designed with the wider Discover machine-interface contract rather than introduced incidentally during parser preparation.

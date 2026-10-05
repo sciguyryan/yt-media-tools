@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from functools import lru_cache
 from importlib.resources import files
+import re
 
 from lark import Lark
 from lark.exceptions import LarkError
 
-from .query_model import QuerySyntaxError
+from .query_model import QueryLexicalError, QuerySyntaxError
 
 
 @lru_cache(maxsize=1)
@@ -25,14 +26,8 @@ def _parser() -> Lark:
 
 def recognise_lark_query(source: str) -> None:
     """Recognise *source* without exposing parser-library objects to callers."""
-    try:
-        _parser().parse(source)
-        return None
-    except LarkError as error:
-        position = getattr(error, "pos_in_stream", None)
-        if not isinstance(position, int):
-            position = len(source)
-        raise QuerySyntaxError(source, "Experimental declarative parser rejected the query.", position) from error
+    _parse_lark_tree(source)
+    return None
 
 
 def parse_lark_query(source: str):
@@ -41,14 +36,135 @@ def parse_lark_query(source: str):
     This remains deliberately independent of ``query_parser.parse_query`` and
     is not wired into the production parser path.
     """
+    tree = _parse_lark_tree(source)
+    return _LarkModelBuilder(source).query(tree)
+
+
+def _parse_lark_tree(source: str):
+    """Parse and validate candidate-only lexical boundaries."""
     try:
         tree = _parser().parse(source)
     except LarkError as error:
-        position = getattr(error, "pos_in_stream", None)
-        if not isinstance(position, int):
-            position = len(source)
-        raise QuerySyntaxError(source, "Experimental declarative parser rejected the query.", position) from error
-    return _LarkModelBuilder(source).query(tree)
+        raise _translated_lark_error(source, error) from None
+    _validate_lark_tree(source, tree)
+    return tree
+
+
+def _validate_lark_tree(source: str, tree) -> None:
+    """Reject a clause keyword swallowed as part of a literal sequence."""
+    if any(node.data == "order_by_clause" for node in tree.iter_subtrees()):
+        return
+    for node in tree.iter_subtrees():
+        if node.data not in {"where_clause", "predicate_only_query"}:
+            continue
+        start = node.meta.start_pos
+        segment = source[start : node.meta.end_pos]
+        malformed_order = re.search(r"\bORDER\s+(?!BY(?:\s|$))(?P<term>[^\s,()]+)", segment, re.IGNORECASE)
+        if malformed_order:
+            term_start = start + malformed_order.start("term")
+            term_end = start + malformed_order.end("term")
+            raise QuerySyntaxError(
+                source,
+                "Expected BY after ORDER.",
+                term_start,
+                end_position=term_end,
+                expected=("BY",),
+            )
+
+
+def _translated_lark_error(source: str, error: LarkError) -> QuerySyntaxError:
+    """Translate one implementation-native failure into yt-sql vocabulary."""
+    native_position = getattr(error, "pos_in_stream", None)
+    position = native_position if isinstance(native_position, int) and native_position >= 0 else len(source)
+    stripped = source.rstrip()
+    expected = set(getattr(error, "expected", ()) or ())
+
+    if re.match(r"(?i)^SELECT(?:COALESCE|COUNT)\b", source):
+        return QuerySyntaxError(source, "A function name cannot include SELECT.", 0)
+
+    if position < len(source) and source[position] in {"'", '"'}:
+        return QueryLexicalError(
+            source,
+            "Unterminated string literal.",
+            position,
+            end_position=len(source),
+            reason="unterminated-string",
+        )
+
+    if "[]" in source and position == source.index("[]") + 1:
+        return QuerySyntaxError(
+            source,
+            "Collection indexing requires an index expression.",
+            position - 1,
+            reason="missing-index-expression",
+        )
+
+    if re.match(r"(?i)(?:WHERE|UNION)[\w-]", source[position:]):
+        return QuerySyntaxError(
+            source,
+            "A separator is required after the clause keyword.",
+            position,
+            reason="missing-clause-separator",
+        )
+
+    if (
+        position < len(source)
+        and source[position] == ","
+        and re.search(r"\bOF\b[^,]*,\s*$", source[:position], re.IGNORECASE)
+    ):
+        return QuerySyntaxError(source, "A facet name is required.", position, reason="missing-facet")
+
+    if re.search(r"\bAS\s*\(\s*\)$", source[: position + 1], re.IGNORECASE):
+        return QuerySyntaxError(source, "Query body cannot be empty.", position, reason="empty-query")
+
+    if position == len(source):
+        if re.search(r"\b(?:FROM|JOIN)\s*$", stripped, re.IGNORECASE):
+            return QuerySyntaxError(source, "A relation source is required.", position, reason="missing-source")
+        if re.search(r"\bOF\s*$", stripped, re.IGNORECASE):
+            return QuerySyntaxError(source, "A facet name is required after OF.", position, reason="missing-facet")
+        union = re.search(r"\bUNION\s*$", stripped, re.IGNORECASE)
+        if union:
+            return QuerySyntaxError(
+                source,
+                "UNION requires a query on both sides.",
+                union.start(),
+                reason="incomplete-union",
+            )
+        if re.search(r"\bJOIN\b", stripped, re.IGNORECASE) and not re.search(r"\bON\b[^)]*$", stripped, re.IGNORECASE):
+            return QuerySyntaxError(
+                source,
+                "JOIN requires an ON predicate.",
+                position,
+                expected=("ON",),
+                reason="missing-join-on",
+            )
+        if "RPAR" in expected:
+            return QuerySyntaxError(
+                source,
+                "A closing ')' delimiter is required.",
+                position,
+                expected=(")",),
+                reason="invalid",
+            )
+
+    word = re.match(r"[A-Za-z]+", source[position:])
+    if word and word.group(0).upper() in {"WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "OFFSET"}:
+        return QuerySyntaxError(
+            source,
+            "A clause is repeated or out of canonical order.",
+            position,
+            reason="clause-order",
+        )
+
+    if position < len(source) and source[position] == "@" and re.match(r"(?is)^\s*SELECT\s+FROM\s+", source):
+        return QuerySyntaxError(
+            source,
+            "A clause separator is required.",
+            position,
+            reason="missing-clause-separator",
+        )
+
+    return QuerySyntaxError(source, "The query is not valid yt-sql syntax.", position)
 
 
 class _LarkModelBuilder:

@@ -20,6 +20,7 @@ class RejectedParserCase:
     name: str
     query: str
     category: str
+    reason: str
 
 
 ACCEPTED_PARSER_CASES = (
@@ -43,15 +44,17 @@ ACCEPTED_PARSER_CASES = (
 
 
 REJECTED_PARSER_CASES = (
-    RejectedParserCase("unterminated-string", "SELECT 'broken FROM @fixture", "lexical"),
-    RejectedParserCase("missing-projection", "SELECT FROM @fixture", "syntax"),
-    RejectedParserCase("missing-source", "SELECT id FROM", "syntax"),
-    RejectedParserCase("missing-facet", "SELECT id FROM @fixture OF", "syntax"),
-    RejectedParserCase("missing-join-relation", "SELECT id FROM @fixture LEFT JOIN", "syntax"),
-    RejectedParserCase("missing-join-on", "SELECT id FROM @fixture LEFT JOIN @other", "syntax"),
-    RejectedParserCase("dangling-union", "SELECT id FROM @fixture UNION", "syntax"),
-    RejectedParserCase("empty-cte", "WITH x AS () SELECT id FROM x", "syntax"),
-    RejectedParserCase("repeated-where", "SELECT id FROM @fixture WHERE id = 'x' WHERE id = 'y'", "syntax"),
-    RejectedParserCase("backwards-limit", "SELECT id FROM @fixture LIMIT 2 ORDER BY id", "syntax"),
-    RejectedParserCase("broken-postfix", "SELECT formats[].height FROM @fixture", "syntax"),
+    RejectedParserCase("unterminated-string", "SELECT 'broken FROM @fixture", "lexical", "unterminated-string"),
+    RejectedParserCase("missing-projection", "SELECT FROM @fixture", "syntax", "missing-clause-separator"),
+    RejectedParserCase("missing-source", "SELECT id FROM", "syntax", "missing-source"),
+    RejectedParserCase("missing-facet", "SELECT id FROM @fixture OF", "syntax", "missing-facet"),
+    RejectedParserCase("missing-join-relation", "SELECT id FROM @fixture LEFT JOIN", "syntax", "missing-source"),
+    RejectedParserCase("missing-join-on", "SELECT id FROM @fixture LEFT JOIN @other", "syntax", "missing-join-on"),
+    RejectedParserCase("dangling-union", "SELECT id FROM @fixture UNION", "syntax", "incomplete-union"),
+    RejectedParserCase("empty-cte", "WITH x AS () SELECT id FROM x", "syntax", "empty-query"),
+    RejectedParserCase(
+        "repeated-where", "SELECT id FROM @fixture WHERE id = 'x' WHERE id = 'y'", "syntax", "clause-order"
+    ),
+    RejectedParserCase("backwards-limit", "SELECT id FROM @fixture LIMIT 2 ORDER BY id", "syntax", "clause-order"),
+    RejectedParserCase("broken-postfix", "SELECT formats[].height FROM @fixture", "syntax", "missing-index-expression"),
 )

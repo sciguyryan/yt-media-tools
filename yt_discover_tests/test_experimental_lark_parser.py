@@ -7,7 +7,7 @@ import pytest
 from yt_discover_tests.parser_grammar_generation import generated_valid_queries
 from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
 from yt_media_tools.experimental_lark_parser import recognise_lark_query
-from yt_media_tools.query_model import QuerySyntaxError
+from yt_media_tools.query_model import QueryLexicalError, QuerySyntaxError
 
 
 def test_lark_prototype_accepts_deterministic_reference_corpus() -> None:
@@ -24,6 +24,14 @@ def test_lark_prototype_rejects_deterministic_malformed_corpus() -> None:
     for case in REJECTED_PARSER_CASES:
         with pytest.raises(QuerySyntaxError):
             recognise_lark_query(case.query)
+
+
+def test_lark_prototype_translates_native_failure_without_exposing_it() -> None:
+    with pytest.raises(QueryLexicalError) as captured:
+        recognise_lark_query("SELECT 'unterminated")
+
+    assert captured.value.context.reason == "unterminated-string"
+    assert captured.value.__cause__ is None
 
 
 @pytest.mark.parametrize(

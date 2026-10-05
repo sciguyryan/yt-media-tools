@@ -80,6 +80,7 @@ def normalised_diagnostic(error: QuerySyntaxError) -> tuple[Any, ...]:
     context = error.context
     return (
         context.category,
+        context.reason,
         context.span.start.position,
         context.span.end.position,
         context.span.start.line,

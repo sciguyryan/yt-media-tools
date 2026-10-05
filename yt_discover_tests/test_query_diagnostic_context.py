@@ -67,6 +67,7 @@ def test_lexical_diagnostic_has_distinct_category_and_half_open_span() -> None:
     error = captured.value
     assert isinstance(error, QuerySyntaxError)
     assert error.context.category == "lexical"
+    assert error.context.reason == "unterminated-string"
     assert error.span.start.position == source.index("'")
     assert error.span.end.position == len(source)
     assert error.context.location == error.location
@@ -88,6 +89,7 @@ def test_curated_expected_tokens_are_structured_but_not_rendered_as_parser_inter
 
     error = captured.value
     assert error.context.category == "syntax"
+    assert error.context.reason == "invalid"
     assert error.expected == ("BY",)
     assert error.context.expected == ("BY",)
     assert "expected=" not in error.format()

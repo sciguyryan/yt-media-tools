@@ -24,6 +24,7 @@ def test_deterministic_rejected_corpus_matches_expected_categories() -> None:
         assert outcome.model is None, case.name
         assert outcome.diagnostic is not None, case.name
         assert outcome.diagnostic[0] == case.category, case.name
+        assert outcome.diagnostic[1] == case.reason, case.name
 
 
 def test_grammar_generated_cases_reference_real_productions_and_parse() -> None:
