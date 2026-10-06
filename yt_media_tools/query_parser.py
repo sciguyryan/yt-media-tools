@@ -12,6 +12,7 @@ from .query_model import (
     Binary,
     CaseWhen,
     CommonTableExpression,
+    DerivedRelation,
     CollectionCount,
     CollectionFilter,
     CollectionProjection,
@@ -435,6 +436,7 @@ class Parser:
         from_facet: str | None = None
         additional_from_facets: tuple[tuple[str, int], ...] = ()
         from_alias: str | None = None
+        from_relation: RelationReference | None = None
         joins: list[JoinClause] = []
         distinct = False
         offset = 0
@@ -503,6 +505,8 @@ class Parser:
                     (item.facet, item.position) for item in relations[1:] if item.facet is not None
                 )
                 from_alias = relation.alias
+                if relation.derived is not None:
+                    from_relation = relation
                 while self._join_starts_here():
                     joins.append(self.parse_join_clause())
 
@@ -574,6 +578,8 @@ class Parser:
                 from_facet,
                 from_alias,
                 tuple(joins),
+                None,
+                from_relation,
             )
 
         if not where_only and not set_branch:
@@ -596,6 +602,8 @@ class Parser:
                             facet,
                             from_alias,
                             tuple(joins),
+                            None,
+                            from_relation,
                         ),
                         True,
                         facet_position,
@@ -679,6 +687,7 @@ class Parser:
             from_alias,
             tuple(joins),
             left_query,
+            from_relation,
         )
 
     def _statement_clause_at_current(self) -> str | None:
@@ -1109,9 +1118,30 @@ class Parser:
         source, cache and provenance identity model below the parser.
         """
         position = self.current.position
-        source = self.parse_from_source()
+        derived = None
+        if self.current.kind == "LPAREN":
+            self.advance()
+            if self.current.kind == "RPAREN":
+                raise QuerySyntaxError(
+                    self.source,
+                    "Derived relation query cannot be empty.",
+                    self.current.position,
+                    reason="empty-query",
+                )
+            query = self.parse_query(stop_at_rparen=True, allow_with=False)
+            self.expect("RPAREN", "Expected ')' after derived relation query.")
+            derived = DerivedRelation(query, position)
+            source = None
+        else:
+            source = self.parse_from_source()
         facets: list[tuple[str | None, int]] = [(None, position)]
         if self.consume_keyword("OF"):
+            if derived is not None:
+                raise QuerySyntaxError(
+                    self.source,
+                    "OF applies only to physical source relations, not derived relations.",
+                    self.tokens[self.index - 1].position,
+                )
             facets = []
             while True:
                 facet_token = self.current
@@ -1140,7 +1170,7 @@ class Parser:
             alias_token = self.expect_identifier("Expected a relation alias after AS.")
             alias = alias_token.text
         return tuple(
-            RelationReference(source, facet, alias, position if index == 0 else facet_position)
+            RelationReference(source, facet, alias, position if index == 0 else facet_position, derived)
             for index, (facet, facet_position) in enumerate(facets)
         )
 

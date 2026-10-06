@@ -20,8 +20,9 @@ LANGUAGE_REFERENCE = ROOT / "docs" / "YT-SQL.md"
 
 def test_formal_grammar_is_parser_neutral_and_versioned() -> None:
     text = GRAMMAR.read_text(encoding="utf-8")
-    assert "Grammar revision: 1" in text
-    assert "Introduced by: yt-discover 0.29.15" in text
+    assert "Grammar revision: 2" in text
+    assert "Revision 1 introduced by: yt-discover 0.29.15" in text
+    assert "Revision 2 introduced by: yt-discover 0.31.0 development" in text
     assert "Lark" not in text
     assert "TatSu" not in text
     for production in (

@@ -22,7 +22,7 @@ from .query_model import (
 )
 from .query_scope import SemanticScope, relation_binding
 from .query_traversal import walk_ast
-from .schema import QuerySchema
+from .schema import FieldInfo, QuerySchema
 
 
 def _rewrite_value(
@@ -101,7 +101,14 @@ def _scope_for_query(
             query.source.find("FROM") if "FROM" in query.source else 0,
         )
 
-    left = relation_binding(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas)
+    if query.from_relation is not None and query.from_relation.derived is not None:
+        exported = tuple(
+            FieldInfo(term.output_name, term.kind or "unknown", True, dynamic=True)
+            for term in query.from_relation.derived.query.select
+        )
+        left = relation_binding(None, None, QuerySchema.from_field_infos(exported), {}, {})
+    else:
+        left = relation_binding(query.from_source, query.from_facet, physical_schema, cte_schemas, source_schemas)
     bindings = [replace(left, qualifier=query.from_alias)]
     aliases = {query.from_alias}
     for join in query.joins:
@@ -115,13 +122,20 @@ def _scope_for_query(
         if alias in aliases:
             raise QuerySemanticError(query.source, f"Duplicate relation alias {alias!r}.", join.relation.position)
         aliases.add(alias)
-        binding = relation_binding(
-            join.relation.source,
-            join.relation.facet,
-            physical_schema,
-            cte_schemas,
-            source_schemas,
-        )
+        if join.relation.derived is not None:
+            exported = tuple(
+                FieldInfo(term.output_name, term.kind or "unknown", True, dynamic=True)
+                for term in join.relation.derived.query.select
+            )
+            binding = relation_binding(None, None, QuerySchema.from_field_infos(exported), {}, {})
+        else:
+            binding = relation_binding(
+                join.relation.source,
+                join.relation.facet,
+                physical_schema,
+                cte_schemas,
+                source_schemas,
+            )
         bindings.append(replace(binding, qualifier=alias))
     return SemanticScope(tuple(bindings))
 

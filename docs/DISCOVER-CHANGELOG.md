@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [feature] Add grammar revision 2 derived relations so parenthesised query expressions can form explicit logical relations in `FROM` and `JOIN` without being rewritten as hidden CTEs.
+- [fix] Resolve derived relations against only their exported result schema, preserving first-branch UNION output names, outer CTE visibility and the existing prohibition on nested WITH and correlated row references.
+- [test] Cover derived-relation aliases, schema boundaries, malformed forms, canonical round trips, UNION composition and nested torture cases before planner and execution integration.
+- [docs] Define derived-relation syntax and semantic boundaries while keeping Lark and Tree-sitter parity as subsequent issue #148 phases.
 - [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
 - [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.
 - [docs] Classify Tree-sitter as viable for complete grammar work while retaining model construction, diagnostics, packaging and full differential conformance as later gates.

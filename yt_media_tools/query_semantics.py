@@ -241,11 +241,15 @@ def _direct_from_sources(query: Query) -> tuple[str, ...]:
     result: list[str] = []
     if query.from_source is not None:
         result.append(query.from_source)
+    if query.from_relation is not None and query.from_relation.derived is not None:
+        result.extend(_direct_from_sources(query.from_relation.derived.query))
     for join in query.joins:
-        result.append(join.relation.source)
+        if join.relation.source is not None:
+            result.append(join.relation.source)
+        elif join.relation.derived is not None:
+            result.extend(_direct_from_sources(join.relation.derived.query))
     for operation in query.set_operations:
-        if operation.query.from_source is not None:
-            result.append(operation.query.from_source)
+        result.extend(_direct_from_sources(operation.query))
     return tuple(result)
 
 
@@ -279,8 +283,13 @@ def query_physical_source_requests(query: Query) -> tuple[tuple[str, str | None]
             visit(candidate.left_query)
         if candidate.from_source is not None:
             visit_relation(candidate.from_source, candidate.from_facet)
+        elif candidate.from_relation is not None and candidate.from_relation.derived is not None:
+            visit(candidate.from_relation.derived.query)
         for join in candidate.joins:
-            visit_relation(join.relation.source, join.relation.facet)
+            if join.relation.source is not None:
+                visit_relation(join.relation.source, join.relation.facet)
+            elif join.relation.derived is not None:
+                visit(join.relation.derived.query)
         # Set branches are complete relation expressions in their own right. Recurse
         # so JOIN inputs inside a later UNION branch participate in acquisition.
         for operation in candidate.set_operations:

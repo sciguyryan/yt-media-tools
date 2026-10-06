@@ -58,4 +58,4 @@ Stable `parser.tree_sitter.*` benchmark targets measure raw Tree-sitter parsing 
 
 Tree-sitter therefore passes the early 60 to 70 percent raw-parser gate by a wide margin and is worth taking into complete grammar recognition. The result is not a cut-over recommendation. A fuller grammar may add parser cost, and model construction, exact source origins, diagnostics, packaging and complete differential conformance remain unmeasured or incomplete.
 
-During migration, grammar revision 1 and the accepted hand-written parser remain frozen references. Any discrepancy is classified before either reference is changed. Unrelated grammar evolution is outside the migration.
+The accepted hand-written parser and current formal grammar remain the behavioural references during migration. Issue #148 deliberately advances the production language from grammar revision 1 to revision 2 with derived relations; experimental parsers remain pinned to their last completed revision until their dedicated parity phases bring them forward. Differential evaluation must compare like-for-like grammar revisions, and any discrepancy is classified before a parser reference is changed.

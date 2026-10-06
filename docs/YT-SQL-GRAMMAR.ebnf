@@ -1,6 +1,8 @@
 (* yt-sql formal grammar
- * Grammar revision: 1
- * Introduced by: yt-discover 0.29.15
+ * Grammar revision: 2
+ * Revision 1 introduced by: yt-discover 0.29.15
+ * Revision 2 introduced by: yt-discover 0.31.0 development
+ * Revision 2: derived relation operands in FROM and JOIN
  *
  * This parser-neutral EBNF is authoritative for yt-sql syntactic structure.
  * docs/YT-SQL.md is authoritative for semantics and context-sensitive rules.
@@ -29,8 +31,10 @@ projection-wildcard  = "*" ;
 relation-wildcard     = identifier, ".", "*" ;
 
 from-clause           = "FROM", relation-reference, { join-clause } ;
-relation-reference    = relation-source, [ "OF", facet-reference, { ",", facet-reference } ],
-                        [ "AS", identifier ] ;
+relation-reference    = relation-operand, [ "AS", identifier ] ;
+relation-operand      = relation-source, [ "OF", facet-reference, { ",", facet-reference } ]
+                      | derived-relation ;
+derived-relation      = "(", query-expression, ")" ;
 facet-reference       = identifier ;
 relation-source       = at-identifier | identifier | string ;
 join-clause           = join-kind, relation-reference-single, "ON", boolean-expression ;
@@ -38,7 +42,7 @@ join-kind             = [ "INNER" ], "JOIN"
                       | "LEFT", [ "OUTER" ], "JOIN"
                       | "SEMI", "JOIN"
                       | "ANTI", "JOIN" ;
-relation-reference-single = relation-source, [ "OF", facet-reference ], [ "AS", identifier ] ;
+relation-reference-single = ( relation-source, [ "OF", facet-reference ] | derived-relation ), [ "AS", identifier ] ;
 
 where-clause          = "WHERE", boolean-expression ;
 group-by-clause       = "GROUP", "BY", scalar-expression, { ",", scalar-expression } ;

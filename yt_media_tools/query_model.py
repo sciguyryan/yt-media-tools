@@ -436,13 +436,22 @@ class JoinKind(str, Enum):
 
 
 @dataclass(frozen=True)
-class RelationReference:
-    """One source/facet relation participating in relational composition."""
+class DerivedRelation:
+    """One parenthesised query used as a logical relation operand."""
 
-    source: str
+    query: "Query"
+    position: int = 0
+
+
+@dataclass(frozen=True)
+class RelationReference:
+    """One physical, CTE or derived relation participating in composition."""
+
+    source: str | None
     facet: str | None = None
     alias: str | None = None
     position: int = 0
+    derived: DerivedRelation | None = None
 
 
 @dataclass(frozen=True)
@@ -473,3 +482,4 @@ class Query:
     from_alias: str | None = None
     joins: tuple[JoinClause, ...] = ()
     left_query: "Query | None" = None
+    from_relation: RelationReference | None = None

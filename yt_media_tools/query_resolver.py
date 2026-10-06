@@ -1343,10 +1343,68 @@ def _resolve_composed_query(
     """Resolve one query body and its positional set-composition branches."""
 
     def resolve_body(body: Query) -> Query:
-        schema = relation_binding(
-            body.from_source, body.from_facet, physical_schema, cte_schemas, source_schemas
-        ).schema
+        resolved_relation = body.from_relation
+        if body.from_relation is not None and body.from_relation.derived is not None:
+            derived_query = _resolve_composed_query(
+                body.from_relation.derived.query,
+                physical_schema=physical_schema,
+                cte_schemas=cte_schemas,
+                context=context,
+                source_schemas=source_schemas,
+            )
+            if not derived_query.select:
+                raise QuerySemanticError(
+                    body.source,
+                    "Derived relation query must export a result schema.",
+                    body.from_relation.position,
+                )
+            resolved_relation = replace(
+                body.from_relation,
+                derived=replace(body.from_relation.derived, query=derived_query),
+            )
+            schema = _query_result_schema(derived_query)
+            if body.from_relation.alias is not None:
+                alias = body.from_relation.alias
+                exported = schema.select_star_fields()
+                schema = QuerySchema.from_field_infos(
+                    tuple(exported)
+                    + tuple(
+                        FieldInfo(
+                            f"{alias}.{field.name}",
+                            field.kind,
+                            field.nullable,
+                            alias_of=field.name,
+                            dynamic=field.dynamic,
+                            resolved_type=field.resolved_type,
+                        )
+                        for field in exported
+                    )
+                )
+        else:
+            schema = relation_binding(
+                body.from_source, body.from_facet, physical_schema, cte_schemas, source_schemas
+            ).schema
         if body.joins:
+            resolved_joins = []
+            for join in body.joins:
+                relation = join.relation
+                if relation.derived is not None:
+                    nested = _resolve_composed_query(
+                        relation.derived.query,
+                        physical_schema=physical_schema,
+                        cte_schemas=cte_schemas,
+                        context=context,
+                        source_schemas=source_schemas,
+                    )
+                    if not nested.select:
+                        raise QuerySemanticError(
+                            body.source,
+                            "Derived relation query must export a result schema.",
+                            relation.position,
+                        )
+                    relation = replace(relation, derived=replace(relation.derived, query=nested))
+                resolved_joins.append(replace(join, relation=relation))
+            body = replace(body, joins=tuple(resolved_joins))
             prepared = prepare_join_query(
                 body,
                 physical_schema,
@@ -1354,8 +1412,14 @@ def _resolve_composed_query(
                 source_schemas=source_schemas,
             )
             resolved_body = _resolve_query_body(replace(prepared, joins=()), schema, context)
-            return replace(resolved_body, from_alias=prepared.from_alias, joins=prepared.joins)
-        return _resolve_query_body(body, schema, context)
+            return replace(
+                resolved_body,
+                from_alias=prepared.from_alias,
+                joins=prepared.joins,
+                from_relation=resolved_relation,
+            )
+        resolved_body = _resolve_query_body(body, schema, context)
+        return replace(resolved_body, from_alias=body.from_alias, from_relation=resolved_relation)
 
     if not query.set_operations and query.left_query is None:
         return resolve_body(replace(query, ctes=(), set_operations=()))
@@ -1460,6 +1524,7 @@ def resolve_query(
         and not query.set_operations
         and query.left_query is None
         and query.from_source is None
+        and query.from_relation is None
     ):
         return _resolve_query_body(query, schema, context)
 

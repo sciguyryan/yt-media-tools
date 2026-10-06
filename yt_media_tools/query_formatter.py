@@ -288,16 +288,28 @@ def _format_relation_source(
     return text
 
 
+def _format_relation_reference(relation: Any, *, identifier_sources: frozenset[str] = frozenset()) -> str:
+    """Render one physical, CTE or derived relation reference."""
+    if relation.derived is not None:
+        body = format_query(relation.derived.query, _identifier_sources=identifier_sources)
+        text = f"(\n{_indent(body)}\n)"
+        if relation.alias is not None:
+            text += f" AS {_format_identifier_component(relation.alias)}"
+        return text
+    assert relation.source is not None
+    return _format_relation_source(
+        relation.source,
+        relation.facet,
+        relation.alias,
+        identifier_source=relation.source in identifier_sources,
+    )
+
+
 def _format_join_lines(join: JoinClause, *, identifier_sources: frozenset[str] = frozenset()) -> list[str]:
     """Render one JOIN edge using the canonical relational layout."""
 
     keyword = "JOIN" if join.kind.value == "INNER" else f"{join.kind.value} JOIN"
-    relation = _format_relation_source(
-        join.relation.source,
-        join.relation.facet,
-        join.relation.alias,
-        identifier_source=join.relation.source in identifier_sources,
-    )
+    relation = _format_relation_reference(join.relation, identifier_sources=identifier_sources)
     return [f"{keyword} {relation}", f"  ON {format_expression(join.predicate)}"]
 
 
@@ -340,7 +352,12 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
             + ", ".join(_format_select_term(term) for term in query.select)
         )
 
-    if query.from_source is not None:
+    if query.from_relation is not None and query.from_relation.derived is not None:
+        source_text = _format_relation_reference(query.from_relation, identifier_sources=local_identifier_sources)
+        parts.append(f"FROM {source_text}")
+        for join in query.joins:
+            parts.extend(_format_join_lines(join, identifier_sources=local_identifier_sources))
+    elif query.from_source is not None:
         if facet_expansions:
             source_text = _format_relation_source(
                 query.from_source,

@@ -380,7 +380,9 @@ ORDER BY id ASC
 LIMIT 10
 ```
 
-Branch-local `ORDER BY`, `LIMIT` or `OFFSET` therefore require parentheses. Parenthesised compound expressions may themselves participate as `UNION` branches, and canonical formatting preserves parentheses whenever they carry that grouping boundary. A leading `WITH` remains scoped to its complete following query expression; nested `WITH` clauses remain unsupported. Derived tables in `FROM (...)` are not part of this grammar.
+Branch-local `ORDER BY`, `LIMIT` or `OFFSET` therefore require parentheses. Parenthesised compound expressions may themselves participate as `UNION` branches, and canonical formatting preserves parentheses whenever they carry that grouping boundary. A leading `WITH` remains scoped to its complete following query expression; nested `WITH` clauses remain unsupported.
+
+A parenthesised query expression may also be used as a derived relation in `FROM` or `JOIN`. The derived relation exports only the columns of its result relation; for `UNION`, the established first-branch output names continue to define that schema. Predicate-only queries retain yt-sql's normal implicit `id` projection when used as a derived relation, so they still have a defined exported schema. `OF` applies only to physical sources and cannot be attached to a derived relation. An alias is optional for a single `FROM` relation, while the existing JOIN rule still requires explicit aliases for every participating relation. Outer CTEs remain visible according to the existing CTE scope, but outer row references are not visible inside the derived query: correlated and `LATERAL` subqueries are not introduced by grammar revision 2. Canonical formatting retains the parentheses because they establish the relation boundary.
 
 ## Common table expressions
 
