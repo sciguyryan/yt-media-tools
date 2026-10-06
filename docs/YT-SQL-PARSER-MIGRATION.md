@@ -38,4 +38,16 @@ No behavioural differences remain within the bounded gate across acceptance, nor
 
 The remaining concern is compatibility at the operational boundary: complete Lark parsing is still approximately 3.5 to 5.4 times slower on the representative workloads, and raw Lark tree construction alone exceeds the complete hand-written parser. The Lark candidate is therefore behaviourally conformant within the issue #144 gate but is not recommended for production cut-over. Investigation of another declarative engine is separate work and does not alter this conclusion.
 
+## Experimental Tree-sitter boundary
+
+The Tree-sitter investigation starts as a separate optional grammar package under `experiments/tree-sitter-yt-sql`. It does not change the production parser or ordinary Python dependencies. The formal EBNF and hand-written parser remain the de facto references, and the Lark candidate remains available as supporting evidence until a later cut-over decision.
+
+Part 1 pins Tree-sitter CLI at 0.26.13, Python runtime 0.26.0 and language ABI 15. The grammar source and generated C are committed together. Node.js and the CLI are required to regenerate the parser, but not to build the committed source. npm's install-script approval is limited to the exact CLI version rather than allowing dependency scripts generally.
+
+The Python language binding is its own experimental package. The adapter imports it only when the Tree-sitter path is called, keeps concrete syntax trees private and rejects recovered or missing syntax instead of treating Tree-sitter's error recovery as acceptance. Tree-sitter's UTF-8 byte offsets are converted to the existing Python character-offset model at the adapter boundary.
+
+The smoke grammar proves generation, native compilation, case-insensitive keyword recognition, Python loading and strict recovery rejection. It recognises only a deliberately tiny projection shape for the moment. This is primarily because this is to be used as a performance feasibility, representative grammar coverage and the first meaningful benchmark gate belong to part 2.
+
+The early performance gate remains deliberately uncomfortable: raw Tree-sitter parsing should take no more than approximately 60 to 70 percent of the hand-written parser's time. Final cut-over would additionally require end-to-end model construction to meet or beat the reference parser, behavioural and diagnostic parity, supported packaging, and a real reduction in hand-maintained parser complexity. Generated C is reported separately rather than counted as a maintenance saving.
+
 During migration, grammar revision 1 and the accepted hand-written parser remain frozen references. Any discrepancy is classified before either reference is changed. Unrelated grammar evolution is outside the migration.

@@ -689,7 +689,7 @@ class _LarkModelBuilder:
         if node.data == "predicate":
             left = self.scalar(node.children[0])
             suffix = next(
-                (c for c in node.children[1:] if isinstance(c, self.Tree) or isinstance(c, Token)),
+                (c for c in node.children[1:] if isinstance(c, (self.Tree, Token))),
                 None,
             )
             text = self.source[self._end(left) : self._node_end(node)].strip()

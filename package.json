@@ -6,9 +6,15 @@
     "youtubei.js": "18.0.0"
   },
   "scripts": {
-    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\""
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\"",
+    "tree-sitter:generate": "cd experiments/tree-sitter-yt-sql && tree-sitter generate --abi 15",
+    "tree-sitter:test": "cd experiments/tree-sitter-yt-sql && tree-sitter test"
   },
   "devDependencies": {
-    "markdownlint-cli2": "0.23.2"
+    "markdownlint-cli2": "0.23.2",
+    "tree-sitter-cli": "0.26.13"
+  },
+  "allowScripts": {
+    "tree-sitter-cli@0.26.13": true
   }
 }

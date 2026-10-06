@@ -44,6 +44,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [fix] Preserve Boolean negation across every accepted whitespace separator and construct direct-token `IS NOT DISTINCT FROM` operands correctly in the Lark model.
 - [fix] Align the malformed `IS DISTINCT FROM` keyword-boundary diagnostic span and expected token without hiding the parser difference.
 - [docs] Classify the bounded Lark candidate as behaviourally conformant while retaining its measured performance gap as a production cut-over concern.
+- [experimental] Establish an isolated Tree-sitter yt-sql grammar package with committed ABI-15 generated C and an optional Python language binding.
+- [maintenance] Pin the Tree-sitter generator, runtime and install-script approval without adding Tree-sitter to the production parser path or ordinary Python dependencies.
+- [test] Prove native grammar generation, case-insensitive smoke recognition, strict recovery rejection and UTF-8 byte-to-character position conversion.
+- [docs] Record the Tree-sitter experiment's reference, packaging, source-position, recovery, performance and maintainability boundaries before representative grammar work begins.
 - [docs] Record revision-1 grammar corrections for established projection wildcard, repeated Boolean negation and temporal-token syntax exposed by differential conformance.
 - [docs] Reconcile grammar revision 1 with established parser behaviour by requiring a non-empty select query and formally representing accepted unit literals without changing yt-sql syntax.
 - [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.

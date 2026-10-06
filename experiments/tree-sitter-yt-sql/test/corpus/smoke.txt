@@ -1,0 +1,38 @@
+==================
+Simple projection
+==================
+
+SELECT id
+
+---
+
+(source_file
+  (query
+    keyword: (select_keyword)
+    projection: (identifier)))
+
+==================
+Case-insensitive keyword
+==================
+
+select title
+
+---
+
+(source_file
+  (query
+    keyword: (select_keyword)
+    projection: (identifier)))
+
+==================
+Missing projection
+==================
+
+SELECT
+
+---
+
+(source_file
+  (query
+    keyword: (select_keyword)
+    projection: (MISSING identifier)))
