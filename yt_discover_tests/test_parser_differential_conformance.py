@@ -157,3 +157,39 @@ def test_lark_seeded_fuzz_inputs_are_differentially_equivalent(seed: int) -> Non
         candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
         assert candidate_model == reference_model, context
         assert candidate_canonical == reference_canonical, context
+
+
+DERIVED_RELATION_DIFFERENTIAL_CASES = (
+    "SELECT id FROM (SELECT id FROM @a)",
+    "SELECT combined.id FROM (SELECT id FROM @a UNION SELECT id FROM @b) AS combined",
+    "SELECT outer_id FROM (SELECT inner_id AS outer_id FROM (SELECT id AS inner_id FROM @a))",
+    "SELECT a.id FROM (SELECT id FROM @a) AS a JOIN (SELECT id FROM @b) AS b ON a.id = b.id",
+    "WITH x AS (SELECT id FROM @a) SELECT id FROM (SELECT id FROM x)",
+)
+
+
+@pytest.mark.parametrize("source", DERIVED_RELATION_DIFFERENTIAL_CASES)
+def test_lark_derived_relations_are_structurally_and_canonically_equivalent(source: str) -> None:
+    comparison = compare_parsers(parse_query, parse_lark_query, source)
+    assert comparison.equivalent, comparison.describe()
+
+    reference_model, reference_canonical = canonical_round_trip(parse_query, source)
+    candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
+    assert candidate_model == reference_model
+    assert candidate_canonical == reference_canonical
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "SELECT id FROM ()",
+        "SELECT id FROM (SELECT id FROM @a",
+        "SELECT id FROM (SELECT id FROM @a) OF videos",
+        "SELECT id FROM (WITH x AS (SELECT id FROM @a) SELECT id FROM x)",
+        "SELECT a.id FROM @a AS a JOIN () AS b ON a.id = b.id",
+    ),
+)
+def test_lark_derived_relation_malformed_boundaries_match_reference_acceptance(source: str) -> None:
+    comparison = compare_parsers(parse_query, parse_lark_query, source)
+    assert comparison.reference.kind == "rejected"
+    assert comparison.candidate.kind == "rejected"

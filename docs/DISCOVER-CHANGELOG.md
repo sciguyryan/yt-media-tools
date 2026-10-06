@@ -13,6 +13,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [fix] Propagate conservative empty-relation proofs through derived FROM and JOIN operands without treating the relation boundary as a physical source.
 - [test] Add execution, planning, JOIN, explain, provenance and derived-UNION torture coverage for issue #148 Part 2.
 - [docs] Record derived-relation planning and optimisation boundaries, including the deliberate absence of unsafe outer projection pushdown.
+- [experimental] Bring the independent Lark grammar and model builder to grammar revision 2 with explicit derived relations while preserving the hand-written parser as the behavioural reference.
+- [test] Add Lark differential, origin, malformed-boundary, canonical round-trip and composite derived-relation torture coverage.
+- [docs] Record that safe cross-relation projection pruning is technically viable but not currently planned because its column-liveness proof burden is disproportionate to the expected benefit.
 - [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
 - [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.
 - [docs] Classify Tree-sitter as viable for complete grammar work while retaining model construction, diagnostics, packaging and full differential conformance as later gates.

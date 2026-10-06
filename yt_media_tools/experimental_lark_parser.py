@@ -1,4 +1,4 @@
-"""Experimental Lark parser boundary for yt-sql grammar revision 1.
+"""Experimental Lark parser boundary for yt-sql grammar revision 2.
 
 This module is intentionally not wired into the production parser path. The
 formal EBNF remains authoritative; this Lark grammar is an implementation
@@ -28,6 +28,7 @@ from .query_model import (
     CollectionPredicate,
     CollectionProjection,
     CommonTableExpression,
+    DerivedRelation,
     Field,
     InList,
     IsNull,
@@ -84,7 +85,7 @@ def recognise_lark_query(source: str) -> None:
 
 
 def parse_lark_query(source: str):
-    """Parse grammar revision 1 into the existing yt-sql Query model.
+    """Parse grammar revision 2 into the existing yt-sql Query model.
 
     This remains deliberately independent of ``query_parser.parse_query`` and
     is not wired into the production parser path.
@@ -388,7 +389,9 @@ class _LarkModelBuilder:
         if from_clause:
             relation = self._first(from_clause, "relation_reference")
             if relation:
-                from_source, facets, from_alias = self.relation_reference(relation)
+                relation_ref, facets = self.relation_reference(relation)
+                from_source = relation_ref.source
+                from_alias = relation_ref.alias
                 from_facet = facets[0][0] if facets else None
                 additional_facets = tuple(facets[1:])
             joins = tuple(self.join_clause(join) for join in self._trees(from_clause, "join_clause"))
@@ -408,6 +411,7 @@ class _LarkModelBuilder:
             group_by=group_by,
             having=having,
             joins=joins,
+            from_relation=relation_ref if from_clause and relation and relation_ref.derived is not None else None,
         )
         if additional_facets:
             operations = tuple(
@@ -418,13 +422,7 @@ class _LarkModelBuilder:
         return query
 
     def relation_reference(self, node):
-        trees = self._trees(node)
-        source_node = trees[0] if trees and trees[0].data not in {"facet_reference"} else node.children[0]
-        source = self._token_text(source_node)
-        if source.startswith(("'", '"')):
-            source = source[1:-1].replace(source[0] * 2, source[0])
-        elif source.startswith("`"):
-            source = source[1:-1].replace("``", "`")
+        derived_node = self._first(node, "derived_relation")
         facets = []
         for facet_node in self._trees(node, "facet_reference"):
             child = facet_node.children[0] if facet_node.children else facet_node
@@ -434,7 +432,25 @@ class _LarkModelBuilder:
         match = re.search(r"\bAS\s+(`(?:``|[^`])+`|[^\s,]+)\s*$", text, re.IGNORECASE)
         if match:
             alias = match.group(1).replace("``", "`").strip("`")
-        return source, facets, alias
+
+        if derived_node is not None:
+            expression = self._first(derived_node, "query_expression")
+            derived = DerivedRelation(self.query_expression(expression), derived_node.meta.start_pos)
+            return RelationReference(None, None, alias, derived_node.meta.start_pos, derived), facets
+
+        trees = self._trees(node)
+        source_node = next(
+            (tree for tree in trees if tree.data not in {"facet_reference", "derived_relation"}),
+            node.children[0],
+        )
+        source = self._token_text(source_node)
+        if source.startswith(("'", '"')):
+            quote = source[0]
+            source = source[1:-1].replace(quote * 2, quote)
+        elif source.startswith("`"):
+            source = source[1:-1].replace("``", "`")
+        facet = facets[0][0] if facets else None
+        return RelationReference(source, facet, alias, node.meta.start_pos), facets
 
     def join_clause(self, node):
         kind_text = self._slice(self._first(node, "join_kind")).upper()
@@ -447,9 +463,9 @@ class _LarkModelBuilder:
         else:
             kind = JoinKind.INNER
         relation_node = self._first(node, "relation_reference_single")
-        source, facets, alias = self.relation_reference(relation_node)
-        facet = facets[0][0] if facets else None
-        relation = RelationReference(source, facet, alias, relation_node.meta.start_pos)
+        relation, facets = self.relation_reference(relation_node)
+        if len(facets) > 1:
+            raise AssertionError("JOIN relation unexpectedly contains multiple facets")
         predicate_node = next(
             child
             for child in node.children

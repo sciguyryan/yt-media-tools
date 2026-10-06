@@ -58,3 +58,29 @@ def test_lark_model_matches_reference_parser_for_structural_query_families(sourc
 
     assert normalised_parser_model(actual) == normalised_parser_model(expected)
     assert user_origin_positions(actual) == user_origin_positions(expected)
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "SELECT id FROM (SELECT id FROM @a)",
+        "SELECT combined.id FROM (SELECT id FROM @a UNION SELECT id FROM @b) AS combined",
+        "SELECT outer_id FROM (SELECT inner_id AS outer_id FROM (SELECT id AS inner_id FROM @a))",
+        "SELECT a.id FROM (SELECT id FROM @a) AS a JOIN @b AS b ON a.id = b.id",
+        "SELECT a.id FROM @a AS a LEFT JOIN (SELECT id FROM @b) AS b ON a.id = b.id",
+        (
+            "SELECT a.id FROM (SELECT id FROM @a UNION ALL SELECT id FROM @b) AS a "
+            "JOIN (SELECT id FROM @c) AS c ON a.id = c.id"
+        ),
+        (
+            "SELECT stats.uploader_id FROM (SELECT uploader_id, COUNT(*) AS n FROM @a "
+            "GROUP BY uploader_id HAVING COUNT(*) > 1) AS stats WHERE stats.uploader_id IS NOT NULL"
+        ),
+    ),
+)
+def test_lark_model_matches_reference_parser_for_derived_relations(source: str) -> None:
+    expected = parse_query(source)
+    actual = parse_lark_query(source)
+
+    assert normalised_parser_model(actual) == normalised_parser_model(expected)
+    assert user_origin_positions(actual) == user_origin_positions(expected)

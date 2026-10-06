@@ -1,7 +1,7 @@
-// Experimental Lark grammar for yt-sql grammar revision 1.
+// Experimental Lark grammar for yt-sql grammar revision 2.
 // The authoritative language grammar remains docs/YT-SQL-GRAMMAR.ebnf.
 //
-// This transcription follows the reconciled revision-1 EBNF.
+// This transcription follows the reconciled revision-2 EBNF.
 // Case-insensitive word literals are bounded during parser construction so a
 // contextual keyword cannot consume the prefix of an ordinary identifier.
 
@@ -27,11 +27,14 @@ relation_wildcard: identifier "." "*"
 
 from_clause: "FROM"i relation_reference join_clause*
 relation_reference: relation_source ("OF"i facet_reference ("," facet_reference)*)? ("AS"i identifier)?
+                  | derived_relation ("AS"i identifier)?
+derived_relation: "(" query_expression ")"
 facet_reference: identifier
 ?relation_source: AT_IDENTIFIER | identifier | STRING
 join_clause: join_kind relation_reference_single "ON"i boolean_expression
 join_kind: "INNER"i? "JOIN"i | "LEFT"i "OUTER"i? "JOIN"i | "SEMI"i "JOIN"i | "ANTI"i "JOIN"i
 relation_reference_single: relation_source ("OF"i facet_reference)? ("AS"i identifier)?
+                         | derived_relation ("AS"i identifier)?
 
 where_clause: "WHERE"i boolean_expression
 group_by_clause: "GROUP"i "BY"i scalar_expression ("," scalar_expression)*
