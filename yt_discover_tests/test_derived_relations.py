@@ -281,6 +281,31 @@ def test_torture_derived_union_planning_keeps_branch_requirements_on_their_sourc
     ]
 
 
+def test_outer_concat_over_union_plans_only_id_and_title_for_each_source():
+    from datetime import datetime, timezone
+
+    from yt_media_tools.dates import DateContext
+    from yt_media_tools.planner import plan_source_boundaries
+    from yt_media_tools.query import query_physical_source_requests
+    from yt_media_tools.sources import resolve_source_request
+
+    query = parse_query(
+        "SELECT CONCAT(id, ' # ', title) FROM (SELECT id, title FROM @a UNION SELECT id, title FROM @b) AS combined"
+    )
+    requests = query_physical_source_requests(query)
+    sources = tuple(resolve_source_request(source, facet=facet) for source, facet in requests)
+    plans = plan_source_boundaries(
+        query,
+        requests=requests,
+        sources=sources,
+        dates=DateContext(now=datetime(2026, 10, 6, 12, 0, tzinfo=timezone.utc)),
+    )
+    assert [(plan.source_name, plan.required_fields) for plan in plans] == [
+        ("@a", frozenset({"id", "title"})),
+        ("@b", frozenset({"id", "title"})),
+    ]
+
+
 def test_derived_join_execution_materialises_right_relation_before_matching():
     from yt_media_tools.query_evaluator import apply_query, canonical_record_value
 

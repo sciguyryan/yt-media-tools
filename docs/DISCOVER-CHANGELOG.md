@@ -17,6 +17,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [test] Add Lark differential, origin, malformed-boundary, canonical round-trip and composite derived-relation torture coverage.
 - [fix] Harden Lark revision-2 model construction for literal-only DISTINCT predicates, signed legacy predicate literals, nested compound JOIN comparisons and unary-expression source origins exposed by maximal cross-feature composition.
 - [test] Add a maximal derived-relation parser torture query combining CTEs, nested derived relations, all executable JOIN kinds, UNION ALL, collections, aggregates, scalar functions, CASE, mixed-base arithmetic, temporal expressions, NULL/3VL predicates, Unicode identifiers, ordering and slicing under reference/Lark differential and canonical round-trip checks.
+- [test] Freeze derived-UNION requirement propagation so outer scalar expressions acquire only their referenced branch fields while preserving UNION duplicate identity.
 - [docs] Record that safe cross-relation projection pruning is technically viable but not currently planned because its column-liveness proof burden is disproportionate to the expected benefit.
 - [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
 - [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.
