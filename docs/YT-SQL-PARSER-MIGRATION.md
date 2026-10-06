@@ -50,4 +50,12 @@ The smoke grammar proves generation, native compilation, case-insensitive keywor
 
 The early performance gate remains deliberately uncomfortable: raw Tree-sitter parsing should take no more than approximately 60 to 70 percent of the hand-written parser's time. Final cut-over would additionally require end-to-end model construction to meet or beat the reference parser, behavioural and diagnostic parity, supported packaging, and a real reduction in hand-maintained parser complexity. Generated C is reported separately rather than counted as a maintenance saving.
 
+## Tree-sitter performance feasibility
+
+Part 2 extends the experimental grammar only far enough to recognise the established simple, complex and collection-heavy parser workloads. This slice covers projections, aliases, known scalar functions, nested collection transforms, collection predicates, Boolean precedence, comparisons, text matching, NULL tests, representative literals, ordering and slicing. It does not imply complete grammar acceptance, and arbitrary function names remain outside the experiment's syntax.
+
+Stable `parser.tree_sitter.*` benchmark targets measure raw Tree-sitter parsing through the optional Python binding, including UTF-8 encoding but excluding query-model construction. On one local CPython run, the hand-written parser completed the simple, complex and collection workloads in approximately 23.9, 138.9 and 85.4 microseconds. Raw Tree-sitter parsing completed them in approximately 2.6, 11.4 and 8.0 microseconds, or roughly 8 to 11 percent of the reference time. The representative corpus also rejects recovery as failure through the established adapter boundary.
+
+Tree-sitter therefore passes the early 60 to 70 percent raw-parser gate by a wide margin and is worth taking into complete grammar recognition. The result is not a cut-over recommendation. A fuller grammar may add parser cost, and model construction, exact source origins, diagnostics, packaging and complete differential conformance remain unmeasured or incomplete.
+
 During migration, grammar revision 1 and the accepted hand-written parser remain frozen references. Any discrepancy is classified before either reference is changed. Unrelated grammar evolution is outside the migration.

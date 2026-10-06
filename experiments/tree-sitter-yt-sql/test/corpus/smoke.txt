@@ -8,8 +8,12 @@ SELECT id
 
 (source_file
   (query
-    keyword: (select_keyword)
-    projection: (identifier)))
+    (select_clause
+      (select_keyword)
+      (select_term
+        (scalar_expression
+          (scalar_atom
+            (identifier)))))))
 
 ==================
 Case-insensitive keyword
@@ -21,8 +25,12 @@ select title
 
 (source_file
   (query
-    keyword: (select_keyword)
-    projection: (identifier)))
+    (select_clause
+      (select_keyword)
+      (select_term
+        (scalar_expression
+          (scalar_atom
+            (identifier)))))))
 
 ==================
 Missing projection
@@ -34,5 +42,9 @@ SELECT
 
 (source_file
   (query
-    keyword: (select_keyword)
-    projection: (MISSING identifier)))
+    (select_clause
+      (select_keyword)
+      (select_term
+        (scalar_expression
+          (scalar_atom
+            (MISSING identifier)))))))

@@ -35,6 +35,8 @@ pytest.ini                        Combined test discovery configuration
 run-tests.py                      Routine test-suite entry point
 benchmark.py                      Performance benchmark entry point
 benchmarks/                       Deterministic performance benchmark implementation
+experiments/                      Isolated experimental implementations not used by production paths
+scripts/                          Repository-level development and quality-gate helpers
 ```
 
 The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained. Common low-level yt-dlp runtime mechanics are shared by both applications without merging their higher-level acquisition and download policies.

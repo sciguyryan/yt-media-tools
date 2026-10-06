@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
+- [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.
+- [docs] Classify Tree-sitter as viable for complete grammar work while retaining model construction, diagnostics, packaging and full differential conformance as later gates.
+- [maintenance] Add root-level Clang formatting, static-analysis and generated-source compile gates for the experimental Tree-sitter native code while keeping generated parser sources untouched.
 - [docs] Reconcile the optimisation strategy with reachable-CTE projection, field-sensitive provider escalation, cache-v4 known-NULL reuse, staged cache-first rejection, proven forward source-order LIMIT termination and refresh deduplication.
 - [performance] Deduplicate repeated media entity IDs before specialised-provider or yt-dlp refresh within each cache-aware acquisition request while preserving every logical source occurrence for later relational evaluation.
 - [test] Cover duplicate cache-miss entities so external detailed acquisition occurs once per entity without collapsing duplicate logical rows or cache examination accounting.

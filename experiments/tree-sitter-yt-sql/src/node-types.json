@@ -1,19 +1,63 @@
 [
   {
-    "type": "query",
+    "type": "boolean_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "and_keyword",
+          "named": true
+        },
+        {
+          "type": "boolean_expression",
+          "named": true
+        },
+        {
+          "type": "boolean_primary",
+          "named": true
+        },
+        {
+          "type": "not_keyword",
+          "named": true
+        },
+        {
+          "type": "or_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "boolean_primary",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "boolean_expression",
+          "named": true
+        },
+        {
+          "type": "collection_predicate",
+          "named": true
+        },
+        {
+          "type": "predicate",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "collection_predicate",
     "named": true,
     "fields": {
-      "keyword": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "select_keyword",
-            "named": true
-          }
-        ]
-      },
-      "projection": {
+      "binding": {
         "multiple": false,
         "required": true,
         "types": [
@@ -23,6 +67,387 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "all_keyword",
+          "named": true
+        },
+        {
+          "type": "any_keyword",
+          "named": true
+        },
+        {
+          "type": "as_keyword",
+          "named": true
+        },
+        {
+          "type": "boolean_expression",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        },
+        {
+          "type": "where_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "collection_transform",
+    "named": true,
+    "fields": {
+      "binding": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "as_keyword",
+          "named": true
+        },
+        {
+          "type": "boolean_expression",
+          "named": true
+        },
+        {
+          "type": "filter_keyword",
+          "named": true
+        },
+        {
+          "type": "map_keyword",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        },
+        {
+          "type": "select_keyword",
+          "named": true
+        },
+        {
+          "type": "where_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "comparison_operator",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "known_scalar_function",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "cardinality_keyword",
+          "named": true
+        },
+        {
+          "type": "coalesce_keyword",
+          "named": true
+        },
+        {
+          "type": "length_keyword",
+          "named": true
+        },
+        {
+          "type": "lower_keyword",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        },
+        {
+          "type": "upper_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "limit_clause",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "decimal_integer",
+          "named": true
+        },
+        {
+          "type": "limit_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "offset_clause",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "decimal_integer",
+          "named": true
+        },
+        {
+          "type": "offset_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "order_by_clause",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "by_keyword",
+          "named": true
+        },
+        {
+          "type": "order_keyword",
+          "named": true
+        },
+        {
+          "type": "order_term",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "order_term",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "asc_keyword",
+          "named": true
+        },
+        {
+          "type": "desc_keyword",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "predicate",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "comparison_operator",
+          "named": true
+        },
+        {
+          "type": "is_keyword",
+          "named": true
+        },
+        {
+          "type": "not_keyword",
+          "named": true
+        },
+        {
+          "type": "null_keyword",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        },
+        {
+          "type": "text_operator",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "query",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "limit_clause",
+          "named": true
+        },
+        {
+          "type": "offset_clause",
+          "named": true
+        },
+        {
+          "type": "order_by_clause",
+          "named": true
+        },
+        {
+          "type": "select_clause",
+          "named": true
+        },
+        {
+          "type": "where_clause",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "scalar_atom",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "collection_transform",
+          "named": true
+        },
+        {
+          "type": "date",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "known_scalar_function",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        },
+        {
+          "type": "unit_literal",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "scalar_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "scalar_atom",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "select_clause",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "select_keyword",
+          "named": true
+        },
+        {
+          "type": "select_term",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "select_term",
+    "named": true,
+    "fields": {
+      "alias": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "as_keyword",
+          "named": true
+        },
+        {
+          "type": "scalar_expression",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -42,11 +467,225 @@
     }
   },
   {
+    "type": "text_operator",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "ilike_keyword",
+          "named": true
+        },
+        {
+          "type": "like_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "where_clause",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "boolean_expression",
+          "named": true
+        },
+        {
+          "type": "where_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "!=",
+    "named": false
+  },
+  {
+    "type": "%",
+    "named": false
+  },
+  {
+    "type": "(",
+    "named": false
+  },
+  {
+    "type": ")",
+    "named": false
+  },
+  {
+    "type": "*",
+    "named": false
+  },
+  {
+    "type": "+",
+    "named": false
+  },
+  {
+    "type": ",",
+    "named": false
+  },
+  {
+    "type": "-",
+    "named": false
+  },
+  {
+    "type": "/",
+    "named": false
+  },
+  {
+    "type": "<",
+    "named": false
+  },
+  {
+    "type": "<=",
+    "named": false
+  },
+  {
+    "type": "<>",
+    "named": false
+  },
+  {
+    "type": "=",
+    "named": false
+  },
+  {
+    "type": ">",
+    "named": false
+  },
+  {
+    "type": ">=",
+    "named": false
+  },
+  {
+    "type": "all_keyword",
+    "named": true
+  },
+  {
+    "type": "and_keyword",
+    "named": true
+  },
+  {
+    "type": "any_keyword",
+    "named": true
+  },
+  {
+    "type": "as_keyword",
+    "named": true
+  },
+  {
+    "type": "asc_keyword",
+    "named": true
+  },
+  {
+    "type": "by_keyword",
+    "named": true
+  },
+  {
+    "type": "cardinality_keyword",
+    "named": true
+  },
+  {
+    "type": "coalesce_keyword",
+    "named": true
+  },
+  {
+    "type": "date",
+    "named": true
+  },
+  {
+    "type": "decimal_integer",
+    "named": true
+  },
+  {
+    "type": "desc_keyword",
+    "named": true
+  },
+  {
+    "type": "filter_keyword",
+    "named": true
+  },
+  {
     "type": "identifier",
     "named": true
   },
   {
+    "type": "ilike_keyword",
+    "named": true
+  },
+  {
+    "type": "is_keyword",
+    "named": true
+  },
+  {
+    "type": "length_keyword",
+    "named": true
+  },
+  {
+    "type": "like_keyword",
+    "named": true
+  },
+  {
+    "type": "limit_keyword",
+    "named": true
+  },
+  {
+    "type": "lower_keyword",
+    "named": true
+  },
+  {
+    "type": "map_keyword",
+    "named": true
+  },
+  {
+    "type": "not_keyword",
+    "named": true
+  },
+  {
+    "type": "null_keyword",
+    "named": true
+  },
+  {
+    "type": "number",
+    "named": true
+  },
+  {
+    "type": "offset_keyword",
+    "named": true
+  },
+  {
+    "type": "or_keyword",
+    "named": true
+  },
+  {
+    "type": "order_keyword",
+    "named": true
+  },
+  {
     "type": "select_keyword",
+    "named": true
+  },
+  {
+    "type": "string",
+    "named": true
+  },
+  {
+    "type": "unit_literal",
+    "named": true
+  },
+  {
+    "type": "upper_keyword",
+    "named": true
+  },
+  {
+    "type": "where_keyword",
     "named": true
   }
 ]

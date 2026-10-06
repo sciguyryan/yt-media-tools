@@ -11,6 +11,20 @@ from yt_media_tools.experimental_tree_sitter_parser import (
 )
 from yt_media_tools.query_model import QuerySyntaxError
 
+_REPRESENTATIVE_QUERIES = (
+    "SELECT id WHERE view_count >= 1000",
+    (
+        "SELECT id, title, COALESCE(view_count, 0) AS views "
+        "WHERE (view_count >= 1000 AND title ILIKE '%video%') "
+        "OR (duration >= 60s AND upload_date >= 2025-01-01) "
+        "ORDER BY view_count DESC, title ASC LIMIT 100 OFFSET 5"
+    ),
+    (
+        "SELECT id, MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT UPPER(tag)) "
+        "AS normalised_tags WHERE ANY(tags AS tag WHERE tag = 'group-1')"
+    ),
+)
+
 
 def test_tree_sitter_byte_offsets_convert_to_python_character_offsets() -> None:
     source = "Δelta SELECT"
@@ -24,6 +38,12 @@ def test_tree_sitter_byte_offsets_convert_to_python_character_offsets() -> None:
 def test_tree_sitter_smoke_grammar_accepts_a_projection() -> None:
     recognise_tree_sitter_query("SELECT id")
     recognise_tree_sitter_query("select title")
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+@pytest.mark.parametrize("source", _REPRESENTATIVE_QUERIES, ids=("simple", "complex", "collection"))
+def test_tree_sitter_feasibility_grammar_accepts_representative_queries(source: str) -> None:
+    recognise_tree_sitter_query(source)
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
