@@ -76,6 +76,12 @@ FROM @example
 ORDER BY length_class
 ```
 
+## Comments
+
+A `#` outside a string literal or quoted identifier begins a line comment extending to the next physical line break or end of input. Comments are lexical trivia equivalent to whitespace and are not represented in the query model. They may therefore appear anywhere whitespace is valid, including immediately after another token without intervening whitespace.
+
+A `#` inside a single-quoted or double-quoted string, or inside a backtick-quoted identifier, remains part of that literal or identifier. Comment text may contain arbitrary Unicode, quote characters and yt-sql-looking text without affecting lexical state. LF and CRLF line endings are accepted, and a final comment does not require a trailing newline. Canonical formatting discards comments rather than attempting to preserve or reposition them.
+
 ## Identifier and keyword contract
 
 yt-sql identifiers are case-sensitive and preserve their exact Unicode spelling. Keywords are recognised case-insensitively, but most grammar words are contextual rather than globally reserved. This distinction lets the grammar grow without needlessly taking ordinary names away from fields, aliases and relations.

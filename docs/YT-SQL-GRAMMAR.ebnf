@@ -140,6 +140,7 @@ identifier            = ordinary-identifier | quoted-identifier ;
 ordinary-identifier   = xid-start, { xid-continue | "-" }, { ".", xid-start, { xid-continue | "-" } } ;
 quoted-identifier     = "`", quoted-identifier-character, { quoted-identifier-character }, "`" ;
 at-identifier         = "@", ascii-source-character, { ascii-source-character } ;
+line-comment          = "#", { non-line-break-character } ;
 
 unit-literal          = decimal-digits, [ ".", decimal-digits ], unit-name,
                         { decimal-digits, [ ".", decimal-digits ], unit-name } ;
@@ -159,6 +160,7 @@ today-or-now          = "TODAY()" | "NOW()" ;
 infinity-token        = "INFINITY()" | "-INFINITY()" ;
 
 (* DATE, DATETIME and TIME token shapes, numeric digit/separator validity,
+ * line comments are lexical trivia and may appear anywhere whitespace is valid;
  * string escapes, parameter substitution, field-aware temporal collection,
  * reserved/contextual keyword classification and malformed-token rejection are
  * lexical contracts defined in docs/YT-SQL.md and docs/YT-SQL-DIAGNOSTICS.md.

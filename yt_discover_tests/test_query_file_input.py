@@ -77,7 +77,6 @@ def test_query_file_requires_utf8(tmp_path: Path) -> None:
         parse_user_query(_parse_args("--query-file", str(query_file)))
 
 
-
 def test_query_file_preserves_anonymous_derived_union_through_cli_merge(tmp_path):
     from yt_media_tools.discover_cli import build_parser, parse_user_query
     from yt_media_tools.query_semantics import query_physical_sources

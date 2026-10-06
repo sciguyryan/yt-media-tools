@@ -160,7 +160,36 @@ def test_lark_seeded_fuzz_inputs_are_differentially_equivalent(seed: int) -> Non
         assert candidate_canonical == reference_canonical, context
 
 
-MAXIMAL_DERIVED_RELATION_TORTURE_QUERY = r"""WITH `Ω seed` AS (
+COMMENT_DIFFERENTIAL_CASES = (
+    ("leading", "# leading comment\nSELECT id FROM @fixture", "SELECT id FROM @fixture"),
+    ("trailing", "SELECT id FROM @fixture # trailing comment", "SELECT id FROM @fixture"),
+    ("immediate", "SELECT id# no whitespace required\nFROM @fixture", "SELECT id FROM @fixture"),
+    ("crlf", "# first\r\nSELECT id\r\nFROM @fixture# last\r\n", "SELECT id FROM @fixture"),
+    ("unicode", "# 🏴 arbitrary SELECT 'fake' `syntax` Ω\nSELECT id FROM @fixture", "SELECT id FROM @fixture"),
+    (
+        "string-hash",
+        "SELECT '# not a comment' AS value FROM @fixture",
+        "SELECT '# not a comment' AS value FROM @fixture",
+    ),
+    ("quoted-hash", "SELECT `field # name` FROM @fixture", "SELECT `field # name` FROM @fixture"),
+    (
+        "derived-set-join",
+        "WITH x AS (# cte\nSELECT id FROM @a) SELECT l.id FROM (# derived\nSELECT id FROM x UNION # set\nSELECT id FROM @b) AS l INNER JOIN @c AS r ON l.id = r.id # join\nWHERE l.id IS NOT NULL",
+        "WITH x AS (SELECT id FROM @a) SELECT l.id FROM (SELECT id FROM x UNION SELECT id FROM @b) AS l INNER JOIN @c AS r ON l.id = r.id WHERE l.id IS NOT NULL",
+    ),
+)
+
+
+@pytest.mark.parametrize("name,commented,plain", COMMENT_DIFFERENTIAL_CASES)
+def test_line_comments_are_non_semantic_and_lark_equivalent(name: str, commented: str, plain: str) -> None:
+    reference = compare_parsers(parse_query, parse_lark_query, commented)
+    assert reference.equivalent, f"{name}: {reference.describe()}"
+    assert format_query(parse_query(commented)) == format_query(parse_query(plain)), name
+    assert format_query(parse_lark_query(commented)) == format_query(parse_lark_query(plain)), name
+
+
+MAXIMAL_DERIVED_RELATION_TORTURE_QUERY = r"""# welcome to parser misery 🏴
+WITH `Ω seed` AS (# CTE boundary
 SELECT DISTINCT id, title, tags, formats, duration, view_count, upload_date, is_live,
        LOWER(title) AS `é!`, UPPER(title) AS `é!`, LENGTH(title) AS `👩‍💻`,
        CARDINALITY(tags) AS tag_count,
@@ -192,7 +221,8 @@ WHERE ((ANY(tags AS tag WHERE tag = 'mars' OR tag = 'unicode')
        AND view_count NOT IN (-1, -0x2)
        AND (is_live IS NOT TRUE OR is_live IS UNKNOWN OR is_live IS NOT UNKNOWN))
 ORDER BY seeded DESC, `🏴󠁧󠁢󠁷󠁬󠁳󠁿` ASC LIMIT 32 OFFSET 1
-), `left pain` AS (
+), # one CTE down, regrettably
+`left pain` AS (
 SELECT id, title, duration, view_count, tags, formats, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, seeded
 FROM (SELECT id, title, duration, view_count, tags, formats, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, seeded FROM `Ω seed` ORDER BY seeded LIMIT 16) AS d
 WHERE formats[0].height IS NULL OR formats[0].height >= 0x2D0
@@ -217,8 +247,8 @@ HAVING COUNT(*) >= 0b1 AND SUM(COALESCE(r.duration, 0)) IS NOT NULL
 )
 SELECT id, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, matches, total_duration, min_views, max_views, avg_views,
        CASE WHEN right_title IS NULL THEN '∅' ELSE right_title END AS branch
-FROM (SELECT * FROM `joined agony` WHERE matches > 0) AS final
-UNION ALL
+FROM (SELECT * FROM `joined agony` WHERE matches > 0) AS final # derived result
+UNION ALL # the suffering continues
 SELECT l.id, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, 0 AS matches, 0 AS total_duration, 0 AS min_views, 0 AS max_views, 0 AS avg_views, 'left' AS branch
 FROM `left pain` AS l LEFT OUTER JOIN `right pain` AS r ON l.id = r.id
 WHERE r.id IS NULL

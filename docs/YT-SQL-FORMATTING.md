@@ -46,7 +46,7 @@ Canonical formatting intentionally does not preserve keyword case, redundant whi
 
 ## Comments
 
-Comments are not currently part of the yt-sql lexical or grammatical language. Canonical comment preservation or placement is therefore outside this contract. If comments are added to the language later, their formatting semantics must be defined deliberately rather than inferred from a parser library.
+`#` begins a line comment outside a string literal or quoted identifier. Comments are lexical trivia equivalent to whitespace and extend to the next line break or end of input. Canonical formatting does not preserve comments or their placement. Formatting a commented query therefore produces the same canonical query as formatting the equivalent uncommented source.
 
 ## Formatter ownership
 

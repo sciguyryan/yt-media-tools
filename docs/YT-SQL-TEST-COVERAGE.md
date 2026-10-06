@@ -6,6 +6,8 @@ This document records the major yt-sql language and execution surfaces that must
 
 Dedicated coverage distinguishes lexical, syntax and semantic diagnostic categories while preserving the historical common exception boundary, requires deterministic line and column information, verifies absolute half-open spans for lexical input, preserves semantic source origins and checks that curated expected-token data remains structured rather than leaking parser-internal token dumps into terminal rendering. The parser-independent contract is documented in [`YT-SQL-DIAGNOSTICS.md`](YT-SQL-DIAGNOSTICS.md).
 
+Line-comment coverage verifies `#` as non-semantic lexical trivia outside strings and quoted identifiers, including leading and trailing comments, immediate token adjacency, LF and CRLF input, Unicode and yt-sql-looking comment text, preserved source positions, derived relations, CTEs, JOINs, set operations, canonical comment removal and hand-written/Lark differential parity. The maximal parser torture query also carries comments across composed-query boundaries.
+
 ## Coverage standard
 
 A language feature is not considered thoroughly covered merely because its happy path parses. Where applicable, coverage should include parsing, semantic resolution, execution, formatting round-trips, malformed input, NULL behaviour, Unicode behaviour, optimiser differential equivalence, composition through CTEs and set operations, and observable CLI behaviour.

@@ -50,6 +50,7 @@ from .query_model import (
 _TOKEN_RE = re.compile(
     r"""
     (?P<SPACE>\s+)
+  | (?P<COMMENT>\#[^\r\n]*)
   | (?P<INFINITY>-?INFINITY\(\))
   | (?P<OP><=|>=|!=|<>|=|<|>)
   | (?P<LPAREN>\()
@@ -240,7 +241,7 @@ def tokenise(source: str) -> list[Token]:
                 match_end = match.end()
         else:
             match_end = match.end()
-        if kind == "SPACE":
+        if kind in {"SPACE", "COMMENT"}:
             position = match_end
             continue
         if kind == "MISMATCH":

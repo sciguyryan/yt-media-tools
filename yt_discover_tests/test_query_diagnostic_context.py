@@ -121,3 +121,24 @@ def test_malformed_numeric_literal_is_lexical_not_syntax() -> None:
         parse_query("SELECT 0xGG")
 
     assert captured.value.context.category == "lexical"
+
+
+def test_line_comment_preserves_following_token_source_position() -> None:
+    from yt_media_tools.query_parser import tokenise
+
+    source = "# comment\nSELECT id FROM @fixture"
+    tokens = tokenise(source)
+    select = next(token for token in tokens if token.text.upper() == "SELECT")
+    assert select.position == source.index("SELECT")
+    assert select.end_position == source.index("SELECT") + len("SELECT")
+
+
+def test_hash_inside_strings_and_quoted_identifiers_is_not_a_comment() -> None:
+    from yt_media_tools.query_parser import parse_query
+    from yt_media_tools.query_formatter import format_query
+
+    source = "SELECT '# literal' AS `alias # literal` FROM @fixture # actual comment"
+    canonical = format_query(parse_query(source))
+    assert "'# literal'" in canonical
+    assert "`alias # literal`" in canonical
+    assert "actual comment" not in canonical

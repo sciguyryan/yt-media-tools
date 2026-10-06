@@ -4,6 +4,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- Add `#` line comments as non-semantic yt-sql lexical trivia with hand-written and Lark parser parity.
 - [fix] Preserve anonymous derived relations through CLI query merging so query-file execution retains recursively reachable physical sources.
 - [fix] Route derived FROM and JOIN composition through relational materialisation instead of the legacy single-relation result path.
 - [feature] Export multi-source derived results as truthful constructed collection documents without inventing remote playlist identity.
