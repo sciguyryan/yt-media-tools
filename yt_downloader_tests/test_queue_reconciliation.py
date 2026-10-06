@@ -373,8 +373,8 @@ def test_row_mode_canonicalises_leading_hyphen_youtube_id_before_yt_dlp(download
         remove_completed_rows=True,
     )
 
-    assert "-i-Gxbd5bVw" not in command
-    assert "https://www.youtube.com/watch?v=-i-Gxbd5bVw" in command
+    target_index = command.index("-i-Gxbd5bVw")
+    assert command[target_index - 1] == "--"
     assert "ordinary123" in command
 
 

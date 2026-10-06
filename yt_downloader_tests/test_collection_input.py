@@ -74,8 +74,16 @@ def test_collection_command_loads_metadata_bridge_and_disables_remote_playlist_e
     assert specification.startswith("CollectionMetadata:when=pre_process;collection=")
     encoded = specification.split("collection=", 1)[1]
     assert base64.urlsafe_b64decode(encoded).decode("utf-8") == str(collection)
-    assert command[-3:] == ["first", "second", "third"]
+    assert command[-4:] == ["--", "first", "second", "third"]
 
+
+
+def test_collection_command_separates_leading_dash_target_from_options(downloader, tmp_path: Path) -> None:
+    collection = _write_collection(tmp_path / "collection.json", targets=("-ttxL2vaB3Q", "ordinary"))
+    source = downloader.load_collection_input(collection)
+    policy = downloader.DownloadPolicy(resolution="1080", format_selector="bv+ba/best", reverse_playlist=False)
+    command = downloader.build_yt_dlp_command("yt-dlp", policy, source, None)
+    assert command[-3:] == ["--", "-ttxL2vaB3Q", "ordinary"]
 
 def test_collection_validation_rejects_unknown_metadata(downloader, tmp_path: Path) -> None:
     collection = _write_collection(tmp_path / "collection.json")
