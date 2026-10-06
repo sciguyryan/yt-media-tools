@@ -801,8 +801,14 @@ def required_query_fields(query: Query) -> set[str]:
         if candidate.left_query is not None:
             visit(candidate.left_query)
         logical_primary = visit_relation(candidate.from_source)
+        if candidate.from_relation is not None and candidate.from_relation.derived is not None:
+            visit(candidate.from_relation.derived.query)
+            logical_primary = True
         for join in candidate.joins:
-            visit_relation(join.relation.source)
+            if join.relation.derived is not None:
+                visit(join.relation.derived.query)
+            else:
+                visit_relation(join.relation.source)
         if not logical_primary:
             fields.update(_required_body_fields(candidate))
         for operation in candidate.set_operations:

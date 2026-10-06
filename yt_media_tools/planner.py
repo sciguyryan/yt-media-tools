@@ -459,6 +459,8 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
         effective_order_by = candidate.order_by or compound_order_by
         if candidate.left_query is not None:
             visit(candidate.left_query, owner_cte, effective_order_by)
+        if candidate.from_relation is not None and candidate.from_relation.derived is not None:
+            visit(candidate.from_relation.derived.query, owner_cte, effective_order_by)
         if candidate.from_source is not None and candidate.from_source not in cte_names:
             planning_candidate = replace(candidate, order_by=effective_order_by)
             if candidate.joins and candidate.from_alias is not None:
@@ -479,6 +481,9 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
                 )
             uses.append((candidate.from_source, candidate.from_facet, local, owner_cte))
         for join in candidate.joins:
+            if join.relation.derived is not None:
+                visit(join.relation.derived.query, owner_cte, effective_order_by)
+                continue
             if join.relation.source in cte_names:
                 continue
             if join.relation.alias is None:

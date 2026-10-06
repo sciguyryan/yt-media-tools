@@ -8,6 +8,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [fix] Resolve derived relations against only their exported result schema, preserving first-branch UNION output names, outer CTE visibility and the existing prohibition on nested WITH and correlated row references.
 - [test] Cover derived-relation aliases, schema boundaries, malformed forms, canonical round trips, UNION composition and nested torture cases before planner and execution integration.
 - [docs] Define derived-relation syntax and semantic boundaries while keeping Lark and Tree-sitter parity as subsequent issue #148 phases.
+- [feature] Materialise derived relations as logical result rows during execution, including derived operands on either side of supported JOINs.
+- [feature] Plan physical source boundaries recursively through derived relations while retaining each inner source/facet requirement and provenance identity.
+- [fix] Propagate conservative empty-relation proofs through derived FROM and JOIN operands without treating the relation boundary as a physical source.
+- [test] Add execution, planning, JOIN, explain, provenance and derived-UNION torture coverage for issue #148 Part 2.
+- [docs] Record derived-relation planning and optimisation boundaries, including the deliberate absence of unsafe outer projection pushdown.
 - [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
 - [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.
 - [docs] Classify Tree-sitter as viable for complete grammar work while retaining model construction, diagnostics, packaging and full differential conformance as later gates.

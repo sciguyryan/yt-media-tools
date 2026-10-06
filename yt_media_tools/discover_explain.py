@@ -237,12 +237,52 @@ def _join_execution_strategy(query: Query, join_index: int) -> tuple[str, str]:
     )
 
 
+def _relation_explain_payload(
+    relation: object,
+    *,
+    fallback_source: str | None = None,
+    fallback_facet: str | None = None,
+    fallback_alias: str | None = None,
+) -> dict[str, object]:
+    """Describe a physical or derived relation without erasing its logical boundary."""
+    derived = getattr(relation, "derived", None) if relation is not None else None
+    source = getattr(relation, "source", fallback_source) if relation is not None else fallback_source
+    facet = getattr(relation, "facet", fallback_facet) if relation is not None else fallback_facet
+    alias = getattr(relation, "alias", fallback_alias) if relation is not None else fallback_alias
+    if derived is not None:
+        return {
+            "kind": "derived",
+            "source": None,
+            "facet": None,
+            "alias": alias,
+            "identity": f"derived AS {alias or '?'}",
+            "query": format_query(derived.query),
+        }
+    return {
+        "kind": "source",
+        "source": source,
+        "facet": facet,
+        "alias": alias,
+        "identity": f"{source}{' OF ' + facet if facet else ''} AS {alias or '?'}",
+    }
+
+
 def _join_explain_payload(query: Query, source_boundaries: tuple[object, ...]) -> list[dict[str, object]]:
     """Project JOIN semantics and physical requirements into stable explain data."""
     requirements: dict[tuple[str | None, str | None], list[str]] = {}
     for boundary in source_boundaries:
         key = (getattr(boundary, "source_name", None), getattr(boundary, "facet", None))
         requirements[key] = sorted(getattr(boundary, "required_fields", ()))
+
+    def relation_requirements(relation: object, source: str | None, facet: str | None) -> list[str]:
+        derived = getattr(relation, "derived", None) if relation is not None else None
+        if derived is None:
+            return requirements.get((source, facet), [])
+        nested_requests = set(query_physical_source_requests(derived.query))
+        fields: set[str] = set()
+        for request in nested_requests:
+            fields.update(requirements.get(request, ()))
+        return sorted(fields)
 
     result: list[dict[str, object]] = []
     for index, join in enumerate(query.joins):
@@ -253,18 +293,21 @@ def _join_explain_payload(query: Query, source_boundaries: tuple[object, ...]) -
                 "index": index,
                 "kind": join.kind.value,
                 "left_relation": {
-                    "source": query.from_source,
-                    "facet": query.from_facet,
-                    "alias": query.from_alias,
-                    "identity": f"{query.from_source}{' OF ' + query.from_facet if query.from_facet else ''} AS {query.from_alias or '?'}",
-                    "acquisition_requirements": requirements.get((query.from_source, query.from_facet), []),
+                    **_relation_explain_payload(
+                        query.from_relation,
+                        fallback_source=query.from_source,
+                        fallback_facet=query.from_facet,
+                        fallback_alias=query.from_alias,
+                    ),
+                    "acquisition_requirements": relation_requirements(
+                        query.from_relation, query.from_source, query.from_facet
+                    ),
                 },
                 "right_relation": {
-                    "source": join.relation.source,
-                    "facet": join.relation.facet,
-                    "alias": join.relation.alias,
-                    "identity": f"{join.relation.source}{' OF ' + join.relation.facet if join.relation.facet else ''} AS {join.relation.alias or '?'}",
-                    "acquisition_requirements": requirements.get((join.relation.source, join.relation.facet), []),
+                    **_relation_explain_payload(join.relation),
+                    "acquisition_requirements": relation_requirements(
+                        join.relation, join.relation.source, join.relation.facet
+                    ),
                 },
                 "predicate": format_expression(join.predicate),
                 "predicate_dependencies": _join_predicate_dependencies(join.predicate),

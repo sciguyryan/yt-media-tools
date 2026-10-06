@@ -187,3 +187,172 @@ def test_torture_nested_derived_relations_and_union_schema_do_not_leak_fields():
     assert resolved.select[0].output_name == "id"
     with pytest.raises(QuerySemanticError, match="Unknown field 'title'"):
         _resolve(source.replace("SELECT id FROM (", "SELECT title FROM (", 1))
+
+
+def test_derived_relation_execution_materialises_exported_rows_before_outer_projection():
+    from yt_media_tools.query_evaluator import apply_query
+
+    resolved = _resolve("SELECT CONCAT(id, ' # ', title) AS line FROM (SELECT id, title FROM @a)")
+    result = apply_query(ROWS, resolved)
+    assert result == [{"id": "a", "title": "Alpha"}, {"id": "b", "title": "Beta"}]
+    from yt_media_tools.query_evaluator import canonical_record_value
+
+    assert [canonical_record_value(row, resolved.select[0]) for row in result] == ["a # Alpha", "b # Beta"]
+
+
+def test_derived_relation_execution_does_not_leak_unexported_physical_values():
+    from yt_media_tools.query_evaluator import apply_query
+
+    resolved = _resolve("SELECT id FROM (SELECT id FROM @a)")
+    result = apply_query(ROWS, resolved)
+    assert result == [{"id": "a"}, {"id": "b"}]
+    assert all("title" not in row and "duration" not in row for row in result)
+
+
+def test_derived_union_execution_deduplicates_before_outer_projection():
+    from yt_media_tools.query_evaluator import apply_query
+
+    records = [
+        {"id": "a", "title": "Alpha", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Beta", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Beta", "_yt_sql_source": "@b", "_yt_sql_source_facet": None},
+        {"id": "c", "title": "Gamma", "_yt_sql_source": "@b", "_yt_sql_source_facet": None},
+    ]
+    resolved = _resolve(
+        "SELECT CONCAT(id, ' # ', title) AS line FROM (SELECT id, title FROM @a UNION SELECT id, title FROM @b)"
+    )
+    result = apply_query(records, resolved)
+    from yt_media_tools.query_evaluator import canonical_record_value
+
+    assert [canonical_record_value(row, resolved.select[0]) for row in result] == [
+        "a # Alpha",
+        "b # Beta",
+        "c # Gamma",
+    ]
+
+
+def test_derived_relation_planning_discovers_inner_physical_requirements_only():
+    from datetime import datetime, timezone
+
+    from yt_media_tools.dates import DateContext
+    from yt_media_tools.planner import plan_source_boundaries
+    from yt_media_tools.query import query_physical_source_requests
+    from yt_media_tools.sources import resolve_source_request
+
+    query = parse_query("SELECT id FROM (SELECT id, title FROM @a WHERE duration >= 30s)")
+    requests = query_physical_source_requests(query)
+    sources = tuple(resolve_source_request(source, facet=facet) for source, facet in requests)
+    plans = plan_source_boundaries(
+        query,
+        requests=requests,
+        sources=sources,
+        dates=DateContext(now=datetime(2026, 10, 6, 12, 0, tzinfo=timezone.utc)),
+    )
+    assert requests == (("@a", None),)
+    assert len(plans) == 1
+    assert plans[0].required_fields == frozenset({"id", "title", "duration"})
+
+
+def test_torture_derived_union_planning_keeps_branch_requirements_on_their_sources():
+    from datetime import datetime, timezone
+
+    from yt_media_tools.dates import DateContext
+    from yt_media_tools.planner import plan_source_boundaries
+    from yt_media_tools.query import query_physical_source_requests
+    from yt_media_tools.sources import resolve_source_request
+
+    query = parse_query(
+        "SELECT id FROM ("
+        "SELECT id FROM @a WHERE title ILIKE '%alpha%' "
+        "UNION ALL SELECT id FROM @b WHERE duration >= 30s"
+        ") AS combined WHERE id IS NOT NULL"
+    )
+    requests = query_physical_source_requests(query)
+    sources = tuple(resolve_source_request(source, facet=facet) for source, facet in requests)
+    plans = plan_source_boundaries(
+        query,
+        requests=requests,
+        sources=sources,
+        dates=DateContext(now=datetime(2026, 10, 6, 12, 0, tzinfo=timezone.utc)),
+    )
+    assert [(plan.source_name, plan.required_fields) for plan in plans] == [
+        ("@a", frozenset({"id", "title"})),
+        ("@b", frozenset({"id", "duration"})),
+    ]
+
+
+def test_derived_join_execution_materialises_right_relation_before_matching():
+    from yt_media_tools.query_evaluator import apply_query, canonical_record_value
+
+    records = [
+        {"id": "a", "title": "Left A", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Left B", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Right B", "_yt_sql_source": "@b", "_yt_sql_source_facet": None},
+    ]
+    resolved = _resolve(
+        "SELECT left_rel.id, right_rel.title FROM @a AS left_rel "
+        "JOIN (SELECT id, title FROM @b) AS right_rel ON left_rel.id = right_rel.id"
+    )
+    result = apply_query(records, resolved)
+    assert len(result) == 1
+    assert [canonical_record_value(result[0], term) for term in resolved.select] == ["b", "Right B"]
+
+
+def test_derived_primary_join_execution_materialises_left_relation_before_matching():
+    from yt_media_tools.query_evaluator import apply_query, canonical_record_value
+
+    records = [
+        {"id": "a", "title": "Left A", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Left B", "_yt_sql_source": "@a", "_yt_sql_source_facet": None},
+        {"id": "b", "title": "Right B", "_yt_sql_source": "@b", "_yt_sql_source_facet": None},
+    ]
+    resolved = _resolve(
+        "SELECT left_rel.id, right_rel.title FROM (SELECT id FROM @a) AS left_rel "
+        "JOIN @b AS right_rel ON left_rel.id = right_rel.id"
+    )
+    result = apply_query(records, resolved)
+    assert len(result) == 1
+    assert [canonical_record_value(result[0], term) for term in resolved.select] == ["b", "Right B"]
+
+
+def test_provability_propagates_empty_derived_from_relation():
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    resolved = _resolve("SELECT id FROM (SELECT id FROM @a WHERE id = 'a' AND id = 'b')")
+    facts = prove_query_relation_facts(resolved)
+    assert facts.empty
+    assert facts.proof is not None
+    assert any("derived FROM relation is proven empty" in reason for reason in facts.proof.reasons)
+
+
+def test_provability_propagates_empty_derived_inner_join_relation():
+    from yt_media_tools.semantic_provability import prove_query_relation_facts
+
+    resolved = _resolve(
+        "SELECT left_rel.id FROM @a AS left_rel "
+        "JOIN (SELECT id FROM @b WHERE id = 'a' AND id = 'b') AS right_rel ON left_rel.id = right_rel.id"
+    )
+    facts = prove_query_relation_facts(resolved)
+    assert facts.empty
+    assert facts.proof is not None
+    assert any("derived relation is proven empty" in reason for reason in facts.proof.reasons)
+
+
+def test_explain_preserves_derived_join_identity_and_inner_acquisition_requirements():
+    from yt_media_tools.discover_explain import explain_user_query_json
+
+    payload = explain_user_query_json(
+        "SELECT left_rel.id FROM @a AS left_rel "
+        "JOIN (SELECT id, title FROM @b) AS right_rel ON left_rel.id = right_rel.id",
+        source_type="channel",
+        tab="all",
+        date_format="%Y%m%d",
+    )
+    relation = payload["relational_joins"][0]["right_relation"]
+    assert relation["kind"] == "derived"
+    assert relation["source"] is None
+    assert relation["alias"] == "right_rel"
+    assert relation["query"] == "SELECT id, title FROM @b"
+    assert relation["acquisition_requirements"] == ["id", "title"]
+    boundaries = {item["source"]: item for item in payload["source_boundaries"]}
+    assert boundaries["@b"]["required_fields"] == ["id", "title"]

@@ -976,6 +976,32 @@ def _hash_join_matches(
     return index.get(key, [])
 
 
+def _materialise_relation_reference(
+    records: Sequence[dict[str, Any]],
+    relation: Any,
+    relations: dict[str, list[dict[str, Any]]],
+    physical_requests: tuple[tuple[str, str | None], ...],
+    *,
+    relational_optimisation: bool,
+) -> list[dict[str, Any]]:
+    """Materialise one physical, CTE or derived relation operand."""
+    if relation is not None and relation.derived is not None:
+        nested = relation.derived.query
+        nested_rows = _apply_composed_query(
+            records,
+            nested,
+            relations,
+            physical_requests,
+            relational_optimisation=relational_optimisation,
+        )
+        if nested.set_operations:
+            return [dict(row) for row in nested_rows]
+        return _project_result_rows(nested_rows, nested)
+    source = relation.source if relation is not None else None
+    facet = relation.facet if relation is not None else None
+    return _records_for_source(records, source, facet, relations, physical_requests)
+
+
 def _apply_existence_join(
     records: Sequence[dict[str, Any]],
     query: Query,
@@ -986,9 +1012,23 @@ def _apply_existence_join(
 ) -> list[dict[str, Any]]:
     """Apply one SEMI or ANTI join, with a proof-limited membership fast path."""
     join = query.joins[0]
-    left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
-    right_records = _records_for_source(
-        records, join.relation.source, join.relation.facet, relations, physical_requests
+    left_records = (
+        _materialise_relation_reference(
+            records,
+            query.from_relation,
+            relations,
+            physical_requests,
+            relational_optimisation=relational_optimisation,
+        )
+        if query.from_relation is not None
+        else _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
+    )
+    right_records = _materialise_relation_reference(
+        records,
+        join.relation,
+        relations,
+        physical_requests,
+        relational_optimisation=relational_optimisation,
     )
     equality_fields = _equality_join_key_fields(query) if relational_optimisation else None
     if not left_records:
@@ -1044,9 +1084,23 @@ def _apply_row_producing_join(
 ) -> list[dict[str, Any]]:
     """Apply one INNER or LEFT JOIN while preserving explicit relation ownership."""
     join = query.joins[0]
-    left_records = _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
-    right_records = _records_for_source(
-        records, join.relation.source, join.relation.facet, relations, physical_requests
+    left_records = (
+        _materialise_relation_reference(
+            records,
+            query.from_relation,
+            relations,
+            physical_requests,
+            relational_optimisation=relational_optimisation,
+        )
+        if query.from_relation is not None
+        else _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
+    )
+    right_records = _materialise_relation_reference(
+        records,
+        join.relation,
+        relations,
+        physical_requests,
+        relational_optimisation=relational_optimisation,
     )
     left_alias = query.from_alias or ""
     right_alias = join.relation.alias or ""
@@ -1125,8 +1179,16 @@ def _apply_composed_query(
                     records, query, relations, physical_requests, relational_optimisation=relational_optimisation
                 )
         else:
-            input_records = _records_for_source(
-                records, query.from_source, query.from_facet, relations, physical_requests
+            input_records = (
+                _materialise_relation_reference(
+                    records,
+                    query.from_relation,
+                    relations,
+                    physical_requests,
+                    relational_optimisation=relational_optimisation,
+                )
+                if query.from_relation is not None
+                else _records_for_source(records, query.from_source, query.from_facet, relations, physical_requests)
             )
         return _apply_query_body(input_records, query)
 

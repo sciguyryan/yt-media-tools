@@ -517,7 +517,14 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
 
     source_name = query.from_source or ""
     source_fact = cte_facts.get(source_name)
-    if source_fact is not None and source_fact.empty:
+    if query.from_relation is not None and query.from_relation.derived is not None:
+        source_fact = prove_query_relation_facts(query.from_relation.derived.query)
+        if source_fact.empty:
+            body_empty = True
+            if source_fact.proof is not None:
+                premises.append(source_fact.proof)
+            reasons.append("derived FROM relation is proven empty")
+    elif source_fact is not None and source_fact.empty:
         body_empty = True
         if source_fact.proof is not None:
             premises.append(source_fact.proof)
@@ -540,7 +547,11 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
     # source here.
     if len(query.joins) == 1 and not body_empty:
         join = query.joins[0]
-        right_fact = cte_facts.get(join.relation.source)
+        right_fact = (
+            prove_query_relation_facts(join.relation.derived.query)
+            if join.relation.derived is not None
+            else cte_facts.get(join.relation.source)
+        )
         kind = join.kind.value.upper()
         join_consequence = prove_join_consequences(kind, join.predicate)
         if join_consequence.result_empty:
@@ -552,7 +563,8 @@ def prove_query_relation_facts(query: Query) -> RelationFacts:
             body_empty = True
             if right_fact.proof is not None:
                 premises.append(right_fact.proof)
-            reasons.append(f"{kind} JOIN right CTE is proven empty")
+            relation_kind = "derived relation" if join.relation.derived is not None else "CTE"
+            reasons.append(f"{kind} JOIN right {relation_kind} is proven empty")
 
     body_proof = _relation_fact_proof("relation-empty", "; ".join(reasons), *premises) if body_empty else None
 
