@@ -75,3 +75,30 @@ def test_query_file_requires_utf8(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match=r"expected UTF-8 text$"):
         parse_user_query(_parse_args("--query-file", str(query_file)))
+
+
+
+def test_query_file_preserves_anonymous_derived_union_through_cli_merge(tmp_path):
+    from yt_media_tools.discover_cli import build_parser, parse_user_query
+    from yt_media_tools.query_semantics import query_physical_sources
+
+    query_file = tmp_path / "derived-union.yt-sql"
+    query_file.write_text(
+        """SELECT CONCAT(id, ' # ', title)
+FROM (
+  SELECT id, title FROM PLqBJTlL2aNfPukqkyuPm1URrAWB5E8fpJ
+  UNION
+  SELECT id, title FROM PLhO3J4aB-4mir8edIBPvTn8o55xj8lF9H
+)
+""",
+        encoding="utf-8",
+    )
+    args = build_parser().parse_args(["--query-file", str(query_file)])
+
+    query = parse_user_query(args)
+
+    assert query.from_relation is not None
+    assert query_physical_sources(query) == (
+        "PLqBJTlL2aNfPukqkyuPm1URrAWB5E8fpJ",
+        "PLhO3J4aB-4mir8edIBPvTn8o55xj8lF9H",
+    )

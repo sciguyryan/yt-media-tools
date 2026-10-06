@@ -46,7 +46,11 @@ from yt_media_tools.discover_cli import (
     looks_like_complete_query,
     parse_user_query,
 )
-from yt_media_tools.collection_export import build_playlist_collection, write_collection
+from yt_media_tools.collection_export import (
+    build_constructed_collection,
+    build_playlist_collection,
+    write_collection,
+)
 from yt_media_tools.discover_constants import (
     DEFAULT_ARCHIVE_FILE,
     FRONTIER_OVERLAP_CONFIRMATIONS,
@@ -1672,7 +1676,13 @@ def main(argv: list[str] | None = None) -> int:
         _verbose(args.verbose, f"Archive exclusion removed {archive_excluded} entries; {len(records)} remain.")
 
     before_query = len(records)
-    if resolved_query.ctes or resolved_query.set_operations:
+    if (
+        resolved_query.ctes
+        or resolved_query.set_operations
+        or resolved_query.left_query is not None
+        or resolved_query.from_relation is not None
+        or resolved_query.joins
+    ):
         unlimited_query = replace(resolved_query, limit=None)
         matched_before_limit = apply_query(records, unlimited_query)
         selected = apply_query(records, resolved_query)
@@ -1715,10 +1725,12 @@ def main(argv: list[str] | None = None) -> int:
     query_elapsed = perf_counter() - query_started
 
     if args.collection_output is not None:
-        if multi_source:
-            parser.error("--collection-output currently requires exactly one playlist source")
         try:
-            collection_payload = build_playlist_collection(source, raw_records, selected, resolved_query)
+            collection_payload = (
+                build_constructed_collection(selected, resolved_query)
+                if multi_source
+                else build_playlist_collection(source, raw_records, selected, resolved_query)
+            )
             write_collection(args.collection_output, collection_payload)
         except ValueError as exc:
             parser.error(str(exc))

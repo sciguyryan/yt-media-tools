@@ -135,9 +135,11 @@ A Discover export describes the effective query result. If a source playlist con
 
 Discover applies normal yt-sql filtering, ordering, `DISTINCT`, `OFFSET` and `LIMIT` semantics before collection export. The exported entry order is therefore the final query order.
 
-For the v1 export path, Discover supports one playlist source at a time. Stable source identity and repeated playlist metadata which agree across acquired entries may be promoted to `collection.metadata`. Conflicting repeated values are omitted rather than resolved arbitrarily. Values describing the effective result, especially positions and counts, are always derived from `entries`.
+For a single playlist source, stable source identity and repeated playlist metadata which agree across acquired entries may be promoted to `collection.metadata`. Conflicting repeated values are omitted rather than resolved arbitrarily. Values describing the effective result, especially positions and counts, are always derived from `entries`.
 
-Source facts are retained only while they remain truthful. A hand-built collection may use an empty metadata object rather than inventing a remote playlist ID, URL, uploader or channel.
+A multi-source yt-sql result is exported as a constructed collection. Its `collection.metadata` is empty rather than falsely attributing the effective collection to any one contributing remote playlist. Per-entry acquisition targets and projected metadata still follow the final query result.
+
+Source facts are retained only while they remain truthful. A hand-built or multi-source constructed collection may use an empty metadata object rather than inventing a remote playlist ID, URL, uploader or channel.
 
 ## Discover export
 

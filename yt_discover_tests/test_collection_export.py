@@ -95,3 +95,21 @@ def test_collection_export_rejects_non_playlist_source():
 
     with pytest.raises(ValueError, match="playlist source"):
         build_playlist_collection(source, [], [{"id": "a"}], query)
+
+
+def test_constructed_collection_preserves_hidden_target_and_projected_expression():
+    from yt_media_tools.collection_export import build_constructed_collection
+    from yt_media_tools.query import parse_query
+
+    query = parse_query("SELECT CONCAT(id, ' # ', title) FROM source")
+    selected = [{"id": "abc123", "title": "Example"}]
+
+    payload = build_constructed_collection(selected, query)
+
+    assert payload["collection"] == {"type": "playlist", "metadata": {}}
+    assert payload["entries"] == [
+        {
+            "target": "abc123",
+            "metadata": {"CONCAT(id, ' # ', title)": "abc123 # Example"},
+        }
+    ]

@@ -74,6 +74,23 @@ def _collection_entry(
     return {"target": target, "metadata": metadata}
 
 
+def build_constructed_collection(
+    selected_rows: Sequence[Mapping[str, Any]],
+    query: Query,
+) -> dict[str, object]:
+    """Build a v1 effective collection without inventing remote playlist identity."""
+    entries = [_collection_entry(row, query, position=position) for position, row in enumerate(selected_rows, start=1)]
+    return {
+        "schema": COLLECTION_INTERCHANGE_SCHEMA,
+        "version": COLLECTION_INTERCHANGE_VERSION,
+        "collection": {
+            "type": COLLECTION_TYPE_PLAYLIST,
+            "metadata": {},
+        },
+        "entries": entries,
+    }
+
+
 def build_playlist_collection(
     source: SourceSpec,
     raw_records: Sequence[Mapping[str, Any]],

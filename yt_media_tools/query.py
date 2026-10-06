@@ -109,6 +109,7 @@ def merge_queries(base: Query, extra: Query) -> Query:
         extra.from_alias or base.from_alias,
         extra.joins or base.joins,
         extra.left_query or base.left_query,
+        extra.from_relation or base.from_relation,
     )
 
 
