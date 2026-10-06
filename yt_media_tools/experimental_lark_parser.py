@@ -473,8 +473,26 @@ class _LarkModelBuilder:
         )
         if predicate_node.data == "boolean_not" and not self._starts_with_keyword(predicate_node, "NOT"):
             predicate_node = self._trees(predicate_node)[0]
-        predicate = self.boolean(predicate_node)
+        predicate = self._join_predicate(self.boolean(predicate_node))
+        return JoinClause(kind, relation, predicate, node.meta.start_pos)
 
+    def _join_predicate(self, predicate):
+        """Promote legacy field predicates throughout a JOIN Boolean tree.
+
+        Ordinary WHERE comparisons intentionally retain the historical field-to-
+        literal model. JOIN ON is different: relation-qualified operands are scalar
+        expressions and therefore use ``ScalarComparison``.  Earlier differential
+        cases only exercised a single top-level comparison, which meant nested
+        AND/OR predicates could quietly retain the WHERE representation.
+        """
+        if isinstance(predicate, Binary) and predicate.operator in {"AND", "OR"}:
+            return Binary(
+                predicate.operator,
+                self._join_predicate(predicate.left),
+                self._join_predicate(predicate.right),
+            )
+        if isinstance(predicate, Unary) and predicate.operator == "NOT":
+            return Unary(predicate.operator, self._join_predicate(predicate.operand))
         if isinstance(predicate, Binary) and predicate.operator in {"=", "!=", "<>", "<", "<=", ">", ">="}:
             right = predicate.right
             if isinstance(right, Literal) and not right.quoted:
@@ -483,10 +501,10 @@ class _LarkModelBuilder:
                     if right.raw[:1].isdigit()
                     else Field(right.raw, right.position)
                 )
-            predicate = ScalarComparison(predicate.operator, predicate.left, right)
-        elif isinstance(predicate, IsNull):
-            predicate = ScalarIsNull(predicate.field, predicate.negated)
-        return JoinClause(kind, relation, predicate, node.meta.start_pos)
+            return ScalarComparison(predicate.operator, predicate.left, right)
+        if isinstance(predicate, IsNull):
+            return ScalarIsNull(predicate.field, predicate.negated)
+        return predicate
 
     def select_term(self, node):
         wildcard = self._first(node, "projection_wildcard")
@@ -716,15 +734,17 @@ class _LarkModelBuilder:
                 negated = "IS NOT" in upper or upper.startswith("NOT IS")
                 if "DISTINCT FROM" in upper:
                     operator = "IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM"
-                    right_node = (
-                        next(
+                    # Literal-only grammar nodes such as NULL/TRUE/FALSE can be
+                    # represented by Lark as an empty ``scalar_literal`` tree.  The
+                    # source span still carries the literal, so preserve that node
+                    # rather than assuming every tree contains a token child.
+                    right_node = suffix
+                    if isinstance(suffix, self.Tree) and suffix.data != "scalar_literal":
+                        right_node = next(
                             child
                             for child in reversed(suffix.children)
                             if isinstance(child, self.Tree) or hasattr(child, "value")
                         )
-                        if isinstance(suffix, self.Tree)
-                        else suffix
-                    )
                     return ScalarComparison(operator, left, self.scalar(right_node))
                 if upper.endswith("NULL"):
                     return IsNull(left, negated) if isinstance(left, Field) else ScalarIsNull(left, negated)
@@ -815,6 +835,15 @@ class _LarkModelBuilder:
             if value.value is None or isinstance(value.value, bool):
                 return value
             raw = value.raw
+            # The reference parser retains unary signs in legacy predicate
+            # literals as a separate lexical piece.  Preserve that canonical
+            # spelling when Lark has already collapsed the scalar node.
+            if isinstance(node, self.Tree) and node.data == "literal_sequence":
+                source_text = self._slice(node).strip()
+                if source_text.upper().startswith("-INFINITY()"):
+                    raw = "-INFINITY()"
+                elif source_text.startswith(("+", "-")):
+                    raw = f"{source_text[0]} {raw.lstrip('+-').lstrip()}"
             unit = re.fullmatch(r"(\d+(?:\.\d+)?)([^\W\d_].*)", raw, re.UNICODE)
             if unit and not raw.lower().startswith(("0x", "0o", "0b")) and not re.fullmatch(r"[kKmMbB]", unit.group(2)):
                 raw = f"{unit.group(1)} {unit.group(2)}"
@@ -896,6 +925,8 @@ class _LarkModelBuilder:
             return value.position + len(value.binding)
         if hasattr(value, "right"):
             return _LarkModelBuilder._end(value.right)
+        if hasattr(value, "operand"):
+            return _LarkModelBuilder._end(value.operand)
         if hasattr(value, "member") and hasattr(value, "position"):
             return value.position + 1 + len(value.member)
         return _LarkModelBuilder._start(value)

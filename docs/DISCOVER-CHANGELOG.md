@@ -7,7 +7,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Add grammar revision 2 derived relations so parenthesised query expressions can form explicit logical relations in `FROM` and `JOIN` without being rewritten as hidden CTEs.
 - [fix] Resolve derived relations against only their exported result schema, preserving first-branch UNION output names, outer CTE visibility and the existing prohibition on nested WITH and correlated row references.
 - [test] Cover derived-relation aliases, schema boundaries, malformed forms, canonical round trips, UNION composition and nested torture cases before planner and execution integration.
-- [docs] Define derived-relation syntax and semantic boundaries while keeping Lark and Tree-sitter parity as subsequent issue #148 phases.
+- [docs] Define derived-relation syntax and semantic boundaries while keeping Lark parity in issue #148 and deferring Tree-sitter parity to separate work.
 - [feature] Materialise derived relations as logical result rows during execution, including derived operands on either side of supported JOINs.
 - [feature] Plan physical source boundaries recursively through derived relations while retaining each inner source/facet requirement and provenance identity.
 - [fix] Propagate conservative empty-relation proofs through derived FROM and JOIN operands without treating the relation boundary as a physical source.
@@ -15,6 +15,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [docs] Record derived-relation planning and optimisation boundaries, including the deliberate absence of unsafe outer projection pushdown.
 - [experimental] Bring the independent Lark grammar and model builder to grammar revision 2 with explicit derived relations while preserving the hand-written parser as the behavioural reference.
 - [test] Add Lark differential, origin, malformed-boundary, canonical round-trip and composite derived-relation torture coverage.
+- [fix] Harden Lark revision-2 model construction for literal-only DISTINCT predicates, signed legacy predicate literals, nested compound JOIN comparisons and unary-expression source origins exposed by maximal cross-feature composition.
+- [test] Add a maximal derived-relation parser torture query combining CTEs, nested derived relations, all executable JOIN kinds, UNION ALL, collections, aggregates, scalar functions, CASE, mixed-base arithmetic, temporal expressions, NULL/3VL predicates, Unicode identifiers, ordering and slicing under reference/Lark differential and canonical round-trip checks.
 - [docs] Record that safe cross-relation projection pruning is technically viable but not currently planned because its column-liveness proof burden is disproportionate to the expected benefit.
 - [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
 - [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.

@@ -14,6 +14,7 @@ from yt_discover_tests.parser_migration_harness import ParserDifference, canonic
 from yt_discover_tests.parser_mutation import malformed_neighbours
 from yt_media_tools.discover_cli import bind_query_parameters
 from yt_media_tools.experimental_lark_parser import parse_lark_query
+from yt_media_tools.query_formatter import format_query
 from yt_media_tools.query_model import Query, QuerySyntaxError
 from yt_media_tools.query_parser import parse_query
 
@@ -157,6 +158,114 @@ def test_lark_seeded_fuzz_inputs_are_differentially_equivalent(seed: int) -> Non
         candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
         assert candidate_model == reference_model, context
         assert candidate_canonical == reference_canonical, context
+
+
+MAXIMAL_DERIVED_RELATION_TORTURE_QUERY = r"""WITH `Ω seed` AS (
+SELECT DISTINCT id, title, tags, formats, duration, view_count, upload_date, is_live,
+       LOWER(title) AS `é!`, UPPER(title) AS `é!`, LENGTH(title) AS `👩‍💻`,
+       CARDINALITY(tags) AS tag_count,
+       COUNT(tags AS tag WHERE tag IS NOT NULL AND tag != 'skip') AS kept_count,
+       FILTER(tags AS tag WHERE tag IS NOT NULL AND tag != 'skip') AS kept,
+       MAP(tags AS tag SELECT UPPER(tag)) AS mapped,
+       COALESCE(title, '∅') AS fallback,
+       CONCAT(COALESCE(title, ''), CHAR(0x20, 0x1F642)) AS `🏴󠁧󠁢󠁷󠁬󠁳󠁿`,
+       NULLIF(title, '') AS nonempty,
+       GREATEST(COALESCE(view_count, 0), 0x10, 0o17, 0b1110) AS hi,
+       LEAST(COALESCE(view_count, 0), 0xFF, 0o755, 0b1010_0101) AS lo_num,
+       CASE WHEN is_live IS TRUE THEN 0x1 WHEN is_live IS FALSE THEN 0o2 ELSE 0b11 END AS live_rank,
+       RANDOM(31415926) AS seeded,
+       (+0x10 + 0o7 * 0b10 - 3) / 2 % 5 AS arithmetic
+FROM @yt_sql_fixture OF videos, shorts
+WHERE ((ANY(tags AS tag WHERE tag = 'mars' OR tag = 'unicode')
+        OR ALL(tags AS tag WHERE tag IS NOT NULL))
+       AND title IS DISTINCT FROM NULL
+       AND title IS NOT DISTINCT FROM title
+       AND title NOT LIKE 'never%'
+       AND title NOT ILIKE 'NEVER%'
+       AND title MATCHES '.*'
+       AND title NOT MATCHES '^$'
+       AND title DOES NOT CONTAIN 'definitely absent'
+       AND duration NOT BETWEEN 0s AND 1.5m
+       AND upload_date BETWEEN -INFINITY() AND TODAY()+1baktun
+       AND release_timestamp < NOW()+2hour
+       AND view_count IN (0, 0x10, 0o20, 0b1_0000, 1k, 2m)
+       AND view_count NOT IN (-1, -0x2)
+       AND (is_live IS NOT TRUE OR is_live IS UNKNOWN OR is_live IS NOT UNKNOWN))
+ORDER BY seeded DESC, `🏴󠁧󠁢󠁷󠁬󠁳󠁿` ASC LIMIT 32 OFFSET 1
+), `left pain` AS (
+SELECT id, title, duration, view_count, tags, formats, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, seeded
+FROM (SELECT id, title, duration, view_count, tags, formats, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, seeded FROM `Ω seed` ORDER BY seeded LIMIT 16) AS d
+WHERE formats[0].height IS NULL OR formats[0].height >= 0x2D0
+), `right pain` AS (
+SELECT id, title, duration, view_count, tags, formats
+FROM (SELECT id, title, duration, view_count, tags, formats FROM @yt_sql_fixture WHERE upload_date >= 2026-08-01 UNION SELECT id, title, duration, view_count, tags, formats FROM @yt_sql_fixture WHERE upload_date < 2026-08-01) AS r
+WHERE NOT (title = 'impossible' AND view_count <> 0)
+), `joined agony` AS (
+SELECT l.id AS id, l.title AS title, r.title AS right_title,
+       l.duration AS duration, l.view_count AS view_count,
+       `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, l.seeded AS seeded,
+       COUNT(*) FILTER (WHERE r.title IS NOT NULL) AS matches,
+       SUM(COALESCE(r.duration, 0)) AS total_duration,
+       MIN(COALESCE(r.view_count, 0)) AS min_views,
+       MAX(COALESCE(r.view_count, 0)) AS max_views,
+       AVG(COALESCE(r.view_count, 0)) AS avg_views
+FROM `left pain` AS l INNER JOIN `right pain` AS r
+ON l.id = r.id AND (l.title = r.title OR l.title IS DISTINCT FROM r.title)
+WHERE l.duration >= 0s OR l.duration IS NULL
+GROUP BY l.id, l.title, r.title, l.duration, l.view_count, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, l.seeded
+HAVING COUNT(*) >= 0b1 AND SUM(COALESCE(r.duration, 0)) IS NOT NULL
+)
+SELECT id, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, matches, total_duration, min_views, max_views, avg_views,
+       CASE WHEN right_title IS NULL THEN '∅' ELSE right_title END AS branch
+FROM (SELECT * FROM `joined agony` WHERE matches > 0) AS final
+UNION ALL
+SELECT l.id, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, 0 AS matches, 0 AS total_duration, 0 AS min_views, 0 AS max_views, 0 AS avg_views, 'left' AS branch
+FROM `left pain` AS l LEFT OUTER JOIN `right pain` AS r ON l.id = r.id
+WHERE r.id IS NULL
+UNION ALL
+SELECT l.id, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, 1 AS matches, 0, 0, 0, 0, 'semi'
+FROM `left pain` AS l SEMI JOIN `right pain` AS r ON l.id = r.id
+UNION ALL
+SELECT l.id, `🏴󠁧󠁢󠁷󠁬󠁳󠁿`, `é!`, `é!`, `👩‍💻`, 0 AS matches, 0, 0, 0, 0, 'anti'
+FROM `left pain` AS l ANTI JOIN `right pain` AS r ON l.id = r.id
+ORDER BY branch ASC, id DESC LIMIT 1_000 OFFSET 0"""
+
+
+def test_maximal_torture_unicode_alias_spellings_are_exact() -> None:
+    flag = "🏴󠁧󠁢󠁷󠁬󠁳󠁿"
+    decomposed = "é!"
+    precomposed = "é!"
+    zwj_alias = "👩‍💻"
+
+    assert [f"U+{ord(char):04X}" for char in flag] == [
+        "U+1F3F4",
+        "U+E0067",
+        "U+E0062",
+        "U+E0077",
+        "U+E006C",
+        "U+E0073",
+        "U+E007F",
+    ]
+    assert [f"U+{ord(char):04X}" for char in zwj_alias] == ["U+1F469", "U+200D", "U+1F4BB"]
+    assert [f"U+{ord(char):04X}" for char in decomposed] == ["U+0065", "U+0301", "U+0021"]
+    assert [f"U+{ord(char):04X}" for char in precomposed] == ["U+00E9", "U+0021"]
+    assert decomposed != precomposed
+    for alias in (flag, decomposed, precomposed, zwj_alias):
+        assert f"`{alias}`" in MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
+
+
+def test_lark_maximal_derived_relation_torture_is_structurally_and_canonically_equivalent() -> None:
+    comparison = compare_parsers(parse_query, parse_lark_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
+    assert comparison.equivalent, comparison.describe()
+
+    reference_model, reference_canonical = canonical_round_trip(parse_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
+    candidate_model, candidate_canonical = canonical_round_trip(
+        parse_lark_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
+    )
+    assert candidate_model == reference_model
+    assert candidate_canonical == reference_canonical
+    assert format_query(parse_query(reference_canonical)) == reference_canonical
+    assert compare_parsers(parse_query, parse_lark_query, reference_canonical).equivalent
 
 
 DERIVED_RELATION_DIFFERENTIAL_CASES = (
