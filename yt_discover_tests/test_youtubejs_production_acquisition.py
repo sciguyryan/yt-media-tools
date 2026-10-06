@@ -48,8 +48,12 @@ def test_specialised_youtubejs_failure_falls_back_to_ytdlp(monkeypatch) -> None:
     def fail(*args, **kwargs):
         raise YouTubeJsError("synthetic failure")
 
-    def fake_load(command, *, progress=None):
-        return ([{"id": "abc", "title": "Fallback"}], AcquisitionStats(available=1))
+    def fake_load(command, *, progress=None, record_callback=None):
+        records = [{"id": "abc", "title": "Fallback"}]
+        if record_callback is not None:
+            for record in records:
+                record_callback(record)
+        return records, AcquisitionStats(available=1)
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fail)
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
@@ -105,9 +109,13 @@ def test_specialised_youtubejs_partial_result_falls_back_only_for_missing_ids(mo
             AcquisitionStats(available=1),
         )
 
-    def fake_load(command, *, progress=None):
+    def fake_load(command, *, progress=None, record_callback=None):
         commands.append(command)
-        return ([{"id": "b", "title": "B"}], AcquisitionStats(available=1))
+        records = [{"id": "b", "title": "B"}]
+        if record_callback is not None:
+            for record in records:
+                record_callback(record)
+        return records, AcquisitionStats(available=1)
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
@@ -184,8 +192,12 @@ def test_specialised_youtubejs_success_and_ytdlp_fallback_preserve_requested_ord
             AcquisitionStats(available=2),
         )
 
-    def fake_load(command, *, progress=None):
-        return ([{"id": "b", "title": "B"}], AcquisitionStats(available=1))
+    def fake_load(command, *, progress=None, record_callback=None):
+        records = [{"id": "b", "title": "B"}]
+        if record_callback is not None:
+            for record in records:
+                record_callback(record)
+        return records, AcquisitionStats(available=1)
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)

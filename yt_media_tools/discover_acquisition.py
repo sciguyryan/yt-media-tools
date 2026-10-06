@@ -309,15 +309,27 @@ def _cached_or_refresh_metadata(
             _verbose(verbose, f"Candidate yt-dlp command: {shell_join(command)}")
         semantic_progress = _DetailedMetadataProgress(level=verbose, total=len(remaining_ids))
         semantic_progress.start()
-        ytdlp_records, fallback_stats = load_metadata(command, progress=semantic_progress.backend)
+        written = 0
+
+        def persist_record(record: dict) -> None:
+            nonlocal written
+            if cache is not None:
+                written += cache.put_many(source_url, (record,))
+
+        ytdlp_records, fallback_stats = load_metadata(
+            command,
+            progress=semantic_progress.backend,
+            record_callback=persist_record,
+        )
         semantic_progress.complete(fallback_stats.attempted)
         fetched_records.extend(ytdlp_records)
         _merge_acquisition_stats(acquisition_stats, fallback_stats)
+    else:
+        written = 0
 
     fetched_by_id = {
         record.get("id"): record for record in fetched_records if isinstance(record.get("id"), str) and record.get("id")
     }
-    written = cache.put_many(source_url, ytdlp_records) if cache is not None and ytdlp_records else 0
     records: list[dict] = []
     for video_id in video_ids:
         record = fetched_by_id.get(video_id) or cached_by_id.get(video_id)

@@ -186,6 +186,7 @@ def load_metadata(
     command: list[str],
     *,
     progress: ProgressCallback | None = None,
+    record_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> tuple[list[dict[str, Any]], AcquisitionStats]:
     """Run yt-dlp, collecting JSON records and live acquisition telemetry.
 
@@ -251,6 +252,12 @@ def load_metadata(
             if isinstance(value, dict):
                 records.append(value)
                 stats.available += 1
+                if record_callback is not None:
+                    try:
+                        record_callback(value)
+                    except BaseException:
+                        process.kill()
+                        raise
                 if progress is not None:
                     detail = str(value.get("id") or value.get("webpage_url") or f"entry {stats.available}")
                     progress("available", stats, detail)
