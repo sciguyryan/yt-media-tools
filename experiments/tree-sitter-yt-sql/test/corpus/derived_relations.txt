@@ -22,18 +22,26 @@ FROM (
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (known_scalar_function
-                    (concat_keyword)
-                    (scalar_expression
-                      (scalar_atom
-                        (identifier)))
-                    (scalar_expression
-                      (scalar_atom
-                        (string)))
-                    (scalar_expression
-                      (scalar_atom
-                        (identifier))))))))
+                (postfix_expression
+                  (scalar_atom
+                    (scalar_function
+                      (multi_scalar_function
+                        (concat_keyword))
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (identifier
+                              (ordinary_identifier)))))
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (scalar_literal
+                              (string)))))
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (identifier
+                              (ordinary_identifier)))))))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -46,18 +54,23 @@ FROM (
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier))))))
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
                             (relation_operand
                               (relation_source
-                                (identifier)))))))
+                                (identifier
+                                  (ordinary_identifier))))))))
                     (union_operator
                       (union_keyword))
                     (query_primary
@@ -66,18 +79,23 @@ FROM (
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier))))))
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
                             (relation_operand
                               (relation_source
-                                (identifier)))))))))))))))))
+                                (identifier
+                                  (ordinary_identifier))))))))))))))))))
 
 ==================
 Nested aliased derived relation
@@ -100,8 +118,10 @@ FROM (
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -114,10 +134,13 @@ FROM (
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))
                             (as_keyword)
-                            (identifier)))
+                            (identifier
+                              (ordinary_identifier))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
@@ -130,10 +153,13 @@ FROM (
                                         (select_keyword)
                                         (select_term
                                           (scalar_expression
-                                            (scalar_atom
-                                              (identifier)))
+                                            (postfix_expression
+                                              (scalar_atom
+                                                (identifier
+                                                  (ordinary_identifier)))))
                                           (as_keyword)
-                                          (identifier)))
+                                          (identifier
+                                            (ordinary_identifier))))
                                       (from_clause
                                         (from_keyword)
                                         (relation_reference
@@ -141,7 +167,8 @@ FROM (
                                             (relation_source
                                               (at_identifier)))))))))))))))))
               (as_keyword)
-              (identifier))))))))
+              (identifier
+                (ordinary_identifier)))))))))
 
 ==================
 Predicate-only derived relation
@@ -160,8 +187,10 @@ SELECT id FROM (id = 'a')
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -174,12 +203,18 @@ SELECT id FROM (id = 'a')
                           (boolean_primary
                             (predicate
                               (scalar_expression
-                                (scalar_atom
-                                  (identifier)))
-                              (comparison_operator)
-                              (scalar_expression
-                                (scalar_atom
-                                  (string))))))))))))))))))
+                                (postfix_expression
+                                  (scalar_atom
+                                    (identifier
+                                      (ordinary_identifier)))))
+                              (predicate_suffix
+                                (comparison_operator)
+                                (comparison_value
+                                  (scalar_expression
+                                    (postfix_expression
+                                      (scalar_atom
+                                        (scalar_literal
+                                          (string))))))))))))))))))))))
 
 ==================
 Derived JOIN operand
@@ -201,8 +236,10 @@ ON a.id = combined.id
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -210,7 +247,8 @@ ON a.id = combined.id
                 (relation_source
                   (at_identifier)))
               (as_keyword)
-              (identifier))
+              (identifier
+                (ordinary_identifier)))
             (join_clause
               (join_kind
                 (join_keyword))
@@ -223,8 +261,10 @@ ON a.id = combined.id
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
@@ -240,8 +280,10 @@ ON a.id = combined.id
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
@@ -249,18 +291,25 @@ ON a.id = combined.id
                               (relation_source
                                 (at_identifier)))))))))
                 (as_keyword)
-                (identifier))
+                (identifier
+                  (ordinary_identifier)))
               (on_keyword)
               (boolean_expression
                 (boolean_primary
                   (predicate
                     (scalar_expression
-                      (scalar_atom
-                        (identifier)))
-                    (comparison_operator)
-                    (scalar_expression
-                      (scalar_atom
-                        (identifier)))))))))))))
+                      (postfix_expression
+                        (scalar_atom
+                          (identifier
+                            (ordinary_identifier)))))
+                    (predicate_suffix
+                      (comparison_operator)
+                      (comparison_value
+                        (scalar_expression
+                          (postfix_expression
+                            (scalar_atom
+                              (identifier
+                                (ordinary_identifier)))))))))))))))))
 
 ==================
 Empty derived relation
@@ -279,10 +328,26 @@ SELECT id FROM ()
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))))))
-  (ERROR
-    (from_keyword)))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
+          (from_clause
+            (from_keyword)
+            (relation_reference
+              (relation_operand
+                (derived_relation
+                  (query_expression
+                    (query_primary
+                      (predicate_only_query
+                        (boolean_expression
+                          (boolean_primary
+                            (predicate
+                              (scalar_expression
+                                (postfix_expression
+                                  (scalar_atom
+                                    (identifier
+                                      (MISSING ordinary_identifier))))))))))))))))))))
 
 ==================
 Unclosed derived relation
@@ -301,8 +366,10 @@ SELECT id FROM (SELECT id FROM @a
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -315,8 +382,10 @@ SELECT id FROM (SELECT id FROM @a
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
@@ -342,8 +411,10 @@ SELECT id FROM (SELECT id FROM @a) OF videos
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (ERROR
@@ -356,16 +427,19 @@ SELECT id FROM (SELECT id FROM @a) OF videos
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
                             (relation_operand
                               (relation_source
                                 (at_identifier))))))))))
-              (identifier))
+              (ordinary_identifier))
             (relation_reference
               (relation_operand
                 (relation_source
-                  (identifier))))))))))
+                  (identifier
+                    (ordinary_identifier)))))))))))

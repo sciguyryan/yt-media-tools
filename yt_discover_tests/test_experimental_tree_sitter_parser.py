@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import pytest
 
+from yt_discover_tests.conformance.cases import CASES
+from yt_discover_tests.parser_grammar_generation import generated_valid_queries
+from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
+from yt_discover_tests.test_parser_differential_conformance import MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
+from yt_media_tools.discover_cli import bind_query_parameters
 from yt_media_tools.experimental_tree_sitter_parser import (
     _character_offset,
     recognise_tree_sitter_query,
@@ -50,6 +55,18 @@ _SLICING_INTEGER_QUERIES = (
     "SELECT id LIMIT 0o7_55 OFFSET 0B10",
     "SELECT id OFFSET 0x0",
 )
+
+
+def _complete_accepted_inventory() -> tuple[tuple[str, str], ...]:
+    cases = [(f"migration:{case.name}", case.query) for case in ACCEPTED_PARSER_CASES]
+    for case in CASES:
+        values = dict(parameter.split("=", 1) for parameter in case.params)
+        cases.append((f"conformance:{case.name}", bind_query_parameters(case.query, values)))
+    cases.extend(
+        (f"generated:{index}:{case.production}", case.query)
+        for index, case in enumerate(generated_valid_queries(rounds=3))
+    )
+    return tuple(cases)
 
 
 def test_tree_sitter_byte_offsets_convert_to_python_character_offsets() -> None:
@@ -112,6 +129,48 @@ def test_tree_sitter_revision_2_slice_accepts_integer_base_slicing(source: str) 
 def test_tree_sitter_revision_2_slice_rejects_invalid_integer_slicing(source: str) -> None:
     with pytest.raises(QuerySyntaxError):
         recognise_tree_sitter_query(source)
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_complete_grammar_accepts_established_inventory() -> None:
+    cases = _complete_accepted_inventory()
+    assert len(cases) >= 220
+
+    for name, source in cases:
+        try:
+            recognise_tree_sitter_query(source)
+        except QuerySyntaxError as error:
+            pytest.fail(f"{name}: {error}")
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_complete_grammar_rejects_established_malformed_inventory() -> None:
+    for case in REJECTED_PARSER_CASES:
+        with pytest.raises(QuerySyntaxError):
+            recognise_tree_sitter_query(case.query)
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+@pytest.mark.parametrize("name", ("future_function", "`future function`"))
+def test_tree_sitter_function_syntax_does_not_embed_the_runtime_registry(name: str) -> None:
+    recognise_tree_sitter_query(f"SELECT {name}(id)")
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+@pytest.mark.parametrize(
+    "source",
+    (
+        "SELECT id WHERE upload_date >= TODAY() - 1 year",
+        "SELECT id WHERE duration < 1μέρα",
+    ),
+)
+def test_tree_sitter_complete_grammar_accepts_spaced_and_unicode_units(source: str) -> None:
+    recognise_tree_sitter_query(source)
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_complete_grammar_accepts_maximal_revision_2_torture_query() -> None:
+    recognise_tree_sitter_query(MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")

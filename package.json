@@ -9,6 +9,7 @@
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\"",
     "tree-sitter:generate": "cd experiments/tree-sitter-yt-sql && tree-sitter generate --abi 15",
     "tree-sitter:test": "cd experiments/tree-sitter-yt-sql && tree-sitter test",
+    "tree-sitter:update": "cd experiments/tree-sitter-yt-sql && tree-sitter test --update",
     "format:tree-sitter": "./scripts/lint-tree-sitter.sh --format",
     "lint:tree-sitter:format": "./scripts/lint-tree-sitter.sh --check-format",
     "lint:tree-sitter:native": "./scripts/lint-tree-sitter.sh --lint",

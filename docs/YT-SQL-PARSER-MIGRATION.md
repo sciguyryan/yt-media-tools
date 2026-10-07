@@ -40,7 +40,7 @@ The remaining concern is compatibility at the operational boundary: complete Lar
 
 ## Experimental Tree-sitter boundary
 
-The Tree-sitter investigation starts as a separate optional grammar package under `experiments/tree-sitter-yt-sql`. It does not change the production parser or ordinary Python dependencies. The formal EBNF and hand-written parser remain the de facto references, and the Lark candidate remains available as supporting evidence until a later cut-over decision.
+The Tree-sitter investigation starts as a separate optional grammar package under `experiments/tree-sitter-yt-sql`. It does not change the production parser or ordinary Python dependencies. The formal EBNF and hand-written parser remain the de facto references, and the Lark candidate remains available as supporting evidence until a later cut-over decision. This work looks to be large enough to justify being split into parts.
 
 Part 1 pins Tree-sitter CLI at 0.26.13, Python runtime 0.26.0 and language ABI 15. The grammar source and generated C are committed together. Node.js and the CLI are required to regenerate the parser, but not to build the committed source. npm's install-script approval is limited to the exact CLI version rather than allowing dependency scripts generally.
 
@@ -60,4 +60,12 @@ On one local CPython run after the revision-2 update, the hand-written parser co
 
 Tree-sitter therefore passes the early 60 to 70 percent raw-parser gate by a wide margin and is worth taking into complete grammar recognition. The result is not a cut-over recommendation. A fuller grammar may add parser cost, and model construction, exact source origins, diagnostics, packaging and complete differential conformance remain unmeasured or incomplete.
 
-The accepted hand-written parser and current formal grammar remain the behavioural references during migration. Issue #148 deliberately advances the production language from grammar revision 1 to revision 2 with derived relations. The experimental Lark parser implements revision 2 across its complete parity boundary. The Tree-sitter feasibility slice now targets revision 2 for the relation forms it recognises, while complete grammar recognition remains Part 3. Differential evaluation must compare like-for-like grammar revisions, and any discrepancy is classified before a parser reference is changed.
+## Tree-sitter complete grammar recognition
+
+Part 3 expands the feasibility slice to the complete revision-2 syntactic surface. The grammar now recognises CTEs; implicit and predicate-only query bodies; complete predicate, truth-test and natural-comparison forms; grouping and HAVING; scalar, aggregate and collection expressions; `CASE`; postfix indexing and members; temporal forms; quoted and Unicode identifiers; comments; and all relation-composition forms. Recovery and missing nodes remain rejected at the adapter boundary.
+
+The permanent recognition gate exercises all 220 accepted migration, conformance and three-round generated grammar cases, the deterministic malformed corpus and the maximal revision-2 torture query. Generic identifier-spelled function calls are represented without embedding the runtime function registry in `grammar.js`. Part 4 model construction must apply the existing registry and reject unsupported calls, so recognition alone does not broaden the executable language.
+
+On one local CPython run with the complete grammar, the hand-written parser completed the simple, complex, collection and base-sliced derived-relation workloads in approximately 24.0, 142.3, 86.4 and 87.8 microseconds. Raw Tree-sitter parsing completed them in approximately 4.0, 18.2, 12.8 and 10.5 microseconds, or roughly 12 to 17 percent of the reference time. The larger grammar therefore remains comfortably inside the early performance gate.
+
+The accepted hand-written parser and current formal grammar remain the behavioural references during migration. Issue #148 deliberately advances the production language from grammar revision 1 to revision 2 with derived relations. The experimental Lark parser implements revision 2 across its complete parity boundary, while Tree-sitter now implements complete grammar recognition without query-model construction. Differential evaluation must compare like-for-like grammar revisions, and any discrepancy is classified before a parser reference is changed.

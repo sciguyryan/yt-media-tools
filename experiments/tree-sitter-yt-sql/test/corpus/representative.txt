@@ -15,20 +15,28 @@ SELECT id WHERE view_count >= 1000
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (where_clause
             (where_keyword)
             (boolean_expression
               (boolean_primary
                 (predicate
                   (scalar_expression
-                    (scalar_atom
-                      (identifier)))
-                  (comparison_operator)
-                  (scalar_expression
-                    (scalar_atom
-                      (number))))))))))))
+                    (postfix_expression
+                      (scalar_atom
+                        (identifier
+                          (ordinary_identifier)))))
+                  (predicate_suffix
+                    (comparison_operator)
+                    (comparison_value
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (scalar_literal
+                              (number))))))))))))))))
 
 ==================
 Complex benchmark query
@@ -47,90 +55,130 @@ SELECT id, title, COALESCE(view_count, 0) AS views WHERE (view_count >= 1000 AND
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier))))))
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier))))))
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (known_scalar_function
-                    (coalesce_keyword)
-                    (scalar_expression
-                      (scalar_atom
-                        (identifier)))
-                    (scalar_expression
-                      (scalar_atom
-                        (number))))))
+                (postfix_expression
+                  (scalar_atom
+                    (scalar_function
+                      (multi_scalar_function
+                        (coalesce_keyword))
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (identifier
+                              (ordinary_identifier)))))
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (scalar_literal
+                              (number)))))))))
               (as_keyword)
-              (identifier)))
+              (identifier
+                (ordinary_identifier))))
           (where_clause
             (where_keyword)
             (boolean_expression
               (boolean_expression
                 (boolean_primary
-                  (boolean_expression
+                  (parenthesised_boolean
                     (boolean_expression
-                      (boolean_primary
-                        (predicate
-                          (scalar_expression
-                            (scalar_atom
-                              (identifier)))
-                          (comparison_operator)
-                          (scalar_expression
-                            (scalar_atom
-                              (number))))))
-                    (and_keyword)
-                    (boolean_expression
-                      (boolean_primary
-                        (predicate
-                          (scalar_expression
-                            (scalar_atom
-                              (identifier)))
-                          (text_operator
-                            (ilike_keyword))
-                          (scalar_expression
-                            (scalar_atom
-                              (string)))))))))
+                      (boolean_expression
+                        (boolean_primary
+                          (predicate
+                            (scalar_expression
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))
+                            (predicate_suffix
+                              (comparison_operator)
+                              (comparison_value
+                                (scalar_expression
+                                  (postfix_expression
+                                    (scalar_atom
+                                      (scalar_literal
+                                        (number))))))))))
+                      (and_keyword)
+                      (boolean_expression
+                        (boolean_primary
+                          (predicate
+                            (scalar_expression
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))
+                            (predicate_suffix
+                              (text_operator
+                                (ilike_keyword))
+                              (text_value
+                                (literal_sequence
+                                  (literal_piece
+                                    (scalar_literal
+                                      (string)))))))))))))
               (or_keyword)
               (boolean_expression
                 (boolean_primary
-                  (boolean_expression
+                  (parenthesised_boolean
                     (boolean_expression
-                      (boolean_primary
-                        (predicate
-                          (scalar_expression
-                            (scalar_atom
-                              (identifier)))
-                          (comparison_operator)
-                          (scalar_expression
-                            (scalar_atom
-                              (unit_literal))))))
-                    (and_keyword)
-                    (boolean_expression
-                      (boolean_primary
-                        (predicate
-                          (scalar_expression
-                            (scalar_atom
-                              (identifier)))
-                          (comparison_operator)
-                          (scalar_expression
-                            (scalar_atom
-                              (date)))))))))))))
+                      (boolean_expression
+                        (boolean_primary
+                          (predicate
+                            (scalar_expression
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))
+                            (predicate_suffix
+                              (comparison_operator)
+                              (comparison_value
+                                (scalar_expression
+                                  (postfix_expression
+                                    (scalar_atom
+                                      (scalar_literal
+                                        (unit_literal))))))))))
+                      (and_keyword)
+                      (boolean_expression
+                        (boolean_primary
+                          (predicate
+                            (scalar_expression
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))
+                            (predicate_suffix
+                              (comparison_operator)
+                              (comparison_value
+                                (scalar_expression
+                                  (postfix_expression
+                                    (scalar_atom
+                                      (temporal_literal
+                                        (date))))))))))))))))))
       (order_by_clause
         (order_keyword)
         (by_keyword)
         (order_term
           (scalar_expression
-            (scalar_atom
-              (identifier)))
+            (postfix_expression
+              (scalar_atom
+                (identifier
+                  (ordinary_identifier)))))
           (desc_keyword))
         (order_term
           (scalar_expression
-            (scalar_atom
-              (identifier)))
+            (postfix_expression
+              (scalar_atom
+                (identifier
+                  (ordinary_identifier)))))
           (asc_keyword)))
       (limit_clause
         (limit_keyword)
@@ -156,44 +204,60 @@ SELECT id, MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT UPPER(tag
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier))))))
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (collection_transform
-                    (map_keyword)
-                    (scalar_expression
-                      (scalar_atom
-                        (collection_transform
-                          (filter_keyword)
-                          (scalar_expression
-                            (scalar_atom
-                              (identifier)))
-                          (as_keyword)
-                          (identifier)
-                          (where_keyword)
-                          (boolean_expression
-                            (boolean_primary
-                              (predicate
-                                (scalar_expression
+                (postfix_expression
+                  (scalar_atom
+                    (collection_transform
+                      (map_keyword)
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (collection_transform
+                              (filter_keyword)
+                              (scalar_expression
+                                (postfix_expression
                                   (scalar_atom
-                                    (identifier)))
-                                (is_keyword)
-                                (not_keyword)
-                                (null_keyword)))))))
-                    (as_keyword)
-                    (identifier)
-                    (select_keyword)
-                    (scalar_expression
-                      (scalar_atom
-                        (known_scalar_function
-                          (upper_keyword)
-                          (scalar_expression
-                            (scalar_atom
-                              (identifier)))))))))
+                                    (identifier
+                                      (ordinary_identifier)))))
+                              (as_keyword)
+                              (identifier
+                                (ordinary_identifier))
+                              (where_keyword)
+                              (boolean_expression
+                                (boolean_primary
+                                  (predicate
+                                    (scalar_expression
+                                      (postfix_expression
+                                        (scalar_atom
+                                          (identifier
+                                            (ordinary_identifier)))))
+                                    (predicate_suffix
+                                      (is_keyword)
+                                      (not_keyword)
+                                      (null_keyword)))))))))
+                      (as_keyword)
+                      (identifier
+                        (ordinary_identifier))
+                      (select_keyword)
+                      (scalar_expression
+                        (postfix_expression
+                          (scalar_atom
+                            (scalar_function
+                              (unary_scalar_function
+                                (upper_keyword))
+                              (scalar_expression
+                                (postfix_expression
+                                  (scalar_atom
+                                    (identifier
+                                      (ordinary_identifier)))))))))))))
               (as_keyword)
-              (identifier)))
+              (identifier
+                (ordinary_identifier))))
           (where_clause
             (where_keyword)
             (boolean_expression
@@ -201,18 +265,27 @@ SELECT id, MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT UPPER(tag
                 (collection_predicate
                   (any_keyword)
                   (scalar_expression
-                    (scalar_atom
-                      (identifier)))
+                    (postfix_expression
+                      (scalar_atom
+                        (identifier
+                          (ordinary_identifier)))))
                   (as_keyword)
-                  (identifier)
+                  (identifier
+                    (ordinary_identifier))
                   (where_keyword)
                   (boolean_expression
                     (boolean_primary
                       (predicate
                         (scalar_expression
-                          (scalar_atom
-                            (identifier)))
-                        (comparison_operator)
-                        (scalar_expression
-                          (scalar_atom
-                            (string)))))))))))))))
+                          (postfix_expression
+                            (scalar_atom
+                              (identifier
+                                (ordinary_identifier)))))
+                        (predicate_suffix
+                          (comparison_operator)
+                          (comparison_value
+                            (scalar_expression
+                              (postfix_expression
+                                (scalar_atom
+                                  (scalar_literal
+                                    (string)))))))))))))))))))

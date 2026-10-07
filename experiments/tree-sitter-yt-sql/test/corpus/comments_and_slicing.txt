@@ -17,8 +17,10 @@ SELECT id FROM @a # trailing comment without newline
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -52,8 +54,10 @@ OFFSET 0B10
             (comment)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -67,12 +71,16 @@ OFFSET 0B10
                           (select_keyword)
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (string))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (scalar_literal
+                                    (string))))))
                           (select_term
                             (scalar_expression
-                              (scalar_atom
-                                (identifier)))))
+                              (postfix_expression
+                                (scalar_atom
+                                  (identifier
+                                    (ordinary_identifier)))))))
                         (from_clause
                           (from_keyword)
                           (relation_reference
@@ -105,8 +113,10 @@ SELECT id FROM @a LIMIT 0o7_55 OFFSET 0b10
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))
           (from_clause
             (from_keyword)
             (relation_reference
@@ -137,8 +147,10 @@ SELECT id LIMIT 0x0
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))))))
   (ERROR
     (limit_keyword)
     (integer_literal)))
@@ -160,8 +172,10 @@ SELECT id OFFSET 0b102
             (select_keyword)
             (select_term
               (scalar_expression
-                (scalar_atom
-                  (identifier)))))))
+                (postfix_expression
+                  (scalar_atom
+                    (identifier
+                      (ordinary_identifier)))))))))
       (offset_clause
         (offset_keyword)
         (integer_literal))))

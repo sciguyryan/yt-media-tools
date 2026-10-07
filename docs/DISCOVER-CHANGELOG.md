@@ -4,6 +4,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [experimental] Complete Tree-sitter recognition of the revision-2 yt-sql grammar across query composition, predicates, scalar and aggregate expressions, collections, temporal forms, grouping and Unicode identifiers.
+- [test] Require Tree-sitter to accept all 220 established migration, conformance and generated grammar cases, reject the deterministic malformed corpus and recognise the maximal revision-2 torture query.
+- [performance] Retain raw Tree-sitter parsing at approximately 12 to 17 percent of the hand-written parser's time after expanding from the feasibility slice to complete grammar recognition.
+- [docs] Keep function-call syntax independent of the runtime function registry while deferring unsupported-function rejection to Tree-sitter model construction.
+- [maintenance] Add a focused npm workflow for regenerating reviewed Tree-sitter corpus snapshots without hand-maintaining accepted concrete syntax trees.
 - [feature] Add `#` line comments as non-semantic yt-sql lexical trivia with hand-written, Lark and bounded Tree-sitter recognition parity.
 - [feature] Accept decimal, hexadecimal, octal and binary integer literals in `LIMIT` and `OFFSET`, retaining their base through canonical formatting while preserving the established range constraints.
 - [test] Cover comment placement, base-aware row slicing, malformed literals and canonical round trips across the hand-written, Lark and bounded Tree-sitter parsers.
