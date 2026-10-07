@@ -5,9 +5,10 @@ from __future__ import annotations
 import pytest
 
 from yt_discover_tests.conformance.cases import CASES
+from yt_discover_tests.parser_fuzzing import seeded_parser_fuzz_inputs, shrink_by_token_deletion
 from yt_discover_tests.parser_grammar_generation import generated_valid_queries
 from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
-from yt_discover_tests.parser_migration_harness import compare_parsers
+from yt_discover_tests.parser_migration_harness import canonical_round_trip, compare_parsers
 from yt_discover_tests.parser_mutation import malformed_neighbours
 from yt_discover_tests.test_parser_differential_conformance import MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
 from yt_media_tools.discover_cli import bind_query_parameters
@@ -18,6 +19,7 @@ from yt_media_tools.experimental_tree_sitter_parser import (
     tree_sitter_available,
 )
 from yt_media_tools.parser_equivalence import normalised_parser_model, user_origin_positions
+from yt_media_tools.query_formatter import format_query
 from yt_media_tools.query_model import QuerySyntaxError
 from yt_media_tools.query_parser import parse_query
 
@@ -253,12 +255,50 @@ def test_tree_sitter_models_and_origins_match_the_complete_accepted_inventory() 
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_accepted_inventory_has_canonical_cross_parser_convergence() -> None:
+    for name, source in _complete_accepted_inventory():
+        reference_model, reference_canonical = canonical_round_trip(parse_query, source)
+        candidate_model, candidate_canonical = canonical_round_trip(parse_tree_sitter_query, source)
+
+        assert candidate_model == reference_model, name
+        assert candidate_canonical == reference_canonical, name
+        canonical_comparison = compare_parsers(parse_query, parse_tree_sitter_query, reference_canonical)
+        assert canonical_comparison.equivalent, f"{name}: {canonical_comparison.describe()}"
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+@pytest.mark.parametrize("seed", (0, 1, 2, 3, 31415926, 27182818, 16180339, 14142135))
+def test_tree_sitter_seeded_fuzz_inputs_are_differentially_equivalent(seed: int) -> None:
+    inputs = seeded_parser_fuzz_inputs(seed=seed, limit=128)
+    assert inputs
+
+    for index, source in enumerate(inputs):
+        comparison = compare_parsers(parse_query, parse_tree_sitter_query, source)
+        smaller = shrink_by_token_deletion(source)[:3]
+        context = f"seed={seed}, case={index}, source={source!r}, smaller={smaller!r}"
+        assert comparison.equivalent, f"{context}: {comparison.describe()}"
+
+        if comparison.reference.kind != "accepted":
+            continue
+        reference_model, reference_canonical = canonical_round_trip(parse_query, source)
+        candidate_model, candidate_canonical = canonical_round_trip(parse_tree_sitter_query, source)
+        assert candidate_model == reference_model, context
+        assert candidate_canonical == reference_canonical, context
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
 def test_tree_sitter_models_and_origins_match_the_maximal_revision_2_query() -> None:
     reference = parse_query(MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
     candidate = parse_tree_sitter_query(MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
 
     assert normalised_parser_model(candidate) == normalised_parser_model(reference)
     assert user_origin_positions(candidate) == user_origin_positions(reference)
+    reference_model, reference_canonical = canonical_round_trip(parse_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
+    candidate_model, candidate_canonical = canonical_round_trip(
+        parse_tree_sitter_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
+    )
+    assert candidate_model == reference_model
+    assert candidate_canonical == reference_canonical
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
@@ -269,6 +309,7 @@ def test_tree_sitter_comments_preserve_model_source_origins(source: str) -> None
 
     assert normalised_parser_model(candidate) == normalised_parser_model(reference)
     assert user_origin_positions(candidate) == user_origin_positions(reference)
+    assert format_query(candidate) == format_query(reference)
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")

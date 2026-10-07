@@ -4,6 +4,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [test] Complete the bounded Tree-sitter differential gate across the accepted inventory, controlled mutations, eight seeded fuzz streams, canonical round trips and cross-parser formatting convergence.
+- [docs] Record that no behavioural differences remain within the bounded Tree-sitter conformance gate while retaining performance, packaging and cut-over as separate decisions.
 - [experimental] Translate Tree-sitter recovery and missing nodes into parser-independent yt-sql lexical and syntax diagnostics without exposing generated rule names or recovery artefacts.
 - [fix] Reject malformed non-decimal literals that Tree-sitter could otherwise reinterpret as unit-shaped syntax, while retaining identifier-spelled function calls for model-layer registry validation.
 - [test] Require exact structured diagnostic parity across the curated malformed corpus, all 39 controlled malformed neighbours and focused lexical, delimiter, slicing and Unicode failures.
