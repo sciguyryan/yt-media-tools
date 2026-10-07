@@ -434,6 +434,8 @@ def _relation_use(candidate: Query, source: str, facet: str | None, alias: str, 
         select=select,
         limit=None,
         offset=0,
+        limit_literal=None,
+        offset_literal=None,
     )
 
 
@@ -478,6 +480,8 @@ def _physical_query_uses(query: Query) -> tuple[tuple[str, str | None, Query, st
                     set_operations=(),
                     limit=None,
                     offset=0,
+                    limit_literal=None,
+                    offset_literal=None,
                 )
             uses.append((candidate.from_source, candidate.from_facet, local, owner_cte))
         for join in candidate.joins:

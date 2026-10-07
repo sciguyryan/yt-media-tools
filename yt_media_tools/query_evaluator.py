@@ -1199,7 +1199,19 @@ def _apply_composed_query(
         # Multi-facet OF is one logical source relation expanded across facets.
         # Reconcile the unprojected rows so ordinary source-field ORDER BY terms
         # remain available even when they are not part of the SELECT projection.
-        bodies = [replace(query, set_operations=(), order_by=(), limit=None, offset=0, distinct=False, ctes=())]
+        bodies = [
+            replace(
+                query,
+                set_operations=(),
+                order_by=(),
+                limit=None,
+                offset=0,
+                distinct=False,
+                ctes=(),
+                limit_literal=None,
+                offset_literal=None,
+            )
+        ]
         bodies.extend(
             replace(
                 operation.query,
@@ -1209,6 +1221,8 @@ def _apply_composed_query(
                 offset=0,
                 distinct=False,
                 ctes=(),
+                limit_literal=None,
+                offset_literal=None,
             )
             for operation in query.set_operations
         )
@@ -1255,7 +1269,16 @@ def _apply_composed_query(
             rows = rows[: query.limit]
         return _project_result_rows(
             rows,
-            replace(query, set_operations=(), order_by=(), limit=None, offset=0, distinct=False),
+            replace(
+                query,
+                set_operations=(),
+                order_by=(),
+                limit=None,
+                offset=0,
+                distinct=False,
+                limit_literal=None,
+                offset_literal=None,
+            ),
         )
 
     if query.left_query is not None:
@@ -1269,7 +1292,16 @@ def _apply_composed_query(
             else _project_result_rows(left_rows, left_body)
         )
     else:
-        left_body = replace(query, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+        left_body = replace(
+            query,
+            set_operations=(),
+            order_by=(),
+            limit=None,
+            offset=0,
+            ctes=(),
+            limit_literal=None,
+            offset_literal=None,
+        )
         # A UNION branch is a complete relational query body. Apply its JOIN before
         # projection just as we do for a standalone query rather than bypassing the
         # relation operator through the older single-relation UNION path.
@@ -1292,7 +1324,16 @@ def _apply_composed_query(
                 else _project_result_rows(branch_result, branch_body)
             )
         else:
-            branch_body = replace(branch, set_operations=(), order_by=(), limit=None, offset=0, ctes=())
+            branch_body = replace(
+                branch,
+                set_operations=(),
+                order_by=(),
+                limit=None,
+                offset=0,
+                ctes=(),
+                limit_literal=None,
+                offset_literal=None,
+            )
             branch_result = _apply_composed_query(
                 records, branch_body, relations, physical_requests, relational_optimisation=relational_optimisation
             )

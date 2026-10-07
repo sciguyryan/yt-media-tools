@@ -24,6 +24,8 @@ A non-compound yt-sql query has the following broad clause order:
 
 This order is the language contract. Clauses cannot be repeated or reordered. In particular, slicing uses `LIMIT ... OFFSET ...`; the alternative `OFFSET ... LIMIT ...` spelling is not accepted. `OFFSET` may also be used without `LIMIT`, including `OFFSET 0`. Supporting multiple clause orders would add parser and formatter complexity without adding expressive power.
 
+`LIMIT` and `OFFSET` accept decimal, hexadecimal, octal and binary integer literals under the established numeric spelling rules. `LIMIT` must resolve to a value greater than zero, while `OFFSET` may resolve to zero. Canonical formatting preserves the selected base while normalising prefix case, hexadecimal digit case and separator underscores. Floating-point, magnitude-suffixed, unit-bearing and signed forms remain invalid in row-slicing clauses.
+
 If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been requested. The established predicate-only compatibility form also remains supported. `HAVING` is meaningful only for aggregate or grouped queries, subject to the aggregate rules below.
 
 `UNION` and `UNION ALL` introduce a compound-query boundary. Trailing `ORDER BY`, `LIMIT` and `OFFSET` after an unparenthesised set expression apply to the complete compound result; parenthesised query-expression boundaries provide branch-local ordering and slicing. The full grouping and scope contract is described under Compound query grouping and scope below.

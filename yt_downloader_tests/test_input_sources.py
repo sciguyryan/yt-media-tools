@@ -17,12 +17,12 @@ def test_direct_targets_are_preserved(downloader) -> None:
     assert command == ["--", "a", "b"]
 
 
-
 def test_direct_targets_are_separated_from_yt_dlp_options(downloader) -> None:
     source = downloader.InputSource(direct_targets=("-ttxL2vaB3Q", "ordinary"))
     command = ["yt-dlp", "--no-playlist"]
     source.append_to(command)
     assert command == ["yt-dlp", "--no-playlist", "--", "-ttxL2vaB3Q", "ordinary"]
+
 
 def test_direct_targets_accept_legacy_namespace_without_collection_file(downloader) -> None:
     """Direct Namespace callers inherit the collection-file CLI default."""

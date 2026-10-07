@@ -1683,7 +1683,7 @@ def main(argv: list[str] | None = None) -> int:
         or resolved_query.from_relation is not None
         or resolved_query.joins
     ):
-        unlimited_query = replace(resolved_query, limit=None)
+        unlimited_query = replace(resolved_query, limit=None, limit_literal=None)
         matched_before_limit = apply_query(records, unlimited_query)
         selected = apply_query(records, resolved_query)
         where_matches = matched_before_limit

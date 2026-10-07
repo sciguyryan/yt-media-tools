@@ -4,7 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-- Add `#` line comments as non-semantic yt-sql lexical trivia with hand-written and Lark parser parity.
+- [feature] Add `#` line comments as non-semantic yt-sql lexical trivia with hand-written, Lark and bounded Tree-sitter recognition parity.
+- [feature] Accept decimal, hexadecimal, octal and binary integer literals in `LIMIT` and `OFFSET`, retaining their base through canonical formatting while preserving the established range constraints.
+- [test] Cover comment placement, base-aware row slicing, malformed literals and canonical round trips across the hand-written, Lark and bounded Tree-sitter parsers.
+- [docs] Document which committed Tree-sitter files are regenerated, which integration files remain maintained and why direct changes to generated parser outputs will be overwritten.
 - [fix] Preserve anonymous derived relations through CLI query merging so query-file execution retains recursively reachable physical sources.
 - [fix] Route derived FROM and JOIN composition through relational materialisation instead of the legacy single-relation result path.
 - [feature] Export multi-source derived results as truthful constructed collection documents without inventing remote playlist identity.
@@ -12,7 +15,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Add grammar revision 2 derived relations so parenthesised query expressions can form explicit logical relations in `FROM` and `JOIN` without being rewritten as hidden CTEs.
 - [fix] Resolve derived relations against only their exported result schema, preserving first-branch UNION output names, outer CTE visibility and the existing prohibition on nested WITH and correlated row references.
 - [test] Cover derived-relation aliases, schema boundaries, malformed forms, canonical round trips, UNION composition and nested torture cases before planner and execution integration.
-- [docs] Define derived-relation syntax and semantic boundaries while keeping Lark parity in issue #148 and deferring Tree-sitter parity to separate work.
+- [docs] Define derived-relation syntax and semantic boundaries while tracking each experimental parser against its explicit parity phase.
 - [feature] Materialise derived relations as logical result rows during execution, including derived operands on either side of supported JOINs.
 - [feature] Plan physical source boundaries recursively through derived relations while retaining each inner source/facet requirement and provenance identity.
 - [fix] Propagate conservative empty-relation proofs through derived FROM and JOIN operands without treating the relation boundary as a physical source.
@@ -25,7 +28,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [test] Freeze derived-UNION requirement propagation so outer scalar expressions acquire only their referenced branch fields while preserving UNION duplicate identity.
 - [docs] Record that safe cross-relation projection pruning is technically viable but not currently planned because its column-liveness proof burden is disproportionate to the expected benefit.
 - [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
-- [performance] Add stable raw Tree-sitter benchmark surfaces and establish a local 8 to 11 percent reference-parser time range across the representative workloads.
+- [experimental] Advance the bounded Tree-sitter feasibility grammar to revision 2 for physical and derived relation operands, nested query expressions, set composition and derived JOIN operands.
+- [test] Cover accepted nested, UNION, predicate-only and JOIN-derived relations alongside empty, unclosed and illegal `OF` recovery cases.
+- [performance] Add a matched derived-relation benchmark and retain a local 8 to 12 percent reference-parser time range across all four representative workloads.
 - [docs] Classify Tree-sitter as viable for complete grammar work while retaining model construction, diagnostics, packaging and full differential conformance as later gates.
 - [maintenance] Add root-level Clang formatting, static-analysis and generated-source compile gates for the experimental Tree-sitter native code while keeping generated parser sources untouched.
 - [docs] Reconcile the optimisation strategy with reachable-CTE projection, field-sensitive provider escalation, cache-v4 known-NULL reuse, staged cache-first rejection, proven forward source-order LIMIT termination and refresh deduplication.

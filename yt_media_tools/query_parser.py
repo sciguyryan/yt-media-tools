@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from .query_formatter import format_scalar_expression
+from .query_formatter import _canonical_numeric_raw, format_scalar_expression
 from .query_model import (
     AggregateFunction,
     Between,
@@ -432,6 +432,7 @@ class Parser:
         predicate = None
         order_by: tuple[OrderTerm, ...] = ()
         limit = None
+        limit_literal = None
         select: tuple[SelectTerm, ...] = ()
         from_source: str | None = None
         from_facet: str | None = None
@@ -441,6 +442,7 @@ class Parser:
         joins: list[JoinClause] = []
         distinct = False
         offset = 0
+        offset_literal = None
         group_by: tuple[Any, ...] = ()
         having = None
         ctes: list[CommonTableExpression] = []
@@ -645,20 +647,28 @@ class Parser:
 
         if self.consume_keyword("LIMIT"):
             token = self.current
-            if token.kind != "NUMBER" or not re.fullmatch(r"\d[\d_]*", token.text):
+            integer_shape = token.kind == "NUMBER" and (
+                _DECIMAL_INTEGER_RE.fullmatch(token.text) or re.match(r"0[xXoObB]", token.text)
+            )
+            if not integer_shape:
                 raise QuerySyntaxError(self.source, "LIMIT requires a positive integer.", token.position)
-            limit = int(token.text.replace("_", ""))
+            limit = _parse_integer_literal_text(token.text, self.source, token.position)
             if limit <= 0:
                 raise QuerySyntaxError(self.source, "LIMIT must be greater than zero.", token.position)
+            limit_literal = _canonical_numeric_raw(token.text)
             self.advance()
 
         if self.consume_keyword("OFFSET"):
             token = self.current
             if token.kind == "MINUS":
                 raise QuerySyntaxError(self.source, "OFFSET requires a non-negative integer.", token.position)
-            if token.kind != "NUMBER" or not re.fullmatch(r"\d[\d_]*", token.text):
+            integer_shape = token.kind == "NUMBER" and (
+                _DECIMAL_INTEGER_RE.fullmatch(token.text) or re.match(r"0[xXoObB]", token.text)
+            )
+            if not integer_shape:
                 raise QuerySyntaxError(self.source, "OFFSET requires a non-negative integer.", token.position)
-            offset = int(token.text.replace("_", ""))
+            offset = _parse_integer_literal_text(token.text, self.source, token.position)
+            offset_literal = _canonical_numeric_raw(token.text)
             self.advance()
 
         if not at_end():
@@ -689,6 +699,8 @@ class Parser:
             tuple(joins),
             left_query,
             from_relation,
+            limit_literal,
+            offset_literal,
         )
 
     def _statement_clause_at_current(self) -> str | None:

@@ -21,11 +21,16 @@ COLLECTION_QUERY = (
     "SELECT id, MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT UPPER(tag)) AS normalised_tags "
     "WHERE ANY(tags AS tag WHERE tag = 'group-1')"
 )
+DERIVED_QUERY = (
+    "SELECT CONCAT(id, ' # ', title) FROM (SELECT id, title FROM @a UNION SELECT id, title FROM @b) LIMIT 0xff"
+)
 
 
 @pytest.mark.benchmark(group="parser")
 @pytest.mark.parametrize(
-    "source", [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY], ids=["simple", "complex", "collection"]
+    "source",
+    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
+    ids=["simple", "complex", "collection", "derived"],
 )
 def test_parse_query(benchmark, source: str) -> None:
     """Measure parser cost independently of semantic resolution."""
@@ -36,7 +41,9 @@ def test_parse_query(benchmark, source: str) -> None:
 
 @pytest.mark.benchmark(group="parser")
 @pytest.mark.parametrize(
-    "source", [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY], ids=["simple", "complex", "collection"]
+    "source",
+    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
+    ids=["simple", "complex", "collection", "derived"],
 )
 def test_parse_lark_query(benchmark, source: str) -> None:
     """Measure the experimental parser over the reference parser workloads."""
@@ -48,7 +55,9 @@ def test_parse_lark_query(benchmark, source: str) -> None:
 @pytest.mark.benchmark(group="parser")
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
 @pytest.mark.parametrize(
-    "source", [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY], ids=["simple", "complex", "collection"]
+    "source",
+    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
+    ids=["simple", "complex", "collection", "derived"],
 )
 def test_parse_tree_sitter_query(benchmark, source: str) -> None:
     """Measure raw Tree-sitter parsing over the reference parser workloads."""

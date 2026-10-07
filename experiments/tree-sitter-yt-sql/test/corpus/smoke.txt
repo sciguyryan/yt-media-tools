@@ -8,12 +8,15 @@ SELECT id
 
 (source_file
   (query
-    (select_clause
-      (select_keyword)
-      (select_term
-        (scalar_expression
-          (scalar_atom
-            (identifier)))))))
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier))))))))))
 
 ==================
 Case-insensitive keyword
@@ -25,12 +28,15 @@ select title
 
 (source_file
   (query
-    (select_clause
-      (select_keyword)
-      (select_term
-        (scalar_expression
-          (scalar_atom
-            (identifier)))))))
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier))))))))))
 
 ==================
 Missing projection
@@ -42,9 +48,12 @@ SELECT
 
 (source_file
   (query
-    (select_clause
-      (select_keyword)
-      (select_term
-        (scalar_expression
-          (scalar_atom
-            (MISSING identifier)))))))
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (MISSING identifier))))))))))

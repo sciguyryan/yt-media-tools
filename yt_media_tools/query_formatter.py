@@ -400,9 +400,9 @@ def format_query(query: Query, *, _identifier_sources: frozenset[str] = frozense
             "ORDER BY " + ", ".join(f"{term.field} {'DESC' if term.descending else 'ASC'}" for term in query.order_by)
         )
     if query.limit is not None:
-        parts.append(f"LIMIT {query.limit}")
-    if query.offset:
-        parts.append(f"OFFSET {query.offset}")
+        parts.append(f"LIMIT {query.limit_literal or query.limit}")
+    if query.offset or query.offset_literal is not None:
+        parts.append(f"OFFSET {query.offset_literal or query.offset}")
 
     if not parts:
         return "<no projection, source, filtering, ordering, or limit>"

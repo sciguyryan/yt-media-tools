@@ -49,6 +49,12 @@ TARGETS = (
         "Parse a collection-heavy yt-sql query.",
     ),
     BenchmarkTarget(
+        "parser.derived",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_query[derived]",
+        "parser",
+        "Parse a derived-relation yt-sql query.",
+    ),
+    BenchmarkTarget(
         "parser.lark.simple",
         "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[simple]",
         "parser",
@@ -67,6 +73,12 @@ TARGETS = (
         "Parse a collection-heavy query with the experimental Lark parser.",
     ),
     BenchmarkTarget(
+        "parser.lark.derived",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[derived]",
+        "parser",
+        "Parse a derived-relation query with the experimental Lark parser.",
+    ),
+    BenchmarkTarget(
         "parser.tree_sitter.simple",
         "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[simple]",
         "parser",
@@ -83,6 +95,12 @@ TARGETS = (
         "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[collection]",
         "parser",
         "Parse a collection-heavy query with the experimental Tree-sitter parser.",
+    ),
+    BenchmarkTarget(
+        "parser.tree_sitter.derived",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[derived]",
+        "parser",
+        "Parse a derived-relation query with the experimental Tree-sitter parser.",
     ),
     BenchmarkTarget(
         "resolution.simple",

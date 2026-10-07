@@ -483,3 +483,5 @@ class Query:
     joins: tuple[JoinClause, ...] = ()
     left_query: "Query | None" = None
     from_relation: RelationReference | None = None
+    limit_literal: str | None = None
+    offset_literal: str | None = None

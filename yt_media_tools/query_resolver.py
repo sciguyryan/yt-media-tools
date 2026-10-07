@@ -1268,6 +1268,8 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
         (),
         (),
         query.from_facet,
+        limit_literal=query.limit_literal,
+        offset_literal=query.offset_literal,
     )
     if _aggregate_query(resolved):
         for term in resolved.select:
@@ -1436,7 +1438,16 @@ def _resolve_composed_query(
     else:
         # Unparenthesised ORDER BY/LIMIT/OFFSET belong to the complete set result,
         # not the first branch.
-        left_body = replace(query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+        left_body = replace(
+            query,
+            ctes=(),
+            set_operations=(),
+            order_by=(),
+            limit=None,
+            offset=0,
+            limit_literal=None,
+            offset_literal=None,
+        )
         left = resolve_body(left_body)
     common_terms = list(left.select)
     resolved_ops: list[SetOperation] = []
@@ -1451,7 +1462,16 @@ def _resolve_composed_query(
             )
         else:
             branch = resolve_body(
-                replace(operation.query, ctes=(), set_operations=(), order_by=(), limit=None, offset=0)
+                replace(
+                    operation.query,
+                    ctes=(),
+                    set_operations=(),
+                    order_by=(),
+                    limit=None,
+                    offset=0,
+                    limit_literal=None,
+                    offset_literal=None,
+                )
             )
         if len(branch.select) != len(common_terms):
             raise QuerySemanticError(
@@ -1493,6 +1513,8 @@ def _resolve_composed_query(
             order_by=order_by,
             limit=query.limit,
             offset=query.offset,
+            limit_literal=query.limit_literal,
+            offset_literal=query.offset_literal,
             set_operations=tuple(resolved_ops),
         )
     return replace(
@@ -1500,6 +1522,8 @@ def _resolve_composed_query(
         order_by=order_by,
         limit=query.limit,
         offset=query.offset,
+        limit_literal=query.limit_literal,
+        offset_literal=query.offset_literal,
         set_operations=tuple(resolved_ops),
     )
 

@@ -84,12 +84,15 @@ def merge_queries(base: Query, extra: Query) -> Query:
         predicate = extra.predicate if predicate is None else Binary("AND", predicate, extra.predicate)
     order_by = extra.order_by or base.order_by
     limit = extra.limit if extra.limit is not None else base.limit
+    limit_literal = extra.limit_literal if extra.limit is not None else base.limit_literal
     source = base.source or extra.source
     select = extra.select or base.select
     from_source = extra.from_source or base.from_source
     from_facet = extra.from_facet if extra.from_source is not None else base.from_facet
     distinct = extra.distinct or base.distinct
-    offset = extra.offset if extra.offset else base.offset
+    has_extra_offset = extra.offset != 0 or extra.offset_literal is not None
+    offset = extra.offset if has_extra_offset else base.offset
+    offset_literal = extra.offset_literal if has_extra_offset else base.offset_literal
     group_by = extra.group_by or base.group_by
     having = extra.having if extra.having is not None else base.having
     return Query(
@@ -110,6 +113,8 @@ def merge_queries(base: Query, extra: Query) -> Query:
         extra.joins or base.joins,
         extra.left_query or base.left_query,
         extra.from_relation or base.from_relation,
+        limit_literal,
+        offset_literal,
     )
 
 

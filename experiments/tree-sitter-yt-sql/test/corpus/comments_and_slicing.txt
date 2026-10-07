@@ -1,0 +1,169 @@
+==================
+Leading and trailing comments
+==================
+
+# leading comment
+SELECT id FROM @a # trailing comment without newline
+
+---
+
+(source_file
+  (comment)
+  (query
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier)))))
+          (from_clause
+            (from_keyword)
+            (relation_reference
+              (relation_operand
+                (relation_source
+                  (at_identifier)))))))))
+  (comment))
+
+==================
+Comments between derived relation tokens
+==================
+
+SELECT # projection
+  id
+FROM (# derived relation
+  SELECT '# string literal', id
+  FROM @a # nested source
+)
+LIMIT 0xff # hexadecimal limit
+OFFSET 0B10
+
+---
+
+(source_file
+  (query
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (comment)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier)))))
+          (from_clause
+            (from_keyword)
+            (relation_reference
+              (relation_operand
+                (derived_relation
+                  (comment)
+                  (query_expression
+                    (query_primary
+                      (select_query
+                        (select_clause
+                          (select_keyword)
+                          (select_term
+                            (scalar_expression
+                              (scalar_atom
+                                (string))))
+                          (select_term
+                            (scalar_expression
+                              (scalar_atom
+                                (identifier)))))
+                        (from_clause
+                          (from_keyword)
+                          (relation_reference
+                            (relation_operand
+                              (relation_source
+                                (at_identifier))))))))
+                  (comment)))))))
+      (limit_clause
+        (limit_keyword)
+        (positive_integer_literal))
+      (comment)
+      (offset_clause
+        (offset_keyword)
+        (integer_literal)))))
+
+==================
+Octal and binary slicing
+==================
+
+SELECT id FROM @a LIMIT 0o7_55 OFFSET 0b10
+
+---
+
+(source_file
+  (query
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier)))))
+          (from_clause
+            (from_keyword)
+            (relation_reference
+              (relation_operand
+                (relation_source
+                  (at_identifier)))))))
+      (limit_clause
+        (limit_keyword)
+        (positive_integer_literal))
+      (offset_clause
+        (offset_keyword)
+        (integer_literal)))))
+
+==================
+Zero hexadecimal LIMIT
+==================
+
+SELECT id LIMIT 0x0
+
+---
+
+(source_file
+  (query
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier)))))))))
+  (ERROR
+    (limit_keyword)
+    (integer_literal)))
+
+==================
+Malformed binary OFFSET
+==================
+
+SELECT id OFFSET 0b102
+
+---
+
+(source_file
+  (query
+    (query_expression
+      (query_primary
+        (select_query
+          (select_clause
+            (select_keyword)
+            (select_term
+              (scalar_expression
+                (scalar_atom
+                  (identifier)))))))
+      (offset_clause
+        (offset_keyword)
+        (integer_literal))))
+  (ERROR
+    (integer_literal)))

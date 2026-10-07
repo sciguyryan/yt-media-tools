@@ -41,8 +41,8 @@ group_by_clause: "GROUP"i "BY"i scalar_expression ("," scalar_expression)*
 having_clause: "HAVING"i having_expression
 order_by_clause: "ORDER"i "BY"i order_term ("," order_term)*
 order_term: scalar_expression ("ASC"i | "DESC"i)?
-limit_clause: "LIMIT"i DECIMAL_INTEGER
-offset_clause: "OFFSET"i DECIMAL_INTEGER
+limit_clause: "LIMIT"i INTEGER_LITERAL
+offset_clause: "OFFSET"i INTEGER_LITERAL
 
 ?boolean_expression: boolean_and ("OR"i boolean_and)*
 ?boolean_and: boolean_not ("AND"i boolean_not)*
@@ -114,7 +114,7 @@ QUOTED_IDENTIFIER: /`(?:``|[^`])+`/
 IDENTIFIER: /[^\W\d][\w-]*(?:\.[^\W\d][\w-]*)*/u
 UNIT_LITERAL: /\d+(?:\.\d+)?[^\W\d_]+(?:-[^\W\d_]+)*(?:\d+(?:\.\d+)?[^\W\d_]+(?:-[^\W\d_]+)*)*/u
 NUMBER: /(?:0[xX][0-9A-Za-z_]+|0[oO][0-9A-Za-z_]+|0[bB][0-9A-Za-z_]+|\d[\d_]*(?:\.\d[\d_]*)?(?:[kKmMbB])?)/
-DECIMAL_INTEGER: /\d[\d_]*/
+INTEGER_LITERAL: /(?:0[xX][0-9A-Za-z_]*|0[oO][0-9A-Za-z_]*|0[bB][0-9A-Za-z_]*|\d[\d_]*(?:\.\d[\d_]*)?(?:[kKmMbB])?)/
 STRING: /'(?:''|\\.|[^'\\])*'|"(?:""|\\.|[^"\\])*"/
 INFINITY.4: /(?i:-?INFINITY\(\))/
 TEMPORAL.4: /(?i:TODAY|NOW)\(\)(?:\s*[+-]\s*\d+(?:\.\d+)?\s*[^\W\d_]+(?:-[^\W\d_]+)*)?/

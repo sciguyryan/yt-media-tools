@@ -49,8 +49,8 @@ group-by-clause       = "GROUP", "BY", scalar-expression, { ",", scalar-expressi
 having-clause         = "HAVING", having-expression ;
 order-by-clause       = "ORDER", "BY", order-term, { ",", order-term } ;
 order-term            = scalar-expression, [ "ASC" | "DESC" ] ;
-limit-clause          = "LIMIT", positive-decimal-integer ;
-offset-clause         = "OFFSET", non-negative-decimal-integer ;
+limit-clause          = "LIMIT", positive-integer ;
+offset-clause         = "OFFSET", non-negative-integer ;
 
 boolean-expression    = boolean-and, { "OR", boolean-and } ;
 boolean-and           = boolean-not, { "AND", boolean-not } ;
@@ -151,8 +151,10 @@ magnitude-suffix      = "k" | "K" | "m" | "M" | "b" | "B" ;
 hexadecimal-integer   = "0x", base16-digits ;
 octal-integer         = "0o", base8-digits ;
 binary-integer        = "0b", base2-digits ;
-positive-decimal-integer = decimal-digits ;
-non-negative-decimal-integer = decimal-digits ;
+positive-integer      = unsigned-integer ;
+non-negative-integer  = unsigned-integer ;
+unsigned-integer      = decimal-integer | hexadecimal-integer | octal-integer | binary-integer ;
+decimal-integer       = decimal-digits ;
 
 string                = single-quoted-string | double-quoted-string ;
 temporal-token        = today-or-now, [ signed-unit-quantity ] ;

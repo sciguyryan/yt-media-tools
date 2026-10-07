@@ -16,7 +16,7 @@ from lark import Lark, Token, Tree
 from lark.exceptions import LarkError
 from lark.lexer import PatternRE, PatternStr
 
-from .query_formatter import format_scalar_expression
+from .query_formatter import _canonical_numeric_raw, format_scalar_expression
 from .query_model import (
     AggregateFunction,
     Between,
@@ -62,6 +62,26 @@ def _bound_keyword_terminal(terminal) -> None:
     if isinstance(pattern, PatternStr) and "i" in pattern.flags and pattern.value.isalpha():
         terminal.pattern = PatternRE(f"{pattern.to_regexp()}(?![\\w-])")
         terminal.priority = 2
+
+
+def _row_count_literal(token: Token, source: str, clause: str) -> tuple[int, str]:
+    """Parse one independently validated LIMIT or OFFSET integer token."""
+    text = str(token)
+    compact = text.replace("_", "")
+    if re.fullmatch(r"\d+", compact):
+        return int(compact, 10), _canonical_numeric_raw(text)
+
+    match = re.fullmatch(r"(?P<prefix>0[xX]|0[oO]|0[bB])(?P<digits>[0-9A-Za-z]*)", compact)
+    if match is None:
+        requirement = "a positive integer" if clause == "LIMIT" else "a non-negative integer"
+        raise QuerySyntaxError(source, f"{clause} requires {requirement}.", token.start_pos)
+    prefix = match.group("prefix").casefold()
+    base = {"0x": 16, "0o": 8, "0b": 2}[prefix]
+    digits = match.group("digits")
+    valid_digits = {16: r"[0-9a-fA-F]+", 8: r"[0-7]+", 2: r"[01]+"}[base]
+    if not re.fullmatch(valid_digits, digits):
+        raise QueryLexicalError(source, f"Invalid base-{base} integer literal {text!r}.", token.start_pos)
+    return int(digits, base), _canonical_numeric_raw(text)
 
 
 @lru_cache(maxsize=1)
@@ -361,12 +381,23 @@ class _LarkModelBuilder:
         order = self._first(expression, "order_by_clause")
         limit = self._first(expression, "limit_clause")
         offset = self._first(expression, "offset_clause")
+        limit_value = limit_literal = None
+        if limit is not None:
+            limit_value, limit_literal = _row_count_literal(limit.children[0], self.source, "LIMIT")
+            if limit_value <= 0:
+                raise QuerySyntaxError(self.source, "LIMIT must be greater than zero.", limit.children[0].start_pos)
+        offset_value = 0
+        offset_literal = None
+        if offset is not None:
+            offset_value, offset_literal = _row_count_literal(offset.children[0], self.source, "OFFSET")
         return replace(
             query,
             set_operations=tuple(query.set_operations) + tuple(operations),
             order_by=tuple(self.order_term(term) for term in self._trees(order, "order_term")) if order else (),
-            limit=int(str(limit.children[0]).replace("_", "")) if limit else None,
-            offset=int(str(offset.children[0]).replace("_", "")) if offset else 0,
+            limit=limit_value,
+            offset=offset_value,
+            limit_literal=limit_literal,
+            offset_literal=offset_literal,
             source=self.source,
         )
 
