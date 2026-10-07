@@ -10,6 +10,7 @@ from __future__ import annotations
 from functools import lru_cache
 from importlib.util import find_spec
 
+from .experimental_tree_sitter_model_builder import TreeSitterModelBuilder
 from .query_model import QuerySyntaxError
 
 TREE_SITTER_ABI = 15
@@ -69,6 +70,12 @@ def _first_error_node(root):
 
 def recognise_tree_sitter_query(source: str) -> None:
     """Recognise the current experimental grammar and reject recovered trees."""
+    _validated_tree_sitter_tree(source)
+    return None
+
+
+def _validated_tree_sitter_tree(source: str):
+    """Return one recovery-free private concrete syntax tree."""
     source_bytes = source.encode("utf-8")
     tree = _parser().parse(source_bytes)
     root = tree.root_node
@@ -81,4 +88,9 @@ def recognise_tree_sitter_query(source: str) -> None:
             _character_offset(source_bytes, failure_start),
             end_position=_character_offset(source_bytes, failure.end_byte),
         )
-    return None
+    return tree
+
+
+def parse_tree_sitter_query(source: str):
+    """Parse yt-sql into the existing model through the optional Tree-sitter CST."""
+    return TreeSitterModelBuilder(source).build(_validated_tree_sitter_tree(source).root_node)

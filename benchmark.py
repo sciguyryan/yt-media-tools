@@ -103,6 +103,30 @@ TARGETS = (
         "Parse a derived-relation query with the experimental Tree-sitter parser.",
     ),
     BenchmarkTarget(
+        "parser.tree_sitter.model.simple",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[simple]",
+        "parser",
+        "Parse and model a simple query with the experimental Tree-sitter parser.",
+    ),
+    BenchmarkTarget(
+        "parser.tree_sitter.model.complex",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[complex]",
+        "parser",
+        "Parse and model a representative complex query with the experimental Tree-sitter parser.",
+    ),
+    BenchmarkTarget(
+        "parser.tree_sitter.model.collection",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[collection]",
+        "parser",
+        "Parse and model a collection-heavy query with the experimental Tree-sitter parser.",
+    ),
+    BenchmarkTarget(
+        "parser.tree_sitter.model.derived",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[derived]",
+        "parser",
+        "Parse and model a derived-relation query with the experimental Tree-sitter parser.",
+    ),
+    BenchmarkTarget(
         "resolution.simple",
         "benchmarks/test_query_pipeline_benchmarks.py::test_resolve_query[simple]",
         "resolution",

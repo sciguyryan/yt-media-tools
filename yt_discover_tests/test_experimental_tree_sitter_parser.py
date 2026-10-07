@@ -11,10 +11,13 @@ from yt_discover_tests.test_parser_differential_conformance import MAXIMAL_DERIV
 from yt_media_tools.discover_cli import bind_query_parameters
 from yt_media_tools.experimental_tree_sitter_parser import (
     _character_offset,
+    parse_tree_sitter_query,
     recognise_tree_sitter_query,
     tree_sitter_available,
 )
+from yt_media_tools.parser_equivalence import normalised_parser_model, user_origin_positions
 from yt_media_tools.query_model import QuerySyntaxError
+from yt_media_tools.query_parser import parse_query
 
 _REPRESENTATIVE_QUERIES = (
     "SELECT id WHERE view_count >= 1000",
@@ -155,6 +158,9 @@ def test_tree_sitter_complete_grammar_rejects_established_malformed_inventory() 
 def test_tree_sitter_function_syntax_does_not_embed_the_runtime_registry(name: str) -> None:
     recognise_tree_sitter_query(f"SELECT {name}(id)")
 
+    with pytest.raises(QuerySyntaxError):
+        parse_tree_sitter_query(f"SELECT {name}(id)")
+
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
 @pytest.mark.parametrize(
@@ -165,12 +171,45 @@ def test_tree_sitter_function_syntax_does_not_embed_the_runtime_registry(name: s
     ),
 )
 def test_tree_sitter_complete_grammar_accepts_spaced_and_unicode_units(source: str) -> None:
-    recognise_tree_sitter_query(source)
+    reference = parse_query(source)
+    candidate = parse_tree_sitter_query(source)
+
+    assert normalised_parser_model(candidate) == normalised_parser_model(reference)
+    assert user_origin_positions(candidate) == user_origin_positions(reference)
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
 def test_tree_sitter_complete_grammar_accepts_maximal_revision_2_torture_query() -> None:
     recognise_tree_sitter_query(MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_models_and_origins_match_the_complete_accepted_inventory() -> None:
+    for name, source in _complete_accepted_inventory():
+        reference = parse_query(source)
+        candidate = parse_tree_sitter_query(source)
+
+        assert normalised_parser_model(candidate) == normalised_parser_model(reference), name
+        assert user_origin_positions(candidate) == user_origin_positions(reference), name
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_models_and_origins_match_the_maximal_revision_2_query() -> None:
+    reference = parse_query(MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
+    candidate = parse_tree_sitter_query(MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
+
+    assert normalised_parser_model(candidate) == normalised_parser_model(reference)
+    assert user_origin_positions(candidate) == user_origin_positions(reference)
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+@pytest.mark.parametrize("source", _COMMENT_QUERIES)
+def test_tree_sitter_comments_preserve_model_source_origins(source: str) -> None:
+    reference = parse_query(source)
+    candidate = parse_tree_sitter_query(source)
+
+    assert normalised_parser_model(candidate) == normalised_parser_model(reference)
+    assert user_origin_positions(candidate) == user_origin_positions(reference)
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")

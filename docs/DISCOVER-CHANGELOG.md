@@ -4,6 +4,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [experimental] Add independent Tree-sitter CST-to-query-model construction without invoking the hand-written or Lark parsers.
+- [test] Require Tree-sitter normalised models and user-written source origins to match the reference parser across the complete accepted inventory, comments and maximal revision-2 query.
+- [performance] Establish end-to-end Tree-sitter model-construction baselines ranging from parity to approximately 1.6 times the hand-written parser pending the dedicated optimisation phase.
 - [experimental] Complete Tree-sitter recognition of the revision-2 yt-sql grammar across query composition, predicates, scalar and aggregate expressions, collections, temporal forms, grouping and Unicode identifiers.
 - [test] Require Tree-sitter to accept all 220 established migration, conformance and generated grammar cases, reject the deterministic malformed corpus and recognise the maximal revision-2 torture query.
 - [performance] Retain raw Tree-sitter parsing at approximately 12 to 17 percent of the hand-written parser's time after expanding from the feasibility slice to complete grammar recognition.

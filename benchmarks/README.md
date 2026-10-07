@@ -76,17 +76,19 @@ Run both parser implementations with:
 python benchmark.py parser
 ```
 
-The optional Tree-sitter feasibility package adds matching `parser.tree_sitter.*` surfaces, including `parser.tree_sitter.derived` for grammar revision 2. These measure raw parsing, including UTF-8 encoding at the Python boundary, but exclude query-model construction that has not yet been implemented. Build the committed generated source and run the directly comparable targets with:
+The optional Tree-sitter package adds two matched surface families. `parser.tree_sitter.*` measures raw parsing, including UTF-8 encoding at the Python boundary. `parser.tree_sitter.model.*` includes parser-neutral query-model construction and is the end-to-end comparison against the hand-written and Lark parsers. Build the committed generated source and run the directly comparable targets with:
 
 ```bash
 python -m pip install tree-sitter==0.26.0
 python -m pip install --no-deps experiments/tree-sitter-yt-sql
 python benchmark.py parser.simple parser.complex parser.collection parser.derived \
   parser.tree_sitter.simple parser.tree_sitter.complex \
-  parser.tree_sitter.collection parser.tree_sitter.derived
+  parser.tree_sitter.collection parser.tree_sitter.derived \
+  parser.tree_sitter.model.simple parser.tree_sitter.model.complex \
+  parser.tree_sitter.model.collection parser.tree_sitter.model.derived
 ```
 
-An environment without the optional binding skips the Tree-sitter benchmark cases. Raw feasibility timings are evidence about whether continued implementation is worthwhile, not evidence of end-to-end parser parity.
+An environment without the optional binding skips the Tree-sitter benchmark cases. Raw timings isolate grammar-engine cost; model timings determine whether the complete candidate is competitive enough for a later cut-over.
 
 ## Cache-v4 reconciliation
 
