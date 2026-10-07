@@ -14,7 +14,7 @@ FROM (
 ---
 
 (source_file
-  query
+  (query
     (query_expression
       (query_primary
         (select_query
