@@ -4,6 +4,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [experimental] Translate Tree-sitter recovery and missing nodes into parser-independent yt-sql lexical and syntax diagnostics without exposing generated rule names or recovery artefacts.
+- [fix] Reject malformed non-decimal literals that Tree-sitter could otherwise reinterpret as unit-shaped syntax, while retaining identifier-spelled function calls for model-layer registry validation.
+- [test] Require exact structured diagnostic parity across the curated malformed corpus, all 39 controlled malformed neighbours and focused lexical, delimiter, slicing and Unicode failures.
 - [experimental] Add independent Tree-sitter CST-to-query-model construction without invoking the hand-written or Lark parsers.
 - [test] Require Tree-sitter normalised models and user-written source origins to match the reference parser across the complete accepted inventory, comments and maximal revision-2 query.
 - [performance] Establish end-to-end Tree-sitter model-construction baselines ranging from parity to approximately 1.6 times the hand-written parser pending the dedicated optimisation phase.

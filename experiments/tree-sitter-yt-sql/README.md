@@ -2,7 +2,7 @@
 
 This directory is an isolated feasibility package for the Tree-sitter parser experiment. It is not part of the production parser path and installing `yt-media-tools` does not install or import it.
 
-`grammar.js` is an implementation artefact. The formal grammar in `docs/YT-SQL-GRAMMAR.ebnf` and the hand-written parser remain the behavioural references during the experiment. Part 1 proved generation, native compilation, strict error detection and Python loading. Part 2 added the syntax families needed by the established parser benchmarks and the subsequent grammar-revision-2 relation changes. Part 3 extended that slice to complete revision-2 grammar recognition. Part 4 adds independent parser-neutral query-model construction and source-origin preservation. Diagnostics and full differential conformance remain later gates, so this is not yet the production parser.
+`grammar.js` is an implementation artefact. The formal grammar in `docs/YT-SQL-GRAMMAR.ebnf` and the hand-written parser remain the behavioural references during the experiment. Part 1 proved generation, native compilation, strict error detection and Python loading. Part 2 added the syntax families needed by the established parser benchmarks and the subsequent grammar-revision-2 relation changes. Part 3 extended that slice to complete revision-2 grammar recognition. Part 4 added independent parser-neutral query-model construction and source-origin preservation. Part 5 translates recovery into yt-sql diagnostics and closes the deterministic malformed-input gate. Seeded fuzzing, the final differential gate and optimisation remain later work, so this is not yet the production parser.
 
 The generated `src/parser.c`, `src/grammar.json` and `src/node-types.json` files are committed so ordinary source installations do not require Node.js or the Tree-sitter CLI. Regeneration requires the exactly pinned root development dependency:
 
@@ -47,7 +47,7 @@ python -m pip install tree-sitter==0.26.0
 python -m pip install --no-deps --editable experiments/tree-sitter-yt-sql
 ```
 
-Tree-sitter reports UTF-8 byte offsets. The yt-sql adapter converts them to Python character offsets before constructing query-model source origins. Recovery nodes continue to be treated as syntax failures rather than accepted queries.
+Tree-sitter reports UTF-8 byte offsets. The yt-sql adapter converts them to Python character offsets before constructing query-model source origins or diagnostics. Recovery and missing nodes are translated into yt-sql-owned diagnostic categories, reasons, spans and curated expected tokens rather than exposing Tree-sitter internals. Lexical checks at this boundary also prevent malformed base-prefixed integers from being reinterpreted as otherwise valid grammar tokens.
 
 The parser benchmark surfaces are documented in `benchmarks/README.md`. Raw grammar-engine and complete model-construction costs remain separate. Raw Tree-sitter parsing takes approximately 12 to 17 percent of the hand-written parser's time, while the initial complete model path ranges from parity to approximately 1.6 times the reference cost. The slower workloads remain explicit targets for the later optimisation phase.
 

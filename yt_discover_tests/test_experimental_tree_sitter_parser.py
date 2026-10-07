@@ -1,4 +1,4 @@
-"""Part 1 boundary checks for the optional Tree-sitter experiment."""
+"""Boundary and conformance checks for the optional Tree-sitter experiment."""
 
 from __future__ import annotations
 
@@ -7,6 +7,8 @@ import pytest
 from yt_discover_tests.conformance.cases import CASES
 from yt_discover_tests.parser_grammar_generation import generated_valid_queries
 from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
+from yt_discover_tests.parser_migration_harness import compare_parsers
+from yt_discover_tests.parser_mutation import malformed_neighbours
 from yt_discover_tests.test_parser_differential_conformance import MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
 from yt_media_tools.discover_cli import bind_query_parameters
 from yt_media_tools.experimental_tree_sitter_parser import (
@@ -70,6 +72,15 @@ def _complete_accepted_inventory() -> tuple[tuple[str, str], ...]:
         for index, case in enumerate(generated_valid_queries(rounds=3))
     )
     return tuple(cases)
+
+
+def _malformed_mutation_inventory() -> tuple[tuple[str, str], ...]:
+    cases = {
+        mutation.source: mutation.name
+        for generated in generated_valid_queries(rounds=3)
+        for mutation in malformed_neighbours(generated.query)
+    }
+    return tuple((name, source) for source, name in cases.items())
 
 
 def test_tree_sitter_byte_offsets_convert_to_python_character_offsets() -> None:
@@ -151,6 +162,54 @@ def test_tree_sitter_complete_grammar_rejects_established_malformed_inventory() 
     for case in REJECTED_PARSER_CASES:
         with pytest.raises(QuerySyntaxError):
             recognise_tree_sitter_query(case.query)
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_malformed_inventory_has_equivalent_diagnostics() -> None:
+    for case in REJECTED_PARSER_CASES:
+        comparison = compare_parsers(parse_query, parse_tree_sitter_query, case.query)
+
+        assert comparison.reference.kind == "rejected", case.name
+        assert comparison.candidate.kind == "rejected", case.name
+        assert comparison.equivalent, f"{case.name}: {comparison.describe()}"
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_tree_sitter_controlled_malformed_neighbours_have_equivalent_diagnostics() -> None:
+    cases = _malformed_mutation_inventory()
+    assert len(cases) >= 39
+
+    for name, source in cases:
+        comparison = compare_parsers(parse_query, parse_tree_sitter_query, source)
+
+        assert comparison.reference.kind == "rejected", name
+        assert comparison.candidate.kind == "rejected", name
+        assert comparison.equivalent, f"{name}: {comparison.describe()} for {source!r}"
+
+
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+@pytest.mark.parametrize(
+    "source",
+    (
+        "SELECT 'unterminated",
+        "SELECT 'incomplete\\",
+        "SELECT `unterminated",
+        "SELECT ``",
+        "SELECT 0xGG",
+        "SELECT 0o9",
+        "SELECT 0b102",
+        "SELECT 💩",
+        "SELECT Δelta\nWHERE 💩",
+        "SELECT id LIMIT 0x0",
+        "SELECT id LIMIT 1.5",
+    ),
+)
+def test_tree_sitter_lexical_and_slicing_failures_have_equivalent_diagnostics(source: str) -> None:
+    comparison = compare_parsers(parse_query, parse_tree_sitter_query, source)
+
+    assert comparison.reference.kind == "rejected"
+    assert comparison.candidate.kind == "rejected"
+    assert comparison.equivalent, comparison.describe()
 
 
 @pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
