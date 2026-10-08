@@ -77,3 +77,54 @@ def test_position_alias_cannot_order_the_result():
     query = parse_query("SELECT POSITION() AS position, id FROM @fixture ORDER BY position")
     with pytest.raises(QuerySemanticError, match="ORDER BY cannot depend"):
         resolve_query(query, QuerySchema([{"id": "a"}]))
+
+
+def test_position_properties_are_final_stage_without_metadata_requirements():
+    from yt_media_tools.query_properties import (
+        METADATA_NONE,
+        STAGE_FINAL_RESULT,
+        analyse_expression,
+        required_query_fields,
+    )
+
+    query = resolve_query(
+        parse_query("SELECT POSITION() AS position FROM @fixture ORDER BY id LIMIT 2 OFFSET 1"),
+        QuerySchema([{"id": "a"}]),
+    )
+    properties = analyse_expression(query.select[0].expression)
+    assert properties.earliest_stage == STAGE_FINAL_RESULT
+    assert properties.metadata_depth == METADATA_NONE
+    assert properties.required_fields == frozenset()
+    assert not properties.constant
+    assert not properties.decidable_from_enumeration
+    assert required_query_fields(query) == {"id"}
+
+
+def test_position_disables_unproven_source_prefix_termination():
+    from yt_media_tools.planner import plan_limit_termination
+
+    query = resolve_query(
+        parse_query("SELECT POSITION() AS position, id FROM @fixture LIMIT 2 OFFSET 3"),
+        QuerySchema([{"id": "a"}]),
+    )
+    plan = plan_limit_termination(query)
+    assert not plan.eligible
+    assert plan.required_matches == 5
+    assert "POSITION()" in plan.reason
+
+
+def test_position_optimiser_preserves_final_sequence():
+    from yt_media_tools.optimizer import optimise_query
+    from yt_media_tools.query_evaluator import apply_query
+
+    records = [{"id": "c"}, {"id": "a"}, {"id": "d"}, {"id": "b"}]
+    query = resolve_query(
+        parse_query("SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1"),
+        QuerySchema(records),
+    )
+    optimised = optimise_query(query).query
+    expected = [(2, "b"), (3, "c")]
+    for candidate in (query, optimised):
+        for relational_optimisation in (False, True):
+            rows = apply_query(records, candidate, relational_optimisation=relational_optimisation)
+            assert [(row["position"], row["id"]) for row in rows] == expected

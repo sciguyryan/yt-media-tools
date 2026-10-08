@@ -58,6 +58,7 @@ STAGE_ENUMERATION = "enumeration"
 STAGE_DETAILED = "detailed"
 STAGE_GROUP = "group"
 STAGE_RELATION = "relation"
+STAGE_FINAL_RESULT = "final-result"
 
 METADATA_NONE = "none"
 METADATA_ENUMERATION = "enumeration"
@@ -74,6 +75,7 @@ _STAGE_RANK = {
     STAGE_DETAILED: 2,
     STAGE_GROUP: 3,
     STAGE_RELATION: 4,
+    STAGE_FINAL_RESULT: 5,
 }
 _METADATA_RANK = {
     METADATA_NONE: 0,
@@ -640,6 +642,19 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
         return combined
     if isinstance(expression, ScalarFunction):
         children = tuple(analyse_expression(arg, source=source) for arg in expression.args)
+        if expression.name == "POSITION":
+            # A final-sequence value is neither a constant nor a source field.
+            # Its stage is distinct from future partitioned window evaluation.
+            return _combine(
+                children,
+                resolved_type=expression.kind or "integer",
+                constant=False,
+                deterministic=False,
+                null_sensitive=False,
+                may_return_null=False,
+                earliest_stage=STAGE_FINAL_RESULT,
+                metadata_depth=METADATA_NONE,
+            )
         if expression.name == "CARDINALITY" and expression.args:
             combined = _combine(children, resolved_type=expression.kind, null_sensitive=True)
             requirement = _collection_query_requirement(expression.args[0], "cardinality")
