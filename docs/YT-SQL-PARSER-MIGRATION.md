@@ -1,115 +1,36 @@
-# yt-sql parser migration gate
+# yt-sql parser migration conclusion
 
-A replacement parser is eligible for cut-over only after it is plugged into the differential harness defined by `YT-SQL-PARSER-EQUIVALENCE.md`. No candidate parser is introduced by this contract.
+The hand-written parser remains the production yt-sql implementation and behavioural reference. The Lark and Tree-sitter replacement experiments are concluded, neither candidate will proceed to production integration, and their implementation-specific code and tooling have been removed.
 
-The deterministic accepted and malformed corpora are the primary gate. They are supplemented by grammar-anchored valid generation, controlled malformed mutation, property-style invariants, seeded bounded fuzzing, canonical formatting convergence and representative performance measurements. A fuzz failure becomes a deterministic regression case before closure.
+This decision is based on the complete evaluation surface rather than parser throughput alone. A replacement must preserve accepted and malformed syntax, normalised query models, user-written source origins, parser-independent diagnostics and canonical formatting. It must also justify its operational and maintenance costs across ordinary, malformed and bounded pathological inputs. The reusable contract is defined in `YT-SQL-PARSER-EQUIVALENCE.md`.
 
-For valid queries, the reference and candidate parsers must produce equivalent normalised yt-sql models. Meaning-bearing structure must agree, and available user-written source origins must identify equivalent constructs. Both parsers must converge through canonical formatting.
+## Evaluation evidence
 
-For invalid queries, both parsers must reject with the same diagnostic category, an equivalent meaningful source region and an equivalent reason for rejection. Exact human-readable wording may differ. Where wording differs, the differential case must state the stable rejection reason being compared rather than deriving language semantics from exception prose.
+Both candidates were exercised against the established migration and conformance corpora, grammar-anchored generation, controlled malformed neighbours, fixed seeded fuzz inputs and canonical parse-format-parse checks. The final bounded inventories covered more than 200 accepted queries, the curated malformed corpus, 39 generated malformed neighbours and more than 800 deterministic fuzz executions. Material differences were investigated rather than hidden through compatibility normalisation.
 
-Syntax that is intentionally parsed but rejected semantically is compared at the syntactic-model boundary first. The same semantic validation layer then remains responsible for rejecting unsupported execution. Candidate parsers must not absorb semantic policy merely to make a differential test pass.
+Lark reached bounded behavioural conformance after moving from Earley parsing to a conflict-free LALR grammar with contextual lexing. Complete model construction nevertheless remained approximately 3.5 to 5.4 times slower than the hand-written parser on representative queries. Raw Lark tree construction alone exceeded the complete reference-parser cost, leaving no credible optimisation route that also preserved exact source origins.
 
-Performance comparison uses recorded reference workloads covering ordinary, complex, malformed and deeply nested bounded inputs. Sustained regressions, scaling, memory where measurable and pathological behaviour are reviewed before cut-over. A repeatable slowdown around twofold is an investigation trigger rather than a hard-coded pass/fail rule.
+Tree-sitter also reached bounded conformance and its raw parser was substantially faster than the reference implementation. After model-builder optimisation, its complete path was approximately 4 to 24 percent faster across the simple, complex, collection and derived representative workloads. That advantage did not remain consistent across the wider decision surface:
 
-## Experimental Lark optimisation review
+- accepted expressions at bounded parenthesis depths were approximately 14 to 21 percent slower;
+- malformed nested inputs were approximately 30 to 68 percent slower;
+- traced Python allocation growth was materially higher with nesting;
+- a missing parenthesis before `FROM` retained a diagnostic-span compatibility difference outside the bounded differential inventory; and
+- maintained source was reduced by only approximately 3 to 5 percent once the adapter, model builder and declarative grammar were counted and generated C was excluded.
 
-The issue #144 candidate review replaces Earley parsing with LALR and Lark's contextual lexer. The initial revision-1 transcription could not construct an LALR parser because separate scalar, temporal and literal-sequence alternatives described the same token reductions. Comparison values now use one shared syntactic path: field comparisons retain the established literal model, while scalar comparisons retain scalar-expression construction. This removes the parser conflict rather than silencing it with rule priorities or compatibility normalisation.
+Tree-sitter therefore met the representative throughput target but did not provide the same consistency as the hand-written parser across performance, allocation, diagnostics and maintenance.
 
-Earley with the basic lexer cannot preserve contextual keywords and overlapping numeric tokens without duplicating parsing policy outside the grammar. Earley's dynamic-complete lexer and the optional third-party regular-expression engine were also measured and were slower than the original dynamic configuration on the deterministic generated inventory. These alternatives are rejected implementation experiments, not language limitations.
+## Durable outcomes
 
-Repeated `SELECT` and `FROM` alternatives are factored through a shared query-head production. Case-insensitive grammar words remain ordinary readable literals in the Lark source; parser construction adds their identifier-continuation boundary and structural priority centrally. This replaces a large duplicated terminal block while allowing the contextual lexer to retain the same words as identifiers in unambiguous positions.
+The experiments materially strengthened yt-sql even though neither candidate was selected. The project retains:
 
-Local repeated measurements over the three-round generated inventory improved median grammar-recognition throughput from approximately 127 to 9,800 parses per second, roughly a 75-fold improvement. LALR grammar construction took about three times as long, but construction remains cached once per process. Adapter profiling also removed repeated hot-path imports, avoids a whole-tree validation walk when model construction already visits the relevant comparison, and bypasses validation walks when the source cannot contain the compatibility boundary being checked.
+- the authoritative parser-neutral EBNF and grammar-revision contract;
+- parser-independent model, source-origin and diagnostic normalisation;
+- the reusable differential harness and explicit difference classification;
+- accepted and malformed migration corpora;
+- grammar-derived generation, controlled mutation and deterministic fuzz inputs;
+- canonical round-trip and idempotence checks;
+- regression coverage for comments, mixed-base row slicing, derived relations and the maximal revision-2 composition query; and
+- production-parser benchmarks for representative, malformed, nested and traced-allocation workloads.
 
-The remaining performance gap is inside the retained Lark machinery rather than hidden in model conversion. On one local CPython run, the hand-written parser completed the simple, complex and collection workloads in approximately 23, 139 and 85 microseconds. Raw Lark tree construction alone took approximately 78, 363 and 240 microseconds; complete Lark model construction took approximately 122, 489 and 321 microseconds. The candidate is therefore about 3.5 to 5.4 times slower end to end, while its raw tree-construction lower bound is already about 2.6 to 3.4 times slower than the complete hand-written parse.
-
-Disabling propagated tree positions reduced raw Lark time, but was rejected because Lark omits grammar literals from ordinary child lists. Exact origins for constructs including `UNION`, `JOIN`, aggregate stars and postfix members could not then be recovered from tokens alone. An integrated model transformer could reduce allocation and adapter traversal, but cannot overcome the measured raw parser lower bound while the exact-origin contract is retained. Parser replacement therefore does not currently meet the performance objective, despite the substantial improvement over Earley. These figures are review evidence rather than a portable performance promise. Stable `parser.lark.*` benchmark targets preserve simple, complex and collection-heavy candidate workloads for later comparison with the hand-written `parser.*` surfaces.
-
-Accepting arbitrary function names in the grammar and rejecting unknown calls later was deliberately excluded. That proposal changes the syntax-versus-semantic rejection boundary and requires a separate language-design decision rather than being introduced as parser optimisation.
-
-## Lark differential conclusion
-
-The bounded issue #144 gate now compares the complete migration and established conformance corpora, three rounds of grammar-anchored generation, controlled malformed neighbours and a slew of fuzz seeds. The permanent suite exercises more than 200 accepted inventory entries, the established malformed corpus, 39 generated malformed neighbours and more than 800 seeded fuzz executions. Every accepted fuzz result also passes same-parser canonical round trips and cross-parser canonical convergence. The seed and failing source are reported with deterministic token-deletion candidates when a property fails.
-
-The fuzz phase achieved its goals and exposed three material implementation defects rather than normalising them away: negation detection assumed an ASCII space after `NOT`; an `IS [NOT] DISTINCT FROM` right operand could be reduced directly to a token instead of a wrapper tree; and a missing separator after the required `FROM` keyword had a different diagnostic span and expected-token set. Each defect is corrected and represented by a deterministic corpus or model-construction regression.
-
-No behavioural differences remain within the bounded gate across acceptance, normalised models, user-written source origins, canonical formatting or normalised diagnostics.
-
-The remaining concern is compatibility at the operational boundary: complete Lark parsing is still approximately 3.5 to 5.4 times slower on the representative workloads, and raw Lark tree construction alone exceeds the complete hand-written parser. The Lark candidate is therefore behaviourally conformant within the issue #144 gate but is not recommended for production cut-over. Investigation of another declarative engine is separate work and does not alter this conclusion.
-
-## Experimental Tree-sitter boundary
-
-The Tree-sitter investigation starts as a separate optional grammar package under `experiments/tree-sitter-yt-sql`. It does not change the production parser or ordinary Python dependencies. The formal EBNF and hand-written parser remain the de facto references, and the Lark candidate remains available as supporting evidence until a later cut-over decision. This work looks to be large enough to justify being split into parts.
-
-Part 1 pins Tree-sitter CLI at 0.26.13, Python runtime 0.26.0 and language ABI 15. The grammar source and generated C are committed together. Node.js and the CLI are required to regenerate the parser, but not to build the committed source. npm's install-script approval is limited to the exact CLI version rather than allowing dependency scripts generally.
-
-The Python language binding is its own experimental package. The adapter imports it only when the Tree-sitter path is called, keeps concrete syntax trees private and rejects recovered or missing syntax instead of treating Tree-sitter's error recovery as acceptance. Tree-sitter's UTF-8 byte offsets are converted to the existing Python character-offset model at the adapter boundary.
-
-The smoke grammar proves generation, native compilation, case-insensitive keyword recognition, Python loading and strict recovery rejection. It recognises only a deliberately tiny projection shape for the moment. This is primarily because this is to be used as a performance feasibility, representative grammar coverage and the first meaningful benchmark gate belong to part 2.
-
-The early performance gate remains deliberately uncomfortable: raw Tree-sitter parsing should take no more than approximately 60 to 70 percent of the hand-written parser's time. Final cut-over would additionally require end-to-end model construction to meet or beat the reference parser, behavioural and diagnostic parity, supported packaging, and a real reduction in hand-maintained parser complexity. Generated C is reported separately rather than counted as a maintenance saving.
-
-## Tree-sitter performance feasibility
-
-Part 2 extends the experimental grammar only far enough to recognise the established simple, complex and collection-heavy parser workloads. This slice covers projections, aliases, known scalar functions, nested collection transforms, collection predicates, Boolean precedence, comparisons, text matching, NULL tests, representative literals, ordering and slicing. It does not imply complete grammar acceptance, and arbitrary function names remain outside the experiment's syntax.
-
-Grammar revision 2 extends that bounded slice with physical and derived relation operands, nested query expressions, `UNION` and `UNION ALL`, predicate-only derived queries, optional aliases and derived JOIN operands. The bounded grammar also follows the current lexical contract for `#` line comments and decimal, hexadecimal, octal and binary `LIMIT` and `OFFSET` integers. This covers the new relation and slicing boundaries without claiming that the remainder of revision 2 is already implemented. Stable `parser.tree_sitter.*` benchmark targets measure raw Tree-sitter parsing through the optional Python binding, including UTF-8 encoding but excluding query-model construction.
-
-On one local CPython run after the revision-2 update, the hand-written parser completed the simple, complex, collection and base-sliced derived-relation workloads in approximately 23.7, 142.1, 85.9 and 87.8 microseconds. Raw Tree-sitter parsing completed them in approximately 2.8, 11.8, 8.5 and 8.0 microseconds, or roughly 8 to 12 percent of the reference time. The corpus and adapter tests accept nested, UNION, predicate-only and JOIN-derived relations, line comments and base-aware row slicing while rejecting empty, unclosed, illegal `OF` and malformed slicing forms through the strict recovery boundary.
-
-Tree-sitter therefore passes the early 60 to 70 percent raw-parser gate by a wide margin and is worth taking into complete grammar recognition. The result is not a cut-over recommendation. A fuller grammar may add parser cost, and model construction, exact source origins, diagnostics, packaging and complete differential conformance remain unmeasured or incomplete.
-
-## Tree-sitter complete grammar recognition
-
-Part 3 expands the feasibility slice to the complete revision-2 syntactic surface. The grammar now recognises CTEs; implicit and predicate-only query bodies; complete predicate, truth-test and natural-comparison forms; grouping and HAVING; scalar, aggregate and collection expressions; `CASE`; postfix indexing and members; temporal forms; quoted and Unicode identifiers; comments; and all relation-composition forms. Recovery and missing nodes remain rejected at the adapter boundary.
-
-The permanent recognition gate exercises all 220 accepted migration, conformance and three-round generated grammar cases, the deterministic malformed corpus and the maximal revision-2 torture query. Generic identifier-spelled function calls are represented without embedding the runtime function registry in `grammar.js`. Part 4 model construction must apply the existing registry and reject unsupported calls, so recognition alone does not broaden the executable language.
-
-On one local CPython run with the complete grammar, the hand-written parser completed the simple, complex, collection and base-sliced derived-relation workloads in approximately 24.0, 142.3, 86.4 and 87.8 microseconds. Raw Tree-sitter parsing completed them in approximately 4.0, 18.2, 12.8 and 10.5 microseconds, or roughly 12 to 17 percent of the reference time. The larger grammar therefore remains comfortably inside the early performance gate.
-
-The accepted hand-written parser and current formal grammar remain the behavioural references during migration. Issue #148 deliberately advances the production language from grammar revision 1 to revision 2 with derived relations. The experimental Lark parser implements revision 2 across its complete parity boundary, while the Part 3 Tree-sitter boundary implements complete grammar recognition without query-model construction. Differential evaluation must compare like-for-like grammar revisions, and any discrepancy is classified before a parser reference is changed.
-
-## Tree-sitter query-model construction
-
-Part 4 lowers the private Tree-sitter CST into the existing parser-neutral `Query` model without invoking either established parser. The builder covers complete query composition, relations, scalar and Boolean expressions, aggregates, collection bindings, temporal and numeric literals, comments and Unicode source locations. Tree-sitter byte offsets are converted to Python character offsets at the adapter boundary. Identifier-spelled function syntax remains grammar-level extensibility, while the builder enforces the current runtime registry by rejecting unsupported names.
-
-The permanent model gate compares normalised models and user-written source origins across all 220 accepted migration, conformance and generated cases, every dedicated comment placement and the maximal revision-2 torture query. The current builder also produces exact dataclass equality with the reference parser over that inventory, including incidental source and literal spelling, although the migration contract continues to assess semantic models and origins independently.
-
-On one local CPython run, complete Tree-sitter parsing and model construction took approximately 38.9, 140.4, 92.3 and 118.8 microseconds for the simple, complex, collection and derived workloads. The hand-written parser took approximately 24.0, 141.1, 85.9 and 87.7 microseconds. Tree-sitter is therefore effectively level on the complex workload but approximately 1.1 to 1.6 times slower on the other three. This is an explicit optimisation target rather than a cut-over result; diagnostics, full malformed differential conformance and the later optimisation phase remain outstanding.
-
-## Tree-sitter diagnostic translation
-
-Part 5 translates Tree-sitter recovery and missing nodes into the parser-independent yt-sql diagnostic model. Translation retains lexical-versus-syntax classification, stable rejection reasons, half-open character spans, line and column locations and the small curated expected-token sets already exposed by the reference parser. Generated rule names, recovery nodes and byte offsets remain private implementation details.
-
-The deterministic gate now matches the reference diagnostic exactly for all 12 curated malformed cases and all 39 unique controlled malformed neighbours. Focused cases cover unterminated and incomplete strings, quoted identifiers, unexpected Unicode characters, malformed base-prefixed integers, missing delimiters and invalid `LIMIT` or `OFFSET` values. This work exposed one acceptance defect: a malformed literal such as `0xGG` could be reduced as unit-shaped syntax. A narrow lexical guard now rejects that spelling before model construction. It only performs quote-aware rescanning when raw text contains a potentially malformed base-prefixed token, keeping the ordinary accepted-query path out of the diagnostic machinery.
-
-The representative complete-parser timings remain in the Part 4 range after diagnostic translation. Seeded fuzz and property inputs may expose further diagnostic shapes; those belong to the next differential phase rather than being claimed as settled here.
-
-## Tree-sitter bounded differential conclusion
-
-Part 6 plugs the complete Tree-sitter model path into the established parser-equivalence and canonical-formatting oracles. The gate covers the full accepted inventory, the deterministic malformed corpus, controlled malformed neighbours, comments, the maximal revision-2 query and eight fixed grammar-aware fuzz seeds. Each accepted fuzz result must preserve its normalised model through a same-parser canonical round trip, produce the same canonical text as the reference parser and remain equivalent when that canonical text is parsed by both implementations.
-
-The eight seeds currently produce 893 bounded fuzz executions. No acceptance, model, source-origin, diagnostic or canonical-formatting differences remain in that inventory, and the shrink candidates recorded by the existing fuzz harness remain attached to any future failure. No compatibility normalisation was added during this phase because the existing Part 4 model builder and Part 5 diagnostic translation already satisfied the gate.
-
-This establishes behavioural equivalence within the bounded evidence we have. It does not settle production packaging, pathological scaling or the performance requirement. Those remain separate gates, with the small-query adapter overhead still the clearest measured weakness.
-
-## Tree-sitter optimisation and cut-over review
-
-Part 7 removes repeated CST child scans, redundant query dataclass replacement, duplicate UTF-8 encoding and recursive traversal through wrapper-only scalar nodes. Numeric compatibility validation now leaves ordinary sources on a short path and performs quote-aware rescanning only when a base-prefixed token may actually be malformed. These changes alter neither the grammar nor the parser-neutral model boundary.
-
-On repeated local CPython measurements after optimisation, the hand-written parser completed the simple, complex, collection and derived workloads in approximately 23.8, 141.3, 86.2 and 87.8 microseconds. Complete Tree-sitter parsing and model construction took approximately 21.7, 107.6, 69.8 and 84.3 microseconds. The candidate is therefore approximately 4 to 24 percent faster across all four representative paths. This meets the representative throughput objective that the initial Part 4 model path missed.
-
-However, the favourable result does not extend uniformly to bounded pathological inputs. At scalar-parenthesis depths 1, 32 and 128, accepted reference parses took approximately 15.1, 65.6 and 236.6 microseconds, while Tree-sitter model construction took approximately 16.4, 79.7 and 270.3 microseconds. Rejection of the corresponding unmatched-parenthesis inputs took approximately 12.2, 61.4 and 230.9 microseconds in the reference parser and 20.5, 89.0 and 299.5 microseconds through Tree-sitter. Diagnostic translation accounts for the bulk of the malformed-path gap. Peak Python allocations traced at accepted depths 1 and 32 were approximately 4,080 and 11,568 bytes for the reference path, compared with 7,782 and 39,588 bytes for Tree-sitter. `tracemalloc` is unable to measure every native allocation, so these figures are comparative Python-boundary evidence rather than a whole-process memory total.
-
-The new malformed scaling case also identifies a diagnostic compatibility difference outside the completed Part 6 inventory. When a scalar closing parenthesis is missing immediately before `FROM`, both parsers reject for the same grammatical reason, but the reference span identifies the unexpected `FROM` token while the Tree-sitter translator currently reports end-of-input. This is a compatibility concern, not an acceptance or query-model correctness difference, and it must be resolved or deliberately accepted before an unqualified diagnostic-parity claim can extend beyond the bounded gate.
-
-Generated C remains excluded from maintainability accounting. At the conclusion of the experiment, the hand-written parser contains 1,669 physical lines, 1,517 non-comment lines, 958 Python statements and 346 branch-shaped AST nodes. The Tree-sitter adapter, model builder and grammar together contain 1,590 physical lines and 1,466 non-comment lines; the two Python modules contain 800 statements and 296 branch-shaped nodes. The declarative grammar and lower Python control-flow count are improvements, but the approximately 3 to 5 percent maintained-line reduction is modest rather than the decisive reduction initially sought.
-
-The optional binding can be built from the committed generated source without Node.js and its ABI/runtime pins are tested, but production dependency and wheel integration have deliberately not been introduced. The Tree-sitter candidate exceeds the representative performance target and retains bounded behavioural equivalence, but it is not selected for cut-over. Its nested allocation growth, malformed-path cost, diagnostic-span difference and modest maintainability reduction make it less consistent than the hand-written parser across the complete decision surface.
-
-## Parser migration conclusion
-
-The hand-written parser remains the production yt-sql parser and the behavioural reference. Neither the Lark nor Tree-sitter candidate will proceed to production integration. Lark reaches bounded behavioural conformance but carries a substantial representative performance penalty. Tree-sitter is faster on the four representative queries but does not provide the same consistency across malformed input, bounded pathological nesting, allocation growth and diagnostics, while reducing maintained source by less than originally expected.
-
-This concludes the replacement experiment rather than deferring the decision. The result does not invalidate the candidate work: it exposed ambiguities and defects, strengthened grammar revision 2, expanded accepted and malformed corpora, exercised source origins and normalised models independently, and established deterministic generation, mutation, fuzzing, canonical round-trip and scaling evidence. Those parser-neutral specification and conformance improvements remain part of the project. The experimental implementations and their implementation-specific tooling can now be removed because their complete history and measured conclusions remain available in version control.
+These assets remain available for language hardening and for any future parser proposal. A later proposal would start from this evidence and must demonstrate a material overall advantage rather than reopening either concluded implementation by default.

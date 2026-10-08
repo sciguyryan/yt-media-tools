@@ -4,27 +4,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
-- [performance] Optimise Tree-sitter query-model construction to beat the hand-written parser across the simple, complex, collection and derived representative workloads on repeated local measurements.
-- [benchmark] Add matched accepted and malformed parser-scaling targets at bounded nesting depths together with separately instrumented traced-allocation comparisons.
-- [docs] Record the favourable representative Tree-sitter throughput alongside slower malformed recovery, higher nested allocations, a newly classified missing-delimiter diagnostic-span difference and only modest maintained-line reduction.
-- [docs] Conclude the parser-replacement experiment with the hand-written parser retained for its more consistent performance, allocation and diagnostic behaviour; neither Lark nor Tree-sitter will proceed to production integration.
-- [test] Complete the bounded Tree-sitter differential gate across the accepted inventory, controlled mutations, eight seeded fuzz streams, canonical round trips and cross-parser formatting convergence.
-- [docs] Record that no behavioural differences remain within the bounded Tree-sitter conformance gate while retaining performance, packaging and cut-over as separate decisions.
-- [experimental] Translate Tree-sitter recovery and missing nodes into parser-independent yt-sql lexical and syntax diagnostics without exposing generated rule names or recovery artefacts.
-- [fix] Reject malformed non-decimal literals that Tree-sitter could otherwise reinterpret as unit-shaped syntax, while retaining identifier-spelled function calls for model-layer registry validation.
-- [test] Require exact structured diagnostic parity across the curated malformed corpus, all 39 controlled malformed neighbours and focused lexical, delimiter, slicing and Unicode failures.
-- [experimental] Add independent Tree-sitter CST-to-query-model construction without invoking the hand-written or Lark parsers.
-- [test] Require Tree-sitter normalised models and user-written source origins to match the reference parser across the complete accepted inventory, comments and maximal revision-2 query.
-- [performance] Establish end-to-end Tree-sitter model-construction baselines ranging from parity to approximately 1.6 times the hand-written parser pending the dedicated optimisation phase.
-- [experimental] Complete Tree-sitter recognition of the revision-2 yt-sql grammar across query composition, predicates, scalar and aggregate expressions, collections, temporal forms, grouping and Unicode identifiers.
-- [test] Require Tree-sitter to accept all 220 established migration, conformance and generated grammar cases, reject the deterministic malformed corpus and recognise the maximal revision-2 torture query.
-- [performance] Retain raw Tree-sitter parsing at approximately 12 to 17 percent of the hand-written parser's time after expanding from the feasibility slice to complete grammar recognition.
-- [docs] Keep function-call syntax independent of the runtime function registry while deferring unsupported-function rejection to Tree-sitter model construction.
-- [maintenance] Add a focused npm workflow for regenerating reviewed Tree-sitter corpus snapshots without hand-maintaining accepted concrete syntax trees.
-- [feature] Add `#` line comments as non-semantic yt-sql lexical trivia with hand-written, Lark and bounded Tree-sitter recognition parity.
+- [maintenance] Remove the concluded Lark and Tree-sitter parser experiments, their dependencies and implementation-specific tooling after retaining the durable conformance results.
+- [docs] Retain the hand-written parser as the production yt-sql implementation because it provides the most consistent overall performance, allocation, diagnostic and maintenance profile.
+- [test] Preserve the parser-neutral equivalence harness, grammar-derived corpus, controlled mutations, eight seeded fuzz streams, canonical round trips and maximal revision-2 regression query against the production parser.
+- [benchmark] Retain representative, malformed, nested and traced-allocation benchmark surfaces for the hand-written parser.
+- [feature] Add `#` line comments as non-semantic yt-sql lexical trivia.
 - [feature] Accept decimal, hexadecimal, octal and binary integer literals in `LIMIT` and `OFFSET`, retaining their base through canonical formatting while preserving the established range constraints.
-- [test] Cover comment placement, base-aware row slicing, malformed literals and canonical round trips across the hand-written, Lark and bounded Tree-sitter parsers.
-- [docs] Document which committed Tree-sitter files are regenerated, which integration files remain maintained and why direct changes to generated parser outputs will be overwritten.
+- [test] Cover comment placement, base-aware row slicing, malformed literals and canonical round trips in the production parser.
 - [fix] Preserve anonymous derived relations through CLI query merging so query-file execution retains recursively reachable physical sources.
 - [fix] Route derived FROM and JOIN composition through relational materialisation instead of the legacy single-relation result path.
 - [feature] Export multi-source derived results as truthful constructed collection documents without inventing remote playlist identity.
@@ -32,24 +18,15 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [feature] Add grammar revision 2 derived relations so parenthesised query expressions can form explicit logical relations in `FROM` and `JOIN` without being rewritten as hidden CTEs.
 - [fix] Resolve derived relations against only their exported result schema, preserving first-branch UNION output names, outer CTE visibility and the existing prohibition on nested WITH and correlated row references.
 - [test] Cover derived-relation aliases, schema boundaries, malformed forms, canonical round trips, UNION composition and nested torture cases before planner and execution integration.
-- [docs] Define derived-relation syntax and semantic boundaries while tracking each experimental parser against its explicit parity phase.
+- [docs] Define derived-relation syntax and semantic boundaries.
 - [feature] Materialise derived relations as logical result rows during execution, including derived operands on either side of supported JOINs.
 - [feature] Plan physical source boundaries recursively through derived relations while retaining each inner source/facet requirement and provenance identity.
 - [fix] Propagate conservative empty-relation proofs through derived FROM and JOIN operands without treating the relation boundary as a physical source.
 - [test] Add execution, planning, JOIN, explain, provenance and derived-UNION torture coverage for issue #148 Part 2.
 - [docs] Record derived-relation planning and optimisation boundaries, including the deliberate absence of unsafe outer projection pushdown.
-- [experimental] Bring the independent Lark grammar and model builder to grammar revision 2 with explicit derived relations while preserving the hand-written parser as the behavioural reference.
-- [test] Add Lark differential, origin, malformed-boundary, canonical round-trip and composite derived-relation torture coverage.
-- [fix] Harden Lark revision-2 model construction for literal-only DISTINCT predicates, signed legacy predicate literals, nested compound JOIN comparisons and unary-expression source origins exposed by maximal cross-feature composition.
-- [test] Add a maximal derived-relation parser torture query combining CTEs, nested derived relations, all executable JOIN kinds, UNION ALL, collections, aggregates, scalar functions, CASE, mixed-base arithmetic, temporal expressions, NULL/3VL predicates, Unicode identifiers, ordering and slicing under reference/Lark differential and canonical round-trip checks.
+- [test] Add a maximal derived-relation parser query combining CTEs, nested derived relations, all executable JOIN kinds, UNION ALL, collections, aggregates, scalar functions, CASE, mixed-base arithmetic, temporal expressions, NULL/3VL predicates, Unicode identifiers, ordering and slicing under canonical round-trip checks.
 - [test] Freeze derived-UNION requirement propagation so outer scalar expressions acquire only their referenced branch fields while preserving UNION duplicate identity.
 - [docs] Record that safe cross-relation projection pruning is technically viable but not currently planned because its column-liveness proof burden is disproportionate to the expected benefit.
-- [experimental] Extend the Tree-sitter feasibility grammar across the established simple, complex and collection-heavy parser benchmark families without claiming complete yt-sql coverage.
-- [experimental] Advance the bounded Tree-sitter feasibility grammar to revision 2 for physical and derived relation operands, nested query expressions, set composition and derived JOIN operands.
-- [test] Cover accepted nested, UNION, predicate-only and JOIN-derived relations alongside empty, unclosed and illegal `OF` recovery cases.
-- [performance] Add a matched derived-relation benchmark and retain a local 8 to 12 percent reference-parser time range across all four representative workloads.
-- [docs] Classify Tree-sitter as viable for complete grammar work while retaining model construction, diagnostics, packaging and full differential conformance as later gates.
-- [maintenance] Add root-level Clang formatting, static-analysis and generated-source compile gates for the experimental Tree-sitter native code while keeping generated parser sources untouched.
 - [docs] Reconcile the optimisation strategy with reachable-CTE projection, field-sensitive provider escalation, cache-v4 known-NULL reuse, staged cache-first rejection, proven forward source-order LIMIT termination and refresh deduplication.
 - [performance] Deduplicate repeated media entity IDs before specialised-provider or yt-dlp refresh within each cache-aware acquisition request while preserving every logical source occurrence for later relational evaluation.
 - [test] Cover duplicate cache-miss entities so external detailed acquisition occurs once per entity without collapsing duplicate logical rows or cache examination accounting.
@@ -72,28 +49,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 - [fix] Route unbounded playlist queries through cache-first flat identity enumeration and per-entry cache resolution, refreshing detailed metadata only for stale or missing requirements while preserving complete playlist membership enumeration.
 - [fix] Route yt-sql `OF videos` channel queries through the same cache-first identity-enumeration path as legacy `--tab videos`, so fresh cached detailed metadata is reused before external per-video refresh.
-- [experimental] Begin the declarative-parser investigation with an isolated Lark grammar recogniser and deterministic corpus coverage; the transcription exposes revision-1 EBNF mismatches around empty query bodies and established unit literals that must be reconciled before parser migration.
-- [test] Establish a two-parser differential harness that classifies acceptance, normalised-model, source-origin, diagnostic and unexpected-error differences across the migration, conformance and generated syntax corpora.
-- [test] Require the hand-written and Lark parsers to produce equivalent models and source origins across the complete accepted differential inventory, with same-parser and cross-parser canonical convergence.
-- [experimental] Reconcile Lark model construction across temporal literals, truth tests, collection scopes, scalar and aggregate functions, joins, CTEs and set composition without changing the production parser path.
-- [test] Require malformed corpus and controlled-neighbour differential cases to agree on rejection, diagnostic category, stable reason, source span and curated expected tokens.
-- [experimental] Translate Lark failures into parser-independent yt-sql diagnostics and enforce identifier boundaries on contextual grammar keywords without exposing library-native exceptions.
-- [performance] Replace the experimental Earley parser with a conflict-free LALR grammar and contextual lexer, factor repeated query-head productions and retain exact differential conformance.
-- [maintenance] Replace duplicated Lark keyword-terminal declarations with readable grammar literals and one parser-construction boundary rule for identifier continuations.
-- [fix] Preserve field-literal comparison semantics and whitespace-insensitive `SELECT DISTINCT` model construction through the optimised Lark grammar.
-- [benchmark] Add matching simple, complex and collection-heavy Lark parser surfaces alongside the established production-parser benchmarks.
-- [performance] Remove repeated model-builder imports and redundant validation-tree walks from the experimental Lark hot path while preserving independent recogniser validation.
-- [docs] Record the measured Lark parser, lexer and grammar alternatives, including why LALR, basic and dynamic-complete configurations were not retained.
-- [docs] Record the raw Lark tree-construction lower bound, the retained source-position cost and the remaining parser-replacement performance concern.
-- [test] Compare the parsers across fixed seeded grammar-aware fuzz inputs, requiring acceptance, diagnostics, models, source origins and canonical round trips to remain equivalent.
-- [test] Promote fuzz-discovered negation, distinct-comparison and missing-separator cases into deterministic parser regressions.
-- [fix] Preserve Boolean negation across every accepted whitespace separator and construct direct-token `IS NOT DISTINCT FROM` operands correctly in the Lark model.
-- [fix] Align the malformed `IS DISTINCT FROM` keyword-boundary diagnostic span and expected token without hiding the parser difference.
-- [docs] Classify the bounded Lark candidate as behaviourally conformant while retaining its measured performance gap as a production cut-over concern.
-- [experimental] Establish an isolated Tree-sitter yt-sql grammar package with committed ABI-15 generated C and an optional Python language binding.
-- [maintenance] Pin the Tree-sitter generator, runtime and install-script approval without adding Tree-sitter to the production parser path or ordinary Python dependencies.
-- [test] Prove native grammar generation, case-insensitive smoke recognition, strict recovery rejection and UTF-8 byte-to-character position conversion.
-- [docs] Record the Tree-sitter experiment's reference, packaging, source-position, recovery, performance and maintainability boundaries before representative grammar work begins.
+- [test] Establish a parser-neutral differential harness that independently classifies acceptance, normalised models, source origins, diagnostics and unexpected errors.
+- [test] Add deterministic accepted and malformed corpora, grammar-anchored generation, controlled mutation and seeded fuzz inputs with canonical round-trip coverage.
 - [docs] Record revision-1 grammar corrections for established projection wildcard, repeated Boolean negation and temporal-token syntax exposed by differential conformance.
 - [docs] Reconcile grammar revision 1 with established parser behaviour by requiring a non-empty select query and formally representing accepted unit literals without changing yt-sql syntax.
 - [feature] Move Discover's managed metadata cache to the provider-aware v4 model, with service-owned media identity, provider-owned metadata and acquisition state, and independent source/facet observations.

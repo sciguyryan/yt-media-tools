@@ -55,78 +55,6 @@ TARGETS = (
         "Parse a derived-relation yt-sql query.",
     ),
     BenchmarkTarget(
-        "parser.lark.simple",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[simple]",
-        "parser",
-        "Parse a simple yt-sql query with the experimental Lark parser.",
-    ),
-    BenchmarkTarget(
-        "parser.lark.complex",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[complex]",
-        "parser",
-        "Parse a representative complex query with the experimental Lark parser.",
-    ),
-    BenchmarkTarget(
-        "parser.lark.collection",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[collection]",
-        "parser",
-        "Parse a collection-heavy query with the experimental Lark parser.",
-    ),
-    BenchmarkTarget(
-        "parser.lark.derived",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_lark_query[derived]",
-        "parser",
-        "Parse a derived-relation query with the experimental Lark parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.simple",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[simple]",
-        "parser",
-        "Parse a simple yt-sql query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.complex",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[complex]",
-        "parser",
-        "Parse a representative complex query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.collection",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[collection]",
-        "parser",
-        "Parse a collection-heavy query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.derived",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_query[derived]",
-        "parser",
-        "Parse a derived-relation query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.model.simple",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[simple]",
-        "parser",
-        "Parse and model a simple query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.model.complex",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[complex]",
-        "parser",
-        "Parse and model a representative complex query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.model.collection",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[collection]",
-        "parser",
-        "Parse and model a collection-heavy query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
-        "parser.tree_sitter.model.derived",
-        "benchmarks/test_query_pipeline_benchmarks.py::test_parse_tree_sitter_model[derived]",
-        "parser",
-        "Parse and model a derived-relation query with the experimental Tree-sitter parser.",
-    ),
-    BenchmarkTarget(
         "resolution.simple",
         "benchmarks/test_query_pipeline_benchmarks.py::test_resolve_query[simple]",
         "resolution",
@@ -285,30 +213,10 @@ TARGETS = (
     ),
     *(
         BenchmarkTarget(
-            f"parser.tree_sitter.model.nested.depth_{depth}",
-            f"benchmarks/test_scaling_benchmarks.py::test_parse_tree_sitter_query_nested[{depth}]",
-            "scaling",
-            f"Parse a scalar expression nested to depth {depth} with the Tree-sitter candidate.",
-            "scaling",
-        )
-        for depth in (1, 32, 128)
-    ),
-    *(
-        BenchmarkTarget(
             f"parser.malformed_nested.depth_{depth}",
             f"benchmarks/test_scaling_benchmarks.py::test_reject_query_nested[{depth}]",
             "scaling",
             f"Reject unmatched scalar parentheses at depth {depth} with the reference parser.",
-            "scaling",
-        )
-        for depth in (1, 32, 128)
-    ),
-    *(
-        BenchmarkTarget(
-            f"parser.tree_sitter.model.malformed_nested.depth_{depth}",
-            f"benchmarks/test_scaling_benchmarks.py::test_reject_tree_sitter_query_nested[{depth}]",
-            "scaling",
-            f"Reject unmatched scalar parentheses at depth {depth} with the Tree-sitter candidate.",
             "scaling",
         )
         for depth in (1, 32, 128)
@@ -368,16 +276,6 @@ TARGETS = (
             f"benchmarks/test_memory_benchmarks.py::test_parser_peak_allocations[{depth}]",
             "memory",
             f"Measure reference parser allocations for scalar nesting depth {depth}.",
-            "memory",
-        )
-        for depth in (1, 32)
-    ),
-    *(
-        BenchmarkTarget(
-            f"memory.parser.tree_sitter.nested.depth_{depth}",
-            f"benchmarks/test_memory_benchmarks.py::test_tree_sitter_parser_peak_allocations[{depth}]",
-            "memory",
-            f"Measure Tree-sitter candidate allocations for scalar nesting depth {depth}.",
             "memory",
         )
         for depth in (1, 32)

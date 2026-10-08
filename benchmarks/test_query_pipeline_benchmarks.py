@@ -5,12 +5,6 @@ from __future__ import annotations
 import pytest
 
 from yt_media_tools.optimizer import optimise_query
-from yt_media_tools.experimental_lark_parser import parse_lark_query
-from yt_media_tools.experimental_tree_sitter_parser import (
-    _parse_tree_sitter_tree,
-    parse_tree_sitter_query,
-    tree_sitter_available,
-)
 from yt_media_tools.query import apply_query, evaluate_scalar_expression, parse_query, resolve_query
 from yt_media_tools.query_properties import analyse_query
 
@@ -40,47 +34,6 @@ def test_parse_query(benchmark, source: str) -> None:
     """Measure parser cost independently of semantic resolution."""
     benchmark.extra_info["benchmark_id"] = f"parser.{source[:24]}"
     result = benchmark(parse_query, source)
-    assert result.source == source
-
-
-@pytest.mark.benchmark(group="parser")
-@pytest.mark.parametrize(
-    "source",
-    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
-    ids=["simple", "complex", "collection", "derived"],
-)
-def test_parse_lark_query(benchmark, source: str) -> None:
-    """Measure the experimental parser over the reference parser workloads."""
-    benchmark.extra_info["benchmark_id"] = f"parser.lark.{source[:24]}"
-    result = benchmark(parse_lark_query, source)
-    assert result.source == source
-
-
-@pytest.mark.benchmark(group="parser")
-@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
-@pytest.mark.parametrize(
-    "source",
-    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
-    ids=["simple", "complex", "collection", "derived"],
-)
-def test_parse_tree_sitter_query(benchmark, source: str) -> None:
-    """Measure raw Tree-sitter parsing over the reference parser workloads."""
-    benchmark.extra_info["benchmark_id"] = f"parser.tree_sitter.{source[:24]}"
-    result = benchmark(_parse_tree_sitter_tree, source)
-    assert not result.root_node.has_error
-
-
-@pytest.mark.benchmark(group="parser")
-@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
-@pytest.mark.parametrize(
-    "source",
-    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
-    ids=["simple", "complex", "collection", "derived"],
-)
-def test_parse_tree_sitter_model(benchmark, source: str) -> None:
-    """Measure Tree-sitter parsing plus parser-neutral model construction."""
-    benchmark.extra_info["benchmark_id"] = f"parser.tree_sitter.model.{source[:24]}"
-    result = benchmark(parse_tree_sitter_query, source)
     assert result.source == source
 
 

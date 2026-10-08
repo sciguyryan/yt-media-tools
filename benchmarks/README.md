@@ -66,40 +66,26 @@ Run the complete relational group with:
 python benchmark.py relational
 ```
 
-## Parser comparison
+## Parser benchmarks
 
-The `parser` group contains matching simple, complex, collection-heavy and derived-relation workloads for the production hand-written parser and the experimental Lark parser. The experimental Lark surfaces use stable `parser.lark.*` names and remain advisory until parser migration is decided.
+The `parser` group covers simple, complex, collection-heavy and derived-relation workloads for the production hand-written parser.
 
-Run both parser implementations with:
+Run the parser workloads with:
 
 ```bash
 python benchmark.py parser
 ```
 
-The optional Tree-sitter package adds two matched surface families. `parser.tree_sitter.*` measures raw parsing, including UTF-8 encoding at the Python boundary. `parser.tree_sitter.model.*` includes parser-neutral query-model construction and is the end-to-end comparison against the hand-written and Lark parsers. Build the committed generated source and run the directly comparable targets with:
-
-```bash
-python -m pip install tree-sitter==0.26.0
-python -m pip install --no-deps experiments/tree-sitter-yt-sql
-python benchmark.py parser.simple parser.complex parser.collection parser.derived \
-  parser.tree_sitter.simple parser.tree_sitter.complex \
-  parser.tree_sitter.collection parser.tree_sitter.derived \
-  parser.tree_sitter.model.simple parser.tree_sitter.model.complex \
-  parser.tree_sitter.model.collection parser.tree_sitter.model.derived
-```
-
-An environment without the optional binding skips the Tree-sitter benchmark cases. Raw timings isolate grammar-engine cost; model timings determine whether the complete candidate is competitive enough for a later cut-over.
-
-Parser scaling is kept out of the normal timing suite. The `scaling` group includes matched reference and Tree-sitter model paths for accepted scalar-parenthesis depths 1, 32 and 128, together with the corresponding unmatched-parenthesis rejection paths. Stable names begin with `parser.nested.*`, `parser.malformed_nested.*` and their `parser.tree_sitter.model.*` counterparts. For example:
+Parser scaling is kept out of the normal timing suite. The `scaling` group covers accepted scalar-parenthesis depths 1, 32 and 128 together with corresponding unmatched-parenthesis rejection paths. Stable names begin with `parser.nested.*` and `parser.malformed_nested.*`. For example:
 
 ```bash
 python benchmark.py parser.nested.depth_32 \
-  parser.tree_sitter.model.nested.depth_32 \
-  parser.malformed_nested.depth_32 \
-  parser.tree_sitter.model.malformed_nested.depth_32
+  parser.malformed_nested.depth_32
 ```
 
-The `memory` group also exposes matched depth-1 and depth-32 parser measurements through `memory.parser.reference.nested.*` and `memory.parser.tree_sitter.nested.*`. These report peak Python allocations traced by `tracemalloc`; they do not claim to measure every native allocation made by Tree-sitter.
+The `memory` group also exposes depth-1 and depth-32 parser measurements through `memory.parser.reference.nested.*`. These report peak Python allocations traced by `tracemalloc`.
+
+The completed Lark and Tree-sitter comparison, including its local measurements and final decision, remains recorded in `docs/YT-SQL-PARSER-MIGRATION.md` and repository history.
 
 ## Cache-v4 reconciliation
 

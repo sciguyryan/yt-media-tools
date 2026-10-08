@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from yt_discover_tests.parser_migration_harness import compare_parsers
-from yt_media_tools.experimental_lark_parser import parse_lark_query
 from yt_media_tools.query import merge_queries
 from yt_media_tools.query_formatter import format_query
 from yt_media_tools.query_model import QuerySyntaxError
@@ -27,13 +25,10 @@ def test_row_slicing_accepts_integer_bases_and_preserves_canonical_base(
     source: str, limit: int | None, offset: int, canonical_suffix: str
 ) -> None:
     reference = parse_query(source)
-    candidate = parse_lark_query(source)
 
-    assert reference.limit == candidate.limit == limit
-    assert reference.offset == candidate.offset == offset
-    assert compare_parsers(parse_query, parse_lark_query, source).equivalent
+    assert reference.limit == limit
+    assert reference.offset == offset
     assert format_query(reference).endswith(canonical_suffix)
-    assert format_query(candidate) == format_query(reference)
     assert format_query(parse_query(format_query(reference))) == format_query(reference)
 
 
@@ -56,9 +51,6 @@ def test_row_slicing_accepts_integer_bases_and_preserves_canonical_base(
 def test_row_slicing_rejects_zero_limit_and_non_integer_forms(source: str) -> None:
     with pytest.raises(QuerySyntaxError):
         parse_query(source)
-    with pytest.raises(QuerySyntaxError):
-        parse_lark_query(source)
-    assert compare_parsers(parse_query, parse_lark_query, source).equivalent
 
 
 def test_explicit_zero_offset_overrides_a_merged_base_offset() -> None:

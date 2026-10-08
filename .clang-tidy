@@ -1,9 +1,0 @@
-Checks: >-
-  -*,
-  bugprone-*,
-  clang-analyzer-*,
-  performance-*,
-  portability-*
-WarningsAsErrors: ''
-HeaderFilterRegex: 'experiments/tree-sitter-yt-sql/(bindings|src)/.*'
-FormatStyle: file

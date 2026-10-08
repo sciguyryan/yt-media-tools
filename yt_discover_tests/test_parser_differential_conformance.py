@@ -1,4 +1,4 @@
-"""Baseline differential inventory for the experimental Lark parser."""
+"""Durable parser conformance cases retained from differential evaluation."""
 
 from __future__ import annotations
 
@@ -9,11 +9,10 @@ import pytest
 from yt_discover_tests.conformance.cases import CASES
 from yt_discover_tests.parser_fuzzing import seeded_parser_fuzz_inputs, shrink_by_token_deletion
 from yt_discover_tests.parser_grammar_generation import generated_valid_queries
-from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES, REJECTED_PARSER_CASES
+from yt_discover_tests.parser_migration_corpus import ACCEPTED_PARSER_CASES
 from yt_discover_tests.parser_migration_harness import ParserDifference, canonical_round_trip, compare_parsers
 from yt_discover_tests.parser_mutation import malformed_neighbours
 from yt_media_tools.discover_cli import bind_query_parameters
-from yt_media_tools.experimental_lark_parser import parse_lark_query
 from yt_media_tools.query_formatter import format_query
 from yt_media_tools.query_model import Query, QuerySyntaxError
 from yt_media_tools.query_parser import parse_query
@@ -101,63 +100,40 @@ def test_normalised_model_excludes_non_semantic_literal_source_spelling() -> Non
     assert double_quoted == single_quoted
 
 
-def test_lark_accepted_syntax_inventory_is_structurally_equivalent() -> None:
+def test_complete_accepted_inventory_parses_and_round_trips_canonically() -> None:
     cases = _accepted_inventory()
     assert cases
 
     for name, source in cases:
-        comparison = compare_parsers(parse_query, parse_lark_query, source)
-        assert comparison.reference.kind == "accepted", name
-        assert comparison.equivalent, f"{name}: {comparison.describe()}"
+        model, canonical = canonical_round_trip(parse_query, source)
+        assert model, name
+        assert canonical, name
 
 
-def test_lark_accepted_syntax_inventory_has_canonical_cross_parser_convergence() -> None:
-    for name, source in _accepted_inventory():
-        reference_model, reference_canonical = canonical_round_trip(parse_query, source)
-        candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
-
-        assert candidate_model == reference_model, name
-        assert candidate_canonical == reference_canonical, name
-        canonical_comparison = compare_parsers(parse_query, parse_lark_query, reference_canonical)
-        assert canonical_comparison.equivalent, f"{name}: {canonical_comparison.describe()}"
-
-
-def test_lark_malformed_syntax_inventory_is_diagnostically_equivalent() -> None:
-    for case in REJECTED_PARSER_CASES:
-        comparison = compare_parsers(parse_query, parse_lark_query, case.query)
-        assert comparison.reference.kind == "rejected", case.name
-        assert comparison.candidate.kind == "rejected", case.name
-        assert comparison.equivalent, f"{case.name}: {comparison.describe()}"
-
-
-def test_lark_controlled_malformed_neighbours_are_diagnostically_equivalent() -> None:
+def test_complete_controlled_malformed_neighbour_inventory_is_rejected() -> None:
     cases = _malformed_mutation_inventory()
     assert cases
 
     for name, source in cases:
-        comparison = compare_parsers(parse_query, parse_lark_query, source)
-        assert comparison.reference.kind == "rejected", name
-        assert comparison.candidate.kind == "rejected", name
-        assert comparison.equivalent, f"{name}: {comparison.describe()} for {source!r}"
+        with pytest.raises(QuerySyntaxError, match=".+"):
+            parse_query(source)
 
 
 @pytest.mark.parametrize("seed", (0, 1, 2, 3, 31415926, 27182818, 16180339, 14142135))
-def test_lark_seeded_fuzz_inputs_are_differentially_equivalent(seed: int) -> None:
+def test_seeded_fuzz_inputs_remain_inside_the_parser_contract(seed: int) -> None:
     inputs = seeded_parser_fuzz_inputs(seed=seed, limit=128)
     assert inputs
 
     for index, source in enumerate(inputs):
-        comparison = compare_parsers(parse_query, parse_lark_query, source)
         smaller = shrink_by_token_deletion(source)[:3]
         context = f"seed={seed}, case={index}, source={source!r}, smaller={smaller!r}"
-        assert comparison.equivalent, f"{context}: {comparison.describe()}"
-
-        if comparison.reference.kind != "accepted":
+        try:
+            parse_query(source)
+        except QuerySyntaxError:
             continue
-        reference_model, reference_canonical = canonical_round_trip(parse_query, source)
-        candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
-        assert candidate_model == reference_model, context
-        assert candidate_canonical == reference_canonical, context
+        model, canonical = canonical_round_trip(parse_query, source)
+        assert model, context
+        assert canonical, context
 
 
 COMMENT_DIFFERENTIAL_CASES = (
@@ -181,11 +157,8 @@ COMMENT_DIFFERENTIAL_CASES = (
 
 
 @pytest.mark.parametrize("name,commented,plain", COMMENT_DIFFERENTIAL_CASES)
-def test_line_comments_are_non_semantic_and_lark_equivalent(name: str, commented: str, plain: str) -> None:
-    reference = compare_parsers(parse_query, parse_lark_query, commented)
-    assert reference.equivalent, f"{name}: {reference.describe()}"
+def test_line_comments_are_non_semantic(name: str, commented: str, plain: str) -> None:
     assert format_query(parse_query(commented)) == format_query(parse_query(plain)), name
-    assert format_query(parse_lark_query(commented)) == format_query(parse_lark_query(plain)), name
 
 
 MAXIMAL_DERIVED_RELATION_TORTURE_QUERY = r"""# welcome to parser misery 🏴
@@ -284,18 +257,11 @@ def test_maximal_torture_unicode_alias_spellings_are_exact() -> None:
         assert f"`{alias}`" in MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
 
 
-def test_lark_maximal_derived_relation_torture_is_structurally_and_canonically_equivalent() -> None:
-    comparison = compare_parsers(parse_query, parse_lark_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
-    assert comparison.equivalent, comparison.describe()
+def test_maximal_derived_relation_torture_round_trips_canonically() -> None:
+    model, canonical = canonical_round_trip(parse_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
 
-    reference_model, reference_canonical = canonical_round_trip(parse_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY)
-    candidate_model, candidate_canonical = canonical_round_trip(
-        parse_lark_query, MAXIMAL_DERIVED_RELATION_TORTURE_QUERY
-    )
-    assert candidate_model == reference_model
-    assert candidate_canonical == reference_canonical
-    assert format_query(parse_query(reference_canonical)) == reference_canonical
-    assert compare_parsers(parse_query, parse_lark_query, reference_canonical).equivalent
+    assert model
+    assert format_query(parse_query(canonical)) == canonical
 
 
 DERIVED_RELATION_DIFFERENTIAL_CASES = (
@@ -308,14 +274,11 @@ DERIVED_RELATION_DIFFERENTIAL_CASES = (
 
 
 @pytest.mark.parametrize("source", DERIVED_RELATION_DIFFERENTIAL_CASES)
-def test_lark_derived_relations_are_structurally_and_canonically_equivalent(source: str) -> None:
-    comparison = compare_parsers(parse_query, parse_lark_query, source)
-    assert comparison.equivalent, comparison.describe()
+def test_derived_relation_regressions_round_trip_canonically(source: str) -> None:
+    model, canonical = canonical_round_trip(parse_query, source)
 
-    reference_model, reference_canonical = canonical_round_trip(parse_query, source)
-    candidate_model, candidate_canonical = canonical_round_trip(parse_lark_query, source)
-    assert candidate_model == reference_model
-    assert candidate_canonical == reference_canonical
+    assert model
+    assert canonical
 
 
 @pytest.mark.parametrize(
@@ -328,7 +291,6 @@ def test_lark_derived_relations_are_structurally_and_canonically_equivalent(sour
         "SELECT a.id FROM @a AS a JOIN () AS b ON a.id = b.id",
     ),
 )
-def test_lark_derived_relation_malformed_boundaries_match_reference_acceptance(source: str) -> None:
-    comparison = compare_parsers(parse_query, parse_lark_query, source)
-    assert comparison.reference.kind == "rejected"
-    assert comparison.candidate.kind == "rejected"
+def test_derived_relation_malformed_boundaries_are_rejected(source: str) -> None:
+    with pytest.raises(QuerySyntaxError):
+        parse_query(source)

@@ -7,7 +7,6 @@ import tracemalloc
 
 import pytest
 
-from yt_media_tools.experimental_tree_sitter_parser import parse_tree_sitter_query, tree_sitter_available
 from yt_media_tools.query import evaluate_scalar_expression, parse_query, resolve_query
 
 PARSER_NESTING_DEPTHS = (1, 32)
@@ -60,11 +59,3 @@ def _record_parser_peak(parser, depth: int, record_property, name: str) -> None:
 def test_parser_peak_allocations(depth: int, record_property) -> None:
     """Record reference parser allocations as scalar parentheses deepen."""
     _record_parser_peak(parse_query, depth, record_property, "reference")
-
-
-@pytest.mark.memory
-@pytest.mark.parametrize("depth", PARSER_NESTING_DEPTHS)
-@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
-def test_tree_sitter_parser_peak_allocations(depth: int, record_property) -> None:
-    """Record candidate parser allocations as scalar parentheses deepen."""
-    _record_parser_peak(parse_tree_sitter_query, depth, record_property, "tree_sitter")
