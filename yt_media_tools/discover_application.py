@@ -27,7 +27,7 @@ from yt_media_tools.cache_startup_policy import (
 )
 from yt_media_tools.cache_maintenance import CacheRetentionPolicy
 from yt_media_tools.cache_status import collect_cache_status, format_cache_status
-from yt_media_tools.cache_compaction import compact_cache
+from yt_media_tools.database_maintenance import manual_full_vacuum
 from yt_media_tools.cache_v4_ytdlp import YTDLP_FRESHNESS_FIELDS, build_ytdlp_provider
 from yt_media_tools.capabilities import safely_reject_lightweight
 from yt_media_tools.dates import DateContext
@@ -347,7 +347,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             connection = sqlite3.connect(cache_path)
             try:
-                result = compact_cache(connection, cache_path)
+                result = manual_full_vacuum(connection, cache_path)
             finally:
                 connection.close()
         except (sqlite3.Error, RuntimeError, ValueError) as exc:

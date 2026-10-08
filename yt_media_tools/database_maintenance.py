@@ -1,8 +1,4 @@
-"""Read-only SQLite maintenance measurements and policy decisions.
-
-Maintenance execution and database-wide coordination belong to later phases.
-This module deliberately never creates or modifies a database.
-"""
+"""Shared SQLite maintenance measurements, policy and guarded execution."""
 
 from __future__ import annotations
 
@@ -241,7 +237,7 @@ def decide_maintenance(
 
 
 def dry_run(path: Path, database: str, policy: MaintenancePolicy | None = None) -> MaintenanceDecision:
-    """Read-only maintenance preview; execution is deliberately not implemented."""
+    """Read-only maintenance preview; never modify the database."""
     return decide_maintenance(inspect_database(path), policy or load_policy(), database)
 
 
@@ -342,3 +338,141 @@ def incremental_maintenance(
                 _release_maintenance_lock(handle)
     except (OSError, sqlite3.Error, MaintenanceInspectionError) as exc:
         return MaintenanceOutcome("deferred", f"maintenance unavailable: {exc}")
+
+
+@dataclass(frozen=True)
+class SQLiteStorageMeasurement:
+    """Connection-local measurements used by the existing cache status contract."""
+
+    page_size: int
+    page_count: int
+    free_pages: int
+    database_bytes: int | None
+    wal_bytes: int | None
+
+    @property
+    def reusable_bytes(self) -> int:
+        return self.page_size * self.free_pages
+
+
+@dataclass(frozen=True)
+class CacheCompactionResult:
+    """Compatibility result for the explicit Discover compaction command."""
+
+    journal_mode: str
+    auto_vacuum: str
+    checkpoint_attempted: bool
+    checkpoint_busy: int | None
+    checkpoint_log_pages: int | None
+    checkpointed_pages: int | None
+    vacuum_performed: bool
+    before: SQLiteStorageMeasurement
+    after: SQLiteStorageMeasurement
+
+    def to_dict(self) -> dict[str, object]:
+        from dataclasses import asdict
+
+        return asdict(self)
+
+
+def _optional_file_size(path: Path) -> int | None:
+    try:
+        return path.stat().st_size
+    except FileNotFoundError:
+        return None
+
+
+def measure_sqlite_storage(connection: sqlite3.Connection, path: Path) -> SQLiteStorageMeasurement:
+    """Inspect the existing connection without altering its transaction state."""
+    source = Path(path).expanduser()
+    return SQLiteStorageMeasurement(
+        page_size=int(connection.execute("PRAGMA page_size").fetchone()[0]),
+        page_count=int(connection.execute("PRAGMA page_count").fetchone()[0]),
+        free_pages=int(connection.execute("PRAGMA freelist_count").fetchone()[0]),
+        database_bytes=_optional_file_size(source),
+        wal_bytes=_optional_file_size(Path(str(source) + "-wal")),
+    )
+
+
+def checkpoint_wal(connection: sqlite3.Connection, *, mode: str = "PASSIVE") -> tuple[int, int, int] | None:
+    """Checkpoint an existing WAL database without changing journal mode."""
+    if connection.in_transaction:
+        raise RuntimeError("WAL checkpoint requires no active SQLite transaction")
+    if mode not in {"PASSIVE", "TRUNCATE"}:
+        raise ValueError("unsupported WAL checkpoint mode")
+    if str(connection.execute("PRAGMA journal_mode").fetchone()[0]).lower() != "wal":
+        return None
+    row = connection.execute(f"PRAGMA wal_checkpoint({mode})").fetchone()
+    if row is None:
+        raise RuntimeError("WAL checkpoint returned no result")
+    return tuple(int(value) for value in row)
+
+
+def optimise_statistics(connection: sqlite3.Connection) -> None:
+    """Request SQLite's own bounded query-planner statistics optimisation."""
+    if connection.in_transaction:
+        raise RuntimeError("statistics optimisation requires no active SQLite transaction")
+    connection.execute("PRAGMA optimize")
+
+
+def manual_full_vacuum(
+    connection: sqlite3.Connection,
+    path: Path,
+    *,
+    minimum_free_space_multiplier: float = 2.0,
+) -> CacheCompactionResult:
+    """Explicit full compaction shared by all SQLite-backed application commands.
+
+    The caller must invoke this outside normal operations. A non-blocking
+    advisory lock coordinates with incremental maintainers. SQLite remains the
+    authority for other readers and writers; busy access fails rather than waits.
+    """
+    import shutil
+
+    if connection.in_transaction:
+        raise RuntimeError("cache compaction requires no active SQLite transaction")
+    if minimum_free_space_multiplier < 1:
+        raise ValueError("full vacuum space multiplier must be at least one")
+    source = Path(path).resolve()
+    if not source.is_file():
+        raise RuntimeError(f"database does not exist: {source}")
+    lock_path = source.with_name(source.name + ".maintenance.lock")
+    with lock_path.open("a+b") as handle:
+        if not _try_maintenance_lock(handle):
+            raise RuntimeError("another database maintenance operation is active")
+        try:
+            connection.execute("PRAGMA busy_timeout=0")
+            journal_mode = str(connection.execute("PRAGMA journal_mode").fetchone()[0]).lower()
+            mode_value = int(connection.execute("PRAGMA auto_vacuum").fetchone()[0])
+            if mode_value not in VACUUM_MODES:
+                raise RuntimeError("unsupported SQLite auto-vacuum mode")
+            mode = VACUUM_MODES[mode_value]
+            before = measure_sqlite_storage(connection, source)
+            # A full vacuum creates a second database. SQLite's temporary files
+            # and WAL activity may need additional space beyond the main file.
+            if before.free_pages and mode != "full":
+                required = int(
+                    max(before.page_count * before.page_size, source.stat().st_size) * minimum_free_space_multiplier
+                )
+                if shutil.disk_usage(source.parent).free < required:
+                    raise RuntimeError("insufficient free disk space for full vacuum preflight")
+            checkpoint = checkpoint_wal(connection, mode="TRUNCATE")
+            if checkpoint is not None and checkpoint[0]:
+                raise RuntimeError("cannot compact database while WAL readers or writers prevent checkpointing")
+            vacuum_performed = before.free_pages > 0 and mode != "full"
+            if vacuum_performed:
+                connection.execute("VACUUM")
+            after = measure_sqlite_storage(connection, source)
+            return CacheCompactionResult(
+                journal_mode=journal_mode,
+                auto_vacuum=mode,
+                checkpoint_attempted=checkpoint is not None,
+                checkpoint_busy=checkpoint[0] if checkpoint else None,
+                checkpoint_log_pages=checkpoint[1] if checkpoint else None,
+                checkpointed_pages=checkpoint[2] if checkpoint else None,
+                vacuum_performed=vacuum_performed,
+                before=before,
+                after=after,
+            )
+        finally:
+            _release_maintenance_lock(handle)
