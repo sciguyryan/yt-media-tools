@@ -10,7 +10,7 @@ from .cache_registry import (
     ProviderDefinition,
     ProviderFieldDefinition,
 )
-from .freshness_config import BUILTIN_FRESHNESS_CONFIG, load_freshness_configuration
+from .freshness_config import BUILTIN_FRESHNESS_CONFIG, ProviderFreshnessPolicies, load_freshness_configuration
 from .query_types import QueryType
 
 
@@ -47,30 +47,40 @@ YTDLP_FRESHNESS_POLICIES = load_freshness_configuration(
     require_complete=True,
 ).provider("yt-dlp")
 assert YTDLP_FRESHNESS_POLICIES is not None
-_YTDLP_FIELD_FRESHNESS = dict(YTDLP_FRESHNESS_POLICIES.fields)
 
 # These fields already have a stable language-level representation but are not scalar
 # cache-v4 columns yet. Part 2 accounts for them explicitly instead of pretending they
 # were normalised or treating them as unexplained discarded backend baggage.
 STABLE_COLLECTION_EQUIVALENTS = frozenset({"tags", "categories", "formats", "chapters", "thumbnails"})
 
-YTDLP_PROVIDER = ProviderDefinition(
-    key="yt-dlp",
-    schema_revision=2,
-    metadata_table="cache_v4_ytdlp_metadata",
-    acquisition_groups=(AcquisitionGroupDefinition("detailed"),),
-    fields=tuple(
-        ProviderFieldDefinition(
-            name=name,
-            value_type=QueryType.scalar(kind, nullable=True),
-            acquisition_group="detailed",
-            storage_name=name,
-            freshness=_YTDLP_FIELD_FRESHNESS[name].policy,
-        )
-        for name, kind in _STABLE_SCALARS
-    ),
-    applicability=ProviderApplicability(services=frozenset({"youtube"})),
-)
+
+def build_ytdlp_provider(policies: ProviderFreshnessPolicies) -> ProviderDefinition:
+    """Build the installed yt-dlp contract from one complete typed policy set."""
+    field_policies = dict(policies.fields)
+    missing = sorted(set(YTDLP_FRESHNESS_FIELDS) - set(field_policies))
+    if policies.key != "yt-dlp" or missing:
+        detail = f"; missing fields: {', '.join(missing)}" if missing else ""
+        raise ValueError(f"incomplete freshness policies for yt-dlp{detail}")
+    return ProviderDefinition(
+        key="yt-dlp",
+        schema_revision=2,
+        metadata_table="cache_v4_ytdlp_metadata",
+        acquisition_groups=(AcquisitionGroupDefinition("detailed"),),
+        fields=tuple(
+            ProviderFieldDefinition(
+                name=name,
+                value_type=QueryType.scalar(kind, nullable=True),
+                acquisition_group="detailed",
+                storage_name=name,
+                freshness=field_policies[name].policy,
+            )
+            for name, kind in _STABLE_SCALARS
+        ),
+        applicability=ProviderApplicability(services=frozenset({"youtube"})),
+    )
+
+
+YTDLP_PROVIDER = build_ytdlp_provider(YTDLP_FRESHNESS_POLICIES)
 
 
 def normalise_registered_metadata(

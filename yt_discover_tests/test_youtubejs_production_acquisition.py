@@ -233,12 +233,19 @@ def test_minimum_sufficient_provider_uses_only_stale_required_subset(monkeypatch
                 )
             }
 
-        def is_fresh(self, item, required_fields, *, now=None):
+        def stale_fields(self, item, required_fields, *, now=None):
             from yt_media_tools.cache import field_max_age
 
             current = now or datetime.now(timezone.utc)
             age = current - item.fetched_at
-            return all(age <= field_max_age(field) for field in required_fields)
+            return frozenset(field for field in required_fields if age > field_max_age(field))
+
+        def freshness_policy(self, field):
+            from yt_media_tools.cache_v4_ytdlp import YTDLP_FRESHNESS_POLICIES
+
+            resolved = YTDLP_FRESHNESS_POLICIES.field(field)
+            assert resolved is not None
+            return resolved
 
         def put_many(self, source_url, records):
             raise AssertionError("specialised partial refresh must not be misattributed to yt-dlp cache storage")

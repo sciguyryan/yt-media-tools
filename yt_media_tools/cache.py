@@ -15,13 +15,16 @@ from pathlib import Path
 from typing import Any, Iterable, Self
 
 from .cache_entity_store import CacheV4EntityStore
+from .cache_registry import FreshnessMode
 from .cache_registry_store import CacheV4RegistryStore
 from .cache_v4_ytdlp import (
-    YTDLP_PROVIDER,
     YTDLP_FRESHNESS_POLICIES,
+    YTDLP_PROVIDER,
     STABLE_COLLECTION_EQUIVALENTS,
+    build_ytdlp_provider,
     normalise_registered_metadata,
 )
+from .freshness_config import ProviderFreshnessPolicies, ResolvedFreshnessPolicy
 
 
 SCHEMA_VERSION = 3
@@ -127,9 +130,12 @@ def canonical_field(name: str) -> str:
     return _ALIASES.get(lowered, lowered)
 
 
-def field_max_age(name: str) -> timedelta:
-    """Return the built-in maximum age for one canonical yt-dlp field."""
-    resolved = YTDLP_FRESHNESS_POLICIES.field(canonical_field(name))
+def field_max_age(
+    name: str,
+    policies: ProviderFreshnessPolicies = YTDLP_FRESHNESS_POLICIES,
+) -> timedelta:
+    """Return the maximum age for one canonical yt-dlp field."""
+    resolved = policies.field(canonical_field(name))
     assert resolved is not None
     assert resolved.policy.max_age_seconds is not None
     return timedelta(seconds=resolved.policy.max_age_seconds)
@@ -138,8 +144,16 @@ def field_max_age(name: str) -> timedelta:
 class MetadataCache:
     """Versioned SQLite cache of source-scoped authoritative yt-dlp metadata."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(
+        self,
+        path: Path,
+        *,
+        freshness_policies: ProviderFreshnessPolicies = YTDLP_FRESHNESS_POLICIES,
+    ) -> None:
         self.path = path.expanduser()
+        self.configured_freshness_policies = freshness_policies
+        self.freshness_policies = freshness_policies
+        self.ytdlp_provider = build_ytdlp_provider(freshness_policies)
         self.connection: sqlite3.Connection | None = None
         self.schema_version: int | None = None
 
@@ -166,9 +180,17 @@ class MetadataCache:
             if state is None or str(state[0]) != "complete":
                 self.close()
                 raise RuntimeError("cache-v4 database is not a complete migration target")
+            registry = CacheV4RegistryStore(connection)
+            try:
+                registry.reconcile((self.ytdlp_provider,))
+                self._apply_persisted_freshness_overrides(registry)
+            except BaseException:
+                self.close()
+                raise
             self.schema_version = CURRENT_SCHEMA_VERSION
             return
         self._initialise_schema()
+        self._apply_persisted_freshness_overrides(CacheV4RegistryStore(connection))
         self.schema_version = SCHEMA_VERSION
 
     def _existing_schema_version(self) -> int | None:
@@ -191,6 +213,18 @@ class MetadataCache:
     def _v4_store(self) -> CacheV4EntityStore:
         registry = CacheV4RegistryStore(self._db())
         return CacheV4EntityStore(self._db(), registry)
+
+    def _apply_persisted_freshness_overrides(self, registry: CacheV4RegistryStore) -> None:
+        overrides = dict(registry.field_freshness_overrides("yt-dlp"))
+        fields = dict(self.configured_freshness_policies.fields)
+        for name, policy in overrides.items():
+            if name in fields:
+                fields[name] = ResolvedFreshnessPolicy(policy, "database override")
+        self.freshness_policies = ProviderFreshnessPolicies(
+            key=self.configured_freshness_policies.key,
+            default=self.configured_freshness_policies.default,
+            fields=tuple(sorted(fields.items())),
+        )
 
     def _v4_source(self, source_url: str):
         row = (
@@ -238,7 +272,7 @@ class MetadataCache:
                     record[name] = json.loads(str(payload))
                 except (TypeError, json.JSONDecodeError):
                     pass
-        for field in YTDLP_PROVIDER.fields:
+        for field in self.ytdlp_provider.fields:
             if field.storage_name in row.keys():
                 record[field.name] = row[field.storage_name]
         record.setdefault("id", video_id)
@@ -250,9 +284,9 @@ class MetadataCache:
     def _sync_v4_source_state(self, source_url: str | None = None) -> None:
         """Mirror transitional v3 source state into the v4 entity-backed model."""
         registry = CacheV4RegistryStore(self._db())
-        registry.reconcile((YTDLP_PROVIDER,))
+        registry.reconcile((self.ytdlp_provider,))
         store = CacheV4EntityStore(self._db(), registry)
-        store.initialise((YTDLP_PROVIDER,))
+        store.initialise((self.ytdlp_provider,))
         store.import_legacy_source_state(source_urls=(source_url,) if source_url is not None else None)
 
     def close(self) -> None:
@@ -506,12 +540,34 @@ class MetadataCache:
         now: datetime | None = None,
     ) -> bool:
         """Return whether every query-required field is fresh enough for reuse."""
-        current = now or datetime.now(timezone.utc)
-        age = current.astimezone(timezone.utc) - item.fetched_at
+        return not self.stale_fields(item, required_fields, now=now)
+
+    def freshness_policy(self, field: str) -> ResolvedFreshnessPolicy:
+        """Return the effective typed policy and origin for one yt-dlp field."""
+        resolved = self.freshness_policies.field(canonical_field(field))
+        assert resolved is not None
+        return resolved
+
+    def stale_fields(
+        self,
+        item: CachedMetadata,
+        required_fields: Iterable[str],
+        *,
+        now: datetime | None = None,
+    ) -> frozenset[str]:
+        """Return the required fields whose effective policies reject an observation."""
+        current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        age = current - item.fetched_at
+        stale = set()
         for field in required_fields:
-            if age > field_max_age(field):
-                return False
-        return True
+            policy = self.freshness_policy(field).policy
+            if policy.mode is FreshnessMode.ALWAYS_REFRESH:
+                stale.add(field)
+            elif policy.mode is FreshnessMode.MAX_AGE:
+                assert policy.max_age_seconds is not None
+                if age > timedelta(seconds=policy.max_age_seconds):
+                    stale.add(field)
+        return frozenset(stale)
 
     def _normalise_record_into_v4(
         self,
@@ -529,15 +585,15 @@ class MetadataCache:
             return False
         registry = CacheV4RegistryStore(self._db())
         if commit:
-            registry.reconcile((YTDLP_PROVIDER,))
+            registry.reconcile((self.ytdlp_provider,))
         store = CacheV4EntityStore(self._db(), registry)
         if commit:
-            store.initialise((YTDLP_PROVIDER,))
+            store.initialise((self.ytdlp_provider,))
         entity = store.get_or_create_entity("youtube", video_id, commit=commit)
         values = normalise_registered_metadata(record)
-        store.write_provider_metadata(YTDLP_PROVIDER, entity.entity_id, values, commit=commit)
+        store.write_provider_metadata(self.ytdlp_provider, entity.entity_id, values, commit=commit)
         store.record_acquisition_success(
-            YTDLP_PROVIDER,
+            self.ytdlp_provider,
             entity.entity_id,
             "detailed",
             acquired_at=acquired_at,

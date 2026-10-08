@@ -16,12 +16,13 @@ from yt_media_tools.acquisition_progress import (
     AcquisitionProgressStage,
     render_acquisition_progress,
 )
-from yt_media_tools.cache import CacheStats, MetadataCache, field_max_age
+from yt_media_tools.cache import CacheStats, MetadataCache
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_constants import (
     DEFAULT_ENUMERATION_PROGRESS_INTERVAL,
     VERBOSE_ENUMERATION_PROGRESS_INTERVAL,
 )
+from yt_media_tools.freshness_config import format_freshness_policy
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.query import Query, QuerySchema, QuerySyntaxError, apply_query, resolve_query
 from yt_media_tools.youtubejs import YouTubeJsError, acquire_basic_info as acquire_youtubejs_basic_info
@@ -230,15 +231,22 @@ def _cached_or_refresh_metadata(
             misses += 1
             refresh_ids.append(video_id)
             unresolved_fields_by_id[video_id] = frozenset(cache_fields)
-        elif cache.is_fresh(item, cache_fields, now=now):
-            hits += 1
-            cached_by_id[video_id] = item.record
         else:
+            stale_fields = cache.stale_fields(item, cache_fields, now=now)
+            if not stale_fields:
+                hits += 1
+                cached_by_id[video_id] = item.record
+                continue
             stale += 1
             refresh_ids.append(video_id)
             cached_by_id[video_id] = item.record
-            age = now - item.fetched_at
-            unresolved_fields_by_id[video_id] = frozenset(field for field in cache_fields if age > field_max_age(field))
+            unresolved_fields_by_id[video_id] = stale_fields
+            details = ", ".join(
+                f"{field} ({format_freshness_policy(resolved.policy)} from {resolved.origin})"
+                for field in sorted(stale_fields)
+                for resolved in (cache.freshness_policy(field),)
+            )
+            _verbose(verbose, f"Cached metadata for {video_id} is stale: {details}.", minimum=2)
 
     # Logical source rows may repeat the same media entity. Preserve those occurrences
     # for relational evaluation, but refresh each entity at most once in this acquisition

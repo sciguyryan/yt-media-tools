@@ -231,6 +231,19 @@ yt-discover uses a persistent source-scoped SQLite metadata cache before asking 
 
 Freshness is field-aware. Stable identity and publication fields can be reused for much longer than mutable counters or availability state. If any field required by the current query has exceeded its freshness policy, yt-discover refreshes that video's complete authoritative yt-dlp record.
 
+The complete built-in policy needs no user configuration. To change selected policies, create `$XDG_CONFIG_HOME/yt-discover/freshness.toml`, or `~/.config/yt-discover/freshness.toml` when `XDG_CONFIG_HOME` is unset. A user file is a partial override, so this example changes only yt-dlp availability while retaining every other built-in value:
+
+```toml
+schema_version = 1
+
+[providers."yt-dlp".fields]
+availability = "12h"
+```
+
+Use `--freshness-config FILE` to select another file explicitly. The explicit path takes precedence over automatic discovery and must exist. Present configuration is validated strictly before acquisition: provider and field names must be known, durations must be positive integers followed by `m`, `h` or `d`, and the only special values are `immutable` and `always-refresh`. Invalid configuration is an error rather than a reason to fall back silently.
+
+`--cache-status` reports every effective policy and whether it came from the built-in catalogue or a user override. At `-vv`, stale-cache diagnostics identify the fields responsible for refresh together with their effective policies and origins.
+
 The default cache follows the XDG cache convention and normally lives at `~/.cache/yt-discover/metadata-v4.sqlite3`. Override it or disable it per run:
 
 ```bash

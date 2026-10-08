@@ -96,7 +96,7 @@ A stale high-priority value should not force reacquisition merely because its pr
 
 Known NULL ages too. Unsupported/inapplicable capability information is different and may change with a provider/schema capability revision rather than a TTL.
 
-Provider fields carry sensible default freshness policies from the complete built-in TOML catalogue. The configuration language supports positive durations in minutes, hours or days, plus `immutable` for data that does not expire with time but can still be explicitly invalidated and `always-refresh` for the opposite case. User override discovery and precedence remain subsequent work, separate from this built-in contract.
+Provider fields carry sensible default freshness policies from the complete built-in TOML catalogue. The configuration language supports positive durations in minutes, hours or days, plus `immutable` for data that does not expire with time but can still be explicitly invalidated and `always-refresh` for the opposite case. The resolved catalogue overlays a partial user file when one is present, preserving an origin alongside every typed policy.
 
 The initial catalogue deliberately reproduces the active pre-configuration values exactly, including the one-day fallback for unlisted yt-dlp fields. Policy changes remain separate from the configuration architecture.
 
@@ -112,6 +112,8 @@ schema_version = 1
 [providers."yt-dlp".fields]
 availability = "12h"
 ```
+
+The active cache reuse path consumes the resolved typed catalogue directly, including `immutable` and `always-refresh`, rather than reading TOML values itself. Cache-v4 provider reconciliation receives a provider definition built from the same catalogue. Existing explicitly persisted cache-v4 field overrides retain their established precedence over that installed default. Cache status exposes the resolved TOML policy and origin, while detailed verbose acquisition diagnostics identify which effective field policies made an observation stale.
 
 ## Source state is not metadata
 

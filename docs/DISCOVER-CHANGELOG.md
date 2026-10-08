@@ -9,6 +9,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [docs] Reconcile the cache-v4 design and registry documentation with TOML-backed built-in freshness policy.
 - [feature] Add XDG-compatible freshness configuration discovery and narrowly merge user provider or field overrides over the complete built-in policy.
 - [test] Cover explicit-path precedence, absent optional configuration, partial override isolation, retained policy origins and safe configuration failures.
+- [feature] Apply effective typed freshness policies to live cache reuse and cache-v4 provider reconciliation, including immutable and always-refresh semantics.
+- [observability] Report effective freshness values and origins through cache status and explain stale refreshes at field level in verbose output.
+- [test] Isolate user configuration during pytest and cover runtime policy decisions, cache-v4 reconciliation, CLI failures and human and JSON diagnostics.
+- [docs] Document the complete freshness configuration schema, location, precedence, failure and inspection contracts.
 - [release] Bump yt-discover to 0.32.0 after completing grammar revision 2, derived-relation integration and the parser-replacement investigation.
 - [maintenance] Remove the concluded Lark and Tree-sitter parser experiments, their dependencies and implementation-specific tooling after retaining the durable conformance results.
 - [docs] Retain the hand-written parser as the production yt-sql implementation because it provides the most consistent overall performance, allocation, diagnostic and maintenance profile.

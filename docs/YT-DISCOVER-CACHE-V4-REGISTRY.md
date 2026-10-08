@@ -10,7 +10,7 @@ Acquisition groups describe real provider fetch boundaries. A field must name a 
 
 Applicability records stable semantic constraints such as content service, logical source kind, facet and required source traits. It does not replace the existing physical provider-selection machinery. The two contracts can be reconciled as the v4 implementation moves into acquisition and persistence, but this part does not change current provider selection.
 
-Provider priority, enabled state, immutable registration order and user overrides are intentionally absent from the code-owned definition. They are persistent deployment state. SQLite stores and reconciles that state with the code-owned contract.
+Provider priority, enabled state, immutable registration order and explicit database field overrides are intentionally absent from the installed definition. They are persistent deployment state. The TOML catalogue is resolved before the provider definition is built; SQLite then stores and reconciles its persistent state with that installed contract.
 
 Likewise, this part does not create `entity_id`, provider metadata rows or acquisition-state rows, and it does not resolve competing cached values. Those are #128 concerns. The purpose here is to give those later layers a small, validated vocabulary instead of letting table columns become the language contract by accident.
 
@@ -22,7 +22,7 @@ Reconciliation starts from the installed code declaration. A provider seen for t
 
 The stored rows also retain a snapshot of the provider contract needed to recognise incompatible reuse of an existing identity. Metadata-table identity, field storage identity, field type and acquisition-group membership are not silently rewritten. A provider schema revision may advance, but an older implementation cannot open a database whose recorded provider revision is newer. Changes that require a real provider migration therefore remain explicit work rather than reconciliation side effects.
 
-Freshness defaults are installed configuration and may evolve with a provider revision. Deployment choices remain database-owned. Reconciliation updates the default while retaining any field-specific override. Provider enabled state and priority behave the same way: reopening or reinstalling a provider does not reset them.
+Freshness defaults are installed configuration and may evolve with a provider revision or a user TOML override. Reconciliation updates the installed default while retaining any explicit database field override. Provider enabled state and priority behave the same way: reopening or reinstalling a provider does not reset them.
 
 These tables are deliberately isolated from the v3 runtime cache path. Part 2 establishes persistent registry behaviour for v4; it does not select a v4 database at startup, migrate a v3 database, create entity metadata, record acquisition state or resolve competing cached values.
 

@@ -68,8 +68,9 @@ def _build_dataset(
 
 @pytest.fixture(autouse=True)
 def isolated_default_cache_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep every test, including child processes, away from the user's real cache."""
+    """Keep every test, including child processes, away from user cache and configuration."""
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "xdg-cache"))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg-config"))
 
 
 @pytest.fixture(scope="session")

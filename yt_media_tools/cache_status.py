@@ -9,8 +9,9 @@ import sqlite3
 from typing import Iterable
 
 from .cache_maintenance import CacheRetentionPolicy, plan_cache_retention
-from .cache_registry import ProviderDefinition
-from .cache_registry_store import REGISTRY_SCHEMA_REVISION
+from .cache_registry import FreshnessMode, FreshnessPolicy, ProviderDefinition
+from .cache_registry_store import REGISTRY_SCHEMA_REVISION, CacheV4RegistryStore
+from .freshness_config import FreshnessPolicyCatalogue, format_freshness_policy
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,17 @@ class SQLiteCacheStatus:
 
 
 @dataclass(frozen=True)
+class FreshnessCacheStatus:
+    """One effective configured policy exposed for cache diagnostics."""
+
+    provider: str
+    field: str | None
+    mode: str
+    max_age_seconds: int | None
+    origin: str
+
+
+@dataclass(frozen=True)
 class CacheStatus:
     """Structured cache status independent of terminal presentation."""
 
@@ -80,6 +92,7 @@ class CacheStatus:
     acquisition_records: int
     source: SourceCacheStatus
     retention: CacheRetentionPolicy
+    freshness_policies: tuple[FreshnessCacheStatus, ...]
     sqlite: SQLiteCacheStatus
 
     def to_dict(self) -> dict[str, object]:
@@ -88,6 +101,7 @@ class CacheStatus:
             {**asdict(provider), "available": provider.available, "revision_current": provider.revision_current}
             for provider in self.providers
         ]
+        payload["freshness_policies"] = [asdict(policy) for policy in self.freshness_policies]
         for key in ("provider_max_age", "source_max_age"):
             value = getattr(self.retention, key)
             payload["retention"][key] = None if value is None else int(value.total_seconds())
@@ -112,6 +126,7 @@ def collect_cache_status(
     providers: Iterable[ProviderDefinition],
     *,
     retention: CacheRetentionPolicy | None = None,
+    freshness: FreshnessPolicyCatalogue | None = None,
     now=None,
 ) -> CacheStatus:
     """Return a read-only status snapshot for an open cache database."""
@@ -192,6 +207,26 @@ def collect_cache_status(
         wal_bytes=_file_size(Path(str(path) + "-wal")),
         shm_bytes=_file_size(Path(str(path) + "-shm")),
     )
+    freshness_status = []
+    if freshness is not None:
+        registry = CacheV4RegistryStore(connection)
+        for provider in freshness.providers:
+            overrides = dict(registry.field_freshness_overrides(provider.key))
+            configured = ((None, provider.default), *provider.fields)
+            for field, resolved in configured:
+                if resolved is None:
+                    continue
+                policy = overrides.get(field, resolved.policy)
+                origin = "database override" if field in overrides else resolved.origin
+                freshness_status.append(
+                    FreshnessCacheStatus(
+                        provider=provider.key,
+                        field=field,
+                        mode=policy.mode.value,
+                        max_age_seconds=policy.max_age_seconds,
+                        origin=origin,
+                    )
+                )
     return CacheStatus(
         cache_schema_version=None if schema_row is None else int(schema_row[0]),
         registry_schema_revision=None if registry_row is None else int(registry_row[0]),
@@ -201,6 +236,7 @@ def collect_cache_status(
         acquisition_records=_count(connection, "cache_v4_acquisition_state"),
         source=source,
         retention=retention,
+        freshness_policies=tuple(freshness_status),
         sqlite=sqlite_status,
     )
 
@@ -241,6 +277,13 @@ def format_cache_status(status: CacheStatus) -> str:
             f"acquisitions {provider.acquisition_records} ({provider.successful_acquisitions} successful, "
             f"{provider.failed_acquisitions} failed), retention-eligible {provider.retention_eligible_contributions}{suffix}"
         )
+    lines.append("Freshness policies:")
+    if not status.freshness_policies:
+        lines.append("  unavailable")
+    for configured in status.freshness_policies:
+        field = configured.field if configured.field is not None else "default"
+        policy = FreshnessPolicy(FreshnessMode(configured.mode), configured.max_age_seconds)
+        lines.append(f"  {configured.provider}.{field}: {format_freshness_policy(policy)} ({configured.origin})")
     lines.extend(
         [
             (

@@ -580,6 +580,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="SQLite metadata cache (default: XDG cache directory or ~/.cache/yt-discover/metadata-v4.sqlite3)",
     )
     cache_group.add_argument(
+        "--freshness-config",
+        type=Path,
+        metavar="FILE",
+        help="load freshness-policy overrides from FILE instead of the XDG configuration path",
+    )
+    cache_group.add_argument(
         "--keep-old-cache",
         action="store_true",
         help="retain a successfully migrated legacy cache after verified v4 cut-over",

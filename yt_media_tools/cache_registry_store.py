@@ -519,6 +519,29 @@ class CacheV4RegistryStore:
         ).fetchall()
         return tuple(str(row["provider_key"]) for row in rows)
 
+    def field_freshness_overrides(self, provider_key: str) -> tuple[tuple[str, FreshnessPolicy], ...]:
+        """Return explicit database-owned freshness overrides for one provider."""
+        rows = self.connection.execute(
+            """
+            SELECT f.field_name, f.freshness_mode_override, f.max_age_seconds_override
+            FROM cache_v4_fields AS f
+            JOIN cache_v4_providers AS p USING(provider_id)
+            WHERE p.provider_key = ? AND f.freshness_mode_override IS NOT NULL
+            ORDER BY f.registration_order
+            """,
+            (provider_key,),
+        ).fetchall()
+        return tuple(
+            (
+                str(row["field_name"]),
+                self._freshness_from_columns(
+                    str(row["freshness_mode_override"]),
+                    row["max_age_seconds_override"],
+                ),
+            )
+            for row in rows
+        )
+
     def set_provider_policy(
         self,
         provider_key: str,

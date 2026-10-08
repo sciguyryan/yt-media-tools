@@ -116,6 +116,31 @@ def test_status_json_payload_uses_seconds_for_retention_windows(tmp_path: Path) 
     connection.close()
 
 
+def test_status_reports_persisted_freshness_override_as_effective(tmp_path: Path) -> None:
+    from yt_media_tools.cache_registry import FreshnessPolicy
+    from yt_media_tools.cache_v4_ytdlp import YTDLP_FRESHNESS_FIELDS
+    from yt_media_tools.freshness_config import load_effective_freshness_configuration
+
+    path = tmp_path / "metadata.sqlite3"
+    connection = _populated_cache(path)
+    CacheV4RegistryStore(connection).set_field_overrides(
+        "yt-dlp",
+        "availability",
+        freshness=FreshnessPolicy.immutable(),
+    )
+    catalogue = load_effective_freshness_configuration(
+        provider_fields={"yt-dlp": YTDLP_FRESHNESS_FIELDS},
+        environ={"XDG_CONFIG_HOME": str(tmp_path / "absent")},
+    )
+
+    status = collect_cache_status(connection, path, (YTDLP_PROVIDER,), freshness=catalogue)
+    availability = next(policy for policy in status.freshness_policies if policy.field == "availability")
+    assert availability.mode == "immutable"
+    assert availability.max_age_seconds is None
+    assert availability.origin == "database override"
+    connection.close()
+
+
 def test_text_status_exposes_unavailable_provider_and_physical_facts(tmp_path: Path) -> None:
     path = tmp_path / "metadata.sqlite3"
     connection = _populated_cache(path)
@@ -141,6 +166,8 @@ def test_cache_status_cli_reads_existing_cache_without_source(monkeypatch, tmp_p
     output = capsys.readouterr().out
     assert "Cache schema: 3" in output
     assert "yt-dlp:" in output
+    assert "Freshness policies:" in output
+    assert "yt-dlp.availability: 1h (built-in)" in output
     assert "Source state:" in output
     assert "SQLite: journal=wal" in output
 
@@ -160,7 +187,43 @@ def test_cache_status_cli_can_emit_machine_readable_json(tmp_path: Path, capsys)
     assert payload["providers"][0]["available"] is True
     assert payload["providers"][0]["revision_current"] is True
     assert payload["retention"]["provider_max_age"] is None
+    availability = next(
+        policy
+        for policy in payload["freshness_policies"]
+        if policy["provider"] == "yt-dlp" and policy["field"] == "availability"
+    )
+    assert availability == {
+        "provider": "yt-dlp",
+        "field": "availability",
+        "mode": "max-age",
+        "max_age_seconds": 3600,
+        "origin": "built-in",
+    }
     assert payload["sqlite"]["journal_mode"] == "wal"
+
+
+def test_cache_status_reports_discovered_user_policy_and_origin(monkeypatch, tmp_path: Path, capsys) -> None:
+    from yt_media_tools.discover_application import main
+
+    path = tmp_path / "metadata.sqlite3"
+    connection = _populated_cache(path)
+    connection.close()
+    config_root = tmp_path / "configuration"
+    config = config_root / "yt-discover" / "freshness.toml"
+    config.parent.mkdir(parents=True)
+    config.write_text(
+        """schema_version = 1
+[providers."yt-dlp".fields]
+availability = "12h"
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config_root))
+
+    assert main(["--cache-status", "--cache", str(path)]) == 0
+    output = capsys.readouterr().out
+    assert f"yt-dlp.availability: 12h (user override: {config})" in output
+    assert "yt-dlp.title: 7d (built-in)" in output
 
 
 def test_cache_compact_cli_compacts_explicit_cache_without_source(tmp_path: Path, capsys) -> None:

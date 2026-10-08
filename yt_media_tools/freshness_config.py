@@ -104,6 +104,16 @@ def parse_freshness_policy(value: object, *, location: str) -> FreshnessPolicy:
     return FreshnessPolicy.max_age(seconds)
 
 
+def format_freshness_policy(policy: FreshnessPolicy) -> str:
+    """Return the compact configuration spelling for a typed policy."""
+    if policy.max_age_seconds is None:
+        return policy.mode.value
+    for suffix, seconds in (("d", 86400), ("h", 3600), ("m", 60)):
+        if policy.max_age_seconds % seconds == 0:
+            return f"{policy.max_age_seconds // seconds}{suffix}"
+    return f"{policy.max_age_seconds}s"
+
+
 def _table(value: object, *, location: str) -> dict[str, object]:
     if not isinstance(value, dict):
         raise FreshnessConfigurationError(f"{location} must be a TOML table")

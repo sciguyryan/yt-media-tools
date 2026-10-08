@@ -28,7 +28,7 @@ from yt_media_tools.cache_startup_policy import (
 from yt_media_tools.cache_maintenance import CacheRetentionPolicy
 from yt_media_tools.cache_status import collect_cache_status, format_cache_status
 from yt_media_tools.cache_compaction import compact_cache
-from yt_media_tools.cache_v4_ytdlp import YTDLP_PROVIDER
+from yt_media_tools.cache_v4_ytdlp import YTDLP_FRESHNESS_FIELDS, build_ytdlp_provider
 from yt_media_tools.capabilities import safely_reject_lightweight
 from yt_media_tools.dates import DateContext
 from yt_media_tools.discover_acquisition import (
@@ -58,6 +58,7 @@ from yt_media_tools.discover_constants import (
 )
 from yt_media_tools.explain_presentation import render_svg, resolve_console_modes
 from yt_media_tools.external_tools import configure_external_diagnostics
+from yt_media_tools.freshness_config import FreshnessConfigurationError, load_effective_freshness_configuration
 from yt_media_tools.discover_explain import (
     _explain_analyze_payload,
     _format_explain_analyze_text,
@@ -324,6 +325,18 @@ def main(argv: list[str] | None = None) -> int:
         print(EXAMPLES)
         return 0
 
+    try:
+        freshness = load_effective_freshness_configuration(
+            provider_fields={"yt-dlp": YTDLP_FRESHNESS_FIELDS},
+            requested_path=args.freshness_config,
+        )
+        ytdlp_freshness = freshness.provider("yt-dlp")
+        if ytdlp_freshness is None:
+            raise FreshnessConfigurationError("effective freshness configuration has no yt-dlp provider")
+        ytdlp_provider = build_ytdlp_provider(ytdlp_freshness)
+    except (FreshnessConfigurationError, ValueError) as exc:
+        parser.error(f"invalid freshness configuration: {exc}")
+
     if args.cache_compact:
         try:
             cache_path = _resolve_cache_startup(args, explicit_cache=explicit_cache)
@@ -363,8 +376,9 @@ def main(argv: list[str] | None = None) -> int:
                 status = collect_cache_status(
                     connection,
                     cache_path,
-                    (YTDLP_PROVIDER,),
+                    (ytdlp_provider,),
                     retention=CacheRetentionPolicy(),
+                    freshness=freshness,
                 )
             finally:
                 connection.close()
@@ -773,7 +787,7 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, RuntimeError, sqlite3.Error) as exc:
             print(f"Error: metadata-cache startup failed: {exc}", file=sys.stderr)
             return 1
-        metadata_cache = MetadataCache(args.cache)
+        metadata_cache = MetadataCache(args.cache, freshness_policies=ytdlp_freshness)
         try:
             metadata_cache.open()
         except (OSError, RuntimeError, sqlite3.Error) as exc:
