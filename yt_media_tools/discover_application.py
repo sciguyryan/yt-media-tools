@@ -792,6 +792,7 @@ def main(argv: list[str] | None = None) -> int:
     limit_batches = 0
     limit_candidates_examined = 0
     enumeration_only_acquisition = False
+    source_metadata_records: list[dict] = []
     acquisition_started = perf_counter()
     source_record_counts: dict[tuple[str, str | None], int] = {}
     source_backend_resolutions: dict[tuple[str, str | None], tuple] = {}
@@ -1128,6 +1129,8 @@ def main(argv: list[str] | None = None) -> int:
             except YtDlpError as exc:
                 print(f"Error: {exc}.", file=sys.stderr)
                 return 1
+            if args.collection_output is not None and source.kind == "playlist":
+                source_metadata_records = flat_entries
             candidate_ids = []
             seen_ids = set()
             lightweight_rejected = 0
@@ -1289,6 +1292,8 @@ def main(argv: list[str] | None = None) -> int:
                 except YtDlpError as exc:
                     print(f"Error: {exc}.", file=sys.stderr)
                     return 1
+                if args.collection_output is not None and source.kind == "playlist":
+                    source_metadata_records = flat_entries
                 raw_records = []
                 observed_ids_for_cache = []
                 seen_ids: set[str] = set()
@@ -1377,6 +1382,9 @@ def main(argv: list[str] | None = None) -> int:
                         except YtDlpError as exc:
                             print(f"Error: {exc}.", file=sys.stderr)
                             return 1
+
+                    if args.collection_output is not None and source.kind == "playlist":
+                        source_metadata_records = flat_entries
 
                     current_ids: list[str] = []
                     entry_by_id: dict[str, dict] = {}
@@ -1729,7 +1737,13 @@ def main(argv: list[str] | None = None) -> int:
             collection_payload = (
                 build_constructed_collection(selected, resolved_query)
                 if multi_source
-                else build_playlist_collection(source, raw_records, selected, resolved_query)
+                else build_playlist_collection(
+                    source,
+                    raw_records,
+                    selected,
+                    resolved_query,
+                    source_metadata_records=source_metadata_records,
+                )
             )
             write_collection(args.collection_output, collection_payload)
         except ValueError as exc:

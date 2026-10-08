@@ -69,6 +69,39 @@ def test_collection_export_preserves_aliases_calculations_null_and_falsey_values
     }
 
 
+def test_collection_export_prefers_current_source_title_over_detailed_entry_metadata():
+    row = {"id": "a", "title": "Alpha", "playlist_title": "Cached title"}
+    query = _query(SelectTerm("id", "id", kind="string"))
+
+    payload = build_playlist_collection(
+        _playlist(),
+        [row],
+        [row],
+        query,
+        source_metadata_records=[{"id": "a", "playlist_title": "Current title"}],
+    )
+
+    assert payload["collection"]["metadata"]["title"] == "Current title"
+
+
+def test_collection_export_omits_conflicting_current_source_titles():
+    row = {"id": "a", "title": "Alpha", "playlist_title": "Cached title"}
+    query = _query(SelectTerm("id", "id", kind="string"))
+
+    payload = build_playlist_collection(
+        _playlist(),
+        [row],
+        [row],
+        query,
+        source_metadata_records=[
+            {"id": "a", "playlist_title": "First title"},
+            {"id": "b", "playlist_title": "Second title"},
+        ],
+    )
+
+    assert "title" not in payload["collection"]["metadata"]
+
+
 def test_collection_export_duplicate_targets_keep_independent_projected_rows():
     first = {"id": "same", "title": "First"}
     second = {"id": "same", "title": "Second"}

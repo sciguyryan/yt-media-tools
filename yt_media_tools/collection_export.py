@@ -36,14 +36,36 @@ def _consistent_string(records: Iterable[Mapping[str, Any]], field: str) -> str 
     return None
 
 
-def playlist_metadata(source: SourceSpec, raw_records: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+def _preferred_consistent_string(
+    primary_records: Iterable[Mapping[str, Any]],
+    fallback_records: Iterable[Mapping[str, Any]],
+    field: str,
+) -> str | None:
+    """Prefer a current source observation without hiding conflicting values."""
+    primary_values = {value for record in primary_records if isinstance((value := record.get(field)), str) and value}
+    if primary_values:
+        return next(iter(primary_values)) if len(primary_values) == 1 else None
+    return _consistent_string(fallback_records, field)
+
+
+def playlist_metadata(
+    source: SourceSpec,
+    raw_records: Sequence[Mapping[str, Any]],
+    *,
+    source_metadata_records: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, str]:
     """Build truthful source metadata for a playlist-derived effective collection."""
     if source.kind != COLLECTION_TYPE_PLAYLIST:
         raise ValueError("collection export currently requires a playlist source")
 
     metadata: dict[str, str] = {}
     for raw_field, interchange_field in _PLAYLIST_METADATA_FIELDS:
-        if value := _consistent_string(raw_records, raw_field):
+        value = (
+            _preferred_consistent_string(source_metadata_records, raw_records, raw_field)
+            if raw_field == "playlist_title"
+            else _consistent_string(raw_records, raw_field)
+        )
+        if value:
             metadata[interchange_field] = value
 
     # These identify the remote playlist from which the effective collection was
@@ -96,6 +118,8 @@ def build_playlist_collection(
     raw_records: Sequence[Mapping[str, Any]],
     selected_rows: Sequence[Mapping[str, Any]],
     query: Query,
+    *,
+    source_metadata_records: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, object]:
     """Build a v1 playlist collection without discarding the effective projection."""
     entries = [_collection_entry(row, query, position=position) for position, row in enumerate(selected_rows, start=1)]
@@ -104,7 +128,11 @@ def build_playlist_collection(
         "version": COLLECTION_INTERCHANGE_VERSION,
         "collection": {
             "type": COLLECTION_TYPE_PLAYLIST,
-            "metadata": playlist_metadata(source, raw_records),
+            "metadata": playlist_metadata(
+                source,
+                raw_records,
+                source_metadata_records=source_metadata_records,
+            ),
         },
         "entries": entries,
     }
