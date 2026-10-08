@@ -100,6 +100,19 @@ Provider fields carry sensible default freshness policies from the complete buil
 
 The initial catalogue deliberately reproduces the active pre-configuration values exactly, including the one-day fallback for unlisted yt-dlp fields. Policy changes remain separate from the configuration architecture.
 
+The user configuration resolution layer discovers `freshness.toml` at `$XDG_CONFIG_HOME/yt-discover/freshness.toml`, falling back to `~/.config/yt-discover/freshness.toml` when `XDG_CONFIG_HOME` is unset or empty. A path explicitly supplied by an application caller takes precedence over automatic discovery. The automatic file is optional, so its absence leaves the complete built-in catalogue unchanged. An explicitly requested file must exist, and any present file must be readable, valid TOML and valid against the known provider and field contract.
+
+User files are deliberately partial. They carry the same schema version but need declare only the provider defaults or individual fields being changed. Merging replaces only those entries and preserves the built-in values and origins of everything else. There is no freshness-specific environment-variable override and no silent fallback after an invalid user file.
+
+For example, this changes only yt-dlp `availability`; all other policies continue to come from the built-in catalogue:
+
+```toml
+schema_version = 1
+
+[providers."yt-dlp".fields]
+availability = "12h"
+```
+
 ## Source state is not metadata
 
 This was an important point in the discussion because the tempting pruning implementation gets it wrong.

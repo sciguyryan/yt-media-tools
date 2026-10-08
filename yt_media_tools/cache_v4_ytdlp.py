@@ -38,11 +38,12 @@ _STABLE_SCALARS: tuple[tuple[str, str], ...] = (
     ("release_timestamp", "datetime"),
     ("modified_timestamp", "datetime"),
 )
+YTDLP_FRESHNESS_FIELDS = tuple(name for name, _kind in _STABLE_SCALARS)
 
 YTDLP_FRESHNESS_POLICIES = load_freshness_configuration(
     BUILTIN_FRESHNESS_CONFIG,
     origin="built-in",
-    provider_fields={"yt-dlp": (name for name, _kind in _STABLE_SCALARS)},
+    provider_fields={"yt-dlp": YTDLP_FRESHNESS_FIELDS},
     require_complete=True,
 ).provider("yt-dlp")
 assert YTDLP_FRESHNESS_POLICIES is not None

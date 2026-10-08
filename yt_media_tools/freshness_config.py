@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+import os
 from pathlib import Path
 import re
 import tomllib
@@ -14,6 +15,8 @@ from .cache_registry import FreshnessPolicy
 
 FRESHNESS_CONFIG_SCHEMA_VERSION = 1
 BUILTIN_FRESHNESS_CONFIG = Path(__file__).with_name("freshness-defaults.toml")
+FRESHNESS_CONFIG_DIRECTORY = "yt-discover"
+FRESHNESS_CONFIG_FILENAME = "freshness.toml"
 
 _DURATION = re.compile(r"^([1-9][0-9]*)([mhd])$")
 _DURATION_SECONDS = {"m": 60, "h": 3600, "d": 86400}
@@ -62,6 +65,20 @@ class FreshnessPolicyCatalogue:
         """Resolve one provider field without applying query-language aliases."""
         provider = self.provider(provider_key)
         return None if provider is None else provider.field(field_name)
+
+
+def default_user_freshness_config_path(
+    *,
+    environ: Mapping[str, str] | None = None,
+    home: Path | None = None,
+) -> Path:
+    """Return the XDG-compatible user freshness-configuration path."""
+    environment = os.environ if environ is None else environ
+    configured_root = environment.get("XDG_CONFIG_HOME")
+    root = (
+        Path(configured_root).expanduser() if configured_root else (Path.home() if home is None else home) / ".config"
+    )
+    return root / FRESHNESS_CONFIG_DIRECTORY / FRESHNESS_CONFIG_FILENAME
 
 
 def parse_freshness_policy(value: object, *, location: str) -> FreshnessPolicy:
@@ -197,3 +214,69 @@ def load_freshness_configuration(
         provider_fields=provider_fields,
         require_complete=require_complete,
     )
+
+
+def merge_freshness_configurations(
+    base: FreshnessPolicyCatalogue,
+    override: FreshnessPolicyCatalogue,
+) -> FreshnessPolicyCatalogue:
+    """Overlay explicitly supplied provider policies without losing their origins."""
+    if base.schema_version != override.schema_version:
+        raise FreshnessConfigurationError("cannot merge freshness configurations with different schema versions")
+
+    base_providers = {provider.key: provider for provider in base.providers}
+    override_providers = {provider.key: provider for provider in override.providers}
+    unknown_providers = sorted(set(override_providers) - set(base_providers))
+    if unknown_providers:
+        raise FreshnessConfigurationError(
+            f"freshness override contains provider(s) absent from built-in configuration: {', '.join(unknown_providers)}"
+        )
+
+    providers: list[ProviderFreshnessPolicies] = []
+    for provider_key in sorted(base_providers):
+        base_provider = base_providers[provider_key]
+        override_provider = override_providers.get(provider_key)
+        if override_provider is None:
+            providers.append(base_provider)
+            continue
+        fields = dict(base_provider.fields)
+        fields.update(override_provider.fields)
+        providers.append(
+            ProviderFreshnessPolicies(
+                key=provider_key,
+                default=override_provider.default or base_provider.default,
+                fields=tuple(sorted(fields.items())),
+            )
+        )
+    return FreshnessPolicyCatalogue(base.schema_version, tuple(providers))
+
+
+def load_effective_freshness_configuration(
+    *,
+    provider_fields: Mapping[str, Iterable[str]],
+    requested_path: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+    home: Path | None = None,
+    builtin_path: Path = BUILTIN_FRESHNESS_CONFIG,
+) -> FreshnessPolicyCatalogue:
+    """Load complete built-ins and overlay one discovered or requested user file."""
+    builtin = load_freshness_configuration(
+        builtin_path,
+        origin="built-in",
+        provider_fields=provider_fields,
+        require_complete=True,
+    )
+    user_path = (
+        requested_path.expanduser()
+        if requested_path is not None
+        else default_user_freshness_config_path(environ=environ, home=home)
+    )
+    if requested_path is None and not user_path.exists():
+        return builtin
+    override = load_freshness_configuration(
+        user_path,
+        origin=f"user override: {user_path}",
+        provider_fields=provider_fields,
+        require_complete=False,
+    )
+    return merge_freshness_configurations(builtin, override)
