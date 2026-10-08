@@ -19,6 +19,8 @@ Downloader configuration uses one versioned JSON profile system:
 from __future__ import annotations
 
 import argparse
+import contextlib
+import dataclasses
 import base64
 import copy
 import hashlib
@@ -29,7 +31,7 @@ import shlex
 import shutil
 import subprocess
 
-from yt_media_tools.collection_state import resolve_collection_identity
+from yt_media_tools.collection_state import CollectionState, CollectionStateError, resolve_collection_identity
 from yt_media_tools.collection_interchange import (
     COLLECTION_INTERCHANGE_SCHEMA,
     COLLECTION_INTERCHANGE_VERSION,
@@ -1555,6 +1557,20 @@ def load_collection_input(path: Path) -> InputSource:
             raise ValueError(f"collection entry {index} metadata must be a JSON object")
         targets.append(target)
     return InputSource(collection_file=expanded, direct_targets=tuple(targets), collection_identity=identity)
+
+
+def reconcile_collection_targets(input_source: InputSource, completed: set[str]) -> InputSource:
+    """Filter completed members without altering the original collection or its positions.
+
+    The collection metadata plugin reads positions from the original JSON file,
+    not the shortened positional argument sequence.
+    """
+    if input_source.collection_file is None:
+        return input_source
+    return dataclasses.replace(
+        input_source,
+        direct_targets=tuple(target for target in input_source.direct_targets if target not in completed),
+    )
 
 
 def resolve_input(args: argparse.Namespace) -> InputSource:
@@ -4293,7 +4309,45 @@ def main(argv: Sequence[str] | None = None) -> int:
         os.close(descriptor)
         output_event_file = Path(event_name)
 
-    exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
+    # Reconcile under the collection lock and retain it across yt-dlp execution.
+    # This stage deliberately does not infer completion from process exit status;
+    # structured per-target persistence is introduced in Part 3.
+    continuation = (
+        CollectionState() if input_source.collection_file is not None and input_source.collection_identity else None
+    )
+    lock = (
+        continuation.collection_lock(input_source.collection_identity)
+        if continuation is not None and not args.dry_run
+        else contextlib.nullcontext()
+    )
+    try:
+        with lock:
+            effective_plan = plan
+            if continuation is not None and not args.dry_run:
+                try:
+                    completed = continuation.completed(input_source.collection_identity)
+                except CollectionStateError as exc:
+                    print(
+                        f"Warning: collection continuation unavailable ({exc}); processing all targets.",
+                        file=sys.stderr,
+                    )
+                    completed = set()
+                reconciled = reconcile_collection_targets(input_source, completed)
+                remaining = reconciled.direct_targets
+                print(
+                    f"Collection continuation: requested={len(input_source.direct_targets)}, "
+                    f"previously-completed={len(input_source.direct_targets) - len(remaining)}, "
+                    f"remaining={len(remaining)}.",
+                    file=sys.stderr,
+                )
+                effective_plan = dataclasses.replace(plan, input_source=reconciled)
+            if continuation is not None and not args.dry_run and not effective_plan.input_source.direct_targets:
+                exit_status = 0
+            else:
+                exit_status = run(effective_plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
+    except CollectionStateError as exc:
+        print(f"Warning: collection state unavailable ({exc}); processing all targets.", file=sys.stderr)
+        exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
 
     queue_report_payload: dict[str, object] | None = None
     if (args.remove_completed_ids or args.remove_completed_rows) and not args.dry_run:

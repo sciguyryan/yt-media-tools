@@ -369,3 +369,29 @@ def test_collection_entry_metadata_must_be_an_object(downloader, tmp_path: Path)
 
     with pytest.raises(ValueError, match="metadata must be a JSON object"):
         downloader.load_collection_input(collection)
+
+
+def test_continuation_reconciliation_preserves_order_duplicates_and_original_file(downloader, tmp_path: Path) -> None:
+    collection = _write_collection(tmp_path / "collection.json", targets=("A", "B", "A", "X", "C"))
+    original = collection.read_bytes()
+    source = downloader.load_collection_input(collection)
+    reconciled = downloader.reconcile_collection_targets(source, {"A", "C"})
+    assert reconciled.direct_targets == ("B", "X")
+    assert reconciled.collection_file == source.collection_file
+    assert source.direct_targets == ("A", "B", "A", "X", "C")
+    assert collection.read_bytes() == original
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        downloader.DownloadPolicy(resolution="best", format_selector="bv+ba/b", reverse_playlist=False),
+        reconciled,
+        None,
+    )
+    assert command[-3:] == ["--", "B", "X"]
+    assert "CollectionMetadata:when=pre_process" in " ".join(command)
+
+
+def test_continuation_reconciliation_handles_all_completed_and_unidentified(downloader, tmp_path: Path) -> None:
+    source = downloader.load_collection_input(_write_collection(tmp_path / "collection.json"))
+    assert source.collection_identity is None
+    assert downloader.reconcile_collection_targets(source, set()).direct_targets == source.direct_targets
+    assert downloader.reconcile_collection_targets(source, set(source.direct_targets)).direct_targets == ()
