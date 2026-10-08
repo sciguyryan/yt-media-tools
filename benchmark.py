@@ -273,6 +273,46 @@ TARGETS = (
         "Analyse an expression tree with depth 128.",
         "scaling",
     ),
+    *(
+        BenchmarkTarget(
+            f"parser.nested.depth_{depth}",
+            f"benchmarks/test_scaling_benchmarks.py::test_parse_query_nested[{depth}]",
+            "scaling",
+            f"Parse a scalar expression nested to depth {depth} with the reference parser.",
+            "scaling",
+        )
+        for depth in (1, 32, 128)
+    ),
+    *(
+        BenchmarkTarget(
+            f"parser.tree_sitter.model.nested.depth_{depth}",
+            f"benchmarks/test_scaling_benchmarks.py::test_parse_tree_sitter_query_nested[{depth}]",
+            "scaling",
+            f"Parse a scalar expression nested to depth {depth} with the Tree-sitter candidate.",
+            "scaling",
+        )
+        for depth in (1, 32, 128)
+    ),
+    *(
+        BenchmarkTarget(
+            f"parser.malformed_nested.depth_{depth}",
+            f"benchmarks/test_scaling_benchmarks.py::test_reject_query_nested[{depth}]",
+            "scaling",
+            f"Reject unmatched scalar parentheses at depth {depth} with the reference parser.",
+            "scaling",
+        )
+        for depth in (1, 32, 128)
+    ),
+    *(
+        BenchmarkTarget(
+            f"parser.tree_sitter.model.malformed_nested.depth_{depth}",
+            f"benchmarks/test_scaling_benchmarks.py::test_reject_tree_sitter_query_nested[{depth}]",
+            "scaling",
+            f"Reject unmatched scalar parentheses at depth {depth} with the Tree-sitter candidate.",
+            "scaling",
+        )
+        for depth in (1, 32, 128)
+    ),
     BenchmarkTarget(
         "end_to_end.offline.100",
         "benchmarks/test_scaling_benchmarks.py::test_offline_dataset_scaling[100]",
@@ -321,6 +361,26 @@ TARGETS = (
         "memory",
         "Measure traced allocations for collection pipeline depth 8.",
         "memory",
+    ),
+    *(
+        BenchmarkTarget(
+            f"memory.parser.reference.nested.depth_{depth}",
+            f"benchmarks/test_memory_benchmarks.py::test_parser_peak_allocations[{depth}]",
+            "memory",
+            f"Measure reference parser allocations for scalar nesting depth {depth}.",
+            "memory",
+        )
+        for depth in (1, 32)
+    ),
+    *(
+        BenchmarkTarget(
+            f"memory.parser.tree_sitter.nested.depth_{depth}",
+            f"benchmarks/test_memory_benchmarks.py::test_tree_sitter_parser_peak_allocations[{depth}]",
+            "memory",
+            f"Measure Tree-sitter candidate allocations for scalar nesting depth {depth}.",
+            "memory",
+        )
+        for depth in (1, 32)
     ),
 )
 TARGET_BY_NAME = {target.name: target for target in TARGETS}

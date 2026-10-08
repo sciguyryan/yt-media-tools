@@ -90,6 +90,17 @@ python benchmark.py parser.simple parser.complex parser.collection parser.derive
 
 An environment without the optional binding skips the Tree-sitter benchmark cases. Raw timings isolate grammar-engine cost; model timings determine whether the complete candidate is competitive enough for a later cut-over.
 
+Parser scaling is kept out of the normal timing suite. The `scaling` group includes matched reference and Tree-sitter model paths for accepted scalar-parenthesis depths 1, 32 and 128, together with the corresponding unmatched-parenthesis rejection paths. Stable names begin with `parser.nested.*`, `parser.malformed_nested.*` and their `parser.tree_sitter.model.*` counterparts. For example:
+
+```bash
+python benchmark.py parser.nested.depth_32 \
+  parser.tree_sitter.model.nested.depth_32 \
+  parser.malformed_nested.depth_32 \
+  parser.tree_sitter.model.malformed_nested.depth_32
+```
+
+The `memory` group also exposes matched depth-1 and depth-32 parser measurements through `memory.parser.reference.nested.*` and `memory.parser.tree_sitter.nested.*`. These report peak Python allocations traced by `tracemalloc`; they do not claim to measure every native allocation made by Tree-sitter.
+
 ## Cache-v4 reconciliation
 
 The cache-v4 benchmark tools are retained as reproducible engineering evidence rather than as a release diary. They use deterministic profiles so storage and timing changes can be compared without depending on a developer's real cache.

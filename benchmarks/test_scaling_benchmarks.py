@@ -5,17 +5,79 @@ from __future__ import annotations
 import pytest
 
 from yt_discover_tests.conformance.generate_dataset import DATASET_SEED, build_records
+from yt_media_tools.experimental_tree_sitter_parser import parse_tree_sitter_query, tree_sitter_available
 from yt_media_tools.query import apply_query, parse_query, resolve_query
+from yt_media_tools.query_model import QuerySyntaxError
 from yt_media_tools.query_properties import analyse_query
 from yt_media_tools.schema import QuerySchema
 
 AST_DEPTHS = (8, 32, 128)
 DATASET_SIZES = (100, 1_000, 10_000)
+PARSER_NESTING_DEPTHS = (1, 32, 128)
 
 
 def _deep_predicate(depth: int) -> str:
     terms = [f"view_count >= {index}" for index in range(depth)]
     return "SELECT id WHERE " + " AND ".join(terms)
+
+
+def _nested_scalar(depth: int, *, malformed: bool = False) -> str:
+    closing_delimiters = depth - 1 if malformed else depth
+    return f"SELECT {'(' * depth}id{')' * closing_delimiters} FROM @fixture"
+
+
+def _reject_query(parser, source: str) -> QuerySyntaxError:
+    try:
+        parser(source)
+    except QuerySyntaxError as error:
+        return error
+    raise AssertionError("Malformed parser-scaling input was accepted.")
+
+
+@pytest.mark.scale
+@pytest.mark.benchmark(group="parser-scaling")
+@pytest.mark.parametrize("depth", PARSER_NESTING_DEPTHS)
+def test_parse_query_nested(benchmark, depth: int) -> None:
+    """Measure reference parser growth as scalar parentheses deepen."""
+    source = _nested_scalar(depth)
+    benchmark.extra_info["benchmark_id"] = f"parser.nested.depth_{depth}"
+    result = benchmark(parse_query, source)
+    assert result.source == source
+
+
+@pytest.mark.scale
+@pytest.mark.benchmark(group="parser-scaling")
+@pytest.mark.parametrize("depth", PARSER_NESTING_DEPTHS)
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_parse_tree_sitter_query_nested(benchmark, depth: int) -> None:
+    """Measure candidate parser growth as scalar parentheses deepen."""
+    source = _nested_scalar(depth)
+    benchmark.extra_info["benchmark_id"] = f"parser.tree_sitter.model.nested.depth_{depth}"
+    result = benchmark(parse_tree_sitter_query, source)
+    assert result.source == source
+
+
+@pytest.mark.scale
+@pytest.mark.benchmark(group="parser-scaling")
+@pytest.mark.parametrize("depth", PARSER_NESTING_DEPTHS)
+def test_reject_query_nested(benchmark, depth: int) -> None:
+    """Measure reference parser rejection as unmatched parentheses deepen."""
+    source = _nested_scalar(depth, malformed=True)
+    benchmark.extra_info["benchmark_id"] = f"parser.malformed_nested.depth_{depth}"
+    error = benchmark(_reject_query, parse_query, source)
+    assert error.source == source
+
+
+@pytest.mark.scale
+@pytest.mark.benchmark(group="parser-scaling")
+@pytest.mark.parametrize("depth", PARSER_NESTING_DEPTHS)
+@pytest.mark.skipif(not tree_sitter_available(), reason="optional Tree-sitter experiment is not installed")
+def test_reject_tree_sitter_query_nested(benchmark, depth: int) -> None:
+    """Measure candidate parser rejection as unmatched parentheses deepen."""
+    source = _nested_scalar(depth, malformed=True)
+    benchmark.extra_info["benchmark_id"] = f"parser.tree_sitter.model.malformed_nested.depth_{depth}"
+    error = benchmark(_reject_query, parse_tree_sitter_query, source)
+    assert error.source == source
 
 
 @pytest.mark.scale

@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Optimise Tree-sitter query-model construction to beat the hand-written parser across the simple, complex, collection and derived representative workloads on repeated local measurements.
+- [benchmark] Add matched accepted and malformed parser-scaling targets at bounded nesting depths together with separately instrumented traced-allocation comparisons.
+- [docs] Record the favourable representative Tree-sitter throughput alongside slower malformed recovery, higher nested allocations, a newly classified missing-delimiter diagnostic-span difference and only modest maintained-line reduction.
+- [docs] Keep Tree-sitter cut-over and production packaging undecided until the remaining diagnostic, scaling and maintainability concerns are resolved or deliberately accepted.
 - [test] Complete the bounded Tree-sitter differential gate across the accepted inventory, controlled mutations, eight seeded fuzz streams, canonical round trips and cross-parser formatting convergence.
 - [docs] Record that no behavioural differences remain within the bounded Tree-sitter conformance gate while retaining performance, packaging and cut-over as separate decisions.
 - [experimental] Translate Tree-sitter recovery and missing nodes into parser-independent yt-sql lexical and syntax diagnostics without exposing generated rule names or recovery artefacts.

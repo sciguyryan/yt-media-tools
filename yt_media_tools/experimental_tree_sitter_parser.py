@@ -22,6 +22,11 @@ _BASE_DIGITS = {
     "o": re.compile(r"[0-7]+(?:_[0-7]+)*"),
     "b": re.compile(r"[01]+(?:_[01]+)*"),
 }
+_BASE_DIGIT_CHARACTERS = {
+    "x": frozenset("0123456789abcdefABCDEF_"),
+    "o": frozenset("01234567_"),
+    "b": frozenset("01_"),
+}
 
 
 class TreeSitterUnavailableError(RuntimeError):
@@ -143,10 +148,31 @@ def _validate_numeric_tokens(source: str, masked: str) -> None:
 
 def _may_contain_malformed_numeric(source: str) -> bool:
     """Return whether raw text warrants quote-aware numeric validation."""
-    for match in _BASE_INTEGER_TOKEN.finditer(source):
-        prefix = match.group("prefix").casefold()
-        if _BASE_DIGITS[prefix].fullmatch(match.group("digits")) is None:
-            return True
+    folded = source.casefold()
+    if "0x" not in folded and "0o" not in folded and "0b" not in folded:
+        return False
+    index = source.find("0")
+    while index >= 0 and index + 1 < len(source):
+        prefix = source[index + 1].casefold()
+        if prefix in _BASE_DIGIT_CHARACTERS and (
+            index == 0 or not (source[index - 1].isalnum() or source[index - 1] in "_.")
+        ):
+            end = index + 2
+            while end < len(source) and (source[end].isalnum() or source[end] == "_"):
+                end += 1
+            digits = source[index + 2 : end]
+            valid_characters = _BASE_DIGIT_CHARACTERS[prefix]
+            if (
+                not digits
+                or digits.startswith("_")
+                or digits.endswith("_")
+                or "__" in digits
+                or any(character not in valid_characters for character in digits)
+            ):
+                return True
+            index = source.find("0", end)
+            continue
+        index = source.find("0", index + 1)
     return False
 
 
@@ -412,11 +438,11 @@ def recognise_tree_sitter_query(source: str) -> None:
     return None
 
 
-def _validated_tree_sitter_tree(source: str):
+def _validated_tree_sitter_tree(source: str, source_bytes: bytes | None = None):
     """Return one recovery-free private concrete syntax tree."""
     if _may_contain_malformed_numeric(source):
         _validate_numeric_tokens(source, _masked_source(source))
-    source_bytes = source.encode("utf-8")
+    source_bytes = source.encode("utf-8") if source_bytes is None else source_bytes
     tree = _parser().parse(source_bytes)
     root = tree.root_node
     if root.has_error:
@@ -427,4 +453,6 @@ def _validated_tree_sitter_tree(source: str):
 
 def parse_tree_sitter_query(source: str):
     """Parse yt-sql into the existing model through the optional Tree-sitter CST."""
-    return TreeSitterModelBuilder(source).build(_validated_tree_sitter_tree(source).root_node)
+    source_bytes = source.encode("utf-8")
+    tree = _validated_tree_sitter_tree(source, source_bytes)
+    return TreeSitterModelBuilder(source, source_bytes).build(tree.root_node)

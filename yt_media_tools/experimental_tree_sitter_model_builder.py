@@ -52,9 +52,11 @@ _COMPARISON_OPERATORS = re.compile(r"<=|>=|!=|<>|=|<|>")
 class TreeSitterModelBuilder:
     """Lower one valid Tree-sitter CST without invoking another parser."""
 
-    def __init__(self, source: str) -> None:
+    __slots__ = ("_offsets", "ascii_source", "collection_bindings", "source", "source_bytes")
+
+    def __init__(self, source: str, source_bytes: bytes | None = None) -> None:
         self.source = source
-        self.source_bytes = source.encode("utf-8")
+        self.source_bytes = source_bytes if source_bytes is not None else source.encode("utf-8")
         self.ascii_source = source.isascii()
         self.collection_bindings: list[str] = []
         self._offsets: dict[int, int] = {0: 0, len(self.source_bytes): len(source)}
@@ -81,16 +83,29 @@ class TreeSitterModelBuilder:
                     )
                 )
             query = replace(query, ctes=tuple(ctes))
-        return replace(query, source=self.source)
+        return query
 
     def query_expression(self, node) -> Query:
-        primaries = self._children(node, "query_primary")
+        primaries = []
+        unions = []
+        order = limit = offset = None
+        for child in node.named_children:
+            if child.type == "query_primary":
+                primaries.append(child)
+            elif child.type == "union_operator":
+                unions.append(child)
+            elif child.type == "order_by_clause":
+                order = child
+            elif child.type == "limit_clause":
+                limit = child
+            elif child.type == "offset_clause":
+                offset = child
         if not primaries:
             raise QuerySyntaxError(self.source, "Unsupported experimental query shape.", self.start(node))
 
         query = self.query_primary(primaries[0])
         operations = []
-        for union, primary in zip(self._children(node, "union_operator"), primaries[1:], strict=True):
+        for union, primary in zip(unions, primaries[1:], strict=True):
             operations.append(
                 SetOperation(
                     self.query_primary(primary),
@@ -101,9 +116,6 @@ class TreeSitterModelBuilder:
                 )
             )
 
-        order = self._first(node, "order_by_clause")
-        limit = self._first(node, "limit_clause")
-        offset = self._first(node, "offset_clause")
         limit_value = limit_literal = None
         if limit is not None:
             literal = self._first(limit, "positive_integer_literal")
@@ -113,6 +125,8 @@ class TreeSitterModelBuilder:
         if offset is not None:
             literal = self._first(offset, "integer_literal")
             offset_value, offset_literal = self.row_count(literal)
+        if not operations and order is None and limit is None and offset is None:
+            return query
         return replace(
             query,
             set_operations=tuple(query.set_operations) + tuple(operations),
@@ -125,19 +139,26 @@ class TreeSitterModelBuilder:
         )
 
     def query_primary(self, node) -> Query:
-        primary = self._meaningful(node)[0]
+        primary = self._first_meaningful(node)
         if primary.type == "predicate_only_query":
-            return Query(predicate=self.boolean(self._meaningful(primary)[0]), source=self.source)
+            return Query(predicate=self.boolean(self._first_meaningful(primary)), source=self.source)
         if primary.type == "query_expression":
             return Query(source=self.source, left_query=self.query_expression(primary))
         return self.select_query(primary)
 
     def select_query(self, node) -> Query:
-        select_clause = self._first(node, "select_clause")
-        from_clause = self._first(node, "from_clause")
-        where_clause = self._first(node, "where_clause")
-        group_clause = self._first(node, "group_by_clause")
-        having_clause = self._first(node, "having_clause")
+        select_clause = from_clause = where_clause = group_clause = having_clause = None
+        for child in node.named_children:
+            if child.type == "select_clause":
+                select_clause = child
+            elif child.type == "from_clause":
+                from_clause = child
+            elif child.type == "where_clause":
+                where_clause = child
+            elif child.type == "group_by_clause":
+                group_clause = child
+            elif child.type == "having_clause":
+                having_clause = child
         select = tuple(self.select_term(term) for term in self._children(select_clause, "select_term"))
         distinct = select_clause is not None and self._first(select_clause, "distinct_keyword") is not None
 
@@ -186,7 +207,8 @@ class TreeSitterModelBuilder:
     def relation_reference(self, node) -> tuple[RelationReference, list[tuple[str, int]]]:
         operand = self._first(node, "relation_operand") or node
         derived_node = self._first(operand, "derived_relation")
-        facet_nodes = self._descendants(operand, "facet_reference")
+        facet_list = self._first(operand, "facet_list") or self._first(operand, "single_facet")
+        facet_nodes = self._children(facet_list, "facet_reference")
         facets = [
             (self.identifier(self._first(facet, "identifier")).casefold(), self.start(facet)) for facet in facet_nodes
         ]
@@ -199,7 +221,7 @@ class TreeSitterModelBuilder:
             return RelationReference(None, None, alias, self.start(derived_node), derived), facets
 
         source_node = self._first(operand, "relation_source")
-        value_node = self._meaningful(source_node)[0]
+        value_node = self._first_meaningful(source_node)
         source = self.text(value_node)
         if value_node.type == "string":
             source = self.unquote_string(source)
@@ -282,30 +304,39 @@ class TreeSitterModelBuilder:
     def scalar(self, node) -> Any:
         if node is None:
             raise QuerySyntaxError(self.source, "Missing scalar expression.", 0)
-        node_type = node.type
-        if node_type == "scalar_expression":
-            scalar_children = self._children(node, "scalar_expression")
-            if len(scalar_children) == 2:
-                left = self.scalar(scalar_children[0])
-                right = self.scalar(scalar_children[1])
-                gap_start = self.end(scalar_children[0])
-                gap_end = self.start(scalar_children[1])
-                match = re.search(r"[+\-*/%]", self.source[gap_start:gap_end])
-                if match is None:
-                    raise QuerySyntaxError(self.source, "Missing scalar operator.", gap_start)
-                position = gap_start + match.start()
-                return ScalarBinary(match.group(0), left, right, position)
-            if len(scalar_children) == 1:
-                prefix = self.source[self.start(node) : self.start(scalar_children[0])]
-                match = re.search(r"[+-]", prefix)
-                operand = self.scalar(scalar_children[0])
-                return ScalarUnary(match.group(0), operand, self.start(node) + match.start()) if match else operand
-            meaningful = self._meaningful(node)
-            return self.scalar(meaningful[0])
-        if node_type in {"postfix_expression", "scalar_atom"}:
-            meaningful = self._meaningful(node)
-            value = self.scalar(meaningful[0])
+        while True:
+            node_type = node.type
+            if node_type == "scalar_expression":
+                scalar_children = self._children(node, "scalar_expression")
+                if len(scalar_children) == 2:
+                    left = self.scalar(scalar_children[0])
+                    right = self.scalar(scalar_children[1])
+                    gap_start = self.end(scalar_children[0])
+                    gap_end = self.start(scalar_children[1])
+                    match = re.search(r"[+\-*/%]", self.source[gap_start:gap_end])
+                    if match is None:
+                        raise QuerySyntaxError(self.source, "Missing scalar operator.", gap_start)
+                    position = gap_start + match.start()
+                    return ScalarBinary(match.group(0), left, right, position)
+                if len(scalar_children) == 1:
+                    prefix = self.source[self.start(node) : self.start(scalar_children[0])]
+                    match = re.search(r"[+-]", prefix)
+                    if match is not None:
+                        operand = self.scalar(scalar_children[0])
+                        return ScalarUnary(match.group(0), operand, self.start(node) + match.start())
+                    node = scalar_children[0]
+                    continue
+                node = self._first_meaningful(node)
+                continue
+            if node_type == "scalar_atom":
+                node = self._first_meaningful(node)
+                continue
             if node_type == "postfix_expression":
+                meaningful = self._meaningful(node)
+                if len(meaningful) == 1:
+                    node = meaningful[0]
+                    continue
+                value = self.scalar(meaningful[0])
                 for suffix in meaningful[1:]:
                     if suffix.type == "index_suffix":
                         value = ScalarIndex(
@@ -314,7 +345,11 @@ class TreeSitterModelBuilder:
                     elif suffix.type == "member_suffix":
                         member_node = self._first(suffix, "identifier")
                         value = ScalarMember(value, self.identifier(member_node), self.start(suffix))
-            return value
+                return value
+            if node_type in {"parenthesised_scalar", "comparison_value"}:
+                node = self._first(node, "scalar_expression")
+                continue
+            break
         if node_type == "identifier":
             name = self.identifier(node)
             return self.bound_collection_reference(name, self.start(node)) or Field(name, self.start(node))
@@ -323,8 +358,6 @@ class TreeSitterModelBuilder:
             return self.bound_collection_reference(name, self.start(node)) or Field(name, self.start(node))
         if node_type in {"scalar_literal", "temporal_literal", "literal_sequence", "literal_piece"}:
             return self.literal_text(self.text(node), self.start(node))
-        if node_type in {"parenthesised_scalar", "comparison_value"}:
-            return self.scalar(self._first(node, "scalar_expression"))
         if node_type in {"scalar_function", "function_call", "aggregate_function", "collection_transform"}:
             return self.function(node)
         if node_type == "case_expression":
@@ -442,15 +475,25 @@ class TreeSitterModelBuilder:
 
     def boolean(self, node) -> Any:
         if node.type == "boolean_expression":
-            expressions = self._children(node, "boolean_expression")
+            expressions = []
+            primary = not_keyword = or_keyword = None
+            for child in node.named_children:
+                if child.type == "boolean_expression":
+                    expressions.append(child)
+                elif child.type == "boolean_primary":
+                    primary = child
+                elif child.type == "not_keyword":
+                    not_keyword = child
+                elif child.type == "or_keyword":
+                    or_keyword = child
             if len(expressions) == 2:
-                operator = "OR" if self._first(node, "or_keyword") is not None else "AND"
+                operator = "OR" if or_keyword is not None else "AND"
                 return Binary(operator, self.boolean(expressions[0]), self.boolean(expressions[1]))
-            child = expressions[0] if expressions else self._first(node, "boolean_primary")
+            child = expressions[0] if expressions else primary
             value = self.boolean(child)
-            return Unary("NOT", value) if self._first(node, "not_keyword") is not None else value
+            return Unary("NOT", value) if not_keyword is not None else value
         if node.type == "boolean_primary":
-            return self.boolean(self._meaningful(node)[0])
+            return self.boolean(self._first_meaningful(node))
         if node.type == "parenthesised_boolean":
             value = self.boolean(self._first(node, "boolean_expression"))
             truth = self._first(node, "truth_test")
@@ -467,9 +510,13 @@ class TreeSitterModelBuilder:
             quantifier = "ALL" if self._first(node, "all_keyword") is not None else "ANY"
             return CollectionPredicate(quantifier, collection, binding, predicate, self.start(node))
         if node.type == "predicate":
-            left_node = self._first(node, "scalar_expression")
+            left_node = suffix = None
+            for child in node.named_children:
+                if child.type == "scalar_expression":
+                    left_node = child
+                elif child.type == "predicate_suffix":
+                    suffix = child
             left = self.scalar(left_node)
-            suffix = self._first(node, "predicate_suffix")
             if suffix is None:
                 return Binary("=", left, Literal(True, "TRUE", self._start_value(left)))
             return self.predicate_suffix(left, suffix)
@@ -480,26 +527,38 @@ class TreeSitterModelBuilder:
         )
 
     def predicate_suffix(self, left: Any, node) -> Any:
-        negated = self._first(node, "not_keyword") is not None
-        if self._first(node, "distinct_keyword") is not None:
-            right = self.scalar(self._children(node, "scalar_expression")[-1])
+        node_children = node.named_children
+        if len(node_children) == 2 and node_children[0].type == "comparison_operator":
+            operator = self.text(node_children[0])
+            operator = "!=" if operator == "<>" else operator
+            comparison = node_children[1]
+            if not isinstance(left, Field):
+                return ScalarComparison(operator, left, self.scalar(comparison))
+            return Binary(operator, left, self.predicate_literal(comparison))
+
+        children: dict[str, list[Any]] = {}
+        for child in node_children:
+            children.setdefault(child.type, []).append(child)
+
+        negated = "not_keyword" in children
+        if "distinct_keyword" in children:
+            right = self.scalar(children["scalar_expression"][-1])
             return ScalarComparison("IS NOT DISTINCT FROM" if negated else "IS DISTINCT FROM", left, right)
-        if self._first(node, "null_keyword") is not None:
+        if "null_keyword" in children:
             return IsNull(left, negated) if isinstance(left, Field) else ScalarIsNull(left, negated)
-        truth = self._first(node, "truth_value")
-        if truth is not None:
+        if truth_values := children.get("truth_value"):
             operand = (
                 Binary("=", left, Literal(True, "TRUE", self._start_value(left))) if isinstance(left, Field) else left
             )
-            return TruthTest(operand, self.truth_value(truth), negated)
-        if self._first(node, "between_keyword") is not None:
-            values = self._children(node, "literal_value")
+            return TruthTest(operand, self.truth_value(truth_values[0]), negated)
+        if "between_keyword" in children:
+            values = children["literal_value"]
             return Between(left, self.predicate_literal(values[0]), self.predicate_literal(values[1]), negated)
-        if self._first(node, "in_keyword") is not None:
-            values = tuple(self.predicate_literal(value) for value in self._children(node, "literal_value"))
+        if "in_keyword" in children:
+            values = tuple(self.predicate_literal(value) for value in children["literal_value"])
             return InList(left, values, negated)
-        text_operator = self._first(node, "text_operator")
-        if text_operator is not None:
+        if text_operators := children.get("text_operator"):
+            text_operator = text_operators[0]
             spelling = self.text(text_operator).upper()
             operator = (
                 "CONTAINS"
@@ -512,11 +571,11 @@ class TreeSitterModelBuilder:
                 }
                 else spelling
             )
-            value = self.predicate_literal(self._first(node, "text_value"))
-            does_not = self._first(node, "does_keyword") is not None
+            value = self.predicate_literal(children["text_value"][0])
+            does_not = "does_keyword" in children
             return TextPredicate(operator, left, value, negated or does_not)
-        natural = self._first(node, "natural_comparison")
-        if natural is not None:
+        if natural_comparisons := children.get("natural_comparison"):
+            natural = natural_comparisons[0]
             spelling = " ".join(self.text(natural).upper().split())
             operator = {
                 "AT LEAST": ">=",
@@ -531,10 +590,10 @@ class TreeSitterModelBuilder:
                 "EQUAL TO": "=",
                 "EQUALS": "=",
             }[spelling]
-            return Binary(operator, left, self.predicate_literal(self._first(node, "literal_value")))
+            return Binary(operator, left, self.predicate_literal(children["literal_value"][0]))
 
-        operator_node = self._first(node, "comparison_operator")
-        comparison = self._first(node, "comparison_value")
+        operator_node = children["comparison_operator"][0]
+        comparison = children["comparison_value"][0]
         operator = self.text(operator_node)
         operator = "!=" if operator == "<>" else operator
         if not isinstance(left, Field):
@@ -583,13 +642,14 @@ class TreeSitterModelBuilder:
         if stripped.upper() == "NULL":
             return Literal(None, raw, position)
         compact = stripped.replace("_", "")
-        if re.fullmatch(r"0[xX][0-9A-Fa-f]+", compact):
+        prefix = compact[:2].casefold()
+        if prefix == "0x":
             return Literal(int(compact, 16), raw, position)
-        if re.fullmatch(r"0[bB][01]+", compact):
+        if prefix == "0b":
             return Literal(int(compact, 2), raw, position)
-        if re.fullmatch(r"0[oO][0-7]+", compact):
+        if prefix == "0o":
             return Literal(int(compact, 8), raw, position)
-        if re.fullmatch(r"\d+(?:\.\d+)?", compact):
+        if compact.isdecimal() or compact.count(".") == 1 and compact.replace(".", "").isdecimal():
             return Literal(float(compact) if "." in compact else int(compact), raw, position)
         return Literal(stripped, raw, position)
 
@@ -621,7 +681,7 @@ class TreeSitterModelBuilder:
 
     def identifier(self, node) -> str:
         if node.type == "identifier":
-            node = self._meaningful(node)[0]
+            node = self._first_meaningful(node)
         text = self.text(node)
         return text[1:-1].replace("``", "`") if node.type == "quoted_identifier" else text
 
@@ -662,19 +722,20 @@ class TreeSitterModelBuilder:
     def _meaningful(self, node) -> list[Any]:
         return [child for child in self._children(node) if not child.type.endswith(_KEYWORD_SUFFIX)]
 
-    def _first(self, node, node_type: str):
-        return next(iter(self._children(node, node_type)), None)
+    @staticmethod
+    def _first_meaningful(node):
+        for child in node.named_children:
+            if child.type != "comment" and not child.type.endswith(_KEYWORD_SUFFIX):
+                return child
+        return None
 
-    def _descendants(self, node, node_type: str) -> list[Any]:
-        found = []
-        pending = list(reversed(self._children(node)))
-        while pending:
-            child = pending.pop()
+    def _first(self, node, node_type: str):
+        if node is None:
+            return None
+        for child in node.named_children:
             if child.type == node_type:
-                found.append(child)
-                continue
-            pending.extend(reversed(self._children(child)))
-        return found
+                return child
+        return None
 
     @staticmethod
     def _start_value(value: Any) -> int:
