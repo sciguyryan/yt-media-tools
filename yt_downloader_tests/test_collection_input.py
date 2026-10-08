@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import importlib.util
 import json
+import sqlite3
 import sys
 import types
 from pathlib import Path
@@ -525,3 +526,77 @@ def test_indexed_template_detection(downloader) -> None:
     assert downloader._uses_collection_indexed_filenames(plan("%(playlist_autonumber)s.%(ext)s"))
     assert not downloader._uses_collection_indexed_filenames(plan("%(title)s [%(id)s].%(ext)s"))
     assert not downloader._uses_collection_indexed_filenames(plan("%%(playlist_index)s.%(ext)s"))
+
+
+@pytest.mark.parametrize(
+    ("previous", "current"),
+    [
+        (("A", "B"), ("B", "A")),
+        (("A", "B"), ("A", "X", "B")),
+        (("A", "B"), ("A", "B", "C")),
+        (("A", "B", "C"), ("A", "C")),
+        (("A", "B", "A"), ("A", "A", "B")),
+        (("A", "B"), ("A", "B", "B")),
+    ],
+)
+def test_collection_revision_mutations_warn_once(downloader, tmp_path, monkeypatch, capsys, previous, current):
+    from yt_media_tools.collection_state import CollectionState, fingerprint_collection_sequence
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    identity = "youtube-playlist:PL123"
+    collection = _write_collection(tmp_path / "changed.json", targets=current)
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    payload["collection"]["identity"] = identity
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    state = CollectionState()
+    state.record_observation(identity, list(previous))
+    monkeypatch.setattr(downloader, "validate_environment", lambda **kwargs: "yt-dlp")
+    monkeypatch.setattr(downloader, "run", lambda command, *, dry_run: 1)
+    monkeypatch.setattr(downloader, "_uses_collection_indexed_filenames", lambda plan: True)
+
+    assert downloader.main(["--collection-file", str(collection)]) == 1
+    assert "playlist-indexed filenames" in capsys.readouterr().err
+    assert state.observation(identity)[1] == fingerprint_collection_sequence(list(current))
+    assert downloader.main(["--collection-file", str(collection)]) == 1
+    assert "playlist-indexed filenames" not in capsys.readouterr().err
+
+
+def test_collection_revision_nonindexed_updates_without_warning(downloader, tmp_path, monkeypatch, capsys):
+    from yt_media_tools.collection_state import CollectionState, fingerprint_collection_sequence
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    collection = _write_collection(tmp_path / "nonindexed.json", targets=("B", "A"))
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    identity = "youtube-playlist:PL123"
+    payload["collection"]["identity"] = identity
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    state = CollectionState()
+    state.record_observation(identity, ["A", "B"])
+    monkeypatch.setattr(downloader, "validate_environment", lambda **kwargs: "yt-dlp")
+    monkeypatch.setattr(downloader, "run", lambda command, *, dry_run: 1)
+    monkeypatch.setattr(downloader, "_uses_collection_indexed_filenames", lambda plan: False)
+    assert downloader.main(["--collection-file", str(collection)]) == 1
+    assert "playlist-indexed filenames" not in capsys.readouterr().err
+    assert state.observation(identity)[1] == fingerprint_collection_sequence(["B", "A"])
+
+
+def test_collection_revision_unsupported_version_preserved(downloader, tmp_path, monkeypatch, capsys):
+    from yt_media_tools.collection_state import CollectionState
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    collection = _write_collection(tmp_path / "unsupported.json", targets=("A", "B"))
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    identity = "youtube-playlist:PL123"
+    payload["collection"]["identity"] = identity
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    state = CollectionState()
+    state.record_observation(identity, ["B", "A"])
+    with sqlite3.connect(state.path) as connection:
+        connection.execute(
+            "UPDATE collection_observations SET fingerprint_version = 999 WHERE collection_id = ?", (identity,)
+        )
+    monkeypatch.setattr(downloader, "validate_environment", lambda **kwargs: "yt-dlp")
+    monkeypatch.setattr(downloader, "run", lambda command, *, dry_run: 1)
+    assert downloader.main(["--collection-file", str(collection)]) == 1
+    assert "unsupported fingerprint version" in capsys.readouterr().err
+    assert state.observation(identity)[0] == 999

@@ -112,3 +112,47 @@ def test_invalid_v1_layout_not_migrated(tmp_path):
     with sqlite3.connect(state.path) as connection:
         assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
         assert connection.execute("SELECT name FROM sqlite_master WHERE name='unexpected'").fetchone()
+
+
+def test_collection_observations_are_namespaced_and_independent(tmp_path):
+    from yt_media_tools.collection_state import fingerprint_collection_sequence
+
+    state = CollectionState(tmp_path)
+    playlist = "youtube-playlist:PL123"
+    constructed = "yt-sql:sha256:" + "a" * 64
+    manual = "collection-uuid:550e8400-e29b-41d4-a716-446655440000"
+    for identity in (playlist, constructed, manual):
+        state.record_observation(identity, ["A", "B"])
+    assert all(
+        state.observation(identity)[1] == fingerprint_collection_sequence(["A", "B"])
+        for identity in (playlist, constructed, manual)
+    )
+    state.record_observation(playlist, ["B", "A"])
+    assert state.observation(constructed)[1] == fingerprint_collection_sequence(["A", "B"])
+    assert state.observation(manual)[1] == fingerprint_collection_sequence(["A", "B"])
+
+
+def test_observation_persists_after_large_completion_cleanup(tmp_path):
+    state = CollectionState(tmp_path)
+    identity = "youtube-playlist:PL123"
+    targets = [f"video-{number:05d}" for number in range(1000)]
+    state.record_observation(identity, targets)
+    for target in targets:
+        state.record(identity, target)
+    assert len(state.completed(identity)) == len(targets)
+    state.clear(identity)
+    assert state.completed(identity) == set()
+    assert CollectionState(tmp_path).observation(identity)[2] == len(targets)
+
+
+def test_corrupt_observation_schema_fails_closed_without_replacement(tmp_path):
+    state = CollectionState(tmp_path)
+    identity = "youtube-playlist:PL123"
+    state.record(identity, "A")
+    with sqlite3.connect(state.path) as connection:
+        connection.execute("DROP TABLE collection_observations")
+    with pytest.raises(CollectionStateError, match="unsupported"):
+        state.completed(identity)
+    with sqlite3.connect(state.path) as connection:
+        assert connection.execute("SELECT target_id FROM completed_targets").fetchone()[0] == "A"
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
