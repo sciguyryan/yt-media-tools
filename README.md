@@ -2,7 +2,7 @@
 
 `yt-media-tools` is a pair of command-line tools built around `yt-dlp`:
 
-- `yt-discover.py` 0.31.0 discovers, caches, queries and reports media metadata using the yt-sql query language.
+- `yt-discover.py` 0.32.0 discovers, caches, queries and reports media metadata using the yt-sql query language.
 - `yt-download.py` 1.23.0 downloads direct targets, discovered IDs and batch files using a predictable yt-dlp policy and versioned JSON profiles.
 
 The tools remain independently useful, but are deliberately designed to compose through standard input and standard output:
@@ -103,7 +103,7 @@ GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. 
 
 ## Future work
 
-The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Completed Discover series are retained in release history and durable architecture documentation rather than the active roadmap directory. Discover 0.31.0 completes the cache-v4 programme on top of the 0.30 collection-interchange release, including certified v3 migration, provider-aware persistence, explicit maintenance controls and reconciled cache documentation. Downloader 1.23.0 adds collection-aware acquisition on top of the established machine-interface foundation.
+The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Completed Discover series are retained in release history and durable architecture documentation rather than the active roadmap directory. Discover 0.32.0 adds grammar-revision-2 derived relations, line comments and base-aware row slicing while retaining the hand-written parser after the completed replacement investigation. Downloader 1.23.0 adds collection-aware acquisition on top of the established machine-interface foundation.
 
 ## External tool diagnostics
 

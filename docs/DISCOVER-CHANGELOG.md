@@ -4,6 +4,7 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [release] Bump yt-discover to 0.32.0 after completing grammar revision 2, derived-relation integration and the parser-replacement investigation.
 - [maintenance] Remove the concluded Lark and Tree-sitter parser experiments, their dependencies and implementation-specific tooling after retaining the durable conformance results.
 - [docs] Retain the hand-written parser as the production yt-sql implementation because it provides the most consistent overall performance, allocation, diagnostic and maintenance profile.
 - [test] Preserve the parser-neutral equivalence harness, grammar-derived corpus, controlled mutations, eight seeded fuzz streams, canonical round trips and maximal revision-2 regression query against the production parser.
