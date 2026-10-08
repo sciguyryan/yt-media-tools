@@ -699,7 +699,7 @@ class DownloadPlan:
     setting_sources: dict[str, str]
     remove_completed_rows: bool = False
 
-    def command(self, *, output_event_file: Path | None = None) -> list[str]:
+    def command(self, *, output_event_file: Path | None = None, continuation_identity: str | None = None) -> list[str]:
         """Return the exact yt-dlp command represented by this plan."""
         return build_yt_dlp_command(
             self.executable,
@@ -711,6 +711,7 @@ class DownloadPlan:
             remove_completed_ids=self.remove_completed_ids,
             remove_completed_rows=self.remove_completed_rows,
             output_event_file=output_event_file,
+            continuation_identity=continuation_identity,
         )
 
 
@@ -1467,6 +1468,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--_remove-completed-row",
         nargs=2,
         metavar=("FILE", "VIDEO_ID"),
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--_record-collection-completion",
+        nargs=3,
+        metavar=("COLLECTION_FILE", "COLLECTION_ID", "MEDIA_ID"),
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
@@ -3239,6 +3246,34 @@ def completion_exec_command(input_file: Path) -> str:
     return " ".join(command)
 
 
+def collection_completion_exec_command(collection_file: Path, collection_id: str) -> str:
+    """Build a structured after_move completion callback for a collection."""
+    return " ".join(
+        (
+            shlex.quote(sys.executable),
+            shlex.quote(str(Path(__file__).resolve())),
+            "--_record-collection-completion",
+            shlex.quote(str(collection_file.expanduser().resolve())),
+            shlex.quote(collection_id),
+            "%(id)q",
+        )
+    )
+
+
+def record_collection_completion(collection_file: Path, collection_id: str, media_id: str) -> None:
+    """Persist only an after_move ID belonging to the current collection.
+
+    The callback is a subprocess, so it opens its own short-lived SQLite
+    connection rather than sharing a connection with the parent process.
+    """
+    source = load_collection_input(collection_file)
+    if source.collection_identity != collection_id:
+        raise CollectionStateError("collection identity changed during download")
+    if media_id not in source.direct_targets:
+        raise CollectionStateError("completed media ID is not a collection target")
+    CollectionState().record(collection_id, media_id)
+
+
 def output_record_exec_command(event_file: Path) -> str:
     """Return an ``after_move`` callback that records one completed primary output."""
     command = [
@@ -3902,6 +3937,7 @@ def build_yt_dlp_command(
     remove_completed_ids: bool = False,
     remove_completed_rows: bool = False,
     output_event_file: Path | None = None,
+    continuation_identity: str | None = None,
 ) -> list[str]:
     """Build the complete yt-dlp command without invoking a shell."""
     command = [
@@ -4061,6 +4097,16 @@ def build_yt_dlp_command(
     elif policy.playlist is False:
         command.append("--no-playlist")
 
+    if continuation_identity is not None:
+        if input_source.collection_file is None:
+            raise ValueError("collection completion requires collection input")
+        command.extend(
+            (
+                "--exec",
+                f"after_move:{collection_completion_exec_command(input_source.collection_file, continuation_identity)}",
+            )
+        )
+
     if output_event_file is not None:
         command.extend(("--exec", f"after_move:{output_record_exec_command(output_event_file)}"))
 
@@ -4137,6 +4183,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
         if removed:
             print(f"Removed completed row for {video_id} from {input_file}", file=sys.stderr)
+        return 0
+
+    if args._record_collection_completion is not None:
+        collection_file, collection_id, media_id = args._record_collection_completion
+        try:
+            record_collection_completion(Path(collection_file), collection_id, media_id)
+        except (CollectionStateError, ValueError, OSError) as exc:
+            print(f"Error: unable to record collection completion: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if args._record_output is not None:
@@ -4323,6 +4378,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         with lock:
             effective_plan = plan
+            completed: set[str] | None = None
             if continuation is not None and not args.dry_run:
                 try:
                     completed = continuation.completed(input_source.collection_identity)
@@ -4331,8 +4387,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         f"Warning: collection continuation unavailable ({exc}); processing all targets.",
                         file=sys.stderr,
                     )
-                    completed = set()
-                reconciled = reconcile_collection_targets(input_source, completed)
+                    completed = None
+                reconciled = reconcile_collection_targets(input_source, completed or set())
                 remaining = reconciled.direct_targets
                 print(
                     f"Collection continuation: requested={len(input_source.direct_targets)}, "
@@ -4344,7 +4400,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             if continuation is not None and not args.dry_run and not effective_plan.input_source.direct_targets:
                 exit_status = 0
             else:
-                exit_status = run(effective_plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
+                exit_status = run(
+                    effective_plan.command(
+                        output_event_file=output_event_file,
+                        continuation_identity=input_source.collection_identity
+                        if continuation is not None and completed is not None
+                        else None,
+                    ),
+                    dry_run=args.dry_run,
+                )
     except CollectionStateError as exc:
         print(f"Warning: collection state unavailable ({exc}); processing all targets.", file=sys.stderr)
         exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)

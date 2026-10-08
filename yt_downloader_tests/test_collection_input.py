@@ -395,3 +395,40 @@ def test_continuation_reconciliation_handles_all_completed_and_unidentified(down
     assert source.collection_identity is None
     assert downloader.reconcile_collection_targets(source, set()).direct_targets == source.direct_targets
     assert downloader.reconcile_collection_targets(source, set(source.direct_targets)).direct_targets == ()
+
+
+def test_collection_after_move_records_only_requested_ids(downloader, tmp_path: Path, monkeypatch) -> None:
+    from yt_media_tools.collection_state import CollectionState
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    collection = _write_collection(tmp_path / "tracked.json", targets=("A", "B"))
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    payload["collection"]["identity"] = "youtube-playlist:PL123"
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    identity = "youtube-playlist:PL123"
+
+    assert downloader.main(["--_record-collection-completion", str(collection), identity, "A"]) == 0
+    assert CollectionState().completed(identity) == {"A"}
+    assert downloader.main(["--_record-collection-completion", str(collection), identity, "unknown"]) == 1
+    assert CollectionState().completed(identity) == {"A"}
+
+
+def test_collection_command_has_structured_completion_without_archive(downloader, tmp_path: Path) -> None:
+    collection = _write_collection(tmp_path / "tracked.json", targets=("A", "B"))
+    source = downloader.load_collection_input(collection)
+    policy = downloader.DownloadPolicy(
+        resolution="best",
+        format_selector="bv+ba/b",
+        reverse_playlist=False,
+        archive_file=tmp_path / "archive.txt",
+        chapter_sections=("*00:00-00:10",),
+    )
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        policy,
+        source,
+        None,
+        continuation_identity="youtube-playlist:PL123",
+    )
+    assert "--no-download-archive" in command
+    assert any("after_move:" in value and "--_record-collection-completion" in value for value in command)
