@@ -1150,6 +1150,25 @@ def _validate_position_placement(query: Query) -> None:
         for term in query.select
         if isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"
     }
+    position_terms = [
+        term
+        for term in query.select
+        if isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"
+    ]
+    if position_terms and (query.set_operations or query.left_query is not None):
+        raise QuerySemanticError(
+            query.source,
+            "POSITION() in set-operation projections is not yet supported.",
+            position_terms[0].expression.position,
+        )
+    position_aliases = {term.output_name.casefold() for term in position_terms}
+    for order in query.order_by:
+        if order.field and order.field.casefold() in position_aliases:
+            raise QuerySemanticError(
+                query.source,
+                "ORDER BY cannot depend on a POSITION() projection.",
+                order.position,
+            )
     for node in walk_ast(query, descend=lambda node: node is query or not isinstance(node, Query)):
         if not isinstance(node, ScalarFunction) or node.name != "POSITION":
             continue

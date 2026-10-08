@@ -329,8 +329,13 @@ def canonical_record_value(
         materialised_result = record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
         aggregate_projection = field.expression is not None and _contains_aggregate(field.expression)
         volatile_projection = field.expression is not None and _contains_random(field.expression)
-        if field.output_name in record and (materialised_result or aggregate_projection or volatile_projection):
+        deferred_position = _is_final_position(field)
+        if field.output_name in record and (
+            materialised_result or aggregate_projection or volatile_projection or deferred_position
+        ):
             return record.get(field.output_name)
+        if deferred_position:
+            raise AssertionError("POSITION() must be evaluated at the final-result stage")
         if field.expression is not None:
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
@@ -735,6 +740,23 @@ def _evaluate_having(node: Any, group: Sequence[dict[str, Any]]) -> bool | None:
     raise AssertionError(f"Unsupported HAVING node {node!r}")
 
 
+def _is_final_position(term: SelectTerm) -> bool:
+    """Identify a deferred result-position projection, not an ordinary scalar."""
+    return isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"
+
+
+def _slice_final_result(rows: list[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
+    """Attach deferred projections after deduplication and ordering, then slice."""
+    if query.offset:
+        rows = rows[query.offset :]
+    if query.limit is not None:
+        rows = rows[: query.limit]
+    if not any(_is_final_position(term) for term in query.select):
+        return rows
+    names = [term.output_name for term in query.select if _is_final_position(term)]
+    return [{**row, **{name: index for name in names}} for index, row in enumerate(rows, start=query.offset + 1)]
+
+
 def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     filtered = [record for record in records if evaluate(query.predicate, record) is True]
     grouped: list[tuple[tuple[Any, ...], list[dict[str, Any]]]] = []
@@ -771,7 +793,9 @@ def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> l
         row: dict[str, Any] = {"_yt_sql_aggregate_result": True}
         for term in query.select:
             if term.expression is not None:
-                row[term.output_name] = _evaluate_group_expression(term.expression, group)
+                row[term.output_name] = (
+                    None if _is_final_position(term) else _evaluate_group_expression(term.expression, group)
+                )
             elif group:
                 row[term.output_name] = canonical_record_value(group[0], term)
             else:
@@ -782,17 +806,17 @@ def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> l
         seen: set[tuple[Any, ...]] = set()
         unique = []
         for row in rows:
-            key = tuple(_hashable_group_value(row.get(term.output_name)) for term in query.select)
+            key = tuple(
+                _hashable_group_value(row.get(term.output_name))
+                for term in query.select
+                if not _is_final_position(term)
+            )
             if key in seen:
                 continue
             seen.add(key)
             unique.append(row)
         rows = unique
-    if query.offset:
-        rows = rows[query.offset :]
-    if query.limit is not None:
-        rows = rows[: query.limit]
-    return rows
+    return _slice_final_result(rows, query)
 
 
 def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
@@ -819,6 +843,8 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
         for record in result:
             key_values = []
             for term in query.select:
+                if _is_final_position(term):
+                    continue
                 value = canonical_record_value(record, term)
                 try:
                     hash(value)
@@ -831,10 +857,7 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
                 distinct_records.append(record)
         result = distinct_records
 
-    if query.offset:
-        result = result[query.offset :]
-    if query.limit is not None:
-        result = result[: query.limit]
+    result = _slice_final_result(result, query)
 
     random_terms = [term for term in query.select if term.expression is not None and _contains_random(term.expression)]
     if random_terms:
@@ -1251,6 +1274,8 @@ def _apply_composed_query(
             for row in rows:
                 key_values: list[Any] = []
                 for term in query.select:
+                    if _is_final_position(term):
+                        continue
                     value = canonical_record_value(row, term)
                     try:
                         hash(value)
@@ -1263,10 +1288,7 @@ def _apply_composed_query(
                 seen.add(key)
                 distinct_rows.append(row)
             rows = distinct_rows
-        if query.offset:
-            rows = rows[query.offset :]
-        if query.limit is not None:
-            rows = rows[: query.limit]
+        rows = _slice_final_result(rows, query)
         return _project_result_rows(
             rows,
             replace(
