@@ -486,3 +486,42 @@ def test_continuation_cleanup_requires_structured_completion(downloader, tmp_pat
     monkeypatch.setattr(downloader, "run", completed_callback)
     assert downloader.main(["--collection-file", str(collection)]) == 0
     assert state.completed(identity) == set()
+
+
+def test_collection_revision_warning_for_indexed_output(downloader, tmp_path: Path, monkeypatch, capsys) -> None:
+    from yt_media_tools.collection_state import CollectionState, fingerprint_collection_sequence
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    collection = _write_collection(tmp_path / "revision.json", targets=("A", "B"))
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    identity = "youtube-playlist:PL123"
+    payload["collection"]["identity"] = identity
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    state = CollectionState()
+    state.record_observation(identity, ["B", "A"])
+    state.record(identity, "A")
+    monkeypatch.setattr(downloader, "validate_environment", lambda **kwargs: "yt-dlp")
+    monkeypatch.setattr(downloader, "run", lambda command, *, dry_run: 1)
+    original = downloader._uses_collection_indexed_filenames
+    monkeypatch.setattr(downloader, "_uses_collection_indexed_filenames", lambda plan: True)
+    assert downloader.main(["--collection-file", str(collection)]) == 1
+    assert "playlist-indexed filenames" in capsys.readouterr().err
+    assert state.observation(identity)[1] == fingerprint_collection_sequence(["A", "B"])
+    assert state.completed(identity) == {"A"}
+    monkeypatch.setattr(downloader, "_uses_collection_indexed_filenames", original)
+    assert downloader.main(["--collection-file", str(collection)]) == 1
+    assert "playlist-indexed filenames" not in capsys.readouterr().err
+
+
+def test_indexed_template_detection(downloader) -> None:
+    from types import SimpleNamespace
+
+    def plan(template):
+        return SimpleNamespace(
+            output_profile=SimpleNamespace(output=template), policy=SimpleNamespace(partial_media=False)
+        )
+
+    assert downloader._uses_collection_indexed_filenames(plan("%(playlist_index)03d - %(title)s.%(ext)s"))
+    assert downloader._uses_collection_indexed_filenames(plan("%(playlist_autonumber)s.%(ext)s"))
+    assert not downloader._uses_collection_indexed_filenames(plan("%(title)s [%(id)s].%(ext)s"))
+    assert not downloader._uses_collection_indexed_filenames(plan("%%(playlist_index)s.%(ext)s"))

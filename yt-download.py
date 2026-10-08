@@ -31,7 +31,13 @@ import shlex
 import shutil
 import subprocess
 
-from yt_media_tools.collection_state import CollectionState, CollectionStateError, resolve_collection_identity
+from yt_media_tools.collection_state import (
+    CollectionState,
+    CollectionStateError,
+    SEQUENCE_FINGERPRINT_VERSION,
+    fingerprint_collection_sequence,
+    resolve_collection_identity,
+)
 from yt_media_tools.collection_interchange import (
     COLLECTION_INTERCHANGE_SCHEMA,
     COLLECTION_INTERCHANGE_VERSION,
@@ -4175,6 +4181,18 @@ def run(command: Sequence[str], *, dry_run: bool) -> int:
     return completed.returncode
 
 
+def _uses_collection_indexed_filenames(plan: DownloadPlan) -> bool:
+    """Detect playlist position fields in the effective output filename template.
+
+    Inspect the resolved output policy rather than guessing from collection type.
+    Literal escaped percent signs are not yt-dlp template fields.
+    """
+    template = plan.output_profile.output if plan.output_profile is not None else None
+    if not template or plan.policy.partial_media:
+        return False
+    return re.search(r"(?<!%)%(?:%%)*\((?:playlist_index|playlist_autonumber|playlist_count)\)", template) is not None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, construct the yt-dlp invocation, and execute it."""
     parser = build_parser()
@@ -4456,6 +4474,37 @@ def main(argv: Sequence[str] | None = None) -> int:
                         file=sys.stderr,
                     )
                     completed = None
+                if completed is not None:
+                    try:
+                        previous = continuation.observation(input_source.collection_identity)
+                        current_fingerprint = fingerprint_collection_sequence(input_source.direct_targets)
+                        if previous is not None and previous[0] != SEQUENCE_FINGERPRINT_VERSION:
+                            print(
+                                "Warning: collection observation uses an unsupported fingerprint version; retaining the previous observation.",
+                                file=sys.stderr,
+                            )
+                        else:
+                            if (
+                                previous is not None
+                                and previous[1] != current_fingerprint
+                                and _uses_collection_indexed_filenames(plan)
+                            ):
+                                print(
+                                    "Warning: collection ordering or membership changed since the previous observation; "
+                                    "playlist-indexed filenames may no longer correspond to previously downloaded files. "
+                                    "Completed targets remain tracked by identity; existing files are not renamed.",
+                                    file=sys.stderr,
+                                )
+                            # Establish the new observation before starting yt-dlp, including
+                            # interrupted invocations. The collection lock protects comparison.
+                            continuation.record_observation(
+                                input_source.collection_identity, input_source.direct_targets
+                            )
+                    except (CollectionStateError, ValueError) as exc:
+                        print(
+                            f"Warning: collection revision observation unavailable ({exc}); continuing without revision tracking.",
+                            file=sys.stderr,
+                        )
                 reconciled = reconcile_collection_targets(input_source, completed or set())
                 remaining = reconciled.direct_targets
                 print(
