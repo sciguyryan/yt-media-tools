@@ -233,6 +233,9 @@ CLI_DESTINATION_CLASSES = {
     "execution-mode": frozenset({"explain", "explain_json", "dry_run", "debug_external", "debug_external_unsafe"}),
     "reporting-side-effect": frozenset(
         {
+            "collection_continuation_ignore",
+            "collection_continuation_reset",
+            "collection_continuation_status",
             "remove_completed_ids",
             "remove_completed_rows",
             "queue_report",
@@ -1357,6 +1360,21 @@ def build_parser() -> argparse.ArgumentParser:
             "Read an ordered versioned collection from FILE and inject its supported "
             "collection metadata before yt-dlp renders output templates."
         ),
+    )
+    parser.add_argument(
+        "--collection-continuation-ignore",
+        action="store_true",
+        help="Process the complete collection without reading or writing continuation state.",
+    )
+    parser.add_argument(
+        "--collection-continuation-reset",
+        action="store_true",
+        help="Clear this collection's completed-target state before downloading.",
+    )
+    parser.add_argument(
+        "--collection-continuation-status",
+        action="store_true",
+        help="Show completed-target state for the supplied collection and exit.",
     )
     cookie_group = parser.add_mutually_exclusive_group()
     cookie_group.add_argument(
@@ -4228,6 +4246,37 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(format_capabilities(payload))
         return 0
 
+    continuation_controls = (
+        args.collection_continuation_ignore,
+        args.collection_continuation_reset,
+        args.collection_continuation_status,
+    )
+    if sum(continuation_controls) > 1:
+        parser.error("collection continuation controls are mutually exclusive")
+    if any(continuation_controls) and args.collection_file is None:
+        parser.error("collection continuation controls require --collection-file")
+    if args.dry_run and args.collection_continuation_reset:
+        parser.error("--collection-continuation-reset is unavailable with --dry-run")
+
+    if args.collection_continuation_status:
+        try:
+            source = load_collection_input(args.collection_file)
+            if not source.collection_identity:
+                parser.error("collection has no stable identity; continuation status is unavailable")
+            state = CollectionState()
+            with state.collection_lock(source.collection_identity):
+                stored = state.completed(source.collection_identity)
+            matching = sum(target in stored for target in source.direct_targets)
+            print(
+                f"Collection continuation: identity={source.collection_identity}, "
+                f"requested={len(source.direct_targets)}, completed={matching}, "
+                f"remaining={len(source.direct_targets) - matching}."
+            )
+            return 0
+        except (CollectionStateError, ValueError, OSError) as exc:
+            print(f"Error: collection continuation status unavailable: {exc}", file=sys.stderr)
+            return 1
+
     resolved_defaults = defaults_path(args.defaults)
 
     if args.validate_config is not None:
@@ -4365,10 +4414,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_event_file = Path(event_name)
 
     # Reconcile under the collection lock and retain it across yt-dlp execution.
-    # This stage deliberately does not infer completion from process exit status;
-    # structured per-target persistence is introduced in Part 3.
+    # Structured callbacks, not process exit status, establish completion.
+    if args.collection_continuation_status and not input_source.collection_identity:
+        parser.error("collection has no stable identity; continuation status is unavailable")
+    if args.collection_continuation_reset and not input_source.collection_identity:
+        parser.error("collection has no stable identity; continuation reset is unavailable")
     continuation = (
-        CollectionState() if input_source.collection_file is not None and input_source.collection_identity else None
+        CollectionState()
+        if input_source.collection_file is not None
+        and input_source.collection_identity
+        and not args.collection_continuation_ignore
+        else None
     )
     lock = (
         continuation.collection_lock(input_source.collection_identity)
@@ -4377,6 +4433,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     try:
         with lock:
+            if args.collection_continuation_reset:
+                assert continuation is not None
+                try:
+                    continuation.clear(input_source.collection_identity)
+                except CollectionStateError as exc:
+                    print(
+                        f"Warning: unable to reset collection continuation ({exc}); processing without continuation.",
+                        file=sys.stderr,
+                    )
+                    continuation = None
+                else:
+                    print("Collection continuation: cleared previous completed-target state.", file=sys.stderr)
             effective_plan = plan
             completed: set[str] | None = None
             if continuation is not None and not args.dry_run:
@@ -4409,6 +4477,26 @@ def main(argv: Sequence[str] | None = None) -> int:
                     ),
                     dry_run=args.dry_run,
                 )
+            # Never infer success from yt-dlp's process exit alone. Only the
+            # structured after_move callback supplies durable completion evidence.
+            # A fully recorded collection has no remaining continuation work.
+            if continuation is not None and completed is not None and not args.dry_run:
+                try:
+                    observed = continuation.completed(input_source.collection_identity)
+                    if set(input_source.direct_targets).issubset(observed):
+                        continuation.clear(input_source.collection_identity)
+                        print(
+                            "Collection continuation: all targets accounted for; temporary state cleared.",
+                            file=sys.stderr,
+                        )
+                    elif exit_status == 0:
+                        missing = sum(target not in observed for target in input_source.direct_targets)
+                        print(
+                            f"Collection continuation: {missing} target(s) lack structured completion evidence; state retained.",
+                            file=sys.stderr,
+                        )
+                except CollectionStateError as exc:
+                    print(f"Warning: unable to reconcile collection completion state ({exc}).", file=sys.stderr)
     except CollectionStateError as exc:
         print(f"Warning: collection state unavailable ({exc}); processing all targets.", file=sys.stderr)
         exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)

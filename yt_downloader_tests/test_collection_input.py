@@ -432,3 +432,57 @@ def test_collection_command_has_structured_completion_without_archive(downloader
     )
     assert "--no-download-archive" in command
     assert any("after_move:" in value and "--_record-collection-completion" in value for value in command)
+
+
+def test_continuation_status_and_reset_controls(downloader, tmp_path: Path, monkeypatch, capsys) -> None:
+    from yt_media_tools.collection_state import CollectionState
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    collection = _write_collection(tmp_path / "tracked.json", targets=("A", "B"))
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    payload["collection"]["identity"] = "youtube-playlist:PL123"
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    state = CollectionState()
+    state.record("youtube-playlist:PL123", "A")
+    # The status command must be read-only and must not start yt-dlp.
+    assert downloader.main(["--collection-file", str(collection), "--collection-continuation-status"]) == 0
+    assert "completed=1" in capsys.readouterr().out
+    assert state.completed("youtube-playlist:PL123") == {"A"}
+
+
+def test_continuation_controls_require_collection(downloader) -> None:
+    with pytest.raises(SystemExit) as exc:
+        downloader.main(["--collection-continuation-status"])
+    assert exc.value.code == 2
+
+
+def test_continuation_cleanup_requires_structured_completion(downloader, tmp_path: Path, monkeypatch) -> None:
+    from yt_media_tools.collection_state import CollectionState
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    collection = _write_collection(tmp_path / "tracked.json", targets=("A", "B"))
+    payload = json.loads(collection.read_text(encoding="utf-8"))
+    payload["collection"]["identity"] = "youtube-playlist:PL123"
+    collection.write_text(json.dumps(payload), encoding="utf-8")
+    identity = "youtube-playlist:PL123"
+    state = CollectionState()
+    state.record(identity, "A")
+    monkeypatch.setattr(downloader, "validate_environment", lambda **kwargs: "yt-dlp")
+    calls = []
+
+    def no_callbacks(command, *, dry_run):
+        calls.append(command)
+        return 0
+
+    monkeypatch.setattr(downloader, "run", no_callbacks)
+    assert downloader.main(["--collection-file", str(collection)]) == 0
+    assert state.completed(identity) == {"A"}  # A zero exit does not prove B completed.
+    assert calls and calls[0][-1] == "B"
+
+    def completed_callback(command, *, dry_run):
+        state.record(identity, "B")
+        return 0
+
+    monkeypatch.setattr(downloader, "run", completed_callback)
+    assert downloader.main(["--collection-file", str(collection)]) == 0
+    assert state.completed(identity) == set()
