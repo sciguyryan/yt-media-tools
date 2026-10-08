@@ -29,6 +29,7 @@ import shlex
 import shutil
 import subprocess
 
+from yt_media_tools.collection_state import resolve_collection_identity
 from yt_media_tools.collection_interchange import (
     COLLECTION_INTERCHANGE_SCHEMA,
     COLLECTION_INTERCHANGE_VERSION,
@@ -666,6 +667,7 @@ class InputSource:
     collection_file: Path | None = None
     stdin: bool = False
     direct_targets: tuple[str, ...] = ()
+    collection_identity: str | None = None
 
     def append_to(self, command: list[str]) -> None:
         """Append the input arguments represented by this source to a command."""
@@ -1523,6 +1525,9 @@ def load_collection_input(path: Path) -> InputSource:
     collection = payload.get("collection")
     if not isinstance(collection, dict) or collection.get("type") != COLLECTION_TYPE_PLAYLIST:
         raise ValueError("collection v1 requires collection.type to be 'playlist'")
+    if set(collection) - {"type", "metadata", "identity", "identity_kind"}:
+        raise ValueError("unsupported collection-level field")
+    identity = resolve_collection_identity(collection)
     metadata = collection.get("metadata")
     if not isinstance(metadata, dict):
         raise ValueError("collection.metadata must be a JSON object")
@@ -1549,7 +1554,7 @@ def load_collection_input(path: Path) -> InputSource:
         if "metadata" in entry and not isinstance(entry["metadata"], dict):
             raise ValueError(f"collection entry {index} metadata must be a JSON object")
         targets.append(target)
-    return InputSource(collection_file=expanded, direct_targets=tuple(targets))
+    return InputSource(collection_file=expanded, direct_targets=tuple(targets), collection_identity=identity)
 
 
 def resolve_input(args: argparse.Namespace) -> InputSource:
