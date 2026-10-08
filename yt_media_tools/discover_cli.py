@@ -681,6 +681,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="write the effective playlist result as a versioned collection interchange file",
     )
+    output.add_argument(
+        "--collection-title",
+        metavar="TITLE",
+        help="set or override the title stored in --collection-output",
+    )
 
     parser.add_argument(
         "--dry-run",

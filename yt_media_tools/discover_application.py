@@ -460,6 +460,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--append cannot be combined with --explain-analyze")
     if args.append is not None and args.format not in {"auto", "lines", "ids"}:
         parser.error("--append supports ID line output only; omit --format or use --format lines/ids")
+    if args.collection_title is not None and args.collection_output is None:
+        parser.error("--collection-title requires --collection-output")
+    if args.collection_title is not None and not args.collection_title.strip():
+        parser.error("--collection-title must contain at least one non-whitespace character")
     if args.provenance == "-" and not explain_analyze and args.output is None and args.append is None:
         parser.error(
             "--provenance - would mix JSON provenance with query rows on stdout; use a file or redirect query output with -o/--append"
@@ -1735,7 +1739,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.collection_output is not None:
         try:
             collection_payload = (
-                build_constructed_collection(selected, resolved_query)
+                build_constructed_collection(
+                    selected,
+                    resolved_query,
+                    collection_title=args.collection_title,
+                )
                 if multi_source
                 else build_playlist_collection(
                     source,
@@ -1743,6 +1751,7 @@ def main(argv: list[str] | None = None) -> int:
                     selected,
                     resolved_query,
                     source_metadata_records=source_metadata_records,
+                    collection_title=args.collection_title,
                 )
             )
             write_collection(args.collection_output, collection_payload)

@@ -67,6 +67,7 @@ def test_collection_export_preserves_aliases_calculations_null_and_falsey_values
         "target": "a",
         "metadata": {"empty_title": "", "views": 0, "live": False, "minutes": 2.0},
     }
+    assert "title" not in payload["collection"]["metadata"]
 
 
 def test_collection_export_prefers_current_source_title_over_detailed_entry_metadata():
@@ -100,6 +101,22 @@ def test_collection_export_omits_conflicting_current_source_titles():
     )
 
     assert "title" not in payload["collection"]["metadata"]
+
+
+def test_explicit_collection_title_overrides_current_source_title():
+    row = {"id": "a", "title": "Alpha"}
+    query = _query(SelectTerm("id", "id", kind="string"))
+
+    payload = build_playlist_collection(
+        _playlist(),
+        [row],
+        [row],
+        query,
+        source_metadata_records=[{"id": "a", "playlist_title": "Source title"}],
+        collection_title="Explicit title",
+    )
+
+    assert payload["collection"]["metadata"]["title"] == "Explicit title"
 
 
 def test_collection_export_duplicate_targets_keep_independent_projected_rows():
@@ -146,3 +163,18 @@ def test_constructed_collection_preserves_hidden_target_and_projected_expression
             "metadata": {"CONCAT(id, ' # ', title)": "abc123 # Example"},
         }
     ]
+
+
+def test_constructed_collection_accepts_explicit_title():
+    from yt_media_tools.collection_export import build_constructed_collection
+    from yt_media_tools.query import parse_query
+
+    query = parse_query("SELECT id FROM source")
+
+    payload = build_constructed_collection(
+        [{"id": "abc123"}],
+        query,
+        collection_title="Combined collection",
+    )
+
+    assert payload["collection"]["metadata"] == {"title": "Combined collection"}

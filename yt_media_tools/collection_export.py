@@ -99,15 +99,18 @@ def _collection_entry(
 def build_constructed_collection(
     selected_rows: Sequence[Mapping[str, Any]],
     query: Query,
+    *,
+    collection_title: str | None = None,
 ) -> dict[str, object]:
     """Build a v1 effective collection without inventing remote playlist identity."""
     entries = [_collection_entry(row, query, position=position) for position, row in enumerate(selected_rows, start=1)]
+    metadata = {"title": collection_title} if collection_title is not None else {}
     return {
         "schema": COLLECTION_INTERCHANGE_SCHEMA,
         "version": COLLECTION_INTERCHANGE_VERSION,
         "collection": {
             "type": COLLECTION_TYPE_PLAYLIST,
-            "metadata": {},
+            "metadata": metadata,
         },
         "entries": entries,
     }
@@ -120,19 +123,23 @@ def build_playlist_collection(
     query: Query,
     *,
     source_metadata_records: Sequence[Mapping[str, Any]] = (),
+    collection_title: str | None = None,
 ) -> dict[str, object]:
     """Build a v1 playlist collection without discarding the effective projection."""
     entries = [_collection_entry(row, query, position=position) for position, row in enumerate(selected_rows, start=1)]
+    metadata = playlist_metadata(
+        source,
+        raw_records,
+        source_metadata_records=source_metadata_records,
+    )
+    if collection_title is not None:
+        metadata["title"] = collection_title
     return {
         "schema": COLLECTION_INTERCHANGE_SCHEMA,
         "version": COLLECTION_INTERCHANGE_VERSION,
         "collection": {
             "type": COLLECTION_TYPE_PLAYLIST,
-            "metadata": playlist_metadata(
-                source,
-                raw_records,
-                source_metadata_records=source_metadata_records,
-            ),
+            "metadata": metadata,
         },
         "entries": entries,
     }
