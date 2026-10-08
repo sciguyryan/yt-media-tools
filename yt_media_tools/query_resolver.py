@@ -790,6 +790,8 @@ def _resolve_scalar_expression(
             result_kind = _common_scalar_kind(args, source, expression.position, expression.name)
         elif expression.name == "COALESCE":
             result_kind = _common_scalar_kind(args, source, expression.position, "COALESCE")
+        elif expression.name == "POSITION":
+            result_kind = "integer"
         elif expression.name == "RANDOM":
             if args:
                 seed = args[0]
@@ -1141,11 +1143,30 @@ def _validate_random_placement(query: Query) -> None:
             )
 
 
+def _validate_position_placement(query: Query) -> None:
+    """Keep final-result positions out of expressions evaluated before final ordering."""
+    allowed = {
+        id(term.expression)
+        for term in query.select
+        if isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"
+    }
+    for node in walk_ast(query, descend=lambda node: node is query or not isinstance(node, Query)):
+        if not isinstance(node, ScalarFunction) or node.name != "POSITION":
+            continue
+        if id(node) not in allowed:
+            raise QuerySemanticError(
+                query.source,
+                "POSITION() is allowed only as a standalone final SELECT projection.",
+                node.position,
+            )
+
+
 def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
     """Resolve fields and typed literals after metadata has established a schema."""
     context = dates or DateContext()
     source = query.source
     _validate_random_placement(query)
+    _validate_position_placement(query)
 
     predicate = _resolve_predicate(query.predicate, schema, source, context)
     group_by = tuple(_resolve_scalar_expression(item, schema, source, context) for item in query.group_by)

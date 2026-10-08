@@ -985,6 +985,7 @@ class Parser:
             "GREATEST",
             "LEAST",
             "RANDOM",
+            "POSITION",
         }
         if name not in scalar_names | aggregate_names:
             raise QuerySyntaxError(
@@ -1097,6 +1098,8 @@ class Parser:
             raise QuerySyntaxError(self.source, "NULLIF requires exactly two arguments.", name_token.position)
         if name in {"GREATEST", "LEAST"} and len(args) < 2:
             raise QuerySyntaxError(self.source, f"{name} requires at least two arguments.", name_token.position)
+        if name == "POSITION" and args:
+            raise QuerySyntaxError(self.source, "POSITION requires no arguments.", name_token.position)
         if name == "RANDOM" and len(args) > 1:
             raise QuerySyntaxError(self.source, "RANDOM accepts zero or one seed argument.", name_token.position)
         return ScalarFunction(name, tuple(args), name_token.position)

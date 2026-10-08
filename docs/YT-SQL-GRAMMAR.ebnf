@@ -116,7 +116,8 @@ scalar-function       = unary-scalar-function, "(", scalar-expression, ")"
                         { ",", scalar-expression }, ")"
                       | "CHAR", "(", scalar-expression, { ",", scalar-expression }, ")"
                       | "NULLIF", "(", scalar-expression, ",", scalar-expression, ")"
-                      | "RANDOM", "(", [ scalar-expression ], ")" ;
+                      | "RANDOM", "(", [ scalar-expression ], ")"
+                      | "POSITION", "(", ")" ;
 unary-scalar-function = "LOWER" | "UPPER" | "LENGTH" | "CARDINALITY" ;
 multi-scalar-function = "COALESCE" | "CONCAT" | "GREATEST" | "LEAST" ;
 aggregate-function    = "COUNT", "(", ( "*" | scalar-expression
