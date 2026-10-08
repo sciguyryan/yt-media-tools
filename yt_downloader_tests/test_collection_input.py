@@ -11,6 +11,10 @@ from pathlib import Path
 
 import pytest
 
+from yt_media_tools.collection_export import build_playlist_collection, write_collection
+from yt_media_tools.query import parse_query
+from yt_media_tools.source_model import SourceSpec
+
 
 def _write_collection(
     path: Path,
@@ -187,6 +191,79 @@ def _load_collection_plugin(collection: Path):
         sys.modules.pop("yt_dlp.postprocessor.common", None)
         sys.modules.pop("yt_dlp.postprocessor", None)
         sys.modules.pop("yt_dlp", None)
+
+
+def _discover_collection(path: Path, *, title: str) -> Path:
+    source = SourceSpec(
+        "playlist",
+        "PLexample123",
+        "https://www.youtube.com/playlist?list=PLexample123",
+        "PLexample123",
+    )
+    records = [
+        {"id": "first", "title": "First video"},
+        {"id": "second", "title": "Second video"},
+    ]
+    query = parse_query("SELECT id, title FROM PLexample123 ORDER BY source_index")
+    payload = build_playlist_collection(
+        source,
+        records,
+        records,
+        query,
+        collection_title=title,
+    )
+    write_collection(path, payload)
+    return path
+
+
+def test_discover_title_reaches_downloader_template_and_hook_metadata(downloader, tmp_path: Path) -> None:
+    collection = _discover_collection(tmp_path / "discover.json", title="Discover collection")
+
+    source = downloader.load_collection_input(collection)
+    assert source.direct_targets == ("first", "second")
+    command = downloader.build_yt_dlp_command(
+        "yt-dlp",
+        downloader.DownloadPolicy(resolution="best", format_selector="bv+ba/b", reverse_playlist=False),
+        source,
+        None,
+    )
+    assert any(value.startswith("CollectionMetadata:when=pre_process;") for value in command)
+
+    plugin = _load_collection_plugin(collection)
+    _, info = plugin.run(
+        {
+            "original_url": "first",
+            "title": "First video",
+            "ext": "webm",
+            "playlist_title": "Remote title",
+        }
+    )
+
+    assert "%(playlist_title)s/%(title)s.%(ext)s" % info == "Discover collection/First video.webm"
+    hook_event = {"status": "finished", "info_dict": info}
+    assert hook_event["info_dict"]["playlist_title"] == "Discover collection"
+    assert hook_event["info_dict"]["playlist"] == "Discover collection"
+
+
+def test_title_only_changes_preserve_collection_targets_and_positions(downloader, tmp_path: Path) -> None:
+    first_path = _discover_collection(tmp_path / "first.json", title="First title")
+    second_path = _discover_collection(tmp_path / "second.json", title="Renamed collection")
+
+    first_source = downloader.load_collection_input(first_path)
+    second_source = downloader.load_collection_input(second_path)
+    assert first_source.direct_targets == second_source.direct_targets == ("first", "second")
+
+    first_plugin = _load_collection_plugin(first_path)
+    second_plugin = _load_collection_plugin(second_path)
+    _, first_info = first_plugin.run({"original_url": "second"})
+    _, second_info = second_plugin.run({"original_url": "second"})
+
+    positional_fields = ("playlist_index", "playlist_autonumber", "playlist_count", "n_entries")
+    assert (
+        tuple(first_info[field] for field in positional_fields)
+        == tuple(second_info[field] for field in positional_fields)
+        == (2, 2, 2, 2)
+    )
 
 
 def test_constructed_collection_needs_no_remote_playlist_identity(tmp_path: Path) -> None:

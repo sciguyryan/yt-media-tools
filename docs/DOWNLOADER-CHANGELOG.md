@@ -5,6 +5,8 @@ This file is the authoritative changelog for yt-downloader. Active development a
 ## Active development
 
 - Prevent annotated row-removal queues from passing leading-hyphen bare YouTube video IDs to yt-dlp as option-like positional arguments; canonicalise only those IDs to watch URLs before invocation.
+- Verify Discover collection titles through JSON loading, the bundled metadata bridge and yt-dlp template and hook-visible playlist fields.
+- Clarify that `collection.metadata.title` supplies both `playlist_title` and the preferred `playlist` value without changing ordered collection membership.
 
 ## Release history
 

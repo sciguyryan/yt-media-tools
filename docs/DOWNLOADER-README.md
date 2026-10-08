@@ -71,7 +71,7 @@ Consume a versioned collection exported by Discover or constructed separately:
 ./yt-download.py --collection-file filtered-playlist.json
 ```
 
-Collection input preserves its ordered playlist context for existing output profiles. Downloader injects the supported playlist metadata before yt-dlp renders output templates, so fields such as `%(playlist)s` and `%(playlist_autonumber)03d` can be used without a collection-specific output profile. See `COLLECTION-INTERCHANGE.md` for the versioned format and field rules.
+Collection input preserves its ordered playlist context for existing output profiles. Downloader injects the supported playlist metadata before yt-dlp renders output templates, so fields such as `%(playlist_title)s`, `%(playlist)s` and `%(playlist_autonumber)03d` can be used without a collection-specific output profile. A title in `collection.metadata.title`, whether preserved from a source playlist or supplied explicitly by Discover, becomes both `playlist_title` and the preferred `playlist` value. The same fields are visible to later yt-dlp hooks. See `COLLECTION-INTERCHANGE.md` for the versioned format and field rules.
 
 Discover-exported entries may also contain the yt-sql values selected for that row. Downloader preserves and validates that interchange data but does not inject arbitrary projected fields into yt-dlp metadata. Only the documented playlist-context bridge affects `info_dict` values.
 

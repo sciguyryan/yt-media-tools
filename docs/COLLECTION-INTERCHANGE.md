@@ -135,11 +135,13 @@ A Discover export describes the effective query result. If a source playlist con
 
 Discover applies normal yt-sql filtering, ordering, `DISTINCT`, `OFFSET` and `LIMIT` semantics before collection export. The exported entry order is therefore the final query order.
 
-For a single playlist source, stable source identity and repeated playlist metadata which agree across acquired entries may be promoted to `collection.metadata`. Conflicting repeated values are omitted rather than resolved arbitrarily. Values describing the effective result, especially positions and counts, are always derived from `entries`.
+For a single playlist source, stable source identity and repeated playlist metadata which agree across acquired entries may be promoted to `collection.metadata`. Discover retains a consistent playlist title observed during current lightweight source enumeration even when detailed or cached entry records are subsequently used for query evaluation. If no current source title was observed, it may fall back to a consistent title in the acquired entry records. Conflicting current observations are omitted rather than resolved arbitrarily.
 
-A multi-source yt-sql result is exported as a constructed collection. Its `collection.metadata` is empty rather than falsely attributing the effective collection to any one contributing remote playlist. Per-entry acquisition targets and projected metadata still follow the final query result.
+A multi-source yt-sql result is exported as a constructed collection. It does not inherit the title, ID or URL of an arbitrary contributing playlist. Its metadata is empty unless the user supplies a descriptive title with `--collection-title`. Per-entry acquisition targets and projected metadata still follow the final query result.
 
 Source facts are retained only while they remain truthful. A hand-built or multi-source constructed collection may use an empty metadata object rather than inventing a remote playlist ID, URL, uploader or channel.
+
+Collection titles are descriptive metadata. They do not determine the ordered membership or positions of a collection, and must remain outside any continuation identity or sequence fingerprint derived from that membership. Values describing the effective result, especially positions and counts, are always derived from `entries`.
 
 ## Discover export
 
@@ -152,6 +154,17 @@ Use `--collection-output FILE` to write the effective playlist result as an addi
 ```
 
 Normal Discover output is still emitted. The collection file is additional output intended for later acquisition or another consumer which needs the effective ordered result and its selected metadata.
+
+When one playlist is the unambiguous source and its title is available through normal acquisition, Discover preserves that title automatically. `--collection-title TITLE` overrides the source title or names a constructed collection explicitly:
+
+```bash
+./yt-discover.py \
+  --query-file combined.yt-sql \
+  --collection-output combined.json \
+  --collection-title "Combined Phasmophobia"
+```
+
+`--collection-title` applies only to collection output and does not change the yt-sql result. If neither an unambiguous source title nor an explicit title is available, `collection.metadata.title` is omitted.
 
 The visible projection does not need to contain `id` merely for collection export. Discover uses retained acquisition identity where the final row still has an unambiguous underlying target. It rejects result shapes where that association no longer exists.
 
@@ -169,11 +182,15 @@ For collection runs, Downloader loads its bundled yt-dlp pre-processing plugin. 
 
 Collection positions and counts are injected as integers. Downloader does not perform output-template formatting itself. Padding, path separators, fallback syntax and other template behaviour remain yt-dlp responsibilities.
 
+For example, `%(playlist_title)s/%(title)s.%(ext)s` receives the preserved or explicitly supplied collection title. Because the bridge updates the ordinary yt-dlp information dictionary during pre-processing, later yt-dlp hooks see the same `playlist_title` and `playlist` values.
+
 Each collection entry represents one acquisition target. Downloader disables remote playlist expansion for collection targets so a target which happens to identify a remote playlist cannot unexpectedly expand into several media items and break the one-entry-to-one-position contract.
 
 ## Metadata precedence
 
 Collection metadata explicitly supplied through the supported playlist field set represents the caller's requested collection context and overrides conflicting playlist-context values returned incidentally while processing an individual target.
+
+For Discover exports, an explicit `--collection-title` has precedence over an automatically preserved source title. Downloader receives only the resulting `collection.metadata.title`; it does not need a second override mechanism.
 
 This precedence is deliberately narrow. `entries[].metadata` is informational projected row data and does not participate in yt-dlp metadata precedence. Undeclared or unrelated extractor metadata remains available for normal yt-dlp processing.
 

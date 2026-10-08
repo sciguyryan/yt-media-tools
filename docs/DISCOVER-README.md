@@ -677,6 +677,17 @@ The legacy `--format ids` and `--format urls` shortcuts remain supported only wh
 
 The collection preserves the final target order and the visible yt-sql projection for each row. Acquisition identity is stored separately from projected metadata, so an ordinary query does not need to select `id` merely to remain downloadable when Discover can still associate the result row with one underlying target. Multi-source derived results are exported as constructed collections with no invented remote-playlist identity.
 
+For a result backed by one unambiguous playlist, Discover preserves an available source playlist title automatically. Use `--collection-title TITLE` to override that title or to name a constructed multi-source collection:
+
+```bash
+./yt-discover.py \
+  --query-file combined.yt-sql \
+  --collection-output combined.json \
+  --collection-title "Combined Phasmophobia"
+```
+
+The explicit title belongs to the exported collection rather than yt-sql. If no truthful source title and no explicit title are available, the collection remains valid without `collection.metadata.title`.
+
 The resulting document can be passed directly to Downloader:
 
 ```bash

@@ -15,7 +15,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [fix] Preserve anonymous derived relations through CLI query merging so query-file execution retains recursively reachable physical sources.
 - [fix] Route derived FROM and JOIN composition through relational materialisation instead of the legacy single-relation result path.
 - [feature] Export multi-source derived results as truthful constructed collection documents without inventing remote playlist identity.
+- [feature] Preserve an available title for collection output backed by one unambiguous playlist, and add `--collection-title TITLE` to override it or name a constructed collection.
+- [performance] Retain playlist titles from normal lightweight source enumeration without adding per-video detailed metadata acquisition.
 - [test] Cover query-file derived UNION source discovery and constructed collection export with hidden acquisition identity and projected scalar metadata.
+- [test] Cover automatic, explicit, overridden, omitted and multi-source collection titles through Discover and Downloader, including stable targets and positions across title-only changes.
+- [docs] Define collection-title precedence, acquisition, constructed-result and identity boundaries.
 - [feature] Add grammar revision 2 derived relations so parenthesised query expressions can form explicit logical relations in `FROM` and `JOIN` without being rewritten as hidden CTEs.
 - [fix] Resolve derived relations against only their exported result schema, preserving first-branch UNION output names, outer CTE visibility and the existing prohibition on nested WITH and correlated row references.
 - [test] Cover derived-relation aliases, schema boundaries, malformed forms, canonical round trips, UNION composition and nested torture cases before planner and execution integration.
