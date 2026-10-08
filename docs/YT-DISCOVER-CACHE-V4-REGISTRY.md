@@ -2,9 +2,9 @@
 
 This document records the cache-v4 provider-registry contract. Entity metadata and source-state persistence are covered by the complete v4 database design.
 
-A provider definition has a stable textual key, an independently versioned provider schema revision, a provider-owned metadata table identity, named acquisition groups, logical field claims and applicability. Field claims use the existing yt-sql `QueryType` model rather than creating a cache-specific type system. They also name the provider storage field and carry a default freshness policy.
+A provider definition has a stable textual key, an independently versioned provider schema revision, a provider-owned metadata table identity, named acquisition groups, logical field claims and applicability. Field claims use the existing yt-sql `QueryType` model rather than creating a cache-specific type system. They also name the provider storage field and carry a typed freshness policy loaded from the installed defaults.
 
-Freshness has three code-level forms: a positive maximum age, immutable until explicit invalidation, and always refresh. Persistent registry configuration can override provider defaults without changing the logical field contract.
+Freshness has three typed runtime forms: a positive maximum age, immutable until explicit invalidation, and always refresh. The complete built-in policy is kept in a versioned TOML document and strictly parsed into those runtime types. Persistent registry configuration can override provider defaults without changing the logical field contract.
 
 Acquisition groups describe real provider fetch boundaries. A field must name a group declared by its provider. The declaration does not yet say that every successful acquisition of that group establishes value-or-NULL for every member. That distinction depends on the acquisition-state work in #128 and must not be invented here.
 
@@ -22,7 +22,7 @@ Reconciliation starts from the installed code declaration. A provider seen for t
 
 The stored rows also retain a snapshot of the provider contract needed to recognise incompatible reuse of an existing identity. Metadata-table identity, field storage identity, field type and acquisition-group membership are not silently rewritten. A provider schema revision may advance, but an older implementation cannot open a database whose recorded provider revision is newer. Changes that require a real provider migration therefore remain explicit work rather than reconciliation side effects.
 
-Freshness defaults are code-owned and may evolve with a provider revision. Deployment choices remain database-owned. Reconciliation updates the default while retaining any field-specific override. Provider enabled state and priority behave the same way: reopening or reinstalling a provider does not reset them.
+Freshness defaults are installed configuration and may evolve with a provider revision. Deployment choices remain database-owned. Reconciliation updates the default while retaining any field-specific override. Provider enabled state and priority behave the same way: reopening or reinstalling a provider does not reset them.
 
 These tables are deliberately isolated from the v3 runtime cache path. Part 2 establishes persistent registry behaviour for v4; it does not select a v4 database at startup, migrate a v3 database, create entity metadata, record acquisition state or resolve competing cached values.
 

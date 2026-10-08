@@ -32,7 +32,7 @@ class FreshnessMode(str, Enum):
 
 @dataclass(frozen=True)
 class FreshnessPolicy:
-    """Code-owned default freshness for one provider field."""
+    """Validated runtime freshness semantics for one provider field."""
 
     mode: FreshnessMode
     max_age_seconds: int | None = None
@@ -107,7 +107,7 @@ class ProviderFieldDefinition:
 
 @dataclass(frozen=True)
 class ProviderDefinition:
-    """The code-owned semantic and storage contract for one cache provider.
+    """The installed semantic and storage contract for one cache provider.
 
     Deployment policy such as enabled state, provider priority and persistent
     registration order deliberately does not live here. Cache-v4 persistence owns

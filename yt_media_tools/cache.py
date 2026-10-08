@@ -18,6 +18,7 @@ from .cache_entity_store import CacheV4EntityStore
 from .cache_registry_store import CacheV4RegistryStore
 from .cache_v4_ytdlp import (
     YTDLP_PROVIDER,
+    YTDLP_FRESHNESS_POLICIES,
     STABLE_COLLECTION_EQUIVALENTS,
     normalise_registered_metadata,
 )
@@ -25,31 +26,6 @@ from .cache_v4_ytdlp import (
 
 SCHEMA_VERSION = 3
 CURRENT_SCHEMA_VERSION = 4
-DEFAULT_DYNAMIC_MAX_AGE = timedelta(days=1)
-
-_FIELD_MAX_AGE: dict[str, timedelta] = {
-    "id": timedelta(days=3650),
-    "upload_date": timedelta(days=3650),
-    "release_timestamp": timedelta(days=3650),
-    "timestamp": timedelta(days=3650),
-    "modified_timestamp": timedelta(days=1),
-    "channel_id": timedelta(days=3650),
-    "uploader_id": timedelta(days=3650),
-    "duration": timedelta(days=30),
-    "title": timedelta(days=7),
-    "uploader": timedelta(days=7),
-    "channel": timedelta(days=7),
-    "webpage_url": timedelta(days=30),
-    "view_count": timedelta(hours=6),
-    "like_count": timedelta(hours=6),
-    "comment_count": timedelta(hours=6),
-    "channel_follower_count": timedelta(hours=6),
-    "availability": timedelta(hours=1),
-    "live_status": timedelta(hours=1),
-    "is_live": timedelta(hours=1),
-    "was_live": timedelta(hours=1),
-}
-
 _ALIASES = {
     "views": "view_count",
     "likes": "like_count",
@@ -152,8 +128,11 @@ def canonical_field(name: str) -> str:
 
 
 def field_max_age(name: str) -> timedelta:
-    """Return the default maximum age for a cached field."""
-    return _FIELD_MAX_AGE.get(canonical_field(name), DEFAULT_DYNAMIC_MAX_AGE)
+    """Return the built-in maximum age for one canonical yt-dlp field."""
+    resolved = YTDLP_FRESHNESS_POLICIES.field(canonical_field(name))
+    assert resolved is not None
+    assert resolved.policy.max_age_seconds is not None
+    return timedelta(seconds=resolved.policy.max_age_seconds)
 
 
 class MetadataCache:

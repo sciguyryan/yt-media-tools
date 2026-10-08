@@ -1,0 +1,28 @@
+schema_version = 1
+
+[providers."yt-dlp"]
+default = "1d"
+
+[providers."yt-dlp".fields]
+id = "3650d"
+title = "7d"
+upload_date = "3650d"
+duration = "30d"
+view_count = "6h"
+like_count = "6h"
+comment_count = "6h"
+channel_follower_count = "6h"
+uploader = "7d"
+uploader_id = "3650d"
+channel = "7d"
+channel_id = "3650d"
+live_status = "1h"
+availability = "1h"
+is_live = "1h"
+was_live = "1h"
+webpage_url = "30d"
+playlist_id = "1d"
+playlist_title = "1d"
+timestamp = "3650d"
+release_timestamp = "3650d"
+modified_timestamp = "1d"

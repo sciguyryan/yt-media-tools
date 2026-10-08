@@ -4,6 +4,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [maintenance] Move the complete built-in yt-dlp freshness table into versioned TOML and construct the runtime provider registry from its typed policies.
+- [test] Freeze the active pre-configuration freshness values and strictly validate duration syntax, provider names, field names and configuration completeness.
+- [docs] Reconcile the cache-v4 design and registry documentation with TOML-backed built-in freshness policy.
 - [release] Bump yt-discover to 0.32.0 after completing grammar revision 2, derived-relation integration and the parser-replacement investigation.
 - [maintenance] Remove the concluded Lark and Tree-sitter parser experiments, their dependencies and implementation-specific tooling after retaining the durable conformance results.
 - [docs] Retain the hand-written parser as the production yt-sql implementation because it provides the most consistent overall performance, allocation, diagnostic and maintenance profile.

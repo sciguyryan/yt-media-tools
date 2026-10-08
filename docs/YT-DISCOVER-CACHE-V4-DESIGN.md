@@ -44,7 +44,7 @@ This is a fairly important departure from v3. Seeing one YouTube video through t
 
 A provider should say what it can supply. SQLite columns should not accidentally become the definition of the query language.
 
-The code-side definition needs a stable provider key, a provider schema revision, field definitions and their yt-sql types, storage mappings, acquisition groups, applicability/capability information and default freshness. The database keeps the persistent half: stable provider identity, registration order, policy overrides, the provider schema revision responsible for data on disk, and enough of the field contract to understand that data later.
+The installed definition needs a stable provider key, a provider schema revision, field definitions and their yt-sql types, storage mappings, acquisition groups and applicability/capability information. A versioned TOML document supplies the complete built-in freshness policy, which is parsed into the same typed policy objects used by the registry. The database keeps the persistent half: stable provider identity, registration order, policy overrides, the provider schema revision responsible for data on disk, and enough of the field contract to understand that data later.
 
 Provider metadata can live in provider-owned tables keyed by `entity_id`. I expect that to be one main table per provider in the ordinary case, but I don't want to legislate that before we inventory the structured fields. If yt-sql treats some data relationally, a child table may be the honest representation.
 
@@ -96,9 +96,9 @@ A stale high-priority value should not force reacquisition merely because its pr
 
 Known NULL ages too. Unsupported/inapplicable capability information is different and may change with a provider/schema capability revision rather than a TTL.
 
-Provider fields carry sensible default freshness policies; users can override them globally, per provider and, where there is a reason, per field. `immutable` is useful for data that does not expire with time but can still be explicitly invalidated. `always-refresh` exists for the opposite case. I expect it to be rare.
+Provider fields carry sensible default freshness policies from the complete built-in TOML catalogue. The configuration language supports positive durations in minutes, hours or days, plus `immutable` for data that does not expire with time but can still be explicitly invalidated and `always-refresh` for the opposite case. User override discovery and precedence remain subsequent work, separate from this built-in contract.
 
-The exact defaults need to be reconciled with the v3 values rather than invented afresh. v3 already has useful evidence about which fields were considered volatile.
+The initial catalogue deliberately reproduces the active pre-configuration values exactly, including the one-day fallback for unlisted yt-dlp fields. Policy changes remain separate from the configuration architecture.
 
 ## Source state is not metadata
 
