@@ -243,3 +243,102 @@ def decide_maintenance(
 def dry_run(path: Path, database: str, policy: MaintenancePolicy | None = None) -> MaintenanceDecision:
     """Read-only maintenance preview; execution is deliberately not implemented."""
     return decide_maintenance(inspect_database(path), policy or load_policy(), database)
+
+
+@dataclass(frozen=True)
+class MaintenanceOutcome:
+    """Outcome of one opportunistic, post-operation maintenance attempt."""
+
+    status: str
+    reason: str
+    pages_reclaimed: int = 0
+
+
+def _try_maintenance_lock(handle: object) -> bool:
+    """Acquire the advisory maintenance lock without waiting for other maintainers."""
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except (OSError, BlockingIOError):
+        return False
+
+
+def _release_maintenance_lock(handle: object) -> None:
+    if os.name == "nt":
+        import msvcrt
+
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def incremental_maintenance(
+    path: Path,
+    database: str,
+    policy: MaintenancePolicy | None = None,
+    *,
+    clock=None,
+) -> MaintenanceOutcome:
+    """Attempt bounded post-operation reclamation; never create a missing database.
+
+    The advisory lock serialises cooperating maintainers. SQLite's immediate
+    write transaction and zero busy timeout independently protect against
+    competing writers and readers requiring incompatible locks. Each vacuum
+    statement is bounded to one page; the time budget is checked between them.
+    """
+    import time
+
+    policy = policy if policy is not None else load_policy()
+    clock = clock or time.monotonic
+    source = Path(path).resolve()
+    if not source.is_file():
+        return MaintenanceOutcome("deferred", "database does not exist")
+    lock_path = source.with_name(source.name + ".maintenance.lock")
+    try:
+        with lock_path.open("a+b") as handle:
+            if not _try_maintenance_lock(handle):
+                return MaintenanceOutcome("deferred", "another maintenance operation is active")
+            try:
+                decision = dry_run(source, database, policy)
+                if not decision.eligible:
+                    return MaintenanceOutcome("skipped", decision.reason)
+                start = clock()
+                reclaimed = 0
+                # Use short, individual transactions rather than holding a write
+                # lock for the whole page budget or wall-clock interval.
+                for _ in range(policy.max_pages_per_run):
+                    if clock() - start >= policy.max_duration_seconds:
+                        break
+                    try:
+                        with sqlite3.connect(f"{source.as_uri()}?mode=rw", uri=True, timeout=0) as connection:
+                            connection.execute("PRAGMA busy_timeout=0")
+                            if connection.execute("PRAGMA auto_vacuum").fetchone()[0] != 2:
+                                return MaintenanceOutcome("deferred", "incremental vacuum mode changed", reclaimed)
+                            before = connection.execute("PRAGMA freelist_count").fetchone()[0]
+                            if not before:
+                                break
+                            connection.execute("PRAGMA incremental_vacuum(1)")
+                            after = connection.execute("PRAGMA freelist_count").fetchone()[0]
+                            if after >= before:
+                                break
+                            reclaimed += before - after
+                    except sqlite3.OperationalError as exc:
+                        if getattr(exc, "sqlite_errorcode", None) in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                            return MaintenanceOutcome("deferred", "database is busy", reclaimed)
+                        return MaintenanceOutcome("deferred", f"SQLite maintenance unavailable: {exc}", reclaimed)
+                return MaintenanceOutcome("completed", "bounded incremental vacuum finished", reclaimed)
+            finally:
+                _release_maintenance_lock(handle)
+    except (OSError, sqlite3.Error, MaintenanceInspectionError) as exc:
+        return MaintenanceOutcome("deferred", f"maintenance unavailable: {exc}")

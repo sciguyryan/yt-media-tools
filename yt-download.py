@@ -4615,6 +4615,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             except OSError:
                 pass
 
+    # This is strictly after the download, completion reconciliation and
+    # manifest work. Optional reclamation cannot change the download result.
+    if continuation is not None and not args.dry_run:
+        try:
+            from yt_media_tools.database_maintenance import incremental_maintenance
+
+            incremental_maintenance(continuation.path, "collection_state")
+        except Exception as exc:
+            print(f"Warning: optional collection-state maintenance unavailable ({exc}).", file=sys.stderr)
+
     return exit_status
 
 

@@ -81,3 +81,81 @@ def test_missing_database_not_created(tmp_path):
     with pytest.raises(MaintenanceInspectionError):
         inspect_database(source)
     assert not source.exists()
+
+
+def test_incremental_maintenance_reclaims_pages_and_preserves_records(tmp_path):
+    from yt_media_tools.database_maintenance import incremental_maintenance
+
+    source = tmp_path / "collection.sqlite3"
+    with sqlite3.connect(source) as connection:
+        connection.execute("PRAGMA auto_vacuum=INCREMENTAL")
+        connection.execute("CREATE TABLE records (payload TEXT)")
+        connection.executemany("INSERT INTO records VALUES (?)", [("x" * 1000,)] * 300)
+        connection.execute("DELETE FROM records WHERE rowid > 10")
+    policy = parse_policy(
+        "schema_version = 1\n[maintenance.incremental]\nmax_pages_per_run = 10\n[databases.collection_state]\nmin_reclaimable_mib = 0\nmin_free_ratio = 0\n"
+    )
+    before = inspect_database(source)
+    result = incremental_maintenance(source, "collection_state", policy)
+    after = inspect_database(source)
+    assert result.status == "completed"
+    assert 0 < result.pages_reclaimed <= 10
+    assert after.freelist_count < before.freelist_count
+    with sqlite3.connect(source) as connection:
+        assert connection.execute("SELECT count(*) FROM records").fetchone()[0] == 10
+
+
+def test_incremental_maintenance_never_converts_legacy_database(tmp_path):
+    from yt_media_tools.database_maintenance import incremental_maintenance
+
+    source = tmp_path / "old.sqlite3"
+    with sqlite3.connect(source) as connection:
+        connection.execute("CREATE TABLE records (value INTEGER)")
+    before = source.read_bytes()
+    result = incremental_maintenance(source, "collection_state")
+    assert result.status == "skipped"
+    assert source.read_bytes() == before
+
+
+def test_incremental_maintenance_defers_missing_database(tmp_path):
+    from yt_media_tools.database_maintenance import incremental_maintenance
+
+    source = tmp_path / "missing.sqlite3"
+    assert incremental_maintenance(source, "collection_state").status == "deferred"
+    assert not source.exists()
+
+
+def test_incremental_maintenance_defers_under_write_contention(tmp_path):
+    from yt_media_tools.database_maintenance import incremental_maintenance
+
+    source = tmp_path / "contended.sqlite3"
+    with sqlite3.connect(source) as connection:
+        connection.execute("PRAGMA auto_vacuum=INCREMENTAL")
+        connection.execute("CREATE TABLE records (value TEXT)")
+        connection.executemany("INSERT INTO records VALUES (?)", [("x" * 2000,)] * 100)
+        connection.execute("DELETE FROM records")
+    policy = parse_policy(
+        "schema_version = 1\n[databases.collection_state]\nmin_reclaimable_mib = 0\nmin_free_ratio = 0\n"
+    )
+    with sqlite3.connect(source) as writer:
+        writer.execute("BEGIN IMMEDIATE")
+        result = incremental_maintenance(source, "collection_state", policy)
+        assert result.status == "deferred"
+        assert result.pages_reclaimed == 0
+
+
+def test_incremental_maintenance_respects_zero_elapsed_budget(tmp_path):
+    from yt_media_tools.database_maintenance import incremental_maintenance
+
+    source = tmp_path / "budget.sqlite3"
+    with sqlite3.connect(source) as connection:
+        connection.execute("PRAGMA auto_vacuum=INCREMENTAL")
+        connection.execute("CREATE TABLE records (value TEXT)")
+        connection.executemany("INSERT INTO records VALUES (?)", [("x" * 2000,)] * 100)
+        connection.execute("DELETE FROM records")
+    policy = parse_policy(
+        "schema_version = 1\n[databases.collection_state]\nmin_reclaimable_mib = 0\nmin_free_ratio = 0\n"
+    )
+    result = incremental_maintenance(source, "collection_state", policy, clock=iter([0, 10]).__next__)
+    assert result.status == "completed"
+    assert result.pages_reclaimed == 0

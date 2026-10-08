@@ -106,6 +106,9 @@ class CollectionState:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
             tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if version == 0 and not tables:
+                # Set incremental vacuum only for genuinely new databases, before
+                # creating tables. Existing databases are never converted here.
+                connection.execute("PRAGMA auto_vacuum=INCREMENTAL")
                 with connection:
                     connection.execute(
                         "CREATE TABLE completed_targets (collection_id TEXT NOT NULL, target_id TEXT NOT NULL, completed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), PRIMARY KEY (collection_id, target_id))"
