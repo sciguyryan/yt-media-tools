@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 from pathlib import Path
+import shutil
 import sqlite3
 
 import pytest
@@ -38,13 +39,7 @@ def test_legacy_compaction_uses_shared_executor(tmp_path: Path) -> None:
 def test_manual_vacuum_rejects_insufficient_space(tmp_path: Path, monkeypatch) -> None:
     path = tmp_path / "data.sqlite3"
     connection = _db(path)
-    from yt_media_tools import database_maintenance
-
-    monkeypatch.setattr(
-        database_maintenance.shutil if hasattr(database_maintenance, "shutil") else __import__("shutil"),
-        "disk_usage",
-        lambda _path: type("Usage", (), {"free": 0})(),
-    )
+    monkeypatch.setattr(shutil, "disk_usage", lambda _path: type("Usage", (), {"free": 0})())
     with pytest.raises(RuntimeError, match="insufficient free disk space"):
         manual_full_vacuum(connection, path)
     assert connection.execute("SELECT count(*) FROM payload").fetchone()[0] == 0
@@ -63,3 +58,19 @@ def test_statistics_and_checkpoint_preserve_data(tmp_path: Path) -> None:
 def test_full_vacuum_never_runs_automatically() -> None:
     assert not default_policy().automatic_full
     assert not replace(default_policy(), enabled=True).automatic_full
+
+
+@pytest.mark.parametrize("multiplier", [0, -1, float("nan"), float("inf")])
+def test_full_vacuum_rejects_invalid_space_multiplier(tmp_path: Path, multiplier: float) -> None:
+    path = tmp_path / "data.sqlite3"
+    with _db(path) as connection, pytest.raises(ValueError, match="space multiplier"):
+        manual_full_vacuum(connection, path, minimum_free_space_multiplier=multiplier)
+
+
+def test_manual_vacuum_rejects_active_transaction(tmp_path: Path) -> None:
+    path = tmp_path / "data.sqlite3"
+    with _db(path) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        with pytest.raises(RuntimeError, match="active SQLite transaction"):
+            manual_full_vacuum(connection, path)
+        connection.rollback()

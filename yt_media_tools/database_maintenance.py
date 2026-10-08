@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import os
 from pathlib import Path
 import sqlite3
+import shutil
+import time
 import tomllib
 from typing import Mapping
 
@@ -69,7 +71,7 @@ class MaintenanceDecision:
 
 
 def default_policy() -> MaintenancePolicy:
-    """Use conservative provisional defaults pending Part 4 benchmarking."""
+    """Use conservative defaults until representative workloads justify changes."""
     return MaintenancePolicy(
         enabled=True,
         trigger="post-operation",
@@ -199,7 +201,13 @@ def inspect_database(path: Path) -> DatabaseMeasurements:
             freelist_count = int(connection.execute("PRAGMA freelist_count").fetchone()[0])
             page_size = int(connection.execute("PRAGMA page_size").fetchone()[0])
             vacuum = int(connection.execute("PRAGMA auto_vacuum").fetchone()[0])
-        if vacuum not in VACUUM_MODES or page_count < freelist_count or page_size <= 0:
+        if (
+            vacuum not in VACUUM_MODES
+            or page_count < freelist_count
+            or page_count < 0
+            or freelist_count < 0
+            or page_size <= 0
+        ):
             raise MaintenanceInspectionError("invalid SQLite page measurements")
         wal = Path(str(source) + "-wal")
         return DatabaseMeasurements(
@@ -293,8 +301,6 @@ def incremental_maintenance(
     competing writers and readers requiring incompatible locks. Each vacuum
     statement is bounded to one page; the time budget is checked between them.
     """
-    import time
-
     policy = policy if policy is not None else load_policy()
     clock = clock or time.monotonic
     source = Path(path).resolve()
@@ -370,8 +376,6 @@ class CacheCompactionResult:
     after: SQLiteStorageMeasurement
 
     def to_dict(self) -> dict[str, object]:
-        from dataclasses import asdict
-
         return asdict(self)
 
 
@@ -427,11 +431,9 @@ def manual_full_vacuum(
     advisory lock coordinates with incremental maintainers. SQLite remains the
     authority for other readers and writers; busy access fails rather than waits.
     """
-    import shutil
-
     if connection.in_transaction:
         raise RuntimeError("cache compaction requires no active SQLite transaction")
-    if minimum_free_space_multiplier < 1:
+    if not 1 <= minimum_free_space_multiplier < float("inf"):
         raise ValueError("full vacuum space multiplier must be at least one")
     source = Path(path).resolve()
     if not source.is_file():
