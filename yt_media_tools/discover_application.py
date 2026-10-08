@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextvars import ContextVar
 import sqlite3
 import sys
 from dataclasses import replace
@@ -27,7 +28,12 @@ from yt_media_tools.cache_startup_policy import (
 )
 from yt_media_tools.cache_maintenance import CacheRetentionPolicy
 from yt_media_tools.cache_status import collect_cache_status, format_cache_status
-from yt_media_tools.database_maintenance import manual_full_vacuum
+from yt_media_tools.database_maintenance import (
+    MaintenancePolicyError,
+    incremental_maintenance,
+    load_policy,
+    manual_full_vacuum,
+)
 from yt_media_tools.cache_v4_ytdlp import YTDLP_FRESHNESS_FIELDS, build_ytdlp_provider
 from yt_media_tools.capabilities import safely_reject_lightweight
 from yt_media_tools.dates import DateContext
@@ -309,7 +315,10 @@ def _resolve_cache_startup(args, *, explicit_cache: bool) -> Path:
         return startup.active_path
 
 
-def main(argv: list[str] | None = None) -> int:
+_active_maintenance_cache: ContextVar[Path | None] = ContextVar("discover_maintenance_cache", default=None)
+
+
+def _run_application(argv: list[str] | None = None) -> int:
     parser = build_parser()
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(raw_argv)
@@ -793,6 +802,7 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, RuntimeError, sqlite3.Error) as exc:
             print(f"Error: could not open metadata cache {args.cache.expanduser()}: {exc}", file=sys.stderr)
             return 1
+        _active_maintenance_cache.set(Path(args.cache).expanduser())
         _verbose(args.verbose, f"Metadata cache: {args.cache.expanduser()}.")
     else:
         _verbose(args.verbose, "Metadata cache disabled for this run.")
@@ -2034,3 +2044,25 @@ def main(argv: list[str] | None = None) -> int:
     if metadata_cache is not None:
         metadata_cache.close()
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run Discover, then opportunistically maintain its used metadata cache.
+
+    Do not resolve the managed cache a second time: startup resolution can
+    migrate state, and maintenance must never trigger migration or creation.
+    """
+    token = _active_maintenance_cache.set(None)
+    try:
+        return _run_application(argv)
+    finally:
+        cache_path = _active_maintenance_cache.get()
+        _active_maintenance_cache.reset(token)
+        if cache_path is not None:
+            try:
+                policy = load_policy()
+                outcome = incremental_maintenance(cache_path, "metadata_cache", policy)
+                if outcome.status == "deferred":
+                    print(f"Warning: optional metadata-cache maintenance deferred ({outcome.reason}).", file=sys.stderr)
+            except (MaintenancePolicyError, OSError, RuntimeError, ValueError) as exc:
+                print(f"Warning: optional metadata-cache maintenance unavailable ({exc}).", file=sys.stderr)

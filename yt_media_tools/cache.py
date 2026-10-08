@@ -100,6 +100,8 @@ def initialise_v4_cache(path: Path) -> None:
     connection = sqlite3.connect(target)
     try:
         connection.execute("PRAGMA foreign_keys = ON")
+        # Establish incremental vacuum before creating the fresh v4 schema.
+        connection.execute("PRAGMA auto_vacuum=INCREMENTAL")
         connection.execute("CREATE TABLE cache_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         registry = CacheV4RegistryStore(connection)
         registry.reconcile((YTDLP_PROVIDER,))
