@@ -40,6 +40,18 @@ Parser benchmarks measure query parsing time, throughput and memory behaviour ac
 
 Parser performance matters because every textual yt-sql query passes through this stage. Parser benchmarks are also required when evaluating alternative parser architectures so architectural decisions can be based on measured cost rather than implementation preference alone.
 
+### Canonical lexer optimisation baseline
+
+The canonical hand-written yt-sql parser retains the ASCII identifier fast path: when the compiled token regex has already recognised a complete ASCII identifier and no following non-ASCII code point could extend it, tokenisation does not scan that identifier a second time. Unicode identifier recognition and lexical error behaviour retain their existing paths.
+
+The parser benchmark group includes four complete-parsing workloads (simple, complex, collection and derived) and four corresponding tokenisation workloads. Run `python benchmark.py parser` to exercise the parser benchmark selection; use the benchmark runner's baseline facilities for machine-local comparisons. Compare the same Python version, benchmark inputs and environment, and distinguish tokenisation improvements from complete-parsing improvements.
+
+In the October 2026 local acceptance comparison, the identifier-rescan change improved complete-parsing medians by approximately 6-9% across the four workloads (simple 23.963 to 21.731 microseconds, complex 142.685 to 133.060 microseconds, collection 85.681 to 77.976 microseconds, and derived 87.660 to 82.050 microseconds). These results describe the measured machine and are not a cross-platform performance guarantee.
+
+Other investigated micro-optimisations, including alternative ASCII classification, keyword uppercase handling, direct token access, loop-local caching, identifier slicing and slotted token dataclasses, were not retained because complete-parser improvements were inconsistent or did not justify added complexity or compatibility considerations. The slotted-token experiment showed lower retained memory in an exploratory measurement but did not demonstrate faster parsing.
+
+A future Rust parser prototype may be evaluated separately against the same conformance and benchmark workloads. The Python implementation remains the reference, and any native implementation must account for Python boundary and object-conversion costs as well as packaging and maintenance overhead.
+
 ### Semantic resolution
 
 Resolution benchmarks measure the cost of resolving fields, types, scopes, structured access, collection bindings, CTEs, compound queries and other semantic structures.

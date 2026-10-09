@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [performance] Avoid rescanning complete regex-recognised ASCII identifiers in the canonical yt-sql lexer while preserving Unicode identifier and lexical error semantics.
+- [benchmark] Retain four complete-parser and four tokenisation workloads for comparable parser performance measurements.
+- [docs] Record the measured 6-9% complete-parser improvement, conclude the Python lexer micro-optimisation investigation and defer any Rust parser prototype to a separate experiment.
+
 - [maintenance] Move the complete built-in yt-dlp freshness table into versioned TOML and construct the runtime provider registry from its typed policies.
 - [test] Freeze the active pre-configuration freshness values and strictly validate duration syntax, provider names, field names and configuration completeness.
 - [docs] Reconcile the cache-v4 design and registry documentation with TOML-backed built-in freshness policy.
