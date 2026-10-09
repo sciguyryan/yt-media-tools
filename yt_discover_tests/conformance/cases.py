@@ -84,6 +84,18 @@ def _distinct_titles(rows: Rows) -> list[Any]:
     )
 
 
+def _final_position_offset(rows: Rows) -> list[Any]:
+    """Number the complete source-index order before applying the requested slice."""
+    ordered = sorted(rows, key=lambda row: row["source_index"])
+    return [{"position": index, "id": row["id"]} for index, row in enumerate(ordered, start=1) if 3 <= index <= 5]
+
+
+def _final_position_distinct(rows: Rows) -> list[Any]:
+    """Deduplicate projected titles independently of the deferred position."""
+    titles = sorted({row["title"] for row in rows if row["title"] is not None})
+    return [{"position": index, "title": title} for index, title in enumerate(titles, start=1)]
+
+
 def _offset_limit(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)
@@ -1001,6 +1013,7 @@ LANGUAGE_FEATURES = frozenset(
         "datetime.offset",
         "datetime.zulu",
         "distinct",
+        "result.position",
         "duration.clock_hms",
         "duration.clock_ms",
         "duration.compound",
@@ -1140,6 +1153,22 @@ LANGUAGE_FEATURES = frozenset(
 )
 
 CASES = (
+    ConformanceCase(
+        "final_position_offset",
+        "SELECT POSITION() AS position, id FROM @yt_sql_fixture ORDER BY source_index ASC LIMIT 3 OFFSET 2",
+        _final_position_offset,
+        ("position", "id"),
+        "jsonl",
+        features=("result.position",),
+    ),
+    ConformanceCase(
+        "final_position_distinct",
+        "SELECT DISTINCT POSITION() AS position, title FROM @yt_sql_fixture WHERE title IS NOT NULL ORDER BY title ASC",
+        _final_position_distinct,
+        ("position", "title"),
+        "jsonl",
+        features=("result.position",),
+    ),
     ConformanceCase(
         "source_order_limit",
         "SELECT id FROM @yt_sql_fixture LIMIT 10",

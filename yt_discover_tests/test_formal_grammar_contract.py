@@ -56,6 +56,7 @@ def test_language_reference_links_formal_grammar_and_authority_model() -> None:
     "source",
     (
         "SELECT id FROM @fixture",
+        "SELECT POSITION() AS position, id FROM @fixture ORDER BY id LIMIT 2 OFFSET 1",
         "duration > 10m AND title CONTAINS mars",
         "SELECT DISTINCT id, formats[0].height AS height FROM @fixture WHERE title ILIKE 'mars%' ORDER BY height DESC LIMIT 10 OFFSET 2",
         "WITH known AS (SELECT id FROM @known) SELECT l.id FROM @left AS l LEFT JOIN known AS k ON l.id = k.id WHERE l.id IS NOT NULL",

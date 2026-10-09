@@ -163,7 +163,7 @@ def test_line_comments_are_non_semantic(name: str, commented: str, plain: str) -
 
 MAXIMAL_DERIVED_RELATION_TORTURE_QUERY = r"""# welcome to parser misery 🏴
 WITH `Ω seed` AS (# CTE boundary
-SELECT DISTINCT id, title, tags, formats, duration, view_count, upload_date, is_live,
+SELECT DISTINCT POSITION() AS `result position`, id, title, tags, formats, duration, view_count, upload_date, is_live,
        LOWER(title) AS `é!`, UPPER(title) AS `é!`, LENGTH(title) AS `👩‍💻`,
        CARDINALITY(tags) AS tag_count,
        COUNT(tags AS tag WHERE tag IS NOT NULL AND tag != 'skip') AS kept_count,

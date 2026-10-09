@@ -1383,6 +1383,20 @@ def _resolve_composed_query(
     source_schemas: dict[tuple[str, str | None], QuerySchema],
 ) -> Query:
     """Resolve one query body and its positional set-composition branches."""
+    # Explicit UNION operands do not have a shared final-projection stage yet.
+    # Reject deferred positions before splitting the query into independent bodies.
+    # Multi-facet OF expansion is source sugar, not an explicit UNION.
+    if query.set_operations and any(not operation.facet_expansion for operation in query.set_operations):
+        operands = (query.left_query or query, *(operation.query for operation in query.set_operations))
+        for operand in operands:
+            for term in operand.select:
+                expression = term.expression
+                if isinstance(expression, ScalarFunction) and expression.name == "POSITION":
+                    raise QuerySemanticError(
+                        query.source,
+                        "POSITION() in set-operation projections is not yet supported.",
+                        expression.position,
+                    )
 
     def resolve_body(body: Query) -> Query:
         resolved_relation = body.from_relation
