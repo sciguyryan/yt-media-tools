@@ -3,10 +3,32 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import pytest
+
 from yt_discover_tests.cli_harness import run_cli
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(autouse=True)
+def avoid_unrelated_youtubejs_capability_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep observability tests independent of the optional Node.js package probe.
+
+    These tests exercise CLI reporting and yt-dlp acquisition, not YouTube.js
+    installation discovery. Preserve real yt-dlp and Node.js version checks;
+    dedicated tool-discovery tests cover the actual bridge capability check.
+    """
+    from yt_media_tools import tools
+
+    original_run_version = tools._run_version
+
+    def run_version(command: list[str], *, cwd: Path | None = None) -> tuple[bool, str | None, str]:
+        if len(command) >= 3 and command[-1] == "--check" and Path(command[-2]).name == "youtubejs_bridge.mjs":
+            return False, None, "YouTube.js unavailable in observability fixture"
+        return original_run_version(command, cwd=cwd)
+
+    monkeypatch.setattr(tools, "_run_version", run_version)
 
 
 def fake_ytdlp_env(tmp_path: Path, *, with_error: bool = False, count: int = 2) -> dict[str, str]:
