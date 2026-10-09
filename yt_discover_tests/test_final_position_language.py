@@ -181,3 +181,41 @@ def test_position_canonical_round_trip_in_nested_cte():
     parsed = parse_query(sql)
     canonical = format_query(parsed)
     assert format_query(parse_query(canonical)) == canonical
+
+
+@pytest.mark.parametrize(
+    ("sql", "expected"),
+    [
+        (
+            "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
+            "SELECT position, id FROM ranked ORDER BY id DESC",
+            [(4, "d"), (3, "c"), (2, "b"), (1, "a")],
+        ),
+        (
+            "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) "
+            "SELECT position, id FROM ranked ORDER BY id DESC",
+            [(3, "c"), (2, "b")],
+        ),
+        (
+            "SELECT position, id FROM (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
+            "AS ranked ORDER BY id DESC",
+            [(4, "d"), (3, "c"), (2, "b"), (1, "a")],
+        ),
+        (
+            "SELECT POSITION() AS position, id FROM "
+            "(SELECT id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) AS ranked ORDER BY id DESC",
+            [(1, "c"), (2, "b")],
+        ),
+    ],
+)
+def test_position_is_scoped_to_its_own_query_block(sql, expected):
+    """An enclosing query's ordering must not renumber an inner query's POSITION()."""
+    from yt_media_tools.optimizer import optimise_query
+    from yt_media_tools.query_evaluator import apply_query
+
+    records = [{"id": value} for value in "dcba"]
+    query = resolve_query(parse_query(sql), QuerySchema(records))
+    for candidate in (query, optimise_query(query).query):
+        for relational_optimisation in (False, True):
+            rows = apply_query(records, candidate, relational_optimisation=relational_optimisation)
+            assert [(row["position"], row["id"]) for row in rows] == expected

@@ -94,6 +94,8 @@ The cross-facet torture query deliberately uses two facets of one physical sourc
 
 ## Ordering, DISTINCT and slicing
 
+Final-result `POSITION()` coverage includes one-based numbering after ordering and DISTINCT, numbering before OFFSET and LIMIT, grouped projections, optimiser equivalence, source-prefix LIMIT safety, unsupported compound projections, and CTE/derived-relation query-block scope. Tests preserve uppercase SQL keywords and functions except where case variation is itself under test. A runnable Lark implementation and final-position compound-result projection remain outside the currently certified surface.
+
 Current coverage includes explicit projection-alias precedence in ORDER BY, aliases nested inside scalar ordering expressions, JOIN-qualified and ambiguous-name resolution, CTE-exported alias resolution, alias-aware acquisition-field attribution, numeric ordinal rejection, canonical ordering-expression round-trips, deterministic ties, DISTINCT, OFFSET, LIMIT, global set-operation ordering, early acquisition termination and OFFSET + LIMIT planning. RANDOM ordering has dedicated volatile and seeded coverage.
 
 Torture coverage combines computed aliases, multiple ORDER BY keys, LIMIT/OFFSET and large nested predicates, with optimiser differential equivalence checked after resolution.
