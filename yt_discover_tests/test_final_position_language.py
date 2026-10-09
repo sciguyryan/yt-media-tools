@@ -187,23 +187,31 @@ def test_position_canonical_round_trip_in_nested_cte():
     ("sql", "expected"),
     [
         (
-            "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
-            "SELECT position, id FROM ranked ORDER BY id DESC",
+            (
+                "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
+                "SELECT position, id FROM ranked ORDER BY id DESC"
+            ),
             [(4, "d"), (3, "c"), (2, "b"), (1, "a")],
         ),
         (
-            "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) "
-            "SELECT position, id FROM ranked ORDER BY id DESC",
+            (
+                "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) "
+                "SELECT position, id FROM ranked ORDER BY id DESC"
+            ),
             [(3, "c"), (2, "b")],
         ),
         (
-            "SELECT position, id FROM (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
-            "AS ranked ORDER BY id DESC",
+            (
+                "SELECT position, id FROM (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
+                "AS ranked ORDER BY id DESC"
+            ),
             [(4, "d"), (3, "c"), (2, "b"), (1, "a")],
         ),
         (
-            "SELECT POSITION() AS position, id FROM "
-            "(SELECT id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) AS ranked ORDER BY id DESC",
+            (
+                "SELECT POSITION() AS position, id FROM "
+                "(SELECT id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) AS ranked ORDER BY id DESC"
+            ),
             [(1, "c"), (2, "b")],
         ),
     ],
