@@ -5,19 +5,27 @@ from yt_media_tools.discover_acquisition import _cached_or_refresh_metadata
 from yt_media_tools.ytdlp import AcquisitionStats
 
 
+def _recording_metadata_loader(calls, make_record):
+    """Record yt-dlp requests while preserving callback delivery and record shape."""
+
+    def fake_load(command, *, progress=None, record_callback=None):
+        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
+        calls.append(video_ids)
+        records = [make_record(video_id) for video_id in video_ids]
+        if record_callback is not None:
+            for record in records:
+                record_callback(record)
+        return records, AcquisitionStats(available=len(video_ids))
+
+    return fake_load
+
+
 def test_second_source_reuses_v4_entity_metadata_without_refresh(tmp_path, monkeypatch) -> None:
     path = tmp_path / "metadata-v4.sqlite3"
     initialise_v4_cache(path)
     calls: list[list[str]] = []
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
-        calls.append(video_ids)
-        records = [{"id": video_id, "title": f"Title {video_id}"} for video_id in video_ids]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return (records, AcquisitionStats(available=len(video_ids)))
+    fake_load = _recording_metadata_loader(calls, lambda video_id: {"id": video_id, "title": f"Title {video_id}"})
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
 
@@ -57,14 +65,7 @@ def test_fresh_known_null_required_field_avoids_repeat_refresh(tmp_path, monkeyp
     initialise_v4_cache(path)
     calls: list[list[str]] = []
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
-        calls.append(video_ids)
-        records = [{"id": video_id, "comment_count": None} for video_id in video_ids]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return (records, AcquisitionStats(available=len(video_ids)))
+    fake_load = _recording_metadata_loader(calls, lambda video_id: {"id": video_id, "comment_count": None})
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
 
@@ -100,14 +101,7 @@ def test_duplicate_entity_occurrences_refresh_once_but_preserve_rows(tmp_path, m
     initialise_v4_cache(path)
     calls: list[list[str]] = []
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
-        calls.append(video_ids)
-        records = [{"id": video_id, "title": f"Title {video_id}"} for video_id in video_ids]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return (records, AcquisitionStats(available=len(video_ids)))
+    fake_load = _recording_metadata_loader(calls, lambda video_id: {"id": video_id, "title": f"Title {video_id}"})
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
 
@@ -135,14 +129,7 @@ def test_duplicate_entity_occurrences_refresh_once_but_preserve_rows(tmp_path, m
 def test_duplicate_entities_without_cache_refresh_once_and_preserve_rows(monkeypatch) -> None:
     calls: list[list[str]] = []
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        video_ids = [part.rsplit("=", 1)[-1] for part in command if part.startswith("https://www.youtube.com/watch?v=")]
-        calls.append(video_ids)
-        records = [{"id": video_id, "title": f"Title {video_id}"} for video_id in video_ids]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return (records, AcquisitionStats(available=len(video_ids)))
+    fake_load = _recording_metadata_loader(calls, lambda video_id: {"id": video_id, "title": f"Title {video_id}"})
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
     records, _, cache_stats = _cached_or_refresh_metadata(
