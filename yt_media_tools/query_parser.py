@@ -228,7 +228,12 @@ def tokenise(source: str) -> list[Token]:
         kind = match.lastgroup or ""
         text = match.group(0)
         if kind in {"IDENT", "MISMATCH"}:
-            identifier_end = _scan_identifier(source, position)
+            # ASCII identifier matches are already complete unless a following
+            # non-ASCII code point could extend the identifier under XID rules.
+            if kind == "IDENT" and text.isascii() and (match.end() == len(source) or ord(source[match.end()]) < 128):
+                identifier_end = match.end()
+            else:
+                identifier_end = _scan_identifier(source, position)
             if identifier_end is not None:
                 kind = "IDENT"
                 text = source[position:identifier_end]
