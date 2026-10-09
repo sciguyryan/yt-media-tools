@@ -4,6 +4,20 @@ from yt_media_tools.discover_acquisition import _cached_or_refresh_metadata
 from yt_media_tools.ytdlp import AcquisitionStats
 
 
+def _fallback_metadata_loader(records, *, commands=None):
+    """Return fixed yt-dlp records while retaining callback and command semantics."""
+
+    def fake_load(command, *, progress=None, record_callback=None):
+        if commands is not None:
+            commands.append(command)
+        if record_callback is not None:
+            for record in records:
+                record_callback(record)
+        return records, AcquisitionStats(available=len(records))
+
+    return fake_load
+
+
 def test_specialised_youtubejs_acquisition_returns_provenance_without_writing_partial_cache(monkeypatch) -> None:
     captured = {}
 
@@ -48,12 +62,7 @@ def test_specialised_youtubejs_failure_falls_back_to_ytdlp(monkeypatch) -> None:
     def fail(*args, **kwargs):
         raise YouTubeJsError("synthetic failure")
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        records = [{"id": "abc", "title": "Fallback"}]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return records, AcquisitionStats(available=1)
+    fake_load = _fallback_metadata_loader([{"id": "abc", "title": "Fallback"}])
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fail)
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
@@ -109,13 +118,7 @@ def test_specialised_youtubejs_partial_result_falls_back_only_for_missing_ids(mo
             AcquisitionStats(available=1),
         )
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        commands.append(command)
-        records = [{"id": "b", "title": "B"}]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return records, AcquisitionStats(available=1)
+    fake_load = _fallback_metadata_loader([{"id": "b", "title": "B"}], commands=commands)
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
@@ -192,12 +195,7 @@ def test_specialised_youtubejs_success_and_ytdlp_fallback_preserve_requested_ord
             AcquisitionStats(available=2),
         )
 
-    def fake_load(command, *, progress=None, record_callback=None):
-        records = [{"id": "b", "title": "B"}]
-        if record_callback is not None:
-            for record in records:
-                record_callback(record)
-        return records, AcquisitionStats(available=1)
+    fake_load = _fallback_metadata_loader([{"id": "b", "title": "B"}])
 
     monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
     monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
