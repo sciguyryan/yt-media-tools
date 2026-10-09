@@ -55,6 +55,30 @@ TARGETS = (
         "Parse a derived-relation yt-sql query.",
     ),
     BenchmarkTarget(
+        "parser.lexing.simple",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_tokenise_query[simple]",
+        "parser",
+        "Tokenise a simple yt-sql query without parsing.",
+    ),
+    BenchmarkTarget(
+        "parser.lexing.complex",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_tokenise_query[complex]",
+        "parser",
+        "Tokenise a complex yt-sql query without parsing.",
+    ),
+    BenchmarkTarget(
+        "parser.lexing.collection",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_tokenise_query[collection]",
+        "parser",
+        "Tokenise a collection yt-sql query without parsing.",
+    ),
+    BenchmarkTarget(
+        "parser.lexing.derived",
+        "benchmarks/test_query_pipeline_benchmarks.py::test_tokenise_query[derived]",
+        "parser",
+        "Tokenise a derived yt-sql query without parsing.",
+    ),
+    BenchmarkTarget(
         "resolution.simple",
         "benchmarks/test_query_pipeline_benchmarks.py::test_resolve_query[simple]",
         "resolution",

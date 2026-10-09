@@ -76,6 +76,8 @@ Run the parser workloads with:
 python benchmark.py parser
 ```
 
+The `parser.lexing.*` targets measure tokenisation separately from the existing `parser.*` full-parse targets using the same four inputs. Compare the two stages before attributing parser time to regular expressions. Python caches compiled regex patterns, so explicit `re.compile()` changes require measured end-to-end benefits rather than compilation microbenchmarks alone.
+
 Parser scaling is kept out of the normal timing suite. The `scaling` group covers accepted scalar-parenthesis depths 1, 32 and 128 together with corresponding unmatched-parenthesis rejection paths. Stable names begin with `parser.nested.*` and `parser.malformed_nested.*`. For example:
 
 ```bash

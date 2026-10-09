@@ -7,6 +7,7 @@ import pytest
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.query import apply_query, evaluate_scalar_expression, parse_query, resolve_query
 from yt_media_tools.query_properties import analyse_query
+from yt_media_tools.query_parser import tokenise
 
 SIMPLE_QUERY = "SELECT id WHERE view_count >= 1000"
 COMPLEX_QUERY = (
@@ -35,6 +36,20 @@ def test_parse_query(benchmark, source: str) -> None:
     benchmark.extra_info["benchmark_id"] = f"parser.{source[:24]}"
     result = benchmark(parse_query, source)
     assert result.source == source
+
+
+@pytest.mark.benchmark(group="parser-lexing")
+@pytest.mark.parametrize(
+    "source",
+    [SIMPLE_QUERY, COMPLEX_QUERY, COLLECTION_QUERY, DERIVED_QUERY],
+    ids=["simple", "complex", "collection", "derived"],
+)
+def test_tokenise_query(benchmark, source: str) -> None:
+    """Measure token recognition independently of recursive-descent parsing."""
+    expected = tokenise(source)
+    benchmark.extra_info["benchmark_id"] = f"parser.lexing.{source[:24]}"
+    result = benchmark(tokenise, source)
+    assert result == expected
 
 
 @pytest.mark.benchmark(group="resolution")
