@@ -23,3 +23,7 @@ This is an intentionally narrow first step. The next step is to select a maintai
 ## CLI smoke-test repair
 
 The initial smoke tests assumed that Cargo's binary test path was directly executable in every environment. The three checks now exercise the pure response function used by the actual binary, avoiding a second process launch. This verifies response semantics but does not replace a future end-to-end executable smoke test.
+
+## Clap adoption candidate
+
+The profile-option parser now delegates tokenisation and alias handling to Clap. This is a candidate requiring Cargo lockfile regeneration and local tests. The existing lockfile is deliberately not hand-edited. Run `cargo generate-lockfile` in `rust/` with the latest stable toolchain, commit the resulting `Cargo.lock`, then run the normal locked quality gates. Do not merge this candidate without the lockfile update. The binary remains intentionally fail-closed for profile operations until configuration resolution is implemented.

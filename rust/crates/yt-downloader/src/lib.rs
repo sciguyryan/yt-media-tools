@@ -1,7 +1,7 @@
 //! A deliberately small, side-effect-free first slice of Downloader CLI parsing.
 //! The Python application remains authoritative until feature parity is verified.
 
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ProfileOptions {
@@ -30,30 +30,55 @@ pub fn parse_profile_options<I>(args: I) -> Result<ProfileOptions, ParseError>
 where
     I: IntoIterator<Item = OsString>,
 {
-    let mut args = args.into_iter();
-    let mut options = ProfileOptions {
-        profile: None,
-        defaults: None,
-        list_profiles: false,
-    };
-    while let Some(arg) = args.next() {
-        if arg == OsStr::new("-p") || arg == OsStr::new("--profile") || arg == OsStr::new("--parameter-profile") {
-            let value = args.next().ok_or(ParseError::MissingValue("--profile"))?;
-            let name = value.to_str().ok_or(ParseError::InvalidProfileName)?;
-            if !valid_profile_name(name) {
-                return Err(ParseError::InvalidProfileName);
-            }
-            options.profile = Some(value);
-        } else if arg == OsStr::new("-d") || arg == OsStr::new("--defaults") {
-            let value = args.next().ok_or(ParseError::MissingValue("--defaults"))?;
-            options.defaults = Some(value);
-        } else if arg == OsStr::new("--list-profiles") || arg == OsStr::new("--list-parameters") {
-            options.list_profiles = true;
-        } else {
-            return Err(ParseError::UnsupportedOption);
+    use clap::{Arg, ArgAction, Command};
+
+    // Clap handles tokenisation and aliases. The Python-specific profile name
+    // restriction remains a separate validation step.
+    let command = Command::new("yt-download-rs")
+        .disable_help_flag(true)
+        .disable_version_flag(true)
+        .arg(Arg::new("profile").short('p').long("profile")
+            .visible_alias("parameter-profile").num_args(1).action(ArgAction::Append))
+        .arg(Arg::new("defaults").short('d').long("defaults")
+            .num_args(1).action(ArgAction::Append))
+        .arg(Arg::new("list-profiles").long("list-profiles")
+            .visible_alias("list-parameters").action(ArgAction::SetTrue));
+
+    let arguments: Vec<OsString> = args.into_iter().collect();
+    // Clap reports a missing trailing value as InvalidValue in some releases.
+    // Keep the option identity before asking Clap to parse the arguments.
+    if let Some(last) = arguments.last() {
+        let missing = match last.to_str() {
+            Some("-p" | "--profile" | "--parameter-profile") => Some("--profile"),
+            Some("-d" | "--defaults") => Some("--defaults"),
+            _ => None,
+        };
+        if let Some(option) = missing {
+            return Err(ParseError::MissingValue(option));
         }
     }
-    Ok(options)
+    let input = std::iter::once(OsString::from("yt-download-rs")).chain(arguments);
+    let matches = command.try_get_matches_from(input).map_err(|error| {
+        use clap::error::ErrorKind;
+        match error.kind() {
+            ErrorKind::InvalidValue | ErrorKind::ValueValidation => ParseError::InvalidProfileName,
+            _ => ParseError::UnsupportedOption,
+        }
+    })?;
+    let profile = matches.get_many::<String>("profile")
+        .and_then(|values| values.last()).map(OsString::from);
+    if let Some(ref name) = profile {
+        if !name.to_str().is_some_and(valid_profile_name) {
+            return Err(ParseError::InvalidProfileName);
+        }
+    }
+    let defaults = matches.get_many::<String>("defaults")
+        .and_then(|values| values.last()).map(OsString::from);
+    Ok(ProfileOptions {
+        profile,
+        defaults,
+        list_profiles: matches.get_flag("list-profiles"),
+    })
 }
 
 #[cfg(test)]
@@ -91,6 +116,9 @@ mod tests {
     fn invalid_inputs_fail_closed() {
         assert_eq!(parse(&["--profile"]), Err(ParseError::MissingValue("--profile")));
         assert_eq!(parse(&["--defaults"]), Err(ParseError::MissingValue("--defaults")));
+        assert_eq!(parse(&["-p"]), Err(ParseError::MissingValue("--profile")));
+        assert_eq!(parse(&["--parameter-profile"]), Err(ParseError::MissingValue("--profile")));
+        assert_eq!(parse(&["-d"]), Err(ParseError::MissingValue("--defaults")));
         assert_eq!(parse(&["-p", ".hidden"]), Err(ParseError::InvalidProfileName));
         assert_eq!(parse(&["--unknown"]), Err(ParseError::UnsupportedOption));
     }
