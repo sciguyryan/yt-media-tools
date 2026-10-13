@@ -1150,11 +1150,7 @@ def _validate_position_placement(query: Query) -> None:
         for term in query.select
         if isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"
     }
-    position_terms = [
-        term
-        for term in query.select
-        if isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"
-    ]
+    position_terms = [term for term in query.select if isinstance(term.expression, ScalarFunction) and term.expression.name == "POSITION"]
     if position_terms and (query.set_operations or query.left_query is not None):
         raise QuerySemanticError(
             query.source,

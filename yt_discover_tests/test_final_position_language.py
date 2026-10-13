@@ -26,16 +26,13 @@ def test_position_requires_zero_arguments(expression):
         parse_query(f"SELECT {expression} FROM @fixture")
 
 
-@pytest.mark.parametrize(
-    "sql",
-    [
-        "SELECT id FROM @fixture WHERE POSITION() > 0",
-        "SELECT id FROM @fixture ORDER BY POSITION()",
-        "SELECT POSITION() + 1 FROM @fixture",
-        "SELECT COALESCE(POSITION(), 1) FROM @fixture",
-        "SELECT id FROM @fixture GROUP BY POSITION()",
-    ],
-)
+@pytest.mark.parametrize("sql", [
+    "SELECT id FROM @fixture WHERE POSITION() > 0",
+    "SELECT id FROM @fixture ORDER BY POSITION()",
+    "SELECT POSITION() + 1 FROM @fixture",
+    "SELECT COALESCE(POSITION(), 1) FROM @fixture",
+    "SELECT id FROM @fixture GROUP BY POSITION()",
+])
 def test_position_is_rejected_outside_standalone_projection(sql):
     query = parse_query(sql)
     with pytest.raises((QuerySemanticError, QuerySyntaxError), match="POSITION"):
@@ -129,7 +126,6 @@ def test_position_optimiser_preserves_final_sequence():
             rows = apply_query(records, candidate, relational_optimisation=relational_optimisation)
             assert [(row["position"], row["id"]) for row in rows] == expected
 
-
 @pytest.mark.parametrize(
     ("sql", "expected"),
     [
@@ -181,7 +177,6 @@ def test_position_canonical_round_trip_in_nested_cte():
     parsed = parse_query(sql)
     canonical = format_query(parsed)
     assert format_query(parse_query(canonical)) == canonical
-
 
 @pytest.mark.parametrize(
     ("sql", "expected"),

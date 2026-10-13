@@ -102,7 +102,10 @@ def plan_limit_termination(
     # POSITION() is deferred until the final result sequence is established.
     # Do not assert a source-prefix proof before the final-result stage has
     # been certified across all acquisition and composition paths.
-    if any(getattr(term.expression, "name", None) == "POSITION" for term in query.select):
+    if any(
+        getattr(term.expression, "name", None) == "POSITION"
+        for term in query.select
+    ):
         return LimitTerminationPlan(
             False,
             "POSITION() requires final-result numbering; source-prefix early LIMIT is not yet certified",

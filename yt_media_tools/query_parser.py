@@ -230,7 +230,9 @@ def tokenise(source: str) -> list[Token]:
         if kind in {"IDENT", "MISMATCH"}:
             # ASCII identifier matches are already complete unless a following
             # non-ASCII code point could extend the identifier under XID rules.
-            if kind == "IDENT" and text.isascii() and (match.end() == len(source) or ord(source[match.end()]) < 128):
+            if kind == "IDENT" and text.isascii() and (
+                match.end() == len(source) or ord(source[match.end()]) < 128
+            ):
                 identifier_end = match.end()
             else:
                 identifier_end = _scan_identifier(source, position)

@@ -1,0 +1,17 @@
+[package]
+name = "yt-downloader"
+version = "0.1.0"
+edition = "2024"
+description = "Native Rust implementation of the YT Media Tools downloader (in development)"
+license-file = "../../../LICENSE"
+publish = false
+
+[[bin]]
+name = "yt-download-rs"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+correctness = "deny"

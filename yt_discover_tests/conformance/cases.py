@@ -87,7 +87,11 @@ def _distinct_titles(rows: Rows) -> list[Any]:
 def _final_position_offset(rows: Rows) -> list[Any]:
     """Number the complete source-index order before applying the requested slice."""
     ordered = sorted(rows, key=lambda row: row["source_index"])
-    return [{"position": index, "id": row["id"]} for index, row in enumerate(ordered, start=1) if 3 <= index <= 5]
+    return [
+        {"position": index, "id": row["id"]}
+        for index, row in enumerate(ordered, start=1)
+        if 3 <= index <= 5
+    ]
 
 
 def _final_position_distinct(rows: Rows) -> list[Any]:

@@ -82,10 +82,6 @@ env/
 # Optional local YouTube.js installation
 /node_modules/
 
-# Gradle build artefacts
-/tools/newpipe-extractor-bridge/.gradle/
-/tools/newpipe-extractor-bridge/build/
-
 # Node/npm generated files and logs
 npm-debug.log*
 yarn-debug.log*
@@ -112,3 +108,10 @@ Thumbs.db
 /.benchmarks/
 /benchmark-results*.json
 /bench*.json
+
+# Rust and Cargo
+/rust/target/
+**/*.rs.bk
+
+# Rust editor and language-server artefacts
+/rust/.rust-analyzer/
