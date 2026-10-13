@@ -2,29 +2,16 @@
 //! Python remains the production implementation.
 
 use std::env;
+use std::io::{self, Write};
 use std::process::ExitCode;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
 fn main() -> ExitCode {
-    let mut args = env::args_os();
-    let _program = args.next();
-    match (args.next(), args.next()) {
-        (Some(arg), None) if arg == "--version" => {
-            println!("yt-download-rs {VERSION}");
-            ExitCode::SUCCESS
-        }
-        (Some(arg), None) if arg == "--help" || arg == "-h" => {
-            println!(
-                "yt-download-rs (experimental)\n\nUSAGE:\n    yt-download-rs [--help | --version]\n\nThe native downloader is under development. Use yt-download.py for downloads."
-            );
-            ExitCode::SUCCESS
-        }
-        _ => {
-            eprintln!(
-                "yt-download-rs: download functionality is not yet implemented; use yt-download.py"
-            );
-            ExitCode::FAILURE
-        }
+    let args: Vec<_> = env::args_os().skip(1).collect();
+    let (status, stdout, stderr) = yt_downloader::experimental_cli(&args);
+    if io::stdout().write_all(stdout.as_bytes()).is_err()
+        || io::stderr().write_all(stderr.as_bytes()).is_err()
+    {
+        return ExitCode::FAILURE;
     }
+    ExitCode::from(status)
 }
