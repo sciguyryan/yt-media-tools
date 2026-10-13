@@ -1,5 +1,6 @@
-//! A deliberately small, side-effect-free first slice of Downloader CLI parsing.
-//! The Python application remains authoritative until feature parity is verified.
+//! Placeholder for the native Downloader implementation.
+
+pub mod profile_file;
 
 use std::ffi::OsString;
 

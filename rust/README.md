@@ -27,3 +27,9 @@ The initial smoke tests assumed that Cargo's binary test path was directly execu
 ## Clap adoption candidate
 
 The profile-option parser now delegates tokenisation and alias handling to Clap. This is a candidate requiring Cargo lockfile regeneration and local tests. The existing lockfile is deliberately not hand-edited. Run `cargo generate-lockfile` in `rust/` with the latest stable toolchain, commit the resulting `Cargo.lock`, then run the normal locked quality gates. Do not merge this candidate without the lockfile update. The binary remains intentionally fail-closed for profile operations until configuration resolution is implemented.
+
+## Part 3: versioned profile structure
+
+The Rust library now checks the outer shape of v2 and v3 JSON profile documents, validates names and parent links, and detects inheritance cycles. It does **not** yet resolve reusable `$` values, apply `$defaults`, validate setting types, merge inherited settings, or expose profile operations through the binary. This intermediate representation must not be used as an effective download policy.
+
+The new `serde_json` dependency requires regenerating and committing `rust/Cargo.lock` with Cargo before running `--locked` checks. The package intentionally retains the previous lockfile rather than inventing a resolution.
