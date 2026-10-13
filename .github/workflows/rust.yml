@@ -1,0 +1,53 @@
+name: Rust
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Rust quality and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install latest stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Report Rust environment
+        run: |
+          rustc --version
+          cargo --version
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Check linting
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Build all targets
+        run: cargo build --workspace --all-targets --locked
+      - name: Run offline Rust tests
+        run: cargo test --workspace --all-targets --locked
+      - name: Check documentation
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+
+  security:
+    name: Rust dependency advisories
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install latest stable Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+      - name: Check dependency advisories
+        run: cargo audit --file Cargo.lock
