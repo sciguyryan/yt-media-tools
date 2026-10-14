@@ -136,6 +136,47 @@ pub fn list_stored_profiles(profiles: &BTreeMap<String, ValidatedProfile>) -> Ve
         .collect()
 }
 
+/// Render the human-readable profile list used by the Python Downloader.
+///
+/// The stored names are presented without their resolved settings. Sorting is
+/// case-insensitive for ASCII profile names; Python uses Unicode `casefold`,
+/// which remains a separate compatibility refinement for non-ASCII names.
+pub fn render_profile_listing(path: &Path, profiles: &[ListedProfile]) -> String {
+    if profiles.is_empty() {
+        return format!("No profiles are available in {}.\n", path.display());
+    }
+
+    let mut names: Vec<&str> = profiles
+        .iter()
+        .map(|profile| profile.name.as_str())
+        .collect();
+    names.sort_by_key(|name| name.to_ascii_lowercase());
+
+    let mut output = format!("Available profiles in {}:\n\n", path.display());
+
+    for name in names {
+        output.push_str("  ");
+        output.push_str(name);
+        output.push('\n');
+    }
+
+    output
+}
+
+/// Load and render a listing using the same path as profile selection.
+///
+/// A missing implicit defaults file produces the Python Downloader's empty
+/// listing message. Explicitly missing files remain errors.
+pub fn render_from_cli_store(
+    options: &ProfileOptions,
+    executable_dir: &Path,
+) -> Result<String, ProfileStoreError> {
+    let (path, _) = resolve_defaults_path(options, executable_dir);
+    let profiles = list_from_cli_store(options, executable_dir)?;
+
+    Ok(render_profile_listing(&path, &profiles))
+}
+
 /// Load a defaults document for a CLI listing request.
 ///
 /// The listing path does not select a profile or apply download overrides.
@@ -199,6 +240,50 @@ mod tests {
             "yt-downloader-profile-{}-{id}.json",
             std::process::id()
         ))
+    }
+
+    #[test]
+    fn renders_python_style_profile_names_without_settings() {
+        let profiles = [
+            ListedProfile {
+                name: "zeta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Alpha".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "beta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+        ];
+
+        assert_eq!(
+            render_profile_listing(Path::new("defaults.json"), &profiles),
+            "Available profiles in defaults.json:\n\n  Alpha\n  beta\n  zeta\n",
+        );
+    }
+
+    #[test]
+    fn renders_python_style_empty_listing() {
+        assert_eq!(
+            render_profile_listing(Path::new("/example/defaults.json"), &[]),
+            "No profiles are available in /example/defaults.json.\n",
+        );
+    }
+
+    #[test]
+    fn listing_presentation_rejects_non_listing_requests() {
+        let options = crate::parse_profile_options(Vec::<std::ffi::OsString>::new()).unwrap();
+
+        assert!(matches!(
+            render_from_cli_store(&options, Path::new("/example")),
+            Err(ProfileStoreError::ListingRequested),
+        ));
     }
 
     #[test]
