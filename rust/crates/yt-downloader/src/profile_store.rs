@@ -250,8 +250,7 @@ pub fn list_stored_profiles(profiles: &BTreeMap<String, ValidatedProfile>) -> Ve
 /// Render the human-readable profile list used by the Python Downloader.
 ///
 /// The stored names are presented without their resolved settings. Sorting is
-/// case-insensitive for ASCII profile names; Python uses Unicode `casefold`,
-/// which remains a separate compatibility refinement for non-ASCII names.
+/// case-insensitive using Unicode case folding, matching Python's sorting key.
 pub fn render_profile_listing(path: &Path, profiles: &[ListedProfile]) -> String {
     if profiles.is_empty() {
         return format!("No profiles are available in {}.\n", path.display());
@@ -628,6 +627,70 @@ mod tests {
             describe_store_error(&error, Path::new("defaults.json")),
             "invalid defaults file defaults.json: profile 'child': invalid value for setting: audio-quality",
         );
+    }
+
+    #[test]
+    fn explicit_profile_overrides_automatic_default_even_with_cli_settings() {
+        let profiles = load_validated_profiles(
+            &json!({
+                "version": 3,
+                "$defaults": {"playlist": true},
+                "profiles": {
+                    "default": {"audio-format": "mp3"},
+                    "other": {"audio-format": "opus"}
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let overrides = json!({"playlist": false});
+
+        let selected =
+            select_stored_profile(&profiles, Some("other"), overrides.as_object().unwrap())
+                .unwrap();
+
+        assert_eq!(selected.profile_name.as_deref(), Some("other"));
+        assert_eq!(selected.settings["audio-format"], "opus");
+        assert_eq!(selected.settings["playlist"], false);
+        assert_eq!(selected.setting_sources["playlist"], "explicit override");
+    }
+
+    #[test]
+    fn absent_default_does_not_select_an_arbitrary_stored_profile() {
+        let profiles = load_validated_profiles(
+            &json!({
+                "version": 3,
+                "profiles": {"other": {"playlist": true}}
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let overrides = json!({"playlist": false});
+
+        let selected =
+            select_stored_profile(&profiles, None, overrides.as_object().unwrap()).unwrap();
+
+        assert_eq!(selected.profile_name, None);
+        assert_eq!(selected.settings["playlist"], false);
+        assert_eq!(selected.setting_sources["playlist"], "explicit override");
+    }
+
+    #[test]
+    fn explicitly_requested_missing_profile_never_falls_back_to_default() {
+        let profiles = load_validated_profiles(
+            &json!({
+                "version": 3,
+                "profiles": {"default": {"playlist": true}}
+            })
+            .to_string(),
+        )
+        .unwrap();
+
+        assert!(matches!(
+            select_stored_profile(&profiles, Some("missing"), &Map::new()),
+            Err(ProfileStoreError::Selection(ProfileSelectionError::UnknownProfile(name)))
+                if name == "missing"
+        ));
     }
 
     #[test]
