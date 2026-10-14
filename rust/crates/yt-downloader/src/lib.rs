@@ -142,10 +142,6 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 Err(_) => return (1, String::new(), "yt-download-rs: unsupported or invalid arguments\n".to_owned()),
             };
 
-            if !options.list_profiles {
-                return (1, String::new(), "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned());
-            }
-
             let executable_dir = match std::env::current_exe()
                 .ok()
                 .and_then(|path| path.parent().map(std::path::Path::to_path_buf))
@@ -154,8 +150,29 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 None => return (1, String::new(), "yt-download-rs: cannot determine executable directory\n".to_owned()),
             };
 
-            match profile_store::render_from_cli_store(&options, &executable_dir) {
-                Ok(output) => (0, output, String::new()),
+            if options.list_profiles {
+                return match profile_store::render_from_cli_store(&options, &executable_dir) {
+                    Ok(output) => (0, output, String::new()),
+                    Err(error) => {
+                        let (path, _) = profile_store::resolve_defaults_path(&options, &executable_dir);
+                        let diagnostic = profile_store::describe_store_error(&error, &path);
+                        (1, String::new(), format!("yt-download-rs: {diagnostic}\n"))
+                    },
+                };
+            }
+
+            // Validate stored policy before reporting unavailable download execution.
+            // CLI setting overrides are not yet connected.
+            match profile_store::select_from_cli_store(
+                &options,
+                &executable_dir,
+                &serde_json::Map::new(),
+            ) {
+                Ok(_) => (
+                    1,
+                    String::new(),
+                    "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned(),
+                ),
                 Err(error) => {
                     let (path, _) = profile_store::resolve_defaults_path(&options, &executable_dir);
                     let diagnostic = profile_store::describe_store_error(&error, &path);
@@ -224,6 +241,48 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("defaults file not found:"));
+    }
+
+    #[test]
+    fn executable_reports_missing_explicit_defaults_before_download_boundary() {
+        let path = std::env::temp_dir().join(format!(
+            "yt-download-rs-selection-missing-{}-never-created.json",
+            std::process::id(),
+        ));
+        let args = [
+            OsString::from("--profile"),
+            OsString::from("missing"),
+            OsString::from("--defaults"),
+            path.into_os_string(),
+        ];
+
+        let (status, stdout, stderr) = experimental_cli(&args);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("defaults file not found:"));
+        assert!(!stderr.contains("not yet implemented"));
+    }
+
+    #[test]
+    fn store_selection_rejects_unknown_profile_without_implicit_fallback() {
+        let options =
+            parse_profile_options([OsString::from("--profile"), OsString::from("missing")])
+                .unwrap();
+        let directory = std::env::temp_dir().join(format!(
+            "yt-download-rs-selection-absent-{}",
+            std::process::id(),
+        ));
+
+        let result =
+            profile_store::select_from_cli_store(&options, &directory, &serde_json::Map::new());
+
+        assert!(matches!(
+            result,
+            Err(profile_store::ProfileStoreError::Selection(
+                profile_selection::ProfileSelectionError::UnknownProfile(name)
+            )) if name == "missing"
+        ));
     }
 
     #[test]
