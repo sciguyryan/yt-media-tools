@@ -3,10 +3,11 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde_json::{Map, Value};
 
+use crate::ProfileOptions;
 use crate::profile_pipeline::{ProfilePipelineError, load_validated_profiles};
 use crate::profile_selection::{ProfileSelectionError, SelectedProfile, select_profile};
 use crate::profile_settings::ValidatedProfile;
@@ -20,6 +21,10 @@ pub enum ProfileStoreError {
     Read(io::Error),
     /// The stored JSON document or one of its profiles is invalid.
     InvalidDocument(ProfilePipelineError),
+    /// A listing request must be handled separately from effective-policy selection.
+    ListingRequested,
+    /// The supplied profile name cannot be represented as UTF-8.
+    InvalidProfileNameEncoding,
     /// The requested profile or the combined policy is invalid.
     Selection(ProfileSelectionError),
 }
@@ -65,6 +70,47 @@ pub fn select_stored_profile(
     select_profile(profiles, name, overrides).map_err(ProfileStoreError::Selection)
 }
 
+/// Resolve the defaults file relative to the caller's executable directory.
+///
+/// Explicit paths are used as supplied, including relative paths, which remain
+/// relative to the working directory. The implicit file lives beside the
+/// executable rather than in the working directory.
+pub fn resolve_defaults_path(options: &ProfileOptions, executable_dir: &Path) -> (PathBuf, bool) {
+    match &options.defaults {
+        Some(path) => (PathBuf::from(path), true),
+        None => (executable_dir.join("defaults.json"), false),
+    }
+}
+
+/// Load stored profiles and select the effective policy for parsed CLI options.
+///
+/// The caller provides the executable directory and already interpreted explicit
+/// overrides. Listing requests have a separate result path and are rejected here
+/// rather than accidentally selecting a download policy.
+pub fn select_from_cli_store(
+    options: &ProfileOptions,
+    executable_dir: &Path,
+    overrides: &Map<String, Value>,
+) -> Result<SelectedProfile, ProfileStoreError> {
+    if options.list_profiles {
+        return Err(ProfileStoreError::ListingRequested);
+    }
+
+    let requested_name = options
+        .profile
+        .as_ref()
+        .map(|name| {
+            name.to_str()
+                .ok_or(ProfileStoreError::InvalidProfileNameEncoding)
+        })
+        .transpose()?;
+
+    let (path, explicit) = resolve_defaults_path(options, executable_dir);
+    let profiles = load_profiles_from_path(&path, explicit)?;
+
+    select_stored_profile(&profiles, requested_name, overrides)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,6 +126,107 @@ mod tests {
             "yt-downloader-profile-{}-{id}.json",
             std::process::id()
         ))
+    }
+
+    #[test]
+    fn implicit_path_is_executable_local_and_explicit_path_is_preserved() {
+        let options = crate::parse_profile_options(Vec::<std::ffi::OsString>::new()).unwrap();
+        assert_eq!(
+            resolve_defaults_path(&options, Path::new("/opt/downloader")),
+            (PathBuf::from("/opt/downloader/defaults.json"), false),
+        );
+
+        let options = crate::parse_profile_options(
+            ["--defaults", "config/profiles.json"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
+        )
+        .unwrap();
+        assert_eq!(
+            resolve_defaults_path(&options, Path::new("/opt/downloader")),
+            (PathBuf::from("config/profiles.json"), true),
+        );
+    }
+
+    #[test]
+    fn cli_store_selects_default_or_explicit_profile_and_applies_overrides() {
+        let directory = std::env::temp_dir().join(format!(
+            "yt-downloader-store-{}-{}",
+            std::process::id(),
+            NEXT_FILE.fetch_add(1, Ordering::Relaxed),
+        ));
+        fs::create_dir(&directory).unwrap();
+        let file = directory.join("defaults.json");
+        fs::write(
+            &file,
+            json!({
+                "version": 3,
+                "profiles": {
+                    "default": {"playlist": true},
+                    "other": {"playlist": false}
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+
+        let options = crate::parse_profile_options(Vec::<std::ffi::OsString>::new()).unwrap();
+        let overrides = json!({"playlist": false});
+        let selected =
+            select_from_cli_store(&options, &directory, overrides.as_object().unwrap()).unwrap();
+        assert_eq!(selected.profile_name.as_deref(), Some("default"));
+        assert_eq!(selected.settings["playlist"], false);
+        assert_eq!(selected.setting_sources["playlist"], "explicit override");
+
+        let options = crate::parse_profile_options(
+            ["--profile", "other"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
+        )
+        .unwrap();
+        let selected = select_from_cli_store(&options, &directory, &Map::new()).unwrap();
+        assert_eq!(selected.profile_name.as_deref(), Some("other"));
+        assert_eq!(selected.settings["playlist"], false);
+
+        fs::remove_file(&file).unwrap();
+        fs::remove_dir(&directory).unwrap();
+    }
+
+    #[test]
+    fn cli_store_distinguishes_missing_implicit_and_explicit_files() {
+        let directory = std::env::temp_dir().join(format!(
+            "yt-downloader-absent-{}-{}",
+            std::process::id(),
+            NEXT_FILE.fetch_add(1, Ordering::Relaxed),
+        ));
+        let options = crate::parse_profile_options(Vec::<std::ffi::OsString>::new()).unwrap();
+        let selected = select_from_cli_store(&options, &directory, &Map::new()).unwrap();
+        assert_eq!(selected.profile_name, None);
+
+        let missing = directory.join("not-found.json");
+        let options = crate::parse_profile_options([
+            std::ffi::OsString::from("--defaults"),
+            missing.into_os_string(),
+        ])
+        .unwrap();
+        assert!(matches!(
+            select_from_cli_store(&options, &directory, &Map::new()),
+            Err(ProfileStoreError::MissingFile)
+        ));
+    }
+
+    #[test]
+    fn cli_store_rejects_listing_without_loading_a_file() {
+        let options = crate::parse_profile_options(
+            ["--list-profiles"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
+        )
+        .unwrap();
+        assert!(matches!(
+            select_from_cli_store(&options, Path::new("/unused"), &Map::new()),
+            Err(ProfileStoreError::ListingRequested)
+        ));
     }
 
     #[test]
