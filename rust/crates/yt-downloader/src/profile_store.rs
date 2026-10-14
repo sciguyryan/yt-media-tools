@@ -13,7 +13,7 @@ use serde_json::{Map, Value};
 use crate::ProfileOptions;
 use crate::profile_pipeline::{ProfilePipelineError, load_validated_profiles};
 use crate::profile_selection::{ProfileSelectionError, SelectedProfile, select_profile};
-use crate::profile_settings::ValidatedProfile;
+use crate::profile_settings::{SettingError, ValidatedProfile};
 
 /// Errors encountered while loading or selecting stored Downloader policy.
 #[derive(Debug)]
@@ -55,8 +55,39 @@ pub fn describe_store_error(error: &ProfileStoreError, path: &Path) -> String {
         ProfileStoreError::InvalidProfileNameEncoding => {
             "profile name must be valid UTF-8".to_owned()
         }
-        ProfileStoreError::Selection(cause) => {
-            format!("cannot select profile: {cause:?}")
+        ProfileStoreError::Selection(cause) => match cause {
+            ProfileSelectionError::UnknownProfile(name) => {
+                format!("unknown profile: {name}")
+            }
+            ProfileSelectionError::InvalidSettings(setting_error) => {
+                format!(
+                    "invalid effective profile settings: {}",
+                    describe_setting_error(setting_error)
+                )
+            }
+            ProfileSelectionError::InvalidProfileNameEncoding => {
+                "profile name must be valid UTF-8".to_owned()
+            }
+            ProfileSelectionError::DefaultsFileNotLoaded => {
+                "defaults file must be loaded before selecting a profile".to_owned()
+            }
+            ProfileSelectionError::ListingRequested => {
+                "profile listing cannot be used to select download policy".to_owned()
+            }
+        },
+    }
+}
+
+/// Describe an effective-setting failure without exposing Rust enum syntax.
+fn describe_setting_error(error: &SettingError) -> String {
+    match error {
+        SettingError::UnknownSetting(name) => format!("unknown setting: {name}"),
+        SettingError::UnsupportedSetting(name) => {
+            format!("setting not yet supported by the Rust Downloader: {name}")
+        }
+        SettingError::InvalidValue(name) => format!("invalid value for setting: {name}"),
+        SettingError::ConflictingSettings(reason) => {
+            format!("conflicting settings: {reason}")
         }
     }
 }
@@ -483,6 +514,30 @@ mod tests {
             list_from_cli_store(&options, Path::new("/unused")),
             Err(ProfileStoreError::MissingFile)
         ));
+    }
+
+    #[test]
+    fn describes_unknown_profile_without_debug_syntax() {
+        let error = ProfileStoreError::Selection(ProfileSelectionError::UnknownProfile(
+            "missing".to_owned(),
+        ));
+
+        assert_eq!(
+            describe_store_error(&error, Path::new("defaults.json")),
+            "unknown profile: missing",
+        );
+    }
+
+    #[test]
+    fn describes_invalid_effective_settings() {
+        let error = ProfileStoreError::Selection(ProfileSelectionError::InvalidSettings(
+            SettingError::ConflictingSettings("audio-quality requires audio-format".to_owned()),
+        ));
+
+        assert_eq!(
+            describe_store_error(&error, Path::new("defaults.json")),
+            "invalid effective profile settings: conflicting settings: audio-quality requires audio-format",
+        );
     }
 
     #[test]
