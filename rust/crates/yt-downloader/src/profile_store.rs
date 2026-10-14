@@ -32,6 +32,35 @@ pub enum ProfileStoreError {
     Selection(ProfileSelectionError),
 }
 
+/// Format a stored-profile failure for a user-facing diagnostic.
+///
+/// The resolved path is supplied by the caller because file loading and error
+/// classification deliberately remain independent of CLI presentation.
+pub fn describe_store_error(error: &ProfileStoreError, path: &Path) -> String {
+    let location = path.display();
+
+    match error {
+        ProfileStoreError::MissingFile => {
+            format!("defaults file not found: {location}")
+        }
+        ProfileStoreError::Read(cause) => {
+            format!("cannot read defaults file {location}: {cause}")
+        }
+        ProfileStoreError::InvalidDocument(cause) => {
+            format!("invalid defaults file {location}: {cause:?}")
+        }
+        ProfileStoreError::ListingRequested => {
+            "profile selection cannot handle a listing request".to_owned()
+        }
+        ProfileStoreError::InvalidProfileNameEncoding => {
+            "profile name must be valid UTF-8".to_owned()
+        }
+        ProfileStoreError::Selection(cause) => {
+            format!("cannot select profile: {cause:?}")
+        }
+    }
+}
+
 /// Read and validate a defaults document, allowing an absent implicit file.
 ///
 /// The caller resolves the default path. An explicitly supplied path must exist;
@@ -577,6 +606,32 @@ mod tests {
             select_from_cli_store(&options, Path::new("/unused"), &Map::new()),
             Err(ProfileStoreError::ListingRequested)
         ));
+    }
+
+    #[test]
+    fn diagnostics_identify_missing_explicit_file() {
+        let path = Path::new("custom/defaults.json");
+        assert_eq!(
+            describe_store_error(&ProfileStoreError::MissingFile, path),
+            "defaults file not found: custom/defaults.json",
+        );
+    }
+
+    #[test]
+    fn diagnostics_distinguish_invalid_documents_and_read_failures() {
+        let path = Path::new("defaults.json");
+        let invalid = ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            crate::profile_file::ProfileFileError::InvalidJson,
+        ));
+        assert!(
+            describe_store_error(&invalid, path).contains("invalid defaults file defaults.json")
+        );
+
+        let unreadable = ProfileStoreError::Read(io::Error::from(io::ErrorKind::PermissionDenied));
+        assert!(
+            describe_store_error(&unreadable, path)
+                .contains("cannot read defaults file defaults.json")
+        );
     }
 
     #[test]

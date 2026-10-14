@@ -156,7 +156,11 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
 
             match profile_store::render_from_cli_store(&options, &executable_dir) {
                 Ok(output) => (0, output, String::new()),
-                Err(error) => (1, String::new(), format!("yt-download-rs: {error:?}\n")),
+                Err(error) => {
+                    let (path, _) = profile_store::resolve_defaults_path(&options, &executable_dir);
+                    let diagnostic = profile_store::describe_store_error(&error, &path);
+                    (1, String::new(), format!("yt-download-rs: {diagnostic}\n"))
+                },
             }
         },
     }
@@ -219,7 +223,7 @@ mod tests {
 
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
-        assert!(stderr.contains("MissingFile"));
+        assert!(stderr.contains("defaults file not found:"));
     }
 
     #[test]
