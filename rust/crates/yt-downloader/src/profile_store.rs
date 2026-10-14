@@ -150,7 +150,9 @@ pub fn render_profile_listing(path: &Path, profiles: &[ListedProfile]) -> String
         .iter()
         .map(|profile| profile.name.as_str())
         .collect();
-    names.sort_by_key(|name| name.to_ascii_lowercase());
+    // Compare Unicode lowercase forms while preserving the original spelling.
+    // Python's full casefold semantics require a separate compatibility pass.
+    names.sort_by_key(|name| name.to_lowercase());
 
     let mut output = format!("Available profiles in {}:\n\n", path.display());
 
@@ -265,6 +267,58 @@ mod tests {
         assert_eq!(
             render_profile_listing(Path::new("defaults.json"), &profiles),
             "Available profiles in defaults.json:\n\n  Alpha\n  beta\n  zeta\n",
+        );
+    }
+
+    #[test]
+    fn sorts_non_ascii_names_by_unicode_lowercase() {
+        let profiles = [
+            ListedProfile {
+                name: "zeta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Éclair".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "étude".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Alpha".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+        ];
+
+        assert_eq!(
+            render_profile_listing(Path::new("defaults.json"), &profiles),
+            "Available profiles in defaults.json:\n\n  Alpha\n  zeta\n  Éclair\n  étude\n",
+        );
+    }
+
+    #[test]
+    fn preserves_original_spelling_when_lowercase_keys_match() {
+        let profiles = [
+            ListedProfile {
+                name: "beta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Beta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+        ];
+
+        assert_eq!(
+            render_profile_listing(Path::new("defaults.json"), &profiles),
+            "Available profiles in defaults.json:\n\n  beta\n  Beta\n",
         );
     }
 
