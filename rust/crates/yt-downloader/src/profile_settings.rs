@@ -77,7 +77,24 @@ const POSITIVE_INTEGER_SETTINGS: &[&str] = &[
 ];
 
 // Recognised settings still awaiting their Python-compatible validation rules.
-const OTHER_RECOGNISED_SETTINGS: &[&str] = &["cookies-from-browser", "chapter-sections"];
+const OTHER_RECOGNISED_SETTINGS: &[&str] = &["chapter-sections"];
+
+/// Validate a browser cookie source while retaining any profile or container suffix.
+fn validate_cookie_browser(value: &Value) -> Option<Value> {
+    const SUPPORTED_BROWSERS: &[&str] = &[
+        "brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale",
+    ];
+
+    let source = value.as_str()?.trim();
+    if source.is_empty() {
+        return None;
+    }
+
+    let browser = source.split(['+', ':']).next()?.to_ascii_lowercase();
+    SUPPORTED_BROWSERS
+        .contains(&browser.as_str())
+        .then(|| Value::String(source.to_owned()))
+}
 
 /// Validate a vertical resolution, preserving the original profile representation.
 ///
@@ -390,10 +407,8 @@ fn validate_section_timestamp(value: &str, allow_infinity: bool) -> Option<Strin
             return None;
         }
 
-        if parts.len() > 1 && index > 0 {
-            if whole.len() > 2 || whole.parse::<u32>().ok()? >= 60 {
-                return None;
-            }
+        if parts.len() > 1 && index > 0 && (whole.len() > 2 || whole.parse::<u32>().ok()? >= 60) {
+            return None;
         }
     }
 
@@ -487,6 +502,8 @@ pub fn validate_settings(
             }
 
             value.clone()
+        } else if key == "cookies-from-browser" {
+            validate_cookie_browser(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "resolution" {
             validate_resolution(value, false)
                 .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
@@ -572,14 +589,32 @@ pub fn validate_settings(
         validated.insert(key.clone(), normalised);
     }
 
-    if ["cookies", "no-cookies"]
+    if ["cookies", "cookies-from-browser", "no-cookies"]
         .iter()
         .filter(|key| validated.contains_key(**key))
         .count()
         > 1
     {
         return Err(SettingError::ConflictingSettings(
-            "cookies and no-cookies".to_owned(),
+            "multiple cookie sources".to_owned(),
+        ));
+    }
+
+    for (minimum, maximum) in [("min-resolution", "max-resolution"), ("min-fps", "max-fps")] {
+        if let (Some(lower), Some(upper)) = (
+            validated.get(minimum).and_then(Value::as_u64),
+            validated.get(maximum).and_then(Value::as_u64),
+        ) && lower > upper
+        {
+            return Err(SettingError::ConflictingSettings(format!(
+                "{minimum} exceeds {maximum}"
+            )));
+        }
+    }
+
+    if validated.contains_key("audio-quality") && !validated.contains_key("audio-format") {
+        return Err(SettingError::ConflictingSettings(
+            "audio-quality requires audio-format".to_owned(),
         ));
     }
 
@@ -696,19 +731,51 @@ mod tests {
             ));
         }
 
-        let settings = serde_json::from_str(r#"{"cookies-from-browser":"firefox"}"#).unwrap();
-        assert_eq!(
-            validate_settings(&settings),
-            Err(SettingError::UnsupportedSetting(
-                "cookies-from-browser".into()
-            ))
-        );
-
         let settings = serde_json::from_str(r#"{"unrecognised":true}"#).unwrap();
         assert_eq!(
             validate_settings(&settings),
             Err(SettingError::UnknownSetting("unrecognised".into()))
         );
+    }
+
+    #[test]
+    fn validates_browser_cookie_sources() {
+        for source in ["firefox", " CHROME:Profile 1 ", "safari+keyring"] {
+            let settings = serde_json::json!({"cookies-from-browser": source});
+            let validated = validate_settings(settings.as_object().unwrap()).unwrap();
+
+            assert_eq!(validated["cookies-from-browser"], source.trim());
+        }
+
+        for source in ["", "unknown", "chrome-ish", "  "] {
+            let settings = serde_json::json!({"cookies-from-browser": source});
+            assert_eq!(
+                validate_settings(settings.as_object().unwrap()),
+                Err(SettingError::InvalidValue(
+                    "cookies-from-browser".to_owned()
+                ))
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_cross_setting_bounds_and_dependencies() {
+        for json in [
+            r#"{"min-resolution":1080,"max-resolution":720}"#,
+            r#"{"min-fps":60,"max-fps":30}"#,
+            r#"{"audio-quality":"5"}"#,
+            r#"{"cookies-from-browser":"firefox","no-cookies":false}"#,
+            r#"{"cookies":"cookies.txt","cookies-from-browser":"chrome"}"#,
+        ] {
+            let settings = serde_json::from_str(json).unwrap();
+            assert!(
+                matches!(
+                    validate_settings(&settings),
+                    Err(SettingError::ConflictingSettings(_))
+                ),
+                "{json}"
+            );
+        }
     }
 
     #[test]
