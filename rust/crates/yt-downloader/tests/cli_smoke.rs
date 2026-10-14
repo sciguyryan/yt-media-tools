@@ -19,7 +19,10 @@ fn help_is_successful_and_explains_status() {
 fn version_is_successful() {
     let (status, stdout, stderr) = run("--version");
     assert_eq!(status, 0);
-    assert_eq!(stdout.trim(), concat!("yt-download-rs ", env!("CARGO_PKG_VERSION")));
+    assert_eq!(
+        stdout.trim(),
+        concat!("yt-download-rs ", env!("CARGO_PKG_VERSION"))
+    );
     assert!(stderr.is_empty());
 }
 
