@@ -126,7 +126,39 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
             "yt-download-rs (experimental)\n\nUSAGE:\n    yt-download-rs [--help | --version]\n\nThe native downloader is under development. Use yt-download.py for downloads.\n".to_owned(),
             String::new(),
         ),
-        _ => (1, String::new(), "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned()),
+        _ => {
+            // A positional download target is recognised but cannot be handled
+            // until native download execution is implemented.
+            if args.len() == 1 && args[0].to_str().is_some_and(|arg| !arg.starts_with('-')) {
+                return (
+                    1,
+                    String::new(),
+                    "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned(),
+                );
+            }
+
+            let options = match parse_profile_options(args.iter().cloned()) {
+                Ok(options) => options,
+                Err(_) => return (1, String::new(), "yt-download-rs: unsupported or invalid arguments\n".to_owned()),
+            };
+
+            if !options.list_profiles {
+                return (1, String::new(), "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned());
+            }
+
+            let executable_dir = match std::env::current_exe()
+                .ok()
+                .and_then(|path| path.parent().map(std::path::Path::to_path_buf))
+            {
+                Some(path) => path,
+                None => return (1, String::new(), "yt-download-rs: cannot determine executable directory\n".to_owned()),
+            };
+
+            match profile_store::render_from_cli_store(&options, &executable_dir) {
+                Ok(output) => (0, output, String::new()),
+                Err(error) => (1, String::new(), format!("yt-download-rs: {error:?}\n")),
+            }
+        },
     }
 }
 
@@ -167,6 +199,46 @@ mod tests {
     fn list_aliases() {
         assert!(parse(&["--list-parameters"]).unwrap().list_profiles);
         assert!(parse(&["--list-profiles"]).unwrap().list_profiles);
+    }
+
+    #[test]
+    fn executable_lists_absent_implicit_profiles() {
+        // The binary's implicit defaults file is environment-dependent, so
+        // test a missing explicit file instead for a deterministic failure.
+        let path = std::env::temp_dir().join(format!(
+            "yt-download-rs-missing-list-{}-{}.json",
+            std::process::id(),
+            "not-created",
+        ));
+        let args = [
+            OsString::from("--list-profiles"),
+            OsString::from("--defaults"),
+            path.into_os_string(),
+        ];
+        let (status, stdout, stderr) = experimental_cli(&args);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("MissingFile"));
+    }
+
+    #[test]
+    fn positional_download_target_fails_as_unimplemented() {
+        let (status, stdout, stderr) =
+            experimental_cli(&[OsString::from("https://example.invalid/video")]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("not yet implemented"));
+    }
+
+    #[test]
+    fn executable_does_not_claim_download_support() {
+        let (status, stdout, stderr) = experimental_cli(&[]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("not yet implemented"));
     }
 
     #[test]
