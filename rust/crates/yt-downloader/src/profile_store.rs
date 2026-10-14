@@ -1,5 +1,7 @@
 //! File loading and profile selection for Downloader defaults documents.
 
+use unicode_casefold::UnicodeCaseFold;
+
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs;
@@ -150,9 +152,9 @@ pub fn render_profile_listing(path: &Path, profiles: &[ListedProfile]) -> String
         .iter()
         .map(|profile| profile.name.as_str())
         .collect();
-    // Compare Unicode lowercase forms while preserving the original spelling.
-    // Python's full casefold semantics require a separate compatibility pass.
-    names.sort_by_key(|name| name.to_lowercase());
+    // Python orders profile names by Unicode casefolded spelling.
+    // Stable sorting preserves the input order for equivalent folded names.
+    names.sort_by_key(|name| name.case_fold().collect::<String>());
 
     let mut output = format!("Available profiles in {}:\n\n", path.display());
 
@@ -319,6 +321,59 @@ mod tests {
         assert_eq!(
             render_profile_listing(Path::new("defaults.json"), &profiles),
             "Available profiles in defaults.json:\n\n  beta\n  Beta\n",
+        );
+    }
+
+    #[test]
+    fn casefolds_sharp_s_and_ascii_equivalents() {
+        let profiles = [
+            ListedProfile {
+                name: "zulu".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Straße".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "strasse".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "alpha".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+        ];
+
+        assert_eq!(
+            render_profile_listing(Path::new("defaults.json"), &profiles),
+            "Available profiles in defaults.json:\\n\\n  alpha\\n  Straße\\n  strasse\\n  zulu\\n"
+                .replace("\\n", "\n"),
+        );
+    }
+
+    #[test]
+    fn casefolds_greek_final_sigma_with_standard_sigma() {
+        let profiles = [
+            ListedProfile {
+                name: "ος".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "οσ".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+        ];
+
+        assert_eq!(
+            render_profile_listing(Path::new("defaults.json"), &profiles),
+            "Available profiles in defaults.json:\\n\\n  ος\\n  οσ\\n".replace("\\n", "\n"),
         );
     }
 
