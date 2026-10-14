@@ -93,17 +93,17 @@ where
 
     let profile = matches
         .get_many::<String>("profile")
-        .and_then(|values| values.last())
+        .and_then(|mut values| values.next_back())
         .map(OsString::from);
-    if let Some(ref name) = profile {
-        if !name.to_str().is_some_and(valid_profile_name) {
-            return Err(ParseError::InvalidProfileName);
-        }
+    if let Some(ref name) = profile
+        && !name.to_str().is_some_and(valid_profile_name)
+    {
+        return Err(ParseError::InvalidProfileName);
     }
 
     let defaults = matches
         .get_many::<String>("defaults")
-        .and_then(|values| values.last())
+        .and_then(|mut values| values.next_back())
         .map(OsString::from);
 
     Ok(ProfileOptions {
@@ -111,6 +111,20 @@ where
         defaults,
         list_profiles: matches.get_flag("list-profiles"),
     })
+}
+
+/// The current experimental CLI responses, kept pure for deterministic testing.
+/// The executable prints these responses and uses their exit status.
+pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
+    match args {
+        [arg] if arg == "--version" => (0, format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")), String::new()),
+        [arg] if arg == "--help" || arg == "-h" => (
+            0,
+            "yt-download-rs (experimental)\n\nUSAGE:\n    yt-download-rs [--help | --version]\n\nThe native downloader is under development. Use yt-download.py for downloads.\n".to_owned(),
+            String::new(),
+        ),
+        _ => (1, String::new(), "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned()),
+    }
 }
 
 #[cfg(test)]
@@ -173,19 +187,5 @@ mod tests {
             Err(ParseError::InvalidProfileName)
         );
         assert_eq!(parse(&["--unknown"]), Err(ParseError::UnsupportedOption));
-    }
-}
-
-/// The current experimental CLI responses, kept pure for deterministic testing.
-/// The executable prints these responses and uses their exit status.
-pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
-    match args {
-        [arg] if arg == "--version" => (0, format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")), String::new()),
-        [arg] if arg == "--help" || arg == "-h" => (
-            0,
-            "yt-download-rs (experimental)\n\nUSAGE:\n    yt-download-rs [--help | --version]\n\nThe native downloader is under development. Use yt-download.py for downloads.\n".to_owned(),
-            String::new(),
-        ),
-        _ => (1, String::new(), "yt-download-rs: download functionality is not yet implemented; use yt-download.py\n".to_owned()),
     }
 }

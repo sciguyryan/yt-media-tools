@@ -79,7 +79,6 @@ const POSITIVE_INTEGER_SETTINGS: &[&str] = &[
 // The full set is deliberately explicit. Recognised options whose Python validation
 // is not implemented here fail closed rather than passing unchecked values through.
 const OTHER_RECOGNISED_SETTINGS: &[&str] = &[
-    "resolution",
     "cookies-from-browser",
     "playlist-items",
     "wait-for-video",
@@ -95,20 +94,85 @@ const OTHER_RECOGNISED_SETTINGS: &[&str] = &[
     "extractor-retries",
     "retry-sleep",
     "extractor-args",
-    "min-resolution",
-    "max-resolution",
     "preferred-video-codec",
     "preferred-audio-codec",
-    "preferred-hdr",
-    "merge-container",
     "audio-source-codec",
     "audio-source-container",
-    "audio-format",
-    "audio-quality",
     "socket-timeout",
     "sponsorblock-mark",
     "sponsorblock-remove",
 ];
+
+/// Validate a vertical resolution, preserving the original profile representation.
+///
+/// The Python profile validator checks this syntax without replacing the supplied
+/// string. Hard bounds, in contrast, are converted to JSON integers.
+fn validate_resolution(value: &Value, bound: bool) -> Option<Value> {
+    let text = if let Some(text) = value.as_str() {
+        text.trim().to_ascii_lowercase()
+    } else if bound {
+        value.as_u64()?.to_string()
+    } else {
+        return None;
+    };
+
+    if !bound && text == "best" {
+        return Some(value.clone());
+    }
+
+    let digits = text.strip_suffix('p').unwrap_or(&text);
+    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+
+    let number = digits.parse::<u64>().ok().filter(|number| *number > 0)?;
+    if bound {
+        Some(Value::from(number))
+    } else {
+        Some(value.clone())
+    }
+}
+
+/// Accept a known format or container token, normalising its case as Python does.
+fn validate_choice(value: &Value, choices: &[&str]) -> Option<Value> {
+    let text = value.as_str()?.to_ascii_lowercase();
+    choices
+        .contains(&text.as_str())
+        .then_some(Value::String(text))
+}
+
+/// Validate yt-dlp's numeric VBR levels and explicit bitrate notation.
+fn validate_audio_quality(value: &Value) -> Option<Value> {
+    if let Some(number) = value.as_u64() {
+        return (number <= 10).then(|| Value::String(number.to_string()));
+    }
+
+    let text = value.as_str()?.trim();
+    if text == "10" || (text.len() == 1 && text.bytes().all(|byte| byte.is_ascii_digit())) {
+        return Some(Value::String(text.to_owned()));
+    }
+
+    if !text.is_ascii() {
+        return None;
+    }
+
+    let (number, unit) = text.split_at(text.len().checked_sub(1)?);
+    if !matches!(unit, "k" | "K" | "m" | "M") {
+        return None;
+    }
+
+    let (whole, fraction) = number.split_once('.').unwrap_or((number, ""));
+    if whole.is_empty()
+        || whole.starts_with('0')
+        || !whole.bytes().all(|byte| byte.is_ascii_digit())
+        || (!fraction.is_empty() && !fraction.bytes().all(|byte| byte.is_ascii_digit()))
+        || (number.contains('.') && fraction.is_empty())
+    {
+        return None;
+    }
+
+    Some(Value::String(text.to_ascii_uppercase()))
+}
 
 /// Validate the currently supported subset of effective profile settings.
 ///
@@ -142,6 +206,28 @@ pub fn validate_settings(
             }
 
             value.clone()
+        } else if key == "resolution" {
+            validate_resolution(value, false)
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if matches!(key.as_str(), "min-resolution" | "max-resolution") {
+            validate_resolution(value, true)
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "preferred-hdr" {
+            validate_choice(value, &["sdr", "hdr", "dv"])
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "merge-container" {
+            validate_choice(value, &["avi", "flv", "mkv", "mov", "mp4", "webm"])
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "audio-format" {
+            validate_choice(
+                value,
+                &[
+                    "best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav",
+                ],
+            )
+            .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "audio-quality" {
+            validate_audio_quality(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if OTHER_RECOGNISED_SETTINGS.contains(&key.as_str()) {
             return Err(SettingError::UnsupportedSetting(key.clone()));
         } else {
@@ -225,10 +311,12 @@ mod tests {
             ));
         }
 
-        let settings = serde_json::from_str(r#"{"resolution":"1080p"}"#).unwrap();
+        let settings = serde_json::from_str(r#"{"cookies-from-browser":"firefox"}"#).unwrap();
         assert_eq!(
             validate_settings(&settings),
-            Err(SettingError::UnsupportedSetting("resolution".into()))
+            Err(SettingError::UnsupportedSetting(
+                "cookies-from-browser".into()
+            ))
         );
 
         let settings = serde_json::from_str(r#"{"unrecognised":true}"#).unwrap();
@@ -260,6 +348,43 @@ mod tests {
                 validate_settings(&settings),
                 Err(SettingError::ConflictingSettings(_))
             ));
+        }
+    }
+    #[test]
+    fn validates_resolution_and_audio_families() {
+        let settings = serde_json::from_str(r#"{"resolution":" 1080P ","min-resolution":"720p","max-resolution":2160,"preferred-hdr":"HDR","merge-container":"MKV","audio-format":"MP3","audio-quality":"192k"}"#).unwrap();
+        let validated = validate_settings(&settings).unwrap();
+
+        assert_eq!(validated["resolution"], " 1080P ");
+        assert_eq!(validated["min-resolution"], 720);
+        assert_eq!(validated["max-resolution"], 2160);
+        assert_eq!(validated["preferred-hdr"], "hdr");
+        assert_eq!(validated["merge-container"], "mkv");
+        assert_eq!(validated["audio-format"], "mp3");
+        assert_eq!(validated["audio-quality"], "192K");
+    }
+
+    #[test]
+    fn rejects_invalid_resolution_and_audio_values() {
+        for json in [
+            r#"{"resolution":"0p"}"#,
+            r#"{"min-resolution":true}"#,
+            r#"{"max-resolution":"1.5p"}"#,
+            r#"{"preferred-hdr":"dolby"}"#,
+            r#"{"merge-container":"exe"}"#,
+            r#"{"audio-format":"aac+mp3"}"#,
+            r#"{"audio-quality":11}"#,
+            r#"{"audio-quality":"0128K"}"#,
+            r#"{"audio-quality":"1.K"}"#,
+        ] {
+            let settings = serde_json::from_str(json).unwrap();
+            assert!(
+                matches!(
+                    validate_settings(&settings),
+                    Err(SettingError::InvalidValue(_))
+                ),
+                "{json}"
+            );
         }
     }
 }
