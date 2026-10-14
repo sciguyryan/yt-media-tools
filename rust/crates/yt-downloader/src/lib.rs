@@ -4,13 +4,18 @@ pub mod profile_file;
 
 use std::ffi::OsString;
 
+/// Profile-related arguments recognised by the native CLI.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ProfileOptions {
+    /// Last selected profile name, if supplied.
     pub profile: Option<OsString>,
+    /// Last defaults selection, if supplied.
     pub defaults: Option<OsString>,
+    /// Whether the caller requested a listing of available profiles.
     pub list_profiles: bool,
 }
 
+/// Errors returned while parsing profile-related CLI arguments.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ParseError {
     MissingValue(&'static str),
@@ -46,6 +51,7 @@ where
             .visible_alias("list-parameters").action(ArgAction::SetTrue));
 
     let arguments: Vec<OsString> = args.into_iter().collect();
+
     // Clap reports a missing trailing value as InvalidValue in some releases.
     // Keep the option identity before asking Clap to parse the arguments.
     if let Some(last) = arguments.last() {
@@ -58,6 +64,7 @@ where
             return Err(ParseError::MissingValue(option));
         }
     }
+
     let input = std::iter::once(OsString::from("yt-download-rs")).chain(arguments);
     let matches = command.try_get_matches_from(input).map_err(|error| {
         use clap::error::ErrorKind;
@@ -66,6 +73,7 @@ where
             _ => ParseError::UnsupportedOption,
         }
     })?;
+
     let profile = matches.get_many::<String>("profile")
         .and_then(|values| values.last()).map(OsString::from);
     if let Some(ref name) = profile {
@@ -73,8 +81,10 @@ where
             return Err(ParseError::InvalidProfileName);
         }
     }
+
     let defaults = matches.get_many::<String>("defaults")
         .and_then(|values| values.last()).map(OsString::from);
+
     Ok(ProfileOptions {
         profile,
         defaults,

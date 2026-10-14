@@ -1,5 +1,4 @@
-//! Experimental native Downloader entry point.
-//! Python remains the production implementation.
+//! Native Downloader entry point.
 
 use std::env;
 use std::io::{self, Write};
