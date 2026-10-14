@@ -4,11 +4,18 @@ use std::collections::BTreeMap;
 
 use serde_json::{Map, Value};
 
+use crate::ProfileOptions;
 use crate::profile_settings::{SettingError, ValidatedProfile, validate_settings};
 
 /// Failures when selecting a profile or applying explicit settings.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProfileSelectionError {
+    /// A selected profile name cannot be represented as UTF-8.
+    InvalidProfileNameEncoding,
+    /// A defaults-file argument needs the file-loading stage, which is not yet connected.
+    DefaultsFileNotLoaded,
+    /// A profile-listing request is not an effective-policy selection.
+    ListingRequested,
     /// The requested profile is not present in the validated document.
     UnknownProfile(String),
     /// The combined settings contain an invalid value or an unsupported combination.
@@ -65,6 +72,37 @@ pub fn select_profile(
     })
 }
 
+/// Select effective policy from the profile-related arguments already parsed by Clap.
+///
+/// This bridge accepts validated profiles supplied by the caller. A defaults-file
+/// argument must be loaded separately before selection, so it is rejected here
+/// rather than silently ignored. Listing requests likewise require their own path.
+pub fn select_from_cli_options(
+    profiles: &BTreeMap<String, ValidatedProfile>,
+    options: &ProfileOptions,
+    overrides: &Map<String, Value>,
+) -> Result<SelectedProfile, ProfileSelectionError> {
+    if options.list_profiles {
+        return Err(ProfileSelectionError::ListingRequested);
+    }
+
+    if options.defaults.is_some() {
+        return Err(ProfileSelectionError::DefaultsFileNotLoaded);
+    }
+
+    let name = options
+        .profile
+        .as_ref()
+        .map(|value| {
+            value
+                .to_str()
+                .ok_or(ProfileSelectionError::InvalidProfileNameEncoding)
+        })
+        .transpose()?;
+
+    select_profile(profiles, name, overrides)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,6 +122,61 @@ mod tests {
             .to_string(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn selects_cli_profile_and_preserves_override_precedence() {
+        let options = crate::parse_profile_options(
+            ["--parameter-profile", "child"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
+        )
+        .unwrap();
+        let overrides = json!({"playlist": false});
+
+        let selected =
+            select_from_cli_options(&profiles(), &options, overrides.as_object().unwrap()).unwrap();
+
+        assert_eq!(selected.profile_name.as_deref(), Some("child"));
+        assert_eq!(selected.settings["playlist"], false);
+        assert_eq!(selected.setting_sources["playlist"], "explicit override");
+        assert_eq!(selected.settings["audio-format"], "mp3");
+    }
+
+    #[test]
+    fn refuses_to_ignore_defaults_file_and_listing_arguments() {
+        for (arguments, expected) in [
+            (
+                vec!["--defaults", "settings.json"],
+                ProfileSelectionError::DefaultsFileNotLoaded,
+            ),
+            (
+                vec!["--list-parameters"],
+                ProfileSelectionError::ListingRequested,
+            ),
+        ] {
+            let options =
+                crate::parse_profile_options(arguments.into_iter().map(std::ffi::OsString::from))
+                    .unwrap();
+
+            assert_eq!(
+                select_from_cli_options(&profiles(), &options, &Map::new()),
+                Err(expected),
+            );
+        }
+    }
+
+    #[test]
+    fn reports_unknown_cli_profile() {
+        let options = crate::parse_profile_options(
+            ["-p", "missing"].into_iter().map(std::ffi::OsString::from),
+        )
+        .unwrap();
+
+        assert_eq!(
+            select_from_cli_options(&profiles(), &options, &Map::new()),
+            Err(ProfileSelectionError::UnknownProfile("missing".to_owned())),
+        );
     }
 
     #[test]
