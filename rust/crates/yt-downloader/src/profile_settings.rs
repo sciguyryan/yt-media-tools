@@ -77,8 +77,7 @@ const POSITIVE_INTEGER_SETTINGS: &[&str] = &[
 ];
 
 // Recognised settings still awaiting their Python-compatible validation rules.
-const OTHER_RECOGNISED_SETTINGS: &[&str] =
-    &["cookies-from-browser", "chapter-sections", "time-ranges"];
+const OTHER_RECOGNISED_SETTINGS: &[&str] = &["cookies-from-browser", "chapter-sections"];
 
 /// Validate a vertical resolution, preserving the original profile representation.
 ///
@@ -361,6 +360,101 @@ fn validate_sponsorblock_categories(key: &str, value: &Value) -> Option<Value> {
     Some(Value::String(categories.join(",")))
 }
 
+/// Validate a partial-media timestamp using the supported Python profile syntax.
+///
+/// Negative offsets are retained. `inf` is only valid as the end of a range.
+fn validate_section_timestamp(value: &str, allow_infinity: bool) -> Option<String> {
+    let text = value.trim().to_ascii_lowercase();
+    if allow_infinity && text == "inf" {
+        return Some(text);
+    }
+
+    let body = text.strip_prefix('-').unwrap_or(&text);
+    let parts: Vec<&str> = body.split(':').collect();
+    if !(1..=3).contains(&parts.len()) {
+        return None;
+    }
+
+    for (index, part) in parts.iter().enumerate() {
+        let is_last = index == parts.len() - 1;
+        let (whole, fractional) = part.split_once('.').unwrap_or((part, ""));
+        if whole.is_empty() || !whole.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+
+        if part.contains('.')
+            && (!is_last
+                || fractional.is_empty()
+                || !fractional.bytes().all(|byte| byte.is_ascii_digit()))
+        {
+            return None;
+        }
+
+        if parts.len() > 1 && index > 0 {
+            if whole.len() > 2 || whole.parse::<u32>().ok()? >= 60 {
+                return None;
+            }
+        }
+    }
+
+    Some(text)
+}
+
+/// Convert a validated timestamp into seconds for comparing absolute bounds.
+fn timestamp_seconds(value: &str) -> Option<f64> {
+    let mut seconds = 0.0;
+    for part in value.split(':') {
+        seconds = seconds * 60.0 + part.parse::<f64>().ok()?;
+    }
+
+    Some(seconds)
+}
+
+/// Normalise one start/stop pair, preserving negative offsets and infinity.
+fn normalise_time_range(start: &str, stop: &str) -> Option<String> {
+    let start = validate_section_timestamp(start, false)?;
+    let stop = validate_section_timestamp(stop, true)?;
+
+    if stop != "inf"
+        && !start.starts_with('-')
+        && !stop.starts_with('-')
+        && timestamp_seconds(&stop)? <= timestamp_seconds(&start)?
+    {
+        return None;
+    }
+
+    Some(format!("{start}-{stop}"))
+}
+
+/// Validate profile time ranges supplied as strings or two-element arrays.
+fn validate_time_ranges(value: &Value) -> Option<Value> {
+    let entries = value.as_array()?;
+    if entries.is_empty() {
+        return None;
+    }
+
+    let mut result = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let (start, stop) = if let Some(pair) = entry.as_array() {
+            if pair.len() != 2 {
+                return None;
+            }
+
+            (pair[0].as_str()?, pair[1].as_str()?)
+        } else {
+            let text = entry.as_str()?.trim();
+            // A leading minus sign belongs to START; a second minus separates STOP.
+            let search_start = usize::from(text.starts_with('-'));
+            let separator = text[search_start..].find('-')? + search_start;
+            (&text[..separator], &text[separator + 1..])
+        };
+
+        result.push(Value::String(normalise_time_range(start, stop)?));
+    }
+
+    Some(Value::Array(result))
+}
+
 /// Validate the currently supported subset of effective profile settings.
 ///
 /// Options with more involved Python-specific validation are rejected until their
@@ -452,6 +546,8 @@ pub fn validate_settings(
             validate_codec(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "playlist-items" {
             validate_playlist_items(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "time-ranges" {
+            validate_time_ranges(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "wait-for-video" {
             validate_wait_for_video(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if matches!(key.as_str(), "sponsorblock-mark" | "sponsorblock-remove") {
@@ -511,6 +607,12 @@ pub fn validate_settings(
         ));
     }
 
+    if validated.contains_key("time-ranges") && validated.get("live") == Some(&Value::Bool(true)) {
+        return Err(SettingError::ConflictingSettings(
+            "partial-media selection cannot be combined with live mode".to_owned(),
+        ));
+    }
+
     Ok(validated)
 }
 
@@ -542,6 +644,35 @@ pub fn validate_profiles(
 mod tests {
     use super::*;
     use crate::profile_file::{parse_profile_structure, resolve_profile_structure};
+
+    #[test]
+    fn normalises_partial_media_time_ranges() {
+        let settings =
+            serde_json::from_str(r#"{"time-ranges":[" 01:02-02:03 ",["-15", "inf"],"10--5"]}"#)
+                .unwrap();
+        let validated = validate_settings(&settings).unwrap();
+
+        assert_eq!(
+            validated["time-ranges"],
+            serde_json::json!(["01:02-02:03", "-15-inf", "10--5"])
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_partial_media_ranges() {
+        for json in [
+            r#"{"time-ranges":[]}"#,
+            r#"{"time-ranges":["10-10"]}"#,
+            r#"{"time-ranges":["01:60-02:00"]}"#,
+            r#"{"time-ranges":["1.2.3-4"]}"#,
+            r#"{"time-ranges":[["1"]]}"#,
+            r#"{"time-ranges":["inf-20"]}"#,
+            r#"{"time-ranges":["1-2"],"live":true}"#,
+        ] {
+            let settings = serde_json::from_str(json).unwrap();
+            assert!(validate_settings(&settings).is_err(), "{json}");
+        }
+    }
 
     #[test]
     fn normalises_strings_and_preserves_json_types() {
