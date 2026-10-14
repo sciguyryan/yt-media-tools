@@ -110,6 +110,51 @@ pub fn resolve_defaults_path(options: &ProfileOptions, executable_dir: &Path) ->
     }
 }
 
+/// Names and effective settings available for profile-listing presentation.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ListedProfile {
+    /// Stored profile name.
+    pub name: String,
+    /// Effective validated settings, including inherited values.
+    pub settings: Map<String, Value>,
+    /// Parent profile, if this profile inherits another.
+    pub parent: Option<String>,
+}
+
+/// Return profiles in deterministic name order without selecting download policy.
+///
+/// Listing operates on the same validated profiles as ordinary selection, so
+/// inherited values have already been resolved and checked.
+pub fn list_stored_profiles(profiles: &BTreeMap<String, ValidatedProfile>) -> Vec<ListedProfile> {
+    profiles
+        .iter()
+        .map(|(name, profile)| ListedProfile {
+            name: name.clone(),
+            settings: profile.settings.clone(),
+            parent: profile.parent.clone(),
+        })
+        .collect()
+}
+
+/// Load a defaults document for a CLI listing request.
+///
+/// The listing path does not select a profile or apply download overrides.
+/// An absent implicit defaults file yields an empty list, while a missing
+/// explicitly named file remains an error.
+pub fn list_from_cli_store(
+    options: &ProfileOptions,
+    executable_dir: &Path,
+) -> Result<Vec<ListedProfile>, ProfileStoreError> {
+    if !options.list_profiles {
+        return Err(ProfileStoreError::ListingRequested);
+    }
+
+    let (path, explicit) = resolve_defaults_path(options, executable_dir);
+    let profiles = load_profiles_from_path(&path, explicit)?;
+
+    Ok(list_stored_profiles(&profiles))
+}
+
 /// Load stored profiles and select the effective policy for parsed CLI options.
 ///
 /// The caller provides the executable directory and already interpreted explicit
@@ -154,6 +199,67 @@ mod tests {
             "yt-downloader-profile-{}-{id}.json",
             std::process::id()
         ))
+    }
+
+    #[test]
+    fn listing_is_sorted_and_includes_inherited_effective_settings() {
+        let document = json!({
+            "version": 3,
+            "profiles": {
+                "zeta": {"parent": "alpha", "audio-quality": "128K"},
+                "alpha": {"audio-format": "mp3"}
+            }
+        });
+        let profiles = load_validated_profiles(&document.to_string()).unwrap();
+
+        let listed = list_stored_profiles(&profiles);
+
+        assert_eq!(
+            listed
+                .iter()
+                .map(|profile| profile.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["alpha", "zeta"]
+        );
+        assert_eq!(listed[1].parent.as_deref(), Some("alpha"));
+        assert_eq!(listed[1].settings["audio-format"], "mp3");
+    }
+
+    #[test]
+    fn listing_an_absent_implicit_file_returns_no_profiles() {
+        let directory = std::env::temp_dir().join(format!(
+            "yt-downloader-list-absent-{}-{}",
+            std::process::id(),
+            NEXT_FILE.fetch_add(1, Ordering::Relaxed),
+        ));
+        let options = crate::parse_profile_options(
+            ["--list-profiles"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
+        )
+        .unwrap();
+
+        assert!(
+            list_from_cli_store(&options, &directory)
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn listing_rejects_missing_explicit_defaults_file() {
+        let path = temporary_file();
+        let options = crate::parse_profile_options([
+            std::ffi::OsString::from("--list-parameters"),
+            std::ffi::OsString::from("--defaults"),
+            path.into_os_string(),
+        ])
+        .unwrap();
+
+        assert!(matches!(
+            list_from_cli_store(&options, Path::new("/unused")),
+            Err(ProfileStoreError::MissingFile)
+        ));
     }
 
     #[test]
