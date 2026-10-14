@@ -90,17 +90,9 @@ fn expand_current_user(path: &Path, home: Option<&Path>) -> PathBuf {
     path.to_path_buf()
 }
 
-/// Return the current user's home directory when exposed by the environment.
+/// Return the current user's home directory using platform-aware resolution.
 fn home_directory() -> Option<PathBuf> {
-    #[cfg(windows)]
-    {
-        std::env::var_os("USERPROFILE").map(PathBuf::from)
-    }
-
-    #[cfg(not(windows))]
-    {
-        std::env::var_os("HOME").map(PathBuf::from)
-    }
+    home::home_dir()
 }
 
 /// Resolve the defaults file relative to the caller's executable directory.
