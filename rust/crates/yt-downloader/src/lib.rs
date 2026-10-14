@@ -135,6 +135,12 @@ pub fn extract_cli_overrides(
             Some("--no-playlist") => {
                 overrides.insert("playlist".to_owned(), serde_json::Value::Bool(false));
             }
+            Some("--audio-only") => {
+                overrides.insert("audio-only".to_owned(), serde_json::Value::Bool(true));
+            }
+            Some("--no-audio-only") => {
+                overrides.insert("audio-only".to_owned(), serde_json::Value::Bool(false));
+            }
             _ => remaining.push(argument.clone()),
         }
     }
@@ -181,7 +187,7 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 return (
                     1,
                     String::new(),
-                    "yt-download-rs: playlist overrides cannot be combined with profile listing\\n".to_owned(),
+                    "yt-download-rs: download-setting overrides cannot be combined with profile listing\\n".to_owned(),
                 );
             }
 
@@ -196,7 +202,7 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 };
             }
 
-            // Apply explicitly supplied playlist policy over the stored profile
+            // Apply explicitly supplied download settings over the stored profile
             // before reporting that native download execution is unavailable.
             match profile_store::select_from_cli_store(
                 &options,
@@ -255,6 +261,54 @@ mod tests {
     fn list_aliases() {
         assert!(parse(&["--list-parameters"]).unwrap().list_profiles);
         assert!(parse(&["--list-profiles"]).unwrap().list_profiles);
+    }
+
+    #[test]
+    fn audio_only_overrides_follow_last_explicit_flag() {
+        let args = [
+            OsString::from("--audio-only"),
+            OsString::from("--no-audio-only"),
+            OsString::from("--audio-only"),
+            OsString::from("--profile"),
+            OsString::from("example"),
+        ];
+        let (remaining, overrides) = extract_cli_overrides(&args);
+
+        assert_eq!(overrides["audio-only"], true);
+        assert_eq!(
+            remaining,
+            [OsString::from("--profile"), OsString::from("example")],
+        );
+    }
+
+    #[test]
+    fn audio_only_is_not_overridden_when_unspecified() {
+        let (remaining, overrides) =
+            extract_cli_overrides(&[OsString::from("--profile"), OsString::from("example")]);
+
+        assert_eq!(remaining.len(), 2);
+        assert!(!overrides.contains_key("audio-only"));
+    }
+
+    #[test]
+    fn executable_rejects_audio_only_override_during_listing() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--list-profiles"),
+            OsString::from("--audio-only"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("cannot be combined"));
+    }
+
+    #[test]
+    fn executable_accepts_audio_only_override_without_download_execution() {
+        let (status, stdout, stderr) = experimental_cli(&[OsString::from("--no-audio-only")]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("not yet implemented"));
     }
 
     #[test]
