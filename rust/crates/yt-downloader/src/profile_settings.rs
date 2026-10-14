@@ -76,29 +76,13 @@ const POSITIVE_INTEGER_SETTINGS: &[&str] = &[
     "concurrent-fragments",
 ];
 
-// The full set is deliberately explicit. Recognised options whose Python validation
-// is not implemented here fail closed rather than passing unchecked values through.
+// Recognised settings still awaiting their Python-compatible validation rules.
 const OTHER_RECOGNISED_SETTINGS: &[&str] = &[
     "cookies-from-browser",
     "playlist-items",
     "wait-for-video",
     "chapter-sections",
     "time-ranges",
-    "limit-rate",
-    "throttled-rate",
-    "headers",
-    "ip-family",
-    "retries",
-    "fragment-retries",
-    "file-access-retries",
-    "extractor-retries",
-    "retry-sleep",
-    "extractor-args",
-    "preferred-video-codec",
-    "preferred-audio-codec",
-    "audio-source-codec",
-    "audio-source-container",
-    "socket-timeout",
     "sponsorblock-mark",
     "sponsorblock-remove",
 ];
@@ -174,6 +158,80 @@ fn validate_audio_quality(value: &Value) -> Option<Value> {
     Some(Value::String(text.to_ascii_uppercase()))
 }
 
+/// Validate a byte rate using the same optional unit suffixes as Python.
+fn validate_rate(value: &Value) -> Option<Value> {
+    let text = value.as_str()?.trim();
+    let digits = text.trim_end_matches(|ch: char| {
+        matches!(
+            ch,
+            'K' | 'M' | 'G' | 'T' | 'P' | 'k' | 'm' | 'g' | 't' | 'p'
+        )
+    });
+
+    if text.len() - digits.len() > 1 {
+        return None;
+    }
+
+    let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    if whole.is_empty()
+        || !whole.bytes().all(|byte| byte.is_ascii_digit())
+        || (digits.contains('.') && fraction.is_empty())
+        || !fraction.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return None;
+    }
+
+    Some(Value::String(text.to_owned()))
+}
+
+/// Normalise retry counts to strings, including the special infinite value.
+fn validate_retry(value: &Value) -> Option<Value> {
+    if let Some(number) = value.as_u64() {
+        return Some(Value::String(number.to_string()));
+    }
+
+    let text = value.as_str()?.trim().to_ascii_lowercase();
+    if text == "infinite" || (!text.is_empty() && text.bytes().all(|byte| byte.is_ascii_digit())) {
+        Some(Value::String(text))
+    } else {
+        None
+    }
+}
+
+/// Trim a non-empty list of strings without changing its ordering.
+fn validate_string_list(value: &Value) -> Option<Value> {
+    let items = value.as_array()?;
+    if items.is_empty() {
+        return None;
+    }
+
+    let mut result = Vec::with_capacity(items.len());
+    for item in items {
+        let text = item.as_str()?.trim();
+        if text.is_empty() {
+            return None;
+        }
+
+        result.push(Value::String(text.to_owned()));
+    }
+
+    Some(Value::Array(result))
+}
+
+/// Accept a simple codec or container token, without format-expression syntax.
+fn validate_codec(value: &Value) -> Option<Value> {
+    let text = value.as_str()?.trim();
+    let mut bytes = text.bytes();
+    if !bytes.next()?.is_ascii_alphanumeric()
+        || !bytes
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'+' | b'-'))
+    {
+        return None;
+    }
+
+    Some(Value::String(text.to_ascii_lowercase()))
+}
+
 /// Validate the currently supported subset of effective profile settings.
 ///
 /// Options with more involved Python-specific validation are rejected until their
@@ -228,6 +286,51 @@ pub fn validate_settings(
             .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "audio-quality" {
             validate_audio_quality(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if matches!(key.as_str(), "limit-rate" | "throttled-rate") {
+            validate_rate(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if matches!(
+            key.as_str(),
+            "retries" | "fragment-retries" | "file-access-retries" | "extractor-retries"
+        ) {
+            validate_retry(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if matches!(key.as_str(), "retry-sleep" | "extractor-args" | "headers") {
+            let items = validate_string_list(value)
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?;
+
+            if key == "headers"
+                && items.as_array().is_some_and(|entries| {
+                    entries.iter().any(|entry| {
+                        let (field, content) = entry
+                            .as_str()
+                            .unwrap_or_default()
+                            .split_once(':')
+                            .unwrap_or(("", ""));
+                        field.trim().is_empty() || content.trim().is_empty()
+                    })
+                })
+            {
+                return Err(SettingError::InvalidValue(key.clone()));
+            }
+
+            items
+        } else if matches!(
+            key.as_str(),
+            "preferred-video-codec"
+                | "preferred-audio-codec"
+                | "audio-source-codec"
+                | "audio-source-container"
+        ) {
+            validate_codec(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "ip-family" {
+            validate_choice(value, &["ipv4", "ipv6"])
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "socket-timeout" {
+            let number = value
+                .as_f64()
+                .filter(|number| number.is_finite() && *number > 0.0)
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?;
+
+            Value::from(number)
         } else if OTHER_RECOGNISED_SETTINGS.contains(&key.as_str()) {
             return Err(SettingError::UnsupportedSetting(key.clone()));
         } else {
@@ -362,6 +465,52 @@ mod tests {
         assert_eq!(validated["merge-container"], "mkv");
         assert_eq!(validated["audio-format"], "mp3");
         assert_eq!(validated["audio-quality"], "192K");
+    }
+
+    #[test]
+    fn validates_network_retry_and_codec_settings() {
+        let settings = serde_json::from_str(r#"{"limit-rate":" 12m ","throttled-rate":"500K","retries":3,"fragment-retries":" INFINITE ","retry-sleep":[" fragment:exp=1:20 "],"headers":[" Accept: text/plain "],"ip-family":"IPV6","socket-timeout":1.5,"preferred-video-codec":" AV01 ","audio-source-container":" M4A "}"#).unwrap();
+        let validated = validate_settings(&settings).unwrap();
+
+        assert_eq!(validated["limit-rate"], "12m");
+        assert_eq!(validated["retries"], "3");
+        assert_eq!(validated["fragment-retries"], "infinite");
+        assert_eq!(
+            validated["retry-sleep"],
+            serde_json::json!(["fragment:exp=1:20"])
+        );
+        assert_eq!(validated["ip-family"], "ipv6");
+        assert_eq!(validated["socket-timeout"], 1.5);
+        assert_eq!(validated["preferred-video-codec"], "av01");
+        assert_eq!(validated["audio-source-container"], "m4a");
+    }
+
+    #[test]
+    fn rejects_invalid_network_retry_and_codec_settings() {
+        for json in [
+            r#"{"limit-rate":"2MB"}"#,
+            r#"{"limit-rate":"1."}"#,
+            r#"{"retries":-1}"#,
+            r#"{"retries":true}"#,
+            r#"{"fragment-retries":"never"}"#,
+            r#"{"retry-sleep":[]}"#,
+            r#"{"extractor-args":[" "]}"#,
+            r#"{"headers":["invalid"]}"#,
+            r#"{"headers":["x: "]}"#,
+            r#"{"socket-timeout":0}"#,
+            r#"{"socket-timeout":"5"}"#,
+            r#"{"ip-family":"auto"}"#,
+            r#"{"preferred-audio-codec":"aac/mp3"}"#,
+        ] {
+            let settings = serde_json::from_str(json).unwrap();
+            assert!(
+                matches!(
+                    validate_settings(&settings),
+                    Err(SettingError::InvalidValue(_))
+                ),
+                "{json}"
+            );
+        }
     }
 
     #[test]
