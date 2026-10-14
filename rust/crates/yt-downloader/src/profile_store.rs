@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value};
 
 use crate::ProfileOptions;
+use crate::profile_file::ProfileFileError;
 use crate::profile_pipeline::{ProfilePipelineError, load_validated_profiles};
 use crate::profile_selection::{ProfileSelectionError, SelectedProfile, select_profile};
 use crate::profile_settings::{SettingError, ValidatedProfile};
@@ -47,7 +48,10 @@ pub fn describe_store_error(error: &ProfileStoreError, path: &Path) -> String {
             format!("cannot read defaults file {location}: {cause}")
         }
         ProfileStoreError::InvalidDocument(cause) => {
-            format!("invalid defaults file {location}: {cause:?}")
+            format!(
+                "invalid defaults file {location}: {}",
+                describe_pipeline_error(cause)
+            )
         }
         ProfileStoreError::ListingRequested => {
             "profile selection cannot handle a listing request".to_owned()
@@ -75,6 +79,51 @@ pub fn describe_store_error(error: &ProfileStoreError, path: &Path) -> String {
                 "profile listing cannot be used to select download policy".to_owned()
             }
         },
+    }
+}
+
+/// Describe a document failure while preserving the stage and affected profile.
+fn describe_pipeline_error(error: &ProfilePipelineError) -> String {
+    match error {
+        ProfilePipelineError::ProfileFile(cause) => describe_profile_file_error(cause),
+        ProfilePipelineError::Setting { profile, error } => {
+            format!("profile '{profile}': {}", describe_setting_error(error))
+        }
+    }
+}
+
+/// Describe structural, inheritance and reusable-value failures.
+fn describe_profile_file_error(error: &ProfileFileError) -> String {
+    match error {
+        ProfileFileError::InvalidJson => "invalid JSON".to_owned(),
+        ProfileFileError::InvalidRoot => "root must be a JSON object".to_owned(),
+        ProfileFileError::InvalidVersion => {
+            "unsupported or missing profile format version".to_owned()
+        }
+        ProfileFileError::UnknownRootKey(key) => format!("unknown root key: {key}"),
+        ProfileFileError::InvalidValues => "'values' must be a JSON object".to_owned(),
+        ProfileFileError::InvalidProfiles => "'profiles' must be a JSON object".to_owned(),
+        ProfileFileError::InvalidDefaults => "'$defaults' must be a JSON object".to_owned(),
+        ProfileFileError::InvalidProfileName(name) => format!("invalid profile name: {name}"),
+        ProfileFileError::InvalidProfile(name) => {
+            format!("profile '{name}' must be a JSON object")
+        }
+        ProfileFileError::InvalidParent(name) => {
+            format!("invalid parent declaration in profile '{name}'")
+        }
+        ProfileFileError::MissingParent(name) => format!("unknown parent profile: {name}"),
+        ProfileFileError::InheritanceCycle(chain) => {
+            format!("profile inheritance cycle: {}", chain.join(" -> "))
+        }
+        ProfileFileError::InvalidValueReference(reference) => {
+            format!("invalid value reference: {reference}")
+        }
+        ProfileFileError::UnknownValueReference(reference) => {
+            format!("unknown value reference: {reference}")
+        }
+        ProfileFileError::ValueReferenceCycle(chain) => {
+            format!("value reference cycle: {}", chain.join(" -> "))
+        }
     }
 }
 
@@ -537,6 +586,47 @@ mod tests {
         assert_eq!(
             describe_store_error(&error, Path::new("defaults.json")),
             "invalid effective profile settings: conflicting settings: audio-quality requires audio-format",
+        );
+    }
+
+    #[test]
+    fn describes_structural_document_errors_without_debug_syntax() {
+        let error = ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            ProfileFileError::UnknownRootKey("unexpected".to_owned()),
+        ));
+
+        assert_eq!(
+            describe_store_error(&error, Path::new("custom.json")),
+            "invalid defaults file custom.json: unknown root key: unexpected",
+        );
+    }
+
+    #[test]
+    fn describes_inheritance_cycles_with_the_full_chain() {
+        let error = ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            ProfileFileError::InheritanceCycle(vec![
+                "first".to_owned(),
+                "second".to_owned(),
+                "first".to_owned(),
+            ]),
+        ));
+
+        assert_eq!(
+            describe_store_error(&error, Path::new("defaults.json")),
+            "invalid defaults file defaults.json: profile inheritance cycle: first -> second -> first",
+        );
+    }
+
+    #[test]
+    fn describes_profile_validation_failures_with_the_profile_name() {
+        let error = ProfileStoreError::InvalidDocument(ProfilePipelineError::Setting {
+            profile: "child".to_owned(),
+            error: SettingError::InvalidValue("audio-quality".to_owned()),
+        });
+
+        assert_eq!(
+            describe_store_error(&error, Path::new("defaults.json")),
+            "invalid defaults file defaults.json: profile 'child': invalid value for setting: audio-quality",
         );
     }
 
