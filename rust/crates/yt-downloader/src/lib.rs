@@ -116,6 +116,32 @@ where
     })
 }
 
+/// Separate the first supported download-setting overrides from profile options.
+///
+/// Python argparse honours the last occurrence of the mutually exclusive
+/// playlist flags. Other settings remain unsupported until their exact CLI
+/// syntax and precedence have been reviewed.
+pub fn extract_cli_overrides(
+    args: &[OsString],
+) -> (Vec<OsString>, serde_json::Map<String, serde_json::Value>) {
+    let mut remaining = Vec::new();
+    let mut overrides = serde_json::Map::new();
+
+    for argument in args {
+        match argument.to_str() {
+            Some("--playlist") => {
+                overrides.insert("playlist".to_owned(), serde_json::Value::Bool(true));
+            }
+            Some("--no-playlist") => {
+                overrides.insert("playlist".to_owned(), serde_json::Value::Bool(false));
+            }
+            _ => remaining.push(argument.clone()),
+        }
+    }
+
+    (remaining, overrides)
+}
+
 /// The current experimental CLI responses, kept pure for deterministic testing.
 /// The executable prints these responses and uses their exit status.
 pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
@@ -137,7 +163,8 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 );
             }
 
-            let options = match parse_profile_options(args.iter().cloned()) {
+            let (profile_arguments, overrides) = extract_cli_overrides(args);
+            let options = match parse_profile_options(profile_arguments) {
                 Ok(options) => options,
                 Err(_) => return (1, String::new(), "yt-download-rs: unsupported or invalid arguments\n".to_owned()),
             };
@@ -150,6 +177,14 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 None => return (1, String::new(), "yt-download-rs: cannot determine executable directory\n".to_owned()),
             };
 
+            if options.list_profiles && !overrides.is_empty() {
+                return (
+                    1,
+                    String::new(),
+                    "yt-download-rs: playlist overrides cannot be combined with profile listing\\n".to_owned(),
+                );
+            }
+
             if options.list_profiles {
                 return match profile_store::render_from_cli_store(&options, &executable_dir) {
                     Ok(output) => (0, output, String::new()),
@@ -161,12 +196,12 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 };
             }
 
-            // Validate stored policy before reporting unavailable download execution.
-            // CLI setting overrides are not yet connected.
+            // Apply explicitly supplied playlist policy over the stored profile
+            // before reporting that native download execution is unavailable.
             match profile_store::select_from_cli_store(
                 &options,
                 &executable_dir,
-                &serde_json::Map::new(),
+                &overrides,
             ) {
                 Ok(_) => (
                     1,
@@ -220,6 +255,54 @@ mod tests {
     fn list_aliases() {
         assert!(parse(&["--list-parameters"]).unwrap().list_profiles);
         assert!(parse(&["--list-profiles"]).unwrap().list_profiles);
+    }
+
+    #[test]
+    fn playlist_overrides_follow_last_explicit_flag() {
+        let args = [
+            OsString::from("--playlist"),
+            OsString::from("--no-playlist"),
+            OsString::from("--playlist"),
+            OsString::from("--profile"),
+            OsString::from("example"),
+        ];
+        let (remaining, overrides) = extract_cli_overrides(&args);
+
+        assert_eq!(overrides["playlist"], true);
+        assert_eq!(
+            remaining,
+            [OsString::from("--profile"), OsString::from("example")],
+        );
+    }
+
+    #[test]
+    fn playlist_override_is_not_inferred_when_omitted() {
+        let (remaining, overrides) =
+            extract_cli_overrides(&[OsString::from("--profile"), OsString::from("example")]);
+
+        assert_eq!(remaining.len(), 2);
+        assert!(overrides.is_empty());
+    }
+
+    #[test]
+    fn executable_rejects_listing_with_playlist_override() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--list-profiles"),
+            OsString::from("--no-playlist"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("cannot be combined"));
+    }
+
+    #[test]
+    fn executable_accepts_playlist_override_without_enabling_downloads() {
+        let (status, stdout, stderr) = experimental_cli(&[OsString::from("--no-playlist")]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("not yet implemented"));
     }
 
     #[test]
