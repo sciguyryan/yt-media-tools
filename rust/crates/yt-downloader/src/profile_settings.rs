@@ -77,15 +77,8 @@ const POSITIVE_INTEGER_SETTINGS: &[&str] = &[
 ];
 
 // Recognised settings still awaiting their Python-compatible validation rules.
-const OTHER_RECOGNISED_SETTINGS: &[&str] = &[
-    "cookies-from-browser",
-    "playlist-items",
-    "wait-for-video",
-    "chapter-sections",
-    "time-ranges",
-    "sponsorblock-mark",
-    "sponsorblock-remove",
-];
+const OTHER_RECOGNISED_SETTINGS: &[&str] =
+    &["cookies-from-browser", "chapter-sections", "time-ranges"];
 
 /// Validate a vertical resolution, preserving the original profile representation.
 ///
@@ -232,6 +225,142 @@ fn validate_codec(value: &Value) -> Option<Value> {
     Some(Value::String(text.to_ascii_lowercase()))
 }
 
+/// Normalise one playlist index or slice without losing negative offsets.
+fn validate_playlist_item(value: &Value) -> Option<String> {
+    let text = if let Some(index) = value.as_i64() {
+        index.to_string()
+    } else {
+        value.as_str()?.trim().to_owned()
+    };
+
+    if let Ok(index) = text.parse::<i64>() {
+        return (index != 0).then(|| index.to_string());
+    }
+
+    let parts: Vec<&str> = text.split(':').collect();
+    if !(2..=3).contains(&parts.len()) {
+        return None;
+    }
+
+    let mut normalised = Vec::with_capacity(parts.len());
+    for part in &parts {
+        if part.is_empty() {
+            normalised.push(String::new());
+            continue;
+        }
+
+        let number = part.parse::<i64>().ok()?;
+        if number == 0 {
+            return None;
+        }
+
+        // Bounds and steps may be negative, but none may explicitly be zero.
+        normalised.push(number.to_string());
+    }
+
+    if normalised[0].is_empty()
+        && normalised[1].is_empty()
+        && (normalised.len() == 2 || normalised[2].is_empty())
+    {
+        return None;
+    }
+
+    Some(normalised.join(":"))
+}
+
+/// Validate an ordered collection of playlist indices and slices.
+fn validate_playlist_items(value: &Value) -> Option<Value> {
+    let items = value.as_array()?;
+    if items.is_empty() {
+        return None;
+    }
+
+    let mut normalised = Vec::with_capacity(items.len());
+    for item in items {
+        normalised.push(Value::String(validate_playlist_item(item)?));
+    }
+
+    Some(Value::Array(normalised))
+}
+
+/// Normalise a scheduled-stream wait interval expressed in seconds.
+fn validate_wait_for_video(value: &Value) -> Option<Value> {
+    let text = if let Some(number) = value.as_u64() {
+        number.to_string()
+    } else {
+        value.as_str()?.trim().to_owned()
+    };
+
+    let (minimum, maximum) = match text.split_once('-') {
+        Some((minimum, maximum)) => (minimum, Some(maximum)),
+        None => (text.as_str(), None),
+    };
+
+    if minimum.is_empty() || !minimum.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+
+    let lower = minimum.parse::<u64>().ok().filter(|number| *number > 0)?;
+    let upper = if let Some(maximum) = maximum {
+        if maximum.is_empty() || !maximum.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+
+        Some(
+            maximum
+                .parse::<u64>()
+                .ok()
+                .filter(|number| *number >= lower)?,
+        )
+    } else {
+        None
+    };
+
+    Some(Value::String(match upper {
+        Some(upper) => format!("{lower}-{upper}"),
+        None => lower.to_string(),
+    }))
+}
+
+/// Validate SponsorBlock categories while preserving exclusions and their order.
+fn validate_sponsorblock_categories(key: &str, value: &Value) -> Option<Value> {
+    const MARK: &[&str] = &[
+        "sponsor",
+        "intro",
+        "outro",
+        "selfpromo",
+        "preview",
+        "filler",
+        "interaction",
+        "music_offtopic",
+        "hook",
+        "poi_highlight",
+        "chapter",
+        "all",
+        "default",
+    ];
+
+    let text = value.as_str()?.trim();
+    if text.is_empty() {
+        return None;
+    }
+
+    let mut categories = Vec::new();
+    for item in text.split(',') {
+        let item = item.trim();
+        let category = item.strip_prefix('-').unwrap_or(item);
+        if !MARK.contains(&category)
+            || (key == "sponsorblock-remove" && matches!(category, "poi_highlight" | "chapter"))
+        {
+            return None;
+        }
+
+        categories.push(item);
+    }
+
+    Some(Value::String(categories.join(",")))
+}
+
 /// Validate the currently supported subset of effective profile settings.
 ///
 /// Options with more involved Python-specific validation are rejected until their
@@ -321,6 +450,13 @@ pub fn validate_settings(
                 | "audio-source-container"
         ) {
             validate_codec(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "playlist-items" {
+            validate_playlist_items(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if key == "wait-for-video" {
+            validate_wait_for_video(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+        } else if matches!(key.as_str(), "sponsorblock-mark" | "sponsorblock-remove") {
+            validate_sponsorblock_categories(key, value)
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "ip-family" {
             validate_choice(value, &["ipv4", "ipv6"])
                 .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
@@ -348,6 +484,21 @@ pub fn validate_settings(
     {
         return Err(SettingError::ConflictingSettings(
             "cookies and no-cookies".to_owned(),
+        ));
+    }
+
+    if validated.get("playlist") == Some(&Value::Bool(false))
+        && validated.contains_key("playlist-items")
+    {
+        return Err(SettingError::ConflictingSettings(
+            "playlist-items requires playlist=true".to_owned(),
+        ));
+    }
+
+    if validated.contains_key("wait-for-video") && validated.get("live") != Some(&Value::Bool(true))
+    {
+        return Err(SettingError::ConflictingSettings(
+            "wait-for-video requires live=true".to_owned(),
         ));
     }
 
@@ -507,6 +658,59 @@ mod tests {
                 matches!(
                     validate_settings(&settings),
                     Err(SettingError::InvalidValue(_))
+                ),
+                "{json}"
+            );
+        }
+    }
+
+    #[test]
+    fn validates_playlist_wait_and_sponsorblock_settings() {
+        let settings = serde_json::from_str(r#"{"playlist-items":[1," -2 ","1:10:2",":-1"],"wait-for-video":" 060-300 ","live":true,"sponsorblock-mark":" sponsor, -intro ","sponsorblock-remove":"all,-selfpromo"}"#).unwrap();
+        let validated = validate_settings(&settings).unwrap();
+
+        assert_eq!(
+            validated["playlist-items"],
+            serde_json::json!(["1", "-2", "1:10:2", ":-1"])
+        );
+        assert_eq!(validated["wait-for-video"], "60-300");
+        assert_eq!(validated["sponsorblock-mark"], "sponsor,-intro");
+        assert_eq!(validated["sponsorblock-remove"], "all,-selfpromo");
+    }
+
+    #[test]
+    fn rejects_invalid_playlist_wait_and_sponsorblock_settings() {
+        for json in [
+            r#"{"playlist-items":[]}"#,
+            r#"{"playlist-items":[0]}"#,
+            r#"{"playlist-items":["::"]}"#,
+            r#"{"playlist-items":["1:2:0"]}"#,
+            r#"{"playlist-items":[true]}"#,
+            r#"{"wait-for-video":"0"}"#,
+            r#"{"wait-for-video":"10-2"}"#,
+            r#"{"sponsorblock-mark":"sponsor,,intro"}"#,
+            r#"{"sponsorblock-remove":"chapter"}"#,
+            r#"{"sponsorblock-remove":"poi_highlight"}"#,
+        ] {
+            let settings = serde_json::from_str(json).unwrap();
+            assert!(
+                matches!(
+                    validate_settings(&settings),
+                    Err(SettingError::InvalidValue(_))
+                ),
+                "{json}"
+            );
+        }
+
+        for json in [
+            r#"{"playlist":false,"playlist-items":[1]}"#,
+            r#"{"wait-for-video":30}"#,
+        ] {
+            let settings = serde_json::from_str(json).unwrap();
+            assert!(
+                matches!(
+                    validate_settings(&settings),
+                    Err(SettingError::ConflictingSettings(_))
                 ),
                 "{json}"
             );
