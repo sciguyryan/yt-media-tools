@@ -1,6 +1,7 @@
 //! File loading and profile selection for Downloader defaults documents.
 
 use std::collections::BTreeMap;
+use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -70,14 +71,49 @@ pub fn select_stored_profile(
     select_profile(profiles, name, overrides).map_err(ProfileStoreError::Selection)
 }
 
+/// Expand a leading home-directory marker for an explicitly supplied path.
+///
+/// Python's `Path.expanduser()` recognises `~` and `~/...` (or `~\...` on
+/// Windows). Named-user expansion is not attempted here: it requires a separate
+/// platform account lookup and must not be approximated with the current home.
+fn expand_current_user(path: &Path, home: Option<&Path>) -> PathBuf {
+    let mut components = path.components();
+    let first = components.next();
+    let Some(home) = home else {
+        return path.to_path_buf();
+    };
+
+    if first.is_some_and(|component| component.as_os_str() == OsStr::new("~")) {
+        return home.join(components.as_path());
+    }
+
+    path.to_path_buf()
+}
+
+/// Return the current user's home directory when exposed by the environment.
+fn home_directory() -> Option<PathBuf> {
+    #[cfg(windows)]
+    {
+        std::env::var_os("USERPROFILE").map(PathBuf::from)
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::env::var_os("HOME").map(PathBuf::from)
+    }
+}
+
 /// Resolve the defaults file relative to the caller's executable directory.
 ///
-/// Explicit paths are used as supplied, including relative paths, which remain
-/// relative to the working directory. The implicit file lives beside the
+/// Explicit paths expand a leading current-user home marker. Other relative
+/// paths remain relative to the working directory. The implicit file lives beside the
 /// executable rather than in the working directory.
 pub fn resolve_defaults_path(options: &ProfileOptions, executable_dir: &Path) -> (PathBuf, bool) {
     match &options.defaults {
-        Some(path) => (PathBuf::from(path), true),
+        Some(path) => (
+            expand_current_user(Path::new(path), home_directory().as_deref()),
+            true,
+        ),
         None => (executable_dir.join("defaults.json"), false),
     }
 }
@@ -126,6 +162,28 @@ mod tests {
             "yt-downloader-profile-{}-{id}.json",
             std::process::id()
         ))
+    }
+
+    #[test]
+    fn expands_current_user_home_without_changing_other_relative_paths() {
+        let home = Path::new("/example/home");
+        assert_eq!(
+            expand_current_user(Path::new("~/profiles/defaults.json"), Some(home)),
+            home.join("profiles/defaults.json"),
+        );
+        assert_eq!(expand_current_user(Path::new("~"), Some(home)), home,);
+        assert_eq!(
+            expand_current_user(Path::new("profiles/defaults.json"), Some(home)),
+            PathBuf::from("profiles/defaults.json"),
+        );
+        assert_eq!(
+            expand_current_user(Path::new("~other/defaults.json"), Some(home)),
+            PathBuf::from("~other/defaults.json"),
+        );
+        assert_eq!(
+            expand_current_user(Path::new("~/profiles/defaults.json"), None),
+            PathBuf::from("~/profiles/defaults.json"),
+        );
     }
 
     #[test]
