@@ -2,6 +2,7 @@
 
 pub mod profile_file;
 pub mod profile_pipeline;
+pub mod profile_selection;
 pub mod profile_settings;
 
 use std::ffi::OsString;
