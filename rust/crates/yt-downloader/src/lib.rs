@@ -400,6 +400,51 @@ mod tests {
     }
 
     #[test]
+    fn invalid_audio_format_is_rejected_by_effective_policy_validation() {
+        let (_, overrides) = extract_audio_overrides(&[
+            OsString::from("--audio-format"),
+            OsString::from("not-a-format"),
+        ])
+        .unwrap();
+
+        let result = profile_store::select_stored_profile(
+            &std::collections::BTreeMap::new(),
+            None,
+            &overrides,
+        );
+
+        assert!(matches!(
+            result,
+            Err(profile_store::ProfileStoreError::Selection(
+                profile_selection::ProfileSelectionError::InvalidSettings(
+                    profile_settings::SettingError::InvalidValue(name)
+                )
+            )) if name == "audio-format"
+        ));
+    }
+
+    #[test]
+    fn invalid_audio_quality_is_rejected_by_effective_policy_validation() {
+        let (_, overrides) =
+            extract_audio_overrides(&[OsString::from("--audio-quality=not-a-quality")]).unwrap();
+
+        let result = profile_store::select_stored_profile(
+            &std::collections::BTreeMap::new(),
+            None,
+            &overrides,
+        );
+
+        assert!(matches!(
+            result,
+            Err(profile_store::ProfileStoreError::Selection(
+                profile_selection::ProfileSelectionError::InvalidSettings(
+                    profile_settings::SettingError::InvalidValue(name)
+                )
+            )) if name == "audio-quality"
+        ));
+    }
+
+    #[test]
     fn audio_equals_syntax_and_separate_values_share_precedence() {
         let (remaining, overrides) = extract_audio_overrides(&[
             OsString::from("--audio-format=mp3"),
