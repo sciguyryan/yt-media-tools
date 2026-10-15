@@ -29,9 +29,9 @@ The following contracts are confirmed from `yt-download.py` in this combined arc
 
 | Python command | Python behaviour | Rust status | Proposed ownership |
 | --- | --- | --- | --- |
-| `--schema-json` | Must be the only CLI argument; emits the versioned Downloader machine contract and profile JSON Schema. | Unsupported | Part 3, after a schema parity fixture is established. |
-| `--capabilities` | Must be the only CLI argument; emits a human-readable capabilities report. | Unsupported | Part 3 for command validation; capability discovery and content may depend on Parts 4 and 5. |
-| `--capabilities-json` | Must be the only CLI argument; emits a sorted, indented JSON capabilities payload. Cannot be combined with `--capabilities`. | Unsupported | Part 3 for command validation; capability content may depend on Parts 4 and 5. |
+| `--schema-json` | Must be the only CLI argument; emits the versioned Downloader machine contract and profile JSON Schema. | Unsupported | **Part 3 required:** capture the Python schema as a reference fixture, implement the same versioned contract and test exact machine semantics before closure. |
+| `--capabilities` | Must be the only CLI argument; emits a human-readable capabilities report. | Unsupported | **Parts 4-5 deferred content:** Part 3 must reject incompatible arguments; keep the report guarded until native capability facts are available. |
+| `--capabilities-json` | Must be the only CLI argument; emits a sorted, indented JSON capabilities payload. Cannot be combined with `--capabilities`. | Unsupported | **Parts 4-5 deferred content:** Part 3 must reject incompatible arguments; keep the report guarded until native capability facts are available. |
 | `--validate-config [FILE]` | Optional path. When omitted, validates the resolved defaults path. Emits a sorted, indented JSON validation result; validation errors are parser errors. | Implemented subset | Part 3 parity review for implicit-path resolution, diagnostics and machine output. |
 | `--profile-tree [NAME]` | Optional focus name. Uses the resolved defaults path, returns an informative message if implicit defaults are absent, and renders a validated hierarchy with a terminal-encoding-dependent ASCII fallback. | Implemented subset | Part 3 terminal-encoding and diagnostics review. |
 | `--list-profiles` / `--list-parameters` | Lists names from resolved defaults and handles absent implicit defaults without failure. | Implemented subset | Part 3 parity review. |
@@ -77,3 +77,11 @@ The executable now supports explicit and implicit configuration validation and p
 `--schema-json`, `--capabilities` and `--capabilities-json` remain deliberately guarded. Schema publication needs an independently verified contract fixture; capabilities reporting also depends on later native backend and execution architecture. These cannot be silently counted as complete Part 3 behaviour. Closure requires an explicit decision on whether schema parity remains in Part 3 and whether capability content belongs to the later execution/backend parts.
 
 The remaining Python CLI option inventory, parser-level value errors and precedence interactions also require review before claiming complete Part 3 parity. The existing temporary-file profile-tree regression is useful coverage, but it is not a complete differential test of the Python and Rust CLIs. No native download execution is enabled by this work.
+
+## Inspection-command ownership decision
+
+Part 3 owns the complete parse-only CLI contract, typed profile configuration, validation, precedence, hierarchy inspection and configuration schema publication. In particular, `--schema-json` is not an execution-backend feature: it must publish a compatible, versioned machine contract and profile schema before Part 3 closes. Compare the actual Python output against a deterministic fixture rather than constructing an approximate schema from the Rust settings registry.
+
+Part 3 also owns the *argument constraints* of `--capabilities` and `--capabilities-json`, including their mutually exclusive, standalone inspection behaviour. Their *report content* is explicitly deferred to the execution and metadata-backend implementation in Parts 4 and 5. The guarded commands must continue to fail closed until real native capability data is available; this deferral does not grant permission to return placeholder success output.
+
+The remaining Part 3 gate therefore includes: a verified schema contract, a complete argument inventory with explicit disposition for execution-only options, terminal/diagnostic parity for profile inspection, deterministic configuration and precedence regressions, and the user's local Cargo acceptance. This ownership decision does not itself certify those items or close Part 3.
