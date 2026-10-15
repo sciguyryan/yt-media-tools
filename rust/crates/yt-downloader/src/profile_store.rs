@@ -193,6 +193,29 @@ pub fn validate_config_path(path: &Path) -> Result<ConfigValidation, ProfileStor
     })
 }
 
+/// Render successful validation using the Python machine-output field names.
+///
+/// Version identifiers are explicit inputs: the Rust crate version must not be
+/// mistaken for the authoritative Python Downloader contract version.
+pub fn config_validation_json(
+    validation: &ConfigValidation,
+    path: &Path,
+    schema_version: u64,
+    contract_version: u64,
+    downloader_version: &str,
+) -> Value {
+    serde_json::json!({
+        "kind": "yt-download-config-validation",
+        "schema_version": schema_version,
+        "contract_version": contract_version,
+        "downloader_version": downloader_version,
+        "path": path.to_string_lossy(),
+        "valid": true,
+        "profile_count": validation.profile_count,
+        "profiles": validation.profiles,
+    })
+}
+
 /// Select a requested profile, or the conventional `default` profile if present.
 ///
 /// Explicit settings take precedence over the selected profile. If there is no
@@ -364,6 +387,29 @@ pub fn select_from_cli_store(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn validation_json_preserves_the_python_field_contract() {
+        let result = ConfigValidation {
+            profile_count: 2,
+            profiles: vec!["default".to_owned(), "music".to_owned()],
+        };
+        let payload = config_validation_json(
+            &result,
+            Path::new("/tmp/example.json"),
+            3,
+            2,
+            "test-version",
+        );
+        assert_eq!(payload["kind"], "yt-download-config-validation");
+        assert_eq!(payload["schema_version"], 3);
+        assert_eq!(payload["contract_version"], 2);
+        assert_eq!(payload["downloader_version"], "test-version");
+        assert_eq!(payload["path"], "/tmp/example.json");
+        assert_eq!(payload["valid"], true);
+        assert_eq!(payload["profile_count"], 2);
+        assert_eq!(payload["profiles"], serde_json::json!(["default", "music"]));
+    }
+
     #[test]
     fn config_validation_requires_an_existing_file() {
         let path = std::env::temp_dir().join(format!(
