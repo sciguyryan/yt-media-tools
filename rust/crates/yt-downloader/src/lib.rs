@@ -116,102 +116,24 @@ where
     })
 }
 
-/// Separate the first supported download-setting overrides from profile options.
+/// Select which established argument family the shared extractor recognises.
 ///
-/// Python argparse honours the last occurrence of the mutually exclusive
-/// boolean flags. Other settings remain unsupported until their exact CLI
-/// syntax and precedence have been reviewed.
-pub fn extract_cli_overrides(
-    args: &[OsString],
-) -> (Vec<OsString>, serde_json::Map<String, serde_json::Value>) {
-    let mut remaining = Vec::new();
-    let mut overrides = serde_json::Map::new();
-
-    for argument in args {
-        let setting = match argument.to_str() {
-            Some("--playlist") => Some(("playlist", true)),
-            Some("--no-playlist") => Some(("playlist", false)),
-            Some("--audio-only") => Some(("audio-only", true)),
-            Some("--no-audio-only") => Some(("audio-only", false)),
-            Some("--embed-metadata") => Some(("embed-metadata", true)),
-            Some("--no-embed-metadata") => Some(("embed-metadata", false)),
-            Some("--embed-chapters") => Some(("embed-chapters", true)),
-            Some("--no-embed-chapters") => Some(("embed-chapters", false)),
-            Some("--embed-thumbnail") => Some(("embed-thumbnail", true)),
-            Some("--no-embed-thumbnail") => Some(("embed-thumbnail", false)),
-            _ => None,
-        };
-
-        if let Some((name, enabled)) = setting {
-            overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
-        } else {
-            remaining.push(argument.clone());
-        }
-    }
-
-    (remaining, overrides)
+/// Compatibility wrappers deliberately leave other families untouched so
+/// their callers retain the original argument ordering and error contracts.
+#[derive(Clone, Copy)]
+enum OverrideFamily {
+    Boolean,
+    Audio,
+    All,
 }
 
-/// Extract value-taking audio conversion options without consuming unrelated arguments.
+/// Extract supported overrides in command-line order.
 ///
-/// A missing value is reported before Clap parses profile arguments. Explicit
-/// audio conversion settings take precedence over the stored profile values.
-pub fn extract_audio_overrides(
+/// Each explicitly supplied setting replaces its previous value. Unknown
+/// arguments are retained for the next parsing stage, not silently discarded.
+fn extract_overrides(
     args: &[OsString],
-) -> Result<(Vec<OsString>, serde_json::Map<String, serde_json::Value>), ParseError> {
-    let mut remaining = Vec::new();
-    let mut overrides = serde_json::Map::new();
-    let mut arguments = args.iter();
-
-    while let Some(argument) = arguments.next() {
-        let text = argument.to_str();
-        let (name, inline_value) = match text {
-            Some("--audio-format") => (Some("audio-format"), None),
-            Some("--audio-quality") => (Some("audio-quality"), None),
-            Some(value) if value.starts_with("--audio-format=") => {
-                (Some("audio-format"), value.strip_prefix("--audio-format="))
-            }
-            Some(value) if value.starts_with("--audio-quality=") => (
-                Some("audio-quality"),
-                value.strip_prefix("--audio-quality="),
-            ),
-            _ => (None, None),
-        };
-
-        if let Some(name) = name {
-            let option = if name == "audio-format" {
-                "--audio-format"
-            } else {
-                "--audio-quality"
-            };
-            let value = match inline_value {
-                Some(value) => value,
-                None => {
-                    let next = arguments.next().ok_or(ParseError::MissingValue(option))?;
-                    next.to_str().ok_or(ParseError::UnsupportedOption)?
-                }
-            };
-
-            if value.is_empty() || value.starts_with('-') {
-                return Err(ParseError::MissingValue(option));
-            }
-
-            overrides.insert(name.to_owned(), serde_json::Value::String(value.to_owned()));
-        } else {
-            remaining.push(argument.clone());
-        }
-    }
-
-    Ok((remaining, overrides))
-}
-
-/// Extract supported boolean and audio-value settings in one ordered pass.
-///
-/// The remaining arguments retain their original order for Clap. Each setting
-/// is replaced only when explicitly supplied, with its final occurrence taking
-/// precedence over earlier occurrences of the same setting.
-pub fn extract_download_overrides(
-    args: &[OsString],
+    family: OverrideFamily,
 ) -> Result<(Vec<OsString>, serde_json::Map<String, serde_json::Value>), ParseError> {
     let mut remaining = Vec::new();
     let mut overrides = serde_json::Map::new();
@@ -233,7 +155,9 @@ pub fn extract_download_overrides(
             _ => None,
         };
 
-        if let Some((name, enabled)) = boolean_setting {
+        if !matches!(family, OverrideFamily::Audio)
+            && let Some((name, enabled)) = boolean_setting
+        {
             overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
             continue;
         }
@@ -250,7 +174,9 @@ pub fn extract_download_overrides(
             _ => None,
         };
 
-        if let Some((name, inline_value)) = audio_setting {
+        if !matches!(family, OverrideFamily::Boolean)
+            && let Some((name, inline_value)) = audio_setting
+        {
             let option = if name == "audio-format" {
                 "--audio-format"
             } else {
@@ -276,6 +202,33 @@ pub fn extract_download_overrides(
     }
 
     Ok((remaining, overrides))
+}
+
+/// Extract boolean settings while leaving audio-value options untouched.
+///
+/// This infallible compatibility interface recognises only boolean switches.
+pub fn extract_cli_overrides(
+    args: &[OsString],
+) -> (Vec<OsString>, serde_json::Map<String, serde_json::Value>) {
+    // Boolean extraction cannot fail because it never consumes a value.
+    match extract_overrides(args, OverrideFamily::Boolean) {
+        Ok(result) => result,
+        Err(_) => unreachable!("boolean override extraction does not parse values"),
+    }
+}
+
+/// Extract audio conversion values while leaving boolean options untouched.
+pub fn extract_audio_overrides(
+    args: &[OsString],
+) -> Result<(Vec<OsString>, serde_json::Map<String, serde_json::Value>), ParseError> {
+    extract_overrides(args, OverrideFamily::Audio)
+}
+
+/// Extract all supported download-setting overrides in one ordered pass.
+pub fn extract_download_overrides(
+    args: &[OsString],
+) -> Result<(Vec<OsString>, serde_json::Map<String, serde_json::Value>), ParseError> {
+    extract_overrides(args, OverrideFamily::All)
 }
 
 /// Format a CLI parsing failure consistently across option families.
@@ -683,6 +636,44 @@ mod tests {
             ]),
             Err(ParseError::MissingValue("--audio-quality")),
         );
+    }
+
+    #[test]
+    fn compatibility_extractors_preserve_other_argument_families() {
+        let args = [
+            OsString::from("--audio-format=flac"),
+            OsString::from("--no-playlist"),
+            OsString::from("--audio-quality"),
+            OsString::from("192K"),
+            OsString::from("--embed-thumbnail"),
+        ];
+
+        let (boolean_remaining, boolean_overrides) = extract_cli_overrides(&args);
+        assert_eq!(boolean_overrides["playlist"], false);
+        assert_eq!(boolean_overrides["embed-thumbnail"], true);
+        assert_eq!(
+            boolean_remaining,
+            [
+                OsString::from("--audio-format=flac"),
+                OsString::from("--audio-quality"),
+                OsString::from("192K"),
+            ]
+        );
+
+        let (audio_remaining, audio_overrides) = extract_audio_overrides(&args).unwrap();
+        assert_eq!(audio_overrides["audio-format"], "flac");
+        assert_eq!(audio_overrides["audio-quality"], "192K");
+        assert_eq!(
+            audio_remaining,
+            [
+                OsString::from("--no-playlist"),
+                OsString::from("--embed-thumbnail"),
+            ]
+        );
+
+        let (all_remaining, all_overrides) = extract_download_overrides(&args).unwrap();
+        assert!(all_remaining.is_empty());
+        assert_eq!(all_overrides.len(), 4);
     }
 
     #[test]
