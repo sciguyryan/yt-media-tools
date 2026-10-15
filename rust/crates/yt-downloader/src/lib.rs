@@ -164,28 +164,36 @@ pub fn extract_audio_overrides(
     let mut arguments = args.iter();
 
     while let Some(argument) = arguments.next() {
-        let name = match argument.to_str() {
-            Some("--audio-format") => Some("audio-format"),
-            Some("--audio-quality") => Some("audio-quality"),
-            _ => None,
+        let text = argument.to_str();
+        let (name, inline_value) = match text {
+            Some("--audio-format") => (Some("audio-format"), None),
+            Some("--audio-quality") => (Some("audio-quality"), None),
+            Some(value) if value.starts_with("--audio-format=") => {
+                (Some("audio-format"), value.strip_prefix("--audio-format="))
+            }
+            Some(value) if value.starts_with("--audio-quality=") => (
+                Some("audio-quality"),
+                value.strip_prefix("--audio-quality="),
+            ),
+            _ => (None, None),
         };
 
         if let Some(name) = name {
-            let value =
-                arguments
-                    .next()
-                    .ok_or(ParseError::MissingValue(if name == "audio-format" {
-                        "--audio-format"
-                    } else {
-                        "--audio-quality"
-                    }))?;
-            let value = value.to_str().ok_or(ParseError::UnsupportedOption)?;
-            if value.starts_with('-') {
-                return Err(ParseError::MissingValue(if name == "audio-format" {
-                    "--audio-format"
-                } else {
-                    "--audio-quality"
-                }));
+            let option = if name == "audio-format" {
+                "--audio-format"
+            } else {
+                "--audio-quality"
+            };
+            let value = match inline_value {
+                Some(value) => value,
+                None => {
+                    let next = arguments.next().ok_or(ParseError::MissingValue(option))?;
+                    next.to_str().ok_or(ParseError::UnsupportedOption)?
+                }
+            };
+
+            if value.is_empty() || value.starts_with('-') {
+                return Err(ParseError::MissingValue(option));
             }
 
             overrides.insert(name.to_owned(), serde_json::Value::String(value.to_owned()));
@@ -389,6 +397,53 @@ mod tests {
             assert!(stdout.is_empty());
             assert_eq!(stderr, expected);
         }
+    }
+
+    #[test]
+    fn audio_equals_syntax_and_separate_values_share_precedence() {
+        let (remaining, overrides) = extract_audio_overrides(&[
+            OsString::from("--audio-format=mp3"),
+            OsString::from("--audio-quality"),
+            OsString::from("192K"),
+            OsString::from("--audio-format"),
+            OsString::from("flac"),
+            OsString::from("--audio-quality=0"),
+            OsString::from("--profile"),
+            OsString::from("music"),
+        ])
+        .unwrap();
+
+        assert_eq!(overrides["audio-format"], "flac");
+        assert_eq!(overrides["audio-quality"], "0");
+        assert_eq!(
+            remaining,
+            [OsString::from("--profile"), OsString::from("music")]
+        );
+    }
+
+    #[test]
+    fn audio_empty_inline_values_are_rejected() {
+        for (argument, option) in [
+            ("--audio-format=", "--audio-format"),
+            ("--audio-quality=", "--audio-quality"),
+        ] {
+            assert_eq!(
+                extract_audio_overrides(&[OsString::from(argument)]),
+                Err(ParseError::MissingValue(option)),
+            );
+        }
+    }
+
+    #[test]
+    fn audio_equals_values_do_not_swallow_unrelated_options() {
+        let (remaining, overrides) = extract_audio_overrides(&[
+            OsString::from("--audio-format=opus"),
+            OsString::from("--unknown"),
+        ])
+        .unwrap();
+
+        assert_eq!(overrides["audio-format"], "opus");
+        assert_eq!(remaining, [OsString::from("--unknown")]);
     }
 
     #[test]
