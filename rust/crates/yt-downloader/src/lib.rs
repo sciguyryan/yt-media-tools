@@ -223,7 +223,17 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 Err(error) => return (
                     1,
                     String::new(),
-                    format!("yt-download-rs: {error:?}\\n"),
+                    match error {
+                        ParseError::MissingValue(option) => {
+                            format!("yt-download-rs: missing value for {option}\n")
+                        }
+                        ParseError::InvalidProfileName => {
+                            "yt-download-rs: invalid profile name\n".to_owned()
+                        }
+                        ParseError::UnsupportedOption => {
+                            "yt-download-rs: unsupported or invalid arguments\n".to_owned()
+                        }
+                    },
                 ),
             };
             let (profile_arguments, boolean_overrides) = extract_cli_overrides(&value_arguments);
@@ -356,6 +366,29 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("cannot be combined"));
+    }
+
+    #[test]
+    fn missing_audio_values_have_human_readable_diagnostics() {
+        for (args, expected) in [
+            (
+                vec![OsString::from("--audio-format")],
+                "yt-download-rs: missing value for --audio-format\n",
+            ),
+            (
+                vec![
+                    OsString::from("--audio-quality"),
+                    OsString::from("--profile"),
+                    OsString::from("example"),
+                ],
+                "yt-download-rs: missing value for --audio-quality\n",
+            ),
+        ] {
+            let (status, stdout, stderr) = experimental_cli(&args);
+            assert_eq!(status, 1);
+            assert!(stdout.is_empty());
+            assert_eq!(stderr, expected);
+        }
     }
 
     #[test]
