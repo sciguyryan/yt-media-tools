@@ -1449,6 +1449,84 @@ mod tests {
     }
 
     #[test]
+    fn profile_tree_cli_uses_real_temporary_configuration_in_both_orders() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let path = std::env::temp_dir().join(format!(
+            "yt-download-rs-tree-{}-{}.json",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed),
+        ));
+        let document = serde_json::json!({
+            "version": 3,
+            "$defaults": {"playlist": false},
+            "profiles": {
+                "base": {"audio-format": "mp3"},
+                "child": {"parent": "base", "audio-quality": "128K"}
+            }
+        });
+        std::fs::write(&path, document.to_string()).unwrap();
+        let filename = path.clone().into_os_string();
+        let commands = [
+            vec![
+                OsString::from("--profile-tree"),
+                OsString::from("--defaults"),
+                filename.clone(),
+            ],
+            vec![
+                OsString::from("-d"),
+                filename.clone(),
+                OsString::from("--profile-tree"),
+            ],
+        ];
+        for args in commands {
+            let (status, stdout, stderr) = experimental_cli(&args);
+            assert_eq!(status, 0, "{stderr}");
+            assert!(stderr.is_empty());
+            assert_eq!(stdout, "$defaults\n└── base\n    └── child\n");
+        }
+        let commands = [
+            vec![
+                OsString::from("--profile-tree"),
+                OsString::from("child"),
+                OsString::from("-d"),
+                filename.clone(),
+            ],
+            vec![
+                OsString::from("--defaults"),
+                filename.clone(),
+                OsString::from("--profile-tree"),
+                OsString::from("child"),
+            ],
+        ];
+        for args in commands {
+            let (status, stdout, stderr) = experimental_cli(&args);
+            assert_eq!(status, 0, "{stderr}");
+            assert!(stderr.is_empty());
+            assert_eq!(stdout, "$defaults\n└── base\n    └── child\n");
+        }
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--profile-tree"),
+            OsString::from("unknown"),
+            OsString::from("--defaults"),
+            filename.clone(),
+        ]);
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("unknown profile"));
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--profile-tree"),
+            OsString::from("--defaults"),
+            filename.clone(),
+            OsString::from("--audio-only"),
+        ]);
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("cannot be combined"));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
     fn positional_download_target_fails_as_unimplemented() {
         let (status, stdout, stderr) =
             experimental_cli(&[OsString::from("https://example.invalid/video")]);
