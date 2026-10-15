@@ -85,6 +85,23 @@ where
         }
     }
 
+    // A profile or defaults option followed by another switch has no value.
+    // Diagnose this before Clap can classify the following switch as an
+    // unrelated argument error. Do not interpret equals-form values here.
+    for pair in arguments.windows(2) {
+        let option = match pair[0].to_str() {
+            Some("-p" | "--profile" | "--parameter-profile") => Some("--profile"),
+            Some("-d" | "--defaults") => Some("--defaults"),
+            _ => None,
+        };
+
+        if let Some(option) = option
+            && pair[1].to_str().is_some_and(|value| value.starts_with('-'))
+        {
+            return Err(ParseError::MissingValue(option));
+        }
+    }
+
     let input = std::iter::once(OsString::from("yt-download-rs")).chain(arguments);
     let matches = command.try_get_matches_from(input).map_err(|error| {
         use clap::error::ErrorKind;
@@ -357,6 +374,50 @@ mod tests {
         .unwrap();
         assert_eq!(options.profile, Some(OsString::from("4k")));
         assert_eq!(options.defaults, Some(OsString::from("custom.json")));
+    }
+
+    #[test]
+    fn profile_values_cannot_consume_following_switches() {
+        for (arguments, option) in [
+            (vec!["--profile", "--list-profiles"], "--profile"),
+            (
+                vec!["--parameter-profile", "--defaults", "config.json"],
+                "--profile",
+            ),
+            (vec!["-p", "--audio-format"], "--profile"),
+            (vec!["--defaults", "--profile", "music"], "--defaults"),
+            (vec!["-d", "--list-parameters"], "--defaults"),
+        ] {
+            assert_eq!(parse(&arguments), Err(ParseError::MissingValue(option)));
+        }
+    }
+
+    #[test]
+    fn profile_value_boundaries_preserve_valid_following_options() {
+        let options = parse(&[
+            "--profile",
+            "music",
+            "--defaults",
+            "config.json",
+            "--list-profiles",
+        ])
+        .unwrap();
+
+        assert_eq!(options.profile, Some(OsString::from("music")));
+        assert_eq!(options.defaults, Some(OsString::from("config.json")));
+        assert!(options.list_profiles);
+    }
+
+    #[test]
+    fn executable_reports_missing_profile_value_before_listing() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--profile"),
+            OsString::from("--list-profiles"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, "yt-download-rs: missing value for --profile\n");
     }
 
     #[test]
