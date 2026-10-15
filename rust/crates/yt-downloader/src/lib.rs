@@ -300,17 +300,25 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
         "--profile-tree",
     ];
 
-    let command = args.first()?.to_str()?;
-    let command = COMMANDS
-        .into_iter()
-        .find(|candidate| *candidate == command)?;
+    // Recognise an inspection switch even when it is not the first token.
+    // Python reserves these command modes for inspection rather than downloads.
+    // An invalid combination must never fall through to profile selection.
+    let (position, command) = args.iter().enumerate().find_map(|(position, argument)| {
+        let text = argument.to_str()?;
+        COMMANDS
+            .into_iter()
+            .find(|candidate| *candidate == text)
+            .map(|command| (position, command))
+    })?;
+
     let optional_value = matches!(command, "--validate-config" | "--profile-tree");
-    let valid = args.len() == 1
-        || (optional_value
-            && args.len() == 2
-            && args[1]
-                .to_str()
-                .is_some_and(|value| !value.starts_with('-')));
+    let valid = position == 0
+        && (args.len() == 1
+            || (optional_value
+                && args.len() == 2
+                && args[1]
+                    .to_str()
+                    .is_some_and(|value| !value.starts_with('-'))));
 
     let message = if valid {
         format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n")
@@ -437,6 +445,9 @@ mod tests {
             vec!["--capabilities", "--capabilities-json"],
             vec!["--validate-config", "--list-profiles"],
             vec!["--profile-tree", "music", "--audio-only"],
+            vec!["--profile", "music", "--schema-json"],
+            vec!["--audio-only", "--capabilities-json"],
+            vec!["--list-profiles", "--validate-config"],
         ] {
             let args = arguments
                 .into_iter()

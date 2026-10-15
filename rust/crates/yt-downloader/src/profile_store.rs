@@ -168,6 +168,31 @@ pub fn load_profiles_from_path(
     load_validated_profiles(content).map_err(ProfileStoreError::InvalidDocument)
 }
 
+/// A successful full-file validation result, independent of CLI presentation.
+///
+/// The caller supplies whether the path was explicitly requested. Validation
+/// always requires a real file, unlike implicit profile selection, which may
+/// legitimately proceed without a defaults file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigValidation {
+    /// Number of validated profiles in the file.
+    pub profile_count: usize,
+    /// Profile names in deterministic order.
+    pub profiles: Vec<String>,
+}
+
+/// Validate a complete defaults document without selecting or downloading.
+///
+/// Unlike normal implicit defaults loading, a missing file is an error here,
+/// matching the Python validation command's required-file semantics.
+pub fn validate_config_path(path: &Path) -> Result<ConfigValidation, ProfileStoreError> {
+    let profiles = load_profiles_from_path(path, true)?;
+    Ok(ConfigValidation {
+        profile_count: profiles.len(),
+        profiles: profiles.keys().cloned().collect(),
+    })
+}
+
 /// Select a requested profile, or the conventional `default` profile if present.
 ///
 /// Explicit settings take precedence over the selected profile. If there is no
@@ -339,6 +364,29 @@ pub fn select_from_cli_store(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn config_validation_requires_an_existing_file() {
+        let path = std::env::temp_dir().join(format!(
+            "yt-downloader-absent-validation-{}-{}.json",
+            std::process::id(),
+            "nonexistent"
+        ));
+        let error = validate_config_path(&path).unwrap_err();
+        assert!(matches!(error, ProfileStoreError::MissingFile));
+    }
+
+    #[test]
+    fn config_validation_rejects_invalid_json() {
+        let path = std::env::temp_dir().join(format!(
+            "yt-downloader-invalid-validation-{}.json",
+            std::process::id()
+        ));
+        std::fs::write(&path, "{invalid").unwrap();
+        let result = validate_config_path(&path);
+        let _ = std::fs::remove_file(&path);
+        assert!(matches!(result, Err(ProfileStoreError::InvalidDocument(_))));
+    }
+
     use super::*;
     use serde_json::json;
     use std::sync::atomic::{AtomicUsize, Ordering};
