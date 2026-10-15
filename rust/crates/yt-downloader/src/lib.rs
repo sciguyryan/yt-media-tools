@@ -205,6 +205,79 @@ pub fn extract_audio_overrides(
     Ok((remaining, overrides))
 }
 
+/// Extract supported boolean and audio-value settings in one ordered pass.
+///
+/// The remaining arguments retain their original order for Clap. Each setting
+/// is replaced only when explicitly supplied, with its final occurrence taking
+/// precedence over earlier occurrences of the same setting.
+pub fn extract_download_overrides(
+    args: &[OsString],
+) -> Result<(Vec<OsString>, serde_json::Map<String, serde_json::Value>), ParseError> {
+    let mut remaining = Vec::new();
+    let mut overrides = serde_json::Map::new();
+    let mut arguments = args.iter();
+
+    while let Some(argument) = arguments.next() {
+        let text = argument.to_str();
+        let boolean_setting = match text {
+            Some("--playlist") => Some(("playlist", true)),
+            Some("--no-playlist") => Some(("playlist", false)),
+            Some("--audio-only") => Some(("audio-only", true)),
+            Some("--no-audio-only") => Some(("audio-only", false)),
+            Some("--embed-metadata") => Some(("embed-metadata", true)),
+            Some("--no-embed-metadata") => Some(("embed-metadata", false)),
+            Some("--embed-chapters") => Some(("embed-chapters", true)),
+            Some("--no-embed-chapters") => Some(("embed-chapters", false)),
+            Some("--embed-thumbnail") => Some(("embed-thumbnail", true)),
+            Some("--no-embed-thumbnail") => Some(("embed-thumbnail", false)),
+            _ => None,
+        };
+
+        if let Some((name, enabled)) = boolean_setting {
+            overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
+            continue;
+        }
+
+        let audio_setting = match text {
+            Some("--audio-format") => Some(("audio-format", None)),
+            Some("--audio-quality") => Some(("audio-quality", None)),
+            Some(value) if value.starts_with("--audio-format=") => {
+                Some(("audio-format", value.strip_prefix("--audio-format=")))
+            }
+            Some(value) if value.starts_with("--audio-quality=") => {
+                Some(("audio-quality", value.strip_prefix("--audio-quality=")))
+            }
+            _ => None,
+        };
+
+        if let Some((name, inline_value)) = audio_setting {
+            let option = if name == "audio-format" {
+                "--audio-format"
+            } else {
+                "--audio-quality"
+            };
+            let value = match inline_value {
+                Some(value) => value,
+                None => {
+                    let next = arguments.next().ok_or(ParseError::MissingValue(option))?;
+                    next.to_str().ok_or(ParseError::UnsupportedOption)?
+                }
+            };
+
+            if value.is_empty() || value.starts_with('-') {
+                return Err(ParseError::MissingValue(option));
+            }
+
+            overrides.insert(name.to_owned(), serde_json::Value::String(value.to_owned()));
+            continue;
+        }
+
+        remaining.push(argument.clone());
+    }
+
+    Ok((remaining, overrides))
+}
+
 /// Format a CLI parsing failure consistently across option families.
 ///
 /// The returned message includes the executable prefix and one terminating
@@ -242,12 +315,10 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 );
             }
 
-            let (value_arguments, mut overrides) = match extract_audio_overrides(args) {
+            let (profile_arguments, overrides) = match extract_download_overrides(args) {
                 Ok(result) => result,
                 Err(error) => return (1, String::new(), describe_parse_error(&error)),
             };
-            let (profile_arguments, boolean_overrides) = extract_cli_overrides(&value_arguments);
-            overrides.extend(boolean_overrides);
             let options = match parse_profile_options(profile_arguments) {
                 Ok(options) => options,
                 Err(error) => return (1, String::new(), describe_parse_error(&error)),
@@ -558,6 +629,60 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert_eq!(stderr, "yt-download-rs: unsupported or invalid arguments\n");
+    }
+
+    #[test]
+    fn single_pass_parser_preserves_interleaved_override_precedence() {
+        let (remaining, overrides) = extract_download_overrides(&[
+            OsString::from("--audio-format=mp3"),
+            OsString::from("--no-playlist"),
+            OsString::from("--audio-format"),
+            OsString::from("flac"),
+            OsString::from("--playlist"),
+            OsString::from("--no-embed-thumbnail"),
+            OsString::from("--audio-quality=192K"),
+            OsString::from("--profile"),
+            OsString::from("music"),
+        ])
+        .unwrap();
+
+        assert_eq!(overrides["audio-format"], "flac");
+        assert_eq!(overrides["audio-quality"], "192K");
+        assert_eq!(overrides["playlist"], true);
+        assert_eq!(overrides["embed-thumbnail"], false);
+        assert_eq!(
+            remaining,
+            [OsString::from("--profile"), OsString::from("music")]
+        );
+    }
+
+    #[test]
+    fn single_pass_parser_preserves_unsupported_arguments() {
+        let (remaining, overrides) = extract_download_overrides(&[
+            OsString::from("--audio-format=opus"),
+            OsString::from("--unknown"),
+            OsString::from("--no-audio-only"),
+        ])
+        .unwrap();
+
+        assert_eq!(remaining, [OsString::from("--unknown")]);
+        assert_eq!(overrides["audio-format"], "opus");
+        assert_eq!(overrides["audio-only"], false);
+        assert_eq!(
+            parse_profile_options(remaining),
+            Err(ParseError::UnsupportedOption)
+        );
+    }
+
+    #[test]
+    fn single_pass_parser_rejects_missing_audio_value_before_boolean_flag() {
+        assert_eq!(
+            extract_download_overrides(&[
+                OsString::from("--audio-quality"),
+                OsString::from("--embed-metadata"),
+            ]),
+            Err(ParseError::MissingValue("--audio-quality")),
+        );
     }
 
     #[test]
