@@ -287,9 +287,46 @@ pub fn describe_parse_error(error: &ParseError) -> String {
     }
 }
 
+/// Recognise inspection commands before normal profile and download parsing.
+///
+/// Their Python output contracts are not implemented yet. Reject them
+/// explicitly rather than producing incomplete machine-readable output.
+fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)> {
+    const COMMANDS: [&str; 5] = [
+        "--schema-json",
+        "--capabilities",
+        "--capabilities-json",
+        "--validate-config",
+        "--profile-tree",
+    ];
+
+    let command = args.first()?.to_str()?;
+    let command = COMMANDS
+        .into_iter()
+        .find(|candidate| *candidate == command)?;
+    let optional_value = matches!(command, "--validate-config" | "--profile-tree");
+    let valid = args.len() == 1
+        || (optional_value
+            && args.len() == 2
+            && args[1]
+                .to_str()
+                .is_some_and(|value| !value.starts_with('-')));
+
+    let message = if valid {
+        format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n")
+    } else {
+        format!("yt-download-rs: {command} cannot be combined with other options\n")
+    };
+    Some((1, String::new(), message))
+}
+
 /// The current experimental CLI responses, kept pure for deterministic testing.
 /// The executable prints these responses and uses their exit status.
 pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
+    if let Some(result) = pending_inspection_command(args) {
+        return result;
+    }
+
     match args {
         [arg] if arg == "--version" => (0, format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")), String::new()),
         [arg] if arg == "--help" || arg == "-h" => (
@@ -372,6 +409,54 @@ mod tests {
 
     fn parse(args: &[&str]) -> Result<ProfileOptions, ParseError> {
         parse_profile_options(args.iter().map(OsString::from))
+    }
+
+    #[test]
+    fn inspection_commands_fail_closed_without_fake_output() {
+        for command in [
+            "--schema-json",
+            "--capabilities",
+            "--capabilities-json",
+            "--validate-config",
+            "--profile-tree",
+        ] {
+            let (status, stdout, stderr) = experimental_cli(&[OsString::from(command)]);
+            assert_eq!(status, 1);
+            assert!(stdout.is_empty());
+            assert_eq!(
+                stderr,
+                format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n")
+            );
+        }
+    }
+
+    #[test]
+    fn inspection_command_arguments_are_bounded() {
+        for arguments in [
+            vec!["--schema-json", "--profile", "music"],
+            vec!["--capabilities", "--capabilities-json"],
+            vec!["--validate-config", "--list-profiles"],
+            vec!["--profile-tree", "music", "--audio-only"],
+        ] {
+            let args = arguments
+                .into_iter()
+                .map(OsString::from)
+                .collect::<Vec<_>>();
+            let (status, stdout, stderr) = experimental_cli(&args);
+            assert_eq!(status, 1);
+            assert!(stdout.is_empty());
+            assert!(stderr.contains("cannot be combined with other options"));
+        }
+        for arguments in [
+            ["--validate-config", "defaults.json"],
+            ["--profile-tree", "music"],
+        ] {
+            let args = arguments.map(OsString::from);
+            let (status, stdout, stderr) = experimental_cli(&args);
+            assert_eq!(status, 1);
+            assert!(stdout.is_empty());
+            assert!(stderr.contains("is not yet implemented"));
+        }
     }
 
     #[test]
