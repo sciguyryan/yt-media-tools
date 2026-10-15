@@ -316,32 +316,62 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
 
 /// Render profile inheritance without invoking download execution.
 fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
-    let position = args
-        .iter()
-        .position(|argument| argument == "--profile-tree")?;
-    if position != 0
-        || args.len() > 2
-        || (args.len() == 2 && args[1].to_str().is_some_and(|value| value.starts_with('-')))
-    {
-        return Some((
-            1,
-            String::new(),
-            "yt-download-rs: --profile-tree cannot be combined with other options\n".to_owned(),
-        ));
+    if !args.iter().any(|argument| argument == "--profile-tree") {
+        return None;
     }
-    let focus = match args.get(1) {
-        Some(name) => match name.to_str() {
-            Some(name) if valid_profile_name(name) => Some(name),
+    // Inspection accepts only an optional focus and one explicit defaults
+    // path, in either order. Reject all other switches before loading files.
+    let mut focus: Option<&str> = None;
+    let mut defaults: Option<OsString> = None;
+    let mut index = 0;
+    let mut tree_seen = false;
+    while index < args.len() {
+        match args[index].to_str() {
+            Some("--profile-tree") if !tree_seen => {
+                tree_seen = true;
+                if let Some(next) = args.get(index + 1).and_then(|value| value.to_str())
+                    && !next.starts_with('-')
+                {
+                    if !valid_profile_name(next) {
+                        return Some((
+                            1,
+                            String::new(),
+                            "yt-download-rs: invalid profile name\n".to_owned(),
+                        ));
+                    }
+                    focus = Some(next);
+                    index += 1;
+                }
+            }
+            Some("--defaults" | "-d") if defaults.is_none() => {
+                let Some(value) = args.get(index + 1) else {
+                    return Some((
+                        1,
+                        String::new(),
+                        "yt-download-rs: missing value for --defaults\n".to_owned(),
+                    ));
+                };
+                if value.to_str().is_some_and(|text| text.starts_with('-')) {
+                    return Some((
+                        1,
+                        String::new(),
+                        "yt-download-rs: missing value for --defaults\n".to_owned(),
+                    ));
+                }
+                defaults = Some(value.clone());
+                index += 1;
+            }
             _ => {
                 return Some((
                     1,
                     String::new(),
-                    "yt-download-rs: invalid profile name\n".to_owned(),
+                    "yt-download-rs: --profile-tree cannot be combined with other options\n"
+                        .to_owned(),
                 ));
             }
-        },
-        None => None,
-    };
+        }
+        index += 1;
+    }
     let executable_dir = match std::env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
@@ -357,7 +387,7 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
     };
     let options = ProfileOptions {
         profile: None,
-        defaults: None,
+        defaults,
         list_profiles: false,
     };
     let (path, explicit) = profile_store::resolve_defaults_path(&options, &executable_dir);
@@ -588,6 +618,33 @@ mod tests {
                 format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n")
             );
         }
+    }
+
+    #[test]
+    fn profile_tree_accepts_explicit_defaults_in_either_order() {
+        for args in [
+            vec!["--profile-tree", "--defaults", "/no/such/tree.json"],
+            vec!["--defaults", "/no/such/tree.json", "--profile-tree"],
+            vec!["--profile-tree", "music", "-d", "/no/such/tree.json"],
+            vec!["-d", "/no/such/tree.json", "--profile-tree", "music"],
+        ] {
+            let arguments: Vec<OsString> = args.into_iter().map(OsString::from).collect();
+            let (status, stdout, stderr) = experimental_cli(&arguments);
+            assert_eq!(status, 1);
+            assert!(stdout.is_empty());
+            assert!(!stderr.contains("cannot be combined"), "{stderr}");
+            assert!(!stderr.contains("not yet implemented"), "{stderr}");
+        }
+    }
+
+    #[test]
+    fn profile_tree_rejects_duplicate_defaults() {
+        let arguments =
+            ["--profile-tree", "-d", "first.json", "-d", "second.json"].map(OsString::from);
+        let (status, stdout, stderr) = experimental_cli(&arguments);
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("cannot be combined"));
     }
 
     #[test]
