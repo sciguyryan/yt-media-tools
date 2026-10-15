@@ -25,15 +25,15 @@ The executable-facing combined Rust override extractor now rejects opposing swit
 
 ### Machine-readable and inspection commands
 
-The following contracts are confirmed from `yt-download.py` in this combined archive. They are not yet implemented by the Rust executable. Machine-readable output must not be approximated or advertised as equivalent until its schema and versioning are ported and tested.
+The following contracts are confirmed from `yt-download.py` in this combined archive. Some inspection commands remain guarded and others have partial Rust implementations. Machine-readable output must not be approximated or advertised as equivalent until its schema and versioning are ported and tested.
 
 | Python command | Python behaviour | Rust status | Proposed ownership |
 | --- | --- | --- | --- |
 | `--schema-json` | Must be the only CLI argument; emits the versioned Downloader machine contract and profile JSON Schema. | Unsupported | Part 3, after a schema parity fixture is established. |
 | `--capabilities` | Must be the only CLI argument; emits a human-readable capabilities report. | Unsupported | Part 3 for command validation; capability discovery and content may depend on Parts 4 and 5. |
 | `--capabilities-json` | Must be the only CLI argument; emits a sorted, indented JSON capabilities payload. Cannot be combined with `--capabilities`. | Unsupported | Part 3 for command validation; capability content may depend on Parts 4 and 5. |
-| `--validate-config [FILE]` | Optional path. When omitted, validates the resolved defaults path. Emits a sorted, indented JSON validation result; validation errors are parser errors. | Unsupported | Part 3, using existing profile loading and validation, subject to exact output parity. |
-| `--profile-tree [NAME]` | Optional focus name. Uses the resolved defaults path, returns an informative message if implicit defaults are absent, and renders a validated hierarchy with a terminal-encoding-dependent ASCII fallback. | Unsupported | Part 3, after hierarchy and formatting contracts are verified. |
+| `--validate-config [FILE]` | Optional path. When omitted, validates the resolved defaults path. Emits a sorted, indented JSON validation result; validation errors are parser errors. | Implemented subset | Part 3 parity review for implicit-path resolution, diagnostics and machine output. |
+| `--profile-tree [NAME]` | Optional focus name. Uses the resolved defaults path, returns an informative message if implicit defaults are absent, and renders a validated hierarchy with a terminal-encoding-dependent ASCII fallback. | Implemented subset | Part 3 terminal-encoding and diagnostics review. |
 | `--list-profiles` / `--list-parameters` | Lists names from resolved defaults and handles absent implicit defaults without failure. | Implemented subset | Part 3 parity review. |
 
 The Python entry point handles `--schema-json`, `--capabilities` and `--capabilities-json` before normal configuration loading and explicitly requires their argument to be used alone. It handles `--validate-config` before profile selection and handles `--profile-tree` before ordinary listing. The ordering is significant: these commands should not inadvertently require a selected download profile or attempt a download.
@@ -62,10 +62,18 @@ Part 3 is **not ready to close**. It can be proposed for closure only when:
 4. Local formatting, Clippy and Cargo tests pass against the exact candidate package.
 5. The user explicitly accepts Part 3 closure.
 
-Self-note: the Python yt-dlp renaming plugin **must** remain available and behaviourally compatible at the eventual Rust cutover. That requirement extends beyond Part 3 and is not waived by its closure.
+The Python yt-dlp renaming plugin must remain available and behaviourally compatible at the eventual Rust cutover. That requirement extends beyond Part 3 and is not waived by its closure.
 
 ## Profile-tree parity review
 
 The Rust hierarchy renderer follows the Python `profile_tree()` implementation for deterministic sibling sorting, Unicode and ASCII connectors, root grouping, and focused ancestry. Document-level `$defaults` is displayed only for profile document version 3, matching the Python condition. The Rust executable currently selects Unicode connectors unconditionally, whereas Python falls back to ASCII when stdout encoding is not UTF-based. Terminal encoding selection remains an explicit Part 3 compatibility item.
 
 The Rust CLI accepts `--profile-tree [NAME]` with an optional `--defaults FILE` or `-d FILE` in either argument order. The executable-facing regression suite exercises both orders using a real temporary version 3 configuration file, including focused ancestry, unknown-profile diagnostics and rejection of unrelated download switches. The remaining terminal-encoding fallback and broader inspection-command inventory are still subject to reconciliation.
+
+## Final Part 3 reconciliation findings
+
+The executable now supports explicit and implicit configuration validation and profile-tree inspection, including `--defaults` in either order for the tree command. Their implementation is not equivalent to certifying every Python diagnostic, schema field, terminal encoding or deployment path. In particular, the implicit Rust defaults path is executable-relative rather than Python-script-relative, and the Rust tree renderer currently uses Unicode connectors without Python's encoding-dependent ASCII fallback.
+
+`--schema-json`, `--capabilities` and `--capabilities-json` remain deliberately guarded. Schema publication needs an independently verified contract fixture; capabilities reporting also depends on later native backend and execution architecture. These cannot be silently counted as complete Part 3 behaviour. Closure requires an explicit decision on whether schema parity remains in Part 3 and whether capability content belongs to the later execution/backend parts.
+
+The remaining Python CLI option inventory, parser-level value errors and precedence interactions also require review before claiming complete Part 3 parity. The existing temporary-file profile-tree regression is useful coverage, but it is not a complete differential test of the Python and Rust CLIs. No native download execution is enabled by this work.

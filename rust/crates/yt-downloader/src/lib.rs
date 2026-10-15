@@ -1454,6 +1454,7 @@ mod tests {
     fn profile_tree_cli_uses_real_temporary_configuration_in_both_orders() {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static NEXT: AtomicUsize = AtomicUsize::new(0);
+
         let path = std::env::temp_dir().join(format!(
             "yt-download-rs-tree-{}-{}.json",
             std::process::id(),
@@ -1468,6 +1469,7 @@ mod tests {
             }
         });
         std::fs::write(&path, document.to_string()).unwrap();
+
         let filename = path.clone().into_os_string();
         let commands = [
             vec![
@@ -1481,6 +1483,7 @@ mod tests {
                 OsString::from("--profile-tree"),
             ],
         ];
+
         for args in commands {
             let (status, stdout, stderr) = experimental_cli(&args);
             assert_eq!(status, 0, "{stderr}");
@@ -1502,6 +1505,7 @@ mod tests {
                 OsString::from("child"),
             ],
         ];
+
         for args in commands {
             let (status, stdout, stderr) = experimental_cli(&args);
             assert_eq!(status, 0, "{stderr}");
@@ -1518,6 +1522,7 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("unknown profile"));
+
         let (status, stdout, stderr) = experimental_cli(&[
             OsString::from("--profile-tree"),
             OsString::from("--defaults"),
@@ -1527,6 +1532,7 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("cannot be combined"));
+
         std::fs::remove_file(path).unwrap();
     }
 
