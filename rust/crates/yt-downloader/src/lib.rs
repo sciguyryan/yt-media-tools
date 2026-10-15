@@ -445,6 +445,63 @@ mod tests {
     }
 
     #[test]
+    fn invalid_audio_values_have_exact_executable_diagnostics() {
+        for (args, setting) in [
+            (
+                vec![OsString::from("--audio-format=not-a-format")],
+                "audio-format",
+            ),
+            (
+                vec![
+                    OsString::from("--audio-quality"),
+                    OsString::from("not-a-quality"),
+                ],
+                "audio-quality",
+            ),
+        ] {
+            let (status, stdout, stderr) = experimental_cli(&args);
+
+            assert_eq!(status, 1);
+            assert!(stdout.is_empty());
+            assert_eq!(
+                stderr,
+                format!(
+                    "yt-download-rs: invalid effective profile settings: invalid value for setting: {setting}\n"
+                ),
+            );
+        }
+    }
+
+    #[test]
+    fn audio_option_boundaries_do_not_swallow_other_supported_flags() {
+        for (option, following) in [
+            ("--audio-format", "--no-playlist"),
+            ("--audio-quality", "--embed-metadata"),
+            ("--audio-format", "--profile=music"),
+        ] {
+            assert_eq!(
+                extract_audio_overrides(&[OsString::from(option), OsString::from(following)]),
+                Err(ParseError::MissingValue(option)),
+            );
+        }
+    }
+
+    #[test]
+    fn audio_value_overrides_are_rejected_during_profile_listing() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--list-profiles"),
+            OsString::from("--audio-format=flac"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert_eq!(
+            stderr,
+            "yt-download-rs: download-setting overrides cannot be combined with profile listing\n",
+        );
+    }
+
+    #[test]
     fn audio_equals_syntax_and_separate_values_share_precedence() {
         let (remaining, overrides) = extract_audio_overrides(&[
             OsString::from("--audio-format=mp3"),
