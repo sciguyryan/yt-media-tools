@@ -291,12 +291,7 @@ pub fn describe_parse_error(error: &ParseError) -> String {
 /// Their Python output contracts are not implemented yet. Reject them
 /// explicitly rather than producing incomplete machine-readable output.
 fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)> {
-    const COMMANDS: [&str; 4] = [
-        "--schema-json",
-        "--capabilities",
-        "--capabilities-json",
-        "--profile-tree",
-    ];
+    const COMMANDS: [&str; 3] = ["--schema-json", "--capabilities", "--capabilities-json"];
 
     // Recognise an inspection switch even when it is not the first token.
     // Python reserves these command modes for inspection rather than downloads.
@@ -309,14 +304,7 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
             .map(|command| (position, command))
     })?;
 
-    let optional_value = command == "--profile-tree";
-    let valid = position == 0
-        && (args.len() == 1
-            || (optional_value
-                && args.len() == 2
-                && args[1]
-                    .to_str()
-                    .is_some_and(|value| !value.starts_with('-'))));
+    let valid = position == 0 && args.len() == 1;
 
     let message = if valid {
         format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n")
@@ -324,6 +312,67 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
         format!("yt-download-rs: {command} cannot be combined with other options\n")
     };
     Some((1, String::new(), message))
+}
+
+/// Render profile inheritance without invoking download execution.
+fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
+    let position = args
+        .iter()
+        .position(|argument| argument == "--profile-tree")?;
+    if position != 0
+        || args.len() > 2
+        || (args.len() == 2 && args[1].to_str().is_some_and(|value| value.starts_with('-')))
+    {
+        return Some((
+            1,
+            String::new(),
+            "yt-download-rs: --profile-tree cannot be combined with other options\n".to_owned(),
+        ));
+    }
+    let focus = match args.get(1) {
+        Some(name) => match name.to_str() {
+            Some(name) if valid_profile_name(name) => Some(name),
+            _ => {
+                return Some((
+                    1,
+                    String::new(),
+                    "yt-download-rs: invalid profile name\n".to_owned(),
+                ));
+            }
+        },
+        None => None,
+    };
+    let executable_dir = match std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
+    {
+        Some(directory) => directory,
+        None => {
+            return Some((
+                1,
+                String::new(),
+                "yt-download-rs: cannot determine executable directory\n".to_owned(),
+            ));
+        }
+    };
+    let options = ProfileOptions {
+        profile: None,
+        defaults: None,
+        list_profiles: false,
+    };
+    let (path, explicit) = profile_store::resolve_defaults_path(&options, &executable_dir);
+    // Rust currently emits Unicode to UTF-8 terminals and captured stdout.
+    match profile_store::render_tree_from_path(&path, explicit, focus, false) {
+        Ok(output) => Some((0, output, String::new())),
+        Err(error) => Some((
+            1,
+            String::new(),
+            format!(
+                "yt-download-rs: {}\n",
+                profile_store::describe_store_error(&error, &path)
+            ),
+        )),
+    }
 }
 
 /// Validate an explicitly supplied defaults file without selecting a download.
@@ -406,6 +455,10 @@ fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)>
 /// The executable prints these responses and uses their exit status.
 pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
     if let Some(result) = explicit_config_validation(args) {
+        return result;
+    }
+
+    if let Some(result) = profile_tree_command(args) {
         return result;
     }
 
@@ -526,12 +579,7 @@ mod tests {
 
     #[test]
     fn inspection_commands_fail_closed_without_fake_output() {
-        for command in [
-            "--schema-json",
-            "--capabilities",
-            "--capabilities-json",
-            "--profile-tree",
-        ] {
+        for command in ["--schema-json", "--capabilities", "--capabilities-json"] {
             let (status, stdout, stderr) = experimental_cli(&[OsString::from(command)]);
             assert_eq!(status, 1);
             assert!(stdout.is_empty());
@@ -562,11 +610,6 @@ mod tests {
             assert!(stdout.is_empty());
             assert!(stderr.contains("cannot be combined with other options"));
         }
-        let args = ["--profile-tree", "music"].map(OsString::from);
-        let (status, stdout, stderr) = experimental_cli(&args);
-        assert_eq!(status, 1);
-        assert!(stdout.is_empty());
-        assert!(stderr.contains("is not yet implemented"));
     }
 
     #[test]

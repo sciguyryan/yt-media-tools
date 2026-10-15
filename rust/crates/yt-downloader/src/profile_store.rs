@@ -333,7 +333,10 @@ pub fn render_profile_tree(
         }
         let mut chain = vec![name.to_owned()];
         let mut current = name;
-        while let Some(Some(parent)) = parents.get(current) {
+        for _ in 0..parents.len() {
+            let Some(Some(parent)) = parents.get(current) else {
+                break;
+            };
             chain.push(parent.clone());
             current = parent;
         }
@@ -396,6 +399,42 @@ pub fn render_profile_tree(
         }
     }
     Ok(lines.join("\n"))
+}
+
+/// Load the same validated profile model used by listing, and render its tree.
+///
+/// A missing implicit defaults file follows the Python inspection convention.
+pub fn render_tree_from_path(
+    path: &Path,
+    explicit: bool,
+    focus: Option<&str>,
+    ascii_only: bool,
+) -> Result<String, ProfileStoreError> {
+    if !explicit && !path.exists() {
+        return Ok(format!(
+            "No profiles are available in {}.\n",
+            path.display()
+        ));
+    }
+    let profiles = load_profiles_from_path(path, true)?;
+    let document = fs::read_to_string(path).map_err(ProfileStoreError::Read)?;
+    let document = document.strip_prefix('\u{feff}').unwrap_or(&document);
+    let root: Value = serde_json::from_str(document).map_err(|_| {
+        ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            ProfileFileError::InvalidJson,
+        ))
+    })?;
+    let has_defaults = root.get("$defaults").is_some();
+    let listed = list_stored_profiles(&profiles);
+    let rendered =
+        render_profile_tree(&listed, has_defaults, focus, ascii_only).map_err(|name| {
+            ProfileStoreError::Selection(ProfileSelectionError::UnknownProfile(
+                name.strip_prefix("unknown profile: ")
+                    .unwrap_or(&name)
+                    .to_owned(),
+            ))
+        })?;
+    Ok(format!("{rendered}\n"))
 }
 
 /// Render the human-readable profile list used by the Python Downloader.
