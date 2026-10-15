@@ -248,7 +248,20 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
             overrides.extend(boolean_overrides);
             let options = match parse_profile_options(profile_arguments) {
                 Ok(options) => options,
-                Err(_) => return (1, String::new(), "yt-download-rs: unsupported or invalid arguments\n".to_owned()),
+                Err(error) => {
+                    let message = match error {
+                        ParseError::MissingValue(option) => {
+                            format!("yt-download-rs: missing value for {option}\n")
+                        }
+                        ParseError::InvalidProfileName => {
+                            "yt-download-rs: invalid profile name\n".to_owned()
+                        }
+                        ParseError::UnsupportedOption => {
+                            "yt-download-rs: unsupported or invalid arguments\n".to_owned()
+                        }
+                    };
+                    return (1, String::new(), message);
+                }
             };
 
             let executable_dir = match std::env::current_exe()
@@ -499,6 +512,39 @@ mod tests {
             stderr,
             "yt-download-rs: download-setting overrides cannot be combined with profile listing\n",
         );
+    }
+
+    #[test]
+    fn missing_profile_and_defaults_values_have_readable_diagnostics() {
+        for (option, expected) in [
+            ("--profile", "yt-download-rs: missing value for --profile\n"),
+            (
+                "--parameter-profile",
+                "yt-download-rs: missing value for --profile\n",
+            ),
+            ("-p", "yt-download-rs: missing value for --profile\n"),
+            (
+                "--defaults",
+                "yt-download-rs: missing value for --defaults\n",
+            ),
+            ("-d", "yt-download-rs: missing value for --defaults\n"),
+        ] {
+            let (status, stdout, stderr) = experimental_cli(&[OsString::from(option)]);
+
+            assert_eq!(status, 1, "{option}");
+            assert!(stdout.is_empty(), "{option}");
+            assert_eq!(stderr, expected, "{option}");
+        }
+    }
+
+    #[test]
+    fn unknown_profile_options_remain_rejected() {
+        let (status, stdout, stderr) =
+            experimental_cli(&[OsString::from("--not-a-profile-option")]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert_eq!(stderr, "yt-download-rs: unsupported or invalid arguments\n");
     }
 
     #[test]
