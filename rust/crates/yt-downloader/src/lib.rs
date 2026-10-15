@@ -119,7 +119,7 @@ where
 /// Separate the first supported download-setting overrides from profile options.
 ///
 /// Python argparse honours the last occurrence of the mutually exclusive
-/// playlist flags. Other settings remain unsupported until their exact CLI
+/// boolean flags. Other settings remain unsupported until their exact CLI
 /// syntax and precedence have been reviewed.
 pub fn extract_cli_overrides(
     args: &[OsString],
@@ -140,6 +140,18 @@ pub fn extract_cli_overrides(
             }
             Some("--no-audio-only") => {
                 overrides.insert("audio-only".to_owned(), serde_json::Value::Bool(false));
+            }
+            Some("--embed-metadata") => {
+                overrides.insert("embed-metadata".to_owned(), serde_json::Value::Bool(true));
+            }
+            Some("--no-embed-metadata") => {
+                overrides.insert("embed-metadata".to_owned(), serde_json::Value::Bool(false));
+            }
+            Some("--embed-chapters") => {
+                overrides.insert("embed-chapters".to_owned(), serde_json::Value::Bool(true));
+            }
+            Some("--no-embed-chapters") => {
+                overrides.insert("embed-chapters".to_owned(), serde_json::Value::Bool(false));
             }
             _ => remaining.push(argument.clone()),
         }
@@ -187,7 +199,7 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 return (
                     1,
                     String::new(),
-                    "yt-download-rs: download-setting overrides cannot be combined with profile listing\\n".to_owned(),
+                    "yt-download-rs: download-setting overrides cannot be combined with profile listing\n".to_owned(),
                 );
             }
 
@@ -261,6 +273,59 @@ mod tests {
     fn list_aliases() {
         assert!(parse(&["--list-parameters"]).unwrap().list_profiles);
         assert!(parse(&["--list-profiles"]).unwrap().list_profiles);
+    }
+
+    #[test]
+    fn embedding_overrides_follow_last_explicit_flag() {
+        let args = [
+            OsString::from("--no-embed-metadata"),
+            OsString::from("--embed-metadata"),
+            OsString::from("--embed-chapters"),
+            OsString::from("--no-embed-chapters"),
+            OsString::from("--profile"),
+            OsString::from("example"),
+        ];
+        let (remaining, overrides) = extract_cli_overrides(&args);
+
+        assert_eq!(overrides["embed-metadata"], true);
+        assert_eq!(overrides["embed-chapters"], false);
+        assert_eq!(
+            remaining,
+            [OsString::from("--profile"), OsString::from("example")],
+        );
+    }
+
+    #[test]
+    fn omitted_embedding_flags_do_not_override_profile_values() {
+        let (_, overrides) = extract_cli_overrides(&[OsString::from("--no-playlist")]);
+
+        assert!(!overrides.contains_key("embed-metadata"));
+        assert!(!overrides.contains_key("embed-chapters"));
+    }
+
+    #[test]
+    fn embedding_flags_cannot_be_combined_with_profile_listing() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--list-profiles"),
+            OsString::from("--embed-metadata"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("cannot be combined"));
+        assert!(stderr.ends_with('\n'));
+    }
+
+    #[test]
+    fn embedding_overrides_preserve_unavailable_download_boundary() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--no-embed-metadata"),
+            OsString::from("--embed-chapters"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("not yet implemented"));
     }
 
     #[test]
