@@ -128,32 +128,22 @@ pub fn extract_cli_overrides(
     let mut overrides = serde_json::Map::new();
 
     for argument in args {
-        match argument.to_str() {
-            Some("--playlist") => {
-                overrides.insert("playlist".to_owned(), serde_json::Value::Bool(true));
-            }
-            Some("--no-playlist") => {
-                overrides.insert("playlist".to_owned(), serde_json::Value::Bool(false));
-            }
-            Some("--audio-only") => {
-                overrides.insert("audio-only".to_owned(), serde_json::Value::Bool(true));
-            }
-            Some("--no-audio-only") => {
-                overrides.insert("audio-only".to_owned(), serde_json::Value::Bool(false));
-            }
-            Some("--embed-metadata") => {
-                overrides.insert("embed-metadata".to_owned(), serde_json::Value::Bool(true));
-            }
-            Some("--no-embed-metadata") => {
-                overrides.insert("embed-metadata".to_owned(), serde_json::Value::Bool(false));
-            }
-            Some("--embed-chapters") => {
-                overrides.insert("embed-chapters".to_owned(), serde_json::Value::Bool(true));
-            }
-            Some("--no-embed-chapters") => {
-                overrides.insert("embed-chapters".to_owned(), serde_json::Value::Bool(false));
-            }
-            _ => remaining.push(argument.clone()),
+        let setting = match argument.to_str() {
+            Some("--playlist") => Some(("playlist", true)),
+            Some("--no-playlist") => Some(("playlist", false)),
+            Some("--audio-only") => Some(("audio-only", true)),
+            Some("--no-audio-only") => Some(("audio-only", false)),
+            Some("--embed-metadata") => Some(("embed-metadata", true)),
+            Some("--no-embed-metadata") => Some(("embed-metadata", false)),
+            Some("--embed-chapters") => Some(("embed-chapters", true)),
+            Some("--no-embed-chapters") => Some(("embed-chapters", false)),
+            _ => None,
+        };
+
+        if let Some((name, enabled)) = setting {
+            overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
+        } else {
+            remaining.push(argument.clone());
         }
     }
 
@@ -273,6 +263,50 @@ mod tests {
     fn list_aliases() {
         assert!(parse(&["--list-parameters"]).unwrap().list_profiles);
         assert!(parse(&["--list-profiles"]).unwrap().list_profiles);
+    }
+
+    #[test]
+    fn every_boolean_override_pair_preserves_explicit_false() {
+        for (enabled, disabled, name) in [
+            ("--playlist", "--no-playlist", "playlist"),
+            ("--audio-only", "--no-audio-only", "audio-only"),
+            ("--embed-metadata", "--no-embed-metadata", "embed-metadata"),
+            ("--embed-chapters", "--no-embed-chapters", "embed-chapters"),
+        ] {
+            let (remaining, overrides) =
+                extract_cli_overrides(&[OsString::from(enabled), OsString::from(disabled)]);
+
+            assert!(remaining.is_empty());
+            assert_eq!(overrides.len(), 1);
+            assert_eq!(overrides[name], false, "{name}");
+
+            let (_, reversed) =
+                extract_cli_overrides(&[OsString::from(disabled), OsString::from(enabled)]);
+            assert_eq!(reversed[name], true, "{name}");
+        }
+    }
+
+    #[test]
+    fn unsupported_options_are_not_silently_consumed() {
+        let args = [
+            OsString::from("--embed-thumbnail"),
+            OsString::from("--no-embed-metadata"),
+            OsString::from("--unknown"),
+        ];
+        let (remaining, overrides) = extract_cli_overrides(&args);
+
+        assert_eq!(
+            remaining,
+            [
+                OsString::from("--embed-thumbnail"),
+                OsString::from("--unknown")
+            ],
+        );
+        assert_eq!(overrides["embed-metadata"], false);
+        assert_eq!(
+            parse_profile_options(remaining),
+            Err(ParseError::UnsupportedOption),
+        );
     }
 
     #[test]
