@@ -152,6 +152,51 @@ pub fn extract_cli_overrides(
     (remaining, overrides)
 }
 
+/// Extract value-taking audio conversion options without consuming unrelated arguments.
+///
+/// A missing value is reported before Clap parses profile arguments. Explicit
+/// audio conversion settings take precedence over the stored profile values.
+pub fn extract_audio_overrides(
+    args: &[OsString],
+) -> Result<(Vec<OsString>, serde_json::Map<String, serde_json::Value>), ParseError> {
+    let mut remaining = Vec::new();
+    let mut overrides = serde_json::Map::new();
+    let mut arguments = args.iter();
+
+    while let Some(argument) = arguments.next() {
+        let name = match argument.to_str() {
+            Some("--audio-format") => Some("audio-format"),
+            Some("--audio-quality") => Some("audio-quality"),
+            _ => None,
+        };
+
+        if let Some(name) = name {
+            let value =
+                arguments
+                    .next()
+                    .ok_or(ParseError::MissingValue(if name == "audio-format" {
+                        "--audio-format"
+                    } else {
+                        "--audio-quality"
+                    }))?;
+            let value = value.to_str().ok_or(ParseError::UnsupportedOption)?;
+            if value.starts_with('-') {
+                return Err(ParseError::MissingValue(if name == "audio-format" {
+                    "--audio-format"
+                } else {
+                    "--audio-quality"
+                }));
+            }
+
+            overrides.insert(name.to_owned(), serde_json::Value::String(value.to_owned()));
+        } else {
+            remaining.push(argument.clone());
+        }
+    }
+
+    Ok((remaining, overrides))
+}
+
 /// The current experimental CLI responses, kept pure for deterministic testing.
 /// The executable prints these responses and uses their exit status.
 pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
@@ -173,7 +218,16 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 );
             }
 
-            let (profile_arguments, overrides) = extract_cli_overrides(args);
+            let (value_arguments, mut overrides) = match extract_audio_overrides(args) {
+                Ok(result) => result,
+                Err(error) => return (
+                    1,
+                    String::new(),
+                    format!("yt-download-rs: {error:?}\\n"),
+                ),
+            };
+            let (profile_arguments, boolean_overrides) = extract_cli_overrides(&value_arguments);
+            overrides.extend(boolean_overrides);
             let options = match parse_profile_options(profile_arguments) {
                 Ok(options) => options,
                 Err(_) => return (1, String::new(), "yt-download-rs: unsupported or invalid arguments\n".to_owned()),
@@ -302,6 +356,57 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("cannot be combined"));
+    }
+
+    #[test]
+    fn audio_value_overrides_preserve_last_explicit_value() {
+        let args = [
+            OsString::from("--audio-format"),
+            OsString::from("mp3"),
+            OsString::from("--audio-quality"),
+            OsString::from("192K"),
+            OsString::from("--audio-format"),
+            OsString::from("flac"),
+            OsString::from("--profile"),
+            OsString::from("example"),
+        ];
+        let (remaining, overrides) = extract_audio_overrides(&args).unwrap();
+
+        assert_eq!(overrides["audio-format"], "flac");
+        assert_eq!(overrides["audio-quality"], "192K");
+        assert_eq!(
+            remaining,
+            [OsString::from("--profile"), OsString::from("example")]
+        );
+    }
+
+    #[test]
+    fn missing_audio_values_do_not_consume_following_flags() {
+        assert_eq!(
+            extract_audio_overrides(&[OsString::from("--audio-format")]),
+            Err(ParseError::MissingValue("--audio-format")),
+        );
+        assert_eq!(
+            extract_audio_overrides(&[
+                OsString::from("--audio-quality"),
+                OsString::from("--profile"),
+                OsString::from("example"),
+            ]),
+            Err(ParseError::MissingValue("--audio-quality")),
+        );
+    }
+
+    #[test]
+    fn unknown_options_remain_for_profile_argument_rejection() {
+        let (remaining, overrides) = extract_audio_overrides(&[
+            OsString::from("--audio-format"),
+            OsString::from("opus"),
+            OsString::from("--unknown"),
+        ])
+        .unwrap();
+
+        assert_eq!(overrides["audio-format"], "opus");
+        assert_eq!(remaining, [OsString::from("--unknown")]);
     }
 
     #[test]
