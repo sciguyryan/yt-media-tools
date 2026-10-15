@@ -295,6 +295,109 @@ pub fn list_stored_profiles(profiles: &BTreeMap<String, ValidatedProfile>) -> Ve
         .collect()
 }
 
+/// Render a validated profile hierarchy without loading files or selecting media.
+///
+/// The caller supplies whether the document declares `$defaults`; this is a
+/// property of the original document, not of the resolved profile settings.
+/// Unknown focus names are rejected instead of silently showing an empty tree.
+pub fn render_profile_tree(
+    profiles: &[ListedProfile],
+    has_defaults: bool,
+    focus: Option<&str>,
+    ascii_only: bool,
+) -> Result<String, String> {
+    use std::collections::BTreeMap;
+
+    let mut parents = BTreeMap::new();
+    let mut children: BTreeMap<Option<String>, Vec<String>> = BTreeMap::new();
+    for profile in profiles {
+        parents.insert(profile.name.clone(), profile.parent.clone());
+        children
+            .entry(profile.parent.clone())
+            .or_default()
+            .push(profile.name.clone());
+    }
+    for names in children.values_mut() {
+        names.sort_by_key(|name| name.case_fold().collect::<String>());
+    }
+
+    let (tee, elbow, pipe, space) = if ascii_only {
+        ("|-- ", "`-- ", "|   ", "    ")
+    } else {
+        ("├── ", "└── ", "│   ", "    ")
+    };
+
+    if let Some(name) = focus {
+        if !parents.contains_key(name) {
+            return Err(format!("unknown profile: {name}"));
+        }
+        let mut chain = vec![name.to_owned()];
+        let mut current = name;
+        while let Some(Some(parent)) = parents.get(current) {
+            chain.push(parent.clone());
+            current = parent;
+        }
+        chain.reverse();
+        if has_defaults {
+            chain.insert(0, "$defaults".to_owned());
+        }
+        let mut lines = vec![chain[0].clone()];
+        for (depth, item) in chain.iter().skip(1).enumerate() {
+            lines.push(format!("{}{elbow}{item}", space.repeat(depth)));
+        }
+        return Ok(lines.join("\n"));
+    }
+
+    fn emit(
+        parent: &str,
+        prefix: &str,
+        children: &BTreeMap<Option<String>, Vec<String>>,
+        lines: &mut Vec<String>,
+        connectors: (&str, &str, &str, &str),
+    ) {
+        let (tee, elbow, pipe, space) = connectors;
+        if let Some(kids) = children.get(&Some(parent.to_owned())) {
+            for (index, child) in kids.iter().enumerate() {
+                let last = index + 1 == kids.len();
+                lines.push(format!("{prefix}{}{child}", if last { elbow } else { tee }));
+                emit(
+                    child,
+                    &format!("{prefix}{}", if last { space } else { pipe }),
+                    children,
+                    lines,
+                    connectors,
+                );
+            }
+        }
+    }
+
+    let roots = children.get(&None).map(Vec::as_slice).unwrap_or(&[]);
+    let mut lines = Vec::new();
+    if has_defaults {
+        lines.push("$defaults".to_owned());
+    }
+    for (index, root) in roots.iter().enumerate() {
+        let last = index + 1 == roots.len();
+        if has_defaults {
+            lines.push(format!("{}{root}", if last { elbow } else { tee }));
+            emit(
+                root,
+                if last { space } else { pipe },
+                &children,
+                &mut lines,
+                (tee, elbow, pipe, space),
+            );
+        } else {
+            if index > 0 {
+                lines.push(String::new());
+            }
+            lines.push(root.clone());
+            emit(root, "", &children, &mut lines, (tee, elbow, pipe, space));
+        }
+    }
+    Ok(lines.join("\n"))
+}
+
 /// Render the human-readable profile list used by the Python Downloader.
 ///
 /// The stored names are presented without their resolved settings. Sorting is
@@ -387,6 +490,35 @@ pub fn select_from_cli_store(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn profile_tree_matches_python_hierarchy_layout() {
+        let profiles = vec![
+            ListedProfile {
+                name: "root".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "child".to_owned(),
+                settings: Map::new(),
+                parent: Some("root".to_owned()),
+            },
+        ];
+        assert_eq!(
+            render_profile_tree(&profiles, true, None, false).unwrap(),
+            "$defaults\n└── root\n    └── child"
+        );
+        assert_eq!(
+            render_profile_tree(&profiles, true, Some("child"), true).unwrap(),
+            "$defaults\n`-- root\n    `-- child"
+        );
+        assert_eq!(
+            render_profile_tree(&profiles, false, None, true).unwrap(),
+            "root\n`-- child"
+        );
+        assert!(render_profile_tree(&profiles, false, Some("missing"), false).is_err());
+    }
+
     #[test]
     fn validation_json_preserves_the_python_field_contract() {
         let result = ConfigValidation {
