@@ -424,7 +424,8 @@ pub fn render_tree_from_path(
             ProfileFileError::InvalidJson,
         ))
     })?;
-    let has_defaults = root.get("$defaults").is_some();
+    let has_defaults =
+        root.get("version").and_then(Value::as_u64) == Some(3) && root.get("$defaults").is_some();
     let listed = list_stored_profiles(&profiles);
     let rendered =
         render_profile_tree(&listed, has_defaults, focus, ascii_only).map_err(|name| {
@@ -554,6 +555,10 @@ mod tests {
         assert_eq!(
             render_profile_tree(&profiles, false, None, true).unwrap(),
             "root\n`-- child"
+        );
+        assert_eq!(
+            render_profile_tree(&profiles, false, Some("child"), false).unwrap(),
+            "root\n└── child"
         );
         assert!(render_profile_tree(&profiles, false, Some("missing"), false).is_err());
     }

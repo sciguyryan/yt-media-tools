@@ -63,3 +63,9 @@ Part 3 is **not ready to close**. It can be proposed for closure only when:
 5. The user explicitly accepts Part 3 closure.
 
 Self-note: the Python yt-dlp renaming plugin **must** remain available and behaviourally compatible at the eventual Rust cutover. That requirement extends beyond Part 3 and is not waived by its closure.
+
+## Profile-tree parity review
+
+The Rust hierarchy renderer follows the Python `profile_tree()` implementation for deterministic sibling sorting, Unicode and ASCII connectors, root grouping, and focused ancestry. Document-level `$defaults` is displayed only for profile document version 3, matching the Python condition. The Rust executable currently selects Unicode connectors unconditionally, whereas Python falls back to ASCII when stdout encoding is not UTF-based. Terminal encoding selection remains an explicit Part 3 compatibility item.
+
+The Rust CLI currently accepts `--profile-tree [NAME]` as a standalone command, while Python's argument parser also permits a resolved `--defaults FILE` alongside it. That combination is not yet implemented in Rust and must be reconciled before Part 3 closure.
