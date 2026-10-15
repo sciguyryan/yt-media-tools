@@ -205,6 +205,22 @@ pub fn extract_audio_overrides(
     Ok((remaining, overrides))
 }
 
+/// Format a CLI parsing failure consistently across option families.
+///
+/// The returned message includes the executable prefix and one terminating
+/// newline, so callers can send it directly to standard error.
+pub fn describe_parse_error(error: &ParseError) -> String {
+    match error {
+        ParseError::MissingValue(option) => {
+            format!("yt-download-rs: missing value for {option}\n")
+        }
+        ParseError::InvalidProfileName => "yt-download-rs: invalid profile name\n".to_owned(),
+        ParseError::UnsupportedOption => {
+            "yt-download-rs: unsupported or invalid arguments\n".to_owned()
+        }
+    }
+}
+
 /// The current experimental CLI responses, kept pure for deterministic testing.
 /// The executable prints these responses and uses their exit status.
 pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
@@ -228,40 +244,13 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
 
             let (value_arguments, mut overrides) = match extract_audio_overrides(args) {
                 Ok(result) => result,
-                Err(error) => return (
-                    1,
-                    String::new(),
-                    match error {
-                        ParseError::MissingValue(option) => {
-                            format!("yt-download-rs: missing value for {option}\n")
-                        }
-                        ParseError::InvalidProfileName => {
-                            "yt-download-rs: invalid profile name\n".to_owned()
-                        }
-                        ParseError::UnsupportedOption => {
-                            "yt-download-rs: unsupported or invalid arguments\n".to_owned()
-                        }
-                    },
-                ),
+                Err(error) => return (1, String::new(), describe_parse_error(&error)),
             };
             let (profile_arguments, boolean_overrides) = extract_cli_overrides(&value_arguments);
             overrides.extend(boolean_overrides);
             let options = match parse_profile_options(profile_arguments) {
                 Ok(options) => options,
-                Err(error) => {
-                    let message = match error {
-                        ParseError::MissingValue(option) => {
-                            format!("yt-download-rs: missing value for {option}\n")
-                        }
-                        ParseError::InvalidProfileName => {
-                            "yt-download-rs: invalid profile name\n".to_owned()
-                        }
-                        ParseError::UnsupportedOption => {
-                            "yt-download-rs: unsupported or invalid arguments\n".to_owned()
-                        }
-                    };
-                    return (1, String::new(), message);
-                }
+                Err(error) => return (1, String::new(), describe_parse_error(&error)),
             };
 
             let executable_dir = match std::env::current_exe()
@@ -387,6 +376,30 @@ mod tests {
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("cannot be combined"));
+    }
+
+    #[test]
+    fn parse_error_formatter_has_consistent_newline_termination() {
+        for (error, expected) in [
+            (
+                ParseError::MissingValue("--audio-format"),
+                "yt-download-rs: missing value for --audio-format\n",
+            ),
+            (
+                ParseError::MissingValue("--defaults"),
+                "yt-download-rs: missing value for --defaults\n",
+            ),
+            (
+                ParseError::InvalidProfileName,
+                "yt-download-rs: invalid profile name\n",
+            ),
+            (
+                ParseError::UnsupportedOption,
+                "yt-download-rs: unsupported or invalid arguments\n",
+            ),
+        ] {
+            assert_eq!(describe_parse_error(&error), expected);
+        }
     }
 
     #[test]
