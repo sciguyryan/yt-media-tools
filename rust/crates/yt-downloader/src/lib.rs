@@ -25,6 +25,7 @@ pub enum ParseError {
     MissingValue(&'static str),
     InvalidProfileName,
     UnsupportedOption,
+    ConflictingOptions(&'static str, &'static str),
 }
 
 pub fn valid_profile_name(name: &str) -> bool {
@@ -155,6 +156,7 @@ fn extract_overrides(
     let mut remaining = Vec::new();
     let mut overrides = serde_json::Map::new();
     let mut arguments = args.iter();
+    let mut seen_boolean = std::collections::HashMap::new();
 
     while let Some(argument) = arguments.next() {
         let text = argument.to_str();
@@ -175,6 +177,24 @@ fn extract_overrides(
         if !matches!(family, OverrideFamily::Audio)
             && let Some((name, enabled)) = boolean_setting
         {
+            // The public boolean-only compatibility wrapper is infallible and
+            // retains its original last-switch-wins behaviour. The executable's
+            // combined parser enforces Python's mutually exclusive groups.
+            if matches!(family, OverrideFamily::All) {
+                if let Some(previous) = seen_boolean.insert(name, enabled)
+                    && previous != enabled
+                {
+                    let (positive, negative) = match name {
+                        "playlist" => ("--playlist", "--no-playlist"),
+                        "audio-only" => ("--audio-only", "--no-audio-only"),
+                        "embed-metadata" => ("--embed-metadata", "--no-embed-metadata"),
+                        "embed-chapters" => ("--embed-chapters", "--no-embed-chapters"),
+                        "embed-thumbnail" => ("--embed-thumbnail", "--no-embed-thumbnail"),
+                        _ => unreachable!("only recognised boolean settings reach this branch"),
+                    };
+                    return Err(ParseError::ConflictingOptions(positive, negative));
+                }
+            }
             overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
             continue;
         }
@@ -260,6 +280,9 @@ pub fn describe_parse_error(error: &ParseError) -> String {
         ParseError::InvalidProfileName => "yt-download-rs: invalid profile name\n".to_owned(),
         ParseError::UnsupportedOption => {
             "yt-download-rs: unsupported or invalid arguments\n".to_owned()
+        }
+        ParseError::ConflictingOptions(positive, negative) => {
+            format!("yt-download-rs: conflicting options {positive} and {negative}\n")
         }
     }
 }
@@ -646,10 +669,49 @@ mod tests {
     }
 
     #[test]
+    fn executable_rejects_opposing_boolean_switches_in_both_orders() {
+        for (positive, negative) in [
+            ("--playlist", "--no-playlist"),
+            ("--audio-only", "--no-audio-only"),
+            ("--embed-metadata", "--no-embed-metadata"),
+            ("--embed-chapters", "--no-embed-chapters"),
+            ("--embed-thumbnail", "--no-embed-thumbnail"),
+        ] {
+            for (first, second) in [(positive, negative), (negative, positive)] {
+                let arguments = [OsString::from(first), OsString::from(second)];
+                assert_eq!(
+                    extract_download_overrides(&arguments),
+                    Err(ParseError::ConflictingOptions(positive, negative)),
+                );
+                let (status, stdout, stderr) = experimental_cli(&arguments);
+                assert_eq!(status, 1);
+                assert!(stdout.is_empty());
+                assert_eq!(
+                    stderr,
+                    format!("yt-download-rs: conflicting options {positive} and {negative}\n")
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn repeated_identical_boolean_switches_are_allowed() {
+        let (remaining, overrides) = extract_download_overrides(&[
+            OsString::from("--playlist"),
+            OsString::from("--playlist"),
+            OsString::from("--no-embed-thumbnail"),
+            OsString::from("--no-embed-thumbnail"),
+        ])
+        .unwrap();
+        assert!(remaining.is_empty());
+        assert_eq!(overrides["playlist"], true);
+        assert_eq!(overrides["embed-thumbnail"], false);
+    }
+
+    #[test]
     fn single_pass_parser_preserves_interleaved_override_precedence() {
         let (remaining, overrides) = extract_download_overrides(&[
             OsString::from("--audio-format=mp3"),
-            OsString::from("--no-playlist"),
             OsString::from("--audio-format"),
             OsString::from("flac"),
             OsString::from("--playlist"),

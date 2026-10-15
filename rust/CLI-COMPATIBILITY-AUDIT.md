@@ -22,7 +22,7 @@ This audit compares the experimental Rust argument surface with the Python Downl
 
 Python constructs mutually exclusive argument groups for at least the `--playlist`/`--no-playlist`, `--audio-only`/`--no-audio-only`, and `--embed-thumbnail`/`--no-embed-thumbnail` pairs. Supplying both opposing switches is therefore a Python argparse error.
 
-The current Rust override extractor instead accepts both and uses the last explicit switch. Existing Rust regression tests deliberately exercise that behaviour. This is a **known parity gap**, not a certified equivalent. Before Part 3 closes, choose and implement the Python-compatible rule, including repeated identical switches and clear diagnostics, and reconcile the older Rust tests.
+The executable-facing combined Rust override extractor now rejects opposing switches and permits repeated identical switches, matching the Python mutually exclusive group contract. The infallible public boolean-only extraction helper deliberately retains its established last-switch-wins contract for compatibility; only the combined parser used by the executable enforces mutual exclusion. Both behaviours have dedicated regression coverage.
 
 ### Machine-readable and inspection commands
 
