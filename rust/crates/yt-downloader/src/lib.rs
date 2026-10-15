@@ -137,6 +137,8 @@ pub fn extract_cli_overrides(
             Some("--no-embed-metadata") => Some(("embed-metadata", false)),
             Some("--embed-chapters") => Some(("embed-chapters", true)),
             Some("--no-embed-chapters") => Some(("embed-chapters", false)),
+            Some("--embed-thumbnail") => Some(("embed-thumbnail", true)),
+            Some("--no-embed-thumbnail") => Some(("embed-thumbnail", false)),
             _ => None,
         };
 
@@ -266,12 +268,54 @@ mod tests {
     }
 
     #[test]
+    fn thumbnail_overrides_are_independent_of_metadata_and_chapters() {
+        let (remaining, overrides) = extract_cli_overrides(&[
+            OsString::from("--embed-metadata"),
+            OsString::from("--no-embed-thumbnail"),
+            OsString::from("--embed-chapters"),
+            OsString::from("--embed-thumbnail"),
+        ]);
+
+        assert!(remaining.is_empty());
+        assert_eq!(overrides["embed-metadata"], true);
+        assert_eq!(overrides["embed-chapters"], true);
+        assert_eq!(overrides["embed-thumbnail"], true);
+    }
+
+    #[test]
+    fn thumbnail_override_is_not_inferred_from_other_embedding_flags() {
+        let (_, overrides) = extract_cli_overrides(&[
+            OsString::from("--embed-metadata"),
+            OsString::from("--no-embed-chapters"),
+        ]);
+
+        assert!(!overrides.contains_key("embed-thumbnail"));
+    }
+
+    #[test]
+    fn thumbnail_override_cannot_be_combined_with_profile_listing() {
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--list-profiles"),
+            OsString::from("--no-embed-thumbnail"),
+        ]);
+
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("cannot be combined"));
+    }
+
+    #[test]
     fn every_boolean_override_pair_preserves_explicit_false() {
         for (enabled, disabled, name) in [
             ("--playlist", "--no-playlist", "playlist"),
             ("--audio-only", "--no-audio-only", "audio-only"),
             ("--embed-metadata", "--no-embed-metadata", "embed-metadata"),
             ("--embed-chapters", "--no-embed-chapters", "embed-chapters"),
+            (
+                "--embed-thumbnail",
+                "--no-embed-thumbnail",
+                "embed-thumbnail",
+            ),
         ] {
             let (remaining, overrides) =
                 extract_cli_overrides(&[OsString::from(enabled), OsString::from(disabled)]);
@@ -295,13 +339,8 @@ mod tests {
         ];
         let (remaining, overrides) = extract_cli_overrides(&args);
 
-        assert_eq!(
-            remaining,
-            [
-                OsString::from("--embed-thumbnail"),
-                OsString::from("--unknown")
-            ],
-        );
+        assert_eq!(remaining, [OsString::from("--unknown")],);
+        assert_eq!(overrides["embed-thumbnail"], true);
         assert_eq!(overrides["embed-metadata"], false);
         assert_eq!(
             parse_profile_options(remaining),
