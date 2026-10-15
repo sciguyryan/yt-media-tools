@@ -1,14 +1,12 @@
 //! File loading and profile selection for Downloader defaults documents.
 
-use unicode_casefold::UnicodeCaseFold;
-
+use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-
-use serde_json::{Map, Value};
+use unicode_casefold::UnicodeCaseFold;
 
 use crate::ProfileOptions;
 use crate::profile_file::ProfileFileError;
@@ -317,6 +315,7 @@ pub fn render_profile_tree(
             .or_default()
             .push(profile.name.clone());
     }
+
     for names in children.values_mut() {
         names.sort_by_key(|name| name.case_fold().collect::<String>());
     }
@@ -331,6 +330,7 @@ pub fn render_profile_tree(
         if !parents.contains_key(name) {
             return Err(format!("unknown profile: {name}"));
         }
+
         let mut chain = vec![name.to_owned()];
         let mut current = name;
         for _ in 0..parents.len() {
@@ -344,6 +344,7 @@ pub fn render_profile_tree(
         if has_defaults {
             chain.insert(0, "$defaults".to_owned());
         }
+
         let mut lines = vec![chain[0].clone()];
         for (depth, item) in chain.iter().skip(1).enumerate() {
             lines.push(format!("{}{elbow}{item}", space.repeat(depth)));
@@ -379,6 +380,7 @@ pub fn render_profile_tree(
     if has_defaults {
         lines.push("$defaults".to_owned());
     }
+
     for (index, root) in roots.iter().enumerate() {
         let last = index + 1 == roots.len();
         if has_defaults {
@@ -416,6 +418,7 @@ pub fn render_tree_from_path(
             path.display()
         ));
     }
+
     let profiles = load_profiles_from_path(path, true)?;
     let document = fs::read_to_string(path).map_err(ProfileStoreError::Read)?;
     let document = document.strip_prefix('\u{feff}').unwrap_or(&document);
@@ -610,6 +613,7 @@ mod tests {
     }
 
     use super::*;
+
     use serde_json::json;
     use std::sync::atomic::{AtomicUsize, Ordering};
 

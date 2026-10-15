@@ -1,8 +1,7 @@
 //! Selection and explicit overrides for validated Downloader profiles.
 
-use std::collections::BTreeMap;
-
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 use crate::ProfileOptions;
 use crate::profile_settings::{SettingError, ValidatedProfile, validate_settings};
@@ -106,8 +105,10 @@ pub fn select_from_cli_options(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::profile_pipeline::load_validated_profiles;
+
     use serde_json::json;
+
+    use crate::profile_pipeline::load_validated_profiles;
 
     fn profiles() -> BTreeMap<String, ValidatedProfile> {
         load_validated_profiles(

@@ -1,8 +1,7 @@
 //! Validation of effective Downloader profile settings.
 
-use std::collections::BTreeMap;
-
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 use crate::profile_file::ResolvedProfile;
 
@@ -678,6 +677,7 @@ pub fn validate_profiles(
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use crate::profile_file::{parse_profile_structure, resolve_profile_structure};
 
     #[test]

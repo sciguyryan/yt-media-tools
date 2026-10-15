@@ -372,6 +372,7 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
         }
         index += 1;
     }
+
     let executable_dir = match std::env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
@@ -674,6 +675,7 @@ mod tests {
         for name in ["a", "4k", "a.b", "A_b-c", "9"] {
             assert!(valid_profile_name(name), "{name}");
         }
+
         for name in ["", ".hidden", "-bad", "a/b", "a b", "é", "x\\ny"] {
             assert!(!valid_profile_name(name), "{name:?}");
         }
@@ -1485,6 +1487,7 @@ mod tests {
             assert!(stderr.is_empty());
             assert_eq!(stdout, "$defaults\n└── base\n    └── child\n");
         }
+
         let commands = [
             vec![
                 OsString::from("--profile-tree"),
@@ -1505,6 +1508,7 @@ mod tests {
             assert!(stderr.is_empty());
             assert_eq!(stdout, "$defaults\n└── base\n    └── child\n");
         }
+
         let (status, stdout, stderr) = experimental_cli(&[
             OsString::from("--profile-tree"),
             OsString::from("unknown"),

@@ -40,6 +40,7 @@ pub fn load_validated_profiles(
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use serde_json::json;
 
     #[test]

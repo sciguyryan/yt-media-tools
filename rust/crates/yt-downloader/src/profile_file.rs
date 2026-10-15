@@ -59,6 +59,7 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
             return Err(ProfileFileError::UnknownRootKey(key.clone()));
         }
     }
+
     let values = optional_object(root, "values", ProfileFileError::InvalidValues)?;
     let defaults = optional_object(root, "$defaults", ProfileFileError::InvalidDefaults)?;
 
@@ -72,6 +73,7 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
         if !valid_profile_name(name) {
             return Err(ProfileFileError::InvalidProfileName(name.clone()));
         }
+
         let fields = raw
             .as_object()
             .ok_or_else(|| ProfileFileError::InvalidProfile(name.clone()))?;
@@ -79,12 +81,14 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
             if version != 3 {
                 return Err(ProfileFileError::InvalidParent(name.clone()));
             }
+
             let parent = parent
                 .as_str()
                 .ok_or_else(|| ProfileFileError::InvalidParent(name.clone()))?;
             if !valid_profile_name(parent) {
                 return Err(ProfileFileError::InvalidParent(name.clone()));
             }
+
             if !profiles.contains_key(parent) {
                 return Err(ProfileFileError::MissingParent(parent.to_owned()));
             }
@@ -391,6 +395,7 @@ mod tests {
                 Err(ProfileFileError::UnknownValueReference(_))
             ));
         }
+
         let raw =
             parse_profile_structure(r#"{"version":3,"profiles":{"p":{"a":"$other.a"}}}"#).unwrap();
         assert!(matches!(
