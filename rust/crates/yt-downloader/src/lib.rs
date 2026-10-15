@@ -309,7 +309,7 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
             .map(|command| (position, command))
     })?;
 
-    let optional_value = matches!(command, "--validate-config" | "--profile-tree");
+    let optional_value = command == "--profile-tree";
     let valid = position == 0
         && (args.len() == 1
             || (optional_value
@@ -328,8 +328,8 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
 
 /// Validate an explicitly supplied defaults file without selecting a download.
 ///
-/// The no-argument form remains guarded until the Python script-local defaults
-/// location has a deliberate equivalent in the Rust installation layout.
+/// The no-argument form uses the Rust executable-local defaults path, while
+/// explicit paths follow the same expansion policy as normal profile loading.
 fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)> {
     let position = args
         .iter()
@@ -345,9 +345,36 @@ fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)>
         ));
     }
 
-    let Some(path) = args.get(1).map(std::path::PathBuf::from) else {
-        return Some((1, String::new(),
-            "yt-download-rs: --validate-config without a path is not yet implemented; use yt-download.py\n".to_owned()));
+    let path = match args.get(1) {
+        Some(value) => {
+            let options = ProfileOptions {
+                profile: None,
+                defaults: Some(value.clone()),
+                list_profiles: false,
+            };
+            profile_store::resolve_defaults_path(&options, std::path::Path::new("")).0
+        }
+        None => {
+            let executable_dir = match std::env::current_exe()
+                .ok()
+                .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
+            {
+                Some(directory) => directory,
+                None => {
+                    return Some((
+                        1,
+                        String::new(),
+                        "yt-download-rs: cannot determine executable directory\n".to_owned(),
+                    ));
+                }
+            };
+            let options = ProfileOptions {
+                profile: None,
+                defaults: None,
+                list_profiles: false,
+            };
+            profile_store::resolve_defaults_path(&options, &executable_dir).0
+        }
     };
 
     match profile_store::validate_config_path(&path) {
@@ -483,11 +510,18 @@ mod tests {
     }
 
     #[test]
-    fn implicit_config_validation_remains_guarded() {
+    fn implicit_config_validation_uses_the_executable_defaults_path() {
         let (status, stdout, stderr) = experimental_cli(&[OsString::from("--validate-config")]);
-        assert_eq!(status, 1);
-        assert!(stdout.is_empty());
-        assert!(stderr.contains("without a path is not yet implemented"));
+        // The implicit path may exist on a developer machine. Either outcome
+        // must be a real validation result, never the former placeholder.
+        assert!(!stderr.contains("without a path is not yet implemented"));
+        if status == 0 {
+            assert!(stdout.contains("yt-download-config-validation"));
+            assert!(stderr.is_empty());
+        } else {
+            assert!(stdout.is_empty());
+            assert!(!stderr.is_empty());
+        }
     }
 
     #[test]
