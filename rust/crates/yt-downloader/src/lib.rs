@@ -180,20 +180,19 @@ fn extract_overrides(
             // The public boolean-only compatibility wrapper is infallible and
             // retains its original last-switch-wins behaviour. The executable's
             // combined parser enforces Python's mutually exclusive groups.
-            if matches!(family, OverrideFamily::All) {
-                if let Some(previous) = seen_boolean.insert(name, enabled)
-                    && previous != enabled
-                {
-                    let (positive, negative) = match name {
-                        "playlist" => ("--playlist", "--no-playlist"),
-                        "audio-only" => ("--audio-only", "--no-audio-only"),
-                        "embed-metadata" => ("--embed-metadata", "--no-embed-metadata"),
-                        "embed-chapters" => ("--embed-chapters", "--no-embed-chapters"),
-                        "embed-thumbnail" => ("--embed-thumbnail", "--no-embed-thumbnail"),
-                        _ => unreachable!("only recognised boolean settings reach this branch"),
-                    };
-                    return Err(ParseError::ConflictingOptions(positive, negative));
-                }
+            if matches!(family, OverrideFamily::All)
+                && let Some(previous) = seen_boolean.insert(name, enabled)
+                && previous != enabled
+            {
+                let (positive, negative) = match name {
+                    "playlist" => ("--playlist", "--no-playlist"),
+                    "audio-only" => ("--audio-only", "--no-audio-only"),
+                    "embed-metadata" => ("--embed-metadata", "--no-embed-metadata"),
+                    "embed-chapters" => ("--embed-chapters", "--no-embed-chapters"),
+                    "embed-thumbnail" => ("--embed-thumbnail", "--no-embed-thumbnail"),
+                    _ => unreachable!("only recognised boolean settings reach this branch"),
+                };
+                return Err(ParseError::ConflictingOptions(positive, negative));
             }
             overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
             continue;
@@ -292,11 +291,10 @@ pub fn describe_parse_error(error: &ParseError) -> String {
 /// Their Python output contracts are not implemented yet. Reject them
 /// explicitly rather than producing incomplete machine-readable output.
 fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)> {
-    const COMMANDS: [&str; 5] = [
+    const COMMANDS: [&str; 4] = [
         "--schema-json",
         "--capabilities",
         "--capabilities-json",
-        "--validate-config",
         "--profile-tree",
     ];
 
@@ -328,9 +326,62 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
     Some((1, String::new(), message))
 }
 
+/// Validate an explicitly supplied defaults file without selecting a download.
+///
+/// The no-argument form remains guarded until the Python script-local defaults
+/// location has a deliberate equivalent in the Rust installation layout.
+fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)> {
+    let position = args
+        .iter()
+        .position(|argument| argument == "--validate-config")?;
+    if position != 0
+        || args.len() > 2
+        || (args.len() == 2 && args[1].to_str().is_some_and(|value| value.starts_with('-')))
+    {
+        return Some((
+            1,
+            String::new(),
+            "yt-download-rs: --validate-config cannot be combined with other options\n".to_owned(),
+        ));
+    }
+
+    let Some(path) = args.get(1).map(std::path::PathBuf::from) else {
+        return Some((1, String::new(),
+            "yt-download-rs: --validate-config without a path is not yet implemented; use yt-download.py\n".to_owned()));
+    };
+
+    match profile_store::validate_config_path(&path) {
+        Ok(validation) => {
+            let resolved = std::fs::canonicalize(&path).unwrap_or(path);
+            let payload =
+                profile_store::config_validation_json(&validation, &resolved, 1, 4, "1.23.0");
+            match serde_json::to_string_pretty(&payload) {
+                Ok(json) => Some((0, format!("{json}\n"), String::new())),
+                Err(error) => Some((
+                    1,
+                    String::new(),
+                    format!("yt-download-rs: cannot serialise validation result: {error}\n"),
+                )),
+            }
+        }
+        Err(error) => Some((
+            1,
+            String::new(),
+            format!(
+                "yt-download-rs: {}\n",
+                profile_store::describe_store_error(&error, &path)
+            ),
+        )),
+    }
+}
+
 /// The current experimental CLI responses, kept pure for deterministic testing.
 /// The executable prints these responses and uses their exit status.
 pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
+    if let Some(result) = explicit_config_validation(args) {
+        return result;
+    }
+
     if let Some(result) = pending_inspection_command(args) {
         return result;
     }
@@ -420,12 +471,31 @@ mod tests {
     }
 
     #[test]
+    fn explicit_config_validation_reports_missing_file() {
+        let args = [
+            OsString::from("--validate-config"),
+            OsString::from("/nonexistent-yt-download-rs-validation.json"),
+        ];
+        let (status, stdout, stderr) = experimental_cli(&args);
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("defaults file not found"));
+    }
+
+    #[test]
+    fn implicit_config_validation_remains_guarded() {
+        let (status, stdout, stderr) = experimental_cli(&[OsString::from("--validate-config")]);
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("without a path is not yet implemented"));
+    }
+
+    #[test]
     fn inspection_commands_fail_closed_without_fake_output() {
         for command in [
             "--schema-json",
             "--capabilities",
             "--capabilities-json",
-            "--validate-config",
             "--profile-tree",
         ] {
             let (status, stdout, stderr) = experimental_cli(&[OsString::from(command)]);
@@ -458,16 +528,11 @@ mod tests {
             assert!(stdout.is_empty());
             assert!(stderr.contains("cannot be combined with other options"));
         }
-        for arguments in [
-            ["--validate-config", "defaults.json"],
-            ["--profile-tree", "music"],
-        ] {
-            let args = arguments.map(OsString::from);
-            let (status, stdout, stderr) = experimental_cli(&args);
-            assert_eq!(status, 1);
-            assert!(stdout.is_empty());
-            assert!(stderr.contains("is not yet implemented"));
-        }
+        let args = ["--profile-tree", "music"].map(OsString::from);
+        let (status, stdout, stderr) = experimental_cli(&args);
+        assert_eq!(status, 1);
+        assert!(stdout.is_empty());
+        assert!(stderr.contains("is not yet implemented"));
     }
 
     #[test]
