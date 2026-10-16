@@ -94,8 +94,12 @@ The Rust `--schema-json` command returns the canonical Python machine-contract s
 
 The committed `rust/crates/yt-downloader/fixtures/python-machine-contract.json` snapshot must remain byte-for-byte equal to the current Python Downloader `--schema-json` output. Run `python rust/tools/check_schema_fixture.py` from the repository root after Python schema changes and during Part 3 certification. The checker exits non-zero on drift and does not silently regenerate the reference. Any intentional contract change requires an independently reviewed fixture update and Rust compatibility assessment. The Rust regression test checks the embedded fixture's output, while this separate check catches drift in the Python source.
 
-The `home` crate remains pinned to 0.5.11 in the current workspace. Version 0.5.12 declares Rust 1.88 as its minimum, which is compatible with the project's Rust 1.89 baseline, but a dependency update must also regenerate and verify the lockfile, including platform-specific transitive changes. It is not part of this schema-only increment.
+The `home` manifest dependency is now pinned to 0.5.12. The packaged `rust/Cargo.lock` has not been fully resolved; regenerate and commit it with Cargo before claiming a reproducible `--locked` build. Do not manufacture transitive lockfile entries.
 
 ## Source-derived option inventory
 
 The companion `rust/PYTHON-CLI-OPTION-INVENTORY.md` enumerates the Python parser definitions and marks unresolved ownership explicitly. This is an inventory checkpoint, not a declaration that all Python switches have been ported.
+
+## CLI option ownership disposition
+
+All 116 direct Python `add_argument` definitions now have an explicit preliminary Part 3 or later-part owner in `rust/PYTHON-CLI-OPTION-INVENTORY.md`. This closes the *unassigned option inventory* task, not CLI semantic parity. The next Part 3 work must test supported parse-only switches against Python and address profile-tree encoding fallback and diagnostics.

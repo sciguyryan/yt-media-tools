@@ -124,3 +124,128 @@ This inventory is extracted from the `add_argument` calls in the packaged `yt-do
 Total parser definitions: **116**. The inventory includes positional arguments. It does not count dynamically generated parser options or options registered outside direct `add_argument` calls.
 
 Before Part 3 closure, classify every currently unmapped row by actual Python behaviour and assign it to the Rust CLI subset or a named later execution/backend part. Do not treat an unimplemented execution option as an implemented native capability.
+
+## Explicit ownership disposition
+
+The following assignments distinguish **parser accounting** from **implemented functionality**. A later-part assignment does not mean Rust currently accepts the switch, and does not authorise silently ignoring it. Until that part implements the option, the Rust CLI must reject it rather than report success. Part 3 remains responsible for ensuring the current supported subset parses consistently and for documenting each unsupported option.
+
+| Python line | Switch(es) | Assigned ownership |
+| ---: | --- | --- |
+| 782 | `targets` | Part 7: execution target; Part 3 rejects unsupported execution |
+| 788 | `-p`, `--profile`, `--parameter-profile` | Part 3: inspection/configuration contract |
+| 796 | `-d`, `--defaults` | Part 3: inspection/configuration contract |
+| 803 | `--list-profiles`, `--list-parameters` | Part 3: inspection/configuration contract |
+| 810 | `--profile-tree` | Part 3: inspection/configuration contract |
+| 817 | `--schema-json` | Part 3: inspection/configuration contract |
+| 822 | `--validate-config` | Part 3: inspection/configuration contract |
+| 829 | `--capabilities` | Part 3: parse/exclusivity; Parts 4-5: truthful report content |
+| 834 | `--capabilities-json` | Part 3: parse/exclusivity; Parts 4-5: truthful report content |
+| 839 | `-r`, `--resolution` | Part 6: media and format planning |
+| 849 | `-f`, `--format` | Part 6: media and format planning |
+| 860 | `--min-resolution` | Part 6: media and format planning |
+| 865 | `--max-resolution` | Part 6: media and format planning |
+| 870 | `--min-fps` | Part 6: media and format planning |
+| 871 | `--max-fps` | Part 6: media and format planning |
+| 872 | `--preferred-fps` | Part 6: media and format planning |
+| 875 | `--preferred-video-codec` | Part 6: media and format planning |
+| 880 | `--preferred-audio-codec` | Part 6: media and format planning |
+| 885 | `--preferred-hdr` | Part 6: media and format planning |
+| 890 | `--preferred-audio-channels` | Part 6: media and format planning |
+| 896 | `--merge-container` | Part 6: media and format planning |
+| 905 | `--audio-only` | Part 3: typed setting subset; Part 6 consumes it |
+| 912 | `--no-audio-only` | Part 3: typed setting subset; Part 6 consumes it |
+| 918 | `--audio-source-codec` | Part 6: media and format planning |
+| 923 | `--audio-source-container` | Part 6: media and format planning |
+| 929 | `--audio-source-fallback` | Part 6: media and format planning |
+| 936 | `--no-audio-source-fallback` | Part 6: media and format planning |
+| 942 | `--audio-format` | Part 3: typed setting subset; Part 6 consumes it |
+| 948 | `--audio-quality` | Part 3: typed setting subset; Part 6 consumes it |
+| 954 | `--write-subs` | Part 7: download/post-processing execution |
+| 961 | `--no-write-subs` | Part 7: download/post-processing execution |
+| 968 | `--write-auto-subs` | Part 7: download/post-processing execution |
+| 975 | `--no-write-auto-subs` | Part 7: download/post-processing execution |
+| 981 | `--sub-langs` | Part 7: download/post-processing execution |
+| 986 | `--sub-format` | Part 7: download/post-processing execution |
+| 992 | `--embed-subs` | Part 7: download/post-processing execution |
+| 999 | `--no-embed-subs` | Part 7: download/post-processing execution |
+| 1006 | `--write-thumbnail` | Part 7: download/post-processing execution |
+| 1013 | `--no-write-thumbnail` | Part 7: download/post-processing execution |
+| 1020 | `--embed-thumbnail` | Part 3: typed setting subset; Part 7 consumes it |
+| 1027 | `--no-embed-thumbnail` | Part 3: typed setting subset; Part 7 consumes it |
+| 1034 | `--write-info-json` | Part 7: download/post-processing execution |
+| 1041 | `--no-write-info-json` | Part 7: download/post-processing execution |
+| 1048 | `--embed-metadata` | Part 3: typed setting subset; Part 7 consumes it |
+| 1055 | `--no-embed-metadata` | Part 3: typed setting subset; Part 7 consumes it |
+| 1062 | `--embed-chapters` | Part 3: typed setting subset; Part 7 consumes it |
+| 1069 | `--no-embed-chapters` | Part 3: typed setting subset; Part 7 consumes it |
+| 1076 | `--sponsorblock` | Part 7: download/post-processing execution |
+| 1083 | `--no-sponsorblock` | Part 7: download/post-processing execution |
+| 1089 | `--sponsorblock-mark` | Part 7: download/post-processing execution |
+| 1094 | `--sponsorblock-remove` | Part 7: download/post-processing execution |
+| 1100 | `--live` | Part 7: live and section execution |
+| 1107 | `--no-live` | Part 7: live and section execution |
+| 1114 | `--live-from-start` | Part 7: live and section execution |
+| 1121 | `--live-edge`, `--no-live-from-start` | Part 7: live and section execution |
+| 1128 | `--wait-for-video` | Part 7: live and section execution |
+| 1133 | `--no-wait-for-video` | Part 7: live and section execution |
+| 1140 | `--write-live-chat` | Part 7: live and section execution |
+| 1147 | `--no-write-live-chat` | Part 7: live and section execution |
+| 1153 | `--chapter-section` | Part 7: live and section execution |
+| 1162 | `--time-range` | Part 7: live and section execution |
+| 1173 | `--whole-item` | Part 7: live and section execution |
+| 1178 | `--limit-rate` | Part 7: transfer/runtime controls |
+| 1183 | `--throttled-rate` | Part 7: transfer/runtime controls |
+| 1188 | `--user-agent` | Part 5: backend integration and acquisition controls |
+| 1194 | `--impersonate` | Part 5: backend integration and acquisition controls |
+| 1199 | `--no-impersonate` | Part 5: backend integration and acquisition controls |
+| 1204 | `--referer` | Part 5: backend integration and acquisition controls |
+| 1209 | `--add-header` | Part 5: backend integration and acquisition controls |
+| 1216 | `--proxy` | Part 5: backend integration and acquisition controls |
+| 1221 | `--socket-timeout` | Part 5: backend integration and acquisition controls |
+| 1227 | `--source-address` | Part 5: backend integration and acquisition controls |
+| 1233 | `--force-ipv4` | Part 5: backend integration and acquisition controls |
+| 1240 | `--force-ipv6` | Part 5: backend integration and acquisition controls |
+| 1247 | `-N`, `--concurrent-fragments` | Part 7: transfer/runtime controls |
+| 1254 | `-R`, `--retries` | Part 7: transfer/runtime controls |
+| 1260 | `--fragment-retries` | Part 7: transfer/runtime controls |
+| 1265 | `--file-access-retries` | Part 7: transfer/runtime controls |
+| 1270 | `--extractor-retries` | Part 7: transfer/runtime controls |
+| 1275 | `--retry-sleep` | Part 7: transfer/runtime controls |
+| 1281 | `--archive` | Part 7: download persistence/runtime |
+| 1287 | `--temp-path` | Part 7: download persistence/runtime |
+| 1293 | `--extractor-args` | Part 5: backend extractor integration |
+| 1299 | `--playlist-index` | Part 7: playlist/queue execution |
+| 1309 | `--playlist-range` | Part 7: playlist/queue execution |
+| 1318 | `--playlist-slice` | Part 7: playlist/queue execution |
+| 1326 | `--rev`, `--reverse-playlist` | Part 7: playlist/queue execution |
+| 1334 | `--playlist-forward`, `--no-reverse-playlist` | Part 7: playlist/queue execution |
+| 1342 | `--playlist` | Part 3: typed setting subset; Part 7 consumes it |
+| 1349 | `--no-playlist` | Part 3: typed setting subset; Part 7 consumes it |
+| 1355 | `--input-file` | Part 7: collection and cookie execution |
+| 1361 | `--collection-file` | Part 7: collection and cookie execution |
+| 1370 | `--collection-continuation-ignore` | Part 7: collection and cookie execution |
+| 1375 | `--collection-continuation-reset` | Part 7: collection and cookie execution |
+| 1380 | `--collection-continuation-status` | Part 7: collection and cookie execution |
+| 1386 | `--cookies` | Part 5: backend cookie integration |
+| 1395 | `--cookies-from-browser` | Part 5: backend cookie integration |
+| 1400 | `--no-cookies` | Part 5: backend cookie integration |
+| 1406 | `--auto-cookies` | Part 5: backend cookie integration |
+| 1413 | `--explain` | Part 4: execution-plan diagnostics |
+| 1418 | `--explain-json` | Part 4: execution-plan diagnostics |
+| 1423 | `--dry-run` | Part 4: execution-plan diagnostics |
+| 1428 | `--debug-external` | Part 4: execution-plan diagnostics |
+| 1433 | `--debug-external-unsafe` | Part 5: backend diagnostics |
+| 1439 | `--remove-completed-ids` | Part 7: queue/output completion and bookkeeping |
+| 1448 | `--remove-completed-rows` | Part 7: queue/output completion and bookkeeping |
+| 1457 | `--queue-report` | Part 7: queue/output completion and bookkeeping |
+| 1465 | `--failed-targets` | Part 7: queue/output completion and bookkeeping |
+| 1474 | `--run-manifest` | Part 7: queue/output completion and bookkeeping |
+| 1480 | `--hash-outputs` | Part 7: queue/output completion and bookkeeping |
+| 1485 | `--_remove-completed-id` | Part 7: queue/output completion and bookkeeping |
+| 1491 | `--_remove-completed-row` | Part 7: queue/output completion and bookkeeping |
+| 1497 | `--_record-collection-completion` | Part 7: queue/output completion and bookkeeping |
+| 1503 | `--_record-output` | Part 7: queue/output completion and bookkeeping |
+| 1509 | `--examples` | Part 3: informational CLI |
+| 1514 | `--version` | Part 3: informational CLI |
+
+This is a planning disposition, not a complete semantic equivalence proof. Cross-setting constraints, exact argparse error messages, and the terminal encoding fallback remain outstanding Part 3 verification work. The internal underscore-prefixed bookkeeping switches are execution-private and must not be exposed as successful no-ops.
