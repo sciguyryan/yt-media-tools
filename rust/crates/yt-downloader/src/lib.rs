@@ -349,7 +349,14 @@ fn ascii_tree_for_locale(locale: Option<&str>) -> bool {
         return false;
     };
     let locale = locale.trim();
-    locale == "C" || locale == "POSIX" || locale.eq_ignore_ascii_case("C.US-ASCII")
+    // Python selects ASCII connectors when stdout uses a non-UTF encoding.
+    // The locale is only a proxy for stdout encoding on an interactive terminal.
+    let encoding = locale
+        .rsplit_once('.')
+        .map(|(_, encoding)| encoding)
+        .unwrap_or(locale);
+    let encoding = encoding.split('@').next().unwrap_or(encoding);
+    !encoding.to_ascii_lowercase().starts_with("utf")
 }
 
 fn profile_tree_ascii_fallback() -> bool {
@@ -1623,6 +1630,9 @@ mod tests {
         assert!(ascii_tree_for_locale(Some("C.US-ASCII")));
         assert!(!ascii_tree_for_locale(Some("C.UTF-8")));
         assert!(!ascii_tree_for_locale(Some("en_GB.UTF-8")));
+        assert!(!ascii_tree_for_locale(Some("en_US.utf8")));
+        assert!(ascii_tree_for_locale(Some("en_GB.ISO-8859-1")));
+        assert!(ascii_tree_for_locale(Some("de_DE.ISO-8859-15@euro")));
         assert!(!ascii_tree_for_locale(None));
     }
 
