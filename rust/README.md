@@ -39,3 +39,7 @@ Native target handling, invocation context, side-effect-free yt-dlp planning and
 ## Target-source resolution
 
 The native `targets` module represents positional targets, standard input and batch files without invoking yt-dlp. It preserves target ordering and duplicates, recognises a lone `-` as standard input, and applies the Python Downloader's existing-file rule to a single positional target. An explicit input file cannot be combined with positional targets. Collection manifests are rejected by this module until their separate collection-resolution contract is implemented. Target resolution is a library capability only: the experimental CLI still refuses native downloads, and no execution plan or yt-dlp process integration is implied.
+
+## Invocation context
+
+The native `invocation` module combines a validated profile selection, explicit settings overrides and a resolved target source into a typed context. It preserves profile provenance and direct-target order, rejects invalid effective policy and conflicting target sources, and does not construct yt-dlp commands or start downloads. Callers must load and validate profile documents before constructing the context. Collection manifests remain unsupported by the target resolver. The executable is unchanged; planning and execution integration are separate work.
