@@ -39,7 +39,7 @@ pub struct RawProfileFile {
     pub profiles: Map<String, Value>,
 }
 
-/// Validate only the outer v2/v3 shape and the inheritance graph.
+/// Validate only the outer v3 shape and the inheritance graph.
 /// Callers must not mistake this for a fully resolved or validated policy.
 pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFileError> {
     let value: Value = serde_json::from_str(json.trim_start_matches('\u{feff}'))
@@ -47,15 +47,12 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
     let root = value.as_object().ok_or(ProfileFileError::InvalidRoot)?;
 
     let version = match root.get("version") {
-        Some(Value::Number(n)) if n.as_u64() == Some(2) => 2,
         Some(Value::Number(n)) if n.as_u64() == Some(3) => 3,
         _ => return Err(ProfileFileError::InvalidVersion),
     };
 
     for key in root.keys() {
-        if !matches!(key.as_str(), "version" | "profiles" | "values")
-            && !(version == 3 && key == "$defaults")
-        {
+        if !matches!(key.as_str(), "version" | "profiles" | "values") && key != "$defaults" {
             return Err(ProfileFileError::UnknownRootKey(key.clone()));
         }
     }
@@ -78,10 +75,6 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
             .as_object()
             .ok_or_else(|| ProfileFileError::InvalidProfile(name.clone()))?;
         if let Some(parent) = fields.get("parent") {
-            if version != 3 {
-                return Err(ProfileFileError::InvalidParent(name.clone()));
-            }
-
             let parent = parent
                 .as_str()
                 .ok_or_else(|| ProfileFileError::InvalidParent(name.clone()))?;
@@ -321,12 +314,10 @@ fn visit(
 mod tests {
     use super::*;
     #[test]
-    fn accepts_legacy_and_current_structures() {
+    fn accepts_current_structure_only() {
         assert_eq!(
-            parse_profile_structure(r#"{"version":2,"profiles":{"default":{}}}"#)
-                .unwrap()
-                .version,
-            2
+            parse_profile_structure(r#"{"version":2,"profiles":{"default":{}}}"#),
+            Err(ProfileFileError::InvalidVersion)
         );
         assert_eq!(parse_profile_structure(r#"{"version":3,"$defaults":{},"values":{},"profiles":{"child":{"parent":"base"},"base":{}}}"#).unwrap().version, 3);
     }
@@ -334,7 +325,7 @@ mod tests {
     fn rejects_unknown_keys_and_wrong_types() {
         assert_eq!(
             parse_profile_structure(r#"{"version":2,"$defaults":{},"profiles":{}}"#),
-            Err(ProfileFileError::UnknownRootKey("$defaults".into()))
+            Err(ProfileFileError::InvalidVersion)
         );
         assert_eq!(
             parse_profile_structure(r#"{"version":3,"profiles":[],"values":{}}"#),
@@ -407,14 +398,6 @@ mod tests {
             resolve_profile_structure(&raw),
             Err(ProfileFileError::ValueReferenceCycle(_))
         ));
-    }
-    #[test]
-    fn legacy_profiles_share_the_reference_resolver() {
-        let raw = parse_profile_structure(r#"{"version":2,"values":{"quality":720},"profiles":{"p":{"min-resolution":"$values.quality"}}}"#).unwrap();
-        assert_eq!(
-            resolve_profile_structure(&raw).unwrap()["p"].settings["min-resolution"],
-            720
-        );
     }
     #[test]
     fn rejects_invalid_names_and_versions() {

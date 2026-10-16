@@ -123,3 +123,7 @@ The transient static readiness script has been removed: Cargo's locked build and
 ## Expanded executable diagnostic matrix
 
 The executable-level CLI contract checker now covers both orders of conflicting playlist switches, all five implemented boolean conflict families, and missing values for both profile selection and audio quality. These are deterministic native diagnostic checks, not a claim of byte-for-byte Python argparse diagnostic parity. The existing Python/Rust comparison harness currently reports help and version differences as scaffold evidence rather than enforcing parity; the closure review must explicitly decide whether those differences are acceptable for the experimental executable.
+
+## Deliberate v3-only profile boundary
+
+Rust rejects version 2 profiles with `InvalidVersion`; Python retains version 2 support. Rust help describes its supported experimental subset. The Python schema snapshot remains a reference, not a declaration of implemented Rust capabilities. Full v3 parity certification remains outstanding.

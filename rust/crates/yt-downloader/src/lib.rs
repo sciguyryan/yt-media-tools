@@ -569,10 +569,46 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
     }
 
     match args {
-        [arg] if arg == "--version" => (0, format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")), String::new()),
+        [arg] if arg == "--version" => (
+            0,
+            format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")),
+            String::new(),
+        ),
         [arg] if arg == "--help" || arg == "-h" => (
             0,
-            "yt-download-rs (experimental)\n\nUSAGE:\n    yt-download-rs [--help | --version]\n\nThe native downloader is under development. Use yt-download.py for downloads.\n".to_owned(),
+            r#"yt-download-rs (experimental)
+
+USAGE:
+    yt-download-rs [OPTIONS] [TARGET ...]
+
+CONFIGURATION AND INSPECTION:
+    -p, --profile, --parameter-profile NAME   Select a named v3 profile
+    -d, --defaults FILE                      Select a profile JSON file
+    --list-profiles, --list-parameters        List available profiles
+    --profile-tree [NAME]                    Show the profile hierarchy
+    --validate-config [FILE]                 Validate a profile document
+    --schema-json                            Show the Python reference machine contract
+
+SUPPORTED SETTING OVERRIDES:
+    --playlist / --no-playlist
+    --audio-only / --no-audio-only
+    --embed-metadata / --no-embed-metadata
+    --embed-chapters / --no-embed-chapters
+    --embed-thumbnail / --no-embed-thumbnail
+    --audio-format FORMAT
+    --audio-quality QUALITY
+
+GENERAL:
+    -h, --help                               Show this help
+    --version                                Show the independent Rust version
+
+Profile documents must use version 3. Python Downloader retains v2 support.
+The schema reference describes Python's contract, not native capabilities.
+--capabilities and --capabilities-json are reserved and unavailable.
+Native downloading and further Python options are not yet implemented.
+Use yt-download.py for production downloads.
+"#
+            .to_owned(),
             String::new(),
         ),
         _ => {
@@ -600,7 +636,13 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 .and_then(|path| path.parent().map(std::path::Path::to_path_buf))
             {
                 Some(path) => path,
-                None => return (1, String::new(), "yt-download-rs: cannot determine executable directory\n".to_owned()),
+                None => {
+                    return (
+                        1,
+                        String::new(),
+                        "yt-download-rs: cannot determine executable directory\n".to_owned(),
+                    );
+                }
             };
 
             if options.list_profiles && !overrides.is_empty() {
@@ -615,10 +657,11 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                 return match profile_store::render_from_cli_store(&options, &executable_dir) {
                     Ok(output) => (0, output, String::new()),
                     Err(error) => {
-                        let (path, _) = profile_store::resolve_defaults_path(&options, &executable_dir);
+                        let (path, _) =
+                            profile_store::resolve_defaults_path(&options, &executable_dir);
                         let diagnostic = profile_store::describe_store_error(&error, &path);
                         (1, String::new(), format!("yt-download-rs: {diagnostic}\n"))
-                    },
+                    }
                 };
             }
 
@@ -640,7 +683,7 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
                     (1, String::new(), format!("yt-download-rs: {diagnostic}\n"))
                 },
             }
-        },
+        }
     }
 }
 
