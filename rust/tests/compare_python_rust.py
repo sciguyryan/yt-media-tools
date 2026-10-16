@@ -2,6 +2,7 @@
 
 This is deliberately a foundation, not a claim of feature parity.
 """
+
 from __future__ import annotations
 
 import argparse

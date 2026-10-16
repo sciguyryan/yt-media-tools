@@ -107,3 +107,7 @@ All 116 direct Python `add_argument` definitions now have an explicit preliminar
 ## Terminal tree output compatibility
 
 The native profile-tree command now uses the existing ASCII tree renderer for an interactive terminal explicitly configured with the `C`, `POSIX`, or `C.US-ASCII` locale. Redirected output and other locales retain Unicode tree connectors. This is a conservative compatibility improvement, not full parity with Python's actual `sys.stdout.encoding` check; non-ASCII terminal encodings and platform-specific console detection still need certification before Part 3 closure. The locale predicate has deterministic unit coverage.
+
+## Executable-level inspection and diagnostic smoke checks
+
+After building the Rust executable, run `python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs` from the repository root (use the appropriate `.exe` path on Windows). This exercises the actual process exit status, stdout and stderr for the supported schema inspection contract, guarded capabilities modes, conflicting switches and missing-value diagnostics. It deliberately does not assert full Python CLI parity or attempt native downloads. The fixture freshness checker remains a separate prerequisite, and the complete Cargo test suite remains mandatory for acceptance.

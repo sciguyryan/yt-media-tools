@@ -24,11 +24,7 @@ def avoid_unrelated_youtubejs_capability_probe(monkeypatch: pytest.MonkeyPatch) 
     original_run_version = tools._run_version
 
     def run_version(command: list[str], *, cwd: Path | None = None) -> tuple[bool, str | None, str]:
-        if (
-            len(command) >= 3
-            and command[-1] == "--check"
-            and Path(command[-2]).name == "youtubejs_bridge.mjs"
-        ):
+        if len(command) >= 3 and command[-1] == "--check" and Path(command[-2]).name == "youtubejs_bridge.mjs":
             return False, None, "YouTube.js unavailable in observability fixture"
         return original_run_version(command, cwd=cwd)
 

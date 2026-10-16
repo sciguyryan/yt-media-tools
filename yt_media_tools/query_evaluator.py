@@ -330,7 +330,9 @@ def canonical_record_value(
         aggregate_projection = field.expression is not None and _contains_aggregate(field.expression)
         volatile_projection = field.expression is not None and _contains_random(field.expression)
         deferred_position = _is_final_position(field)
-        if field.output_name in record and (materialised_result or aggregate_projection or volatile_projection or deferred_position):
+        if field.output_name in record and (
+            materialised_result or aggregate_projection or volatile_projection or deferred_position
+        ):
             return record.get(field.output_name)
         if deferred_position:
             raise AssertionError("POSITION() must be evaluated at the final-result stage")
@@ -746,9 +748,9 @@ def _is_final_position(term: SelectTerm) -> bool:
 def _slice_final_result(rows: list[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     """Attach deferred projections after deduplication and ordering, then slice."""
     if query.offset:
-        rows = rows[query.offset:]
+        rows = rows[query.offset :]
     if query.limit is not None:
-        rows = rows[:query.limit]
+        rows = rows[: query.limit]
     if not any(_is_final_position(term) for term in query.select):
         return rows
     names = [term.output_name for term in query.select if _is_final_position(term)]
@@ -791,7 +793,9 @@ def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> l
         row: dict[str, Any] = {"_yt_sql_aggregate_result": True}
         for term in query.select:
             if term.expression is not None:
-                row[term.output_name] = None if _is_final_position(term) else _evaluate_group_expression(term.expression, group)
+                row[term.output_name] = (
+                    None if _is_final_position(term) else _evaluate_group_expression(term.expression, group)
+                )
             elif group:
                 row[term.output_name] = canonical_record_value(group[0], term)
             else:
@@ -802,7 +806,11 @@ def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> l
         seen: set[tuple[Any, ...]] = set()
         unique = []
         for row in rows:
-            key = tuple(_hashable_group_value(row.get(term.output_name)) for term in query.select if not _is_final_position(term))
+            key = tuple(
+                _hashable_group_value(row.get(term.output_name))
+                for term in query.select
+                if not _is_final_position(term)
+            )
             if key in seen:
                 continue
             seen.add(key)
