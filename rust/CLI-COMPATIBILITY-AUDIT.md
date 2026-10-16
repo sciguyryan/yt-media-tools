@@ -86,3 +86,18 @@ python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs
 The comparison harness checks the Python machine schema snapshot and representative version 3 configuration validation outcomes, including defaults, inheritance, missing parents, cycles and invalid versions. It also records help/version differences without asserting text equality. The executable contract checker covers inspection commands, argument conflicts and missing-value diagnostics. These bounded checks complement the Rust unit and integration tests; they do not establish full CLI or download parity.
 
 From `rust/`, run `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings` and `cargo test --workspace --all-targets --locked`. A complete, Cargo-resolved `Cargo.lock` is required for locked builds; do not construct dependency resolutions manually.
+
+## Native Part 4 contract certification
+
+The Part 4 library boundary is exercised by `rust/crates/yt-downloader/tests/part4_contract.rs`. These integration tests compose the validated version 3 profile loader, explicit profile selection and overrides, target resolution, deterministic argument planning and lifecycle transitions. They also check conflicting sources, the distinct batch-file and standard-input plans, terminal-state protection and the explicit failure for `preferred-fps`.
+
+| Contract | Native coverage | Remaining compatibility boundary |
+| --- | --- | --- |
+| Direct target ordering, duplicates and leading dashes | Target unit tests and cross-module plan test | Python CLI positional parsing and real yt-dlp invocation are not ported. |
+| Standard input and batch-file argument distinction | Target, planner and cross-module tests | File contents, queue operations and actual process input remain unimplemented. |
+| Profile selection, inheritance and explicit overrides | Profile tests and cross-module plan tests | Python version 2 profile support is intentionally absent in Rust. |
+| Deterministic yt-dlp argument planning | Planner unit tests and cross-module plan tests | Only five boolean settings are mapped; all other settings fail closed. |
+| Lifecycle states, progress, failure and cancellation | Lifecycle unit tests and cross-module terminal-state test | No child-process adapter, output parser, cancellation enforcement or cleanup exists. |
+| Python CLI and machine schema | `rust/tests/compare_python_rust.py` and `rust/tools/check_cli_contract.py` | Inspection checks and selected profile validation are not execution equivalence. |
+
+The Part 4 tests establish internal native contract consistency, not comprehensive Python/Rust behavioural equivalence. In particular, the five mapped settings (`playlist`, `write-info-json`, `write-thumbnail`, `write-subs` and `write-auto-subs`) are an explicitly limited planning subset. Any other validated setting, including `preferred-fps`, must be rejected rather than omitted. The renaming plugin and its packaging remain Python-owned until execution and output parity can be certified. No test in this certification suite invokes yt-dlp or downloads media.

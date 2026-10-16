@@ -49,3 +49,7 @@ The native `planning` module constructs a deterministic, inspectable yt-dlp argu
 ## Execution lifecycle contracts
 
 The native `lifecycle` module defines explicit execution states, transition validation, structured progress and failure events, an event-sink interface and a thread-safe cancellation signal. These are library-only contracts for a future yt-dlp process adapter. A lifecycle holds an existing execution plan but never launches a process, performs I/O or interprets external output. Invalid transitions and inconsistent progress reports are rejected without emitting events. Cancellation requests are signals; the future adapter is responsible for honouring them and safely terminating any child process.
+
+## Part 4 regression certification
+
+The cross-module tests in `crates/yt-downloader/tests/part4_contract.rs` exercise profile loading and overrides through target resolution, argument planning and lifecycle transitions without launching yt-dlp. `CLI-COMPATIBILITY-AUDIT.md` records the supported contracts and the unimplemented Python-equivalence boundaries. The planner's five mapped boolean settings are deliberately not a complete download policy. Actual process execution, format selection, output naming and queue handling require separate implementation and certification.
