@@ -286,12 +286,37 @@ pub fn describe_parse_error(error: &ParseError) -> String {
     }
 }
 
+/// Return the versioned Python machine-contract reference without enabling downloads.
+///
+/// The snapshot is generated from the canonical Python `--schema-json` output.
+/// It must be regenerated and compared whenever the Python contract changes;
+/// this is not a substitute for implementing all advertised native interfaces.
+fn schema_json_command(args: &[OsString]) -> Option<(u8, String, String)> {
+    if !args.iter().any(|argument| argument == "--schema-json") {
+        return None;
+    }
+
+    if args.len() != 1 || args[0] != "--schema-json" {
+        return Some((
+            1,
+            String::new(),
+            "yt-download-rs: --schema-json cannot be combined with other options\n".to_owned(),
+        ));
+    }
+
+    Some((
+        0,
+        include_str!("../fixtures/python-machine-contract.json").to_owned(),
+        String::new(),
+    ))
+}
+
 /// Recognise inspection commands before normal profile and download parsing.
 ///
 /// Their Python output contracts are not implemented yet. Reject them
 /// explicitly rather than producing incomplete machine-readable output.
 fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)> {
-    const COMMANDS: [&str; 3] = ["--schema-json", "--capabilities", "--capabilities-json"];
+    const COMMANDS: [&str; 2] = ["--capabilities", "--capabilities-json"];
 
     // Recognise an inspection switch even when it is not the first token.
     // Python reserves these command modes for inspection rather than downloads.
@@ -493,6 +518,10 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
         return result;
     }
 
+    if let Some(result) = schema_json_command(args) {
+        return result;
+    }
+
     if let Some(result) = pending_inspection_command(args) {
         return result;
     }
@@ -609,8 +638,24 @@ mod tests {
     }
 
     #[test]
+    fn schema_json_matches_the_python_reference_snapshot() {
+        let (status, stdout, stderr) = experimental_cli(&[OsString::from("--schema-json")]);
+
+        assert_eq!(status, 0);
+        assert!(stderr.is_empty());
+        assert_eq!(
+            stdout,
+            include_str!("../fixtures/python-machine-contract.json")
+        );
+
+        let document: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+        assert_eq!(document["contract_version"], 4);
+        assert_eq!(document["profiles"]["format_version"], 3);
+    }
+
+    #[test]
     fn inspection_commands_fail_closed_without_fake_output() {
-        for command in ["--schema-json", "--capabilities", "--capabilities-json"] {
+        for command in ["--capabilities", "--capabilities-json"] {
             let (status, stdout, stderr) = experimental_cli(&[OsString::from(command)]);
             assert_eq!(status, 1);
             assert!(stdout.is_empty());

@@ -1,0 +1,2807 @@
+{
+  "contract_version": 4,
+  "downloader": {
+    "name": "yt-download.py",
+    "version": "1.23.0"
+  },
+  "future_machine_interfaces": {
+    "discover_interchange": "planned",
+    "execution_request_schema": "planned",
+    "manifest_retry": "depends-on-structured-outcomes",
+    "structured_per_target_outcomes": "investigate"
+  },
+  "json_schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+  "machine_interfaces": {
+    "capabilities": {
+      "cli": [
+        "--capabilities",
+        "--capabilities-json"
+      ],
+      "schema_version": 1,
+      "stability": "versioned"
+    },
+    "config_validation": {
+      "cli": "--validate-config [FILE]",
+      "schema_version": 1,
+      "stability": "versioned"
+    },
+    "explain": {
+      "cli": "--explain-json",
+      "schema_version": 4,
+      "stability": "versioned"
+    },
+    "profile_tree": {
+      "cli": "--profile-tree [NAME]",
+      "stability": "versioned"
+    },
+    "run_manifest": {
+      "schema_version": 1,
+      "stability": "versioned"
+    },
+    "schema": {
+      "cli": "--schema-json",
+      "stability": "versioned"
+    }
+  },
+  "profiles": {
+    "cli_destination_classes": {
+      "configuration-control": [
+        "capabilities",
+        "capabilities_json",
+        "defaults",
+        "examples",
+        "list_profiles",
+        "profile",
+        "profile_tree",
+        "schema_json",
+        "validate_config",
+        "version"
+      ],
+      "execution-mode": [
+        "debug_external",
+        "debug_external_unsafe",
+        "dry_run",
+        "explain",
+        "explain_json"
+      ],
+      "input": [
+        "collection_file",
+        "input_file",
+        "targets"
+      ],
+      "profile-policy": [
+        "archive",
+        "audio_format",
+        "audio_only",
+        "audio_quality",
+        "audio_source_codec",
+        "audio_source_container",
+        "audio_source_fallback",
+        "auto_cookies",
+        "chapter_sections",
+        "concurrent_fragments",
+        "cookies",
+        "cookies_from_browser",
+        "embed_chapters",
+        "embed_metadata",
+        "embed_subs",
+        "embed_thumbnail",
+        "extractor_args",
+        "extractor_retries",
+        "file_access_retries",
+        "format_selector",
+        "fragment_retries",
+        "headers",
+        "impersonate",
+        "ip_family",
+        "limit_rate",
+        "live",
+        "live_from_start",
+        "max_fps",
+        "max_resolution",
+        "merge_container",
+        "min_fps",
+        "min_resolution",
+        "no_cookies",
+        "no_impersonate",
+        "no_wait_for_video",
+        "playlist",
+        "playlist_items",
+        "preferred_audio_channels",
+        "preferred_audio_codec",
+        "preferred_fps",
+        "preferred_hdr",
+        "preferred_video_codec",
+        "proxy",
+        "referer",
+        "resolution",
+        "retries",
+        "retry_sleep",
+        "reverse_playlist",
+        "socket_timeout",
+        "source_address",
+        "sponsorblock",
+        "sponsorblock_mark",
+        "sponsorblock_remove",
+        "sub_format",
+        "sub_langs",
+        "temp_path",
+        "throttled_rate",
+        "time_ranges",
+        "user_agent",
+        "wait_for_video",
+        "whole_item",
+        "write_auto_subs",
+        "write_info_json",
+        "write_live_chat",
+        "write_subs",
+        "write_thumbnail"
+      ],
+      "reporting-side-effect": [
+        "collection_continuation_ignore",
+        "collection_continuation_reset",
+        "collection_continuation_status",
+        "failed_targets",
+        "hash_outputs",
+        "queue_report",
+        "remove_completed_ids",
+        "remove_completed_rows",
+        "run_manifest"
+      ]
+    },
+    "file_schema": {
+      "$defs": {
+        "profile": {
+          "additionalProperties": false,
+          "properties": {
+            "archive": {
+              "anyOf": [
+                {
+                  "description": "Path to the yt-dlp download archive used for whole-item completion.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-format": {
+              "anyOf": [
+                {
+                  "description": "Explicitly enable audio extraction/conversion to this format.",
+                  "minLength": 1,
+                  "pattern": "^(?:[bB][eE][sS][tT]|[aA][aA][cC]|[aA][lL][aA][cC]|[fF][lL][aA][cC]|[mM]4[aA]|[mM][pP]3|[oO][pP][uU][sS]|[vV][oO][rR][bB][iI][sS]|[wW][aA][vV])$",
+                  "type": "string",
+                  "x-downloader-canonical-values": [
+                    "aac",
+                    "alac",
+                    "best",
+                    "flac",
+                    "m4a",
+                    "mp3",
+                    "opus",
+                    "vorbis",
+                    "wav"
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-only": {
+              "anyOf": [
+                {
+                  "description": "Select an existing audio-only source stream without enabling conversion.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-quality": {
+              "anyOf": [
+                {
+                  "description": "Audio conversion quality accepted by yt-dlp/FFmpeg.",
+                  "oneOf": [
+                    {
+                      "maximum": 10,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:10|[0-9]|[1-9][0-9]*(?:\\.[0-9]+)?[KkMm])$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-source-codec": {
+              "anyOf": [
+                {
+                  "description": "Require this source audio codec before optional conversion.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-source-container": {
+              "anyOf": [
+                {
+                  "description": "Require this source audio container/extension before optional conversion.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-source-fallback": {
+              "anyOf": [
+                {
+                  "description": "Allow fallback to another audio source when exact source constraints do not match.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "chapter-sections": {
+              "anyOf": [
+                {
+                  "description": "Regular expressions selecting chapter-derived partial-media outputs.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "concurrent-fragments": {
+              "anyOf": [
+                {
+                  "description": "Number of fragments downloaded concurrently per stream.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "cookies": {
+              "anyOf": [
+                {
+                  "description": "Path to a Netscape-format cookie file.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "cookies-from-browser": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp browser-cookie specification.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-chapters": {
+              "anyOf": [
+                {
+                  "description": "Embed chapter metadata into the primary output when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-metadata": {
+              "anyOf": [
+                {
+                  "description": "Embed media metadata into the primary output when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-subs": {
+              "anyOf": [
+                {
+                  "description": "Embed requested subtitles into the primary output when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-thumbnail": {
+              "anyOf": [
+                {
+                  "description": "Embed a requested thumbnail when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "extractor-args": {
+              "anyOf": [
+                {
+                  "description": "Ordered, explicitly supplied yt-dlp extractor-argument expressions.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "extractor-retries": {
+              "anyOf": [
+                {
+                  "description": "Extractor retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "file-access-retries": {
+              "anyOf": [
+                {
+                  "description": "File-access retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "format": {
+              "anyOf": [
+                {
+                  "description": "Expert yt-dlp format selector. This is passed through unchanged.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "fragment-retries": {
+              "anyOf": [
+                {
+                  "description": "Fragment retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "headers": {
+              "anyOf": [
+                {
+                  "description": "Ordered custom HTTP FIELD:VALUE headers passed to yt-dlp with --add-headers.",
+                  "items": {
+                    "pattern": "^\\s*[^:]+\\s*:\\s*.+$",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "impersonate": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp impersonation target in CLIENT[:OS] form.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "ip-family": {
+              "anyOf": [
+                {
+                  "description": "Force yt-dlp connections to IPv4 or IPv6.",
+                  "enum": [
+                    "ipv4",
+                    "ipv6"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "limit-rate": {
+              "anyOf": [
+                {
+                  "description": "Maximum download rate accepted by yt-dlp.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "live": {
+              "anyOf": [
+                {
+                  "description": "Enable explicit live-media workflow semantics.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "live-from-start": {
+              "anyOf": [
+                {
+                  "description": "Request supported acquisition from the beginning of a live stream.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "max-fps": {
+              "anyOf": [
+                {
+                  "description": "Maximum required frame rate.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "max-resolution": {
+              "anyOf": [
+                {
+                  "description": "Maximum required video height in pixels.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^[1-9][0-9]*[pP]?$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "merge-container": {
+              "anyOf": [
+                {
+                  "description": "Container requested when yt-dlp merges separate streams.",
+                  "minLength": 1,
+                  "pattern": "^(?:[aA][vV][iI]|[fF][lL][vV]|[mM][kK][vV]|[mM][oO][vV]|[mM][pP]4|[wW][eE][bB][mM])$",
+                  "type": "string",
+                  "x-downloader-canonical-values": [
+                    "avi",
+                    "flv",
+                    "mkv",
+                    "mov",
+                    "mp4",
+                    "webm"
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "min-fps": {
+              "anyOf": [
+                {
+                  "description": "Minimum required frame rate.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "min-resolution": {
+              "anyOf": [
+                {
+                  "description": "Minimum required video height in pixels.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^[1-9][0-9]*[pP]?$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "no-cookies": {
+              "anyOf": [
+                {
+                  "description": "Disable both explicit and automatic cookie discovery.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "output": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp output filename template.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "parent": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+              "type": "string"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp output home path.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "playlist": {
+              "anyOf": [
+                {
+                  "description": "Allow or suppress playlist traversal.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "playlist-items": {
+              "anyOf": [
+                {
+                  "description": "Ordered yt-dlp playlist item selections after Downloader validation.",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "not": {
+                          "const": 0
+                        },
+                        "type": "integer"
+                      },
+                      {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-audio-channels": {
+              "anyOf": [
+                {
+                  "description": "Preferred audio channel count used for format sorting.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-audio-codec": {
+              "anyOf": [
+                {
+                  "description": "Preferred audio codec used for fallback-friendly format sorting.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-fps": {
+              "anyOf": [
+                {
+                  "description": "Preferred frame rate used for format sorting.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-hdr": {
+              "anyOf": [
+                {
+                  "description": "Preferred dynamic-range class used for format sorting.",
+                  "minLength": 1,
+                  "pattern": "^(?:[sS][dD][rR]|[hH][dD][rR]|[dD][vV])$",
+                  "type": "string",
+                  "x-downloader-canonical-values": [
+                    "sdr",
+                    "hdr",
+                    "dv"
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-video-codec": {
+              "anyOf": [
+                {
+                  "description": "Preferred video codec used for fallback-friendly format sorting.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "proxy": {
+              "anyOf": [
+                {
+                  "description": "HTTP, HTTPS or SOCKS proxy URL passed to yt-dlp with --proxy.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "referer": {
+              "anyOf": [
+                {
+                  "description": "Custom HTTP Referer compiled to yt-dlp's recommended --add-headers form.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "resolution": {
+              "anyOf": [
+                {
+                  "description": "Preferred vertical resolution used for format sorting.",
+                  "minLength": 1,
+                  "pattern": "^(?:[bB][eE][sS][tT]|[1-9][0-9]*[pP]?)$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "retries": {
+              "anyOf": [
+                {
+                  "description": "Whole-download retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "retry-sleep": {
+              "anyOf": [
+                {
+                  "description": "Ordered yt-dlp retry-sleep expressions.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "reverse-playlist": {
+              "anyOf": [
+                {
+                  "description": "Traverse a playlist in reverse order.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "socket-timeout": {
+              "anyOf": [
+                {
+                  "description": "Network socket timeout in seconds passed to yt-dlp.",
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "source-address": {
+              "anyOf": [
+                {
+                  "description": "Client-side IP address passed to yt-dlp with --source-address.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sponsorblock": {
+              "anyOf": [
+                {
+                  "description": "Enable Downloader SponsorBlock policy.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sponsorblock-mark": {
+              "anyOf": [
+                {
+                  "description": "SponsorBlock categories to mark as chapters.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sponsorblock-remove": {
+              "anyOf": [
+                {
+                  "description": "SponsorBlock categories to remove from the media.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sub-format": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp subtitle-format preference expression.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sub-langs": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp subtitle-language selection expression.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "temp-path": {
+              "anyOf": [
+                {
+                  "description": "Temporary path used for yt-dlp intermediate output.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "throttled-rate": {
+              "anyOf": [
+                {
+                  "description": "Rate below which yt-dlp may consider the download throttled.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "time-ranges": {
+              "anyOf": [
+                {
+                  "description": "Partial-media time ranges, each represented as START-STOP or [START, STOP].",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "user-agent": {
+              "anyOf": [
+                {
+                  "description": "Custom HTTP User-Agent compiled to yt-dlp's recommended --add-headers form.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "wait-for-video": {
+              "anyOf": [
+                {
+                  "description": "Wait interval for a scheduled live stream, as MIN or MIN-MAX seconds.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^[0-9]+(?:-[0-9]+)?$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-auto-subs": {
+              "anyOf": [
+                {
+                  "description": "Write automatically generated subtitles when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-info-json": {
+              "anyOf": [
+                {
+                  "description": "Write yt-dlp information JSON as an associated artefact.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-live-chat": {
+              "anyOf": [
+                {
+                  "description": "Request live chat as an associated subtitle sidecar when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-subs": {
+              "anyOf": [
+                {
+                  "description": "Write manually supplied subtitles when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-thumbnail": {
+              "anyOf": [
+                {
+                  "description": "Write an associated thumbnail when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "reusable-value": {
+          "description": "A JSON value reusable through $values.* references."
+        },
+        "settings": {
+          "additionalProperties": false,
+          "properties": {
+            "archive": {
+              "anyOf": [
+                {
+                  "description": "Path to the yt-dlp download archive used for whole-item completion.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-format": {
+              "anyOf": [
+                {
+                  "description": "Explicitly enable audio extraction/conversion to this format.",
+                  "minLength": 1,
+                  "pattern": "^(?:[bB][eE][sS][tT]|[aA][aA][cC]|[aA][lL][aA][cC]|[fF][lL][aA][cC]|[mM]4[aA]|[mM][pP]3|[oO][pP][uU][sS]|[vV][oO][rR][bB][iI][sS]|[wW][aA][vV])$",
+                  "type": "string",
+                  "x-downloader-canonical-values": [
+                    "aac",
+                    "alac",
+                    "best",
+                    "flac",
+                    "m4a",
+                    "mp3",
+                    "opus",
+                    "vorbis",
+                    "wav"
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-only": {
+              "anyOf": [
+                {
+                  "description": "Select an existing audio-only source stream without enabling conversion.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-quality": {
+              "anyOf": [
+                {
+                  "description": "Audio conversion quality accepted by yt-dlp/FFmpeg.",
+                  "oneOf": [
+                    {
+                      "maximum": 10,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:10|[0-9]|[1-9][0-9]*(?:\\.[0-9]+)?[KkMm])$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-source-codec": {
+              "anyOf": [
+                {
+                  "description": "Require this source audio codec before optional conversion.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-source-container": {
+              "anyOf": [
+                {
+                  "description": "Require this source audio container/extension before optional conversion.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "audio-source-fallback": {
+              "anyOf": [
+                {
+                  "description": "Allow fallback to another audio source when exact source constraints do not match.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "chapter-sections": {
+              "anyOf": [
+                {
+                  "description": "Regular expressions selecting chapter-derived partial-media outputs.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "concurrent-fragments": {
+              "anyOf": [
+                {
+                  "description": "Number of fragments downloaded concurrently per stream.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "cookies": {
+              "anyOf": [
+                {
+                  "description": "Path to a Netscape-format cookie file.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "cookies-from-browser": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp browser-cookie specification.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-chapters": {
+              "anyOf": [
+                {
+                  "description": "Embed chapter metadata into the primary output when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-metadata": {
+              "anyOf": [
+                {
+                  "description": "Embed media metadata into the primary output when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-subs": {
+              "anyOf": [
+                {
+                  "description": "Embed requested subtitles into the primary output when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "embed-thumbnail": {
+              "anyOf": [
+                {
+                  "description": "Embed a requested thumbnail when supported.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "extractor-args": {
+              "anyOf": [
+                {
+                  "description": "Ordered, explicitly supplied yt-dlp extractor-argument expressions.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "extractor-retries": {
+              "anyOf": [
+                {
+                  "description": "Extractor retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "file-access-retries": {
+              "anyOf": [
+                {
+                  "description": "File-access retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "format": {
+              "anyOf": [
+                {
+                  "description": "Expert yt-dlp format selector. This is passed through unchanged.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "fragment-retries": {
+              "anyOf": [
+                {
+                  "description": "Fragment retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "headers": {
+              "anyOf": [
+                {
+                  "description": "Ordered custom HTTP FIELD:VALUE headers passed to yt-dlp with --add-headers.",
+                  "items": {
+                    "pattern": "^\\s*[^:]+\\s*:\\s*.+$",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "impersonate": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp impersonation target in CLIENT[:OS] form.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "ip-family": {
+              "anyOf": [
+                {
+                  "description": "Force yt-dlp connections to IPv4 or IPv6.",
+                  "enum": [
+                    "ipv4",
+                    "ipv6"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "limit-rate": {
+              "anyOf": [
+                {
+                  "description": "Maximum download rate accepted by yt-dlp.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "live": {
+              "anyOf": [
+                {
+                  "description": "Enable explicit live-media workflow semantics.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "live-from-start": {
+              "anyOf": [
+                {
+                  "description": "Request supported acquisition from the beginning of a live stream.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "max-fps": {
+              "anyOf": [
+                {
+                  "description": "Maximum required frame rate.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "max-resolution": {
+              "anyOf": [
+                {
+                  "description": "Maximum required video height in pixels.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^[1-9][0-9]*[pP]?$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "merge-container": {
+              "anyOf": [
+                {
+                  "description": "Container requested when yt-dlp merges separate streams.",
+                  "minLength": 1,
+                  "pattern": "^(?:[aA][vV][iI]|[fF][lL][vV]|[mM][kK][vV]|[mM][oO][vV]|[mM][pP]4|[wW][eE][bB][mM])$",
+                  "type": "string",
+                  "x-downloader-canonical-values": [
+                    "avi",
+                    "flv",
+                    "mkv",
+                    "mov",
+                    "mp4",
+                    "webm"
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "min-fps": {
+              "anyOf": [
+                {
+                  "description": "Minimum required frame rate.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "min-resolution": {
+              "anyOf": [
+                {
+                  "description": "Minimum required video height in pixels.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^[1-9][0-9]*[pP]?$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "no-cookies": {
+              "anyOf": [
+                {
+                  "description": "Disable both explicit and automatic cookie discovery.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "output": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp output filename template.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp output home path.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "playlist": {
+              "anyOf": [
+                {
+                  "description": "Allow or suppress playlist traversal.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "playlist-items": {
+              "anyOf": [
+                {
+                  "description": "Ordered yt-dlp playlist item selections after Downloader validation.",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "not": {
+                          "const": 0
+                        },
+                        "type": "integer"
+                      },
+                      {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-audio-channels": {
+              "anyOf": [
+                {
+                  "description": "Preferred audio channel count used for format sorting.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-audio-codec": {
+              "anyOf": [
+                {
+                  "description": "Preferred audio codec used for fallback-friendly format sorting.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-fps": {
+              "anyOf": [
+                {
+                  "description": "Preferred frame rate used for format sorting.",
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-hdr": {
+              "anyOf": [
+                {
+                  "description": "Preferred dynamic-range class used for format sorting.",
+                  "minLength": 1,
+                  "pattern": "^(?:[sS][dD][rR]|[hH][dD][rR]|[dD][vV])$",
+                  "type": "string",
+                  "x-downloader-canonical-values": [
+                    "sdr",
+                    "hdr",
+                    "dv"
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "preferred-video-codec": {
+              "anyOf": [
+                {
+                  "description": "Preferred video codec used for fallback-friendly format sorting.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "proxy": {
+              "anyOf": [
+                {
+                  "description": "HTTP, HTTPS or SOCKS proxy URL passed to yt-dlp with --proxy.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "referer": {
+              "anyOf": [
+                {
+                  "description": "Custom HTTP Referer compiled to yt-dlp's recommended --add-headers form.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "resolution": {
+              "anyOf": [
+                {
+                  "description": "Preferred vertical resolution used for format sorting.",
+                  "minLength": 1,
+                  "pattern": "^(?:[bB][eE][sS][tT]|[1-9][0-9]*[pP]?)$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "retries": {
+              "anyOf": [
+                {
+                  "description": "Whole-download retry count or the literal infinite.",
+                  "oneOf": [
+                    {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^(?:infinite|[0-9]+)$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "retry-sleep": {
+              "anyOf": [
+                {
+                  "description": "Ordered yt-dlp retry-sleep expressions.",
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "reverse-playlist": {
+              "anyOf": [
+                {
+                  "description": "Traverse a playlist in reverse order.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "socket-timeout": {
+              "anyOf": [
+                {
+                  "description": "Network socket timeout in seconds passed to yt-dlp.",
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "source-address": {
+              "anyOf": [
+                {
+                  "description": "Client-side IP address passed to yt-dlp with --source-address.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sponsorblock": {
+              "anyOf": [
+                {
+                  "description": "Enable Downloader SponsorBlock policy.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sponsorblock-mark": {
+              "anyOf": [
+                {
+                  "description": "SponsorBlock categories to mark as chapters.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sponsorblock-remove": {
+              "anyOf": [
+                {
+                  "description": "SponsorBlock categories to remove from the media.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sub-format": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp subtitle-format preference expression.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "sub-langs": {
+              "anyOf": [
+                {
+                  "description": "yt-dlp subtitle-language selection expression.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "temp-path": {
+              "anyOf": [
+                {
+                  "description": "Temporary path used for yt-dlp intermediate output.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "throttled-rate": {
+              "anyOf": [
+                {
+                  "description": "Rate below which yt-dlp may consider the download throttled.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "time-ranges": {
+              "anyOf": [
+                {
+                  "description": "Partial-media time ranges, each represented as START-STOP or [START, STOP].",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "user-agent": {
+              "anyOf": [
+                {
+                  "description": "Custom HTTP User-Agent compiled to yt-dlp's recommended --add-headers form.",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "wait-for-video": {
+              "anyOf": [
+                {
+                  "description": "Wait interval for a scheduled live stream, as MIN or MIN-MAX seconds.",
+                  "oneOf": [
+                    {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    {
+                      "pattern": "^[0-9]+(?:-[0-9]+)?$",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-auto-subs": {
+              "anyOf": [
+                {
+                  "description": "Write automatically generated subtitles when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-info-json": {
+              "anyOf": [
+                {
+                  "description": "Write yt-dlp information JSON as an associated artefact.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-live-chat": {
+              "anyOf": [
+                {
+                  "description": "Request live chat as an associated subtitle sidecar when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-subs": {
+              "anyOf": [
+                {
+                  "description": "Write manually supplied subtitles when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            },
+            "write-thumbnail": {
+              "anyOf": [
+                {
+                  "description": "Write an associated thumbnail when available.",
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^\\$values(?:\\.[A-Za-z0-9_-]+)+$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "$id": "urn:yt-media-tools:downloader:profiles:3",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "$defaults": {
+          "$ref": "#/$defs/settings"
+        },
+        "profiles": {
+          "additionalProperties": {
+            "$ref": "#/$defs/profile"
+          },
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "type": "object"
+        },
+        "values": {
+          "additionalProperties": {
+            "$ref": "#/$defs/reusable-value"
+          },
+          "type": "object"
+        },
+        "version": {
+          "const": 3
+        }
+      },
+      "required": [
+        "version",
+        "profiles"
+      ],
+      "title": "yt-downloader profiles",
+      "type": "object"
+    },
+    "format_version": 3,
+    "inheritance": {
+      "cycles": "error",
+      "implicit_root": "$defaults",
+      "model": "single-parent",
+      "root_optional": true
+    },
+    "precedence": [
+      "explicit-cli",
+      "selected-profile",
+      "ancestor-profiles",
+      "$defaults",
+      "built-in-defaults"
+    ],
+    "references": {
+      "cycles": "error",
+      "literal_dollar_escape": "$$",
+      "missing_targets": "error",
+      "namespace": "$values",
+      "type_preserving": true,
+      "whole_value_only": true
+    },
+    "semantic_validation": [
+      "minimum resolution must not exceed maximum resolution",
+      "minimum FPS must not exceed maximum FPS",
+      "yt-dlp expression-valued settings are validated by Downloader where a stable grammar is owned",
+      "partial-media timestamps and chapter regular expressions receive additional runtime validation",
+      "the schema describes canonical machine-facing values while runtime validation may normalise equivalent text forms",
+      "cross-policy conflicts that depend on resolved CLI state are validated after precedence resolution",
+      "dedicated user-agent/referer policy cannot duplicate the same names in generic HTTP headers"
+    ],
+    "settings_schema": {
+      "$id": "urn:yt-media-tools:downloader:profile-settings:1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "cookies",
+                  "cookies-from-browser"
+                ]
+              },
+              {
+                "required": [
+                  "cookies",
+                  "no-cookies"
+                ]
+              },
+              {
+                "required": [
+                  "cookies-from-browser",
+                  "no-cookies"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "audio-quality"
+            ]
+          },
+          "then": {
+            "required": [
+              "audio-format"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "playlist": {
+                "const": false
+              }
+            },
+            "required": [
+              "playlist"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "playlist-items"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "live-from-start": {
+                "const": true
+              }
+            },
+            "required": [
+              "live-from-start"
+            ]
+          },
+          "then": {
+            "properties": {
+              "live": {
+                "const": true
+              }
+            },
+            "required": [
+              "live"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "write-live-chat": {
+                "const": true
+              }
+            },
+            "required": [
+              "write-live-chat"
+            ]
+          },
+          "then": {
+            "properties": {
+              "live": {
+                "const": true
+              }
+            },
+            "required": [
+              "live"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "wait-for-video"
+            ]
+          },
+          "then": {
+            "properties": {
+              "live": {
+                "const": true
+              }
+            },
+            "required": [
+              "live"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "archive": {
+          "description": "Path to the yt-dlp download archive used for whole-item completion.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "audio-format": {
+          "description": "Explicitly enable audio extraction/conversion to this format.",
+          "minLength": 1,
+          "pattern": "^(?:[bB][eE][sS][tT]|[aA][aA][cC]|[aA][lL][aA][cC]|[fF][lL][aA][cC]|[mM]4[aA]|[mM][pP]3|[oO][pP][uU][sS]|[vV][oO][rR][bB][iI][sS]|[wW][aA][vV])$",
+          "type": "string",
+          "x-downloader-canonical-values": [
+            "aac",
+            "alac",
+            "best",
+            "flac",
+            "m4a",
+            "mp3",
+            "opus",
+            "vorbis",
+            "wav"
+          ]
+        },
+        "audio-only": {
+          "description": "Select an existing audio-only source stream without enabling conversion.",
+          "type": "boolean"
+        },
+        "audio-quality": {
+          "description": "Audio conversion quality accepted by yt-dlp/FFmpeg.",
+          "oneOf": [
+            {
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:10|[0-9]|[1-9][0-9]*(?:\\.[0-9]+)?[KkMm])$",
+              "type": "string"
+            }
+          ]
+        },
+        "audio-source-codec": {
+          "description": "Require this source audio codec before optional conversion.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "audio-source-container": {
+          "description": "Require this source audio container/extension before optional conversion.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "audio-source-fallback": {
+          "description": "Allow fallback to another audio source when exact source constraints do not match.",
+          "type": "boolean"
+        },
+        "chapter-sections": {
+          "description": "Regular expressions selecting chapter-derived partial-media outputs.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "concurrent-fragments": {
+          "description": "Number of fragments downloaded concurrently per stream.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "cookies": {
+          "description": "Path to a Netscape-format cookie file.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "cookies-from-browser": {
+          "description": "yt-dlp browser-cookie specification.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "embed-chapters": {
+          "description": "Embed chapter metadata into the primary output when supported.",
+          "type": "boolean"
+        },
+        "embed-metadata": {
+          "description": "Embed media metadata into the primary output when supported.",
+          "type": "boolean"
+        },
+        "embed-subs": {
+          "description": "Embed requested subtitles into the primary output when supported.",
+          "type": "boolean"
+        },
+        "embed-thumbnail": {
+          "description": "Embed a requested thumbnail when supported.",
+          "type": "boolean"
+        },
+        "extractor-args": {
+          "description": "Ordered, explicitly supplied yt-dlp extractor-argument expressions.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "extractor-retries": {
+          "description": "Extractor retry count or the literal infinite.",
+          "oneOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:infinite|[0-9]+)$",
+              "type": "string"
+            }
+          ]
+        },
+        "file-access-retries": {
+          "description": "File-access retry count or the literal infinite.",
+          "oneOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:infinite|[0-9]+)$",
+              "type": "string"
+            }
+          ]
+        },
+        "format": {
+          "description": "Expert yt-dlp format selector. This is passed through unchanged.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "fragment-retries": {
+          "description": "Fragment retry count or the literal infinite.",
+          "oneOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:infinite|[0-9]+)$",
+              "type": "string"
+            }
+          ]
+        },
+        "headers": {
+          "description": "Ordered custom HTTP FIELD:VALUE headers passed to yt-dlp with --add-headers.",
+          "items": {
+            "pattern": "^\\s*[^:]+\\s*:\\s*.+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "impersonate": {
+          "description": "yt-dlp impersonation target in CLIENT[:OS] form.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "ip-family": {
+          "description": "Force yt-dlp connections to IPv4 or IPv6.",
+          "enum": [
+            "ipv4",
+            "ipv6"
+          ],
+          "type": "string"
+        },
+        "limit-rate": {
+          "description": "Maximum download rate accepted by yt-dlp.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "live": {
+          "description": "Enable explicit live-media workflow semantics.",
+          "type": "boolean"
+        },
+        "live-from-start": {
+          "description": "Request supported acquisition from the beginning of a live stream.",
+          "type": "boolean"
+        },
+        "max-fps": {
+          "description": "Maximum required frame rate.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max-resolution": {
+          "description": "Maximum required video height in pixels.",
+          "oneOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "pattern": "^[1-9][0-9]*[pP]?$",
+              "type": "string"
+            }
+          ]
+        },
+        "merge-container": {
+          "description": "Container requested when yt-dlp merges separate streams.",
+          "minLength": 1,
+          "pattern": "^(?:[aA][vV][iI]|[fF][lL][vV]|[mM][kK][vV]|[mM][oO][vV]|[mM][pP]4|[wW][eE][bB][mM])$",
+          "type": "string",
+          "x-downloader-canonical-values": [
+            "avi",
+            "flv",
+            "mkv",
+            "mov",
+            "mp4",
+            "webm"
+          ]
+        },
+        "min-fps": {
+          "description": "Minimum required frame rate.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "min-resolution": {
+          "description": "Minimum required video height in pixels.",
+          "oneOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "pattern": "^[1-9][0-9]*[pP]?$",
+              "type": "string"
+            }
+          ]
+        },
+        "no-cookies": {
+          "description": "Disable both explicit and automatic cookie discovery.",
+          "type": "boolean"
+        },
+        "output": {
+          "description": "yt-dlp output filename template.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "path": {
+          "description": "yt-dlp output home path.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "playlist": {
+          "description": "Allow or suppress playlist traversal.",
+          "type": "boolean"
+        },
+        "playlist-items": {
+          "description": "Ordered yt-dlp playlist item selections after Downloader validation.",
+          "items": {
+            "oneOf": [
+              {
+                "not": {
+                  "const": 0
+                },
+                "type": "integer"
+              },
+              {
+                "minLength": 1,
+                "type": "string"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "preferred-audio-channels": {
+          "description": "Preferred audio channel count used for format sorting.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "preferred-audio-codec": {
+          "description": "Preferred audio codec used for fallback-friendly format sorting.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "preferred-fps": {
+          "description": "Preferred frame rate used for format sorting.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "preferred-hdr": {
+          "description": "Preferred dynamic-range class used for format sorting.",
+          "minLength": 1,
+          "pattern": "^(?:[sS][dD][rR]|[hH][dD][rR]|[dD][vV])$",
+          "type": "string",
+          "x-downloader-canonical-values": [
+            "sdr",
+            "hdr",
+            "dv"
+          ]
+        },
+        "preferred-video-codec": {
+          "description": "Preferred video codec used for fallback-friendly format sorting.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "proxy": {
+          "description": "HTTP, HTTPS or SOCKS proxy URL passed to yt-dlp with --proxy.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "referer": {
+          "description": "Custom HTTP Referer compiled to yt-dlp's recommended --add-headers form.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "resolution": {
+          "description": "Preferred vertical resolution used for format sorting.",
+          "minLength": 1,
+          "pattern": "^(?:[bB][eE][sS][tT]|[1-9][0-9]*[pP]?)$",
+          "type": "string"
+        },
+        "retries": {
+          "description": "Whole-download retry count or the literal infinite.",
+          "oneOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:infinite|[0-9]+)$",
+              "type": "string"
+            }
+          ]
+        },
+        "retry-sleep": {
+          "description": "Ordered yt-dlp retry-sleep expressions.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "reverse-playlist": {
+          "description": "Traverse a playlist in reverse order.",
+          "type": "boolean"
+        },
+        "socket-timeout": {
+          "description": "Network socket timeout in seconds passed to yt-dlp.",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "source-address": {
+          "description": "Client-side IP address passed to yt-dlp with --source-address.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "sponsorblock": {
+          "description": "Enable Downloader SponsorBlock policy.",
+          "type": "boolean"
+        },
+        "sponsorblock-mark": {
+          "description": "SponsorBlock categories to mark as chapters.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "sponsorblock-remove": {
+          "description": "SponsorBlock categories to remove from the media.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "sub-format": {
+          "description": "yt-dlp subtitle-format preference expression.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "sub-langs": {
+          "description": "yt-dlp subtitle-language selection expression.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "temp-path": {
+          "description": "Temporary path used for yt-dlp intermediate output.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "throttled-rate": {
+          "description": "Rate below which yt-dlp may consider the download throttled.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "time-ranges": {
+          "description": "Partial-media time ranges, each represented as START-STOP or [START, STOP].",
+          "items": {
+            "oneOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "user-agent": {
+          "description": "Custom HTTP User-Agent compiled to yt-dlp's recommended --add-headers form.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "wait-for-video": {
+          "description": "Wait interval for a scheduled live stream, as MIN or MIN-MAX seconds.",
+          "oneOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "pattern": "^[0-9]+(?:-[0-9]+)?$",
+              "type": "string"
+            }
+          ]
+        },
+        "write-auto-subs": {
+          "description": "Write automatically generated subtitles when available.",
+          "type": "boolean"
+        },
+        "write-info-json": {
+          "description": "Write yt-dlp information JSON as an associated artefact.",
+          "type": "boolean"
+        },
+        "write-live-chat": {
+          "description": "Request live chat as an associated subtitle sidecar when available.",
+          "type": "boolean"
+        },
+        "write-subs": {
+          "description": "Write manually supplied subtitles when available.",
+          "type": "boolean"
+        },
+        "write-thumbnail": {
+          "description": "Write an associated thumbnail when available.",
+          "type": "boolean"
+        }
+      },
+      "title": "yt-downloader profile settings",
+      "type": "object"
+    },
+    "unknown_settings": "error"
+  }
+}
