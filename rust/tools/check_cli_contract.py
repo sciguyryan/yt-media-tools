@@ -50,6 +50,39 @@ def main() -> int:
             b"",
             b"yt-download-rs: conflicting options --playlist and --no-playlist\n",
         ),
+        (
+            ["--no-playlist", "--playlist"],
+            1,
+            b"",
+            b"yt-download-rs: conflicting options --playlist and --no-playlist\\n",
+        ),
+        (
+            ["--audio-only", "--no-audio-only"],
+            1,
+            b"",
+            b"yt-download-rs: conflicting options --audio-only and --no-audio-only\\n",
+        ),
+        (
+            ["--embed-metadata", "--no-embed-metadata"],
+            1,
+            b"",
+            b"yt-download-rs: conflicting options --embed-metadata and --no-embed-metadata\\n",
+        ),
+        (
+            ["--embed-chapters", "--no-embed-chapters"],
+            1,
+            b"",
+            b"yt-download-rs: conflicting options --embed-chapters and --no-embed-chapters\\n",
+        ),
+        (
+            ["--embed-thumbnail", "--no-embed-thumbnail"],
+            1,
+            b"",
+            b"yt-download-rs: conflicting options --embed-thumbnail and --no-embed-thumbnail\\n",
+        ),
+        (["--audio-quality"], 1, b"", b"yt-download-rs: missing value for --audio-quality\\n"),
+        (["--defaults"], 1, b"", b"yt-download-rs: missing value for --defaults\\n"),
+        (["--profile"], 1, b"", b"yt-download-rs: missing value for --profile\\n"),
     ]
     failures = 0
     for argv, status, stdout, stderr in cases:

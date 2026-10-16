@@ -119,3 +119,7 @@ The interactive Rust profile-tree fallback now recognises explicitly non-UTF loc
 ## Regression-check consolidation
 
 The transient static readiness script has been removed: Cargo's locked build and test checks are authoritative for dependency resolution. Schema freshness is checked by the existing `rust/tests/compare_python_rust.py` comparison harness whenever it runs, before producing its normal help/version evidence. This avoids requiring a separate schema-check command while preserving the byte-for-byte Python reference check. The comparison harness still does not claim complete CLI parity.
+
+## Expanded executable diagnostic matrix
+
+The executable-level CLI contract checker now covers both orders of conflicting playlist switches, all five implemented boolean conflict families, and missing values for both profile selection and audio quality. These are deterministic native diagnostic checks, not a claim of byte-for-byte Python argparse diagnostic parity. The existing Python/Rust comparison harness currently reports help and version differences as scaffold evidence rather than enforcing parity; the closure review must explicitly decide whether those differences are acceptable for the experimental executable.
