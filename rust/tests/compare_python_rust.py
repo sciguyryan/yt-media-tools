@@ -91,7 +91,7 @@ def main() -> int:
 
     cases = ("--version", "--help")
     report = {
-        "status": "scaffold-only; output parity not expected",
+        "status": "help/version evidence; text parity not asserted",
         "cases": {
             flag: {
                 "python": capture([sys.executable, str(root / "yt-download.py"), flag], root),

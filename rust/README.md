@@ -1,37 +1,37 @@
-> **Implementation scope:** The experimental Rust Downloader supports the agreed Part 3 subset of CLI handling, version 3 profiles and typed settings. It cannot download media. Python Downloader remains the production implementation and continues to support version 2 profiles, which Rust rejects. The next development stage concerns native execution architecture.
-
 # Experimental Rust Downloader
 
-This workspace is the start of a parallel native implementation of `yt-download.py`. The Python application remains the production Downloader. The Rust binary currently implements only a development `--help` and `--version`; it does not download media or claim CLI compatibility.
+The Rust Downloader is a parallel implementation of `yt-download.py`, provided as `yt-download-rs` in `rust/crates/yt-downloader`. The Python Downloader remains the production application and the behavioural reference. The Rust executable does not download media.
 
-The workspace uses Rust edition 2024 and Cargo resolver 3. Use the latest viable stable Rust toolchain with edition 2024 support. A specific minimum supported Rust version and toolchain pin should be chosen once dependencies and target platforms have been evaluated. No external crates are required by this initial scaffold. `Cargo.lock` is tracked for reproducibility.
+## Implemented foundation
 
-The crate references the repository's existing `LICENSE` through Cargo's `license-file` field. This avoids claiming an SPDX licence grant that has not yet been verified.
+The native library supports typed profile configuration, version 3 profile documents, `$values`, `$defaults`, single-parent inheritance, cycle detection, profile selection, precedence and provenance. The executable provides a bounded set of configuration inspection commands and supported CLI overrides, with diagnostics and explicit rejection of unavailable download operations. Rust deliberately rejects version 2 profile documents; Python continues to support them.
 
-From `rust/`, run `cargo build --workspace`, `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`. The Rust GitHub Actions workflow runs these checks automatically, alongside `cargo doc` and `cargo audit`. Cargo was not available in the packaging environment, so local compilation and execution still require verification.
+The Rust `--schema-json` output uses a snapshot of the Python machine contract as a compatibility reference. This is not a claim that the Rust executable implements all interfaces described by the schema. Native capability reports and actual yt-dlp execution are not yet implemented.
 
-For an initial comparison of the two independently invoked entry points, run `python rust/tests/compare_python_rust.py --rust-binary rust/target/debug/yt-download-rs` from the repository root after building. The harness captures exit codes and output for `--help` and `--version`, but does not assert parity at this stage. Later implementation issues should add structured policy and execution-plan fixtures and explicit assertions.
+The workspace uses Rust edition 2024 and Cargo resolver 3. The crate uses Clap, serde_json, home and unicode-casefold. Its Cargo manifest refers to the repository's existing `LICENSE` file. Keep `rust/Cargo.lock` resolved by Cargo and committed for reproducible locked builds.
 
-The Part 1 audit is retained at `docs/development/RUST-DOWNLOADER-PART-1-AUDIT.md` until the port is reconciled. It can be removed in a later commit while remaining in Git history.
+## Build and verification
 
-The initial Rust integration tests verify the experimental CLI help, version and fail-closed behaviour. They do not claim Python parity. Future differential tests must assert equivalence for each ported feature. Routine CI must remain independent of live network downloads.
+From `rust/`:
 
-## Part 3: CLI and configuration, first slice
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --all-targets --locked
+cargo build --bin yt-download-rs --locked
+```
 
-The Rust library now provides side-effect-free parsing for the profile selection, defaults-file and profile-listing flags, including their Python aliases, plus strict ASCII profile-name validation. It does **not** load JSON profiles or execute these flags in the binary yet. The binary deliberately continues to reject them rather than pretending to implement profile resolution.
+From the repository root after building the binary:
 
-This is an intentionally narrow first step. The next step is to select a maintained JSON crate, implement strict version 2/3 profile loading, `$values` and `$defaults` references, inheritance and typed validation, then add deterministic differential tests against Python. Cargo dependencies and `Cargo.lock` should be updated together in a toolchain-enabled environment. Avoid hand-writing a JSON parser or fabricating a lockfile.
+```bash
+python rust/tests/compare_python_rust.py --rust-binary rust/target/debug/yt-download-rs
+python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs
+```
 
-## CLI smoke-test repair
+Use the corresponding `.exe` binary path on Windows. The comparison harness verifies selected version 3 profile-validation outcomes and the Python schema reference, while recording help/version output without requiring text equality. The CLI checker verifies bounded executable inspection and diagnostic contracts. Neither check requires live downloads or proves complete Python/Rust parity.
 
-The initial smoke tests assumed that Cargo's binary test path was directly executable in every environment. The three checks now exercise the pure response function used by the actual binary, avoiding a second process launch. This verifies response semantics but does not replace a future end-to-end executable smoke test.
+## Compatibility and future work
 
-## Clap adoption candidate
+`rust/CLI-COMPATIBILITY-AUDIT.md` records supported behaviour, deliberate differences and regression checks. `rust/PYTHON-CLI-OPTION-INVENTORY.md` records Python options and their preliminary ownership; it does not imply that deferred options are accepted by Rust.
 
-The profile-option parser now delegates tokenisation and alias handling to Clap. This is a candidate requiring Cargo lockfile regeneration and local tests. The existing lockfile is deliberately not hand-edited. Run `cargo generate-lockfile` in `rust/` with the latest stable toolchain, commit the resulting `Cargo.lock`, then run the normal locked quality gates. Do not merge this candidate without the lockfile update. The binary remains intentionally fail-closed for profile operations until configuration resolution is implemented.
-
-## Part 3: versioned profile structure
-
-The Rust library now checks the outer shape of v2 and v3 JSON profile documents, validates names and parent links, and detects inheritance cycles. It does **not** yet resolve reusable `$` values, apply `$defaults`, validate setting types, merge inherited settings, or expose profile operations through the binary. This intermediate representation must not be used as an effective download policy.
-
-The new `serde_json` dependency requires regenerating and committing `rust/Cargo.lock` with Cargo before running `--locked` checks. The package intentionally retains the previous lockfile rather than inventing a resolution.
+Native target handling, invocation context, side-effect-free yt-dlp planning and execution lifecycle contracts form the next architectural stage. yt-dlp process integration, actual downloads, output processing and persistent queue workflows remain separate later work. Preserve the existing Python yt-dlp renaming plugin and certify naming equivalence before any Rust cutover.
