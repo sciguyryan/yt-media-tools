@@ -1,6 +1,7 @@
 //! Placeholder for the native Downloader implementation.
 
 pub mod invocation;
+pub mod planning;
 pub mod profile_file;
 pub mod profile_pipeline;
 pub mod profile_selection;

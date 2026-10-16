@@ -43,3 +43,5 @@ The native `targets` module represents positional targets, standard input and ba
 ## Invocation context
 
 The native `invocation` module combines a validated profile selection, explicit settings overrides and a resolved target source into a typed context. It preserves profile provenance and direct-target order, rejects invalid effective policy and conflicting target sources, and does not construct yt-dlp commands or start downloads. Callers must load and validate profile documents before constructing the context. Collection manifests remain unsupported by the target resolver. The executable is unchanged; planning and execution integration are separate work.
+
+The native `planning` module constructs a deterministic, inspectable yt-dlp argument plan from a validated invocation context. It preserves target order and batch/stdin distinctions. Only explicitly mapped boolean settings are currently translated; other validated settings fail closed until their full Python-compatible semantics are implemented. The plan contains arguments, not an executable invocation, and does not launch yt-dlp or enable downloads.
