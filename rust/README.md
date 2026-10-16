@@ -1,3 +1,5 @@
+> **Implementation scope:** The experimental Rust Downloader supports the agreed Part 3 subset of CLI handling, version 3 profiles and typed settings. It cannot download media. Python Downloader remains the production implementation and continues to support version 2 profiles, which Rust rejects. The next development stage concerns native execution architecture.
+
 # Experimental Rust Downloader
 
 This workspace is the start of a parallel native implementation of `yt-download.py`. The Python application remains the production Downloader. The Rust binary currently implements only a development `--help` and `--version`; it does not download media or claim CLI compatibility.

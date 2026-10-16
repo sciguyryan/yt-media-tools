@@ -111,7 +111,20 @@ The native profile-tree command now uses the existing ASCII tree renderer for an
 ## Executable-level inspection and diagnostic smoke checks
 
 After building the Rust executable, run `python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs` from the repository root (use the appropriate `.exe` path on Windows). This exercises the actual process exit status, stdout and stderr for the supported schema inspection contract, guarded capabilities modes, conflicting switches and missing-value diagnostics. It deliberately does not assert full Python CLI parity or attempt native downloads. The Python/Rust comparison harness checks schema fixture freshness, and the complete Cargo test suite remains mandatory for acceptance.
-\n## Part 3 final reconciliation and remaining blockers\n\nThe Python option inventory and ownership dispositions are complete as a *classification*, not a proof of CLI compatibility. The schema reference and executable smoke checks cover selected inspection and error paths. The conservative ASCII fallback is not equivalent to Python's actual stdout encoding detection. Full supported-option differential parity, profile validation/precedence diagnostics and cross-platform terminal behaviour remain unverified.\n\nThe current packaged `rust/Cargo.lock` is an incomplete workspace-only stub. Run `cargo generate-lockfile` and commit the resulting resolved lockfile before attempting `--locked` certification. Cargo itself must verify the lockfile through the locked build and test commands; no separate static readiness checker is necessary.\n\nFor closure, run from the repository root:\n\n```bash\npython rust/tools/check_release_readiness.py\npython rust/tools/check_schema_fixture.py\ncd rust\ncargo fmt --all --check\ncargo clippy --workspace --all-targets --locked -- -D warnings\ncargo test --workspace --all-targets --locked\ncargo build --bin yt-download-rs --locked\ncd ..\npython rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs\n```\n\nOnly propose closure after addressing the above semantic gaps, reviewing the results from the exact packaged tree, and receiving explicit user acceptance.\n
+\n## Part 3 final reconciliation and remaining blockers\n\nThe Python option inventory and ownership dispositions are complete as a *classification*, not a proof of CLI compatibility. The schema reference and executable smoke checks cover selected inspection and error paths. The conservative ASCII fallback is not equivalent to Python's actual stdout encoding detection. Full supported-option differential parity, profile validation/precedence diagnostics and cross-platform terminal behaviour remain unverified.\n\nThe current packaged `rust/Cargo.lock` is an incomplete workspace-only stub. Run `cargo generate-lockfile` and commit the resulting resolved lockfile before attempting `--locked` certification. Cargo itself must verify the lockfile through the locked build and test commands; no separate static readiness checker is necessary.\n\nFor closure, run from the repository root:
+
+```bash
+cd rust
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --all-targets --locked
+cargo build --bin yt-download-rs --locked
+cd ..
+python rust/tests/compare_python_rust.py --rust-binary rust/target/debug/yt-download-rs
+python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs
+```
+
+Only propose closure after addressing the above semantic gaps, reviewing the results from the exact packaged tree, and receiving explicit user acceptance.\n
 ## Terminal fallback refinement
 
 The interactive Rust profile-tree fallback now recognises explicitly non-UTF locale encodings, including ISO-8859 variants, rather than only C/POSIX ASCII locales. UTF locales continue to render Unicode. This is still a locale-based approximation: Python examines the actual stdout encoding, which can differ from locale settings, especially on Windows. Redirected Rust output remains Unicode. This difference requires explicit acceptance or platform-specific detection before Part 3 closure.
@@ -135,3 +148,9 @@ The existing Rust profile parser tests now explicitly exercise v3 `$defaults` pr
 ## Bounded executable v3 comparison
 
 `rust/tests/compare_python_rust.py` now creates five temporary configuration fixtures and invokes both Python and Rust `--validate-config` commands. It compares acceptance and, for valid documents, stable structured validation fields. The fixtures cover minimal v3, `$defaults` and inheritance, missing parents, cycles and invalid versions. This is a bounded runtime check, not a proof of complete settings resolution or all Python CLI semantics. It leaves Python v2 support unchanged and does not execute downloads. The remaining Rust-only precedence tests supply complementary coverage. The comparison requires a compiled Rust executable and remains subject to local acceptance.
+
+## Part 3 closure decision (2026-10-16)
+
+Part 3 covers a bounded compatibility subset, with a five-fixture Python/Rust v3 validation comparison and 17 executable CLI diagnostic cases. The accepted compatibility boundary requires Rust v3 profiles only, retains Python v2 support, permits Rust-specific help/version text and presentation differences, and defers download execution and truthful backend capability reporting. This does not certify all Python CLI features or all possible profile documents.
+
+**Reproducible builds:** `rust/Cargo.lock` must contain the resolved dependency graph before locked builds can be certified. Generate it with Cargo, rather than editing dependency resolutions by hand.
