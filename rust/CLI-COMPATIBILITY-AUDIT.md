@@ -89,3 +89,9 @@ The remaining Part 3 gate therefore includes: a verified schema contract, a comp
 ## Versioned schema reference
 
 The Rust `--schema-json` command returns the canonical Python machine-contract snapshot stored in `rust/crates/yt-downloader/fixtures/python-machine-contract.json`. The snapshot was generated from the packaged Python `yt-download.py --schema-json` command, rather than reconstructed from the Rust profile setting definitions. It preserves the Python contract's complete JSON payload and deterministic presentation, including the Python Downloader version and interfaces that are not yet available in Rust. It is a **reference contract**, not an assertion that Rust implements every advertised interface. Revalidate and regenerate it whenever the Python machine contract changes. A future native capability descriptor must distinguish implemented Rust behaviour from the reference schema.
+
+## Schema-reference freshness check
+
+The committed `rust/crates/yt-downloader/fixtures/python-machine-contract.json` snapshot must remain byte-for-byte equal to the current Python Downloader `--schema-json` output. Run `python rust/tools/check_schema_fixture.py` from the repository root after Python schema changes and during Part 3 certification. The checker exits non-zero on drift and does not silently regenerate the reference. Any intentional contract change requires an independently reviewed fixture update and Rust compatibility assessment. The Rust regression test checks the embedded fixture's output, while this separate check catches drift in the Python source.
+
+The `home` crate remains pinned to 0.5.11 in the current workspace. Version 0.5.12 declares Rust 1.88 as its minimum, which is compatible with the project's Rust 1.89 baseline, but a dependency update must also regenerate and verify the lockfile, including platform-specific transitive changes. It is not part of this schema-only increment.
