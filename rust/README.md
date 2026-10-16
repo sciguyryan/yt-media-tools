@@ -34,7 +34,7 @@ Use the corresponding `.exe` binary path on Windows. The comparison harness veri
 
 `rust/CLI-COMPATIBILITY-AUDIT.md` records supported behaviour, deliberate differences and regression checks. `rust/PYTHON-CLI-OPTION-INVENTORY.md` records Python options and their preliminary ownership; it does not imply that deferred options are accepted by Rust.
 
-Native target handling, invocation context, side-effect-free yt-dlp planning and execution lifecycle contracts form the next architectural stage. yt-dlp process integration, actual downloads, output processing and persistent queue workflows remain separate later work. Preserve the existing Python yt-dlp renaming plugin and certify naming equivalence before any Rust cutover.
+Native target handling, invocation context, side-effect-free yt-dlp planning and execution lifecycle contracts form the current architectural foundation. yt-dlp process integration, actual downloads, output processing and persistent queue workflows remain separate later work. Preserve the existing Python yt-dlp renaming plugin and certify naming equivalence before any Rust cutover.
 
 ## Target-source resolution
 
@@ -45,3 +45,7 @@ The native `targets` module represents positional targets, standard input and ba
 The native `invocation` module combines a validated profile selection, explicit settings overrides and a resolved target source into a typed context. It preserves profile provenance and direct-target order, rejects invalid effective policy and conflicting target sources, and does not construct yt-dlp commands or start downloads. Callers must load and validate profile documents before constructing the context. Collection manifests remain unsupported by the target resolver. The executable is unchanged; planning and execution integration are separate work.
 
 The native `planning` module constructs a deterministic, inspectable yt-dlp argument plan from a validated invocation context. It preserves target order and batch/stdin distinctions. Only explicitly mapped boolean settings are currently translated; other validated settings fail closed until their full Python-compatible semantics are implemented. The plan contains arguments, not an executable invocation, and does not launch yt-dlp or enable downloads.
+
+## Execution lifecycle contracts
+
+The native `lifecycle` module defines explicit execution states, transition validation, structured progress and failure events, an event-sink interface and a thread-safe cancellation signal. These are library-only contracts for a future yt-dlp process adapter. A lifecycle holds an existing execution plan but never launches a process, performs I/O or interprets external output. Invalid transitions and inconsistent progress reports are rejected without emitting events. Cancellation requests are signals; the future adapter is responsible for honouring them and safely terminating any child process.
