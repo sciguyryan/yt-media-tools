@@ -35,3 +35,7 @@ Use the corresponding `.exe` binary path on Windows. The comparison harness veri
 `rust/CLI-COMPATIBILITY-AUDIT.md` records supported behaviour, deliberate differences and regression checks. `rust/PYTHON-CLI-OPTION-INVENTORY.md` records Python options and their preliminary ownership; it does not imply that deferred options are accepted by Rust.
 
 Native target handling, invocation context, side-effect-free yt-dlp planning and execution lifecycle contracts form the next architectural stage. yt-dlp process integration, actual downloads, output processing and persistent queue workflows remain separate later work. Preserve the existing Python yt-dlp renaming plugin and certify naming equivalence before any Rust cutover.
+
+## Target-source resolution
+
+The native `targets` module represents positional targets, standard input and batch files without invoking yt-dlp. It preserves target ordering and duplicates, recognises a lone `-` as standard input, and applies the Python Downloader's existing-file rule to a single positional target. An explicit input file cannot be combined with positional targets. Collection manifests are rejected by this module until their separate collection-resolution contract is implemented. Target resolution is a library capability only: the experimental CLI still refuses native downloads, and no execution plan or yt-dlp process integration is implied.

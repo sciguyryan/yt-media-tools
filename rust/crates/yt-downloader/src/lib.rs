@@ -5,6 +5,7 @@ pub mod profile_pipeline;
 pub mod profile_selection;
 pub mod profile_settings;
 pub mod profile_store;
+pub mod targets;
 
 use std::ffi::OsString;
 
