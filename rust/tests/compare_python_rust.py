@@ -26,6 +26,24 @@ def main() -> int:
     binary = args.rust_binary.resolve()
     if not binary.is_file():
         parser.error(f"Rust binary not found: {binary}")
+    # Schema parity is a genuine cross-language contract: verify that the
+    # embedded reference remains identical to Python's current output.
+    fixture = root / "rust/crates/yt-downloader/fixtures/python-machine-contract.json"
+    schema = subprocess.run(
+        [sys.executable, str(root / "yt-download.py"), "--schema-json"],
+        cwd=root,
+        capture_output=True,
+        check=False,
+        timeout=20,
+    )
+    if schema.returncode != 0:
+        print("Python schema inspection failed:", file=sys.stderr)
+        sys.stderr.buffer.write(schema.stderr)
+        return 2
+    if schema.stdout != fixture.read_bytes():
+        print("Rust schema fixture differs from Python --schema-json output.", file=sys.stderr)
+        return 1
+
     cases = ("--version", "--help")
     report = {
         "status": "scaffold-only; output parity not expected",
