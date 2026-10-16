@@ -340,6 +340,37 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
 }
 
 /// Render profile inheritance without invoking download execution.
+/// Use ASCII connectors for a terminal explicitly configured with an ASCII locale.
+/// Captured output retains Unicode, and unspecified locales keep the existing
+/// Unicode behaviour. This is a conservative fallback, not Python's full
+/// stdout-encoding detection contract.
+fn ascii_tree_for_locale(locale: Option<&str>) -> bool {
+    let Some(locale) = locale else {
+        return false;
+    };
+    let locale = locale.trim();
+    locale == "C" || locale == "POSIX" || locale.eq_ignore_ascii_case("C.US-ASCII")
+}
+
+fn profile_tree_ascii_fallback() -> bool {
+    use std::io::IsTerminal;
+
+    if !std::io::stdout().is_terminal() {
+        return false;
+    }
+
+    let locale = std::env::var("LC_ALL")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            std::env::var("LC_CTYPE")
+                .ok()
+                .filter(|value| !value.is_empty())
+        })
+        .or_else(|| std::env::var("LANG").ok().filter(|value| !value.is_empty()));
+    ascii_tree_for_locale(locale.as_deref())
+}
+
 fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
     if !args.iter().any(|argument| argument == "--profile-tree") {
         return None;
@@ -417,8 +448,12 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
         list_profiles: false,
     };
     let (path, explicit) = profile_store::resolve_defaults_path(&options, &executable_dir);
-    // Rust currently emits Unicode to UTF-8 terminals and captured stdout.
-    match profile_store::render_tree_from_path(&path, explicit, focus, false) {
+    match profile_store::render_tree_from_path(
+        &path,
+        explicit,
+        focus,
+        profile_tree_ascii_fallback(),
+    ) {
         Ok(output) => Some((0, output, String::new())),
         Err(error) => Some((
             1,
@@ -1579,6 +1614,16 @@ mod tests {
         assert!(stderr.contains("cannot be combined"));
 
         std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn profile_tree_ascii_locale_detection_is_conservative() {
+        assert!(ascii_tree_for_locale(Some("C")));
+        assert!(ascii_tree_for_locale(Some("POSIX")));
+        assert!(ascii_tree_for_locale(Some("C.US-ASCII")));
+        assert!(!ascii_tree_for_locale(Some("C.UTF-8")));
+        assert!(!ascii_tree_for_locale(Some("en_GB.UTF-8")));
+        assert!(!ascii_tree_for_locale(None));
     }
 
     #[test]

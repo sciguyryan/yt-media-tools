@@ -103,3 +103,7 @@ The companion `rust/PYTHON-CLI-OPTION-INVENTORY.md` enumerates the Python parser
 ## CLI option ownership disposition
 
 All 116 direct Python `add_argument` definitions now have an explicit preliminary Part 3 or later-part owner in `rust/PYTHON-CLI-OPTION-INVENTORY.md`. This closes the *unassigned option inventory* task, not CLI semantic parity. The next Part 3 work must test supported parse-only switches against Python and address profile-tree encoding fallback and diagnostics.
+
+## Terminal tree output compatibility
+
+The native profile-tree command now uses the existing ASCII tree renderer for an interactive terminal explicitly configured with the `C`, `POSIX`, or `C.US-ASCII` locale. Redirected output and other locales retain Unicode tree connectors. This is a conservative compatibility improvement, not full parity with Python's actual `sys.stdout.encoding` check; non-ASCII terminal encodings and platform-specific console detection still need certification before Part 3 closure. The locale predicate has deterministic unit coverage.
