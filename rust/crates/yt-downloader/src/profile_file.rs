@@ -400,6 +400,38 @@ mod tests {
         ));
     }
     #[test]
+    fn v3_inheritance_preserves_explicit_false_and_child_precedence() {
+        let raw = parse_profile_structure(
+            r#"{"version":3,"values":{"enabled":false,"quality":"best"},"$defaults":{"playlist":true,"embed-metadata":true,"audio-format":"$values.quality"},"profiles":{"base":{"playlist":"$values.enabled"},"child":{"parent":"base","embed-metadata":false}}}"#,
+        )
+        .unwrap();
+        let profiles = resolve_profile_structure(&raw).unwrap();
+        let child = &profiles["child"];
+
+        assert_eq!(child.settings["playlist"], false);
+        assert_eq!(child.settings["embed-metadata"], false);
+        assert_eq!(child.settings["audio-format"], "best");
+        assert_eq!(child.ancestry, vec!["base"]);
+        assert_eq!(child.setting_sources["playlist"], "profile 'base'");
+        assert_eq!(child.setting_sources["embed-metadata"], "profile 'child'");
+        assert_eq!(child.setting_sources["audio-format"], "$defaults");
+    }
+
+    #[test]
+    fn rejects_all_legacy_version_two_documents_before_resolution() {
+        for document in [
+            r#"{"version":2,"profiles":{}}"#,
+            r#"{"version":2,"values":{"quality":720},"profiles":{"p":{"min-resolution":"$values.quality"}}}"#,
+            r#"{"version":2,"$defaults":{"playlist":true},"profiles":{"p":{}}}"#,
+        ] {
+            assert_eq!(
+                parse_profile_structure(document),
+                Err(ProfileFileError::InvalidVersion),
+            );
+        }
+    }
+
+    #[test]
     fn rejects_invalid_names_and_versions() {
         assert_eq!(
             parse_profile_structure(r#"{"version":4,"profiles":{}}"#),

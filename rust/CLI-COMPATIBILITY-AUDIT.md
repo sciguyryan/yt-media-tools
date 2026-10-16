@@ -127,3 +127,7 @@ The executable-level CLI contract checker now covers both orders of conflicting 
 ## Deliberate v3-only profile boundary
 
 Rust rejects version 2 profiles with `InvalidVersion`; Python retains version 2 support. Rust help describes its supported experimental subset. The Python schema snapshot remains a reference, not a declaration of implemented Rust capabilities. Full v3 parity certification remains outstanding.
+
+## Consolidated v3 regression coverage
+
+The existing Rust profile parser tests now explicitly exercise v3 `$defaults` precedence, inherited values, child overrides, `false` values, reference resolution and provenance. Multiple version 2 document shapes must fail before resolution. These tests strengthen the native semantics but do not, by themselves, certify cross-language parity. The accepted Part 3 boundary requires comparing representative v3 outcomes with Python and reviewing any material differences before closure. No additional standalone checker is introduced.
