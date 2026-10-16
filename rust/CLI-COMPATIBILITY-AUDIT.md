@@ -131,3 +131,7 @@ Rust rejects version 2 profiles with `InvalidVersion`; Python retains version 2 
 ## Consolidated v3 regression coverage
 
 The existing Rust profile parser tests now explicitly exercise v3 `$defaults` precedence, inherited values, child overrides, `false` values, reference resolution and provenance. Multiple version 2 document shapes must fail before resolution. These tests strengthen the native semantics but do not, by themselves, certify cross-language parity. The accepted Part 3 boundary requires comparing representative v3 outcomes with Python and reviewing any material differences before closure. No additional standalone checker is introduced.
+
+## Bounded executable v3 comparison
+
+`rust/tests/compare_python_rust.py` now creates five temporary configuration fixtures and invokes both Python and Rust `--validate-config` commands. It compares acceptance and, for valid documents, stable structured validation fields. The fixtures cover minimal v3, `$defaults` and inheritance, missing parents, cycles and invalid versions. This is a bounded runtime check, not a proof of complete settings resolution or all Python CLI semantics. It leaves Python v2 support unchanged and does not execute downloads. The remaining Rust-only precedence tests supply complementary coverage. The comparison requires a compiled Rust executable and remains subject to local acceptance.

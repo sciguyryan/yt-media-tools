@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 
 def capture(command: list[str], cwd: Path) -> dict[str, object]:
@@ -43,6 +44,50 @@ def main() -> int:
     if schema.stdout != fixture.read_bytes():
         print("Rust schema fixture differs from Python --schema-json output.", file=sys.stderr)
         return 1
+
+    # Bounded v3 parity: compare stable validation semantics, not presentation.
+    # No media targets, network requests, or external downloader are involved.
+    documents = {
+        "minimal": {"version": 3, "profiles": {"base": {}}},
+        "inheritance": {
+            "version": 3,
+            "values": {"audio": "mp3"},
+            "$defaults": {"playlist": False, "embed-metadata": True},
+            "profiles": {
+                "base": {"audio-format": "$values.audio"},
+                "child": {"parent": "base", "embed-metadata": False},
+            },
+        },
+        "missing-parent": {"version": 3, "profiles": {"child": {"parent": "absent"}}},
+        "cycle": {
+            "version": 3,
+            "profiles": {"first": {"parent": "second"}, "second": {"parent": "first"}},
+        },
+        "invalid-version": {"version": 99, "profiles": {}},
+    }
+    with tempfile.TemporaryDirectory(prefix="yt-downloader-v3-parity-") as temporary:
+        for label, document in documents.items():
+            config = Path(temporary) / f"{label}.json"
+            config.write_text(json.dumps(document), encoding="utf-8")
+            python_result = capture(
+                [sys.executable, str(root / "yt-download.py"), "--validate-config", str(config)], root
+            )
+            rust_result = capture([str(binary), "--validate-config", str(config)], root)
+            if (python_result["exit_code"] == 0) != (rust_result["exit_code"] == 0):
+                print(f"FAIL: v3 validation acceptance differs for {label}", file=sys.stderr)
+                return 1
+            if python_result["exit_code"] == 0:
+                try:
+                    python_payload = json.loads(str(python_result["stdout"]))
+                    rust_payload = json.loads(str(rust_result["stdout"]))
+                except json.JSONDecodeError:
+                    print(f"FAIL: invalid validation JSON for {label}", file=sys.stderr)
+                    return 1
+                for key in ("kind", "schema_version", "contract_version", "valid", "profile_count", "profiles"):
+                    if python_payload.get(key) != rust_payload.get(key):
+                        print(f"FAIL: validation field {key} differs for {label}", file=sys.stderr)
+                        return 1
+            print(f"PASS: v3 validation {label}")
 
     cases = ("--version", "--help")
     report = {
