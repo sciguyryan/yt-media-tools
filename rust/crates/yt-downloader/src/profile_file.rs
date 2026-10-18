@@ -52,8 +52,7 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
     };
 
     for key in root.keys() {
-        if !matches!(key.as_str(), "version" | "profiles" | "values")
-            && key != "$defaults" {
+        if !matches!(key.as_str(), "version" | "profiles" | "values") && key != "$defaults" {
             return Err(ProfileFileError::UnknownRootKey(key.clone()));
         }
     }
@@ -61,17 +60,24 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
     let values = optional_object(root, "values", ProfileFileError::InvalidValues)?;
     let defaults = optional_object(root, "$defaults", ProfileFileError::InvalidDefaults)?;
 
-    let profiles = root.get("profiles").and_then(Value::as_object)
-        .ok_or(ProfileFileError::InvalidProfiles)?.clone();
+    let profiles = root
+        .get("profiles")
+        .and_then(Value::as_object)
+        .ok_or(ProfileFileError::InvalidProfiles)?
+        .clone();
 
     for (name, raw) in &profiles {
         if !valid_profile_name(name) {
             return Err(ProfileFileError::InvalidProfileName(name.clone()));
         }
 
-        let fields = raw.as_object().ok_or_else(|| ProfileFileError::InvalidProfile(name.clone()))?;
+        let fields = raw
+            .as_object()
+            .ok_or_else(|| ProfileFileError::InvalidProfile(name.clone()))?;
         if let Some(parent) = fields.get("parent") {
-            let parent = parent.as_str().ok_or_else(|| ProfileFileError::InvalidParent(name.clone()))?;
+            let parent = parent
+                .as_str()
+                .ok_or_else(|| ProfileFileError::InvalidParent(name.clone()))?;
             if !valid_profile_name(parent) {
                 return Err(ProfileFileError::InvalidParent(name.clone()));
             }
@@ -88,9 +94,13 @@ pub fn parse_profile_structure(json: &str) -> Result<RawProfileFile, ProfileFile
     for name in profiles.keys() {
         visit(name, &profiles, &mut complete, &mut Vec::new())?;
     }
-    Ok(RawProfileFile { version, values, defaults, profiles })
+    Ok(RawProfileFile {
+        version,
+        values,
+        defaults,
+        profiles,
+    })
 }
-
 
 /// A resolved profile before option-specific type and policy validation.
 #[derive(Debug, Clone, PartialEq)]
@@ -137,12 +147,20 @@ fn resolve_profile(
     }
     stack.push(name.to_owned());
 
-    let fields = raw.profiles.get(name).and_then(Value::as_object)
+    let fields = raw
+        .profiles
+        .get(name)
+        .and_then(Value::as_object)
         .ok_or_else(|| ProfileFileError::InvalidProfile(name.to_owned()))?;
-    let parent = fields.get("parent").and_then(Value::as_str).map(str::to_owned);
+    let parent = fields
+        .get("parent")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
     let mut settings = defaults.clone();
-    let mut sources: BTreeMap<String, String> = defaults.keys()
-        .map(|key| (key.clone(), "$defaults".to_owned())).collect();
+    let mut sources: BTreeMap<String, String> = defaults
+        .keys()
+        .map(|key| (key.clone(), "$defaults".to_owned()))
+        .collect();
     let mut ancestry = Vec::new();
 
     if let Some(ref parent_name) = parent {
@@ -158,9 +176,11 @@ fn resolve_profile(
         ancestry.push(parent_name.clone());
     }
 
-    let own: Map<String, Value> = fields.iter()
+    let own: Map<String, Value> = fields
+        .iter()
         .filter(|(key, _)| key.as_str() != "parent")
-        .map(|(key, value)| (key.clone(), value.clone())).collect();
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect();
     let own = resolve_settings(&own, &raw.values)?;
 
     for (key, value) in own {
@@ -169,9 +189,15 @@ fn resolve_profile(
     }
 
     stack.pop();
-    result.insert(name.to_owned(), ResolvedProfile {
-        settings, parent, ancestry, setting_sources: sources,
-    });
+    result.insert(
+        name.to_owned(),
+        ResolvedProfile {
+            settings,
+            parent,
+            ancestry,
+            setting_sources: sources,
+        },
+    );
     Ok(())
 }
 
@@ -179,9 +205,12 @@ fn resolve_settings(
     settings: &Map<String, Value>,
     values: &Map<String, Value>,
 ) -> Result<Map<String, Value>, ProfileFileError> {
-    settings.iter().map(|(key, value)| {
-        resolve_value(value, values, &mut Vec::new()).map(|resolved| (key.clone(), resolved))
-    }).collect()
+    settings
+        .iter()
+        .map(|(key, value)| {
+            resolve_value(value, values, &mut Vec::new()).map(|resolved| (key.clone(), resolved))
+        })
+        .collect()
 }
 
 fn resolve_value(
@@ -195,14 +224,17 @@ fn resolve_value(
             let Some(path) = text.strip_prefix("$values.") else {
                 return Err(ProfileFileError::InvalidValueReference(text.clone()));
             };
-            if path.is_empty() || path.split('.').any(|segment| {
-                segment.is_empty() || !segment.bytes().all(|byte| {
-                    byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-')
+            if path.is_empty()
+                || path.split('.').any(|segment| {
+                    segment.is_empty()
+                        || !segment
+                            .bytes()
+                            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
                 })
-            }) {
+            {
                 return Err(ProfileFileError::InvalidValueReference(text.clone()));
             }
-        
+
             if let Some(index) = chain.iter().position(|entry| entry == text) {
                 let mut cycle = chain[index..].to_vec();
                 cycle.push(text.clone());
@@ -211,27 +243,40 @@ fn resolve_value(
 
             let mut current = values.get(path.split('.').next().unwrap());
             for segment in path.split('.').skip(1) {
-                current = current.and_then(Value::as_object).and_then(|map| map.get(segment));
+                current = current
+                    .and_then(Value::as_object)
+                    .and_then(|map| map.get(segment));
             }
 
-            let current = current.ok_or_else(|| ProfileFileError::UnknownValueReference(text.clone()))?;
+            let current =
+                current.ok_or_else(|| ProfileFileError::UnknownValueReference(text.clone()))?;
 
             chain.push(text.clone());
             let resolved = resolve_value(current, values, chain);
             chain.pop();
             resolved
         }
-        Value::Array(items) => items.iter().map(|item| resolve_value(item, values, chain))
-            .collect::<Result<Vec<_>, _>>().map(Value::Array),
-        Value::Object(items) => items.iter().map(|(key, item)| {
-            resolve_value(item, values, chain).map(|resolved| (key.clone(), resolved))
-        }).collect::<Result<Map<_, _>, _>>().map(Value::Object),
+        Value::Array(items) => items
+            .iter()
+            .map(|item| resolve_value(item, values, chain))
+            .collect::<Result<Vec<_>, _>>()
+            .map(Value::Array),
+        Value::Object(items) => items
+            .iter()
+            .map(|(key, item)| {
+                resolve_value(item, values, chain).map(|resolved| (key.clone(), resolved))
+            })
+            .collect::<Result<Map<_, _>, _>>()
+            .map(Value::Object),
         _ => Ok(value.clone()),
     }
 }
 
-fn optional_object(root: &Map<String, Value>, key: &str, error: ProfileFileError)
-    -> Result<Map<String, Value>, ProfileFileError> {
+fn optional_object(
+    root: &Map<String, Value>,
+    key: &str,
+    error: ProfileFileError,
+) -> Result<Map<String, Value>, ProfileFileError> {
     match root.get(key) {
         None => Ok(Map::new()),
         Some(Value::Object(map)) => Ok(map.clone()),
@@ -239,9 +284,12 @@ fn optional_object(root: &Map<String, Value>, key: &str, error: ProfileFileError
     }
 }
 
-fn visit(name: &str, profiles: &Map<String, Value>,
-    complete: &mut std::collections::BTreeSet<String>, stack: &mut Vec<String>)
-    -> Result<(), ProfileFileError> {
+fn visit(
+    name: &str,
+    profiles: &Map<String, Value>,
+    complete: &mut std::collections::BTreeSet<String>,
+    stack: &mut Vec<String>,
+) -> Result<(), ProfileFileError> {
     if complete.contains(name) {
         return Ok(());
     }
@@ -267,19 +315,39 @@ mod tests {
     use super::*;
     #[test]
     fn accepts_current_structure_only() {
-        assert_eq!(parse_profile_structure(r#"{"version":2,"profiles":{"default":{}}}"#), Err(ProfileFileError::InvalidVersion));
+        assert_eq!(
+            parse_profile_structure(r#"{"version":2,"profiles":{"default":{}}}"#),
+            Err(ProfileFileError::InvalidVersion)
+        );
         assert_eq!(parse_profile_structure(r#"{"version":3,"$defaults":{},"values":{},"profiles":{"child":{"parent":"base"},"base":{}}}"#).unwrap().version, 3);
     }
     #[test]
     fn rejects_unknown_keys_and_wrong_types() {
-        assert_eq!(parse_profile_structure(r#"{"version":2,"$defaults":{},"profiles":{}}"#), Err(ProfileFileError::InvalidVersion));
-        assert_eq!(parse_profile_structure(r#"{"version":3,"profiles":[],"values":{}}"#), Err(ProfileFileError::InvalidProfiles));
-        assert_eq!(parse_profile_structure(r#"{"version":3,"profiles":{},"values":null}"#), Err(ProfileFileError::InvalidValues));
+        assert_eq!(
+            parse_profile_structure(r#"{"version":2,"$defaults":{},"profiles":{}}"#),
+            Err(ProfileFileError::InvalidVersion)
+        );
+        assert_eq!(
+            parse_profile_structure(r#"{"version":3,"profiles":[],"values":{}}"#),
+            Err(ProfileFileError::InvalidProfiles)
+        );
+        assert_eq!(
+            parse_profile_structure(r#"{"version":3,"profiles":{},"values":null}"#),
+            Err(ProfileFileError::InvalidValues)
+        );
     }
     #[test]
     fn detects_missing_parents_and_cycles() {
-        assert_eq!(parse_profile_structure(r#"{"version":3,"profiles":{"a":{"parent":"missing"}}}"#), Err(ProfileFileError::MissingParent("missing".into())));
-        assert!(matches!(parse_profile_structure(r#"{"version":3,"profiles":{"a":{"parent":"b"},"b":{"parent":"a"}}}"#), Err(ProfileFileError::InheritanceCycle(_))));
+        assert_eq!(
+            parse_profile_structure(r#"{"version":3,"profiles":{"a":{"parent":"missing"}}}"#),
+            Err(ProfileFileError::MissingParent("missing".into()))
+        );
+        assert!(matches!(
+            parse_profile_structure(
+                r#"{"version":3,"profiles":{"a":{"parent":"b"},"b":{"parent":"a"}}}"#
+            ),
+            Err(ProfileFileError::InheritanceCycle(_))
+        ));
     }
     #[test]
     fn resolves_references_in_nested_values_and_escaped_dollars() {
@@ -288,14 +356,20 @@ mod tests {
         let settings = &profiles["base"].settings;
         assert_eq!(settings["format"], serde_json::json!(["mp4", 7]));
         assert_eq!(settings["literal"], "$values.alias");
-        assert_eq!(settings["extra"], serde_json::json!({"nested":[["mp4",7],true]}));
+        assert_eq!(
+            settings["extra"],
+            serde_json::json!({"nested":[["mp4",7],true]})
+        );
     }
     #[test]
     fn resolves_inheritance_with_sources_and_ancestry() {
         let raw = parse_profile_structure(r#"{"version":3,"$defaults":{"a":1,"b":2},"profiles":{"root":{"b":3},"middle":{"parent":"root","c":4},"leaf":{"parent":"middle","a":5}}}"#).unwrap();
         let profiles = resolve_profile_structure(&raw).unwrap();
         let leaf = &profiles["leaf"];
-        assert_eq!(leaf.settings, serde_json::from_str::<Map<String, Value>>(r#"{"a":5,"b":3,"c":4}"#).unwrap());
+        assert_eq!(
+            leaf.settings,
+            serde_json::from_str::<Map<String, Value>>(r#"{"a":5,"b":3,"c":4}"#).unwrap()
+        );
         assert_eq!(leaf.ancestry, vec!["root", "middle"]);
         assert_eq!(leaf.setting_sources["a"], "profile 'leaf'");
         assert_eq!(leaf.setting_sources["b"], "profile 'root'");
@@ -304,14 +378,26 @@ mod tests {
     #[test]
     fn rejects_unknown_malformed_and_cyclic_references() {
         for reference in ["$values.missing", "$values.a.missing"] {
-            let json = format!(r#"{{"version":3,"values":{{"a":1}},"profiles":{{"p":{{"a":"{reference}"}}}}}}"#);
-            assert!(matches!(resolve_profile_structure(&parse_profile_structure(&json).unwrap()), Err(ProfileFileError::UnknownValueReference(_))));
+            let json = format!(
+                r#"{{"version":3,"values":{{"a":1}},"profiles":{{"p":{{"a":"{reference}"}}}}}}"#
+            );
+            assert!(matches!(
+                resolve_profile_structure(&parse_profile_structure(&json).unwrap()),
+                Err(ProfileFileError::UnknownValueReference(_))
+            ));
         }
 
-        let raw = parse_profile_structure(r#"{"version":3,"profiles":{"p":{"a":"$other.a"}}}"#).unwrap();
-        assert!(matches!(resolve_profile_structure(&raw), Err(ProfileFileError::InvalidValueReference(_))));
+        let raw =
+            parse_profile_structure(r#"{"version":3,"profiles":{"p":{"a":"$other.a"}}}"#).unwrap();
+        assert!(matches!(
+            resolve_profile_structure(&raw),
+            Err(ProfileFileError::InvalidValueReference(_))
+        ));
         let raw = parse_profile_structure(r#"{"version":3,"values":{"a":"$values.b","b":"$values.a"},"profiles":{"p":{"a":"$values.a"}}}"#).unwrap();
-        assert!(matches!(resolve_profile_structure(&raw), Err(ProfileFileError::ValueReferenceCycle(_))));
+        assert!(matches!(
+            resolve_profile_structure(&raw),
+            Err(ProfileFileError::ValueReferenceCycle(_))
+        ));
     }
     #[test]
     fn v3_inheritance_preserves_explicit_false_and_child_precedence() {
@@ -347,7 +433,13 @@ mod tests {
 
     #[test]
     fn rejects_invalid_names_and_versions() {
-        assert_eq!(parse_profile_structure(r#"{"version":4,"profiles":{}}"#), Err(ProfileFileError::InvalidVersion));
-        assert_eq!(parse_profile_structure(r#"{"version":3,"profiles":{".hidden":{}}}"#), Err(ProfileFileError::InvalidProfileName(".hidden".into())));
+        assert_eq!(
+            parse_profile_structure(r#"{"version":4,"profiles":{}}"#),
+            Err(ProfileFileError::InvalidVersion)
+        );
+        assert_eq!(
+            parse_profile_structure(r#"{"version":3,"profiles":{".hidden":{}}}"#),
+            Err(ProfileFileError::InvalidProfileName(".hidden".into()))
+        );
     }
 }

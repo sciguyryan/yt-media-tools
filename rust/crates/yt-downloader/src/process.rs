@@ -115,27 +115,54 @@ mod tests {
 
     fn plan() -> ExecutionPlan {
         ExecutionPlan {
-            arguments: vec!["--".into(), "--leading-dash".into(), "duplicate".into(), "duplicate".into()],
-            source: TargetSource::Direct(vec!["--leading-dash".into(), "duplicate".into(), "duplicate".into()]),
+            arguments: vec![
+                "--".into(),
+                "--leading-dash".into(),
+                "duplicate".into(),
+                "duplicate".into(),
+            ],
+            source: TargetSource::Direct(vec![
+                "--leading-dash".into(),
+                "duplicate".into(),
+                "duplicate".into(),
+            ]),
         }
     }
 
     #[test]
     fn preserves_executable_working_directory_and_argument_order() {
-        let launch = ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), "downloads", &plan()).unwrap();
+        let launch =
+            ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), "downloads", &plan()).unwrap();
         assert_eq!(launch.executable(), Path::new("yt-dlp"));
         assert_eq!(launch.working_directory(), Path::new("downloads"));
-        assert_eq!(launch.arguments(), &["--", "--leading-dash", "duplicate", "duplicate"]);
+        assert_eq!(
+            launch.arguments(),
+            &["--", "--leading-dash", "duplicate", "duplicate"]
+        );
         let command = launch.command();
         assert_eq!(command.get_program(), OsStr::new("yt-dlp"));
         assert_eq!(command.get_current_dir(), Some(Path::new("downloads")));
-        assert_eq!(command.get_args().collect::<Vec<_>>(), vec![OsStr::new("--"), OsStr::new("--leading-dash"), OsStr::new("duplicate"), OsStr::new("duplicate")]);
+        assert_eq!(
+            command.get_args().collect::<Vec<_>>(),
+            vec![
+                OsStr::new("--"),
+                OsStr::new("--leading-dash"),
+                OsStr::new("duplicate"),
+                OsStr::new("duplicate")
+            ]
+        );
     }
 
     #[test]
     fn invalid_launch_configuration_fails_before_process_creation() {
-        assert_eq!(Executable::new("").unwrap_err(), ProcessConfigError::EmptyExecutable);
-        assert_eq!(Executable::new("bad\0name").unwrap_err(), ProcessConfigError::InvalidExecutable);
+        assert_eq!(
+            Executable::new("").unwrap_err(),
+            ProcessConfigError::EmptyExecutable
+        );
+        assert_eq!(
+            Executable::new("bad\0name").unwrap_err(),
+            ProcessConfigError::InvalidExecutable
+        );
         assert_eq!(
             ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), "", &plan()).unwrap_err(),
             ProcessConfigError::EmptyWorkingDirectory,
@@ -144,7 +171,10 @@ mod tests {
 
     #[test]
     fn standard_input_batch_arguments_are_preserved() {
-        let plan = ExecutionPlan { arguments: vec!["--batch-file".into(), "-".into()], source: TargetSource::Stdin };
+        let plan = ExecutionPlan {
+            arguments: vec!["--batch-file".into(), "-".into()],
+            source: TargetSource::Stdin,
+        };
         let launch = ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), ".", &plan).unwrap();
         assert_eq!(launch.arguments(), &["--batch-file", "-"]);
     }

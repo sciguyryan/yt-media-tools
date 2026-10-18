@@ -1,18 +1,18 @@
 //! File loading and profile selection for Downloader defaults documents.
 
-use unicode_casefold::UnicodeCaseFold;
+use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use serde_json::{Map, Value};
+use unicode_casefold::UnicodeCaseFold;
 
-use crate::profile_pipeline::{ProfilePipelineError, load_validated_profiles};
+use crate::ProfileOptions;
 use crate::profile_file::ProfileFileError;
+use crate::profile_pipeline::{ProfilePipelineError, load_validated_profiles};
 use crate::profile_selection::{ProfileSelectionError, SelectedProfile, select_profile};
 use crate::profile_settings::{SettingError, ValidatedProfile};
-use crate::ProfileOptions;
 
 /// Errors encountered while loading or selecting stored Downloader policy.
 #[derive(Debug)]
@@ -46,7 +46,10 @@ pub fn describe_store_error(error: &ProfileStoreError, path: &Path) -> String {
             format!("cannot read defaults file {location}: {cause}")
         }
         ProfileStoreError::InvalidDocument(cause) => {
-            format!("invalid defaults file {location}: {}", describe_pipeline_error(cause))
+            format!(
+                "invalid defaults file {location}: {}",
+                describe_pipeline_error(cause)
+            )
         }
         ProfileStoreError::ListingRequested => {
             "profile selection cannot handle a listing request".to_owned()
@@ -54,25 +57,26 @@ pub fn describe_store_error(error: &ProfileStoreError, path: &Path) -> String {
         ProfileStoreError::InvalidProfileNameEncoding => {
             "profile name must be valid UTF-8".to_owned()
         }
-        ProfileStoreError::Selection(cause) => {
-            match cause {
-                ProfileSelectionError::UnknownProfile(name) => {
-                    format!("unknown profile: {name}")
-                }
-                ProfileSelectionError::InvalidSettings(setting_error) => {
-                    format!("invalid effective profile settings: {}", describe_setting_error(setting_error))
-                }
-                ProfileSelectionError::InvalidProfileNameEncoding => {
-                    "profile name must be valid UTF-8".to_owned()
-                }
-                ProfileSelectionError::DefaultsFileNotLoaded => {
-                    "defaults file must be loaded before selecting a profile".to_owned()
-                }
-                ProfileSelectionError::ListingRequested => {
-                    "profile listing cannot be used to select download policy".to_owned()
-                }
+        ProfileStoreError::Selection(cause) => match cause {
+            ProfileSelectionError::UnknownProfile(name) => {
+                format!("unknown profile: {name}")
             }
-        }
+            ProfileSelectionError::InvalidSettings(setting_error) => {
+                format!(
+                    "invalid effective profile settings: {}",
+                    describe_setting_error(setting_error)
+                )
+            }
+            ProfileSelectionError::InvalidProfileNameEncoding => {
+                "profile name must be valid UTF-8".to_owned()
+            }
+            ProfileSelectionError::DefaultsFileNotLoaded => {
+                "defaults file must be loaded before selecting a profile".to_owned()
+            }
+            ProfileSelectionError::ListingRequested => {
+                "profile listing cannot be used to select download policy".to_owned()
+            }
+        },
     }
 }
 
@@ -91,7 +95,9 @@ fn describe_profile_file_error(error: &ProfileFileError) -> String {
     match error {
         ProfileFileError::InvalidJson => "invalid JSON".to_owned(),
         ProfileFileError::InvalidRoot => "root must be a JSON object".to_owned(),
-        ProfileFileError::InvalidVersion => "unsupported or missing profile format version".to_owned(),
+        ProfileFileError::InvalidVersion => {
+            "unsupported or missing profile format version".to_owned()
+        }
         ProfileFileError::UnknownRootKey(key) => format!("unknown root key: {key}"),
         ProfileFileError::InvalidValues => "'values' must be a JSON object".to_owned(),
         ProfileFileError::InvalidProfiles => "'profiles' must be a JSON object".to_owned(),
@@ -253,7 +259,10 @@ fn home_directory() -> Option<PathBuf> {
 /// executable rather than in the working directory.
 pub fn resolve_defaults_path(options: &ProfileOptions, executable_dir: &Path) -> (PathBuf, bool) {
     match &options.defaults {
-        Some(path) => (expand_current_user(Path::new(path), home_directory().as_deref()), true),
+        Some(path) => (
+            expand_current_user(Path::new(path), home_directory().as_deref()),
+            true,
+        ),
         None => (executable_dir.join("defaults.json"), false),
     }
 }
@@ -273,9 +282,7 @@ pub struct ListedProfile {
 ///
 /// Listing operates on the same validated profiles as ordinary selection, so
 /// inherited values have already been resolved and checked.
-pub fn list_stored_profiles(
-    profiles: &BTreeMap<String, ValidatedProfile>,
-) -> Vec<ListedProfile> {
+pub fn list_stored_profiles(profiles: &BTreeMap<String, ValidatedProfile>) -> Vec<ListedProfile> {
     profiles
         .iter()
         .map(|(name, profile)| ListedProfile {
@@ -303,7 +310,10 @@ pub fn render_profile_tree(
     let mut children: BTreeMap<Option<String>, Vec<String>> = BTreeMap::new();
     for profile in profiles {
         parents.insert(profile.name.clone(), profile.parent.clone());
-        children.entry(profile.parent.clone()).or_default().push(profile.name.clone());
+        children
+            .entry(profile.parent.clone())
+            .or_default()
+            .push(profile.name.clone());
     }
 
     for names in children.values_mut() {
@@ -324,7 +334,9 @@ pub fn render_profile_tree(
         let mut chain = vec![name.to_owned()];
         let mut current = name;
         for _ in 0..parents.len() {
-            let Some(Some(parent)) = parents.get(current) else { break };
+            let Some(Some(parent)) = parents.get(current) else {
+                break;
+            };
             chain.push(parent.clone());
             current = parent;
         }
@@ -352,8 +364,13 @@ pub fn render_profile_tree(
             for (index, child) in kids.iter().enumerate() {
                 let last = index + 1 == kids.len();
                 lines.push(format!("{prefix}{}{child}", if last { elbow } else { tee }));
-                emit(child, &format!("{prefix}{}", if last { space } else { pipe }),
-                    children, lines, connectors);
+                emit(
+                    child,
+                    &format!("{prefix}{}", if last { space } else { pipe }),
+                    children,
+                    lines,
+                    connectors,
+                );
             }
         }
     }
@@ -368,8 +385,13 @@ pub fn render_profile_tree(
         let last = index + 1 == roots.len();
         if has_defaults {
             lines.push(format!("{}{root}", if last { elbow } else { tee }));
-            emit(root, if last { space } else { pipe }, &children, &mut lines,
-                (tee, elbow, pipe, space));
+            emit(
+                root,
+                if last { space } else { pipe },
+                &children,
+                &mut lines,
+                (tee, elbow, pipe, space),
+            );
         } else {
             if index > 0 {
                 lines.push(String::new());
@@ -391,21 +413,31 @@ pub fn render_tree_from_path(
     ascii_only: bool,
 ) -> Result<String, ProfileStoreError> {
     if !explicit && !path.exists() {
-        return Ok(format!("No profiles are available in {}.\n", path.display()));
+        return Ok(format!(
+            "No profiles are available in {}.\n",
+            path.display()
+        ));
     }
 
     let profiles = load_profiles_from_path(path, true)?;
     let document = fs::read_to_string(path).map_err(ProfileStoreError::Read)?;
     let document = document.strip_prefix('\u{feff}').unwrap_or(&document);
-    let root: Value = serde_json::from_str(document)
-        .map_err(|_| ProfileStoreError::InvalidDocument(
-            ProfilePipelineError::ProfileFile(ProfileFileError::InvalidJson)))?;
-    let has_defaults = root.get("version").and_then(Value::as_u64) == Some(3)
-        && root.get("$defaults").is_some();
+    let root: Value = serde_json::from_str(document).map_err(|_| {
+        ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            ProfileFileError::InvalidJson,
+        ))
+    })?;
+    let has_defaults =
+        root.get("version").and_then(Value::as_u64) == Some(3) && root.get("$defaults").is_some();
     let listed = list_stored_profiles(&profiles);
-    let rendered = render_profile_tree(&listed, has_defaults, focus, ascii_only)
-        .map_err(|name| ProfileStoreError::Selection(
-            ProfileSelectionError::UnknownProfile(name.strip_prefix("unknown profile: ").unwrap_or(&name).to_owned())))?;
+    let rendered =
+        render_profile_tree(&listed, has_defaults, focus, ascii_only).map_err(|name| {
+            ProfileStoreError::Selection(ProfileSelectionError::UnknownProfile(
+                name.strip_prefix("unknown profile: ")
+                    .unwrap_or(&name)
+                    .to_owned(),
+            ))
+        })?;
     Ok(format!("{rendered}\n"))
 }
 
@@ -418,7 +450,10 @@ pub fn render_profile_listing(path: &Path, profiles: &[ListedProfile]) -> String
         return format!("No profiles are available in {}.\n", path.display());
     }
 
-    let mut names: Vec<&str> = profiles.iter().map(|profile| profile.name.as_str()).collect();
+    let mut names: Vec<&str> = profiles
+        .iter()
+        .map(|profile| profile.name.as_str())
+        .collect();
     // Python orders profile names by Unicode casefolded spelling.
     // Stable sorting preserves the input order for equivalent folded names.
     names.sort_by_key(|name| name.case_fold().collect::<String>());
@@ -484,7 +519,10 @@ pub fn select_from_cli_store(
     let requested_name = options
         .profile
         .as_ref()
-        .map(|name| name.to_str().ok_or(ProfileStoreError::InvalidProfileNameEncoding))
+        .map(|name| {
+            name.to_str()
+                .ok_or(ProfileStoreError::InvalidProfileNameEncoding)
+        })
         .transpose()?;
 
     let (path, explicit) = resolve_defaults_path(options, executable_dir);
@@ -498,8 +536,16 @@ mod tests {
     #[test]
     fn profile_tree_matches_python_hierarchy_layout() {
         let profiles = vec![
-            ListedProfile { name: "root".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "child".to_owned(), settings: Map::new(), parent: Some("root".to_owned()) },
+            ListedProfile {
+                name: "root".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "child".to_owned(),
+                settings: Map::new(),
+                parent: Some("root".to_owned()),
+            },
         ];
         assert_eq!(
             render_profile_tree(&profiles, true, None, false).unwrap(),
@@ -519,7 +565,6 @@ mod tests {
         );
         assert!(render_profile_tree(&profiles, false, Some("missing"), false).is_err());
     }
-
 
     #[test]
     fn validation_json_preserves_the_python_field_contract() {
@@ -567,7 +612,6 @@ mod tests {
         assert!(matches!(result, Err(ProfileStoreError::InvalidDocument(_))));
     }
 
-
     use super::*;
 
     use serde_json::json;
@@ -587,9 +631,21 @@ mod tests {
     #[test]
     fn renders_python_style_profile_names_without_settings() {
         let profiles = [
-            ListedProfile { name: "zeta".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "Alpha".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "beta".to_owned(), settings: Map::new(), parent: None },
+            ListedProfile {
+                name: "zeta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Alpha".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "beta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
         ];
 
         assert_eq!(
@@ -601,10 +657,26 @@ mod tests {
     #[test]
     fn sorts_non_ascii_names_by_unicode_lowercase() {
         let profiles = [
-            ListedProfile { name: "zeta".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "Éclair".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "étude".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "Alpha".to_owned(), settings: Map::new(), parent: None },
+            ListedProfile {
+                name: "zeta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Éclair".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "étude".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Alpha".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
         ];
 
         assert_eq!(
@@ -616,8 +688,16 @@ mod tests {
     #[test]
     fn preserves_original_spelling_when_lowercase_keys_match() {
         let profiles = [
-            ListedProfile { name: "beta".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "Beta".to_owned(), settings: Map::new(), parent: None },
+            ListedProfile {
+                name: "beta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Beta".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
         ];
 
         assert_eq!(
@@ -629,23 +709,48 @@ mod tests {
     #[test]
     fn casefolds_sharp_s_and_ascii_equivalents() {
         let profiles = [
-            ListedProfile { name: "zulu".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "Straße".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "strasse".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "alpha".to_owned(), settings: Map::new(), parent: None },
+            ListedProfile {
+                name: "zulu".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "Straße".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "strasse".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "alpha".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
         ];
 
         assert_eq!(
             render_profile_listing(Path::new("defaults.json"), &profiles),
-            "Available profiles in defaults.json:\\n\\n  alpha\\n  Straße\\n  strasse\\n  zulu\\n".replace("\\n", "\n"),
+            "Available profiles in defaults.json:\\n\\n  alpha\\n  Straße\\n  strasse\\n  zulu\\n"
+                .replace("\\n", "\n"),
         );
     }
 
     #[test]
     fn casefolds_greek_final_sigma_with_standard_sigma() {
         let profiles = [
-            ListedProfile { name: "ος".to_owned(), settings: Map::new(), parent: None },
-            ListedProfile { name: "οσ".to_owned(), settings: Map::new(), parent: None },
+            ListedProfile {
+                name: "ος".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
+            ListedProfile {
+                name: "οσ".to_owned(),
+                settings: Map::new(),
+                parent: None,
+            },
         ];
 
         assert_eq!(
@@ -685,7 +790,13 @@ mod tests {
 
         let listed = list_stored_profiles(&profiles);
 
-        assert_eq!(listed.iter().map(|profile| profile.name.as_str()).collect::<Vec<_>>(), vec!["alpha", "zeta"]);
+        assert_eq!(
+            listed
+                .iter()
+                .map(|profile| profile.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["alpha", "zeta"]
+        );
         assert_eq!(listed[1].parent.as_deref(), Some("alpha"));
         assert_eq!(listed[1].settings["audio-format"], "mp3");
     }
@@ -698,11 +809,17 @@ mod tests {
             NEXT_FILE.fetch_add(1, Ordering::Relaxed),
         ));
         let options = crate::parse_profile_options(
-            ["--list-profiles"].into_iter().map(std::ffi::OsString::from),
+            ["--list-profiles"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
         )
         .unwrap();
 
-        assert!(list_from_cli_store(&options, &directory).unwrap().is_empty());
+        assert!(
+            list_from_cli_store(&options, &directory)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -723,9 +840,9 @@ mod tests {
 
     #[test]
     fn describes_unknown_profile_without_debug_syntax() {
-        let error = ProfileStoreError::Selection(
-            ProfileSelectionError::UnknownProfile("missing".to_owned()),
-        );
+        let error = ProfileStoreError::Selection(ProfileSelectionError::UnknownProfile(
+            "missing".to_owned(),
+        ));
 
         assert_eq!(
             describe_store_error(&error, Path::new("defaults.json")),
@@ -735,11 +852,9 @@ mod tests {
 
     #[test]
     fn describes_invalid_effective_settings() {
-        let error = ProfileStoreError::Selection(
-            ProfileSelectionError::InvalidSettings(
-                SettingError::ConflictingSettings("audio-quality requires audio-format".to_owned()),
-            ),
-        );
+        let error = ProfileStoreError::Selection(ProfileSelectionError::InvalidSettings(
+            SettingError::ConflictingSettings("audio-quality requires audio-format".to_owned()),
+        ));
 
         assert_eq!(
             describe_store_error(&error, Path::new("defaults.json")),
@@ -749,11 +864,9 @@ mod tests {
 
     #[test]
     fn describes_structural_document_errors_without_debug_syntax() {
-        let error = ProfileStoreError::InvalidDocument(
-            ProfilePipelineError::ProfileFile(
-                ProfileFileError::UnknownRootKey("unexpected".to_owned()),
-            ),
-        );
+        let error = ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            ProfileFileError::UnknownRootKey("unexpected".to_owned()),
+        ));
 
         assert_eq!(
             describe_store_error(&error, Path::new("custom.json")),
@@ -763,13 +876,13 @@ mod tests {
 
     #[test]
     fn describes_inheritance_cycles_with_the_full_chain() {
-        let error = ProfileStoreError::InvalidDocument(
-            ProfilePipelineError::ProfileFile(
-                ProfileFileError::InheritanceCycle(
-                    vec!["first".to_owned(), "second".to_owned(), "first".to_owned()],
-                ),
-            ),
-        );
+        let error = ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            ProfileFileError::InheritanceCycle(vec![
+                "first".to_owned(),
+                "second".to_owned(),
+                "first".to_owned(),
+            ]),
+        ));
 
         assert_eq!(
             describe_store_error(&error, Path::new("defaults.json")),
@@ -779,12 +892,10 @@ mod tests {
 
     #[test]
     fn describes_profile_validation_failures_with_the_profile_name() {
-        let error = ProfileStoreError::InvalidDocument(
-            ProfilePipelineError::Setting {
-                profile: "child".to_owned(),
-                error: SettingError::InvalidValue("audio-quality".to_owned()),
-            },
-        );
+        let error = ProfileStoreError::InvalidDocument(ProfilePipelineError::Setting {
+            profile: "child".to_owned(),
+            error: SettingError::InvalidValue("audio-quality".to_owned()),
+        });
 
         assert_eq!(
             describe_store_error(&error, Path::new("defaults.json")),
@@ -794,21 +905,23 @@ mod tests {
 
     #[test]
     fn explicit_profile_overrides_automatic_default_even_with_cli_settings() {
-        let profiles = load_validated_profiles(&json!({
-            "version": 3,
-            "$defaults": {"playlist": true},
-            "profiles": {
-                "default": {"audio-format": "mp3"},
-                "other": {"audio-format": "opus"}
-            }
-        }).to_string()).unwrap();
+        let profiles = load_validated_profiles(
+            &json!({
+                "version": 3,
+                "$defaults": {"playlist": true},
+                "profiles": {
+                    "default": {"audio-format": "mp3"},
+                    "other": {"audio-format": "opus"}
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
         let overrides = json!({"playlist": false});
 
-        let selected = select_stored_profile(
-            &profiles,
-            Some("other"),
-            overrides.as_object().unwrap(),
-        ).unwrap();
+        let selected =
+            select_stored_profile(&profiles, Some("other"), overrides.as_object().unwrap())
+                .unwrap();
 
         assert_eq!(selected.profile_name.as_deref(), Some("other"));
         assert_eq!(selected.settings["audio-format"], "opus");
@@ -818,17 +931,18 @@ mod tests {
 
     #[test]
     fn absent_default_does_not_select_an_arbitrary_stored_profile() {
-        let profiles = load_validated_profiles(&json!({
-            "version": 3,
-            "profiles": {"other": {"playlist": true}}
-        }).to_string()).unwrap();
+        let profiles = load_validated_profiles(
+            &json!({
+                "version": 3,
+                "profiles": {"other": {"playlist": true}}
+            })
+            .to_string(),
+        )
+        .unwrap();
         let overrides = json!({"playlist": false});
 
-        let selected = select_stored_profile(
-            &profiles,
-            None,
-            overrides.as_object().unwrap(),
-        ).unwrap();
+        let selected =
+            select_stored_profile(&profiles, None, overrides.as_object().unwrap()).unwrap();
 
         assert_eq!(selected.profile_name, None);
         assert_eq!(selected.settings["playlist"], false);
@@ -837,10 +951,14 @@ mod tests {
 
     #[test]
     fn explicitly_requested_missing_profile_never_falls_back_to_default() {
-        let profiles = load_validated_profiles(&json!({
-            "version": 3,
-            "profiles": {"default": {"playlist": true}}
-        }).to_string()).unwrap();
+        let profiles = load_validated_profiles(
+            &json!({
+                "version": 3,
+                "profiles": {"default": {"playlist": true}}
+            })
+            .to_string(),
+        )
+        .unwrap();
 
         assert!(matches!(
             select_stored_profile(&profiles, Some("missing"), &Map::new()),
@@ -856,10 +974,7 @@ mod tests {
             expand_current_user(Path::new("~/profiles/defaults.json"), Some(home)),
             home.join("profiles/defaults.json"),
         );
-        assert_eq!(
-            expand_current_user(Path::new("~"), Some(home)),
-            home,
-        );
+        assert_eq!(expand_current_user(Path::new("~"), Some(home)), home,);
         assert_eq!(
             expand_current_user(Path::new("profiles/defaults.json"), Some(home)),
             PathBuf::from("profiles/defaults.json"),
@@ -883,7 +998,9 @@ mod tests {
         );
 
         let options = crate::parse_profile_options(
-            ["--defaults", "config/profiles.json"].into_iter().map(std::ffi::OsString::from),
+            ["--defaults", "config/profiles.json"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
         )
         .unwrap();
         assert_eq!(
@@ -916,18 +1033,16 @@ mod tests {
 
         let options = crate::parse_profile_options(Vec::<std::ffi::OsString>::new()).unwrap();
         let overrides = json!({"playlist": false});
-        let selected = select_from_cli_store(
-            &options,
-            &directory,
-            overrides.as_object().unwrap(),
-        )
-        .unwrap();
+        let selected =
+            select_from_cli_store(&options, &directory, overrides.as_object().unwrap()).unwrap();
         assert_eq!(selected.profile_name.as_deref(), Some("default"));
         assert_eq!(selected.settings["playlist"], false);
         assert_eq!(selected.setting_sources["playlist"], "explicit override");
 
         let options = crate::parse_profile_options(
-            ["--profile", "other"].into_iter().map(std::ffi::OsString::from),
+            ["--profile", "other"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
         )
         .unwrap();
         let selected = select_from_cli_store(&options, &directory, &Map::new()).unwrap();
@@ -950,9 +1065,10 @@ mod tests {
         assert_eq!(selected.profile_name, None);
 
         let missing = directory.join("not-found.json");
-        let options = crate::parse_profile_options(
-            [std::ffi::OsString::from("--defaults"), missing.into_os_string()],
-        )
+        let options = crate::parse_profile_options([
+            std::ffi::OsString::from("--defaults"),
+            missing.into_os_string(),
+        ])
         .unwrap();
         assert!(matches!(
             select_from_cli_store(&options, &directory, &Map::new()),
@@ -963,7 +1079,9 @@ mod tests {
     #[test]
     fn cli_store_rejects_listing_without_loading_a_file() {
         let options = crate::parse_profile_options(
-            ["--list-profiles"].into_iter().map(std::ffi::OsString::from),
+            ["--list-profiles"]
+                .into_iter()
+                .map(std::ffi::OsString::from),
         )
         .unwrap();
         assert!(matches!(
@@ -984,13 +1102,18 @@ mod tests {
     #[test]
     fn diagnostics_distinguish_invalid_documents_and_read_failures() {
         let path = Path::new("defaults.json");
-        let invalid = ProfileStoreError::InvalidDocument(
-            ProfilePipelineError::ProfileFile(crate::profile_file::ProfileFileError::InvalidJson),
+        let invalid = ProfileStoreError::InvalidDocument(ProfilePipelineError::ProfileFile(
+            crate::profile_file::ProfileFileError::InvalidJson,
+        ));
+        assert!(
+            describe_store_error(&invalid, path).contains("invalid defaults file defaults.json")
         );
-        assert!(describe_store_error(&invalid, path).contains("invalid defaults file defaults.json"));
 
         let unreadable = ProfileStoreError::Read(io::Error::from(io::ErrorKind::PermissionDenied));
-        assert!(describe_store_error(&unreadable, path).contains("cannot read defaults file defaults.json"));
+        assert!(
+            describe_store_error(&unreadable, path)
+                .contains("cannot read defaults file defaults.json")
+        );
     }
 
     #[test]
@@ -1038,12 +1161,8 @@ mod tests {
     #[test]
     fn missing_default_profile_keeps_explicit_settings() {
         let overrides = json!({"playlist": false});
-        let selected = select_stored_profile(
-            &BTreeMap::new(),
-            None,
-            overrides.as_object().unwrap(),
-        )
-        .unwrap();
+        let selected =
+            select_stored_profile(&BTreeMap::new(), None, overrides.as_object().unwrap()).unwrap();
 
         assert_eq!(selected.profile_name, None);
         assert_eq!(selected.settings["playlist"], false);

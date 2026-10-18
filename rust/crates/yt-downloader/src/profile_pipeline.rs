@@ -33,9 +33,8 @@ pub fn load_validated_profiles(
     let raw = parse_profile_structure(json).map_err(ProfilePipelineError::ProfileFile)?;
     let resolved = resolve_profile_structure(&raw).map_err(ProfilePipelineError::ProfileFile)?;
 
-    validate_profiles(&resolved).map_err(|(profile, error)| {
-        ProfilePipelineError::Setting { profile, error }
-    })
+    validate_profiles(&resolved)
+        .map_err(|(profile, error)| ProfilePipelineError::Setting { profile, error })
 }
 
 #[cfg(test)]
@@ -92,7 +91,9 @@ mod tests {
     fn preserves_structural_errors_without_misclassifying_them_as_settings() {
         assert_eq!(
             load_validated_profiles("not json"),
-            Err(ProfilePipelineError::ProfileFile(ProfileFileError::InvalidJson)),
+            Err(ProfilePipelineError::ProfileFile(
+                ProfileFileError::InvalidJson
+            )),
         );
     }
 }

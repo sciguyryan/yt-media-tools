@@ -41,9 +41,10 @@ pub fn prepare_invocation(
     requested_profile: Option<&str>,
     overrides: &Map<String, Value>,
 ) -> Result<InvocationContext, InvocationError> {
-    let selected_name = requested_profile.or_else(|| profiles.contains_key("default").then_some("default"));
-    let policy = select_profile(profiles, selected_name, overrides)
-        .map_err(InvocationError::Policy)?;
+    let selected_name =
+        requested_profile.or_else(|| profiles.contains_key("default").then_some("default"));
+    let policy =
+        select_profile(profiles, selected_name, overrides).map_err(InvocationError::Policy)?;
     let source = resolve_targets(request).map_err(InvocationError::Target)?;
 
     Ok(InvocationContext { source, policy })
@@ -77,21 +78,29 @@ mod tests {
     }
 
     fn profiles() -> BTreeMap<String, ValidatedProfile> {
-        load_validated_profiles(&json!({
-            "version": 3,
-            "$defaults": {"playlist": true},
-            "profiles": {
-                "default": {"audio-format": "mp3"},
-                "alternate": {"audio-format": "opus"}
-            }
-        }).to_string()).unwrap()
+        load_validated_profiles(
+            &json!({
+                "version": 3,
+                "$defaults": {"playlist": true},
+                "profiles": {
+                    "default": {"audio-format": "mp3"},
+                    "alternate": {"audio-format": "opus"}
+                }
+            })
+            .to_string(),
+        )
+        .unwrap()
     }
 
     #[test]
     fn selects_default_policy_and_preserves_target_order() {
-        let context = prepare_invocation(&request(&["b", "a", "b"]), &profiles(), None, &Map::new()).unwrap();
+        let context =
+            prepare_invocation(&request(&["b", "a", "b"]), &profiles(), None, &Map::new()).unwrap();
 
-        assert_eq!(context.source, TargetSource::Direct(vec!["b".into(), "a".into(), "b".into()]));
+        assert_eq!(
+            context.source,
+            TargetSource::Direct(vec!["b".into(), "a".into(), "b".into()])
+        );
         assert_eq!(context.policy.profile_name.as_deref(), Some("default"));
         assert_eq!(context.policy.settings["playlist"], true);
         assert_eq!(context.policy.setting_sources["playlist"], "$defaults");
@@ -100,20 +109,36 @@ mod tests {
     #[test]
     fn explicit_selection_and_overrides_keep_provenance() {
         let overrides = json!({"playlist": false});
-        let context = prepare_invocation(&request(&["video"]), &profiles(), Some("alternate"), overrides.as_object().unwrap()).unwrap();
+        let context = prepare_invocation(
+            &request(&["video"]),
+            &profiles(),
+            Some("alternate"),
+            overrides.as_object().unwrap(),
+        )
+        .unwrap();
 
         assert_eq!(context.policy.profile_name.as_deref(), Some("alternate"));
         assert_eq!(context.policy.settings["audio-format"], "opus");
         assert_eq!(context.policy.settings["playlist"], false);
-        assert_eq!(context.policy.setting_sources["playlist"], "explicit override");
+        assert_eq!(
+            context.policy.setting_sources["playlist"],
+            "explicit override"
+        );
     }
 
     #[test]
     fn invalid_policy_is_not_silently_ignored() {
         let overrides = json!({"unrecognised-setting": true});
         assert!(matches!(
-            prepare_invocation(&request(&["video"]), &profiles(), None, overrides.as_object().unwrap()),
-            Err(InvocationError::Policy(ProfileSelectionError::InvalidSettings(_)))
+            prepare_invocation(
+                &request(&["video"]),
+                &profiles(),
+                None,
+                overrides.as_object().unwrap()
+            ),
+            Err(InvocationError::Policy(
+                ProfileSelectionError::InvalidSettings(_)
+            ))
         ));
     }
 
@@ -123,7 +148,9 @@ mod tests {
         target.input_file = Some(PathBuf::from("batch.txt"));
         assert_eq!(
             prepare_invocation(&target, &profiles(), None, &Map::new()),
-            Err(InvocationError::Target(TargetError::ConflictingSources("--input-file")))
+            Err(InvocationError::Target(TargetError::ConflictingSources(
+                "--input-file"
+            )))
         );
     }
 
@@ -133,7 +160,9 @@ mod tests {
         target.collection_file = Some(PathBuf::from("collection.json"));
         assert_eq!(
             prepare_invocation(&target, &profiles(), None, &Map::new()),
-            Err(InvocationError::Target(TargetError::CollectionRequiresResolver))
+            Err(InvocationError::Target(
+                TargetError::CollectionRequiresResolver
+            ))
         );
     }
 }
