@@ -3,7 +3,7 @@
   "private": true,
   "description": "Optional Node.js dependencies for yt-discover acquisition backends.",
   "dependencies": {
-    "youtubei.js": "18.0.0"
+    "youtubei.js": "18.2.0"
   },
   "scripts": {
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\""
