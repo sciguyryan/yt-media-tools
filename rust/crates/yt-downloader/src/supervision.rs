@@ -300,6 +300,44 @@ mod tests {
         ));
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn failed_child_delivers_progress_before_failure() {
+        let plan = ExecutionPlan {
+            arguments: vec![
+                "-c".into(),
+                "printf 'YT_MEDIA_TOOLS_PROGRESS:4,10\\n' >&2; exit 7".into(),
+            ],
+            source: TargetSource::Direct(vec!["fixture".into()]),
+        };
+        let launch = ProcessLaunch::new(Executable::new("/bin/sh").unwrap(), ".", &plan).unwrap();
+        let mut lifecycle = ExecutionLifecycle::new(plan);
+        let mut events = Events::default();
+        let cancellation = CancellationToken::default();
+        let result = supervise_with_progress(&launch, &mut lifecycle, &cancellation, &mut events);
+        assert!(matches!(result, Ok(ExitStatusOrCancelled::Exited(status)) if !status.success()));
+        assert_eq!(lifecycle.state(), ExecutionState::Failed);
+        let progress_index = events
+            .0
+            .iter()
+            .position(|event| {
+                matches!(
+                    event,
+                    ExecutionEvent::Progress(Progress {
+                        completed_bytes: 4,
+                        total_bytes: Some(10)
+                    })
+                )
+            })
+            .unwrap();
+        let terminal_index = events
+            .0
+            .iter()
+            .position(|event| matches!(event, ExecutionEvent::StateChanged(ExecutionState::Failed)))
+            .unwrap();
+        assert!(progress_index < terminal_index);
+    }
+
     #[test]
     fn pre_cancelled_attempt_does_not_spawn() {
         let (launch, mut lifecycle) = fixture();
