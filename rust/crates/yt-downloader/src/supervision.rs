@@ -89,7 +89,7 @@ fn drain_progress(
     }
 }
 
-/// Repa the output reader before completing a lifecycle. A reader failure is
+/// Reap the output reader before completing a lifecycle. A reader failure is
 /// not a successful download, even if the child itself exited successfully.
 fn finish_reader(
     reader: Option<thread::JoinHandle<io::Result<()>>>,
@@ -184,7 +184,9 @@ fn supervise_inner(
             }
             match child.wait() {
                 Ok(_) => {
-                    let _ = finish_reader(reader, &receiver, lifecycle, sink);
+                    // A failed reader is a supervision failure, even when the
+                    // cancellation request successfully reaped the child.
+                    finish_reader(reader, &receiver, lifecycle, sink)?;
                     lifecycle
                         .transition(ExecutionState::Cancelled, sink)
                         .map_err(SupervisionError::Lifecycle)?;
@@ -447,6 +449,37 @@ mod reader_completion_tests {
             events.0.last(),
             Some(ExecutionEvent::StateChanged(ExecutionState::Failed))
         ));
+    }
+
+    #[test]
+    fn cancelling_lifecycle_can_report_reader_failure() {
+        let (sender, receiver) = mpsc::sync_channel(2);
+        sender
+            .send(Progress {
+                completed_bytes: 2,
+                total_bytes: Some(10),
+            })
+            .unwrap();
+        let reader = thread::spawn(|| Err(io::Error::other("test read failure")));
+        let mut lifecycle = lifecycle();
+        let mut events = Events::default();
+        lifecycle
+            .transition(ExecutionState::Cancelling, &mut events)
+            .unwrap();
+        assert!(matches!(
+            finish_reader(Some(reader), &receiver, &mut lifecycle, &mut events),
+            Err(SupervisionError::Io(_))
+        ));
+        assert_eq!(lifecycle.state(), ExecutionState::Failed);
+        assert!(matches!(
+            events.0.last(),
+            Some(ExecutionEvent::StateChanged(ExecutionState::Failed))
+        ));
+        assert!(
+            !events
+                .0
+                .contains(&ExecutionEvent::StateChanged(ExecutionState::Cancelled))
+        );
     }
 
     #[test]
