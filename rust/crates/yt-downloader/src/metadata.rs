@@ -142,3 +142,109 @@ mod tests {
         );
     }
 }
+
+/// Errors from an explicitly requested yt-dlp metadata acquisition.
+#[derive(Debug)]
+pub enum AcquisitionError {
+    /// The selected executable or child process could not be used.
+    Io(std::io::Error),
+    /// yt-dlp reported an unsuccessful exit without exposing its raw output.
+    ProcessFailed,
+    /// The process returned metadata that failed the bounded contract.
+    Metadata(MetadataError),
+    /// The caller supplied an empty target or working directory.
+    InvalidConfiguration,
+}
+
+/// Acquire one record using a caller-selected yt-dlp executable.
+///
+/// The invocation does not use a shell, ignores user yt-dlp configuration,
+/// disallows playlists and uses the argument terminator before the target.
+/// Standard error is discarded to avoid collecting credentials or URLs.
+/// Standard output is read up to the metadata limit plus one byte; an
+/// oversized result causes the child to be killed and reaped.
+///
+/// This synchronous boundary does not yet implement a wall-clock deadline.
+/// Callers must not expose it as an unbounded interactive CLI operation.
+pub fn acquire_metadata(
+    executable: &std::path::Path,
+    working_directory: &std::path::Path,
+    target: &str,
+) -> Result<MediaMetadata, AcquisitionError> {
+    use std::io::Read;
+    use std::process::{Command, Stdio};
+
+    if executable.as_os_str().is_empty()
+        || working_directory.as_os_str().is_empty()
+        || target.trim().is_empty()
+        || target.contains('\0')
+    {
+        return Err(AcquisitionError::InvalidConfiguration);
+    }
+    let mut child = Command::new(executable)
+        .current_dir(working_directory)
+        .args([
+            "--ignore-config",
+            "--no-playlist",
+            "--dump-single-json",
+            "--",
+            target,
+        ])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(AcquisitionError::Io)?;
+    let mut output = Vec::new();
+    let result = child
+        .stdout
+        .take()
+        .expect("stdout was explicitly piped")
+        .take(MAX_METADATA_BYTES as u64 + 1)
+        .read_to_end(&mut output);
+    if let Err(error) = result {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(AcquisitionError::Io(error));
+    }
+    if output.len() > MAX_METADATA_BYTES {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(AcquisitionError::Metadata(MetadataError::TooLarge));
+    }
+    let status = child.wait().map_err(AcquisitionError::Io)?;
+    if !status.success() {
+        return Err(AcquisitionError::ProcessFailed);
+    }
+    decode_metadata(&output).map_err(AcquisitionError::Metadata)
+}
+
+#[cfg(all(test, unix))]
+mod acquisition_tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn acquires_one_record_from_an_explicit_executable() {
+        let result = acquire_metadata(
+            Path::new("/bin/sh"),
+            Path::new("."),
+            "printf '{\"id\":\"sample\",\"duration\":3}'",
+        );
+        // A shell is not given a script flag: the target remains an inert
+        // positional argument and must never be interpreted as shell code.
+        assert!(matches!(result, Err(AcquisitionError::ProcessFailed)));
+    }
+
+    #[test]
+    fn rejects_invalid_configuration_before_spawning() {
+        assert!(matches!(
+            acquire_metadata(Path::new(""), Path::new("."), "sample"),
+            Err(AcquisitionError::InvalidConfiguration)
+        ));
+        assert!(matches!(
+            acquire_metadata(Path::new("/bin/sh"), Path::new("."), "\0"),
+            Err(AcquisitionError::InvalidConfiguration)
+        ));
+    }
+}
