@@ -91,6 +91,19 @@ impl ProcessLaunch {
         &self.arguments
     }
 
+    /// Construct an unspawned yt-dlp command with machine-readable progress.
+    ///
+    /// The progress template is appended only for explicitly opted-in yt-dlp
+    /// launches. Generic process supervision must not receive yt-dlp options.
+    /// The missing-total placeholder is represented as `NA` by yt-dlp.
+    pub fn ytdlp_progress_command(&self) -> Command {
+        let mut command = self.command();
+        command.arg("--newline");
+        command.arg("--progress-template");
+        command.arg("download:YT_MEDIA_TOOLS_PROGRESS:%(progress.downloaded_bytes)s,%(progress.total_bytes)s");
+        command
+    }
+
     /// Construct an unspawned command with explicit standard-stream handling.
     ///
     /// Standard input is inherited to support `--batch-file -`. Standard output
@@ -127,6 +140,30 @@ mod tests {
                 "duplicate".into(),
             ]),
         }
+    }
+
+    #[test]
+    fn structured_progress_arguments_are_explicit_and_ordered() {
+        let launch = ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), ".", &plan()).unwrap();
+        let ordinary = launch.command();
+        let structured = launch.ytdlp_progress_command();
+        let ordinary_args: Vec<_> = ordinary.get_args().collect();
+        let structured_args: Vec<_> = structured.get_args().collect();
+        assert_eq!(
+            &structured_args[..ordinary_args.len()],
+            ordinary_args.as_slice()
+        );
+        assert_eq!(
+            &structured_args[ordinary_args.len()..],
+            &[
+                OsStr::new("--newline"),
+                OsStr::new("--progress-template"),
+                OsStr::new(
+                    "download:YT_MEDIA_TOOLS_PROGRESS:%(progress.downloaded_bytes)s,%(progress.total_bytes)s"
+                ),
+            ]
+        );
+        assert_eq!(ordinary.get_args().count(), ordinary_args.len());
     }
 
     #[test]

@@ -47,7 +47,7 @@ pub fn supervise(
     cancellation: &impl CancellationSignal,
     sink: &mut impl EventSink,
 ) -> Result<ExitStatusOrCancelled, SupervisionError> {
-    supervise_inner(launch, lifecycle, cancellation, sink, false)
+    supervise_inner(launch, lifecycle, cancellation, sink, false, false)
 }
 
 /// Supervise a child and decode framed progress from its standard error.
@@ -61,7 +61,20 @@ pub fn supervise_with_progress(
     cancellation: &impl CancellationSignal,
     sink: &mut impl EventSink,
 ) -> Result<ExitStatusOrCancelled, SupervisionError> {
-    supervise_inner(launch, lifecycle, cancellation, sink, true)
+    supervise_inner(launch, lifecycle, cancellation, sink, true, false)
+}
+
+/// Supervise an explicitly selected yt-dlp process with structured progress.
+///
+/// This is an opt-in adapter boundary, not an activation of public CLI
+/// downloads. The generic supervisor remains suitable for other executables.
+pub fn supervise_ytdlp_with_progress(
+    launch: &ProcessLaunch,
+    lifecycle: &mut ExecutionLifecycle,
+    cancellation: &impl CancellationSignal,
+    sink: &mut impl EventSink,
+) -> Result<ExitStatusOrCancelled, SupervisionError> {
+    supervise_inner(launch, lifecycle, cancellation, sink, true, true)
 }
 
 const PROGRESS_QUEUE_CAPACITY: usize = 64;
@@ -82,6 +95,7 @@ fn supervise_inner(
     cancellation: &impl CancellationSignal,
     sink: &mut impl EventSink,
     capture_progress: bool,
+    configure_ytdlp_progress: bool,
 ) -> Result<ExitStatusOrCancelled, SupervisionError> {
     if cancellation.is_cancelled() {
         lifecycle
@@ -100,7 +114,11 @@ fn supervise_inner(
         ));
     }
 
-    let mut command = launch.command();
+    let mut command = if configure_ytdlp_progress {
+        launch.ytdlp_progress_command()
+    } else {
+        launch.command()
+    };
     if capture_progress {
         command.stderr(std::process::Stdio::piped());
     }
