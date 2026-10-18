@@ -302,3 +302,37 @@ def test_provider_coverage_retains_supported_subset_of_mixed_query_requirement()
     )
 
     assert coverage[0] == ("youtubejs", frozenset({"title"}))
+
+
+def test_basic_info_upload_date_normalisation() -> None:
+    from yt_media_tools.youtubejs import _basic_info_upload_date
+
+    assert _basic_info_upload_date("2026-10-18") == "20261018"
+    assert _basic_info_upload_date("20261018") == "20261018"
+    assert _basic_info_upload_date("2026-02-30") is None
+    assert _basic_info_upload_date("yesterday") is None
+    assert _basic_info_upload_date(None) is None
+    assert _basic_info_upload_date(20261018) is None
+
+
+def test_basic_info_date_mapping_does_not_substitute_publish_date(monkeypatch) -> None:
+    from types import SimpleNamespace
+    from yt_media_tools.youtubejs import acquire_basic_info
+
+    monkeypatch.setattr("yt_media_tools.youtubejs.shutil.which", lambda executable: "/usr/bin/node")
+    monkeypatch.setattr("yt_media_tools.youtubejs.emit_invocation", lambda invocation: None)
+    monkeypatch.setattr(
+        "yt_media_tools.youtubejs.subprocess.run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0,
+            stderr="",
+            stdout=(
+                '{"ok":true,"id":"a","upload_date":"2026-10-17","publish_date":"2026-10-18"}\n'
+                '{"ok":true,"id":"b","upload_date":null,"publish_date":"2026-10-18"}\n'
+            ),
+        ),
+    )
+    records, _stats = acquire_basic_info(Path(__file__).resolve().parents[1], ["a", "b"])
+    assert records[0]["upload_date"] == "20261017"
+    assert records[1]["upload_date"] is None
+    assert "publish_date" not in records[0]

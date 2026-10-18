@@ -53,6 +53,27 @@ def _published_date(text: str, dates: DateContext) -> tuple[date, timedelta] | N
     return parsed, uncertainty
 
 
+def _basic_info_upload_date(value: object) -> str | None:
+    """Normalise a calendar upload date to yt-dlp's YYYYMMDD representation.
+
+    A publication date is deliberately not substituted for an absent upload date:
+    the two properties describe different events.
+    """
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = (
+            date.fromisoformat(value)
+            if len(value) == 10
+            else date.fromisoformat(f"{value[:4]}-{value[4:6]}-{value[6:]}")
+            if len(value) == 8 and value.isascii() and value.isdigit()
+            else None
+        )
+    except ValueError:
+        return None
+    return parsed.strftime("%Y%m%d") if parsed is not None else None
+
+
 def acquire_basic_info(
     project_root: Path,
     video_ids: list[str],
@@ -131,6 +152,7 @@ def acquire_basic_info(
             "channel_id": payload.get("channel_id"),
             "duration": payload.get("duration"),
             "view_count": payload.get("view_count"),
+            "upload_date": _basic_info_upload_date(payload.get("upload_date")),
             "_yt_sql_metadata_provider": "youtubejs",
             "_yt_sql_metadata_operation": "getBasicInfo",
         }
