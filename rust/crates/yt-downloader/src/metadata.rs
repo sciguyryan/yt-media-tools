@@ -154,30 +154,51 @@ pub enum AcquisitionError {
     Metadata(MetadataError),
     /// The caller supplied an empty target or working directory.
     InvalidConfiguration,
+    /// The child or its output pipe exceeded the acquisition deadline.
+    TimedOut,
+    /// The output reader stopped without returning a result.
+    ReaderFailed,
 }
 
-/// Acquire one record using a caller-selected yt-dlp executable.
-///
-/// The invocation does not use a shell, ignores user yt-dlp configuration,
-/// disallows playlists and uses the argument terminator before the target.
-/// Standard error is discarded to avoid collecting credentials or URLs.
-/// Standard output is read up to the metadata limit plus one byte; an
-/// oversized result causes the child to be killed and reaped.
-///
-/// This synchronous boundary does not yet implement a wall-clock deadline.
-/// Callers must not expose it as an unbounded interactive CLI operation.
+/// Default wall-clock limit for a single metadata acquisition.
+pub const DEFAULT_ACQUISITION_DEADLINE: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Acquire one record with the default deadline.
 pub fn acquire_metadata(
     executable: &std::path::Path,
     working_directory: &std::path::Path,
     target: &str,
 ) -> Result<MediaMetadata, AcquisitionError> {
+    acquire_metadata_with_deadline(
+        executable,
+        working_directory,
+        target,
+        DEFAULT_ACQUISITION_DEADLINE,
+    )
+}
+
+/// Acquire one metadata record within a caller-specified wall-clock deadline.
+///
+/// Output is read on a dedicated thread so a stalled child or inherited pipe
+/// cannot indefinitely block the calling thread. On timeout the direct child
+/// is killed and reaped. A descendant retaining stdout can keep the detached
+/// reader alive; process-group cleanup is outside this API's current contract.
+/// No raw standard error, provider output or target is included in errors.
+pub fn acquire_metadata_with_deadline(
+    executable: &std::path::Path,
+    working_directory: &std::path::Path,
+    target: &str,
+    deadline: std::time::Duration,
+) -> Result<MediaMetadata, AcquisitionError> {
     use std::io::Read;
     use std::process::{Command, Stdio};
+    use std::sync::mpsc;
 
     if executable.as_os_str().is_empty()
         || working_directory.as_os_str().is_empty()
         || target.trim().is_empty()
         || target.contains('\0')
+        || deadline.is_zero()
     {
         return Err(AcquisitionError::InvalidConfiguration);
     }
@@ -195,28 +216,70 @@ pub fn acquire_metadata(
         .stderr(Stdio::null())
         .spawn()
         .map_err(AcquisitionError::Io)?;
-    let mut output = Vec::new();
-    let result = child
-        .stdout
-        .take()
-        .expect("stdout was explicitly piped")
-        .take(MAX_METADATA_BYTES as u64 + 1)
-        .read_to_end(&mut output);
-    if let Err(error) = result {
-        let _ = child.kill();
-        let _ = child.wait();
-        return Err(AcquisitionError::Io(error));
-    }
+
+    let stdout = child.stdout.take().expect("stdout was explicitly piped");
+    let (sender, receiver) = mpsc::sync_channel(1);
+    let reader = std::thread::spawn(move || {
+        let mut output = Vec::new();
+        let result = stdout
+            .take(MAX_METADATA_BYTES as u64 + 1)
+            .read_to_end(&mut output);
+        let _ = sender.send(result.map(|_| output));
+    });
+    let started = std::time::Instant::now();
+    let output = match receiver.recv_timeout(deadline) {
+        Ok(Ok(output)) => output,
+        Ok(Err(error)) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = reader.join();
+            return Err(AcquisitionError::Io(error));
+        }
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            // The reader might hold a pipe inherited by a descendant.
+            // Detach rather than wait indefinitely for its completion.
+            return Err(AcquisitionError::TimedOut);
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = reader.join();
+            return Err(AcquisitionError::ReaderFailed);
+        }
+    };
+    let _ = reader.join();
     if output.len() > MAX_METADATA_BYTES {
         let _ = child.kill();
         let _ = child.wait();
         return Err(AcquisitionError::Metadata(MetadataError::TooLarge));
     }
-    let status = child.wait().map_err(AcquisitionError::Io)?;
-    if !status.success() {
-        return Err(AcquisitionError::ProcessFailed);
+    // Waiting for process exit must share the same deadline as output capture.
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                if !status.success() {
+                    return Err(AcquisitionError::ProcessFailed);
+                }
+                return decode_metadata(&output).map_err(AcquisitionError::Metadata);
+            }
+            Ok(None) if started.elapsed() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(AcquisitionError::TimedOut);
+            }
+            Ok(None) => std::thread::sleep(
+                std::time::Duration::from_millis(10)
+                    .min(deadline.saturating_sub(started.elapsed())),
+            ),
+            Err(error) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(AcquisitionError::Io(error));
+            }
+        }
     }
-    decode_metadata(&output).map_err(AcquisitionError::Metadata)
 }
 
 #[cfg(all(test, unix))]
@@ -246,5 +309,49 @@ mod acquisition_tests {
             acquire_metadata(Path::new("/bin/sh"), Path::new("."), "\0"),
             Err(AcquisitionError::InvalidConfiguration)
         ));
+    }
+}
+
+#[cfg(all(test, unix))]
+mod acquisition_deadline_tests {
+    use super::*;
+    use std::path::Path;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn rejects_zero_deadline() {
+        assert!(matches!(
+            acquire_metadata_with_deadline(
+                Path::new("/bin/sh"),
+                Path::new("."),
+                "target",
+                Duration::ZERO
+            ),
+            Err(AcquisitionError::InvalidConfiguration)
+        ));
+    }
+
+    #[test]
+    fn bounds_stalled_process_and_reaps_direct_child() {
+        // /bin/sleep ignores the extra yt-dlp arguments and remains alive.
+        // /bin/sh without -c exits immediately, so use a temporary executable
+        // script instead to model a non-terminating acquisition.
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!(
+            "yt-metadata-deadline-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let script = dir.join("mock-ytdlp");
+        std::fs::write(&script, "#!/bin/sh\nsleep 3\n").unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let start = Instant::now();
+        let result =
+            acquire_metadata_with_deadline(&script, &dir, "target", Duration::from_millis(100));
+        assert!(matches!(result, Err(AcquisitionError::TimedOut)));
+        assert!(start.elapsed() < Duration::from_secs(2));
+        std::fs::remove_file(script).unwrap();
+        std::fs::remove_dir(dir).unwrap();
     }
 }
