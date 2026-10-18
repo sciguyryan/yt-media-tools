@@ -57,3 +57,7 @@ The cross-module tests in `crates/yt-downloader/tests/part4_contract.rs` exercis
 ## Native process launch boundary
 
 The `process` module constructs an unspawned `std::process::Command` from a validated execution plan and caller-selected executable and working directory. It retains argument order, duplicates and standard-input batch semantics without shell interpretation or implicit working-directory changes. Standard streams are inherited pending a dedicated output and cancellation supervisor. This library-only boundary does not launch yt-dlp or enable downloads in the experimental executable.
+
+## Process supervision
+
+The native `supervision` module provides a synchronous, library-only child-process adapter for a prepared `ProcessLaunch`. It records running, successful, unsuccessful and cancelled outcomes through the existing lifecycle and event-sink contracts. A cancellation request terminates and reaps the child; a request made before launch prevents spawning. Spawn failures are returned without falsely marking a process as running. Standard streams remain inherited and no yt-dlp output is interpreted. The experimental CLI does not call this adapter, and download execution remains disabled pending compatibility certification.

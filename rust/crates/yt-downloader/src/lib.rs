@@ -8,6 +8,7 @@ pub mod profile_file;
 pub mod profile_pipeline;
 pub mod profile_selection;
 pub mod profile_store;
+pub mod supervision;
 pub mod profile_settings;
 pub mod targets;
 
