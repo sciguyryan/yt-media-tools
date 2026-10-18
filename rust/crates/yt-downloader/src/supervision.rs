@@ -5,7 +5,11 @@
 
 use std::io;
 use std::process::ExitStatus;
+use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::thread;
+
+use crate::lifecycle::Progress;
+use crate::progress_stream::read_progress_stream;
 use std::time::Duration;
 
 use crate::lifecycle::{
@@ -43,6 +47,42 @@ pub fn supervise(
     cancellation: &impl CancellationSignal,
     sink: &mut impl EventSink,
 ) -> Result<ExitStatusOrCancelled, SupervisionError> {
+    supervise_inner(launch, lifecycle, cancellation, sink, false)
+}
+
+/// Supervise a child and decode framed progress from its standard error.
+///
+/// Unrelated output is discarded. The reader uses a bounded, non-blocking
+/// channel so a slow lifecycle consumer cannot stall the child process.
+/// This entry point does not add yt-dlp progress arguments to the launch.
+pub fn supervise_with_progress(
+    launch: &ProcessLaunch,
+    lifecycle: &mut ExecutionLifecycle,
+    cancellation: &impl CancellationSignal,
+    sink: &mut impl EventSink,
+) -> Result<ExitStatusOrCancelled, SupervisionError> {
+    supervise_inner(launch, lifecycle, cancellation, sink, true)
+}
+
+const PROGRESS_QUEUE_CAPACITY: usize = 64;
+
+fn drain_progress(
+    receiver: &Receiver<Progress>,
+    lifecycle: &mut ExecutionLifecycle,
+    sink: &mut impl EventSink,
+) {
+    while let Ok(progress) = receiver.try_recv() {
+        let _ = lifecycle.progress(progress, sink);
+    }
+}
+
+fn supervise_inner(
+    launch: &ProcessLaunch,
+    lifecycle: &mut ExecutionLifecycle,
+    cancellation: &impl CancellationSignal,
+    sink: &mut impl EventSink,
+    capture_progress: bool,
+) -> Result<ExitStatusOrCancelled, SupervisionError> {
     if cancellation.is_cancelled() {
         lifecycle
             .transition(ExecutionState::Cancelled, sink)
@@ -60,12 +100,32 @@ pub fn supervise(
         ));
     }
 
-    let mut child = launch.command().spawn().map_err(SupervisionError::Spawn)?;
+    let mut command = launch.command();
+    if capture_progress {
+        command.stderr(std::process::Stdio::piped());
+    }
+    let mut child = command.spawn().map_err(SupervisionError::Spawn)?;
+    let (sender, receiver): (SyncSender<Progress>, Receiver<Progress>) =
+        mpsc::sync_channel(PROGRESS_QUEUE_CAPACITY);
+    let reader = if capture_progress {
+        child.stderr.take().map(|mut stderr| {
+            thread::spawn(move || {
+                // Dropping observations when the queue is full is intentional:
+                // progress is advisory and must never block process termination.
+                read_progress_stream(&mut stderr, |progress| {
+                    let _ = sender.try_send(progress);
+                })
+            })
+        })
+    } else {
+        None
+    };
     lifecycle
         .transition(ExecutionState::Running, sink)
         .map_err(SupervisionError::Lifecycle)?;
 
     loop {
+        drain_progress(&receiver, lifecycle, sink);
         if cancellation.is_cancelled() {
             lifecycle
                 .transition(ExecutionState::Cancelling, sink)
@@ -76,11 +136,17 @@ pub fn supervise(
                 && error.kind() != io::ErrorKind::InvalidInput
             {
                 let _ = child.wait();
+                if let Some(reader) = reader {
+                    let _ = reader.join();
+                }
                 report_io_failure(lifecycle, sink, &error);
                 return Err(SupervisionError::Io(error));
             }
             match child.wait() {
                 Ok(_) => {
+                    if let Some(reader) = reader {
+                        let _ = reader.join();
+                    }
                     lifecycle
                         .transition(ExecutionState::Cancelled, sink)
                         .map_err(SupervisionError::Lifecycle)?;
@@ -95,12 +161,20 @@ pub fn supervise(
 
         match child.try_wait() {
             Ok(Some(status)) if status.success() => {
+                if let Some(reader) = reader {
+                    let _ = reader.join();
+                }
+                drain_progress(&receiver, lifecycle, sink);
                 lifecycle
                     .transition(ExecutionState::Succeeded, sink)
                     .map_err(SupervisionError::Lifecycle)?;
                 return Ok(ExitStatusOrCancelled::Exited(status));
             }
             Ok(Some(status)) => {
+                if let Some(reader) = reader {
+                    let _ = reader.join();
+                }
+                drain_progress(&receiver, lifecycle, sink);
                 lifecycle
                     .fail(
                         ExecutionFailure {
@@ -116,6 +190,9 @@ pub fn supervise(
             Err(error) => {
                 let _ = child.kill();
                 let _ = child.wait();
+                if let Some(reader) = reader {
+                    let _ = reader.join();
+                }
                 report_io_failure(lifecycle, sink, &error);
                 return Err(SupervisionError::Io(error));
             }
@@ -175,6 +252,34 @@ mod tests {
         )
         .unwrap();
         (launch, ExecutionLifecycle::new(plan))
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn supervised_stderr_progress_precedes_success() {
+        let plan = ExecutionPlan { arguments: vec![
+            "-c".into(),
+            "printf 'unrelated\\nYT_MEDIA_TOOLS_PROGRESS:3,10\\nYT_MEDIA_TOOLS_PROGRESS:10,10\\n' >&2".into(),
+        ], source: TargetSource::Direct(vec!["fixture".into()]) };
+        let launch = ProcessLaunch::new(Executable::new("/bin/sh").unwrap(), ".", &plan).unwrap();
+        let mut lifecycle = ExecutionLifecycle::new(plan);
+        let mut events = Events::default();
+        let cancellation = CancellationToken::default();
+        let result = supervise_with_progress(&launch, &mut lifecycle, &cancellation, &mut events);
+        assert!(matches!(result, Ok(ExitStatusOrCancelled::Exited(status)) if status.success()));
+        assert_eq!(lifecycle.state(), ExecutionState::Succeeded);
+        assert!(events.0.contains(&ExecutionEvent::Progress(Progress {
+            completed_bytes: 3,
+            total_bytes: Some(10)
+        })));
+        assert!(events.0.contains(&ExecutionEvent::Progress(Progress {
+            completed_bytes: 10,
+            total_bytes: Some(10)
+        })));
+        assert!(matches!(
+            events.0.last(),
+            Some(ExecutionEvent::StateChanged(ExecutionState::Succeeded))
+        ));
     }
 
     #[test]
