@@ -42,6 +42,8 @@ The current `music` trait requires yt-dlp to resolve the source through the YouT
 
 The production `youtubejs:getBasicInfo` capability is authoritative only for `id`, `title`, `channel_id`, `duration` and `view_count` at the complete-metadata stage. It requires conservative resolution to the `youtube` extractor family and supports anonymous and existing cookie-authenticated contexts.
 
+The bridge can emit `basic_info.upload_date` and `basic_info.publish_date` in newer YouTube.js releases. The adapter normalises calendar upload dates to `YYYYMMDD` without substituting publication dates. This extraction support alone does not establish an authoritative provider capability: the pinned dependency and end-to-end planning and fallback contract must be verified before the capability set is widened.
+
 The field set is closed. Publication dates, descriptions, keywords, category, live/private/unlisted state and other values exposed by YouTube.js are not authoritative through this capability. Any complete-stage requirement containing an unsupported field remains on the established yt-dlp path rather than being partially widened to values whose semantics have not been accepted.
 
 Production acquisition sends the complete requested batch through one Node bridge process and one Innertube session. A whole-operation failure or omitted individual entry falls back to yt-dlp. Requested record order is preserved. Successful specialised rows carry explicit provider and operation provenance and are not written into the existing detailed metadata cache because that cache represents richer yt-dlp-style records.

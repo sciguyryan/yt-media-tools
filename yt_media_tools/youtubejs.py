@@ -61,17 +61,19 @@ def _basic_info_upload_date(value: object) -> str | None:
     """
     if not isinstance(value, str):
         return None
+    if len(value) == 10 and value[4] == "-" and value[7] == "-":
+        digits = value[:4] + value[5:7] + value[8:]
+    elif len(value) == 8:
+        digits = value
+    else:
+        return None
+    if not digits.isascii() or not digits.isdigit():
+        return None
     try:
-        parsed = (
-            date.fromisoformat(value)
-            if len(value) == 10
-            else date.fromisoformat(f"{value[:4]}-{value[4:6]}-{value[6:]}")
-            if len(value) == 8 and value.isascii() and value.isdigit()
-            else None
-        )
+        parsed = date(int(digits[:4]), int(digits[4:6]), int(digits[6:]))
     except ValueError:
         return None
-    return parsed.strftime("%Y%m%d") if parsed is not None else None
+    return parsed.strftime("%Y%m%d")
 
 
 def acquire_basic_info(

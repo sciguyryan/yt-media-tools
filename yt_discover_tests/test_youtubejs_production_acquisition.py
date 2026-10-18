@@ -313,6 +313,13 @@ def test_basic_info_upload_date_normalisation() -> None:
     assert _basic_info_upload_date("yesterday") is None
     assert _basic_info_upload_date(None) is None
     assert _basic_info_upload_date(20261018) is None
+    assert _basic_info_upload_date("2026-10-18T00:00:00Z") is None
+    assert _basic_info_upload_date("2026-1-18") is None
+    assert _basic_info_upload_date("2026-10-18extra") is None
+    assert _basic_info_upload_date("2026-10-1x") is None
+    assert _basic_info_upload_date("2026-02-29") is None
+    assert _basic_info_upload_date("2024-02-29") == "20240229"
+    assert _basic_info_upload_date("２０２６１０１８") is None
 
 
 def test_basic_info_date_mapping_does_not_substitute_publish_date(monkeypatch) -> None:
