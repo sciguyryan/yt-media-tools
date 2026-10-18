@@ -355,3 +355,107 @@ mod acquisition_deadline_tests {
         std::fs::remove_dir(dir).unwrap();
     }
 }
+
+/// Regression coverage for the controlled acquisition boundary. The mock
+/// executables exercise the real argument vector, exit status and output cap.
+#[cfg(all(test, unix))]
+mod acquisition_compatibility_tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+    use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::Duration;
+
+    static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
+
+    struct MockExecutable {
+        directory: PathBuf,
+        executable: PathBuf,
+    }
+
+    impl MockExecutable {
+        fn new(script_body: &str) -> Self {
+            let serial = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
+            let directory = std::env::temp_dir().join(format!(
+                "yt-metadata-compat-{}-{serial}",
+                std::process::id()
+            ));
+            std::fs::create_dir(&directory).unwrap();
+            let executable = directory.join("mock-ytdlp");
+            std::fs::write(&executable, format!("#!/bin/sh\n{script_body}\n")).unwrap();
+            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+            Self {
+                directory,
+                executable,
+            }
+        }
+
+        fn acquire(&self, target: &str) -> Result<MediaMetadata, AcquisitionError> {
+            acquire_metadata_with_deadline(
+                &self.executable,
+                &self.directory,
+                target,
+                Duration::from_secs(2),
+            )
+        }
+    }
+
+    impl Drop for MockExecutable {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.directory);
+        }
+    }
+
+    #[test]
+    fn passes_literal_target_and_isolated_ytdlp_options() {
+        let mock = MockExecutable::new(
+            r#"[ "$#" -eq 5 ] || exit 40
+[ "$1" = '--ignore-config' ] || exit 41
+[ "$2" = '--no-playlist' ] || exit 42
+[ "$3" = '--dump-single-json' ] || exit 43
+[ "$4" = '--' ] || exit 44
+[ "$5" = 'https://example.invalid/watch?v=a;echo injected' ] || exit 45
+printf '{"id":"safe","title":"Test","duration":9}'"#,
+        );
+        let record = mock
+            .acquire("https://example.invalid/watch?v=a;echo injected")
+            .unwrap();
+        assert_eq!(record.id, "safe");
+        assert_eq!(record.duration_seconds, Some(9));
+    }
+
+    #[test]
+    fn distinguishes_process_failure_from_invalid_json_without_stderr_leakage() {
+        let failed = MockExecutable::new(
+            "printf 'sensitive diagnostic' >&2; printf '{\"id\":\"ok\"}'; exit 7",
+        );
+        assert!(matches!(
+            failed.acquire("target"),
+            Err(AcquisitionError::ProcessFailed)
+        ));
+        let malformed = MockExecutable::new("printf 'not-json'");
+        assert!(matches!(
+            malformed.acquire("target"),
+            Err(AcquisitionError::Metadata(MetadataError::InvalidJson))
+        ));
+    }
+
+    #[test]
+    fn rejects_collections_and_excessive_output() {
+        let collection =
+            MockExecutable::new(r#"printf '{"_type":"playlist","id":"p","entries":[]}'"#);
+        assert!(matches!(
+            collection.acquire("target"),
+            Err(AcquisitionError::Metadata(MetadataError::UnsupportedRecord))
+        ));
+        // /dev/zero is available on the Unix platforms supported by this
+        // fixture. head closes after the requested byte count.
+        if Path::new("/dev/zero").exists() {
+            let oversized = MockExecutable::new("head -c 8388609 /dev/zero");
+            assert!(matches!(
+                oversized.acquire("target"),
+                Err(AcquisitionError::Metadata(MetadataError::TooLarge))
+            ));
+        }
+    }
+}
