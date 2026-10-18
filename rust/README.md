@@ -65,3 +65,7 @@ The native `supervision` module provides a synchronous, library-only child-proce
 The `process_output` module provides a bounded, library-only parser for explicitly framed byte-progress records. It rejects malformed values, overlong records and completed counts greater than a known total, while ignoring unrelated process output. The supervisor still inherits standard streams: configuring a yt-dlp progress template, capturing streams and feeding validated observations into lifecycle events remain subsequent integration work.
 
 The experimental process supervisor also offers an explicitly selected yt-dlp progress launch that appends `--newline` and a `--progress-template` download record. Generic launches are unchanged, and the public CLI does not yet activate this execution path. Progress records with unavailable totals remain advisory and do not replace terminal lifecycle state.
+
+## Part 5, Phase 4: Metadata decoding
+
+The native `metadata` module decodes one bounded yt-dlp JSON metadata document into a small validated identity record. It rejects collections, invalid fields and oversized output without retaining arbitrary provider payloads. Metadata acquisition, executable discovery, subprocess capture, format selection and CLI activation are separate work; no downloads are enabled by this module.

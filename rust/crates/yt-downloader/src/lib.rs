@@ -2,6 +2,7 @@
 
 pub mod invocation;
 pub mod lifecycle;
+pub mod metadata;
 pub mod planning;
 pub mod process;
 pub mod process_output;
