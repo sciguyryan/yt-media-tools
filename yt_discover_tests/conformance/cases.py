@@ -594,6 +594,7 @@ SELECT_STAR_COLUMNS = (
     "id",
     "title",
     "upload_date",
+    "publish_date",
     "duration",
     "view_count",
     "like_count",
@@ -625,10 +626,11 @@ def _select_star_projection(rows: Rows) -> list[Any]:
 
     def project(row: dict[str, Any]) -> dict[str, Any]:
         result = {column: row.get(column) for column in SELECT_STAR_COLUMNS}
-        upload_date = result["upload_date"]
-        if upload_date is not None:
-            text = str(upload_date)
-            result["upload_date"] = f"{text[:4]}-{text[4:6]}-{text[6:8]}"
+        for date_field in ("upload_date", "publish_date"):
+            date_value = result[date_field]
+            if date_value is not None:
+                text = str(date_value)
+                result[date_field] = f"{text[:4]}-{text[4:6]}-{text[6:8]}"
         for column in ("timestamp", "release_timestamp", "modified_timestamp"):
             result[column] = _timestamp_text(result[column])
         return result

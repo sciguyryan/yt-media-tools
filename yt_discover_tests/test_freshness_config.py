@@ -14,6 +14,7 @@ EXPECTED_YTDLP_MAX_AGES = {
     "id": 3650 * 86400,
     "title": 7 * 86400,
     "upload_date": 3650 * 86400,
+    "publish_date": 3650 * 86400,
     "duration": 30 * 86400,
     "view_count": 6 * 3600,
     "like_count": 6 * 3600,

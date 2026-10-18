@@ -53,6 +53,9 @@ _FIELD_CAPABILITIES = {
     "id": FieldCapability("id", EXACT, EXACT, logical_kind="string", nullable=False),
     "title": FieldCapability("title", EXACT, EXACT, logical_kind="string"),
     "upload_date": FieldCapability("upload_date", APPROXIMATE, APPROXIMATE, logical_kind="date"),
+    "publish_date": FieldCapability(
+        "publish_date", UNAVAILABLE, UNAVAILABLE, ytdlp_detailed=UNAVAILABLE, logical_kind="date"
+    ),
     "date": FieldCapability("date", APPROXIMATE, APPROXIMATE, logical_kind="date"),
     "duration": FieldCapability("duration", UNAVAILABLE, APPROXIMATE, logical_kind="duration"),
     "view_count": FieldCapability("view_count", APPROXIMATE, APPROXIMATE, logical_kind="count"),

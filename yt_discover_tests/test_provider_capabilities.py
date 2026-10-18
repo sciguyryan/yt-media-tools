@@ -220,7 +220,9 @@ def test_production_youtubejs_exact_scalar_capability_is_deliberately_bounded() 
     assert capability.provider == "youtubejs"
     assert capability.provenance == "youtubejs:getBasicInfo"
     assert capability.fields == YOUTUBEJS_EXACT_SCALAR_FIELDS
-    assert capability.fields == frozenset({"id", "title", "channel_id", "duration", "view_count", "upload_date"})
+    assert capability.fields == frozenset(
+        {"id", "title", "channel_id", "duration", "view_count", "upload_date", "publish_date"}
+    )
     assert "upload_date" in capability.fields
     assert "date" not in capability.fields
     assert "is_live" not in capability.fields

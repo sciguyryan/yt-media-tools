@@ -40,9 +40,9 @@ The current `music` trait requires yt-dlp to resolve the source through the YouT
 
 ## YouTube.js exact-scalar capability
 
-The production `youtubejs:getBasicInfo` capability is authoritative only for `id`, `title`, `channel_id`, `duration`, `view_count` and `upload_date` at the complete-metadata stage. It requires conservative resolution to the `youtube` extractor family and supports anonymous and existing cookie-authenticated contexts.
+The production `youtubejs:getBasicInfo` capability is authoritative only for `id`, `title`, `channel_id`, `duration`, `view_count` `upload_date` and `publish_date` at the complete-metadata stage. It requires conservative resolution to the `youtube` extractor family and supports anonymous and existing cookie-authenticated contexts.
 
-YouTube.js 18.2.0 exposes `basic_info.upload_date` and `basic_info.publish_date`. The adapter normalises valid calendar upload dates to `YYYYMMDD` without substituting publication dates. Exact upload-date requirements can use the lower-cost `getBasicInfo` path; an entry without a usable upload date remains eligible for detailed yt-dlp fallback. The lightweight enumeration capability remains approximate and is separate from detailed `getBasicInfo` acquisition.
+YouTube.js 18.2.0 exposes `basic_info.upload_date` and `basic_info.publish_date`. The adapter normalises both calendar dates independently to `YYYYMMDD`. A missing upload date is never replaced by a publication date, or vice versa. Exact upload-date requirements can use the lower-cost `getBasicInfo` path; an entry without a usable upload date remains eligible for detailed yt-dlp fallback. The lightweight enumeration capability remains approximate and is separate from detailed `getBasicInfo` acquisition.
 
 The field set is closed. Publication dates, descriptions, keywords, category, live/private/unlisted state and other values exposed by YouTube.js are not authoritative through this capability. Any complete-stage requirement containing an unsupported field remains on the established yt-dlp path rather than being partially widened to values whose semantics have not been accepted.
 
@@ -67,3 +67,5 @@ The existing yt-dlp detailed path remains the general authoritative fallback. It
 Mixed acquisition is valid only where every provider contribution has an explicit authority and provenance contract. Cost rank, provider order and successful acquisition do not establish semantic authority. Discover does not race providers or acquire duplicate authoritative values merely to manufacture a disagreement. If a future requirement introduces genuine authoritative disagreement, its resolution policy must be designed explicitly rather than emerging from overwrite order.
 
 General automatic multi-backend scheduling, speculative parallel acquisition and official platform developer APIs are not part of the current provider contract. The contract nevertheless keeps semantic requirements, logical source/facet applicability, physical service-family evidence and provider identity separate so a future backend can participate without becoming yt-sql syntax. They require separate evidence and design if future requirements justify them.
+
+The yt-sql `publish_date` field is a nullable calendar date distinct from `upload_date`, `timestamp` and `release_timestamp`. It is supplied by YouTube.js `getBasicInfo` and is not inferred from yt-dlp release metadata. Missing or invalid publication dates remain NULL. The v4 registered scalar cache stores the two calendar dates separately.

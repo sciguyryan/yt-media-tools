@@ -182,7 +182,9 @@ def lower_provider_requirements(
 
 YOUTUBE_SERVICE_FAMILIES = frozenset({"youtube"})
 SOURCE_TRAIT_MUSIC = "music"
-YOUTUBEJS_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count", "upload_date"})
+YOUTUBEJS_EXACT_SCALAR_FIELDS = frozenset(
+    {"id", "title", "channel_id", "duration", "view_count", "upload_date", "publish_date"}
+)
 YTMUSICAPI_EXACT_SCALAR_FIELDS = frozenset({"id", "title", "channel_id", "duration", "view_count"})
 
 
@@ -191,8 +193,8 @@ def production_provider_capabilities() -> tuple[ProviderCapability, ...]:
 
     The registry is physical planning data, not yt-sql semantics. YouTube.js is
     deliberately bounded to the exact scalar fields established by the retained
-    provider investigation. Publication dates and provider-native state flags are not advertised here;
-    the calendar upload date is available through YouTube.js 18.2.0 basic_info. ytmusicapi is additionally constrained by a
+    provider investigation. Calendar upload and publication dates are independently available through
+    YouTube.js 18.2.0 basic_info; provider-native state flags remain excluded. ytmusicapi is additionally constrained by a
     provider-neutral positive music-source trait and anonymous acquisition; a successful
     ``get_song()`` call cannot manufacture its own eligibility.
     """

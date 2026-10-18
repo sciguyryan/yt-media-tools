@@ -18,6 +18,7 @@ _STABLE_SCALARS: tuple[tuple[str, str], ...] = (
     ("id", "string"),
     ("title", "string"),
     ("upload_date", "date"),
+    ("publish_date", "date"),
     ("duration", "duration"),
     ("view_count", "count"),
     ("like_count", "count"),

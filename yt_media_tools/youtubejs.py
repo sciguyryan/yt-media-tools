@@ -155,6 +155,7 @@ def acquire_basic_info(
             "duration": payload.get("duration"),
             "view_count": payload.get("view_count"),
             "upload_date": _basic_info_upload_date(payload.get("upload_date")),
+            "publish_date": _basic_info_upload_date(payload.get("publish_date")),
             "_yt_sql_metadata_provider": "youtubejs",
             "_yt_sql_metadata_operation": "getBasicInfo",
         }

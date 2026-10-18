@@ -14,6 +14,7 @@ KNOWN_FIELD_TYPES = {
     "id": "string",
     "title": "string",
     "upload_date": "date",
+    "publish_date": "date",
     "duration": "duration",
     "view_count": "count",
     "like_count": "count",

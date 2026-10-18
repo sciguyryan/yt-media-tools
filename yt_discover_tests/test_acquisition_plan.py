@@ -199,7 +199,7 @@ def test_explain_surfaces_conditional_specialised_provider_lowering() -> None:
             "provider": "youtubejs",
             "operation": "youtubejs:getBasicInfo",
             "authority": "exact",
-            "fields": ["channel_id", "duration", "id", "title", "upload_date", "view_count"],
+            "fields": ["channel_id", "duration", "id", "publish_date", "title", "upload_date", "view_count"],
             "required_service_families": ["youtube"],
             "required_logical_source_kinds": [],
             "required_logical_facets": [],

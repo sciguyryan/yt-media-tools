@@ -342,7 +342,7 @@ def test_basic_info_date_mapping_does_not_substitute_publish_date(monkeypatch) -
     records, _stats = acquire_basic_info(Path(__file__).resolve().parents[1], ["a", "b"])
     assert records[0]["upload_date"] == "20261017"
     assert records[1]["upload_date"] is None
-    assert "publish_date" not in records[0]
+    assert [record["publish_date"] for record in records] == ["20261018", "20261018"]
 
 
 def test_basic_info_upload_date_survives_bridge_record_mapping(monkeypatch) -> None:
@@ -366,7 +366,7 @@ def test_basic_info_upload_date_survives_bridge_record_mapping(monkeypatch) -> N
     records, stats = acquire_basic_info(Path(__file__).resolve().parents[1], ["first", "second", "third"])
 
     assert [record["upload_date"] for record in records] == ["20261017", None, None]
-    assert all("publish_date" not in record for record in records)
+    assert [record["publish_date"] for record in records] == ["20261018", "20261018", "20260301"]
     assert stats.available == 3
 
 
