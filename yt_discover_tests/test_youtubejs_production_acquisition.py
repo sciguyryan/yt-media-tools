@@ -94,7 +94,7 @@ def test_application_provider_selection_requires_complete_lowering() -> None:
         _specialised_metadata_provider(physical_plan=plan, resolution_records=records, cookies_file=None) == "youtubejs"
     )
 
-    unsupported = AcquisitionStage("complete-metadata", True, frozenset({"title", "upload_date"}), "test")
+    unsupported = AcquisitionStage("complete-metadata", True, frozenset({"title", "release_timestamp"}), "test")
     unsupported_plan = PhysicalAcquisitionPlan(source, (unsupported,), "test")
     assert (
         _specialised_metadata_provider(physical_plan=unsupported_plan, resolution_records=records, cookies_file=None)
@@ -301,7 +301,7 @@ def test_provider_coverage_retains_supported_subset_of_mixed_query_requirement()
         cookies_file=None,
     )
 
-    assert coverage[0] == ("youtubejs", frozenset({"title"}))
+    assert coverage[0] == ("youtubejs", frozenset({"title", "upload_date"}))
 
 
 def test_basic_info_upload_date_normalisation() -> None:
@@ -405,3 +405,30 @@ def test_basic_info_date_remains_available_without_detailed_fallback(monkeypatch
     )
     assert records[0]["upload_date"] == "20261017"
     assert calls == []
+
+
+def test_missing_basic_info_upload_date_falls_back_to_detailed_metadata(monkeypatch) -> None:
+    """An absent calendar date must not count as satisfying an exact requirement."""
+    requested = []
+
+    def fake_acquire(project_root, video_ids, *, cookies_file=None):
+        return ([{"id": "abc", "title": "Example", "upload_date": None}], AcquisitionStats(available=1))
+
+    def fake_load(command, **kwargs):
+        requested.append(command)
+        return ([{"id": "abc", "title": "Example", "upload_date": "20261016"}], AcquisitionStats(available=1))
+
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.load_metadata", fake_load)
+    records, _, _ = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://www.youtube.com/@example/videos",
+        video_ids=["abc"],
+        required_fields={"title", "upload_date"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider="youtubejs",
+        project_root=Path("/project"),
+    )
+    assert records[0]["upload_date"] == "20261016"
+    assert len(requested) == 1

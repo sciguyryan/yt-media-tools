@@ -292,6 +292,14 @@ def _cached_or_refresh_metadata(
             _verbose(verbose, f"{provider} specialised acquisition failed; trying the next acquisition path ({exc}).")
             continue
         accepted_records = _accepted_specialised_records(provider, provider_records, provider_ids, verbose=verbose)
+        # An unavailable upload date cannot satisfy an exact date requirement.
+        # Keep that entry eligible for the established detailed yt-dlp fallback.
+        accepted_records = [
+            record
+            for record in accepted_records
+            if "upload_date" not in unresolved_fields_by_id.get(record["id"], frozenset())
+            or record.get("upload_date") is not None
+        ]
         accepted_by_id = {record["id"]: record for record in accepted_records}
         for video_id, provider_record in accepted_by_id.items():
             base = cached_by_id.get(video_id, {})

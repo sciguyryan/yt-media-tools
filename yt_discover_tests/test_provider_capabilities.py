@@ -220,8 +220,8 @@ def test_production_youtubejs_exact_scalar_capability_is_deliberately_bounded() 
     assert capability.provider == "youtubejs"
     assert capability.provenance == "youtubejs:getBasicInfo"
     assert capability.fields == YOUTUBEJS_EXACT_SCALAR_FIELDS
-    assert capability.fields == frozenset({"id", "title", "channel_id", "duration", "view_count"})
-    assert "upload_date" not in capability.fields
+    assert capability.fields == frozenset({"id", "title", "channel_id", "duration", "view_count", "upload_date"})
+    assert "upload_date" in capability.fields
     assert "date" not in capability.fields
     assert "is_live" not in capability.fields
 
@@ -253,7 +253,7 @@ def test_youtubejs_exact_scalar_requires_resolved_youtube_source() -> None:
 def test_youtubejs_exact_scalar_rejects_mixed_unsupported_requirement() -> None:
     from yt_media_tools.provider_capabilities import production_provider_capabilities
 
-    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "upload_date"}))
+    requirement = MetadataRequirement("complete-metadata", frozenset({"duration", "release_timestamp"}))
 
     assert (
         select_provider_capability(
@@ -297,8 +297,8 @@ def test_production_lowering_maps_only_wholly_supported_youtubejs_requirement() 
         context=ProviderSelectionContext(resolved_service_family="youtube"),
     )
 
-    assert len(lowered) == 1
-    assert lowered[0].requirement == requirements[0]
+    assert len(lowered) == 2
+    assert [item.requirement for item in lowered] == list(requirements[:2])
     assert lowered[0].candidate.capability.provider == "youtubejs"
     assert lowered[0].candidate.capability.provenance == "youtubejs:getBasicInfo"
 
@@ -337,7 +337,7 @@ def test_youtubejs_exact_scalar_unsupported_fields_poison_complete_lowering() ->
 
     context = ProviderSelectionContext(resolved_service_family="youtube")
     for unsupported in (
-        "upload_date",
+        "release_timestamp",
         "date",
         "description",
         "keywords",
@@ -531,7 +531,7 @@ def test_ytmusicapi_unsupported_field_contamination_rejects_the_whole_capability
         source_traits=frozenset({SOURCE_TRAIT_MUSIC}),
     )
     unsupported_fields = (
-        "upload_date",
+        "release_timestamp",
         "date",
         "description",
         "keywords",
