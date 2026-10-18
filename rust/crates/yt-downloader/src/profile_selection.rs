@@ -1,10 +1,10 @@
 //! Selection and explicit overrides for validated Downloader profiles.
 
-use serde_json::{Map, Value};
 use std::collections::BTreeMap;
+use serde_json::{Map, Value};
 
-use crate::ProfileOptions;
 use crate::profile_settings::{SettingError, ValidatedProfile, validate_settings};
+use crate::ProfileOptions;
 
 /// Failures when selecting a profile or applying explicit settings.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,15 +53,16 @@ pub fn select_profile(
         .transpose()?;
 
     let mut settings = selected.map_or_else(Map::new, |profile| profile.settings.clone());
-    let mut setting_sources =
-        selected.map_or_else(BTreeMap::new, |profile| profile.setting_sources.clone());
+    let mut setting_sources = selected
+        .map_or_else(BTreeMap::new, |profile| profile.setting_sources.clone());
 
     for (key, value) in overrides {
         settings.insert(key.clone(), value.clone());
         setting_sources.insert(key.clone(), "explicit override".to_owned());
     }
 
-    let settings = validate_settings(&settings).map_err(ProfileSelectionError::InvalidSettings)?;
+    let settings = validate_settings(&settings)
+        .map_err(ProfileSelectionError::InvalidSettings)?;
 
     Ok(SelectedProfile {
         settings,
@@ -92,11 +93,7 @@ pub fn select_from_cli_options(
     let name = options
         .profile
         .as_ref()
-        .map(|value| {
-            value
-                .to_str()
-                .ok_or(ProfileSelectionError::InvalidProfileNameEncoding)
-        })
+        .map(|value| value.to_str().ok_or(ProfileSelectionError::InvalidProfileNameEncoding))
         .transpose()?;
 
     select_profile(profiles, name, overrides)
@@ -128,15 +125,17 @@ mod tests {
     #[test]
     fn selects_cli_profile_and_preserves_override_precedence() {
         let options = crate::parse_profile_options(
-            ["--parameter-profile", "child"]
-                .into_iter()
-                .map(std::ffi::OsString::from),
+            ["--parameter-profile", "child"].into_iter().map(std::ffi::OsString::from),
         )
         .unwrap();
         let overrides = json!({"playlist": false});
 
-        let selected =
-            select_from_cli_options(&profiles(), &options, overrides.as_object().unwrap()).unwrap();
+        let selected = select_from_cli_options(
+            &profiles(),
+            &options,
+            overrides.as_object().unwrap(),
+        )
+        .unwrap();
 
         assert_eq!(selected.profile_name.as_deref(), Some("child"));
         assert_eq!(selected.settings["playlist"], false);
@@ -147,18 +146,13 @@ mod tests {
     #[test]
     fn refuses_to_ignore_defaults_file_and_listing_arguments() {
         for (arguments, expected) in [
-            (
-                vec!["--defaults", "settings.json"],
-                ProfileSelectionError::DefaultsFileNotLoaded,
-            ),
-            (
-                vec!["--list-parameters"],
-                ProfileSelectionError::ListingRequested,
-            ),
+            (vec!["--defaults", "settings.json"], ProfileSelectionError::DefaultsFileNotLoaded),
+            (vec!["--list-parameters"], ProfileSelectionError::ListingRequested),
         ] {
-            let options =
-                crate::parse_profile_options(arguments.into_iter().map(std::ffi::OsString::from))
-                    .unwrap();
+            let options = crate::parse_profile_options(
+                arguments.into_iter().map(std::ffi::OsString::from),
+            )
+            .unwrap();
 
             assert_eq!(
                 select_from_cli_options(&profiles(), &options, &Map::new()),
@@ -193,8 +187,12 @@ mod tests {
     #[test]
     fn explicit_settings_replace_inherited_values() {
         let overrides = json!({"audio-quality": "128K", "playlist": false});
-        let result =
-            select_profile(&profiles(), Some("child"), overrides.as_object().unwrap()).unwrap();
+        let result = select_profile(
+            &profiles(),
+            Some("child"),
+            overrides.as_object().unwrap(),
+        )
+        .unwrap();
 
         assert_eq!(result.settings["audio-quality"], "128K");
         assert_eq!(result.settings["playlist"], false);
@@ -214,7 +212,11 @@ mod tests {
     #[test]
     fn rejects_conflicts_introduced_by_overrides() {
         let overrides = json!({"audio-format": null});
-        let result = select_profile(&profiles(), Some("child"), overrides.as_object().unwrap());
+        let result = select_profile(
+            &profiles(),
+            Some("child"),
+            overrides.as_object().unwrap(),
+        );
 
         assert_eq!(
             result,
@@ -227,7 +229,12 @@ mod tests {
     #[test]
     fn accepts_explicit_settings_without_a_stored_profile() {
         let overrides = json!({"playlist": false});
-        let result = select_profile(&profiles(), None, overrides.as_object().unwrap()).unwrap();
+        let result = select_profile(
+            &profiles(),
+            None,
+            overrides.as_object().unwrap(),
+        )
+        .unwrap();
 
         assert_eq!(result.settings["playlist"], false);
         assert_eq!(result.profile_name, None);

@@ -142,26 +142,13 @@ mod tests {
         let source = resolve_targets(&request(&["url:b", "url:a", "url:b", "--unusual"])).unwrap();
         let mut args = vec!["yt-dlp-option".to_owned()];
         source.append_arguments(&mut args);
-        assert_eq!(
-            args,
-            [
-                "yt-dlp-option",
-                "--",
-                "url:b",
-                "url:a",
-                "url:b",
-                "--unusual"
-            ]
-        );
+        assert_eq!(args, ["yt-dlp-option", "--", "url:b", "url:a", "url:b", "--unusual"]);
     }
 
     #[test]
     fn stdin_is_exclusive() {
         assert_eq!(resolve_targets(&request(&["-"])), Ok(TargetSource::Stdin));
-        assert_eq!(
-            resolve_targets(&request(&["-", "other"])),
-            Err(TargetError::MixedStdin)
-        );
+        assert_eq!(resolve_targets(&request(&["-", "other"])), Err(TargetError::MixedStdin));
         let mut args = Vec::new();
         TargetSource::Stdin.append_arguments(&mut args);
         assert_eq!(args, ["--batch-file", "-"]);
@@ -171,43 +158,28 @@ mod tests {
     fn explicit_sources_reject_positional_targets() {
         let mut value = request(&["video"]);
         value.input_file = Some(PathBuf::from("anything"));
-        assert_eq!(
-            resolve_targets(&value),
-            Err(TargetError::ConflictingSources("--input-file"))
-        );
+        assert_eq!(resolve_targets(&value), Err(TargetError::ConflictingSources("--input-file")));
         value.collection_file = Some(PathBuf::from("collection.json"));
-        assert_eq!(
-            resolve_targets(&value),
-            Err(TargetError::ConflictingSources("--collection-file"))
-        );
+        assert_eq!(resolve_targets(&value), Err(TargetError::ConflictingSources("--collection-file")));
     }
 
     #[test]
     fn collections_require_a_dedicated_resolver() {
         let mut value = request(&[]);
         value.collection_file = Some(PathBuf::from("collection.json"));
-        assert_eq!(
-            resolve_targets(&value),
-            Err(TargetError::CollectionRequiresResolver)
-        );
+        assert_eq!(resolve_targets(&value), Err(TargetError::CollectionRequiresResolver));
     }
 
     #[test]
     fn missing_batch_files_are_rejected() {
-        assert!(matches!(
-            resolve_targets(&request(&[])),
-            Err(TargetError::MissingInputFile(_))
-        ));
+        assert!(matches!(resolve_targets(&request(&[])), Err(TargetError::MissingInputFile(_))));
     }
 
     #[test]
     fn single_existing_file_is_a_batch_source() {
         let path = std::env::current_exe().unwrap();
         let mut value = request(&[path.to_str().unwrap()]);
-        assert_eq!(
-            resolve_targets(&value),
-            Ok(TargetSource::BatchFile(path.clone()))
-        );
+        assert_eq!(resolve_targets(&value), Ok(TargetSource::BatchFile(path.clone())));
         value.targets.clear();
         value.input_file = Some(path.clone());
         assert_eq!(resolve_targets(&value), Ok(TargetSource::BatchFile(path)));
@@ -215,11 +187,7 @@ mod tests {
 
     #[test]
     fn nonexistent_single_path_is_a_direct_target() {
-        assert_eq!(
-            resolve_targets(&request(&["nonexistent-video-target"])),
-            Ok(TargetSource::Direct(vec![
-                "nonexistent-video-target".to_owned()
-            ]))
-        );
+        assert_eq!(resolve_targets(&request(&["nonexistent-video-target"])),
+            Ok(TargetSource::Direct(vec!["nonexistent-video-target".to_owned()])));
     }
 }

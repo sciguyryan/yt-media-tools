@@ -108,10 +108,7 @@ impl CancellationSignal for CancellationToken {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LifecycleError {
     /// The requested transition is not valid from the current state.
-    InvalidTransition {
-        from: ExecutionState,
-        to: ExecutionState,
-    },
+    InvalidTransition { from: ExecutionState, to: ExecutionState },
     /// Progress exceeds the stated total.
     InvalidProgress,
 }
@@ -127,10 +124,7 @@ pub struct ExecutionLifecycle {
 impl ExecutionLifecycle {
     /// Create a lifecycle in the planned state.
     pub fn new(plan: ExecutionPlan) -> Self {
-        Self {
-            plan,
-            state: ExecutionState::Planned,
-        }
+        Self { plan, state: ExecutionState::Planned }
     }
 
     /// Return the current execution state.
@@ -139,11 +133,7 @@ impl ExecutionLifecycle {
     }
 
     /// Apply an allowed transition and emit it exactly once.
-    pub fn transition(
-        &mut self,
-        next: ExecutionState,
-        sink: &mut impl EventSink,
-    ) -> Result<(), LifecycleError> {
+    pub fn transition(&mut self, next: ExecutionState, sink: &mut impl EventSink) -> Result<(), LifecycleError> {
         let allowed = matches!(
             (self.state, next),
             (ExecutionState::Planned, ExecutionState::Running)
@@ -155,10 +145,7 @@ impl ExecutionLifecycle {
                 | (ExecutionState::Cancelling, ExecutionState::Failed)
         );
         if !allowed {
-            return Err(LifecycleError::InvalidTransition {
-                from: self.state,
-                to: next,
-            });
+            return Err(LifecycleError::InvalidTransition { from: self.state, to: next });
         }
         self.state = next;
         sink.emit(ExecutionEvent::StateChanged(next));
@@ -166,21 +153,11 @@ impl ExecutionLifecycle {
     }
 
     /// Record progress only while running, with a consistent total.
-    pub fn progress(
-        &self,
-        progress: Progress,
-        sink: &mut impl EventSink,
-    ) -> Result<(), LifecycleError> {
+    pub fn progress(&self, progress: Progress, sink: &mut impl EventSink) -> Result<(), LifecycleError> {
         if self.state != ExecutionState::Running {
-            return Err(LifecycleError::InvalidTransition {
-                from: self.state,
-                to: ExecutionState::Running,
-            });
+            return Err(LifecycleError::InvalidTransition { from: self.state, to: ExecutionState::Running });
         }
-        if progress
-            .total_bytes
-            .is_some_and(|total| progress.completed_bytes > total)
-        {
+        if progress.total_bytes.is_some_and(|total| progress.completed_bytes > total) {
             return Err(LifecycleError::InvalidProgress);
         }
         sink.emit(ExecutionEvent::Progress(progress));
@@ -188,19 +165,9 @@ impl ExecutionLifecycle {
     }
 
     /// Report a failure and transition to the failed state.
-    pub fn fail(
-        &mut self,
-        failure: ExecutionFailure,
-        sink: &mut impl EventSink,
-    ) -> Result<(), LifecycleError> {
-        if !matches!(
-            self.state,
-            ExecutionState::Running | ExecutionState::Cancelling
-        ) {
-            return Err(LifecycleError::InvalidTransition {
-                from: self.state,
-                to: ExecutionState::Failed,
-            });
+    pub fn fail(&mut self, failure: ExecutionFailure, sink: &mut impl EventSink) -> Result<(), LifecycleError> {
+        if !matches!(self.state, ExecutionState::Running | ExecutionState::Cancelling) {
+            return Err(LifecycleError::InvalidTransition { from: self.state, to: ExecutionState::Failed });
         }
         sink.emit(ExecutionEvent::Failure(failure));
         self.transition(ExecutionState::Failed, sink)
@@ -233,53 +200,26 @@ mod tests {
     fn successful_execution_has_ordered_events() {
         let mut lifecycle = make_lifecycle();
         let mut events = Events::default();
-        lifecycle
-            .transition(ExecutionState::Running, &mut events)
-            .unwrap();
-        lifecycle
-            .progress(
-                Progress {
-                    completed_bytes: 5,
-                    total_bytes: Some(10),
-                },
-                &mut events,
-            )
-            .unwrap();
-        lifecycle
-            .transition(ExecutionState::Succeeded, &mut events)
-            .unwrap();
+        lifecycle.transition(ExecutionState::Running, &mut events).unwrap();
+        lifecycle.progress(Progress { completed_bytes: 5, total_bytes: Some(10) }, &mut events).unwrap();
+        lifecycle.transition(ExecutionState::Succeeded, &mut events).unwrap();
 
         assert!(lifecycle.state().is_terminal());
-        assert_eq!(
-            events.0,
-            vec![
-                ExecutionEvent::StateChanged(ExecutionState::Running),
-                ExecutionEvent::Progress(Progress {
-                    completed_bytes: 5,
-                    total_bytes: Some(10)
-                }),
-                ExecutionEvent::StateChanged(ExecutionState::Succeeded),
-            ]
-        );
+        assert_eq!(events.0, vec![
+            ExecutionEvent::StateChanged(ExecutionState::Running),
+            ExecutionEvent::Progress(Progress { completed_bytes: 5, total_bytes: Some(10) }),
+            ExecutionEvent::StateChanged(ExecutionState::Succeeded),
+        ]);
     }
 
     #[test]
     fn invalid_transitions_do_not_emit_events() {
         let mut lifecycle = make_lifecycle();
         let mut events = Events::default();
-        assert!(matches!(
-            lifecycle.transition(ExecutionState::Succeeded, &mut events),
-            Err(LifecycleError::InvalidTransition { .. })
-        ));
+        assert!(matches!(lifecycle.transition(ExecutionState::Succeeded, &mut events), Err(LifecycleError::InvalidTransition { .. })));
         assert!(events.0.is_empty());
-        lifecycle
-            .transition(ExecutionState::Cancelled, &mut events)
-            .unwrap();
-        assert!(
-            lifecycle
-                .transition(ExecutionState::Running, &mut events)
-                .is_err()
-        );
+        lifecycle.transition(ExecutionState::Cancelled, &mut events).unwrap();
+        assert!(lifecycle.transition(ExecutionState::Running, &mut events).is_err());
         assert_eq!(events.0.len(), 1);
     }
 
@@ -293,31 +233,15 @@ mod tests {
 
         let mut lifecycle = make_lifecycle();
         let mut events = Events::default();
-        lifecycle
-            .transition(ExecutionState::Running, &mut events)
-            .unwrap();
-        lifecycle
-            .transition(ExecutionState::Cancelling, &mut events)
-            .unwrap();
-        lifecycle
-            .transition(ExecutionState::Cancelled, &mut events)
-            .unwrap();
+        lifecycle.transition(ExecutionState::Running, &mut events).unwrap();
+        lifecycle.transition(ExecutionState::Cancelling, &mut events).unwrap();
+        lifecycle.transition(ExecutionState::Cancelled, &mut events).unwrap();
         assert_eq!(lifecycle.state(), ExecutionState::Cancelled);
 
         let mut failed_lifecycle = make_lifecycle();
         let mut failures = Events::default();
-        failed_lifecycle
-            .transition(ExecutionState::Running, &mut failures)
-            .unwrap();
-        failed_lifecycle
-            .fail(
-                ExecutionFailure {
-                    kind: FailureKind::Process,
-                    message: "exit status 1".into(),
-                },
-                &mut failures,
-            )
-            .unwrap();
+        failed_lifecycle.transition(ExecutionState::Running, &mut failures).unwrap();
+        failed_lifecycle.fail(ExecutionFailure { kind: FailureKind::Process, message: "exit status 1".into() }, &mut failures).unwrap();
         assert_eq!(failed_lifecycle.state(), ExecutionState::Failed);
         assert!(matches!(failures.0[1], ExecutionEvent::Failure(_)));
     }
@@ -326,18 +250,10 @@ mod tests {
     fn progress_is_validated_without_side_effects() {
         let mut lifecycle = make_lifecycle();
         let mut events = Events::default();
-        let progress = Progress {
-            completed_bytes: 11,
-            total_bytes: Some(10),
-        };
+        let progress = Progress { completed_bytes: 11, total_bytes: Some(10) };
         assert!(lifecycle.progress(progress, &mut events).is_err());
-        lifecycle
-            .transition(ExecutionState::Running, &mut events)
-            .unwrap();
-        assert_eq!(
-            lifecycle.progress(progress, &mut events),
-            Err(LifecycleError::InvalidProgress)
-        );
+        lifecycle.transition(ExecutionState::Running, &mut events).unwrap();
+        assert_eq!(lifecycle.progress(progress, &mut events), Err(LifecycleError::InvalidProgress));
         assert_eq!(events.0.len(), 1);
     }
 }

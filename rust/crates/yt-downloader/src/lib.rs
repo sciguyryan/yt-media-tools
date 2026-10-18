@@ -7,8 +7,8 @@ pub mod process;
 pub mod profile_file;
 pub mod profile_pipeline;
 pub mod profile_selection;
-pub mod profile_settings;
 pub mod profile_store;
+pub mod profile_settings;
 pub mod targets;
 
 use std::ffi::OsString;
@@ -37,9 +37,7 @@ pub fn valid_profile_name(name: &str) -> bool {
     let bytes = name.as_bytes();
     !bytes.is_empty()
         && bytes[0].is_ascii_alphanumeric()
-        && bytes
-            .iter()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
+        && bytes.iter().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
 }
 
 /// Parse the initial profile-related CLI subset without accessing files.
@@ -55,27 +53,12 @@ where
     let command = Command::new("yt-download-rs")
         .disable_help_flag(true)
         .disable_version_flag(true)
-        .arg(
-            Arg::new("profile")
-                .short('p')
-                .long("profile")
-                .visible_alias("parameter-profile")
-                .num_args(1)
-                .action(ArgAction::Append),
-        )
-        .arg(
-            Arg::new("defaults")
-                .short('d')
-                .long("defaults")
-                .num_args(1)
-                .action(ArgAction::Append),
-        )
-        .arg(
-            Arg::new("list-profiles")
-                .long("list-profiles")
-                .visible_alias("list-parameters")
-                .action(ArgAction::SetTrue),
-        );
+        .arg(Arg::new("profile").short('p').long("profile")
+            .visible_alias("parameter-profile").num_args(1).action(ArgAction::Append))
+        .arg(Arg::new("defaults").short('d').long("defaults")
+            .num_args(1).action(ArgAction::Append))
+        .arg(Arg::new("list-profiles").long("list-profiles")
+            .visible_alias("list-parameters").action(ArgAction::SetTrue));
 
     let arguments: Vec<OsString> = args.into_iter().collect();
     // Clap reports a missing trailing value as InvalidValue in some releases.
@@ -117,20 +100,16 @@ where
         }
     })?;
 
-    let profile = matches
-        .get_many::<String>("profile")
-        .and_then(|mut values| values.next_back())
-        .map(OsString::from);
+    let profile = matches.get_many::<String>("profile")
+        .and_then(|mut values| values.next_back()).map(OsString::from);
     if let Some(ref name) = profile
         && !name.to_str().is_some_and(valid_profile_name)
     {
         return Err(ParseError::InvalidProfileName);
     }
 
-    let defaults = matches
-        .get_many::<String>("defaults")
-        .and_then(|mut values| values.next_back())
-        .map(OsString::from);
+    let defaults = matches.get_many::<String>("defaults")
+        .and_then(|mut values| values.next_back()).map(OsString::from);
 
     Ok(ProfileOptions {
         profile,
@@ -189,15 +168,15 @@ fn extract_overrides(
                 && let Some(previous) = seen_boolean.insert(name, enabled)
                 && previous != enabled
             {
-                let (positive, negative) = match name {
-                    "playlist" => ("--playlist", "--no-playlist"),
-                    "audio-only" => ("--audio-only", "--no-audio-only"),
-                    "embed-metadata" => ("--embed-metadata", "--no-embed-metadata"),
-                    "embed-chapters" => ("--embed-chapters", "--no-embed-chapters"),
-                    "embed-thumbnail" => ("--embed-thumbnail", "--no-embed-thumbnail"),
-                    _ => unreachable!("only recognised boolean settings reach this branch"),
-                };
-                return Err(ParseError::ConflictingOptions(positive, negative));
+                    let (positive, negative) = match name {
+                        "playlist" => ("--playlist", "--no-playlist"),
+                        "audio-only" => ("--audio-only", "--no-audio-only"),
+                        "embed-metadata" => ("--embed-metadata", "--no-embed-metadata"),
+                        "embed-chapters" => ("--embed-chapters", "--no-embed-chapters"),
+                        "embed-thumbnail" => ("--embed-thumbnail", "--no-embed-thumbnail"),
+                        _ => unreachable!("only recognised boolean settings reach this branch"),
+                    };
+                    return Err(ParseError::ConflictingOptions(positive, negative));
             }
             overrides.insert(name.to_owned(), serde_json::Value::Bool(enabled));
             continue;
@@ -281,7 +260,9 @@ pub fn describe_parse_error(error: &ParseError) -> String {
         ParseError::MissingValue(option) => {
             format!("yt-download-rs: missing value for {option}\n")
         }
-        ParseError::InvalidProfileName => "yt-download-rs: invalid profile name\n".to_owned(),
+        ParseError::InvalidProfileName => {
+            "yt-download-rs: invalid profile name\n".to_owned()
+        }
         ParseError::UnsupportedOption => {
             "yt-download-rs: unsupported or invalid arguments\n".to_owned()
         }
@@ -350,16 +331,11 @@ fn pending_inspection_command(args: &[OsString]) -> Option<(u8, String, String)>
 /// Unicode behaviour. This is a conservative fallback, not Python's full
 /// stdout-encoding detection contract.
 fn ascii_tree_for_locale(locale: Option<&str>) -> bool {
-    let Some(locale) = locale else {
-        return false;
-    };
+    let Some(locale) = locale else { return false; };
     let locale = locale.trim();
     // Python selects ASCII connectors when stdout uses a non-UTF encoding.
     // The locale is only a proxy for stdout encoding on an interactive terminal.
-    let encoding = locale
-        .rsplit_once('.')
-        .map(|(_, encoding)| encoding)
-        .unwrap_or(locale);
+    let encoding = locale.rsplit_once('.').map(|(_, encoding)| encoding).unwrap_or(locale);
     let encoding = encoding.split('@').next().unwrap_or(encoding);
     !encoding.to_ascii_lowercase().starts_with("utf")
 }
@@ -374,11 +350,7 @@ fn profile_tree_ascii_fallback() -> bool {
     let locale = std::env::var("LC_ALL")
         .ok()
         .filter(|value| !value.is_empty())
-        .or_else(|| {
-            std::env::var("LC_CTYPE")
-                .ok()
-                .filter(|value| !value.is_empty())
-        })
+        .or_else(|| std::env::var("LC_CTYPE").ok().filter(|value| !value.is_empty()))
         .or_else(|| std::env::var("LANG").ok().filter(|value| !value.is_empty()));
     ascii_tree_for_locale(locale.as_deref())
 }
@@ -401,11 +373,8 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
                     && !next.starts_with('-')
                 {
                     if !valid_profile_name(next) {
-                        return Some((
-                            1,
-                            String::new(),
-                            "yt-download-rs: invalid profile name\n".to_owned(),
-                        ));
+                        return Some((1, String::new(),
+                            "yt-download-rs: invalid profile name\n".to_owned()));
                     }
                     focus = Some(next);
                     index += 1;
@@ -413,30 +382,18 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
             }
             Some("--defaults" | "-d") if defaults.is_none() => {
                 let Some(value) = args.get(index + 1) else {
-                    return Some((
-                        1,
-                        String::new(),
-                        "yt-download-rs: missing value for --defaults\n".to_owned(),
-                    ));
+                    return Some((1, String::new(),
+                        "yt-download-rs: missing value for --defaults\n".to_owned()));
                 };
                 if value.to_str().is_some_and(|text| text.starts_with('-')) {
-                    return Some((
-                        1,
-                        String::new(),
-                        "yt-download-rs: missing value for --defaults\n".to_owned(),
-                    ));
+                    return Some((1, String::new(),
+                        "yt-download-rs: missing value for --defaults\n".to_owned()));
                 }
                 defaults = Some(value.clone());
                 index += 1;
             }
-            _ => {
-                return Some((
-                    1,
-                    String::new(),
-                    "yt-download-rs: --profile-tree cannot be combined with other options\n"
-                        .to_owned(),
-                ));
-            }
+            _ => return Some((1, String::new(),
+                "yt-download-rs: --profile-tree cannot be combined with other options\n".to_owned())),
         }
         index += 1;
     }
@@ -446,35 +403,15 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
         .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
     {
         Some(directory) => directory,
-        None => {
-            return Some((
-                1,
-                String::new(),
-                "yt-download-rs: cannot determine executable directory\n".to_owned(),
-            ));
-        }
+        None => return Some((1, String::new(),
+            "yt-download-rs: cannot determine executable directory\n".to_owned())),
     };
-    let options = ProfileOptions {
-        profile: None,
-        defaults,
-        list_profiles: false,
-    };
+    let options = ProfileOptions { profile: None, defaults, list_profiles: false };
     let (path, explicit) = profile_store::resolve_defaults_path(&options, &executable_dir);
-    match profile_store::render_tree_from_path(
-        &path,
-        explicit,
-        focus,
-        profile_tree_ascii_fallback(),
-    ) {
+    match profile_store::render_tree_from_path(&path, explicit, focus, profile_tree_ascii_fallback()) {
         Ok(output) => Some((0, output, String::new())),
-        Err(error) => Some((
-            1,
-            String::new(),
-            format!(
-                "yt-download-rs: {}\n",
-                profile_store::describe_store_error(&error, &path)
-            ),
-        )),
+        Err(error) => Some((1, String::new(),
+            format!("yt-download-rs: {}\n", profile_store::describe_store_error(&error, &path)))),
     }
 }
 
@@ -483,18 +420,12 @@ fn profile_tree_command(args: &[OsString]) -> Option<(u8, String, String)> {
 /// The no-argument form uses the Rust executable-local defaults path, while
 /// explicit paths follow the same expansion policy as normal profile loading.
 fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)> {
-    let position = args
-        .iter()
-        .position(|argument| argument == "--validate-config")?;
-    if position != 0
-        || args.len() > 2
+    let position = args.iter().position(|argument| argument == "--validate-config")?;
+    if position != 0 || args.len() > 2
         || (args.len() == 2 && args[1].to_str().is_some_and(|value| value.starts_with('-')))
     {
-        return Some((
-            1,
-            String::new(),
-            "yt-download-rs: --validate-config cannot be combined with other options\n".to_owned(),
-        ));
+        return Some((1, String::new(),
+            "yt-download-rs: --validate-config cannot be combined with other options\n".to_owned()));
     }
 
     let path = match args.get(1) {
@@ -512,13 +443,11 @@ fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)>
                 .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
             {
                 Some(directory) => directory,
-                None => {
-                    return Some((
-                        1,
-                        String::new(),
-                        "yt-download-rs: cannot determine executable directory\n".to_owned(),
-                    ));
-                }
+                None => return Some((
+                    1,
+                    String::new(),
+                    "yt-download-rs: cannot determine executable directory\n".to_owned(),
+                )),
             };
             let options = ProfileOptions {
                 profile: None,
@@ -532,25 +461,17 @@ fn explicit_config_validation(args: &[OsString]) -> Option<(u8, String, String)>
     match profile_store::validate_config_path(&path) {
         Ok(validation) => {
             let resolved = std::fs::canonicalize(&path).unwrap_or(path);
-            let payload =
-                profile_store::config_validation_json(&validation, &resolved, 1, 4, "1.23.0");
+            let payload = profile_store::config_validation_json(
+                &validation, &resolved, 1, 4, "1.23.0",
+            );
             match serde_json::to_string_pretty(&payload) {
                 Ok(json) => Some((0, format!("{json}\n"), String::new())),
-                Err(error) => Some((
-                    1,
-                    String::new(),
-                    format!("yt-download-rs: cannot serialise validation result: {error}\n"),
-                )),
+                Err(error) => Some((1, String::new(),
+                    format!("yt-download-rs: cannot serialise validation result: {error}\n"))),
             }
         }
-        Err(error) => Some((
-            1,
-            String::new(),
-            format!(
-                "yt-download-rs: {}\n",
-                profile_store::describe_store_error(&error, &path)
-            ),
-        )),
+        Err(error) => Some((1, String::new(),
+            format!("yt-download-rs: {}\n", profile_store::describe_store_error(&error, &path)))),
     }
 }
 
@@ -574,11 +495,7 @@ pub fn experimental_cli(args: &[OsString]) -> (u8, String, String) {
     }
 
     match args {
-        [arg] if arg == "--version" => (
-            0,
-            format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")),
-            String::new(),
-        ),
+        [arg] if arg == "--version" => (0, format!("yt-download-rs {}\n", env!("CARGO_PKG_VERSION")), String::new()),
         [arg] if arg == "--help" || arg == "-h" => (
             0,
             r#"yt-download-rs (experimental)
@@ -612,8 +529,7 @@ The schema reference describes Python's contract, not native capabilities.
 --capabilities and --capabilities-json are reserved and unavailable.
 Native downloading and further Python options are not yet implemented.
 Use yt-download.py for production downloads.
-"#
-            .to_owned(),
+"#.to_owned(),
             String::new(),
         ),
         _ => {
@@ -641,13 +557,7 @@ Use yt-download.py for production downloads.
                 .and_then(|path| path.parent().map(std::path::Path::to_path_buf))
             {
                 Some(path) => path,
-                None => {
-                    return (
-                        1,
-                        String::new(),
-                        "yt-download-rs: cannot determine executable directory\n".to_owned(),
-                    );
-                }
+                None => return (1, String::new(), "yt-download-rs: cannot determine executable directory\n".to_owned()),
             };
 
             if options.list_profiles && !overrides.is_empty() {
@@ -662,11 +572,10 @@ Use yt-download.py for production downloads.
                 return match profile_store::render_from_cli_store(&options, &executable_dir) {
                     Ok(output) => (0, output, String::new()),
                     Err(error) => {
-                        let (path, _) =
-                            profile_store::resolve_defaults_path(&options, &executable_dir);
+                        let (path, _) = profile_store::resolve_defaults_path(&options, &executable_dir);
                         let diagnostic = profile_store::describe_store_error(&error, &path);
                         (1, String::new(), format!("yt-download-rs: {diagnostic}\n"))
-                    }
+                    },
                 };
             }
 
@@ -688,7 +597,7 @@ Use yt-download.py for production downloads.
                     (1, String::new(), format!("yt-download-rs: {diagnostic}\n"))
                 },
             }
-        }
+        },
     }
 }
 
@@ -733,10 +642,7 @@ mod tests {
 
         assert_eq!(status, 0);
         assert!(stderr.is_empty());
-        assert_eq!(
-            stdout,
-            include_str!("../fixtures/python-machine-contract.json")
-        );
+        assert_eq!(stdout, include_str!("../fixtures/python-machine-contract.json"));
 
         let document: serde_json::Value = serde_json::from_str(&stdout).unwrap();
         assert_eq!(document["contract_version"], 4);
@@ -749,10 +655,7 @@ mod tests {
             let (status, stdout, stderr) = experimental_cli(&[OsString::from(command)]);
             assert_eq!(status, 1);
             assert!(stdout.is_empty());
-            assert_eq!(
-                stderr,
-                format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n")
-            );
+            assert_eq!(stderr, format!("yt-download-rs: {command} is not yet implemented; use yt-download.py\n"));
         }
     }
 
@@ -775,8 +678,8 @@ mod tests {
 
     #[test]
     fn profile_tree_rejects_duplicate_defaults() {
-        let arguments =
-            ["--profile-tree", "-d", "first.json", "-d", "second.json"].map(OsString::from);
+        let arguments = ["--profile-tree", "-d", "first.json", "-d", "second.json"]
+            .map(OsString::from);
         let (status, stdout, stderr) = experimental_cli(&arguments);
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
@@ -794,10 +697,7 @@ mod tests {
             vec!["--audio-only", "--capabilities-json"],
             vec!["--list-profiles", "--validate-config"],
         ] {
-            let args = arguments
-                .into_iter()
-                .map(OsString::from)
-                .collect::<Vec<_>>();
+            let args = arguments.into_iter().map(OsString::from).collect::<Vec<_>>();
             let (status, stdout, stderr) = experimental_cli(&args);
             assert_eq!(status, 1);
             assert!(stdout.is_empty());
@@ -818,15 +718,7 @@ mod tests {
 
     #[test]
     fn profile_aliases_and_last_value_win() {
-        let options = parse(&[
-            "-p",
-            "best",
-            "--parameter-profile",
-            "4k",
-            "-d",
-            "custom.json",
-        ])
-        .unwrap();
+        let options = parse(&["-p", "best", "--parameter-profile", "4k", "-d", "custom.json"]).unwrap();
         assert_eq!(options.profile, Some(OsString::from("4k")));
         assert_eq!(options.defaults, Some(OsString::from("custom.json")));
     }
@@ -835,10 +727,7 @@ mod tests {
     fn profile_values_cannot_consume_following_switches() {
         for (arguments, option) in [
             (vec!["--profile", "--list-profiles"], "--profile"),
-            (
-                vec!["--parameter-profile", "--defaults", "config.json"],
-                "--profile",
-            ),
+            (vec!["--parameter-profile", "--defaults", "config.json"], "--profile"),
             (vec!["-p", "--audio-format"], "--profile"),
             (vec!["--defaults", "--profile", "music"], "--defaults"),
             (vec!["-d", "--list-parameters"], "--defaults"),
@@ -850,13 +739,9 @@ mod tests {
     #[test]
     fn profile_value_boundaries_preserve_valid_following_options() {
         let options = parse(&[
-            "--profile",
-            "music",
-            "--defaults",
-            "config.json",
+            "--profile", "music", "--defaults", "config.json",
             "--list-profiles",
-        ])
-        .unwrap();
+        ]).unwrap();
 
         assert_eq!(options.profile, Some(OsString::from("music")));
         assert_eq!(options.defaults, Some(OsString::from("config.json")));
@@ -921,22 +806,10 @@ mod tests {
     #[test]
     fn parse_error_formatter_has_consistent_newline_termination() {
         for (error, expected) in [
-            (
-                ParseError::MissingValue("--audio-format"),
-                "yt-download-rs: missing value for --audio-format\n",
-            ),
-            (
-                ParseError::MissingValue("--defaults"),
-                "yt-download-rs: missing value for --defaults\n",
-            ),
-            (
-                ParseError::InvalidProfileName,
-                "yt-download-rs: invalid profile name\n",
-            ),
-            (
-                ParseError::UnsupportedOption,
-                "yt-download-rs: unsupported or invalid arguments\n",
-            ),
+            (ParseError::MissingValue("--audio-format"), "yt-download-rs: missing value for --audio-format\n"),
+            (ParseError::MissingValue("--defaults"), "yt-download-rs: missing value for --defaults\n"),
+            (ParseError::InvalidProfileName, "yt-download-rs: invalid profile name\n"),
+            (ParseError::UnsupportedOption, "yt-download-rs: unsupported or invalid arguments\n"),
         ] {
             assert_eq!(describe_parse_error(&error), expected);
         }
@@ -950,11 +823,7 @@ mod tests {
                 "yt-download-rs: missing value for --audio-format\n",
             ),
             (
-                vec![
-                    OsString::from("--audio-quality"),
-                    OsString::from("--profile"),
-                    OsString::from("example"),
-                ],
+                vec![OsString::from("--audio-quality"), OsString::from("--profile"), OsString::from("example")],
                 "yt-download-rs: missing value for --audio-quality\n",
             ),
         ] {
@@ -970,8 +839,7 @@ mod tests {
         let (_, overrides) = extract_audio_overrides(&[
             OsString::from("--audio-format"),
             OsString::from("not-a-format"),
-        ])
-        .unwrap();
+        ]).unwrap();
 
         let result = profile_store::select_stored_profile(
             &std::collections::BTreeMap::new(),
@@ -991,8 +859,9 @@ mod tests {
 
     #[test]
     fn invalid_audio_quality_is_rejected_by_effective_policy_validation() {
-        let (_, overrides) =
-            extract_audio_overrides(&[OsString::from("--audio-quality=not-a-quality")]).unwrap();
+        let (_, overrides) = extract_audio_overrides(&[
+            OsString::from("--audio-quality=not-a-quality"),
+        ]).unwrap();
 
         let result = profile_store::select_stored_profile(
             &std::collections::BTreeMap::new(),
@@ -1013,17 +882,8 @@ mod tests {
     #[test]
     fn invalid_audio_values_have_exact_executable_diagnostics() {
         for (args, setting) in [
-            (
-                vec![OsString::from("--audio-format=not-a-format")],
-                "audio-format",
-            ),
-            (
-                vec![
-                    OsString::from("--audio-quality"),
-                    OsString::from("not-a-quality"),
-                ],
-                "audio-quality",
-            ),
+            (vec![OsString::from("--audio-format=not-a-format")], "audio-format"),
+            (vec![OsString::from("--audio-quality"), OsString::from("not-a-quality")], "audio-quality"),
         ] {
             let (status, stdout, stderr) = experimental_cli(&args);
 
@@ -1031,9 +891,7 @@ mod tests {
             assert!(stdout.is_empty());
             assert_eq!(
                 stderr,
-                format!(
-                    "yt-download-rs: invalid effective profile settings: invalid value for setting: {setting}\n"
-                ),
+                format!("yt-download-rs: invalid effective profile settings: invalid value for setting: {setting}\n"),
             );
         }
     }
@@ -1071,15 +929,9 @@ mod tests {
     fn missing_profile_and_defaults_values_have_readable_diagnostics() {
         for (option, expected) in [
             ("--profile", "yt-download-rs: missing value for --profile\n"),
-            (
-                "--parameter-profile",
-                "yt-download-rs: missing value for --profile\n",
-            ),
+            ("--parameter-profile", "yt-download-rs: missing value for --profile\n"),
             ("-p", "yt-download-rs: missing value for --profile\n"),
-            (
-                "--defaults",
-                "yt-download-rs: missing value for --defaults\n",
-            ),
+            ("--defaults", "yt-download-rs: missing value for --defaults\n"),
             ("-d", "yt-download-rs: missing value for --defaults\n"),
         ] {
             let (status, stdout, stderr) = experimental_cli(&[OsString::from(option)]);
@@ -1092,8 +944,9 @@ mod tests {
 
     #[test]
     fn unknown_profile_options_remain_rejected() {
-        let (status, stdout, stderr) =
-            experimental_cli(&[OsString::from("--not-a-profile-option")]);
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--not-a-profile-option"),
+        ]);
 
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
@@ -1118,10 +971,7 @@ mod tests {
                 let (status, stdout, stderr) = experimental_cli(&arguments);
                 assert_eq!(status, 1);
                 assert!(stdout.is_empty());
-                assert_eq!(
-                    stderr,
-                    format!("yt-download-rs: conflicting options {positive} and {negative}\n")
-                );
+                assert_eq!(stderr, format!("yt-download-rs: conflicting options {positive} and {negative}\n"));
             }
         }
     }
@@ -1133,8 +983,7 @@ mod tests {
             OsString::from("--playlist"),
             OsString::from("--no-embed-thumbnail"),
             OsString::from("--no-embed-thumbnail"),
-        ])
-        .unwrap();
+        ]).unwrap();
         assert!(remaining.is_empty());
         assert_eq!(overrides["playlist"], true);
         assert_eq!(overrides["embed-thumbnail"], false);
@@ -1151,17 +1000,13 @@ mod tests {
             OsString::from("--audio-quality=192K"),
             OsString::from("--profile"),
             OsString::from("music"),
-        ])
-        .unwrap();
+        ]).unwrap();
 
         assert_eq!(overrides["audio-format"], "flac");
         assert_eq!(overrides["audio-quality"], "192K");
         assert_eq!(overrides["playlist"], true);
         assert_eq!(overrides["embed-thumbnail"], false);
-        assert_eq!(
-            remaining,
-            [OsString::from("--profile"), OsString::from("music")]
-        );
+        assert_eq!(remaining, [OsString::from("--profile"), OsString::from("music")]);
     }
 
     #[test]
@@ -1170,16 +1015,12 @@ mod tests {
             OsString::from("--audio-format=opus"),
             OsString::from("--unknown"),
             OsString::from("--no-audio-only"),
-        ])
-        .unwrap();
+        ]).unwrap();
 
         assert_eq!(remaining, [OsString::from("--unknown")]);
         assert_eq!(overrides["audio-format"], "opus");
         assert_eq!(overrides["audio-only"], false);
-        assert_eq!(
-            parse_profile_options(remaining),
-            Err(ParseError::UnsupportedOption)
-        );
+        assert_eq!(parse_profile_options(remaining), Err(ParseError::UnsupportedOption));
     }
 
     #[test]
@@ -1206,25 +1047,19 @@ mod tests {
         let (boolean_remaining, boolean_overrides) = extract_cli_overrides(&args);
         assert_eq!(boolean_overrides["playlist"], false);
         assert_eq!(boolean_overrides["embed-thumbnail"], true);
-        assert_eq!(
-            boolean_remaining,
-            [
-                OsString::from("--audio-format=flac"),
-                OsString::from("--audio-quality"),
-                OsString::from("192K"),
-            ]
-        );
+        assert_eq!(boolean_remaining, [
+            OsString::from("--audio-format=flac"),
+            OsString::from("--audio-quality"),
+            OsString::from("192K"),
+        ]);
 
         let (audio_remaining, audio_overrides) = extract_audio_overrides(&args).unwrap();
         assert_eq!(audio_overrides["audio-format"], "flac");
         assert_eq!(audio_overrides["audio-quality"], "192K");
-        assert_eq!(
-            audio_remaining,
-            [
-                OsString::from("--no-playlist"),
-                OsString::from("--embed-thumbnail"),
-            ]
-        );
+        assert_eq!(audio_remaining, [
+            OsString::from("--no-playlist"),
+            OsString::from("--embed-thumbnail"),
+        ]);
 
         let (all_remaining, all_overrides) = extract_download_overrides(&args).unwrap();
         assert!(all_remaining.is_empty());
@@ -1242,15 +1077,11 @@ mod tests {
             OsString::from("--audio-quality=0"),
             OsString::from("--profile"),
             OsString::from("music"),
-        ])
-        .unwrap();
+        ]).unwrap();
 
         assert_eq!(overrides["audio-format"], "flac");
         assert_eq!(overrides["audio-quality"], "0");
-        assert_eq!(
-            remaining,
-            [OsString::from("--profile"), OsString::from("music")]
-        );
+        assert_eq!(remaining, [OsString::from("--profile"), OsString::from("music")]);
     }
 
     #[test]
@@ -1271,8 +1102,7 @@ mod tests {
         let (remaining, overrides) = extract_audio_overrides(&[
             OsString::from("--audio-format=opus"),
             OsString::from("--unknown"),
-        ])
-        .unwrap();
+        ]).unwrap();
 
         assert_eq!(overrides["audio-format"], "opus");
         assert_eq!(remaining, [OsString::from("--unknown")]);
@@ -1294,10 +1124,7 @@ mod tests {
 
         assert_eq!(overrides["audio-format"], "flac");
         assert_eq!(overrides["audio-quality"], "192K");
-        assert_eq!(
-            remaining,
-            [OsString::from("--profile"), OsString::from("example")]
-        );
+        assert_eq!(remaining, [OsString::from("--profile"), OsString::from("example")]);
     }
 
     #[test]
@@ -1322,8 +1149,7 @@ mod tests {
             OsString::from("--audio-format"),
             OsString::from("opus"),
             OsString::from("--unknown"),
-        ])
-        .unwrap();
+        ]).unwrap();
 
         assert_eq!(overrides["audio-format"], "opus");
         assert_eq!(remaining, [OsString::from("--unknown")]);
@@ -1336,21 +1162,21 @@ mod tests {
             ("--audio-only", "--no-audio-only", "audio-only"),
             ("--embed-metadata", "--no-embed-metadata", "embed-metadata"),
             ("--embed-chapters", "--no-embed-chapters", "embed-chapters"),
-            (
-                "--embed-thumbnail",
-                "--no-embed-thumbnail",
-                "embed-thumbnail",
-            ),
+            ("--embed-thumbnail", "--no-embed-thumbnail", "embed-thumbnail"),
         ] {
-            let (remaining, overrides) =
-                extract_cli_overrides(&[OsString::from(enabled), OsString::from(disabled)]);
+            let (remaining, overrides) = extract_cli_overrides(&[
+                OsString::from(enabled),
+                OsString::from(disabled),
+            ]);
 
             assert!(remaining.is_empty());
             assert_eq!(overrides.len(), 1);
             assert_eq!(overrides[name], false, "{name}");
 
-            let (_, reversed) =
-                extract_cli_overrides(&[OsString::from(disabled), OsString::from(enabled)]);
+            let (_, reversed) = extract_cli_overrides(&[
+                OsString::from(disabled),
+                OsString::from(enabled),
+            ]);
             assert_eq!(reversed[name], true, "{name}");
         }
     }
@@ -1364,7 +1190,10 @@ mod tests {
         ];
         let (remaining, overrides) = extract_cli_overrides(&args);
 
-        assert_eq!(remaining, [OsString::from("--unknown")],);
+        assert_eq!(
+            remaining,
+            [OsString::from("--unknown")],
+        );
         assert_eq!(overrides["embed-thumbnail"], true);
         assert_eq!(overrides["embed-metadata"], false);
         assert_eq!(
@@ -1395,7 +1224,9 @@ mod tests {
 
     #[test]
     fn omitted_embedding_flags_do_not_override_profile_values() {
-        let (_, overrides) = extract_cli_overrides(&[OsString::from("--no-playlist")]);
+        let (_, overrides) = extract_cli_overrides(&[
+            OsString::from("--no-playlist"),
+        ]);
 
         assert!(!overrides.contains_key("embed-metadata"));
         assert!(!overrides.contains_key("embed-chapters"));
@@ -1446,8 +1277,10 @@ mod tests {
 
     #[test]
     fn audio_only_is_not_overridden_when_unspecified() {
-        let (remaining, overrides) =
-            extract_cli_overrides(&[OsString::from("--profile"), OsString::from("example")]);
+        let (remaining, overrides) = extract_cli_overrides(&[
+            OsString::from("--profile"),
+            OsString::from("example"),
+        ]);
 
         assert_eq!(remaining.len(), 2);
         assert!(!overrides.contains_key("audio-only"));
@@ -1467,7 +1300,9 @@ mod tests {
 
     #[test]
     fn executable_accepts_audio_only_override_without_download_execution() {
-        let (status, stdout, stderr) = experimental_cli(&[OsString::from("--no-audio-only")]);
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--no-audio-only"),
+        ]);
 
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
@@ -1494,8 +1329,10 @@ mod tests {
 
     #[test]
     fn playlist_override_is_not_inferred_when_omitted() {
-        let (remaining, overrides) =
-            extract_cli_overrides(&[OsString::from("--profile"), OsString::from("example")]);
+        let (remaining, overrides) = extract_cli_overrides(&[
+            OsString::from("--profile"),
+            OsString::from("example"),
+        ]);
 
         assert_eq!(remaining.len(), 2);
         assert!(overrides.is_empty());
@@ -1515,7 +1352,9 @@ mod tests {
 
     #[test]
     fn executable_accepts_playlist_override_without_enabling_downloads() {
-        let (status, stdout, stderr) = experimental_cli(&[OsString::from("--no-playlist")]);
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("--no-playlist"),
+        ]);
 
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
@@ -1566,16 +1405,19 @@ mod tests {
 
     #[test]
     fn store_selection_rejects_unknown_profile_without_implicit_fallback() {
-        let options =
-            parse_profile_options([OsString::from("--profile"), OsString::from("missing")])
-                .unwrap();
+        let options = parse_profile_options(
+            [OsString::from("--profile"), OsString::from("missing")],
+        ).unwrap();
         let directory = std::env::temp_dir().join(format!(
             "yt-download-rs-selection-absent-{}",
             std::process::id(),
         ));
 
-        let result =
-            profile_store::select_from_cli_store(&options, &directory, &serde_json::Map::new());
+        let result = profile_store::select_from_cli_store(
+            &options,
+            &directory,
+            &serde_json::Map::new(),
+        );
 
         assert!(matches!(
             result,
@@ -1607,16 +1449,8 @@ mod tests {
 
         let filename = path.clone().into_os_string();
         let commands = [
-            vec![
-                OsString::from("--profile-tree"),
-                OsString::from("--defaults"),
-                filename.clone(),
-            ],
-            vec![
-                OsString::from("-d"),
-                filename.clone(),
-                OsString::from("--profile-tree"),
-            ],
+            vec![OsString::from("--profile-tree"), OsString::from("--defaults"), filename.clone()],
+            vec![OsString::from("-d"), filename.clone(), OsString::from("--profile-tree")],
         ];
 
         for args in commands {
@@ -1627,18 +1461,8 @@ mod tests {
         }
 
         let commands = [
-            vec![
-                OsString::from("--profile-tree"),
-                OsString::from("child"),
-                OsString::from("-d"),
-                filename.clone(),
-            ],
-            vec![
-                OsString::from("--defaults"),
-                filename.clone(),
-                OsString::from("--profile-tree"),
-                OsString::from("child"),
-            ],
+            vec![OsString::from("--profile-tree"), OsString::from("child"), OsString::from("-d"), filename.clone()],
+            vec![OsString::from("--defaults"), filename.clone(), OsString::from("--profile-tree"), OsString::from("child")],
         ];
 
         for args in commands {
@@ -1649,19 +1473,15 @@ mod tests {
         }
 
         let (status, stdout, stderr) = experimental_cli(&[
-            OsString::from("--profile-tree"),
-            OsString::from("unknown"),
-            OsString::from("--defaults"),
-            filename.clone(),
+            OsString::from("--profile-tree"), OsString::from("unknown"),
+            OsString::from("--defaults"), filename.clone(),
         ]);
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
         assert!(stderr.contains("unknown profile"));
 
         let (status, stdout, stderr) = experimental_cli(&[
-            OsString::from("--profile-tree"),
-            OsString::from("--defaults"),
-            filename.clone(),
+            OsString::from("--profile-tree"), OsString::from("--defaults"), filename.clone(),
             OsString::from("--audio-only"),
         ]);
         assert_eq!(status, 1);
@@ -1686,8 +1506,9 @@ mod tests {
 
     #[test]
     fn positional_download_target_fails_as_unimplemented() {
-        let (status, stdout, stderr) =
-            experimental_cli(&[OsString::from("https://example.invalid/video")]);
+        let (status, stdout, stderr) = experimental_cli(&[
+            OsString::from("https://example.invalid/video"),
+        ]);
 
         assert_eq!(status, 1);
         assert!(stdout.is_empty());
@@ -1705,24 +1526,12 @@ mod tests {
 
     #[test]
     fn invalid_inputs_fail_closed() {
-        assert_eq!(
-            parse(&["--profile"]),
-            Err(ParseError::MissingValue("--profile"))
-        );
-        assert_eq!(
-            parse(&["--defaults"]),
-            Err(ParseError::MissingValue("--defaults"))
-        );
+        assert_eq!(parse(&["--profile"]), Err(ParseError::MissingValue("--profile")));
+        assert_eq!(parse(&["--defaults"]), Err(ParseError::MissingValue("--defaults")));
         assert_eq!(parse(&["-p"]), Err(ParseError::MissingValue("--profile")));
-        assert_eq!(
-            parse(&["--parameter-profile"]),
-            Err(ParseError::MissingValue("--profile"))
-        );
+        assert_eq!(parse(&["--parameter-profile"]), Err(ParseError::MissingValue("--profile")));
         assert_eq!(parse(&["-d"]), Err(ParseError::MissingValue("--defaults")));
-        assert_eq!(
-            parse(&["-p", ".hidden"]),
-            Err(ParseError::InvalidProfileName)
-        );
+        assert_eq!(parse(&["-p", ".hidden"]), Err(ParseError::InvalidProfileName));
         assert_eq!(parse(&["--unknown"]), Err(ParseError::UnsupportedOption));
     }
 }

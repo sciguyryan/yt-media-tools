@@ -51,18 +51,13 @@ pub fn plan_invocation(context: &InvocationContext) -> Result<ExecutionPlan, Pla
             return Err(PlanningError::UnsupportedSetting(name.clone()));
         };
         match value {
-            Value::Bool(enabled) => {
-                arguments.push(if *enabled { positive } else { negative }.to_owned())
-            }
+            Value::Bool(enabled) => arguments.push(if *enabled { positive } else { negative }.to_owned()),
             _ => return Err(PlanningError::InvalidSetting(name.clone())),
         }
     }
 
     context.source.append_arguments(&mut arguments);
-    Ok(ExecutionPlan {
-        arguments,
-        source: context.source.clone(),
-    })
+    Ok(ExecutionPlan { arguments, source: context.source.clone() })
 }
 
 #[cfg(test)]
@@ -89,10 +84,7 @@ mod tests {
 
     #[test]
     fn direct_targets_are_escaped_and_preserve_duplicates() {
-        let input = context(
-            TargetSource::Direct(vec!["--odd".into(), "same".into(), "same".into()]),
-            json!({}),
-        );
+        let input = context(TargetSource::Direct(vec!["--odd".into(), "same".into(), "same".into()]), json!({}));
         let plan = plan_invocation(&input).unwrap();
         assert_eq!(plan.arguments, ["--", "--odd", "same", "same"]);
         assert_eq!(plan.source, input.source);
@@ -101,44 +93,26 @@ mod tests {
     #[test]
     fn batch_and_standard_input_keep_distinct_sources() {
         let batch = context(TargetSource::BatchFile("queue.txt".into()), json!({}));
-        assert_eq!(
-            plan_invocation(&batch).unwrap().arguments,
-            ["--batch-file", "queue.txt"]
-        );
+        assert_eq!(plan_invocation(&batch).unwrap().arguments, ["--batch-file", "queue.txt"]);
         let stdin = context(TargetSource::Stdin, json!({}));
-        assert_eq!(
-            plan_invocation(&stdin).unwrap().arguments,
-            ["--batch-file", "-"]
-        );
+        assert_eq!(plan_invocation(&stdin).unwrap().arguments, ["--batch-file", "-"]);
     }
 
     #[test]
     fn supported_switches_have_deterministic_order_and_polarity() {
-        let input = context(
-            TargetSource::Direct(vec!["video".into()]),
-            json!({"write-subs": false, "playlist": true}),
-        );
-        assert_eq!(
-            plan_invocation(&input).unwrap().arguments,
-            ["--yes-playlist", "--no-write-subs", "--", "video"]
-        );
+        let input = context(TargetSource::Direct(vec!["video".into()]), json!({"write-subs": false, "playlist": true}));
+        assert_eq!(plan_invocation(&input).unwrap().arguments, ["--yes-playlist", "--no-write-subs", "--", "video"]);
     }
 
     #[test]
     fn unported_policy_fails_instead_of_being_silently_dropped() {
         let input = context(TargetSource::Stdin, json!({"preferred-fps": 60}));
-        assert_eq!(
-            plan_invocation(&input),
-            Err(PlanningError::UnsupportedSetting("preferred-fps".into()))
-        );
+        assert_eq!(plan_invocation(&input), Err(PlanningError::UnsupportedSetting("preferred-fps".into())));
     }
 
     #[test]
     fn unexpected_types_fail_closed() {
         let input = context(TargetSource::Stdin, json!({"playlist": "true"}));
-        assert_eq!(
-            plan_invocation(&input),
-            Err(PlanningError::InvalidSetting("playlist".into()))
-        );
+        assert_eq!(plan_invocation(&input), Err(PlanningError::InvalidSetting("playlist".into())));
     }
 }

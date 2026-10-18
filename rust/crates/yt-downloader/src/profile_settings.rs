@@ -1,7 +1,7 @@
 //! Validation of effective Downloader profile settings.
 
-use serde_json::{Map, Value};
 use std::collections::BTreeMap;
+use serde_json::{Map, Value};
 
 use crate::profile_file::ResolvedProfile;
 
@@ -32,56 +32,33 @@ pub struct ValidatedProfile {
 }
 
 const BOOLEAN_SETTINGS: &[&str] = &[
-    "no-cookies",
-    "reverse-playlist",
-    "playlist",
-    "write-subs",
-    "write-auto-subs",
-    "embed-subs",
-    "write-thumbnail",
-    "embed-thumbnail",
-    "write-info-json",
-    "embed-metadata",
-    "embed-chapters",
-    "sponsorblock",
-    "audio-only",
-    "audio-source-fallback",
-    "live",
-    "live-from-start",
-    "write-live-chat",
+    "no-cookies", "reverse-playlist", "playlist", "write-subs", "write-auto-subs",
+    "embed-subs", "write-thumbnail", "embed-thumbnail", "write-info-json",
+    "embed-metadata", "embed-chapters", "sponsorblock", "audio-only",
+    "audio-source-fallback", "live", "live-from-start", "write-live-chat",
 ];
 
 const NONEMPTY_STRING_SETTINGS: &[&str] = &[
-    "path",
-    "output",
-    "format",
-    "cookies",
-    "archive",
-    "temp-path",
-    "user-agent",
-    "impersonate",
-    "referer",
-    "proxy",
-    "source-address",
-    "sub-langs",
-    "sub-format",
+    "path", "output", "format", "cookies", "archive", "temp-path", "user-agent",
+    "impersonate", "referer", "proxy", "source-address", "sub-langs", "sub-format",
 ];
 
 const POSITIVE_INTEGER_SETTINGS: &[&str] = &[
-    "min-fps",
-    "max-fps",
-    "preferred-fps",
-    "preferred-audio-channels",
+    "min-fps", "max-fps", "preferred-fps", "preferred-audio-channels",
     "concurrent-fragments",
 ];
 
 // Recognised settings still awaiting their Python-compatible validation rules.
-const OTHER_RECOGNISED_SETTINGS: &[&str] = &["chapter-sections"];
+const OTHER_RECOGNISED_SETTINGS: &[&str] = &[
+    "chapter-sections",
+];
+
 
 /// Validate a browser cookie source while retaining any profile or container suffix.
 fn validate_cookie_browser(value: &Value) -> Option<Value> {
     const SUPPORTED_BROWSERS: &[&str] = &[
-        "brave", "chrome", "chromium", "edge", "firefox", "opera", "safari", "vivaldi", "whale",
+        "brave", "chrome", "chromium", "edge", "firefox",
+        "opera", "safari", "vivaldi", "whale",
     ];
 
     let source = value.as_str()?.trim();
@@ -90,8 +67,7 @@ fn validate_cookie_browser(value: &Value) -> Option<Value> {
     }
 
     let browser = source.split(['+', ':']).next()?.to_ascii_lowercase();
-    SUPPORTED_BROWSERS
-        .contains(&browser.as_str())
+    SUPPORTED_BROWSERS.contains(&browser.as_str())
         .then(|| Value::String(source.to_owned()))
 }
 
@@ -128,9 +104,7 @@ fn validate_resolution(value: &Value, bound: bool) -> Option<Value> {
 /// Accept a known format or container token, normalising its case as Python does.
 fn validate_choice(value: &Value, choices: &[&str]) -> Option<Value> {
     let text = value.as_str()?.to_ascii_lowercase();
-    choices
-        .contains(&text.as_str())
-        .then_some(Value::String(text))
+    choices.contains(&text.as_str()).then_some(Value::String(text))
 }
 
 /// Validate yt-dlp's numeric VBR levels and explicit bitrate notation.
@@ -169,12 +143,7 @@ fn validate_audio_quality(value: &Value) -> Option<Value> {
 /// Validate a byte rate using the same optional unit suffixes as Python.
 fn validate_rate(value: &Value) -> Option<Value> {
     let text = value.as_str()?.trim();
-    let digits = text.trim_end_matches(|ch: char| {
-        matches!(
-            ch,
-            'K' | 'M' | 'G' | 'T' | 'P' | 'k' | 'm' | 'g' | 't' | 'p'
-        )
-    });
+    let digits = text.trim_end_matches(|ch: char| matches!(ch, 'K' | 'M' | 'G' | 'T' | 'P' | 'k' | 'm' | 'g' | 't' | 'p'));
 
     if text.len() - digits.len() > 1 {
         return None;
@@ -231,8 +200,7 @@ fn validate_codec(value: &Value) -> Option<Value> {
     let text = value.as_str()?.trim();
     let mut bytes = text.bytes();
     if !bytes.next()?.is_ascii_alphanumeric()
-        || !bytes
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'+' | b'-'))
+        || !bytes.all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'+' | b'-'))
     {
         return None;
     }
@@ -321,12 +289,7 @@ fn validate_wait_for_video(value: &Value) -> Option<Value> {
             return None;
         }
 
-        Some(
-            maximum
-                .parse::<u64>()
-                .ok()
-                .filter(|number| *number >= lower)?,
-        )
+        Some(maximum.parse::<u64>().ok().filter(|number| *number >= lower)?)
     } else {
         None
     };
@@ -340,19 +303,9 @@ fn validate_wait_for_video(value: &Value) -> Option<Value> {
 /// Validate SponsorBlock categories while preserving exclusions and their order.
 fn validate_sponsorblock_categories(key: &str, value: &Value) -> Option<Value> {
     const MARK: &[&str] = &[
-        "sponsor",
-        "intro",
-        "outro",
-        "selfpromo",
-        "preview",
-        "filler",
-        "interaction",
-        "music_offtopic",
-        "hook",
-        "poi_highlight",
-        "chapter",
-        "all",
-        "default",
+        "sponsor", "intro", "outro", "selfpromo", "preview", "filler",
+        "interaction", "music_offtopic", "hook", "poi_highlight",
+        "chapter", "all", "default",
     ];
 
     let text = value.as_str()?.trim();
@@ -376,6 +329,7 @@ fn validate_sponsorblock_categories(key: &str, value: &Value) -> Option<Value> {
     Some(Value::String(categories.join(",")))
 }
 
+
 /// Validate a partial-media timestamp using the supported Python profile syntax.
 ///
 /// Negative offsets are retained. `inf` is only valid as the end of a range.
@@ -398,15 +352,14 @@ fn validate_section_timestamp(value: &str, allow_infinity: bool) -> Option<Strin
             return None;
         }
 
-        if part.contains('.')
-            && (!is_last
-                || fractional.is_empty()
-                || !fractional.bytes().all(|byte| byte.is_ascii_digit()))
-        {
+        if part.contains('.') && (!is_last || fractional.is_empty() || !fractional.bytes().all(|byte| byte.is_ascii_digit())) {
             return None;
         }
 
-        if parts.len() > 1 && index > 0 && (whole.len() > 2 || whole.parse::<u32>().ok()? >= 60) {
+        if parts.len() > 1
+            && index > 0
+            && (whole.len() > 2 || whole.parse::<u32>().ok()? >= 60)
+        {
             return None;
         }
     }
@@ -429,9 +382,7 @@ fn normalise_time_range(start: &str, stop: &str) -> Option<String> {
     let start = validate_section_timestamp(start, false)?;
     let stop = validate_section_timestamp(stop, true)?;
 
-    if stop != "inf"
-        && !start.starts_with('-')
-        && !stop.starts_with('-')
+    if stop != "inf" && !start.starts_with('-') && !stop.starts_with('-')
         && timestamp_seconds(&stop)? <= timestamp_seconds(&start)?
     {
         return None;
@@ -473,9 +424,7 @@ fn validate_time_ranges(value: &Value) -> Option<Value> {
 ///
 /// Options with more involved Python-specific validation are rejected until their
 /// semantics have been ported. This avoids treating unvalidated settings as safe.
-pub fn validate_settings(
-    settings: &Map<String, Value>,
-) -> Result<Map<String, Value>, SettingError> {
+pub fn validate_settings(settings: &Map<String, Value>) -> Result<Map<String, Value>, SettingError> {
     let mut validated = Map::new();
 
     for (key, value) in settings {
@@ -504,11 +453,9 @@ pub fn validate_settings(
         } else if key == "cookies-from-browser" {
             validate_cookie_browser(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "resolution" {
-            validate_resolution(value, false)
-                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+            validate_resolution(value, false).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if matches!(key.as_str(), "min-resolution" | "max-resolution") {
-            validate_resolution(value, true)
-                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+            validate_resolution(value, true).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "preferred-hdr" {
             validate_choice(value, &["sdr", "hdr", "dv"])
                 .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
@@ -516,49 +463,26 @@ pub fn validate_settings(
             validate_choice(value, &["avi", "flv", "mkv", "mov", "mp4", "webm"])
                 .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "audio-format" {
-            validate_choice(
-                value,
-                &[
-                    "best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav",
-                ],
-            )
-            .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+            validate_choice(value, &["best", "aac", "alac", "flac", "m4a", "mp3", "opus", "vorbis", "wav"])
+                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "audio-quality" {
             validate_audio_quality(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if matches!(key.as_str(), "limit-rate" | "throttled-rate") {
             validate_rate(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
-        } else if matches!(
-            key.as_str(),
-            "retries" | "fragment-retries" | "file-access-retries" | "extractor-retries"
-        ) {
+        } else if matches!(key.as_str(), "retries" | "fragment-retries" | "file-access-retries" | "extractor-retries") {
             validate_retry(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if matches!(key.as_str(), "retry-sleep" | "extractor-args" | "headers") {
-            let items = validate_string_list(value)
-                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?;
+            let items = validate_string_list(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?;
 
-            if key == "headers"
-                && items.as_array().is_some_and(|entries| {
-                    entries.iter().any(|entry| {
-                        let (field, content) = entry
-                            .as_str()
-                            .unwrap_or_default()
-                            .split_once(':')
-                            .unwrap_or(("", ""));
-                        field.trim().is_empty() || content.trim().is_empty()
-                    })
-                })
-            {
+            if key == "headers" && items.as_array().is_some_and(|entries| entries.iter().any(|entry| {
+                let (field, content) = entry.as_str().unwrap_or_default().split_once(':').unwrap_or(("", ""));
+                field.trim().is_empty() || content.trim().is_empty()
+            })) {
                 return Err(SettingError::InvalidValue(key.clone()));
             }
 
             items
-        } else if matches!(
-            key.as_str(),
-            "preferred-video-codec"
-                | "preferred-audio-codec"
-                | "audio-source-codec"
-                | "audio-source-container"
-        ) {
+        } else if matches!(key.as_str(), "preferred-video-codec" | "preferred-audio-codec" | "audio-source-codec" | "audio-source-container") {
             validate_codec(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "playlist-items" {
             validate_playlist_items(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
@@ -567,15 +491,12 @@ pub fn validate_settings(
         } else if key == "wait-for-video" {
             validate_wait_for_video(value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if matches!(key.as_str(), "sponsorblock-mark" | "sponsorblock-remove") {
-            validate_sponsorblock_categories(key, value)
-                .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
+            validate_sponsorblock_categories(key, value).ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "ip-family" {
             validate_choice(value, &["ipv4", "ipv6"])
                 .ok_or_else(|| SettingError::InvalidValue(key.clone()))?
         } else if key == "socket-timeout" {
-            let number = value
-                .as_f64()
-                .filter(|number| number.is_finite() && *number > 0.0)
+            let number = value.as_f64().filter(|number| number.is_finite() && *number > 0.0)
                 .ok_or_else(|| SettingError::InvalidValue(key.clone()))?;
 
             Value::from(number)
@@ -591,15 +512,15 @@ pub fn validate_settings(
     if ["cookies", "cookies-from-browser", "no-cookies"]
         .iter()
         .filter(|key| validated.contains_key(**key))
-        .count()
-        > 1
+        .count() > 1
     {
-        return Err(SettingError::ConflictingSettings(
-            "multiple cookie sources".to_owned(),
-        ));
+        return Err(SettingError::ConflictingSettings("multiple cookie sources".to_owned()));
     }
 
-    for (minimum, maximum) in [("min-resolution", "max-resolution"), ("min-fps", "max-fps")] {
+    for (minimum, maximum) in [
+        ("min-resolution", "max-resolution"),
+        ("min-fps", "max-fps"),
+    ] {
         if let (Some(lower), Some(upper)) = (
             validated.get(minimum).and_then(Value::as_u64),
             validated.get(maximum).and_then(Value::as_u64),
@@ -617,34 +538,23 @@ pub fn validate_settings(
         ));
     }
 
-    if validated.get("playlist") == Some(&Value::Bool(false))
-        && validated.contains_key("playlist-items")
-    {
-        return Err(SettingError::ConflictingSettings(
-            "playlist-items requires playlist=true".to_owned(),
-        ));
+    if validated.get("playlist") == Some(&Value::Bool(false)) && validated.contains_key("playlist-items") {
+        return Err(SettingError::ConflictingSettings("playlist-items requires playlist=true".to_owned()));
     }
 
-    if validated.contains_key("wait-for-video") && validated.get("live") != Some(&Value::Bool(true))
-    {
-        return Err(SettingError::ConflictingSettings(
-            "wait-for-video requires live=true".to_owned(),
-        ));
+    if validated.contains_key("wait-for-video") && validated.get("live") != Some(&Value::Bool(true)) {
+        return Err(SettingError::ConflictingSettings("wait-for-video requires live=true".to_owned()));
     }
 
     if (validated.get("live-from-start") == Some(&Value::Bool(true))
         || validated.get("write-live-chat") == Some(&Value::Bool(true)))
         && validated.get("live") != Some(&Value::Bool(true))
     {
-        return Err(SettingError::ConflictingSettings(
-            "live=true is required".to_owned(),
-        ));
+        return Err(SettingError::ConflictingSettings("live=true is required".to_owned()));
     }
 
     if validated.contains_key("time-ranges") && validated.get("live") == Some(&Value::Bool(true)) {
-        return Err(SettingError::ConflictingSettings(
-            "partial-media selection cannot be combined with live mode".to_owned(),
-        ));
+        return Err(SettingError::ConflictingSettings("partial-media selection cannot be combined with live mode".to_owned()));
     }
 
     Ok(validated)
@@ -657,18 +567,14 @@ pub fn validate_profiles(
     let mut validated = BTreeMap::new();
 
     for (name, profile) in profiles {
-        let settings =
-            validate_settings(&profile.settings).map_err(|error| (name.clone(), error))?;
+        let settings = validate_settings(&profile.settings).map_err(|error| (name.clone(), error))?;
 
-        validated.insert(
-            name.clone(),
-            ValidatedProfile {
-                settings,
-                parent: profile.parent.clone(),
-                ancestry: profile.ancestry.clone(),
-                setting_sources: profile.setting_sources.clone(),
-            },
-        );
+        validated.insert(name.clone(), ValidatedProfile {
+            settings,
+            parent: profile.parent.clone(),
+            ancestry: profile.ancestry.clone(),
+            setting_sources: profile.setting_sources.clone(),
+        });
     }
 
     Ok(validated)
@@ -682,15 +588,10 @@ mod tests {
 
     #[test]
     fn normalises_partial_media_time_ranges() {
-        let settings =
-            serde_json::from_str(r#"{"time-ranges":[" 01:02-02:03 ",["-15", "inf"],"10--5"]}"#)
-                .unwrap();
+        let settings = serde_json::from_str(r#"{"time-ranges":[" 01:02-02:03 ",["-15", "inf"],"10--5"]}"#).unwrap();
         let validated = validate_settings(&settings).unwrap();
 
-        assert_eq!(
-            validated["time-ranges"],
-            serde_json::json!(["01:02-02:03", "-15-inf", "10--5"])
-        );
+        assert_eq!(validated["time-ranges"], serde_json::json!(["01:02-02:03", "-15-inf", "10--5"]));
     }
 
     #[test]
@@ -711,9 +612,7 @@ mod tests {
 
     #[test]
     fn normalises_strings_and_preserves_json_types() {
-        let settings =
-            serde_json::from_str(r#"{"path":" /tmp/videos ","playlist":true,"min-fps":24}"#)
-                .unwrap();
+        let settings = serde_json::from_str(r#"{"path":" /tmp/videos ","playlist":true,"min-fps":24}"#).unwrap();
         let validated = validate_settings(&settings).unwrap();
 
         assert_eq!(validated["path"], "/tmp/videos");
@@ -725,17 +624,11 @@ mod tests {
     fn rejects_invalid_types_and_unported_options() {
         for json in [r#"{"playlist":1}"#, r#"{"path":"  "}"#, r#"{"min-fps":0}"#] {
             let settings = serde_json::from_str(json).unwrap();
-            assert!(matches!(
-                validate_settings(&settings),
-                Err(SettingError::InvalidValue(_))
-            ));
+            assert!(matches!(validate_settings(&settings), Err(SettingError::InvalidValue(_))));
         }
 
         let settings = serde_json::from_str(r#"{"unrecognised":true}"#).unwrap();
-        assert_eq!(
-            validate_settings(&settings),
-            Err(SettingError::UnknownSetting("unrecognised".into()))
-        );
+        assert_eq!(validate_settings(&settings), Err(SettingError::UnknownSetting("unrecognised".into())));
     }
 
     #[test]
@@ -751,9 +644,7 @@ mod tests {
             let settings = serde_json::json!({"cookies-from-browser": source});
             assert_eq!(
                 validate_settings(settings.as_object().unwrap()),
-                Err(SettingError::InvalidValue(
-                    "cookies-from-browser".to_owned()
-                ))
+                Err(SettingError::InvalidValue("cookies-from-browser".to_owned()))
             );
         }
     }
@@ -769,10 +660,7 @@ mod tests {
         ] {
             let settings = serde_json::from_str(json).unwrap();
             assert!(
-                matches!(
-                    validate_settings(&settings),
-                    Err(SettingError::ConflictingSettings(_))
-                ),
+                matches!(validate_settings(&settings), Err(SettingError::ConflictingSettings(_))),
                 "{json}"
             );
         }
@@ -791,15 +679,9 @@ mod tests {
 
     #[test]
     fn rejects_conflicting_live_and_cookie_settings() {
-        for json in [
-            r#"{"cookies":"file.txt","no-cookies":false}"#,
-            r#"{"live-from-start":true}"#,
-        ] {
+        for json in [r#"{"cookies":"file.txt","no-cookies":false}"#, r#"{"live-from-start":true}"#] {
             let settings = serde_json::from_str(json).unwrap();
-            assert!(matches!(
-                validate_settings(&settings),
-                Err(SettingError::ConflictingSettings(_))
-            ));
+            assert!(matches!(validate_settings(&settings), Err(SettingError::ConflictingSettings(_))));
         }
     }
     #[test]
@@ -824,10 +706,7 @@ mod tests {
         assert_eq!(validated["limit-rate"], "12m");
         assert_eq!(validated["retries"], "3");
         assert_eq!(validated["fragment-retries"], "infinite");
-        assert_eq!(
-            validated["retry-sleep"],
-            serde_json::json!(["fragment:exp=1:20"])
-        );
+        assert_eq!(validated["retry-sleep"], serde_json::json!(["fragment:exp=1:20"]));
         assert_eq!(validated["ip-family"], "ipv6");
         assert_eq!(validated["socket-timeout"], 1.5);
         assert_eq!(validated["preferred-video-codec"], "av01");
@@ -852,13 +731,7 @@ mod tests {
             r#"{"preferred-audio-codec":"aac/mp3"}"#,
         ] {
             let settings = serde_json::from_str(json).unwrap();
-            assert!(
-                matches!(
-                    validate_settings(&settings),
-                    Err(SettingError::InvalidValue(_))
-                ),
-                "{json}"
-            );
+            assert!(matches!(validate_settings(&settings), Err(SettingError::InvalidValue(_))), "{json}");
         }
     }
 
@@ -867,10 +740,7 @@ mod tests {
         let settings = serde_json::from_str(r#"{"playlist-items":[1," -2 ","1:10:2",":-1"],"wait-for-video":" 060-300 ","live":true,"sponsorblock-mark":" sponsor, -intro ","sponsorblock-remove":"all,-selfpromo"}"#).unwrap();
         let validated = validate_settings(&settings).unwrap();
 
-        assert_eq!(
-            validated["playlist-items"],
-            serde_json::json!(["1", "-2", "1:10:2", ":-1"])
-        );
+        assert_eq!(validated["playlist-items"], serde_json::json!(["1", "-2", "1:10:2", ":-1"]));
         assert_eq!(validated["wait-for-video"], "60-300");
         assert_eq!(validated["sponsorblock-mark"], "sponsor,-intro");
         assert_eq!(validated["sponsorblock-remove"], "all,-selfpromo");
@@ -891,13 +761,7 @@ mod tests {
             r#"{"sponsorblock-remove":"poi_highlight"}"#,
         ] {
             let settings = serde_json::from_str(json).unwrap();
-            assert!(
-                matches!(
-                    validate_settings(&settings),
-                    Err(SettingError::InvalidValue(_))
-                ),
-                "{json}"
-            );
+            assert!(matches!(validate_settings(&settings), Err(SettingError::InvalidValue(_))), "{json}");
         }
 
         for json in [
@@ -905,13 +769,7 @@ mod tests {
             r#"{"wait-for-video":30}"#,
         ] {
             let settings = serde_json::from_str(json).unwrap();
-            assert!(
-                matches!(
-                    validate_settings(&settings),
-                    Err(SettingError::ConflictingSettings(_))
-                ),
-                "{json}"
-            );
+            assert!(matches!(validate_settings(&settings), Err(SettingError::ConflictingSettings(_))), "{json}");
         }
     }
 
@@ -929,13 +787,8 @@ mod tests {
             r#"{"audio-quality":"1.K"}"#,
         ] {
             let settings = serde_json::from_str(json).unwrap();
-            assert!(
-                matches!(
-                    validate_settings(&settings),
-                    Err(SettingError::InvalidValue(_))
-                ),
-                "{json}"
-            );
+            assert!(matches!(validate_settings(&settings), Err(SettingError::InvalidValue(_))), "{json}");
         }
     }
+
 }
