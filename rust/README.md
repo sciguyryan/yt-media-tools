@@ -53,3 +53,7 @@ The native `lifecycle` module defines explicit execution states, transition vali
 ## Part 4 regression certification
 
 The cross-module tests in `crates/yt-downloader/tests/part4_contract.rs` exercise profile loading and overrides through target resolution, argument planning and lifecycle transitions without launching yt-dlp. `CLI-COMPATIBILITY-AUDIT.md` records the supported contracts and the unimplemented Python-equivalence boundaries. The planner's five mapped boolean settings are deliberately not a complete download policy. Actual process execution, format selection, output naming and queue handling require separate implementation and certification.
+
+## Native process launch boundary
+
+The `process` module constructs an unspawned `std::process::Command` from a validated execution plan and caller-selected executable and working directory. It retains argument order, duplicates and standard-input batch semantics without shell interpretation or implicit working-directory changes. Standard streams are inherited pending a dedicated output and cancellation supervisor. This library-only boundary does not launch yt-dlp or enable downloads in the experimental executable.

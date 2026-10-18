@@ -3,6 +3,7 @@
 pub mod invocation;
 pub mod lifecycle;
 pub mod planning;
+pub mod process;
 pub mod profile_file;
 pub mod profile_pipeline;
 pub mod profile_selection;
