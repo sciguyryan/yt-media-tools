@@ -89,6 +89,30 @@ fn drain_progress(
     }
 }
 
+/// Repa the output reader before completing a lifecycle. A reader failure is
+/// not a successful download, even if the child itself exited successfully.
+fn finish_reader(
+    reader: Option<thread::JoinHandle<io::Result<()>>>,
+    receiver: &Receiver<Progress>,
+    lifecycle: &mut ExecutionLifecycle,
+    sink: &mut impl EventSink,
+) -> Result<(), SupervisionError> {
+    let outcome = reader.map(thread::JoinHandle::join);
+    drain_progress(receiver, lifecycle, sink);
+    match outcome {
+        None | Some(Ok(Ok(()))) => Ok(()),
+        Some(Ok(Err(error))) => {
+            report_io_failure(lifecycle, sink, &error);
+            Err(SupervisionError::Io(error))
+        }
+        Some(Err(_)) => {
+            let error = io::Error::other("process progress reader terminated unexpectedly");
+            report_io_failure(lifecycle, sink, &error);
+            Err(SupervisionError::Io(error))
+        }
+    }
+}
+
 fn supervise_inner(
     launch: &ProcessLaunch,
     lifecycle: &mut ExecutionLifecycle,
@@ -154,23 +178,20 @@ fn supervise_inner(
                 && error.kind() != io::ErrorKind::InvalidInput
             {
                 let _ = child.wait();
-                if let Some(reader) = reader {
-                    let _ = reader.join();
-                }
+                let _ = finish_reader(reader, &receiver, lifecycle, sink);
                 report_io_failure(lifecycle, sink, &error);
                 return Err(SupervisionError::Io(error));
             }
             match child.wait() {
                 Ok(_) => {
-                    if let Some(reader) = reader {
-                        let _ = reader.join();
-                    }
+                    let _ = finish_reader(reader, &receiver, lifecycle, sink);
                     lifecycle
                         .transition(ExecutionState::Cancelled, sink)
                         .map_err(SupervisionError::Lifecycle)?;
                     return Ok(ExitStatusOrCancelled::Cancelled);
                 }
                 Err(error) => {
+                    let _ = finish_reader(reader, &receiver, lifecycle, sink);
                     report_io_failure(lifecycle, sink, &error);
                     return Err(SupervisionError::Io(error));
                 }
@@ -179,20 +200,14 @@ fn supervise_inner(
 
         match child.try_wait() {
             Ok(Some(status)) if status.success() => {
-                if let Some(reader) = reader {
-                    let _ = reader.join();
-                }
-                drain_progress(&receiver, lifecycle, sink);
+                finish_reader(reader, &receiver, lifecycle, sink)?;
                 lifecycle
                     .transition(ExecutionState::Succeeded, sink)
                     .map_err(SupervisionError::Lifecycle)?;
                 return Ok(ExitStatusOrCancelled::Exited(status));
             }
             Ok(Some(status)) => {
-                if let Some(reader) = reader {
-                    let _ = reader.join();
-                }
-                drain_progress(&receiver, lifecycle, sink);
+                finish_reader(reader, &receiver, lifecycle, sink)?;
                 lifecycle
                     .fail(
                         ExecutionFailure {
@@ -208,9 +223,7 @@ fn supervise_inner(
             Err(error) => {
                 let _ = child.kill();
                 let _ = child.wait();
-                if let Some(reader) = reader {
-                    let _ = reader.join();
-                }
+                let _ = finish_reader(reader, &receiver, lifecycle, sink);
                 report_io_failure(lifecycle, sink, &error);
                 return Err(SupervisionError::Io(error));
             }
@@ -380,5 +393,72 @@ mod tests {
             supervise(&launch, &mut lifecycle, &cancellation, &mut events),
             Err(SupervisionError::Lifecycle(_))
         ));
+    }
+}
+
+#[cfg(test)]
+mod reader_completion_tests {
+    use super::*;
+    use crate::lifecycle::{ExecutionEvent, ExecutionState};
+    use crate::planning::ExecutionPlan;
+    use crate::targets::TargetSource;
+
+    #[derive(Default)]
+    struct Events(Vec<ExecutionEvent>);
+    impl EventSink for Events {
+        fn emit(&mut self, event: ExecutionEvent) {
+            self.0.push(event);
+        }
+    }
+
+    fn lifecycle() -> ExecutionLifecycle {
+        let mut lifecycle = ExecutionLifecycle::new(ExecutionPlan {
+            arguments: vec![],
+            source: TargetSource::Direct(vec!["fixture".into()]),
+        });
+        lifecycle
+            .transition(ExecutionState::Running, &mut Events::default())
+            .unwrap();
+        lifecycle
+    }
+
+    #[test]
+    fn reader_io_error_prevents_success_and_reports_failure() {
+        let (sender, receiver) = mpsc::sync_channel(2);
+        sender
+            .send(Progress {
+                completed_bytes: 2,
+                total_bytes: Some(10),
+            })
+            .unwrap();
+        let reader = thread::spawn(|| Err(io::Error::other("test read failure")));
+        let mut lifecycle = lifecycle();
+        let mut events = Events::default();
+        assert!(matches!(
+            finish_reader(Some(reader), &receiver, &mut lifecycle, &mut events),
+            Err(SupervisionError::Io(_))
+        ));
+        assert_eq!(lifecycle.state(), ExecutionState::Failed);
+        assert!(matches!(
+            events.0.first(),
+            Some(ExecutionEvent::Progress(_))
+        ));
+        assert!(matches!(
+            events.0.last(),
+            Some(ExecutionEvent::StateChanged(ExecutionState::Failed))
+        ));
+    }
+
+    #[test]
+    fn panicked_reader_reports_failure_without_exposing_payload() {
+        let (_sender, receiver) = mpsc::sync_channel(2);
+        let reader = thread::spawn(|| -> io::Result<()> { panic!("fixture panic") });
+        let mut lifecycle = lifecycle();
+        let mut events = Events::default();
+        assert!(matches!(
+            finish_reader(Some(reader), &receiver, &mut lifecycle, &mut events),
+            Err(SupervisionError::Io(_))
+        ));
+        assert_eq!(lifecycle.state(), ExecutionState::Failed);
     }
 }
