@@ -343,3 +343,65 @@ def test_basic_info_date_mapping_does_not_substitute_publish_date(monkeypatch) -
     assert records[0]["upload_date"] == "20261017"
     assert records[1]["upload_date"] is None
     assert "publish_date" not in records[0]
+
+
+def test_basic_info_upload_date_survives_bridge_record_mapping(monkeypatch) -> None:
+    """Retain the normalised date without substituting the publication date."""
+    import json
+    from subprocess import CompletedProcess
+
+    from yt_media_tools.youtubejs import acquire_basic_info
+
+    payloads = [
+        {"ok": True, "id": "first", "title": "First", "upload_date": "2026-10-17", "publish_date": "2026-10-18"},
+        {"ok": True, "id": "second", "title": "Second", "upload_date": None, "publish_date": "2026-10-18"},
+        {"ok": True, "id": "third", "title": "Third", "upload_date": "2026-02-30", "publish_date": "2026-03-01"},
+    ]
+
+    monkeypatch.setattr("yt_media_tools.youtubejs.shutil.which", lambda _: "/usr/bin/node")
+    monkeypatch.setattr(
+        "yt_media_tools.youtubejs.subprocess.run",
+        lambda *args, **kwargs: CompletedProcess(args[0], 0, "\n".join(map(json.dumps, payloads)), ""),
+    )
+    records, stats = acquire_basic_info(Path(__file__).resolve().parents[1], ["first", "second", "third"])
+
+    assert [record["upload_date"] for record in records] == ["20261017", None, None]
+    assert all("publish_date" not in record for record in records)
+    assert stats.available == 3
+
+
+def test_basic_info_date_remains_available_without_detailed_fallback(monkeypatch) -> None:
+    """The specialised acquisition path must retain the date in its returned records."""
+    calls = []
+
+    def fake_acquire(project_root, video_ids, *, cookies_file=None):
+        return (
+            [
+                {
+                    "id": "abc",
+                    "title": "Example",
+                    "upload_date": "20261017",
+                    "_yt_sql_metadata_provider": "youtubejs",
+                    "_yt_sql_metadata_operation": "getBasicInfo",
+                }
+            ],
+            AcquisitionStats(available=1),
+        )
+
+    monkeypatch.setattr("yt_media_tools.discover_acquisition.acquire_youtubejs_basic_info", fake_acquire)
+    monkeypatch.setattr(
+        "yt_media_tools.discover_acquisition.load_metadata",
+        lambda *args, **kwargs: calls.append(args) or ([], AcquisitionStats()),
+    )
+    records, _, _ = _cached_or_refresh_metadata(
+        cache=None,
+        source_url="https://www.youtube.com/@example/videos",
+        video_ids=["abc"],
+        required_fields={"title", "upload_date"},
+        verbose=0,
+        cookies_file=None,
+        specialised_provider="youtubejs",
+        project_root=Path("/project"),
+    )
+    assert records[0]["upload_date"] == "20261017"
+    assert calls == []
