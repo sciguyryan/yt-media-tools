@@ -10,7 +10,7 @@ use std::thread;
 
 use crate::lifecycle::Progress;
 use crate::progress_stream::read_progress_stream;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::lifecycle::{
     CancellationSignal, EventSink, ExecutionFailure, ExecutionLifecycle, ExecutionState,
@@ -78,6 +78,10 @@ pub fn supervise_ytdlp_with_progress(
 }
 
 const PROGRESS_QUEUE_CAPACITY: usize = 64;
+/// A descendant can retain the inherited stderr pipe after the direct child exits.
+/// Do not block the supervisor indefinitely waiting for that descendant to close it.
+const READER_SHUTDOWN_TIMEOUT: Duration = Duration::from_millis(500);
+const READER_SHUTDOWN_POLL: Duration = Duration::from_millis(10);
 
 fn drain_progress(
     receiver: &Receiver<Progress>,
@@ -97,7 +101,28 @@ fn finish_reader(
     lifecycle: &mut ExecutionLifecycle,
     sink: &mut impl EventSink,
 ) -> Result<(), SupervisionError> {
-    let outcome = reader.map(thread::JoinHandle::join);
+    let outcome = if let Some(reader) = reader {
+        let deadline = Instant::now() + READER_SHUTDOWN_TIMEOUT;
+        while !reader.is_finished() && Instant::now() < deadline {
+            drain_progress(receiver, lifecycle, sink);
+            thread::sleep(READER_SHUTDOWN_POLL);
+        }
+        if !reader.is_finished() {
+            // Dropping the handle detaches the reader. It will finish when the
+            // inherited pipe eventually closes, without holding up supervision.
+            drop(reader);
+            drain_progress(receiver, lifecycle, sink);
+            let error = io::Error::new(
+                io::ErrorKind::TimedOut,
+                "process progress reader did not finish after child exit",
+            );
+            report_io_failure(lifecycle, sink, &error);
+            return Err(SupervisionError::Io(error));
+        }
+        Some(reader.join())
+    } else {
+        None
+    };
     drain_progress(receiver, lifecycle, sink);
     match outcome {
         None | Some(Ok(Ok(()))) => Ok(()),
@@ -480,6 +505,27 @@ mod reader_completion_tests {
                 .0
                 .contains(&ExecutionEvent::StateChanged(ExecutionState::Cancelled))
         );
+    }
+
+    #[test]
+    fn inherited_pipe_does_not_block_terminal_lifecycle_indefinitely() {
+        let (_sender, receiver) = mpsc::sync_channel(2);
+        let reader = thread::spawn(|| {
+            thread::sleep(Duration::from_secs(2));
+            Ok(())
+        });
+        let mut lifecycle = lifecycle();
+        let mut events = Events::default();
+        let start = Instant::now();
+        assert!(
+            matches!(finish_reader(Some(reader), &receiver, &mut lifecycle, &mut events), Err(SupervisionError::Io(error)) if error.kind() == io::ErrorKind::TimedOut)
+        );
+        assert!(start.elapsed() < Duration::from_millis(1500));
+        assert_eq!(lifecycle.state(), ExecutionState::Failed);
+        assert!(matches!(
+            events.0.last(),
+            Some(ExecutionEvent::StateChanged(ExecutionState::Failed))
+        ));
     }
 
     #[test]
