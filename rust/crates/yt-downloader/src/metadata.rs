@@ -344,12 +344,15 @@ mod acquisition_deadline_tests {
         ));
         std::fs::create_dir_all(&dir).unwrap();
         let script = dir.join("mock-ytdlp");
-        std::fs::write(&script, "#!/bin/sh\nsleep 3\n").unwrap();
+        std::fs::write(&script, "#!/bin/sh\nexec sleep 3\n").unwrap();
         std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
         let start = Instant::now();
         let result =
             acquire_metadata_with_deadline(&script, &dir, "target", Duration::from_millis(100));
-        assert!(matches!(result, Err(AcquisitionError::TimedOut)));
+        assert!(
+            matches!(result, Err(AcquisitionError::TimedOut)),
+            "unexpected acquisition result: {result:?}"
+        );
         assert!(start.elapsed() < Duration::from_secs(2));
         std::fs::remove_file(script).unwrap();
         std::fs::remove_dir(dir).unwrap();
@@ -476,10 +479,14 @@ printf '{"id":"safe","title":"Test","duration":9}'"#,
     fn rejects_collections_and_excessive_output() {
         let collection =
             MockExecutable::new(r#"printf '{"_type":"playlist","id":"p","entries":[]}'"#);
-        assert!(matches!(
-            collection.acquire("target"),
-            Err(AcquisitionError::Metadata(MetadataError::UnsupportedRecord))
-        ));
+        let collection_result = collection.acquire("target");
+        assert!(
+            matches!(
+                collection_result,
+                Err(AcquisitionError::Metadata(MetadataError::UnsupportedRecord))
+            ),
+            "expected UnsupportedRecord for a playlist; received: {collection_result:?}"
+        );
         // Use a prepared payload rather than generating 8 MiB through a
         // shell pipeline under the fixture's short default deadline.
         let oversized = MockExecutable::new("cat oversized.json");

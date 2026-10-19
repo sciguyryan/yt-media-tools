@@ -1,0 +1,168 @@
+//! Explicit native download execution boundary.
+//!
+//! This module connects a validated execution plan to the existing supervised
+//! yt-dlp progress path. It does not enable downloads in the public CLI.
+
+use std::path::PathBuf;
+
+use crate::lifecycle::{CancellationSignal, EventSink, ExecutionLifecycle, ExecutionState};
+use crate::planning::ExecutionPlan;
+use crate::process::{Executable, ProcessConfigError, ProcessLaunch};
+use crate::supervision::{ExitStatusOrCancelled, SupervisionError, supervise_ytdlp_with_progress};
+
+/// An invalid launch or an error while supervising an execution attempt.
+#[derive(Debug)]
+pub enum DownloadExecutionError {
+    /// The executable or working directory was not valid.
+    Configuration(ProcessConfigError),
+    /// Starting, supervising or completing the child failed.
+    Supervision(SupervisionError),
+}
+
+/// The completed lifecycle and direct child outcome for one attempt.
+///
+/// An unsuccessful child exit is represented as `Ok` with a `Failed` state,
+/// preserving the exit status and emitted failure event for the caller.
+#[derive(Debug)]
+pub struct DownloadAttempt {
+    /// Final lifecycle state, including cancellation and process failure.
+    pub state: ExecutionState,
+    /// The direct child exit or completed cancellation.
+    pub outcome: ExitStatusOrCancelled,
+}
+
+/// Execute an already validated plan using explicitly selected yt-dlp.
+///
+/// This opt-in library entry point does not parse CLI arguments, resolve a
+/// default executable, reinterpret targets or activate the public download CLI.
+/// The caller owns the event sink and cancellation signal. Standard output is
+/// inherited, while structured progress is decoded from standard error.
+pub fn execute_download(
+    plan: ExecutionPlan,
+    executable: Executable,
+    working_directory: impl Into<PathBuf>,
+    cancellation: &impl CancellationSignal,
+    sink: &mut impl EventSink,
+) -> Result<DownloadAttempt, DownloadExecutionError> {
+    let launch = ProcessLaunch::new(executable, working_directory, &plan)
+        .map_err(DownloadExecutionError::Configuration)?;
+    let mut lifecycle = ExecutionLifecycle::new(plan);
+    let outcome = supervise_ytdlp_with_progress(&launch, &mut lifecycle, cancellation, sink)
+        .map_err(DownloadExecutionError::Supervision)?;
+    Ok(DownloadAttempt {
+        state: lifecycle.state(),
+        outcome,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lifecycle::{CancellationToken, ExecutionEvent};
+    use crate::targets::TargetSource;
+
+    #[derive(Default)]
+    struct Events(Vec<ExecutionEvent>);
+    impl EventSink for Events {
+        fn emit(&mut self, event: ExecutionEvent) {
+            self.0.push(event);
+        }
+    }
+
+    fn plan() -> ExecutionPlan {
+        ExecutionPlan {
+            arguments: vec!["--".into(), "literal-target".into()],
+            source: TargetSource::Direct(vec!["literal-target".into()]),
+        }
+    }
+
+    #[test]
+    fn invalid_working_directory_fails_before_any_lifecycle_event() {
+        let mut events = Events::default();
+        let result = execute_download(
+            plan(),
+            Executable::new("yt-dlp").unwrap(),
+            "",
+            &CancellationToken::default(),
+            &mut events,
+        );
+        assert!(matches!(
+            result,
+            Err(DownloadExecutionError::Configuration(
+                ProcessConfigError::EmptyWorkingDirectory
+            ))
+        ));
+        assert!(events.0.is_empty());
+    }
+
+    #[test]
+    fn cancellation_before_spawn_does_not_require_an_installed_executable() {
+        let cancellation = CancellationToken::default();
+        cancellation.cancel();
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan(),
+            Executable::new("nonexistent-yt-dlp-fixture").unwrap(),
+            ".",
+            &cancellation,
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Cancelled);
+        assert!(matches!(attempt.outcome, ExitStatusOrCancelled::Cancelled));
+        assert_eq!(
+            events.0.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Cancelled))
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn successful_process_reports_terminal_success() {
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan(),
+            Executable::new("/bin/true").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Succeeded);
+        assert!(
+            matches!(attempt.outcome, ExitStatusOrCancelled::Exited(status) if status.success())
+        );
+        assert_eq!(
+            events.0.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Succeeded))
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn unsuccessful_process_retains_exit_status_and_failed_lifecycle() {
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan(),
+            Executable::new("/bin/false").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Failed);
+        assert!(
+            matches!(attempt.outcome, ExitStatusOrCancelled::Exited(status) if !status.success())
+        );
+        assert!(
+            events
+                .0
+                .iter()
+                .any(|event| matches!(event, ExecutionEvent::Failure(_)))
+        );
+        assert_eq!(
+            events.0.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Failed))
+        );
+    }
+}

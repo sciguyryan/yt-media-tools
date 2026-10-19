@@ -1,5 +1,6 @@
 //! Placeholder for the native Downloader implementation.
 
+pub mod download;
 pub mod invocation;
 pub mod lifecycle;
 pub mod metadata;
