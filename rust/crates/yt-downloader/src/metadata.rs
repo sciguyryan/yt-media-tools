@@ -312,6 +312,30 @@ mod acquisition_tests {
     }
 }
 
+/// Publish a complete mock executable only after its writer has closed.
+///
+/// A test must never execute a script while it is being written. Writing to a
+/// staging path and renaming it also prevents partially written fixtures from
+/// being visible at the final executable path.
+#[cfg(all(test, unix))]
+fn publish_mock_executable(directory: &std::path::Path, script_body: &str) -> std::path::PathBuf {
+    use std::io::Write;
+    use std::os::unix::fs::PermissionsExt;
+
+    let staging = directory.join("mock-ytdlp.staging");
+    let executable = directory.join("mock-ytdlp");
+    {
+        let mut writer = std::fs::File::create(&staging).unwrap();
+        writer.write_all(b"#!/bin/sh\n").unwrap();
+        writer.write_all(script_body.as_bytes()).unwrap();
+        writer.write_all(b"\n").unwrap();
+        writer.sync_all().unwrap();
+    }
+    std::fs::set_permissions(&staging, std::fs::Permissions::from_mode(0o700)).unwrap();
+    std::fs::rename(&staging, &executable).unwrap();
+    executable
+}
+
 #[cfg(all(test, unix))]
 mod acquisition_deadline_tests {
     use super::*;
@@ -336,16 +360,13 @@ mod acquisition_deadline_tests {
         // /bin/sleep ignores the extra yt-dlp arguments and remains alive.
         // /bin/sh without -c exits immediately, so use a temporary executable
         // script instead to model a non-terminating acquisition.
-        use std::os::unix::fs::PermissionsExt;
         let dir = std::env::temp_dir().join(format!(
             "yt-metadata-deadline-{}-{:?}",
             std::process::id(),
             std::thread::current().id()
         ));
         std::fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("mock-ytdlp");
-        std::fs::write(&script, "#!/bin/sh\nexec sleep 3\n").unwrap();
-        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let script = publish_mock_executable(&dir, "exec sleep 3");
         let start = Instant::now();
         let result =
             acquire_metadata_with_deadline(&script, &dir, "target", Duration::from_millis(100));
@@ -364,7 +385,6 @@ mod acquisition_deadline_tests {
 #[cfg(all(test, unix))]
 mod acquisition_compatibility_tests {
     use super::*;
-    use std::os::unix::fs::PermissionsExt;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::Duration;
@@ -384,9 +404,7 @@ mod acquisition_compatibility_tests {
                 std::process::id()
             ));
             std::fs::create_dir(&directory).unwrap();
-            let executable = directory.join("mock-ytdlp");
-            std::fs::write(&executable, format!("#!/bin/sh\n{script_body}\n")).unwrap();
-            std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+            let executable = publish_mock_executable(&directory, script_body);
             Self {
                 directory,
                 executable,
@@ -432,10 +450,11 @@ printf '{"id":"safe","title":"Test","duration":9}'"#,
         let failed = MockExecutable::new(
             "printf 'sensitive diagnostic' >&2; printf '{\"id\":\"ok\"}'; exit 7",
         );
-        assert!(matches!(
-            failed.acquire("target"),
-            Err(AcquisitionError::ProcessFailed)
-        ));
+        let failed_result = failed.acquire("target");
+        assert!(
+            matches!(failed_result, Err(AcquisitionError::ProcessFailed)),
+            "expected ProcessFailed; received: {failed_result:?}"
+        );
         let malformed = MockExecutable::new("printf 'not-json'");
         assert!(matches!(
             malformed.acquire("target"),

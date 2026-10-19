@@ -396,4 +396,40 @@ mod tests {
             |event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 1)
         ));
     }
+
+    /// A failed child must not discard progress already delivered to callers.
+    #[cfg(unix)]
+    #[test]
+    fn explicit_adapter_preserves_progress_before_terminal_failure() {
+        let script = r"printf 'ordinary diagnostic\n' >&2; printf 'YT_MEDIA_TOOLS_PROGRESS:3,9\n' >&2; exit 17";
+        let mut events = Events::default();
+        let attempt = execute_download(
+            shell_plan(script),
+            Executable::new("/bin/sh").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Failed);
+        assert!(
+            matches!(attempt.outcome, ExitStatusOrCancelled::Exited(status) if status.code() == Some(17))
+        );
+        let progress = events.0.iter().position(|event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 3 && value.total_bytes == Some(9))).expect("progress before failure");
+        let failure = events
+            .0
+            .iter()
+            .position(|event| matches!(event, ExecutionEvent::Failure(_)))
+            .expect("failure event");
+        let terminal = events
+            .0
+            .iter()
+            .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Failed))
+            .expect("terminal failure");
+        assert!(progress < failure && failure < terminal);
+        assert_eq!(
+            events.0.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Failed))
+        );
+    }
 }

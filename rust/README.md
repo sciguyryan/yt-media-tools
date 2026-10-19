@@ -66,6 +66,10 @@ The `process_output` module provides a bounded, library-only parser for explicit
 
 The experimental process supervisor also offers an explicitly selected yt-dlp progress launch that appends `--newline` and a `--progress-template` download record. Generic launches are unchanged, and the public CLI does not yet activate this execution path. Progress records with unavailable totals remain advisory and do not replace terminal lifecycle state.
 
-## Part 5, Phase 4: Metadata decoding
+## Part 5: Metadata acquisition and explicit execution
 
-The native `metadata` module decodes one bounded yt-dlp JSON metadata document into a small validated identity record. It rejects collections, invalid fields and oversized output without retaining arbitrary provider payloads. Metadata acquisition, executable discovery, subprocess capture, format selection and CLI activation are separate work; no downloads are enabled by this module.
+The native `metadata` module decodes a bounded yt-dlp JSON document into a validated single-media identity record. It rejects collections and malformed records, and exposes an opt-in acquisition API with a caller-selected executable, explicit working directory, bounded output and a configurable execution deadline. This does not implement implicit executable discovery, format selection or public CLI download activation.
+
+The `download` module exposes an opt-in library execution adapter that accepts an already validated plan, a caller-selected executable, an explicit working directory, a cancellation signal and an event sink. It uses the supervised yt-dlp progress path, preserves planned target arguments and reports successful, failed and cancelled outcomes. The public Rust executable continues to reject download operations.
+
+Unix mock-process tests cover structured progress before terminal success or failure, cancellation after progress, literal and duplicate targets, batch-file argument forwarding and the standard-input marker. The standard-input fixture does not read inherited stdin, so delivery of actual stdin contents is not certified. These tests do not establish complete Python Downloader compatibility, real yt-dlp download success, output naming equivalence, renaming-plugin parity or persistent queue behaviour. Those remain explicit certification requirements before native download activation.

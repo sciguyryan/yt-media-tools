@@ -101,3 +101,9 @@ The Part 4 library boundary is exercised by `rust/crates/yt-downloader/tests/par
 | Python CLI and machine schema | `rust/tests/compare_python_rust.py` and `rust/tools/check_cli_contract.py` | Inspection checks and selected profile validation are not execution equivalence. |
 
 The Part 4 tests establish internal native contract consistency, not comprehensive Python/Rust behavioural equivalence. In particular, the five mapped settings (`playlist`, `write-info-json`, `write-thumbnail`, `write-subs` and `write-auto-subs`) are an explicitly limited planning subset. Any other validated setting, including `preferred-fps`, must be rejected rather than omitted. The renaming plugin and its packaging remain Python-owned until execution and output parity can be certified. No test in this certification suite invokes yt-dlp or downloads media.
+
+## Part 5 execution adapter boundary
+
+The opt-in Rust library execution adapter now launches a caller-selected executable from a validated plan and forwards structured yt-dlp progress to the lifecycle event sink. Unix mock-process tests cover progress, unsuccessful exits, active cancellation, literal target ordering and duplicates, batch-file paths and the `--batch-file -` marker. The public Rust CLI still does not download media.
+
+The standard-input execution test verifies argument forwarding only; it does not verify actual stdin content delivery. The mock executable tests do not establish compatibility with real yt-dlp versions, Python's output naming and renaming plugin, format selection, persistent queue workflows or the full Python option inventory. Those boundaries remain open and must not be inferred from passing internal tests.
