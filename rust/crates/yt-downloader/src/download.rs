@@ -261,4 +261,54 @@ mod tests {
             Some(&ExecutionEvent::StateChanged(ExecutionState::Cancelled))
         );
     }
+
+    /// Check that progress instrumentation never consumes or rearranges literal
+    /// download targets, including option-looking and duplicate values.
+    #[cfg(unix)]
+    #[test]
+    fn explicit_adapter_preserves_literal_target_arguments() {
+        let script = r#"
+            test "$1" = "--newline" || exit 21
+            test "$2" = "--progress-template" || exit 22
+            case "$3" in
+                download:YT_MEDIA_TOOLS_PROGRESS:*) ;;
+                *) exit 23 ;;
+            esac
+            test "$4" = "--" || exit 24
+            test "$5" = "--unusual" || exit 25
+            test "$6" = "repeat" || exit 26
+            test "$7" = "repeat" || exit 27
+            test "$#" -eq 7 || exit 28
+            printf 'YT_MEDIA_TOOLS_PROGRESS:1,1\n' >&2
+        "#;
+        let plan = ExecutionPlan {
+            arguments: vec![
+                "-c".into(),
+                script.into(),
+                "fixture".into(),
+                "--".into(),
+                "--unusual".into(),
+                "repeat".into(),
+                "repeat".into(),
+            ],
+            source: TargetSource::Direct(vec![
+                "--unusual".into(),
+                "repeat".into(),
+                "repeat".into(),
+            ]),
+        };
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan,
+            Executable::new("/bin/sh").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Succeeded);
+        assert!(events.0.iter().any(
+            |event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 1)
+        ));
+    }
 }
