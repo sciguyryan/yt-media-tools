@@ -441,6 +441,38 @@ printf '{"id":"safe","title":"Test","duration":9}'"#,
     }
 
     #[test]
+    fn bounds_waiting_for_exit_after_complete_metadata_output() {
+        // The child has closed stdout but remains alive. A successful JSON
+        // read must not bypass the overall process-exit deadline.
+        let mock = MockExecutable::new("printf '{\"id\":\"ready\"}'; exec 1>&-; sleep 3");
+        let started = std::time::Instant::now();
+        let result = acquire_metadata_with_deadline(
+            &mock.executable,
+            &mock.directory,
+            "target",
+            Duration::from_millis(100),
+        );
+        assert!(matches!(result, Err(AcquisitionError::TimedOut)));
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn bounds_inherited_stdout_pipe_after_direct_child_exits() {
+        // A descendant can retain the stdout pipe after its parent exits.
+        // The acquisition call must return without joining that reader.
+        let mock = MockExecutable::new("sleep 2 & printf '{\"id\":\"ready\"}'");
+        let started = std::time::Instant::now();
+        let result = acquire_metadata_with_deadline(
+            &mock.executable,
+            &mock.directory,
+            "target",
+            Duration::from_millis(100),
+        );
+        assert!(matches!(result, Err(AcquisitionError::TimedOut)));
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
     fn rejects_collections_and_excessive_output() {
         let collection =
             MockExecutable::new(r#"printf '{"_type":"playlist","id":"p","entries":[]}'"#);
