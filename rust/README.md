@@ -34,7 +34,7 @@ Use the corresponding `.exe` binary path on Windows. The comparison harness veri
 
 `rust/CLI-COMPATIBILITY-AUDIT.md` records supported behaviour, deliberate differences and regression checks. `rust/PYTHON-CLI-OPTION-INVENTORY.md` records Python options and their preliminary ownership; it does not imply that deferred options are accepted by Rust.
 
-Native target handling, invocation context, side-effect-free yt-dlp planning and execution lifecycle contracts form the current architectural foundation. yt-dlp process integration, actual downloads, output processing and persistent queue workflows remain separate later work. Preserve the existing Python yt-dlp renaming plugin and certify naming equivalence before any Rust cutover.
+Native target handling, invocation context, side-effect-free yt-dlp planning and execution lifecycle contracts form the architectural foundation. Opt-in library adapters now provide controlled metadata acquisition and supervised yt-dlp execution with structured progress; the public Rust CLI still refuses downloads. Real download-output parity, output processing and persistent queue workflows remain separate later work. Preserve the existing Python yt-dlp renaming plugin and certify naming equivalence before any Rust cutover.
 
 ## Target-source resolution
 

@@ -107,3 +107,31 @@ The Part 4 tests establish internal native contract consistency, not comprehensi
 The opt-in Rust library execution adapter now launches a caller-selected executable from a validated plan and forwards structured yt-dlp progress to the lifecycle event sink. Unix mock-process tests cover progress, unsuccessful exits, active cancellation, literal target ordering and duplicates, batch-file paths and the `--batch-file -` marker. The public Rust CLI still does not download media.
 
 The standard-input execution test verifies argument forwarding only; it does not verify actual stdin content delivery. The mock executable tests do not establish compatibility with real yt-dlp versions, Python's output naming and renaming plugin, format selection, persistent queue workflows or the full Python option inventory. Those boundaries remain open and must not be inferred from passing internal tests.
+
+## Part 5 Phase 6.2: Python execution compatibility assessment
+
+This assessment distinguishes native library contracts, the experimental Rust CLI and the Python Downloader's production behaviour. It is a source-level inventory of the currently packaged implementation and deterministic tests, not evidence of live yt-dlp parity. The Python Downloader remains the behavioural authority.
+
+| Behaviour | Rust library evidence | Python compatibility status |
+| --- | --- | --- |
+| Single-record metadata acquisition | Explicit yt-dlp executable and working directory, bounded JSON decoding, collection rejection, output cap and deadline tests | Native contract tested with mock executables; real provider and Python metadata equivalence unverified. |
+| Direct download targets | Planning and supervised adapter tests preserve order, duplicates and option-looking literals after `--` | Native argument contract tested; full Python positional CLI behaviour and real yt-dlp results unverified. |
+| Batch-file source | Planner and mock execution verify `--batch-file` forwarding without expansion | File-content handling and Python batch workflow parity unverified. |
+| Standard-input source | Planner and mock execution verify `--batch-file -` forwarding | Actual stdin content delivery and Python pipeline behaviour unverified. |
+| Structured progress | Bounded progress decoder, stream tests and supervised adapter tests verify observation ordering | Event schema, presentation and timing parity with Python unverified. |
+| Exit status and cancellation | Mock execution tests verify terminal success, failure, cancellation and event ordering | Python cancellation, signals and descendant-process cleanup equivalence unverified. |
+| Profile-derived yt-dlp options | Validated version 3 profile selection and five mapped boolean settings | Python version 2 support and the remainder of the Python option inventory are not ported. |
+| Output naming and post-processing | No certified Rust equivalent | Python naming, renaming plugin, post-processing and persistent queue workflows remain Python-owned. |
+| Public download CLI | Download operations remain explicitly disabled | Not equivalent to Python's download-capable CLI. |
+
+The integration certification uses isolated mock executables rather than live downloads. It cannot certify real yt-dlp version compatibility, format negotiation, file output, download recovery, post-processing, output naming or cross-platform process behaviour. Unix-only tests must not be interpreted as Windows certification.
+
+Metadata acquisition has a bounded wall-clock deadline and attempts to terminate and reap the direct child on timeout. Descendants retaining output pipes may outlive the acquisition and leave a detached reader thread; this is an acknowledged cleanup limitation, not a parity claim. The acquisition path retries transient executable-busy spawn errors within its deadline.
+
+### Follow-up evidence needed before a public CLI cutover
+
+1. Run the existing Python/Rust schema and inspection contract checks against a freshly built Rust executable, recording their results separately from library integration tests.
+2. Define and test real stdin delivery and batch-file content behaviour against the Python Downloader.
+3. Compare real yt-dlp invocation, progress, failures, cancellation and output artefacts on controlled fixtures, with explicit version and platform coverage.
+4. Reconcile the deferred Python option inventory, version 2 profiles, naming plugin and persistent queue semantics before asserting feature parity.
+5. Preserve the public CLI download gate until a separately reviewed activation decision.
