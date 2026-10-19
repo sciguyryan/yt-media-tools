@@ -165,4 +165,100 @@ mod tests {
             Some(&ExecutionEvent::StateChanged(ExecutionState::Failed))
         );
     }
+    /// A sink that requests cancellation only after observing real progress.
+    #[cfg(unix)]
+    struct CancelOnProgress<'a> {
+        events: Vec<ExecutionEvent>,
+        cancellation: &'a CancellationToken,
+    }
+
+    #[cfg(unix)]
+    impl EventSink for CancelOnProgress<'_> {
+        fn emit(&mut self, event: ExecutionEvent) {
+            if matches!(event, ExecutionEvent::Progress(_)) {
+                self.cancellation.cancel();
+            }
+            self.events.push(event);
+        }
+    }
+
+    #[cfg(unix)]
+    fn shell_plan(script: &str) -> ExecutionPlan {
+        ExecutionPlan {
+            arguments: vec![
+                "-c".into(),
+                script.into(),
+                "fixture".into(),
+                "--".into(),
+                "literal-target".into(),
+            ],
+            source: TargetSource::Direct(vec!["literal-target".into()]),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn explicit_adapter_forwards_progress_before_terminal_success() {
+        let mut events = Events::default();
+        let plan = shell_plan(
+            "printf 'YT_MEDIA_TOOLS_PROGRESS:4,10\\nYT_MEDIA_TOOLS_PROGRESS:10,10\\n' >&2",
+        );
+        let attempt = execute_download(
+            plan,
+            Executable::new("/bin/sh").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Succeeded);
+        assert!(
+            matches!(attempt.outcome, ExitStatusOrCancelled::Exited(status) if status.success())
+        );
+        let first = events.0.iter().position(|event| matches!(event, ExecutionEvent::Progress(progress) if progress.completed_bytes == 4 && progress.total_bytes == Some(10))).expect("first progress observation");
+        let second = events.0.iter().position(|event| matches!(event, ExecutionEvent::Progress(progress) if progress.completed_bytes == 10 && progress.total_bytes == Some(10))).expect("final progress observation");
+        let terminal = events
+            .0
+            .iter()
+            .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Succeeded))
+            .expect("terminal success");
+        assert!(first < second && second < terminal);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn explicit_adapter_cancels_running_child_after_progress() {
+        let cancellation = CancellationToken::default();
+        let mut sink = CancelOnProgress {
+            events: Vec::new(),
+            cancellation: &cancellation,
+        };
+        let plan = shell_plan("printf 'YT_MEDIA_TOOLS_PROGRESS:1,10\\n' >&2; exec sleep 5");
+        let attempt = execute_download(
+            plan,
+            Executable::new("/bin/sh").unwrap(),
+            ".",
+            &cancellation,
+            &mut sink,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Cancelled);
+        assert!(matches!(attempt.outcome, ExitStatusOrCancelled::Cancelled));
+        let progress = sink.events.iter().position(|event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 1)).expect("progress before cancellation");
+        let cancelling = sink
+            .events
+            .iter()
+            .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Cancelling))
+            .expect("cancelling state");
+        let terminal = sink
+            .events
+            .iter()
+            .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Cancelled))
+            .expect("cancelled state");
+        assert!(progress < cancelling && cancelling < terminal);
+        assert_eq!(
+            sink.events.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Cancelled))
+        );
+    }
 }
