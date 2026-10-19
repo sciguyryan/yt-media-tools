@@ -397,6 +397,94 @@ mod tests {
         ));
     }
 
+    /// Exercise metadata acquisition and download execution against one mock
+    /// executable without network access or the public CLI.
+    #[cfg(unix)]
+    #[test]
+    fn metadata_then_download_preserves_distinct_subprocess_contracts() {
+        use std::fs::{self, OpenOptions};
+        use std::io::Write;
+        use std::os::unix::fs::PermissionsExt;
+        use std::sync::atomic::{AtomicU64, Ordering};
+
+        static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
+        let fixture = std::env::temp_dir().join(format!(
+            "yt-media-tools-p6-{}-{}",
+            std::process::id(),
+            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed),
+        ));
+        fs::create_dir(&fixture).expect("create isolated fixture directory");
+        struct RemoveFixture(std::path::PathBuf);
+        impl Drop for RemoveFixture {
+            fn drop(&mut self) {
+                let _ = fs::remove_dir_all(&self.0);
+            }
+        }
+        let _cleanup = RemoveFixture(fixture.clone());
+        let executable_path = fixture.join("mock-ytdlp");
+        // Close the writer before publishing the executable to avoid ETXTBSY.
+        let staged = fixture.join("mock-ytdlp.staged");
+        {
+            let mut writer = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&staged)
+                .unwrap();
+            writer
+                .write_all(
+                    br##"#!/bin/sh
+if [ "$1" = "--ignore-config" ]; then
+    [ "$2" = "--no-playlist" ] || exit 11
+    [ "$3" = "--dump-single-json" ] || exit 12
+    [ "$4" = "--" ] || exit 13
+    [ "$5" = "literal-target" ] || exit 14
+    [ "$#" -eq 5 ] || exit 15
+    printf '{"id":"fixture-id","title":"Fixture","duration":12}\n'
+else
+    [ "$1" = "--newline" ] || exit 21
+    [ "$2" = "--progress-template" ] || exit 22
+    case "$3" in download:YT_MEDIA_TOOLS_PROGRESS:*) ;; *) exit 23 ;; esac
+    [ "$4" = "--" ] || exit 24
+    [ "$5" = "literal-target" ] || exit 25
+    [ "$#" -eq 5 ] || exit 26
+    printf 'YT_MEDIA_TOOLS_PROGRESS:5,10\nYT_MEDIA_TOOLS_PROGRESS:10,10\n' >&2
+fi
+"##,
+                )
+                .unwrap();
+            writer.sync_all().unwrap();
+        }
+        fs::set_permissions(&staged, fs::Permissions::from_mode(0o700)).unwrap();
+        fs::rename(&staged, &executable_path).unwrap();
+
+        let metadata =
+            crate::metadata::acquire_metadata(&executable_path, &fixture, "literal-target")
+                .expect("metadata acquisition through mock executable");
+        assert_eq!(metadata.id, "fixture-id");
+        assert_eq!(metadata.title.as_deref(), Some("Fixture"));
+        assert_eq!(metadata.duration_seconds, Some(12));
+
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan(),
+            Executable::new(executable_path.to_str().unwrap()).unwrap(),
+            &fixture,
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .expect("download execution through same mock executable");
+        assert_eq!(attempt.state, ExecutionState::Succeeded);
+        let progress = events.0.iter().position(|event| matches!(event,
+            ExecutionEvent::Progress(value) if value.completed_bytes == 10 && value.total_bytes == Some(10)
+        )).expect("final progress observation");
+        let terminal = events
+            .0
+            .iter()
+            .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Succeeded))
+            .expect("terminal success");
+        assert!(progress < terminal);
+    }
+
     /// A failed child must not discard progress already delivered to callers.
     #[cfg(unix)]
     #[test]

@@ -202,20 +202,38 @@ pub fn acquire_metadata_with_deadline(
     {
         return Err(AcquisitionError::InvalidConfiguration);
     }
-    let mut child = Command::new(executable)
-        .current_dir(working_directory)
-        .args([
-            "--ignore-config",
-            "--no-playlist",
-            "--dump-single-json",
-            "--",
-            target,
-        ])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(AcquisitionError::Io)?;
+    // A just-published executable may transiently return ETXTBSY on Linux,
+    // particularly when another process briefly opens the file for writing.
+    // Retry only that specific condition, within the caller's existing deadline.
+    let started = std::time::Instant::now();
+    let mut child = loop {
+        match Command::new(executable)
+            .current_dir(working_directory)
+            .args([
+                "--ignore-config",
+                "--no-playlist",
+                "--dump-single-json",
+                "--",
+                target,
+            ])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            Ok(child) => break child,
+            Err(error) if error.kind() == std::io::ErrorKind::ExecutableFileBusy => {
+                if started.elapsed() >= deadline {
+                    return Err(AcquisitionError::TimedOut);
+                }
+                std::thread::sleep(
+                    std::time::Duration::from_millis(5)
+                        .min(deadline.saturating_sub(started.elapsed())),
+                );
+            }
+            Err(error) => return Err(AcquisitionError::Io(error)),
+        }
+    };
 
     let stdout = child.stdout.take().expect("stdout was explicitly piped");
     let (sender, receiver) = mpsc::sync_channel(1);
@@ -226,8 +244,7 @@ pub fn acquire_metadata_with_deadline(
             .read_to_end(&mut output);
         let _ = sender.send(result.map(|_| output));
     });
-    let started = std::time::Instant::now();
-    let output = match receiver.recv_timeout(deadline) {
+    let output = match receiver.recv_timeout(deadline.saturating_sub(started.elapsed())) {
         Ok(Ok(output)) => output,
         Ok(Err(error)) => {
             let _ = child.kill();
