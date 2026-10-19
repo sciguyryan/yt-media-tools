@@ -30,6 +30,8 @@ python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs
 
 Use the corresponding `.exe` binary path on Windows. The comparison harness verifies selected version 3 profile-validation outcomes and the Python schema reference, while recording help/version output without requiring text equality. The CLI checker verifies bounded executable inspection and diagnostic contracts. Neither check requires live downloads or proves complete Python/Rust parity.
 
+The Part 5 acceptance boundary and remaining certification requirements are recorded in [`PART-5-ACCEPTANCE.md`](PART-5-ACCEPTANCE.md).
+
 ## Compatibility and future work
 
 `rust/CLI-COMPATIBILITY-AUDIT.md` records supported behaviour, deliberate differences and regression checks. `rust/PYTHON-CLI-OPTION-INVENTORY.md` records Python options and their preliminary ownership; it does not imply that deferred options are accepted by Rust.

@@ -143,3 +143,7 @@ The supervisor drains queued progress before reporting terminal success or failu
 The reader shutdown bound is 500 ms after direct-child termination. A descendant retaining the inherited standard-error pipe may outlive that bound; the supervisor reports a failure and detaches the reader thread rather than terminating the descendant. This is a known resource-lifetime limitation, not proof of process-tree cleanup. The progress queue has a capacity of 64 and deliberately drops observations when full; it is advisory rather than a lossless event log.
 
 Metadata acquisition has a separate deadline and bounded output capture. Its executable-busy retry is constrained by that deadline, but the cause of intermittent executable-busy errors remains unproven. The public Rust CLI remains download-disabled, and mock subprocess coverage is not a substitute for live yt-dlp or cross-platform certification.
+
+## Part 5 final reconciliation
+
+The consolidated acceptance scope, local verification commands and explicit residual risks are recorded in `rust/PART-5-ACCEPTANCE.md`. Part 5 certifies the experimental library execution foundation only. It does not certify real yt-dlp downloads, full Python behavioural parity or activation of the public Rust CLI.
