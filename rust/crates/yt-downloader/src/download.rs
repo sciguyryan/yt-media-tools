@@ -311,4 +311,89 @@ mod tests {
             |event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 1)
         ));
     }
+
+    /// Verify that a batch file reaches the child as a path, not expanded targets.
+    #[cfg(unix)]
+    #[test]
+    fn explicit_adapter_preserves_batch_file_source() {
+        let batch_path = std::env::current_dir().unwrap().join("Cargo.toml");
+        assert!(batch_path.is_file());
+        let script = r#"
+            test "$1" = "--batch-file" || exit 31
+            test -f "$2" || exit 32
+            test "$3" = "--newline" || exit 33
+            test "$4" = "--progress-template" || exit 34
+            case "$5" in
+                download:YT_MEDIA_TOOLS_PROGRESS:*) ;;
+                *) exit 35 ;;
+            esac
+            test "$#" -eq 5 || exit 36
+            printf 'YT_MEDIA_TOOLS_PROGRESS:2,2\n' >&2
+        "#;
+        let plan = ExecutionPlan {
+            arguments: vec![
+                "-c".into(),
+                script.into(),
+                "fixture".into(),
+                "--batch-file".into(),
+                batch_path.to_string_lossy().into_owned(),
+            ],
+            source: TargetSource::BatchFile(batch_path),
+        };
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan,
+            Executable::new("/bin/sh").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Succeeded);
+        assert!(events.0.iter().any(
+            |event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 2)
+        ));
+    }
+
+    /// The standard-input marker is forwarded as a batch source. The fixture
+    /// deliberately does not read stdin, which is inherited from the caller.
+    #[cfg(unix)]
+    #[test]
+    fn explicit_adapter_preserves_standard_input_source() {
+        let script = r#"
+            test "$1" = "--batch-file" || exit 41
+            test "$2" = "-" || exit 42
+            test "$3" = "--newline" || exit 43
+            test "$4" = "--progress-template" || exit 44
+            case "$5" in
+                download:YT_MEDIA_TOOLS_PROGRESS:*) ;;
+                *) exit 45 ;;
+            esac
+            test "$#" -eq 5 || exit 46
+            printf 'YT_MEDIA_TOOLS_PROGRESS:1,1\n' >&2
+        "#;
+        let plan = ExecutionPlan {
+            arguments: vec![
+                "-c".into(),
+                script.into(),
+                "fixture".into(),
+                "--batch-file".into(),
+                "-".into(),
+            ],
+            source: TargetSource::Stdin,
+        };
+        let mut events = Events::default();
+        let attempt = execute_download(
+            plan,
+            Executable::new("/bin/sh").unwrap(),
+            ".",
+            &CancellationToken::default(),
+            &mut events,
+        )
+        .unwrap();
+        assert_eq!(attempt.state, ExecutionState::Succeeded);
+        assert!(events.0.iter().any(
+            |event| matches!(event, ExecutionEvent::Progress(value) if value.completed_bytes == 1)
+        ));
+    }
 }
