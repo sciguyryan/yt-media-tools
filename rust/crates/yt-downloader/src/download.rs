@@ -437,17 +437,26 @@ if [ "$1" = "--ignore-config" ]; then
     [ "$2" = "--no-playlist" ] || exit 11
     [ "$3" = "--dump-single-json" ] || exit 12
     [ "$4" = "--" ] || exit 13
-    [ "$5" = "literal-target" ] || exit 14
     [ "$#" -eq 5 ] || exit 15
-    printf '{"id":"fixture-id","title":"Fixture","duration":12}\n'
+    case "$5" in
+        literal-target) printf '{"id":"fixture-id","title":"Fixture","duration":12}\n' ;;
+        invalid-metadata) printf '{not-json}\n' ;;
+        *) exit 14 ;;
+    esac
 else
     [ "$1" = "--newline" ] || exit 21
     [ "$2" = "--progress-template" ] || exit 22
     case "$3" in download:YT_MEDIA_TOOLS_PROGRESS:*) ;; *) exit 23 ;; esac
     [ "$4" = "--" ] || exit 24
-    [ "$5" = "literal-target" ] || exit 25
     [ "$#" -eq 5 ] || exit 26
-    printf 'YT_MEDIA_TOOLS_PROGRESS:5,10\nYT_MEDIA_TOOLS_PROGRESS:10,10\n' >&2
+    case "$5" in
+        literal-target)
+            printf 'YT_MEDIA_TOOLS_PROGRESS:5,10\nYT_MEDIA_TOOLS_PROGRESS:10,10\n' >&2 ;;
+        failing-target)
+            printf 'YT_MEDIA_TOOLS_PROGRESS:3,10\n' >&2
+            exit 17 ;;
+        *) exit 25 ;;
+    esac
 fi
 "##,
                 )
@@ -483,6 +492,63 @@ fi
             .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Succeeded))
             .expect("terminal success");
         assert!(progress < terminal);
+
+        // A malformed metadata record must fail at the acquisition boundary,
+        // before a download is attempted with that record.
+        let malformed =
+            crate::metadata::acquire_metadata(&executable_path, &fixture, "invalid-metadata");
+        assert!(
+            matches!(
+                malformed,
+                Err(crate::metadata::AcquisitionError::Metadata(
+                    crate::metadata::MetadataError::InvalidJson
+                ))
+            ),
+            "unexpected malformed metadata result: {malformed:?}"
+        );
+
+        // A failed download must retain its direct-child exit status and all
+        // progress observed before the terminal failure event.
+        let failure_plan = ExecutionPlan {
+            arguments: vec!["--".into(), "failing-target".into()],
+            source: TargetSource::Direct(vec!["failing-target".into()]),
+        };
+        let mut failed_events = Events::default();
+        let failed_attempt = execute_download(
+            failure_plan,
+            Executable::new(executable_path.to_str().unwrap()).unwrap(),
+            &fixture,
+            &CancellationToken::default(),
+            &mut failed_events,
+        )
+        .expect("failed download should produce a structured attempt");
+        assert_eq!(failed_attempt.state, ExecutionState::Failed);
+        assert!(matches!(failed_attempt.outcome,
+            ExitStatusOrCancelled::Exited(status) if status.code() == Some(17)));
+        let observed = failed_events
+            .0
+            .iter()
+            .position(|event| {
+                matches!(event,
+                    ExecutionEvent::Progress(value) if value.completed_bytes == 3
+                )
+            })
+            .expect("progress before failed download");
+        let failure = failed_events
+            .0
+            .iter()
+            .position(|event| matches!(event, ExecutionEvent::Failure(_)))
+            .expect("failure event");
+        let failed_terminal = failed_events
+            .0
+            .iter()
+            .position(|event| *event == ExecutionEvent::StateChanged(ExecutionState::Failed))
+            .expect("terminal failure");
+        assert!(observed < failure && failure < failed_terminal);
+        assert_eq!(
+            failed_events.0.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Failed))
+        );
     }
 
     /// A failed child must not discard progress already delivered to callers.
