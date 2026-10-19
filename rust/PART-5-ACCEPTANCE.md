@@ -17,7 +17,7 @@ Rust unit and Unix mock-executable integration tests exercise metadata acquisiti
 Run the following from `rust/` and retain the output with the Part 5 acceptance record:
 
 ```sh
-cargo fmt --all --check
+cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --all-targets --locked
 ```
@@ -27,10 +27,9 @@ From the repository root, after building the Rust executable, run the independen
 ```sh
 python rust/tests/compare_python_rust.py --rust-binary rust/target/debug/yt-download-rs
 python rust/tools/check_cli_contract.py rust/target/debug/yt-download-rs
-python rust/tools/check_schema_fixture.py
 ```
 
-These commands must be evaluated in the user's local toolchain. Passing tests must not be inferred merely from the presence of test cases or a valid ZIP archive.
+The comparison harness includes the Python schema-fixture freshness check; there is no separate schema checker script. These commands must be evaluated in the user's local toolchain. Passing tests must not be inferred merely from the presence of test cases or a valid ZIP archive.
 
 ## Explicit exclusions and residual risks
 
@@ -40,6 +39,12 @@ These commands must be evaluated in the user's local toolchain. Passing tests mu
 - Progress observations use a bounded advisory queue and can be dropped under pressure. They are not a lossless audit record.
 - Mock-executable integration tests are Unix-specific; equivalent Windows process and stream behaviour is not certified.
 - The experimental Rust CLI remains download-disabled. Python version 2 profiles and much of the Python option inventory remain outside the implemented Rust interface.
+
+## Final tests and documentation review
+
+The final clean-up reviewed the Rust workspace test files, embedded module tests, Unix mock-executable integration coverage, CI quality gates and the three Rust documentation entry points. The Part 4 cross-module tests remain useful as a planning-only contract; Part 5 integration tests exercise subprocess behaviour separately. No test file was removed merely because its coverage overlaps another layer. The nonexistent `check_schema_fixture.py` invocation was removed from acceptance instructions: schema drift is already checked byte-for-byte by `compare_python_rust.py`. The README was consolidated to remove obsolete statements that process supervision and progress integration were still future work.
+
+This is a source and packaging review, not an independent successful Cargo execution. Local acceptance results remain the authority for Rust compilation, Clippy and tests.
 
 ## Closure decision
 

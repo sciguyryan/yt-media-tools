@@ -66,9 +66,9 @@ The Rust `--schema-json` command returns the canonical Python machine-contract s
 
 ## Schema-reference freshness check
 
-The committed `rust/crates/yt-downloader/fixtures/python-machine-contract.json` snapshot must remain byte-for-byte equal to the current Python Downloader `--schema-json` output. Run `python rust/tools/check_schema_fixture.py` from the repository root after Python schema changes and during Part 3 certification. The checker exits non-zero on drift and does not silently regenerate the reference. Any intentional contract change requires an independently reviewed fixture update and Rust compatibility assessment. The Rust regression test checks the embedded fixture's output, while this separate check catches drift in the Python source.
+The committed `rust/crates/yt-downloader/fixtures/python-machine-contract.json` snapshot must remain byte-for-byte equal to the current Python Downloader `--schema-json` output. The existing `python rust/tests/compare_python_rust.py --rust-binary rust/target/debug/yt-download-rs` harness checks this byte-for-byte before its other comparisons. Run it after Python schema changes and during compatibility certification; it exits non-zero on drift and does not regenerate the reference. Any intentional contract change requires an independently reviewed fixture update and Rust compatibility assessment. The Rust regression test checks the embedded fixture's output, while this separate check catches drift in the Python source.
 
-The `home` manifest dependency is now pinned to 0.5.12. The packaged `rust/Cargo.lock` has not been fully resolved; regenerate and commit it with Cargo before claiming a reproducible `--locked` build. Do not manufacture transitive lockfile entries.
+Maintain `rust/Cargo.lock` with Cargo and commit it for reproducible `--locked` builds; do not manufacture transitive lockfile entries.
 
 ## Source-derived option inventory
 
@@ -93,11 +93,11 @@ The Part 4 library boundary is exercised by `rust/crates/yt-downloader/tests/par
 
 | Contract | Native coverage | Remaining compatibility boundary |
 | --- | --- | --- |
-| Direct target ordering, duplicates and leading dashes | Target unit tests and cross-module plan test | Python CLI positional parsing and real yt-dlp invocation are not ported. |
-| Standard input and batch-file argument distinction | Target, planner and cross-module tests | File contents, queue operations and actual process input remain unimplemented. |
+| Direct target ordering, duplicates and leading dashes | Target unit tests and cross-module plan test | The Part 4 tests do not certify Python CLI positional parsing or live yt-dlp invocation. |
+| Standard input and batch-file argument distinction | Target, planner and cross-module tests | The Part 4 tests do not exercise execution; actual stdin content delivery and queue workflows remain unverified. |
 | Profile selection, inheritance and explicit overrides | Profile tests and cross-module plan tests | Python version 2 profile support is intentionally absent in Rust. |
 | Deterministic yt-dlp argument planning | Planner unit tests and cross-module plan tests | Only five boolean settings are mapped; all other settings fail closed. |
-| Lifecycle states, progress, failure and cancellation | Lifecycle unit tests and cross-module terminal-state test | No child-process adapter, output parser, cancellation enforcement or cleanup exists. |
+| Lifecycle states, progress, failure and cancellation | Lifecycle unit tests and cross-module terminal-state test | These Part 4-only tests do not exercise the subsequently implemented Part 5 supervisor or output parser. |
 | Python CLI and machine schema | `rust/tests/compare_python_rust.py` and `rust/tools/check_cli_contract.py` | Inspection checks and selected profile validation are not execution equivalence. |
 
 The Part 4 tests establish internal native contract consistency, not comprehensive Python/Rust behavioural equivalence. In particular, the five mapped settings (`playlist`, `write-info-json`, `write-thumbnail`, `write-subs` and `write-auto-subs`) are an explicitly limited planning subset. Any other validated setting, including `preferred-fps`, must be rejected rather than omitted. The renaming plugin and its packaging remain Python-owned until execution and output parity can be certified. No test in this certification suite invokes yt-dlp or downloads media.
