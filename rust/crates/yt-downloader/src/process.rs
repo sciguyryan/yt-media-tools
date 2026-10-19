@@ -97,10 +97,23 @@ impl ProcessLaunch {
     /// launches. Generic process supervision must not receive yt-dlp options.
     /// The missing-total placeholder is represented as `NA` by yt-dlp.
     pub fn ytdlp_progress_command(&self) -> Command {
-        let mut command = self.command();
+        let mut command = Command::new(self.executable.as_path());
+        command.current_dir(&self.working_directory);
+        command.stdin(Stdio::inherit());
+        command.stdout(Stdio::inherit());
+        command.stderr(Stdio::inherit());
+        // yt-dlp treats everything after `--` as a literal target. Insert
+        // adapter options before that separator, not after the targets.
+        let separator = self
+            .arguments
+            .iter()
+            .position(|argument| argument == "--")
+            .unwrap_or(self.arguments.len());
+        command.args(&self.arguments[..separator]);
         command.arg("--newline");
         command.arg("--progress-template");
         command.arg("download:YT_MEDIA_TOOLS_PROGRESS:%(progress.downloaded_bytes)s,%(progress.total_bytes)s");
+        command.args(&self.arguments[separator..]);
         command
     }
 
@@ -143,18 +156,17 @@ mod tests {
     }
 
     #[test]
-    fn structured_progress_arguments_are_explicit_and_ordered() {
+    fn structured_progress_options_precede_literal_target_separator() {
         let launch = ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), ".", &plan()).unwrap();
-        let ordinary = launch.command();
+        let ordinary_args: Vec<_> = launch
+            .command()
+            .get_args()
+            .map(OsStr::to_os_string)
+            .collect();
         let structured = launch.ytdlp_progress_command();
-        let ordinary_args: Vec<_> = ordinary.get_args().collect();
         let structured_args: Vec<_> = structured.get_args().collect();
         assert_eq!(
-            &structured_args[..ordinary_args.len()],
-            ordinary_args.as_slice()
-        );
-        assert_eq!(
-            &structured_args[ordinary_args.len()..],
+            &structured_args[..3],
             &[
                 OsStr::new("--newline"),
                 OsStr::new("--progress-template"),
@@ -163,7 +175,30 @@ mod tests {
                 ),
             ]
         );
-        assert_eq!(ordinary.get_args().count(), ordinary_args.len());
+        assert_eq!(
+            &structured_args[3..],
+            ordinary_args
+                .iter()
+                .map(OsString::as_os_str)
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(structured_args[3], OsStr::new("--"));
+    }
+
+    #[test]
+    fn structured_progress_options_follow_existing_options_when_no_separator_exists() {
+        let plan = ExecutionPlan {
+            arguments: vec!["--no-playlist".into()],
+            source: TargetSource::Direct(vec![]),
+        };
+        let launch = ProcessLaunch::new(Executable::new("yt-dlp").unwrap(), ".", &plan).unwrap();
+        let args: Vec<_> = launch
+            .ytdlp_progress_command()
+            .get_args()
+            .map(OsStr::to_os_string)
+            .collect();
+        assert_eq!(args[0], OsStr::new("--no-playlist"));
+        assert_eq!(args[1], OsStr::new("--newline"));
     }
 
     #[test]

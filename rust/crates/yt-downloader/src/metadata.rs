@@ -362,7 +362,7 @@ mod acquisition_deadline_tests {
 mod acquisition_compatibility_tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::Duration;
 
@@ -480,14 +480,22 @@ printf '{"id":"safe","title":"Test","duration":9}'"#,
             collection.acquire("target"),
             Err(AcquisitionError::Metadata(MetadataError::UnsupportedRecord))
         ));
-        // /dev/zero is available on the Unix platforms supported by this
-        // fixture. head closes after the requested byte count.
-        if Path::new("/dev/zero").exists() {
-            let oversized = MockExecutable::new("head -c 8388609 /dev/zero");
-            assert!(matches!(
-                oversized.acquire("target"),
-                Err(AcquisitionError::Metadata(MetadataError::TooLarge))
-            ));
-        }
+        // Use a prepared payload rather than generating 8 MiB through a
+        // shell pipeline under the fixture's short default deadline.
+        let oversized = MockExecutable::new("cat oversized.json");
+        std::fs::write(
+            oversized.directory.join("oversized.json"),
+            vec![b' '; MAX_METADATA_BYTES + 1],
+        )
+        .unwrap();
+        assert!(matches!(
+            acquire_metadata_with_deadline(
+                &oversized.executable,
+                &oversized.directory,
+                "target",
+                Duration::from_secs(10),
+            ),
+            Err(AcquisitionError::Metadata(MetadataError::TooLarge))
+        ));
     }
 }
