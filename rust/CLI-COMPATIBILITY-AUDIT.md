@@ -135,3 +135,11 @@ Metadata acquisition has a bounded wall-clock deadline and attempts to terminate
 3. Compare real yt-dlp invocation, progress, failures, cancellation and output artefacts on controlled fixtures, with explicit version and platform coverage.
 4. Reconcile the deferred Python option inventory, version 2 profiles, naming plugin and persistent queue semantics before asserting feature parity.
 5. Preserve the public CLI download gate until a separately reviewed activation decision.
+
+## Part 5 Phase 6.3 robustness review
+
+The supervisor drains queued progress before reporting terminal success or failure, including when the progress reader returns an I/O error or exceeds its bounded shutdown wait. Dedicated regression tests exercise successful reader completion and stalled reader completion with pending observations. They assert that progress precedes the terminal event and that timeout reports failure rather than success.
+
+The reader shutdown bound is 500 ms after direct-child termination. A descendant retaining the inherited standard-error pipe may outlive that bound; the supervisor reports a failure and detaches the reader thread rather than terminating the descendant. This is a known resource-lifetime limitation, not proof of process-tree cleanup. The progress queue has a capacity of 64 and deliberately drops observations when full; it is advisory rather than a lossless event log.
+
+Metadata acquisition has a separate deadline and bounded output capture. Its executable-busy retry is constrained by that deadline, but the cause of intermittent executable-busy errors remains unproven. The public Rust CLI remains download-disabled, and mock subprocess coverage is not a substitute for live yt-dlp or cross-platform certification.

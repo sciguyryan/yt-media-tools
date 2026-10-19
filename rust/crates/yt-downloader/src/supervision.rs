@@ -529,6 +529,84 @@ mod reader_completion_tests {
     }
 
     #[test]
+    fn completed_reader_drains_queued_progress_before_success() {
+        let (sender, receiver) = mpsc::sync_channel(2);
+        sender
+            .send(Progress {
+                completed_bytes: 3,
+                total_bytes: Some(10),
+            })
+            .unwrap();
+        sender
+            .send(Progress {
+                completed_bytes: 10,
+                total_bytes: Some(10),
+            })
+            .unwrap();
+        drop(sender);
+        let reader = thread::spawn(|| Ok(()));
+        let mut lifecycle = lifecycle();
+        let mut events = Events::default();
+        finish_reader(Some(reader), &receiver, &mut lifecycle, &mut events).unwrap();
+        assert_eq!(lifecycle.state(), ExecutionState::Running);
+        assert_eq!(events.0.len(), 2);
+        assert!(
+            matches!(&events.0[0], ExecutionEvent::Progress(value) if value.completed_bytes == 3)
+        );
+        assert!(
+            matches!(&events.0[1], ExecutionEvent::Progress(value) if value.completed_bytes == 10)
+        );
+        lifecycle
+            .transition(ExecutionState::Succeeded, &mut events)
+            .unwrap();
+        assert_eq!(
+            events.0.last(),
+            Some(&ExecutionEvent::StateChanged(ExecutionState::Succeeded))
+        );
+    }
+
+    #[test]
+    fn stalled_reader_drains_queued_progress_before_terminal_failure() {
+        let (sender, receiver) = mpsc::sync_channel(2);
+        sender
+            .send(Progress {
+                completed_bytes: 7,
+                total_bytes: Some(10),
+            })
+            .unwrap();
+        drop(sender);
+        // The worker simulates a descendant retaining the output pipe.
+        let reader = thread::spawn(|| {
+            thread::sleep(Duration::from_secs(2));
+            Ok(())
+        });
+        let mut lifecycle = lifecycle();
+        let mut events = Events::default();
+        assert!(
+            matches!(finish_reader(Some(reader), &receiver, &mut lifecycle, &mut events), Err(SupervisionError::Io(error)) if error.kind() == io::ErrorKind::TimedOut)
+        );
+        assert_eq!(lifecycle.state(), ExecutionState::Failed);
+        assert!(
+            matches!(events.0.first(), Some(ExecutionEvent::Progress(value)) if value.completed_bytes == 7)
+        );
+        assert!(matches!(
+            events.0.last(),
+            Some(ExecutionEvent::StateChanged(ExecutionState::Failed))
+        ));
+        assert_eq!(
+            events
+                .0
+                .iter()
+                .filter(|event| matches!(
+                    event,
+                    ExecutionEvent::StateChanged(ExecutionState::Failed)
+                ))
+                .count(),
+            1
+        );
+    }
+
+    #[test]
     fn panicked_reader_reports_failure_without_exposing_payload() {
         let (_sender, receiver) = mpsc::sync_channel(2);
         let reader = thread::spawn(|| -> io::Result<()> { panic!("fixture panic") });
