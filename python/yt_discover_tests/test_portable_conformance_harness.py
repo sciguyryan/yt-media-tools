@@ -71,3 +71,32 @@ def test_xpass_is_failure(tmp_path: Path) -> None:
     }
     manifest.write_text(json.dumps(payload), encoding="utf-8")
     assert run(root=corpus)["counts"]["xpass"] == 1
+
+
+def test_registered_adapter_is_invoked_with_explicit_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    import conformance_adapters
+    import run_python_candidate
+
+    calls = []
+
+    def fake_adapter(case: Path, configuration: str, root: Path):
+        calls.append((case, configuration, root))
+        return run_python_candidate.observe(case, configuration=configuration, root=root)
+
+    monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", fake_adapter)
+    report = run(configuration="default")
+    assert report["counts"]["pass"] == 1
+    assert len(calls) == 1
+    assert calls[0][1:] == ("default", ROOT / "yt-sql")
+
+
+def test_registered_adapter_crash_is_not_conformance_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    import conformance_adapters
+
+    def crash(case: Path, configuration: str, root: Path):
+        raise RuntimeError("adapter unavailable")
+
+    monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", crash)
+    report = run()
+    assert report["counts"]["error"] == 1
+    assert report["results"][0]["detail"] == "RuntimeError: adapter unavailable"

@@ -1,0 +1,2 @@
+# Compatibility requirements entry point for repository-root installation.
+-r python/requirements-benchmark.txt

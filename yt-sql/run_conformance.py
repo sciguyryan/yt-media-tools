@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from compare_outcomes import outcomes_match
+from conformance_adapters import resolve
 from validate_corpus import ROOT, CorpusError, _load, validate_corpus
 
 
@@ -16,10 +17,10 @@ class HarnessError(ValueError):
 
 def run(*, root: Path = ROOT, implementation: str = "python", configuration: str = "default") -> dict[str, object]:
     """Compare actual observations with committed expectations, never candidates."""
-    if implementation != "python":
-        raise HarnessError(f"no execution adapter registered for {implementation!r}")
-    # Import lazily so corpus validation does not depend on an implementation.
-    from run_python_candidate import observe
+    try:
+        observe = resolve(implementation)
+    except ValueError as exc:
+        raise HarnessError(str(exc)) from exc
 
     validate_corpus(root)
     overrides = _load(root / "expectations" / f"{implementation}.json")["expectations"]
@@ -30,7 +31,7 @@ def run(*, root: Path = ROOT, implementation: str = "python", configuration: str
         case_id = manifest["id"]
         try:
             expected = _load(case / "expected.json")
-            actual = observe(case, configuration=configuration, root=root)
+            actual = observe(case, configuration, root)
             matches = outcomes_match(expected, actual, order=manifest["order"])
             status = "pass" if matches else "fail"
             detail = "" if matches else "observed outcome differs from approved expectation"

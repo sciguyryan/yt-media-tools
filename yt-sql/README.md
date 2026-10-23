@@ -230,7 +230,7 @@ The current workflow is deliberately local and file-based. It does not provide a
 
 ## Phase 6 permanent conformance runner
 
-`run_conformance.py` compares each committed `expected.json` against an implementation observation. It never reads staged candidates or review records as an oracle. The initial adapter is Python; requesting an unregistered implementation fails closed. The command returns exit status 0 only when every case passes or has an explicitly supported known outcome mismatch. It returns 1 for failures, infrastructure errors and unexpected passes, and 2 for invalid setup.
+`run_conformance.py` compares each committed `expected.json` against an implementation observation. It never reads staged candidates or review records as an oracle. The initial adapter is Python, registered explicitly in `conformance_adapters.py`; requesting an unregistered implementation fails closed. Adapters produce observations only and do not own approved expectations. The command returns exit status 0 only when every case passes or has an explicitly supported known outcome mismatch. It returns 1 for failures, infrastructure errors and unexpected passes, and 2 for invalid setup.
 
 ```bash
 python yt-sql/run_conformance.py
