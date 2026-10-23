@@ -250,3 +250,7 @@ The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Pyth
 ### Versioned report validation
 
 `python yt-sql/validate_report.py REPORT` validates a saved version 1 conformance report without executing an implementation adapter or consulting staged candidates. It rejects malformed JSON, duplicate object keys, unknown fields or statuses, unsorted or repeated case IDs, invalid types and inconsistent status counts. The permanent runner validates the same contract before publishing its results. This is a structural integrity check, not independent certification of the observed semantics or authenticity of a report. Generated reports remain diagnostic evidence rather than normative expectations.
+
+## Phase 7 migration proposals
+
+The `migration-proposals/` directory holds candidate translations of existing Python semantic tests. Proposals are deliberately outside `cases/` and cannot be run as approved conformance expectations. Each proposal identifies its source case and records a proposed result for independent review. Reviewers should check the source query, committed fixture and intended semantics before using the Phase 5 approval and admission workflow. Do not remove the original Python test merely because a proposal exists.

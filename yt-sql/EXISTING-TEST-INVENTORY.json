@@ -509,6 +509,7 @@
     "python/yt_discover_tests/test_portable_parameters.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_phase1_completeness.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_phase1_coverage_assessment.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_portable_phase7_migration_proposal.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_python_candidate_adapter.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_registry_reconciliation.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_report_contract.py": "retain: implementation/integration pending review",

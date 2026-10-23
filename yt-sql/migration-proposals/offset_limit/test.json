@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "ordering.offset_limit",
+  "description": "Offset and limit after descending ordering of non-null view counts",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.sql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "from.handle",
+    "is.not_null",
+    "order.desc",
+    "limit",
+    "offset"
+  ]
+}

@@ -3,7 +3,7 @@ INSERT INTO cache_v4_acquisition_state (
     last_attempt_at, last_success_at, failure_category
 ) VALUES (?, ?, ?, 'success', ?, ?, NULL)
 ON CONFLICT (entity_id, provider_id, acquisition_group_id) DO UPDATE SET
-outcome = 'success',
-last_attempt_at = excluded.last_attempt_at,
-last_success_at = excluded.last_success_at,
-failure_category = NULL
+    outcome = 'success',
+    last_attempt_at = excluded.last_attempt_at,
+    last_success_at = excluded.last_success_at,
+    failure_category = NULL
