@@ -824,8 +824,8 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
         return _apply_aggregate_query(records, query)
     result = [record for record in records if evaluate(query.predicate, record) is True]
 
-    # Python's stable sort preserves source order as the final implicit tie-breaker.
     # Sort from the last term backwards so each ORDER BY direction remains independent.
+    # Python's stable sort may retain encounter order for ties, but yt-sql does not guarantee it.
     for term in reversed(query.order_by):
         present = [record for record in result if canonical_record_value(record, term) is not None]
         missing = [record for record in result if canonical_record_value(record, term) is None]

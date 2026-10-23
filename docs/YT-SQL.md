@@ -36,7 +36,7 @@ The canonical formatter emits clauses only in the order shown above, omits absen
 
 Without `ORDER BY`, yt-sql does not guarantee the order of result rows. An implementation's observed acquisition or evaluation order does not establish an ordering guarantee. `DISTINCT`, grouping and set composition do not impose an implicit result order. The outer query must specify an applicable `ORDER BY` when the order of its result rows matters.
 
-`ORDER BY` evaluates its ordering expressions in the specified sequence and applies each `ASC` or `DESC` direction. Rows whose complete ordering-key tuples compare equal have no guaranteed relative order. yt-sql does not apply an implicit tie-breaker based on `id`, source position or any other hidden value.
+`ORDER BY` evaluates its ordering expressions in the specified sequence and applies each `ASC` or `DESC` direction. SQL NULL ordering values sort after non-NULL values for both `ASC` and `DESC`. This placement applies independently to each ordering expression. Rows whose complete ordering-key tuples compare equal have no guaranteed relative order. yt-sql does not apply an implicit tie-breaker based on `id`, source position or any other hidden value.
 
 `LIMIT` and `OFFSET` restrict the number of rows returned and the portion of the result sequence selected. Neither clause establishes an ordering guarantee. Without `ORDER BY`, the particular rows selected are unspecified. With `ORDER BY`, row selection is deterministic only where the specified ordering keys distinguish rows at the relevant slice boundaries. A boundary within a group of equal ordering keys permits different selections from that group.
 
