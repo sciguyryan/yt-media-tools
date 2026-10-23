@@ -78,3 +78,30 @@ def compare_rows(expected: list[list[object]], actual: list[list[object]], *, or
     left = [_key(row) for row in expected]
     right = [_key(row) for row in actual]
     return left == right if ordered else Counter(left) == Counter(right)
+
+
+def compare_tied_groups(expected: list[list[object]], actual: list[list[object]], *, group_sizes: list[int]) -> bool:
+    """Match consecutive ordered groups, ignoring order only within each group.
+
+    Group boundaries are supplied by an independently reviewed ordering-key
+    analysis. They cannot be inferred from projected rows: ORDER BY expressions
+    need not appear in the SELECT projection.
+    """
+    if (
+        not isinstance(group_sizes, list)
+        or any(type(size) is not int or size <= 0 for size in group_sizes)
+        or not isinstance(expected, list)
+        or not isinstance(actual, list)
+        or sum(group_sizes) != len(expected)
+        or len(actual) != len(expected)
+    ):
+        raise TypedValueError("invalid tied-group partition")
+    validate_values(expected, len(expected[0]) if expected else 0)
+    validate_values(actual, len(expected[0]) if expected else 0)
+    start = 0
+    for size in group_sizes:
+        end = start + size
+        if Counter(_key(row) for row in expected[start:end]) != Counter(_key(row) for row in actual[start:end]):
+            return False
+        start = end
+    return True

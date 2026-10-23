@@ -12,6 +12,10 @@ The initial approved case establishes a narrow conformance baseline, not compreh
 
 The existing test and dataset audit is in `EXISTING-TEST-INVENTORY.json`. Python test removal is explicitly deferred until each migrated case is proven equivalent and implementation-specific assertions are retained. Parallel execution should use pytest-xdist with isolated cache and temporary state per worker.
 
+## Tied ordering-key groups (comparison primitive)
+
+`typed_values.compare_tied_groups` supports a reviewed partial-order comparison: consecutive ordering-key groups retain their sequence, while rows within each group are compared as multisets, including duplicate multiplicity. The caller supplies group sizes from an independent analysis of the complete `ORDER BY` keys; projected row values alone cannot reliably reveal ties. A row crossing a group boundary fails comparison. This is a standalone comparison primitive, **not yet a normative manifest `order` mode**. No corpus case is admitted on this basis until the manifest contract can describe and validate the relevant ordering keys and ambiguous slice boundaries.
+
 ## Coverage inventory
 
 The Phase 1 source-derived baseline is `COVERAGE-INVENTORY.json`, and the existing Python test audit is `EXISTING-TEST-INVENTORY.json`. **Both files are built together** by running `python yt-sql/build_coverage_inventory.py` from the repository root. Run `python yt-sql/build_coverage_inventory.py --check` to check both files for drift without modifying them. The builder reads the feature registry, Python conformance cases, parser function names, dataset specifications and test-file inventory. Existing per-file migration classifications are retained when rebuilding; newly discovered test files default to retention pending review. The historical `source_snapshot` field is retained as provenance, not regenerated as a claim about the current working tree. See `COVERAGE-POLICY.md` for coverage dimensions, limitations and the mandatory review-before-approval rule for generated expected results.
