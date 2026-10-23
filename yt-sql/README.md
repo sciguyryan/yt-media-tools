@@ -12,6 +12,10 @@ The initial approved case establishes a narrow conformance baseline, not compreh
 
 The existing test and dataset audit is in `EXISTING-TEST-INVENTORY.json`. Python test removal is explicitly deferred until each migrated case is proven equivalent and implementation-specific assertions are retained. Parallel execution should use pytest-xdist with isolated cache and temporary state per worker.
 
+## Tied LIMIT/OFFSET boundary comparison (non-normative primitive)
+
+`typed_values.compare_tied_slice` validates a LIMIT/OFFSET result against an independently reviewed full ordered relation and its complete-key tie-group sizes. A slice intersecting a tied group may contain any eligible submultiset of the required size; groups must still appear in their specified order, and duplicate multiplicity remains significant. The function rejects invalid partitions and slice parameters. It does not infer ties from projected columns, establish the correctness of the supplied full relation, or change the version 1 case manifest. In particular, the provisional `offset_limit` migration remains outside the normative corpus until its complete ordering-key groups and expected selection are independently reviewed.
+
 ## Tied ordering-key groups (comparison primitive)
 
 `typed_values.compare_tied_groups` supports a reviewed partial-order comparison: consecutive ordering-key groups retain their sequence, while rows within each group are compared as multisets, including duplicate multiplicity. The caller supplies group sizes from an independent analysis of the complete `ORDER BY` keys; projected row values alone cannot reliably reveal ties. A row crossing a group boundary fails comparison. This is a standalone comparison primitive, **not yet a normative manifest `order` mode**. No corpus case is admitted on this basis until the manifest contract can describe and validate the relevant ordering keys and ambiguous slice boundaries.

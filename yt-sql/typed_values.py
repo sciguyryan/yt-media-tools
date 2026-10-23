@@ -105,3 +105,50 @@ def compare_tied_groups(expected: list[list[object]], actual: list[list[object]]
             return False
         start = end
     return True
+
+
+def compare_tied_slice(
+    expected_full: list[list[object]],
+    actual: list[list[object]],
+    *,
+    group_sizes: list[int],
+    offset: int,
+    limit: int,
+) -> bool:
+    """Validate a slice of ordered tie groups without choosing an implicit tie-breaker.
+
+    The independently reviewed full relation supplies the eligible rows in each
+    complete-key tie group. A boundary may select any submultiset of its group.
+    """
+    if (
+        type(offset) is not int
+        or offset < 0
+        or type(limit) is not int
+        or limit < 0
+        or not isinstance(group_sizes, list)
+        or any(type(size) is not int or size <= 0 for size in group_sizes)
+        or not isinstance(expected_full, list)
+        or not isinstance(actual, list)
+        or sum(group_sizes) != len(expected_full)
+    ):
+        raise TypedValueError("invalid tied-slice contract")
+    width = len(expected_full[0]) if expected_full else 0
+    validate_values(expected_full, width)
+    validate_values(actual, width)
+    if len(actual) != min(limit, max(0, len(expected_full) - offset)):
+        return False
+    start = 0
+    observed_at = 0
+    for size in group_sizes:
+        end = start + size
+        selected_start = max(start, offset)
+        selected_end = min(end, offset + limit)
+        selected_count = max(0, selected_end - selected_start)
+        if selected_count:
+            eligible = Counter(_key(row) for row in expected_full[start:end])
+            observed = Counter(_key(row) for row in actual[observed_at : observed_at + selected_count])
+            if any(count > eligible[row] for row, count in observed.items()):
+                return False
+            observed_at += selected_count
+        start = end
+    return observed_at == len(actual)
