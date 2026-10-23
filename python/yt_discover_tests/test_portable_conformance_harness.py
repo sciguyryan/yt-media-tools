@@ -131,3 +131,51 @@ def test_case_listing_does_not_execute_adapter(
     monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--list-cases"])
     assert run_conformance.main() == 0
     assert capsys.readouterr().out.strip() == "smoke.source_order_limit"
+
+
+def test_report_file_is_deterministic_and_matches_stdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import run_conformance
+
+    output = tmp_path / "report.json"
+    monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--json", "--report-file", str(output)])
+    assert run_conformance.main() == 0
+    stdout = capsys.readouterr().out
+    assert output.read_text(encoding="utf-8") == stdout
+    first = output.read_bytes()
+    assert run_conformance.main() == 0
+    capsys.readouterr()
+    assert output.read_bytes() == first
+
+
+def test_report_file_written_for_conformance_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import run_conformance
+    import conformance_adapters
+
+    output = tmp_path / "failure.json"
+    monkeypatch.setitem(
+        conformance_adapters.ADAPTERS, "python", lambda *args: {"status": "success", "columns": [], "rows": []}
+    )
+    monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--report-file", str(output)])
+    assert run_conformance.main() == 1
+    assert json.loads(output.read_text(encoding="utf-8"))["counts"]["error"] == 1
+
+
+def test_report_file_publication_failure_does_not_leave_temporary_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import run_conformance
+    import os
+
+    output = tmp_path / "report.json"
+    output.write_text("previous", encoding="utf-8")
+
+    def fail_replace(*args: object) -> None:
+        raise OSError("publication refused")
+
+    monkeypatch.setattr(os, "replace", fail_replace)
+    with pytest.raises(OSError, match="publication refused"):
+        run_conformance.write_report(output, {"version": 1})
+    assert output.read_text(encoding="utf-8") == "previous"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["report.json"]

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import tempfile
 from pathlib import Path
 
 from compare_outcomes import outcomes_match
@@ -78,12 +80,41 @@ def run(
     }
 
 
+def write_report(destination: Path, report: dict[str, object]) -> None:
+    """Publish a complete JSON report atomically without changing normative files."""
+    payload = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=destination.parent,
+            prefix=f".{destination.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, destination)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--implementation", default="python")
     parser.add_argument("--configuration", default="default")
     parser.add_argument("--json", action="store_true", help="Emit a deterministic machine-readable report")
+    parser.add_argument(
+        "--report-file",
+        type=Path,
+        metavar="PATH",
+        help="Atomically write the JSON report to PATH, including failing runs",
+    )
     parser.add_argument(
         "--case", action="append", dest="cases", metavar="ID", help="Run an exact approved case ID (repeatable)"
     )
@@ -101,6 +132,8 @@ def main() -> int:
             configuration=args.configuration,
             case_ids=tuple(args.cases) if args.cases is not None else None,
         )
+        if args.report_file is not None:
+            write_report(args.report_file, report)
     except (CorpusError, HarnessError, OSError, ValueError) as exc:
         parser.exit(2, f"Conformance setup failed: {exc}\n")
     if args.json:
