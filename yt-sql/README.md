@@ -238,3 +238,5 @@ python yt-sql/run_conformance.py --json
 ```
 
 Reports distinguish `pass`, `fail`, `error`, `xfail` and `xpass`. An adapter exception is always an infrastructure error, even for a case marked XFAIL. The initial XFAIL support is restricted to the explicit `outcome-mismatch` category; other categories cannot silently excuse a mismatch. The `--configuration` option selects one named configuration for every case, so it is suitable only where that configuration exists in each case. Multiple-configuration scheduling, Rust execution, isolated subprocess execution and richer failure classification remain future Phase 6 work.
+
+Exact case selection is available with repeatable `--case ID` arguments, and `--list-cases` lists approved case IDs without executing an adapter. Selected cases are deduplicated and run in case-ID order for stable output; an unknown case ID is a setup error. The entire corpus is still validated before selection, so filtering cannot hide malformed normative cases or expectation manifests.

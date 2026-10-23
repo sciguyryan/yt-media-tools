@@ -100,3 +100,34 @@ def test_registered_adapter_crash_is_not_conformance_mismatch(monkeypatch: pytes
     report = run()
     assert report["counts"]["error"] == 1
     assert report["results"][0]["detail"] == "RuntimeError: adapter unavailable"
+
+
+def test_exact_case_selection_preserves_approved_results() -> None:
+    result = run(case_ids=("smoke.source_order_limit", "smoke.source_order_limit"))
+    assert [item["id"] for item in result["results"]] == ["smoke.source_order_limit"]
+    assert result["counts"]["pass"] == 1
+
+
+def test_unknown_case_selection_fails_closed() -> None:
+    with pytest.raises(HarnessError, match="unknown case ID"):
+        run(case_ids=("smoke.not_a_case",))
+
+
+def test_empty_case_selection_fails_closed() -> None:
+    with pytest.raises(HarnessError, match="at least one case"):
+        run(case_ids=())
+
+
+def test_case_listing_does_not_execute_adapter(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import conformance_adapters
+    import run_conformance
+
+    def crash(*args: object) -> dict[str, object]:
+        raise AssertionError("adapter should not execute")
+
+    monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", crash)
+    monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--list-cases"])
+    assert run_conformance.main() == 0
+    assert capsys.readouterr().out.strip() == "smoke.source_order_limit"

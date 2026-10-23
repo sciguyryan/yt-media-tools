@@ -15,7 +15,13 @@ class HarnessError(ValueError):
     """Invalid harness configuration or normative corpus."""
 
 
-def run(*, root: Path = ROOT, implementation: str = "python", configuration: str = "default") -> dict[str, object]:
+def run(
+    *,
+    root: Path = ROOT,
+    implementation: str = "python",
+    configuration: str = "default",
+    case_ids: tuple[str, ...] | None = None,
+) -> dict[str, object]:
     """Compare actual observations with committed expectations, never candidates."""
     try:
         observe = resolve(implementation)
@@ -24,8 +30,17 @@ def run(*, root: Path = ROOT, implementation: str = "python", configuration: str
 
     validate_corpus(root)
     overrides = _load(root / "expectations" / f"{implementation}.json")["expectations"]
+    paths = sorted((root / "cases").rglob("test.json"))
+    by_id = {_load(path)["id"]: path for path in paths}
+    if case_ids is not None:
+        if not case_ids:
+            raise HarnessError("at least one case ID must be selected")
+        unknown = sorted(set(case_ids) - by_id.keys())
+        if unknown:
+            raise HarnessError(f"unknown case ID(s): {', '.join(unknown)}")
+        paths = [by_id[case_id] for case_id in sorted(set(case_ids))]
     results: list[dict[str, str]] = []
-    for path in sorted((root / "cases").rglob("test.json")):
+    for path in paths:
         case = path.parent
         manifest = _load(path)
         case_id = manifest["id"]
@@ -69,9 +84,23 @@ def main() -> int:
     parser.add_argument("--implementation", default="python")
     parser.add_argument("--configuration", default="default")
     parser.add_argument("--json", action="store_true", help="Emit a deterministic machine-readable report")
+    parser.add_argument(
+        "--case", action="append", dest="cases", metavar="ID", help="Run an exact approved case ID (repeatable)"
+    )
+    parser.add_argument("--list-cases", action="store_true", help="List approved case IDs without executing adapters")
     args = parser.parse_args()
     try:
-        report = run(root=args.root, implementation=args.implementation, configuration=args.configuration)
+        if args.list_cases:
+            validate_corpus(args.root)
+            ids = sorted(_load(path)["id"] for path in (args.root / "cases").rglob("test.json"))
+            print("\n".join(ids))
+            return 0
+        report = run(
+            root=args.root,
+            implementation=args.implementation,
+            configuration=args.configuration,
+            case_ids=tuple(args.cases) if args.cases is not None else None,
+        )
     except (CorpusError, HarnessError, OSError, ValueError) as exc:
         parser.exit(2, f"Conformance setup failed: {exc}\n")
     if args.json:
