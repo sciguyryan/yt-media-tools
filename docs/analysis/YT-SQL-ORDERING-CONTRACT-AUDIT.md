@@ -61,6 +61,16 @@ I have added `python/yt_discover_tests/test_ordering_type_baseline.py` to charac
 
 This is useful regression evidence, but it is not an endorsement of lexical fallback. In particular, I do not want these assertions copied into the portable corpus. They are a temporary characterisation of the inconsistency we need to resolve, and their expectations should change alongside the eventual shared comparison policy. The next decision still concerns which scalar type families may be ordered together and how incompatible values should be reported.
 
+## Resolved scalar types and the runtime comparison boundary
+
+I checked `schema.py` and `query_resolver.py` against the sorting paths before choosing a mixed-type policy. The resolver distinguishes boolean, integer, number, string, date and datetime scalar kinds, rather than treating every value as an arbitrary Python object. Dynamic provider-derived fields have a separate inference boundary: `_infer_dynamic_value_type` rejects mixed scalar/container shapes, and `infer_kind` returns `mixed` for incompatible observed scalar kinds. Integer and floating-point observations are the deliberate exception: they can reconcile to the numeric `number` kind. An all-NULL dynamic field remains `unknown` and nullable.
+
+This changes how I would approach the implementation. A blanket comparison of `str(value)` is not compatible with the type model: it can change numeric ordering, conceal a schema mismatch and give different results depending on which query path materialises the rows. Conversely, a blanket rejection based only on differing Python classes would incorrectly reject compatible integer/number values. The ordering policy needs to use the resolved scalar kind wherever it is available, with a narrowly defined runtime guard for unexpected provider values.
+
+I have not yet established whether every ordering term retains its resolved type through projection aliases, aggregate results, wrapper queries and set composition. That is the next implementation boundary to trace. In particular, the existing baseline's mixed `view_count` values are useful for characterising the fallback, but a recognised field name may carry a declared numeric kind even when a synthetic record contains a string. I would not generalise from that fixture to a rule allowing heterogeneous metadata.
+
+The current evidence supports compatible numeric comparison and exact Unicode text comparison as separate cases. It does not yet justify a universal ordering between booleans, numbers, text, temporal kinds or collections, nor a particular public diagnostic for an unexpected incompatible runtime value. I would first test type propagation through all four query shapes and distinguish resolution-time rejection from runtime data-integrity failures. No formal YT-SQL rule or evaluator behaviour changes in this investigation.
+
 ## What I would require before further Phase 7 migration
 
 - We have approved and documented the ordering rules in the main YT-SQL language reference, including the places where order is deliberately unspecified.
