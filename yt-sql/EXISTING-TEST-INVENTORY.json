@@ -473,6 +473,7 @@
     "python/yt_discover_tests/test_optimizer_differential_corpus.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_optimizer_proofs.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_order_by_resolution.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_ordering_type_baseline.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_parser_differential_conformance.py": "retain: independent oracle/differential coverage",
     "python/yt_discover_tests/test_parser_formatter_boundary.py": "review: language semantics",
     "python/yt_discover_tests/test_parser_migration_equivalence.py": "review: language semantics",

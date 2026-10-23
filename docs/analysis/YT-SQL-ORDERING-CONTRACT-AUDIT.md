@@ -55,6 +55,12 @@ Native Python string comparison is case-sensitive and lexicographic by Unicode c
 
 The next implementation increment should start with focused fixtures for ordinary, grouped, wrapped and set-operation queries. Those fixtures should establish current outcomes for homogeneous numeric and text values, heterogeneous values, NULLs and mixed ASC/DESC terms. Once we agree on the compatibility boundary, the evaluator should use one shared comparison policy across those paths. Until then, this section is an investigation, not an amendment to `docs/YT-SQL.md`.
 
+## Executable baseline before changing mixed-type semantics
+
+I have added `python/yt_discover_tests/test_ordering_type_baseline.py` to characterise the existing evaluator without treating its current behaviour as the language specification. The tests cover ordinary, grouped, wrapped and compound queries. Homogeneous numeric ordering, NULL placement in both directions and exact Unicode text ordering are exercised across all four paths. The mixed-type tests deliberately record the lexical fallback in three paths and the `TypeError` in the wrapper path.
+
+This is useful regression evidence, but it is not an endorsement of lexical fallback. In particular, I do not want these assertions copied into the portable corpus. They are a temporary characterisation of the inconsistency we need to resolve, and their expectations should change alongside the eventual shared comparison policy. The next decision still concerns which scalar type families may be ordered together and how incompatible values should be reported.
+
 ## What I would require before further Phase 7 migration
 
 - We have approved and documented the ordering rules in the main YT-SQL language reference, including the places where order is deliberately unspecified.
