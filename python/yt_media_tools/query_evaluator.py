@@ -757,6 +757,27 @@ def _slice_final_result(rows: list[dict[str, Any]], query: Query) -> list[dict[s
     return [{**row, **{name: index for name in names}} for index, row in enumerate(rows, start=query.offset + 1)]
 
 
+def _order_rows(rows: list[Any], term: OrderTerm, value_of: Callable[[Any], Any]) -> list[Any]:
+    """Sort one ORDER BY term, retaining NULL-last placement in either direction.
+
+    Reject incomparable scalar families rather than changing all values to text
+    when a single incompatible value is encountered.
+    """
+    present: list[tuple[Any, Any]] = []
+    missing: list[Any] = []
+    for row in rows:
+        value = value_of(row)
+        if value is None:
+            missing.append(row)
+        else:
+            present.append((row, value))
+    try:
+        present.sort(key=lambda item: item[1], reverse=term.descending)
+    except TypeError as exc:
+        raise TypeError("ORDER BY contains values that cannot be compared") from exc
+    return [row for row, _ in present] + missing
+
+
 def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     filtered = [record for record in records if evaluate(query.predicate, record) is True]
     grouped: list[tuple[tuple[Any, ...], list[dict[str, Any]]]] = []
@@ -777,16 +798,11 @@ def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> l
     surviving = [group for _, group in grouped if _evaluate_having(query.having, group) is True]
 
     for term in reversed(query.order_by):
-        present = []
-        missing = []
-        for group in surviving:
-            value = _evaluate_group_expression(term.expression, group) if term.expression is not None else None
-            (missing if value is None else present).append((group, value))
-        try:
-            present.sort(key=lambda item: item[1], reverse=term.descending)
-        except TypeError:
-            present.sort(key=lambda item: str(item[1]), reverse=term.descending)
-        surviving = [group for group, _ in present] + [group for group, _ in missing]
+        surviving = _order_rows(
+            surviving,
+            term,
+            lambda group: _evaluate_group_expression(term.expression, group) if term.expression is not None else None,
+        )
 
     rows: list[dict[str, Any]] = []
     for group in surviving:
@@ -827,15 +843,7 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
     # Sort from the last term backwards so each ORDER BY direction remains independent.
     # Python's stable sort may retain encounter order for ties, but yt-sql does not guarantee it.
     for term in reversed(query.order_by):
-        present = [record for record in result if canonical_record_value(record, term) is not None]
-        missing = [record for record in result if canonical_record_value(record, term) is None]
-        try:
-            present.sort(key=lambda record: canonical_record_value(record, term), reverse=term.descending)
-        except TypeError:
-            # Mixed extractor data is intentionally not coerced for predicates. For ordering only,
-            # a deterministic textual fallback is preferable to failing an otherwise useful query.
-            present.sort(key=lambda record: str(canonical_record_value(record, term)), reverse=term.descending)
-        result = present + missing
+        result = _order_rows(result, term, lambda record: canonical_record_value(record, term))
 
     if query.distinct:
         seen: set[tuple[Any, ...]] = set()
@@ -1181,10 +1189,7 @@ def _apply_composed_query(
             records, query.left_query, relations, physical_requests, relational_optimisation=relational_optimisation
         )
         for term in reversed(query.order_by):
-            present = [row for row in rows if canonical_record_value(row, term) is not None]
-            missing = [row for row in rows if canonical_record_value(row, term) is None]
-            present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
-            rows = present + missing
+            rows = _order_rows(rows, term, lambda row: canonical_record_value(row, term))
         if query.offset:
             rows = rows[query.offset :]
         if query.limit is not None:
@@ -1261,13 +1266,7 @@ def _apply_composed_query(
                 )
             )
         for term in reversed(query.order_by):
-            present = [row for row in rows if canonical_record_value(row, term) is not None]
-            missing = [row for row in rows if canonical_record_value(row, term) is None]
-            try:
-                present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
-            except TypeError:
-                present.sort(key=lambda row: str(canonical_record_value(row, term)), reverse=term.descending)
-            rows = present + missing
+            rows = _order_rows(rows, term, lambda row: canonical_record_value(row, term))
         if query.distinct:
             seen: set[tuple[Any, ...]] = set()
             distinct_rows: list[dict[str, Any]] = []
@@ -1385,13 +1384,7 @@ def _apply_composed_query(
     # through _apply_query_body(), because that would aggregate the UNION result a
     # second time rather than merely ordering/slicing it.
     for term in reversed(query.order_by):
-        present = [row for row in rows if canonical_record_value(row, term) is not None]
-        missing = [row for row in rows if canonical_record_value(row, term) is None]
-        try:
-            present.sort(key=lambda row: canonical_record_value(row, term), reverse=term.descending)
-        except TypeError:
-            present.sort(key=lambda row: str(canonical_record_value(row, term)), reverse=term.descending)
-        rows = present + missing
+        rows = _order_rows(rows, term, lambda row: canonical_record_value(row, term))
     if query.offset:
         rows = rows[query.offset :]
     if query.limit is not None:

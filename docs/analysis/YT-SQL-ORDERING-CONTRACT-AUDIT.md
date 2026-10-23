@@ -81,3 +81,9 @@ The current evidence supports compatible numeric comparison and exact Unicode te
 - Rust YT-SQL execution remains explicitly pending until there is an implementation and adapter to test.
 
 The agreed guarantees for unspecified order, tied keys and LIMIT/OFFSET are now recorded in `docs/YT-SQL.md`, and the CLI no longer advertises stable source-order tie-breaking. NULL-last placement is now documented for both sort directions. I still need to test the missing-metadata boundary and resolve mixed-type comparison, text ordering and portable assertions before admitting the first migration. This audit has not changed execution behaviour, the normative corpus or the provisional migration expectation.
+
+## Shared comparison implementation
+
+I replaced the four separate sorting loops with a single `_order_rows` helper. The change preserves NULL-last placement, per-term direction and the absence of a promised tie-breaker. It also removes the lexical fallback: values that Python cannot compare now raise a consistent `TypeError` across ordinary, aggregate, wrapper and compound paths. Numeric values continue to use numeric comparison; text continues to use Python's case-sensitive Unicode ordering.
+
+The earlier mixed-type baseline has been updated to test the shared rejection behaviour rather than preserve the old discrepancy. This is an evaluator-level step, not yet a portable conformance assertion. The remaining review should address resolved expression-type propagation, SQL NULL versus unavailable metadata, and the ordering assertions needed for the provisional `offset_limit` migration.

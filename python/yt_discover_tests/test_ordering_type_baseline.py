@@ -34,15 +34,10 @@ def test_null_values_sort_last_in_ascending_order(sql: str) -> None:
     assert [row["view_count"] for row in rows] == ([2, 2, 10, 10, None, None] if sql == COMPOUND else [2, 10, None])
 
 
-@pytest.mark.parametrize("sql", [ORDINARY, GROUPED, COMPOUND])
-def test_current_string_fallback_reorders_numeric_values(sql: str) -> None:
-    rows = _run(sql, (2, 10, "3"))
-    assert [row["view_count"] for row in rows] == ([10, 10, 2, 2, "3", "3"] if sql == COMPOUND else [10, 2, "3"])
-
-
-def test_current_wrapper_mixed_type_sort_raises_python_type_error() -> None:
-    with pytest.raises(TypeError):
-        _run(WRAPPED, (2, 10, "3"))
+@pytest.mark.parametrize("sql", [ORDINARY, GROUPED, WRAPPED, COMPOUND])
+def test_incompatible_ordering_values_are_rejected_consistently(sql: str) -> None:
+    with pytest.raises(TypeError, match="ORDER BY contains values that cannot be compared"):
+        _run(sql, (2, 10, "3"))
 
 
 @pytest.mark.parametrize("sql", [ORDINARY, GROUPED, WRAPPED, COMPOUND])
