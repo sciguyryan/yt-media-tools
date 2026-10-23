@@ -69,7 +69,9 @@ def inspect(case: Path, candidate_path: Path, *, root: Path = ROOT) -> dict[str,
         expected_path = case / "expected.json"
         if expected_path.exists() or expected_path.is_symlink():
             expected = _validate(_load(expected_path))
-            matches = outcomes_match(expected, observed, order=manifest["order"])
+            matches = outcomes_match(
+                expected, observed, order=manifest["order"], group_sizes=manifest.get("group_sizes")
+            )
         else:
             matches = None
         return {

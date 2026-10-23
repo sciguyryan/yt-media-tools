@@ -74,6 +74,7 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
             "parameters",
             "features",
             "execution",
+            "group_sizes",
         },
         str(directory),
     )
@@ -84,9 +85,14 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
         or re.fullmatch(r"[a-z][a-z0-9_.-]+", case_id) is None
         or manifest["query"] != "query.sql"
         or manifest["expected"] != "expected.json"
-        or manifest["order"] not in ("ordered", "unordered")
+        or manifest["order"] not in ("ordered", "unordered", "tied")
     ):
         raise CorpusError(f"{directory}: invalid case identity or contract version")
+    sizes = manifest.get("group_sizes")
+    if (manifest["order"] == "tied") != (sizes is not None):
+        raise CorpusError(f"{case_id}: tied ordering requires group_sizes; other modes forbid it")
+    if sizes is not None and (not isinstance(sizes, list) or any(type(size) is not int or size <= 0 for size in sizes)):
+        raise CorpusError(f"{case_id}: invalid tied-group partition")
     if (
         not isinstance(manifest["datasets"], list)
         or not manifest["datasets"]
@@ -136,6 +142,8 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
     )
     if type(result["version"]) is not int or result["version"] != 1:
         raise CorpusError(f"{case_id}: invalid expected-result version")
+    if sizes is not None and result["outcome"] != "rows":
+        raise CorpusError(f"{case_id}: tied ordering requires a rows outcome")
     if result["outcome"] == "rows":
         if (
             "error" in result
@@ -144,6 +152,8 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
             or not isinstance(result.get("rows"), list)
         ):
             raise CorpusError(f"{case_id}: invalid rows outcome")
+        if sizes is not None and sum(sizes) != len(result["rows"]):
+            raise CorpusError(f"{case_id}: tied-group sizes do not match expected rows")
         try:
             validate_values(result["rows"], len(result["columns"]))
         except TypedValueError as exc:

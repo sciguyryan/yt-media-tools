@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from diagnostics import DiagnosticError, diagnostics_match, validate_diagnostic
-from typed_values import TypedValueError, compare_rows, validate_values
+from typed_values import TypedValueError, compare_rows, compare_tied_groups, validate_values
 
 
 class OutcomeError(ValueError):
@@ -38,17 +38,26 @@ def _validate(value: object) -> dict[str, object]:
     return value
 
 
-def outcomes_match(expected: object, observed: object, *, order: str) -> bool:
+def outcomes_match(expected: object, observed: object, *, order: str, group_sizes: list[int] | None = None) -> bool:
     """Compare two validated outcomes; unexpected failures are not outcomes.
 
     The observed error must already have been classified as a language diagnostic
     by an implementation adapter. Never convert arbitrary exceptions to errors.
     """
-    if order not in ("ordered", "unordered"):
-        raise OutcomeError("order must be ordered or unordered")
+    if order not in ("ordered", "unordered", "tied"):
+        raise OutcomeError("order must be ordered, unordered or tied")
+    if (order == "tied") != (group_sizes is not None):
+        raise OutcomeError("tied ordering requires group_sizes; other modes forbid it")
     left, right = _validate(expected), _validate(observed)
     if left["outcome"] != right["outcome"]:
         return False
     if left["outcome"] == "error":
         return diagnostics_match(left["error"], right["error"])
-    return left["columns"] == right["columns"] and compare_rows(left["rows"], right["rows"], ordered=order == "ordered")
+    if left["columns"] != right["columns"]:
+        return False
+    if order == "tied":
+        try:
+            return compare_tied_groups(left["rows"], right["rows"], group_sizes=group_sizes)
+        except TypedValueError as exc:
+            raise OutcomeError(str(exc)) from exc
+    return compare_rows(left["rows"], right["rows"], ordered=order == "ordered")

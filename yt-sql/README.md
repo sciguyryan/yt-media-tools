@@ -258,3 +258,7 @@ The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Pyth
 ## Phase 7 migration proposals
 
 The `migration-proposals/` directory holds candidate translations of existing Python semantic tests. Proposals are deliberately outside `cases/` and cannot be run as approved conformance expectations. Each proposal identifies its source case and records a proposed result for independent review. Reviewers should check the source query, committed fixture and intended semantics before using the Phase 5 approval and admission workflow. Do not remove the original Python test merely because a proposal exists.
+
+## Tied ordering in portable cases
+
+A version 1 case may specify `"order": "tied"` with a `group_sizes` array. Each positive size describes a consecutive group of rows with equal complete `ORDER BY` keys. Groups remain ordered, but rows within each group compare as multisets, retaining duplicate multiplicity. The sizes must sum to the expected row count. The partition must be established from an independently reviewed analysis of the query and its input, not inferred from projected values or the implementation’s observed row sequence. `group_sizes` is forbidden for `ordered` and `unordered` cases. Tied ordering is valid only for row outcomes. This contract does not resolve a `LIMIT` or `OFFSET` boundary that cuts through a tied group; such cases require separate review and must not be admitted on this basis alone.

@@ -40,7 +40,8 @@
     "order": {
       "enum": [
         "ordered",
-        "unordered"
+        "unordered",
+        "tied"
       ]
     },
     "parameters": {
@@ -104,6 +105,14 @@
         }
       },
       "additionalProperties": false
+    },
+    "group_sizes": {
+      "type": "array",
+      "description": "Sizes of consecutive equal-ordering-key groups, established from independently reviewed ordering expressions.",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
     }
   },
   "additionalProperties": false,
@@ -172,5 +181,28 @@
         }
       ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "order": {
+            "const": "tied"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "group_sizes"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "group_sizes"
+          ]
+        }
+      }
+    }
+  ]
 }

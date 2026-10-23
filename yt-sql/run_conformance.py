@@ -50,7 +50,7 @@ def run(
         try:
             expected = _load(case / "expected.json")
             actual = observe(case, configuration, root)
-            matches = outcomes_match(expected, actual, order=manifest["order"])
+            matches = outcomes_match(expected, actual, order=manifest["order"], group_sizes=manifest.get("group_sizes"))
             status = "pass" if matches else "fail"
             detail = "" if matches else "observed outcome differs from approved expectation"
         except (KeyboardInterrupt, SystemExit):
