@@ -26,7 +26,7 @@ yt-download.py                    Root Downloader compatibility launcher
 run-tests.py                      Unified Python and Rust test runner
 defaults.json                     Shared Downloader defaults
 docs/                             Tool documentation, changelogs and project notes
-yt-sql/                           Shared yt-sql conformance corpus (not yet created)
+yt-sql/                           Shared yt-sql conformance corpus
 ```
 
 `common/sqlite/statements/` is the single maintained source for extracted SQLite queries. The Python adapter loads those resources directly. SQLite schema ownership, connection configuration, transactions and migration finalisation remain with their respective tools.

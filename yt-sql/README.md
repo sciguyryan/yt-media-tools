@@ -8,7 +8,7 @@ The committed `python-v6-small` and `python-v6-normal` fixtures contain portable
 
 Every case defaults to passing. `expectations/python.json` and `expectations/rust.json` may record justified implementation-specific `xfail` entries, including a reason and preferably an issue. An unexpected pass (XPASS) must fail the suite. A known failure must match its recorded failure category; an unrelated crash must not count as XFAIL. A query expected to produce a language error is **not** an xfail.
 
-The first case is a format/semantics proof only. It must not replace the existing independent Python oracle or other language tests. Before enabling production execution, freeze the portable dataset representation, numeric and temporal encodings, source/facet identity, ordered and multiset comparison, and diagnostic taxonomy. Do not use production engine output to author expected results without independent review.
+The initial approved case establishes a narrow conformance baseline, not comprehensive language coverage. Existing independent Python oracle tests and other language tests remain in place until equivalent coverage has been reviewed. Portable fixtures, typed encodings, source/facet identity, result comparison and diagnostic categories are governed by the contracts below. Production output must not be used to author normative expectations without independent semantic review.
 
 The existing test and dataset audit is in `EXISTING-TEST-INVENTORY.json`. Python test removal is explicitly deferred until each migrated case is proven equivalent and implementation-specific assertions are retained. Parallel execution should use pytest-xdist with isolated cache and temporary state per worker.
 
@@ -29,7 +29,7 @@ python yt-sql/build_language_element_registry.py
 python yt-sql/build_language_element_registry.py --check
 ```
 
-The minimum approved-case CI gate will be activated after the normative corpus is populated. No generated candidate output counts as approved coverage without review.
+The approved-case CI gate runs the committed normative corpus through the Python conformance adapter. Generated candidate output does not count as approved coverage without independent review.
 
 ### Lexical and semantic rejection discovery
 
@@ -222,13 +222,13 @@ After generating an observation, stage it with `--configuration`, obtain a separ
 
 Reviewers must establish the semantics independently. Successful Python execution and reproducibility are not sufficient grounds for approval. Keep provisional cases out of committed normative corpus changes until their expectation has been admitted and corpus validation succeeds.
 
-### Phase 5 final reconciliation and review
+### Approval safeguards and limitations
 
-Admission and replacement use the same approval-evidence validator, which checks the current candidate preflight, exact candidate digest, review decision and verified configuration provenance. Both operations remain explicit and retain their distinct file-safety rules. Review records are unsigned attestations; a reviewer must verify semantics independently rather than merely accepting Python output. No case is admitted or expectation replaced as part of this reconciliation.
+Admission and replacement use the same approval-evidence validator, which checks the current candidate preflight, exact candidate digest, review decision and verified configuration provenance. Both operations remain explicit and retain their distinct file-safety rules. Review records are unsigned attestations; a reviewer must verify semantics independently rather than merely accepting Python output. Admission and replacement are separate, explicitly authorised operations.
 
-The current workflow is deliberately local and file-based. It does not provide a multi-file crash transaction, signed reviewer identity, automatic recovery of stale artefacts or cross-implementation certification. Keep the candidate and review record as external audit evidence, inspect interrupted operations manually and rerun corpus validation after admission or replacement. Phase 6 will consume approved expectations without treating candidate execution as the oracle.
+The current workflow is deliberately local and file-based. It does not provide a multi-file crash transaction, signed reviewer identity, automatic recovery of stale artefacts or cross-implementation certification. Keep the candidate and review record as external audit evidence, inspect interrupted operations manually and rerun corpus validation after admission or replacement. The permanent conformance runner consumes approved expectations without treating candidate execution as the oracle.
 
-## Phase 6 permanent conformance runner
+## Permanent conformance runner
 
 `run_conformance.py` compares each committed `expected.json` against an implementation observation. It never reads staged candidates or review records as an oracle. The initial adapter is Python, registered explicitly in `conformance_adapters.py`; requesting an unregistered implementation fails closed. Adapters produce observations only and do not own approved expectations. The command returns exit status 0 only when every case passes or has an explicitly supported known outcome mismatch. It returns 1 for failures, infrastructure errors and unexpected passes, and 2 for invalid setup.
 
@@ -237,7 +237,7 @@ python yt-sql/run_conformance.py
 python yt-sql/run_conformance.py --json
 ```
 
-Reports distinguish `pass`, `fail`, `error`, `xfail` and `xpass`. An adapter exception is always an infrastructure error, even for a case marked XFAIL. The initial XFAIL support is restricted to the explicit `outcome-mismatch` category; other categories cannot silently excuse a mismatch. The `--configuration` option selects one named configuration for every case, so it is suitable only where that configuration exists in each case. Multiple-configuration scheduling, Rust execution, isolated subprocess execution and richer failure classification remain future Phase 6 work.
+Reports distinguish `pass`, `fail`, `error`, `xfail` and `xpass`. An adapter exception is always an infrastructure error, even for a case marked XFAIL. The initial XFAIL support is restricted to the explicit `outcome-mismatch` category; other categories cannot silently excuse a mismatch. The `--configuration` option selects one named configuration for every case, so it is suitable only where that configuration exists in each case. Multiple-configuration scheduling, Rust execution, isolated subprocess execution and richer failure classification remain outside the current runner.
 
 Exact case selection is available with repeatable `--case ID` arguments, and `--list-cases` lists approved case IDs without executing an adapter. Selected cases are deduplicated and run in case-ID order for stable output; an unknown case ID is a setup error. The entire corpus is still validated before selection, so filtering cannot hide malformed normative cases or expectation manifests.
 
@@ -249,4 +249,4 @@ The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Pyth
 
 ### Versioned report validation
 
-`validate_report.py REPORT` validates a saved version 1 conformance report without executing an implementation adapter or consulting staged candidates. It rejects malformed JSON, duplicate object keys, unknown fields or statuses, unsorted or repeated case IDs, invalid types and inconsistent status counts. The permanent runner validates the same contract before publishing its results. This is a structural integrity check, not independent certification of the observed semantics or authenticity of a report. Generated reports remain diagnostic evidence rather than normative expectations.
+`python yt-sql/validate_report.py REPORT` validates a saved version 1 conformance report without executing an implementation adapter or consulting staged candidates. It rejects malformed JSON, duplicate object keys, unknown fields or statuses, unsorted or repeated case IDs, invalid types and inconsistent status counts. The permanent runner validates the same contract before publishing its results. This is a structural integrity check, not independent certification of the observed semantics or authenticity of a report. Generated reports remain diagnostic evidence rather than normative expectations.
