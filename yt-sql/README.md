@@ -245,7 +245,7 @@ For CI and other automated consumers, `--report-file PATH` writes the same deter
 
 ### Continuous integration
 
-The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Python conformance corpus on pushes and pull requests. It retains the harness exit status as the CI gate and uploads `conformance-python.json` as a generated diagnostic artefact when a completed run has produced one, including on conformance failures. The report is not a normative expectation and must not be used to approve candidate results. Rust execution remains outside this workflow until its independent adapter is implemented.
+The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Python conformance corpus on pushes and pull requests. It retains the harness exit status as the CI gate and uploads `conformance-python.json` as a generated diagnostic artefact when a completed run has produced one, including on conformance failures. The workflow also validates any generated report against the version 1 structural contract, including when the conformance run fails. If execution fails before a report exists, this validation step records that absence without concealing the original failure. The report is not a normative expectation and must not be used to approve candidate results. Rust execution remains outside this workflow until its independent adapter is implemented.
 
 ### Versioned report validation
 

@@ -483,6 +483,7 @@
     "python/yt_discover_tests/test_portable_candidate_promotion.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_candidate_review.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_candidate_staging.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_portable_ci_report_workflow.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_conformance_harness.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_contract_reconciliation.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_corpus_contract.py": "retain: implementation/integration pending review",

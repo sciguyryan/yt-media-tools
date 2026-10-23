@@ -18,6 +18,14 @@ jobs:
           python-version: '3.12'
       - name: Check approved portable conformance
         run: python yt-sql/run_conformance.py --implementation python --report-file conformance-python.json
+      - name: Validate generated conformance report
+        if: always()
+        run: |
+          if [ -f conformance-python.json ]; then
+            python yt-sql/validate_report.py conformance-python.json
+          else
+            echo "No conformance report was generated (execution or setup may have failed)."
+          fi
       - name: Preserve conformance report
         if: always()
         uses: actions/upload-artifact@v4
