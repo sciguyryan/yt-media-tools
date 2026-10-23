@@ -32,6 +32,16 @@ If `SELECT` is omitted, yt-discover behaves as though `SELECT id` had been reque
 
 The canonical formatter emits clauses only in the order shown above, omits absent clauses, emits `LIMIT` before `OFFSET` when both are present, and does not preserve rejected alternative orderings.
 
+### Result ordering and row selection
+
+Without `ORDER BY`, yt-sql does not guarantee the order of result rows. An implementation's observed acquisition or evaluation order does not establish an ordering guarantee. `DISTINCT`, grouping and set composition do not impose an implicit result order. The outer query must specify an applicable `ORDER BY` when the order of its result rows matters.
+
+`ORDER BY` evaluates its ordering expressions in the specified sequence and applies each `ASC` or `DESC` direction. Rows whose complete ordering-key tuples compare equal have no guaranteed relative order. yt-sql does not apply an implicit tie-breaker based on `id`, source position or any other hidden value.
+
+`LIMIT` and `OFFSET` restrict the number of rows returned and the portion of the result sequence selected. Neither clause establishes an ordering guarantee. Without `ORDER BY`, the particular rows selected are unspecified. With `ORDER BY`, row selection is deterministic only where the specified ordering keys distinguish rows at the relevant slice boundaries. A boundary within a group of equal ordering keys permits different selections from that group.
+
+For deterministic row selection and a fully specified output sequence, the query must provide ordering keys that distinguish the relevant result rows. For example, `ORDER BY view_count DESC, id ASC LIMIT 5 OFFSET 3` defines a reproducible slice if `id` uniquely distinguishes rows in the result relation. `ORDER BY view_count DESC LIMIT 5 OFFSET 3` may leave the selection ambiguous. Uniqueness must hold in the result relation; an identifier unique within one source is not necessarily unique after a join or set composition.
+
 Current predicates include `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `IS DISTINCT FROM`, `IS NOT DISTINCT FROM`, `BETWEEN`, `IN`, `IS NULL`, `IS TRUE`, `IS NOT TRUE`, `IS FALSE`, `IS NOT FALSE`, `IS UNKNOWN`, `IS NOT UNKNOWN`, `CONTAINS`, `MATCHES`, `LIKE`, `ILIKE`, Boolean `AND`, `OR`, and `NOT`, and parentheses. yt-sql uses SQL-like three-valued NULL logic for ordinary comparisons. `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` are NULL-safe comparisons and always return TRUE or FALSE: two NULL operands are not distinct, while exactly one NULL operand is distinct.
 
 ### Observable Boolean evaluation
@@ -366,7 +376,7 @@ Source resolution is deliberately layered. A physical source is classified first
 
 yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`, and `MAX(expr)`. `COUNT(expr)` ignores NULL and returns zero when no non-NULL value exists. `SUM`, `AVG`, `MIN`, and `MAX` ignore NULL and return NULL when no non-NULL input remains. `SUM` and `AVG` require numeric expressions; `MIN` and `MAX` use the ordinary resolved scalar ordering, including exact normalisation-sensitive Unicode ordering for text.
 
-`GROUP BY` accepts non-aggregate scalar expressions. NULL keys group together, text keys are not normalised or case-folded, and groups retain first-source-occurrence order unless an explicit `ORDER BY` is present. Non-aggregate projected or ordered expressions in an aggregate query must match a grouping expression. Nested aggregates and `SELECT *` in aggregate queries are rejected.
+`GROUP BY` accepts non-aggregate scalar expressions. NULL keys group together, text keys are not normalised or case-folded, and group output has no guaranteed order without an explicit `ORDER BY`, even if the current evaluator constructs groups in first-encounter order. Non-aggregate projected or ordered expressions in an aggregate query must match a grouping expression. Nested aggregates and `SELECT *` in aggregate queries are rejected.
 
 `HAVING` provides aggregate-aware comparisons after grouping, including explicit SELECT aggregate aliases, NULL-safe `IS DISTINCT FROM` / `IS NOT DISTINCT FROM`, Boolean `AND`/`OR`/`NOT`, parentheses, and `IS NULL`/`IS NOT NULL`. Aggregate `FILTER (WHERE predicate)` uses the ordinary row-predicate language and applies only to its aggregate after the query-level WHERE filter.
 

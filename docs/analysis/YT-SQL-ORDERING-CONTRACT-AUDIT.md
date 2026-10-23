@@ -21,7 +21,7 @@ This matters to the shared tests. When a test requires an exact sequence, its qu
 | Portable comparison | `yt-sql/compare_outcomes.py` supports `ordered` and `unordered`; `yt-sql/typed_values.py` uses positional comparison or a `Counter` multiset comparison. | Neither mode proves that a partially ordered result respects its sort keys. We need a dedicated assertion design. |
 | First migration | `yt-sql/migration-proposals/offset_limit/query.sql` uses `ORDER BY view_count DESC LIMIT 5 OFFSET 3`; the review records ties. | The proposed exact result is ambiguous. I would add a unique secondary key, recalculate the expected rows independently and review it before admission. |
 | Rust | I could not identify a Rust YT-SQL parser, evaluator or Discover execution adapter under `rust/crates/`; the Rust downloader's ordering is unrelated. | Rust YT-SQL parity is not testable in this tree. It should remain pending, rather than being described as passing or failing. |
-| CLI help | `python/yt_media_tools/discover_cli.py` advertises “stable source-order tie-breaking”. | That wording contradicts our agreed direction and needs to change once the language contract is approved. |
+| CLI help | `python/yt_media_tools/discover_cli.py` advertises “stable source-order tie-breaking”. | The wording is corrected in the first ordering-contract documentation increment; the sort implementation itself is unchanged. |
 
 ## Decisions I want to settle before changing the evaluator
 
@@ -44,4 +44,4 @@ This matters to the shared tests. When a test requires an exact sequence, its qu
 - We have made `offset_limit` unambiguous and independently reviewed its expected result before admitting it.
 - Rust YT-SQL execution remains explicitly pending until there is an implementation and adapter to test.
 
-For now, this document records what I found and what I still need to prove. It does not change execution behaviour, the normative corpus or the provisional migration expectation.
+The agreed guarantees for unspecified order, tied keys and LIMIT/OFFSET are now recorded in `docs/YT-SQL.md`, and the CLI no longer advertises stable source-order tie-breaking. I still need to resolve NULL placement, mixed-type comparison, text ordering and portable assertions before admitting the first migration. This audit has not changed execution behaviour, the normative corpus or the provisional migration expectation.

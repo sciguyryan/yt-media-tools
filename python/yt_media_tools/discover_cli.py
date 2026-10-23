@@ -207,7 +207,7 @@ Examples:
 
   Ordering, reversal, and limits
   -----------------------------
-  ORDER BY supports multiple fields and stable source-order tie-breaking:
+  ORDER BY supports multiple fields. Equal-key rows have no guaranteed relative order:
     yt-discover.py "SELECT id, title, views FROM @example WHERE views >= 10k ORDER BY upload_date DESC, views DESC LIMIT 100"
 
   Missing ORDER BY values are always placed last. BETWEEN is inclusive.
