@@ -1,0 +1,27 @@
+name: YT-SQL portable conformance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check approved portable conformance
+        run: python yt-sql/run_conformance.py --implementation python --report-file conformance-python.json
+      - name: Preserve conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ytsql-python-conformance
+          path: conformance-python.json
+          if-no-files-found: ignore

@@ -242,3 +242,7 @@ Reports distinguish `pass`, `fail`, `error`, `xfail` and `xpass`. An adapter exc
 Exact case selection is available with repeatable `--case ID` arguments, and `--list-cases` lists approved case IDs without executing an adapter. Selected cases are deduplicated and run in case-ID order for stable output; an unknown case ID is a setup error. The entire corpus is still validated before selection, so filtering cannot hide malformed normative cases or expectation manifests.
 
 For CI and other automated consumers, `--report-file PATH` writes the same deterministic JSON report to a file using atomic replacement. It is independent of `--json`, so the normal human-readable console output can be retained while saving a machine-readable result. Reports are written for completed conformance runs even when cases fail; invalid setup does not produce a new report. The destination directory must already exist. Report files are generated evidence, not approved expectations, and should not be committed to the normative corpus.
+
+### Continuous integration
+
+The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Python conformance corpus on pushes and pull requests. It retains the harness exit status as the CI gate and uploads `conformance-python.json` as a generated diagnostic artefact when a completed run has produced one, including on conformance failures. The report is not a normative expectation and must not be used to approve candidate results. Rust execution remains outside this workflow until its independent adapter is implemented.
