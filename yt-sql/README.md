@@ -246,3 +246,7 @@ For CI and other automated consumers, `--report-file PATH` writes the same deter
 ### Continuous integration
 
 The `YT-SQL portable conformance` GitHub Actions workflow runs the approved Python conformance corpus on pushes and pull requests. It retains the harness exit status as the CI gate and uploads `conformance-python.json` as a generated diagnostic artefact when a completed run has produced one, including on conformance failures. The report is not a normative expectation and must not be used to approve candidate results. Rust execution remains outside this workflow until its independent adapter is implemented.
+
+### Versioned report validation
+
+`validate_report.py REPORT` validates a saved version 1 conformance report without executing an implementation adapter or consulting staged candidates. It rejects malformed JSON, duplicate object keys, unknown fields or statuses, unsorted or repeated case IDs, invalid types and inconsistent status counts. The permanent runner validates the same contract before publishing its results. This is a structural integrity check, not independent certification of the observed semantics or authenticity of a report. Generated reports remain diagnostic evidence rather than normative expectations.

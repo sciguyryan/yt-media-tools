@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "implementation": "python",
+  "configuration": "default",
+  "results": [
+    {
+      "id": "smoke.source_order_limit",
+      "status": "pass",
+      "detail": ""
+    }
+  ],
+  "counts": {
+    "pass": 1,
+    "fail": 0,
+    "error": 0,
+    "xfail": 0,
+    "xpass": 0
+  }
+}

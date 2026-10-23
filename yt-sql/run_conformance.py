@@ -11,6 +11,7 @@ from pathlib import Path
 from compare_outcomes import outcomes_match
 from conformance_adapters import resolve
 from validate_corpus import ROOT, CorpusError, _load, validate_corpus
+from validate_report import validate_report
 
 
 class HarnessError(ValueError):
@@ -69,15 +70,17 @@ def run(
             else:
                 detail = "XFAIL mismatch category is not supported by this harness"
         results.append({"id": case_id, "status": status, "detail": detail})
-    return {
-        "version": 1,
-        "implementation": implementation,
-        "configuration": configuration,
-        "results": results,
-        "counts": {
-            name: sum(r["status"] == name for r in results) for name in ("pass", "fail", "error", "xfail", "xpass")
-        },
-    }
+    return validate_report(
+        {
+            "version": 1,
+            "implementation": implementation,
+            "configuration": configuration,
+            "results": results,
+            "counts": {
+                name: sum(r["status"] == name for r in results) for name in ("pass", "fail", "error", "xfail", "xpass")
+            },
+        }
+    )
 
 
 def write_report(destination: Path, report: dict[str, object]) -> None:
