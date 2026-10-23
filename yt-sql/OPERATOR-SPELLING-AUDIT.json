@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "status": "lexical_evidence_only_not_normative_coverage",
+  "symbolic_lexer_spellings": [
+    {
+      "spelling": "<=",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": ">=",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": "!=",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": "<>",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": "=",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": "<",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": ">",
+      "token_kind": "OP"
+    },
+    {
+      "spelling": "*",
+      "token_kind": "STAR"
+    },
+    {
+      "spelling": "+",
+      "token_kind": "PLUS"
+    },
+    {
+      "spelling": "-",
+      "token_kind": "MINUS"
+    },
+    {
+      "spelling": "/",
+      "token_kind": "SLASH"
+    },
+    {
+      "spelling": "%",
+      "token_kind": "PERCENT"
+    }
+  ],
+  "alias_probes": [
+    {
+      "spelling": "&&",
+      "lexed_as_single_token": false,
+      "token_kind": null
+    },
+    {
+      "spelling": "||",
+      "lexed_as_single_token": false,
+      "token_kind": null
+    },
+    {
+      "spelling": "!",
+      "lexed_as_single_token": false,
+      "token_kind": null
+    },
+    {
+      "spelling": "==",
+      "lexed_as_single_token": false,
+      "token_kind": null
+    },
+    {
+      "spelling": "!=",
+      "lexed_as_single_token": true,
+      "token_kind": "OP"
+    },
+    {
+      "spelling": "<>",
+      "lexed_as_single_token": true,
+      "token_kind": "OP"
+    }
+  ],
+  "registered_operator_and_alias_spellings": [
+    "!=",
+    "%",
+    "*",
+    "+",
+    "-",
+    "/",
+    "<",
+    "<=",
+    "<>",
+    "=",
+    ">",
+    ">="
+  ],
+  "lexed_symbolic_spellings_without_registry_entry": [],
+  "registered_spellings_not_in_symbolic_lexer_inventory": [],
+  "review_requirements": [
+    "Distinguish arithmetic and comparison operators from punctuation and wildcard usage in parser context.",
+    "Audit textual AND, OR, NOT, IS, IN, BETWEEN, LIKE, ILIKE and other predicate forms separately.",
+    "A lexical match alone does not prove a valid grammar construct or operator alias.",
+    "Do not register && or || as supported aliases without evidence from the actual hand-written parser.",
+    "Add reviewed positive, negative, boundary and interaction tests before granting conformance credit."
+  ]
+}

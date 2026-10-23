@@ -1,0 +1,1 @@
+INSERT INTO collection_observations (collection_id, fingerprint_version, sequence_fingerprint, target_count) VALUES (?, ?, ?, ?) ON CONFLICT (collection_id) DO UPDATE SET fingerprint_version = excluded.fingerprint_version, sequence_fingerprint = excluded.sequence_fingerprint, target_count = excluded.target_count, observed_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now');

@@ -1,0 +1,268 @@
+{
+  "version": 1,
+  "status": "source_review_provisional_not_normative_coverage",
+  "keyword_candidates": [
+    {
+      "word": "ALL",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_query"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "BETWEEN",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "CASE",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_scalar_case"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "CONTAIN",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "CONTAINS",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "CROSS",
+      "classification": "recognised_unsupported_form",
+      "parser_methods": [
+        "parse_join_clause"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "DOES",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "ELSE",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_scalar_case"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "END",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_scalar_case"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "FALSE",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "FILTER",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_scalar_function"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "FULL",
+      "classification": "recognised_unsupported_form",
+      "parser_methods": [
+        "parse_join_clause"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "ILIKE",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "MATCH",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "MATCHES",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "NATURAL",
+      "classification": "recognised_unsupported_form",
+      "parser_methods": [
+        "parse_join_clause"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "NULL",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_having_predicate",
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "OF",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_relation_references"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "OUTER",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_join_clause"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "RECURSIVE",
+      "classification": "recognised_unsupported_form",
+      "parser_methods": [
+        "parse_query"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "RIGHT",
+      "classification": "recognised_unsupported_form",
+      "parser_methods": [
+        "parse_join_clause"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "THEN",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_scalar_case"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "TRUE",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_predicate"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    },
+    {
+      "word": "WHEN",
+      "classification": "supported_syntax_candidate",
+      "parser_methods": [
+        "parse_scalar_case"
+      ],
+      "approved_case_ids": [],
+      "semantic_review": "pending"
+    }
+  ],
+  "token_candidates": [
+    {
+      "token": "LPAREN",
+      "role": "opening parenthesis",
+      "parser_methods": [
+        "parse_collection_predicate",
+        "parse_predicate",
+        "parse_query",
+        "parse_scalar_function"
+      ],
+      "classification": "structural_token_not_language_keyword",
+      "approved_case_ids": []
+    },
+    {
+      "token": "RBRACKET",
+      "role": "closing bracket",
+      "parser_methods": [
+        "parse_scalar_postfix"
+      ],
+      "classification": "structural_token_not_language_keyword",
+      "approved_case_ids": []
+    },
+    {
+      "token": "RPAREN",
+      "role": "closing parenthesis",
+      "parser_methods": [
+        "parse_collection_predicate",
+        "parse_having_not",
+        "parse_predicate",
+        "parse_primary",
+        "parse_query",
+        "parse_relation_references",
+        "parse_scalar_atom",
+        "parse_scalar_function"
+      ],
+      "classification": "structural_token_not_language_keyword",
+      "approved_case_ids": []
+    }
+  ],
+  "next_actions": [
+    "Verify supported candidates against complete parser and evaluator semantics before adding curated registry entries.",
+    "Keep unsupported forms as explicit negative-test requirements rather than supported-feature registrations.",
+    "Review aliases and operator spellings from the lexer independently of keyword-call discovery.",
+    "Do not credit source classifications or existing Python cases as approved portable conformance tests."
+  ]
+}

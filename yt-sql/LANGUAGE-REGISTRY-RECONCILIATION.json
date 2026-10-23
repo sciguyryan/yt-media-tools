@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "status": "reviewed_source_classification_not_approved_conformance",
+  "supported_keyword_entries_to_add": [
+    "ALL",
+    "BETWEEN",
+    "CASE",
+    "CONTAIN",
+    "CONTAINS",
+    "DOES",
+    "ELSE",
+    "END",
+    "FALSE",
+    "FILTER",
+    "ILIKE",
+    "MATCH",
+    "MATCHES",
+    "NULL",
+    "OF",
+    "OUTER",
+    "THEN",
+    "TRUE",
+    "WHEN"
+  ],
+  "symbolic_operator_entries_to_add": [
+    "%",
+    "*",
+    "+",
+    "-",
+    "/"
+  ],
+  "recognised_unsupported_forms": [
+    "CROSS",
+    "FULL",
+    "NATURAL",
+    "RECURSIVE",
+    "RIGHT"
+  ],
+  "notes": [
+    "These entries reflect parser-source classification only; semantic behaviour and test expectations remain unverified.",
+    "The asterisk has both multiplication and wildcard uses and requires separate conformance cases.",
+    "Unsupported forms require negative cases and must not be registered as supported keywords.",
+    "Unrecognised operator aliases such as && and || must not be registered as supported."
+  ]
+}

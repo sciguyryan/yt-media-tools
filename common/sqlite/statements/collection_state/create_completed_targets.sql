@@ -1,0 +1,1 @@
+CREATE TABLE completed_targets (collection_id TEXT NOT NULL, target_id TEXT NOT NULL, completed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), PRIMARY KEY (collection_id, target_id));

@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "status": "source_evidence_provisional_not_normative_coverage",
+  "families": [
+    {
+      "name": "boolean_connectives",
+      "words": [
+        {
+          "spelling": "AND",
+          "parser_methods": [
+            "_at_expression_boundary",
+            "parse_and",
+            "parse_having_and",
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "OR",
+          "parser_methods": [
+            "_at_expression_boundary",
+            "parse_having_or",
+            "parse_or"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "NOT",
+          "parser_methods": [
+            "_parse_having_truth_test_suffix",
+            "_parse_truth_test_suffix",
+            "parse_having_not",
+            "parse_having_predicate",
+            "parse_not",
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        }
+      ]
+    },
+    {
+      "name": "negated_text_predicates",
+      "words": [
+        {
+          "spelling": "DOES",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "NOT",
+          "parser_methods": [
+            "_parse_having_truth_test_suffix",
+            "_parse_truth_test_suffix",
+            "parse_having_not",
+            "parse_having_predicate",
+            "parse_not",
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        }
+      ]
+    },
+    {
+      "name": "null_and_truth_tests",
+      "words": [
+        {
+          "spelling": "IS",
+          "parser_methods": [
+            "_parse_having_truth_test_suffix",
+            "_parse_truth_test_suffix",
+            "parse_having_predicate",
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "NULL",
+          "parser_methods": [
+            "parse_having_predicate",
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "TRUE",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "FALSE",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "UNKNOWN",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "DISTINCT",
+          "parser_methods": [
+            "parse_having_predicate",
+            "parse_predicate",
+            "parse_query"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        }
+      ]
+    },
+    {
+      "name": "range_and_membership",
+      "words": [
+        {
+          "spelling": "BETWEEN",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "IN",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        }
+      ]
+    },
+    {
+      "name": "text_matching",
+      "words": [
+        {
+          "spelling": "LIKE",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "ILIKE",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "CONTAIN",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "CONTAINS",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "MATCH",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        },
+        {
+          "spelling": "MATCHES",
+          "parser_methods": [
+            "parse_predicate"
+          ],
+          "keyword_registry_entry": true,
+          "approved_case_ids": [],
+          "semantic_review": "pending"
+        }
+      ]
+    }
+  ],
+  "unregistered_predicate_keyword_spellings": [],
+  "review_requirements": [
+    "Review each textual spelling and grammatical context before editing the curated language registry.",
+    "Distinguish standalone Boolean connectives from AND within BETWEEN and NOT within compound predicates.",
+    "Verify alternative text-predicate spellings and their negated forms independently.",
+    "Cover IS [NOT] NULL, truth tests, DISTINCT FROM, BETWEEN and IN with positive and negative cases.",
+    "Do not credit lexical or parser-call evidence as approved conformance coverage."
+  ]
+}

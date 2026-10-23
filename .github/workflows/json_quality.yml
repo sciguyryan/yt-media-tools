@@ -1,0 +1,27 @@
+name: JSON quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  json-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check JSON syntax, Unicode and formatting
+        run: python scripts/json_quality.py
+      - name: Verify generated YT-SQL JSON artefacts
+        run: |
+          python yt-sql/export_portable_dataset.py --check
+          python yt-sql/export_portable_topology.py --check
+          python yt-sql/export_portable_facets.py --check
+          python yt-sql/build_coverage_inventory.py --check
+          python yt-sql/build_unicode_fixture_audit.py --check

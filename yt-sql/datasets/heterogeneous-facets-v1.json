@@ -1,0 +1,148 @@
+{
+  "facets": [
+    {
+      "name": "videos",
+      "record_indices": [
+        0,
+        1
+      ],
+      "source": "@youtube_channel"
+    },
+    {
+      "name": "shorts",
+      "record_indices": [],
+      "source": "@youtube_channel"
+    },
+    {
+      "name": "videos",
+      "record_indices": [
+        2,
+        3
+      ],
+      "source": "@youtube_playlist"
+    },
+    {
+      "name": "live",
+      "record_indices": [],
+      "source": "@youtube_playlist"
+    },
+    {
+      "name": "videos",
+      "record_indices": [],
+      "source": "@twitch_archive"
+    },
+    {
+      "name": "streams",
+      "record_indices": [
+        4,
+        5
+      ],
+      "source": "@twitch_archive"
+    }
+  ],
+  "id": "heterogeneous-facets-v1",
+  "kind": "facet-topology",
+  "provenance": {
+    "source_dataset": "heterogeneous-sources-v1"
+  },
+  "record_count": 6,
+  "record_digest_sha256": "2be48c251b84ee9cd64633df219a09a86609c852f5df2a55e6a824dd8f91e5a6",
+  "records": [
+    {
+      "_yt_sql_source": "@youtube_channel",
+      "duration": 210,
+      "extractor_value": 7,
+      "id": "yt-channel-1",
+      "playlist_index": null,
+      "release_timestamp": 1788278400,
+      "title": "AMV Σ",
+      "upload_date": "20260901",
+      "uploader": "Channel A",
+      "view_count": 1200
+    },
+    {
+      "_yt_sql_source": "@youtube_channel",
+      "duration": null,
+      "extractor_value": 8,
+      "id": "yt-channel-2",
+      "playlist_index": null,
+      "release_timestamp": 1788364800,
+      "title": "AMV é",
+      "upload_date": "20260902",
+      "uploader": "Channel A",
+      "view_count": 800
+    },
+    {
+      "_yt_sql_source": "@youtube_playlist",
+      "duration": 180,
+      "extractor_value": 9,
+      "id": "yt-playlist-1",
+      "playlist_index": 1,
+      "release_timestamp": null,
+      "title": "AMV é",
+      "upload_date": "20260903",
+      "uploader": "Channel B",
+      "view_count": 800
+    },
+    {
+      "_yt_sql_source": "@youtube_playlist",
+      "duration": 90,
+      "extractor_value": 10,
+      "id": "shared-id",
+      "playlist_index": 2,
+      "release_timestamp": null,
+      "title": "Shared",
+      "upload_date": "20260904",
+      "uploader": "Channel B",
+      "view_count": 50
+    },
+    {
+      "_yt_sql_source": "@twitch_archive",
+      "duration": 3600,
+      "extractor_value": "seven",
+      "id": "twitch-1",
+      "playlist_index": null,
+      "release_timestamp": 1788537600,
+      "title": "AMV stream",
+      "upload_date": null,
+      "uploader": "Streamer",
+      "view_count": null
+    },
+    {
+      "_yt_sql_source": "@twitch_archive",
+      "duration": 90,
+      "extractor_value": "ten",
+      "id": "shared-id",
+      "playlist_index": null,
+      "release_timestamp": 1788624000,
+      "title": "Shared",
+      "upload_date": null,
+      "uploader": "Streamer",
+      "view_count": null
+    }
+  ],
+  "sources": [
+    {
+      "handle": "@youtube_channel",
+      "record_indices": [
+        0,
+        1
+      ]
+    },
+    {
+      "handle": "@youtube_playlist",
+      "record_indices": [
+        2,
+        3
+      ]
+    },
+    {
+      "handle": "@twitch_archive",
+      "record_indices": [
+        4,
+        5
+      ]
+    }
+  ],
+  "version": 1
+}

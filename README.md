@@ -11,35 +11,25 @@ The tools remain independently useful, but are deliberately designed to compose 
 ./yt-discover.py   "SELECT id FROM @SomeChannel WHERE upload_date >= TODAY()-6mo ORDER BY upload_date ASC" | ./yt-download.py -
 ```
 
+## Repository organisation
+
+Python and Rust are maintained as independent implementations in `python/` and `rust/`. The root command-line scripts remain compatibility entry points. The shared SQLite statement library is in `common/sqlite/`, separate from the future root `yt-sql/` yt-sql conformance corpus. See [shared SQLite guidance](common/sqlite/README.md) and [the restructuring roadmap](docs/RESTRUCTURE-AND-CONFORMANCE-ROADMAP.md).
+
 ## Repository layout
 
 ```text
-yt-discover.py                    Discover command-line application
-yt-download.py                    Downloader command-line application
-yt_media_tools/                   Shared/internal Python package
-defaults.json                     Downloader profiles
-yt_discover_tests/                Discover test suite
-yt_downloader_tests/              Downloader test suite
-yt_media_tools_tests/             Shared internal-package test suite
-docs/                             Project documentation
-docs/DISCOVER-README.md           Discover documentation
-docs/DOWNLOADER-README.md         Downloader documentation
-docs/DISCOVER-FUTURE-WORK.md      Planned Discover language and capability programme
-docs/DOWNLOADER-FUTURE-WORK.md    Planned Downloader architecture and capability programme
-docs/YT-SQL.md                    yt-sql language reference
-docs/YT-SQL-OPTIMISATION.md       yt-sql optimisation strategy
-docs/PERFORMANCE.md               Performance testing and regression policy
-docs/TODO.md                      Accepted future work and design directions
-docs/roadmap/                     Living Discover version-series roadmaps
-pytest.ini                        Combined test discovery configuration
-run-tests.py                      Routine test-suite entry point
-benchmark.py                      Performance benchmark entry point
-benchmarks/                       Deterministic performance benchmark implementation
-experiments/                      Isolated experimental implementations not used by production paths
-scripts/                          Repository-level development and quality-gate helpers
+python/                           Python implementation, tests and benchmarks
+rust/                             Rust workspace and tests
+common/sqlite/                    Canonical SQLite statements and SQLFluff requirements
+yt-discover.py                    Root Discover compatibility launcher
+yt-download.py                    Root Downloader compatibility launcher
+run-tests.py                      Unified Python and Rust test runner
+defaults.json                     Shared Downloader defaults
+docs/                             Tool documentation, changelogs and project notes
+yt-sql/                           Shared yt-sql conformance corpus (not yet created)
 ```
 
-The internal package is named `yt_media_tools`. It keeps reusable implementation separate from the command-line entry points while allowing extractor-specific adapters to remain contained. Common low-level yt-dlp runtime mechanics are shared by both applications without merging their higher-level acquisition and download policies.
+`common/sqlite/statements/` is the single maintained source for extracted SQLite queries. The Python adapter loads those resources directly. SQLite schema ownership, connection configuration, transactions and migration finalisation remain with their respective tools.
 
 ## Requirements
 
@@ -49,25 +39,21 @@ See `docs/DISCOVER-README.md` and `docs/DOWNLOADER-README.md` for tool-specific 
 
 ## Testing
 
-Run the routine suites from the repository root using the project test entry point:
+Run all available Python and Rust test suites from the repository root:
 
 ```bash
 ./run-tests.py
 ```
 
-The routine entry point uses three pytest-xdist workers with dynamic load scheduling. Install the test dependency before running it:
+Select individual suites with `./run-tests.py --python` or `./run-tests.py --rust`. Both run by default, and `./run-tests.py --list` shows the available suites without running tests. Python continues to use three pytest-xdist workers with dynamic load scheduling, while Rust uses `cargo test --workspace` from `rust/`. Each suite runs even if the preceding suite fails, and the combined runner exits unsuccessfully if any selected suite fails. Use `--fail-fast` to stop at the first failing suite.
+
+Install Python test dependencies using:
 
 ```bash
-python -m pip install -r requirements-test.txt
+python -m pip install -r python/requirements-test.txt
 ```
 
-For serial execution when debugging or measuring the serial baseline, use:
-
-```bash
-./run-tests.py --serial
-```
-
-Additional pytest arguments are passed through unchanged, for example `./run-tests.py --durations=25`.
+For serial Python execution, use `./run-tests.py --python --serial`. Additional pytest arguments are forwarded to the Python suite, for example `./run-tests.py --python --durations=25`. To run only Rust tests, Cargo and the toolchain specified by `rust/rust-toolchain.toml` must be available.
 
 Routine testing excludes the `scale` and `stress` tiers. Run selected large-dataset tests with:
 
@@ -89,6 +75,8 @@ python -m pytest -m "scale or stress"
 
 Ruff is configured for repository linting and formatting, and both checks run in GitHub Actions. Performance benchmarks are opt-in and documented in `docs/PERFORMANCE.md`; CI runs only a small non-comparative benchmark smoke check because shared runners are not treated as stable performance targets.
 
+For SQLite SQL quality checks, see [the SQLFluff setup and commands](common/sqlite/README.md).
+
 ## Versioning
 
 The two command-line applications retain independent versions because they evolve at different rates. Release history is recorded independently in `docs/DISCOVER-CHANGELOG.md` and `docs/DOWNLOADER-CHANGELOG.md`.
@@ -108,3 +96,7 @@ The longer-term programmes are documented under `docs/`, with active Discover ve
 ## External tool diagnostics
 
 Both tools can report the external operations they invoke with `--debug-external`. Diagnostics are written to standard error and redact credential-bearing arguments by default. `--debug-external-unsafe` deliberately disables redaction for local troubleshooting and may expose cookies, credentials or other sensitive values in terminal history or captured logs. Command integrations are rendered as their final argument vector, while bridge and library integrations may report an annotated operation and meaningful arguments instead of pretending to have a command line.
+
+## Source layout
+
+The Python implementation, tests, benchmarks and yt-dlp plugin live under `python/`. The Rust implementation remains under `rust/`. The existing root commands `./yt-discover.py` and `./yt-download.py` are retained as compatibility launchers; their implementations have moved, but command-line invocation does not need to change. The root test and benchmark commands also forward to their Python implementations.

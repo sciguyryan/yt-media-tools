@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "dataset": "python-v6-small",
+  "dataset_record_digest_sha256": "a69fdfe91767b18232ddd8aefd6c563c6a5c01e4300c80c56a8fdaaf760ee545",
+  "scope": "Fixture content only; no semantic expectations are approved.",
+  "categories": [
+    {
+      "id": "arabic",
+      "record_ids": [
+        "vid050"
+      ]
+    },
+    {
+      "id": "bidi_formatting",
+      "record_ids": [
+        "vid054"
+      ]
+    },
+    {
+      "id": "canonical_equivalence",
+      "record_ids": [
+        "vid037",
+        "vid038"
+      ]
+    },
+    {
+      "id": "cjk",
+      "record_ids": [
+        "vid049"
+      ]
+    },
+    {
+      "id": "emoji_supplementary",
+      "record_ids": [
+        "vid040"
+      ]
+    },
+    {
+      "id": "emoji_tag_sequence",
+      "record_ids": [
+        "vid042"
+      ]
+    },
+    {
+      "id": "emoji_zwj_sequence",
+      "record_ids": [
+        "vid041"
+      ]
+    },
+    {
+      "id": "german_sharp_s",
+      "record_ids": [
+        "vid046"
+      ]
+    },
+    {
+      "id": "greek_case",
+      "record_ids": [
+        "vid044"
+      ]
+    },
+    {
+      "id": "hebrew",
+      "record_ids": [
+        "vid051"
+      ]
+    },
+    {
+      "id": "isolated_combining_marks",
+      "record_ids": [
+        "vid039"
+      ]
+    },
+    {
+      "id": "kelvin_casefold",
+      "record_ids": [
+        "vid047"
+      ]
+    },
+    {
+      "id": "long_s_casefold",
+      "record_ids": [
+        "vid048"
+      ]
+    },
+    {
+      "id": "nonbreaking_space",
+      "record_ids": [
+        "vid052"
+      ]
+    },
+    {
+      "id": "supplementary_plane",
+      "record_ids": [
+        "vid056"
+      ]
+    },
+    {
+      "id": "thin_space",
+      "record_ids": [
+        "vid053"
+      ]
+    },
+    {
+      "id": "turkish_case",
+      "record_ids": [
+        "vid045"
+      ]
+    },
+    {
+      "id": "unicode_line_separator",
+      "record_ids": [
+        "vid058"
+      ]
+    },
+    {
+      "id": "variation_selector",
+      "record_ids": [
+        "vid043"
+      ]
+    },
+    {
+      "id": "wildcard_metacharacters",
+      "record_ids": [
+        "vid055"
+      ]
+    },
+    {
+      "id": "zero_width_joiner",
+      "record_ids": [
+        "vid059"
+      ]
+    },
+    {
+      "id": "zero_width_nonjoiner",
+      "record_ids": [
+        "vid060"
+      ]
+    }
+  ],
+  "unrepresented_in_current_small_fixture": [
+    "embedded_nul",
+    "unpaired_surrogates",
+    "unicode_normalisation_forms_nfd_nfkd_nfkc_beyond_existing_pair",
+    "locale_specific_collation",
+    "invalid_utf8_bytes"
+  ]
+}

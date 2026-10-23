@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "YT-SQL dataset reference",
+  "type": "object",
+  "required": [
+    "version",
+    "id",
+    "kind"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": [
+        "generated",
+        "static"
+      ]
+    },
+    "generator": {
+      "type": "string"
+    },
+    "generator_version": {
+      "type": "integer"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "size": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "source_url": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "record_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "record_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "generator",
+        "generator_version",
+        "seed",
+        "profile"
+      ],
+      "properties": {
+        "generator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generator_version": {
+          "type": "integer"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "static"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "source",
+          "records",
+          "record_count",
+          "record_digest_sha256",
+          "source_url",
+          "generated_at",
+          "provenance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "generated"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "generator",
+          "seed",
+          "size"
+        ],
+        "not": {
+          "required": [
+            "records"
+          ]
+        }
+      }
+    }
+  ]
+}

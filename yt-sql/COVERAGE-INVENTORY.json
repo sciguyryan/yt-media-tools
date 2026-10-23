@@ -1,0 +1,1848 @@
+{
+  "version": 1,
+  "status": "baseline_inventory_not_certified_completeness",
+  "sources": {
+    "features_and_cases": "python/yt_discover_tests/conformance/cases.py",
+    "parser_functions": "python/yt_media_tools/query_parser.py"
+  },
+  "registered_features": [
+    "aggregate.avg",
+    "aggregate.count_expression",
+    "aggregate.count_star",
+    "aggregate.empty_input",
+    "aggregate.filter",
+    "aggregate.group_by",
+    "aggregate.having",
+    "aggregate.max",
+    "aggregate.min",
+    "aggregate.sum",
+    "boolean.and",
+    "boolean.bare",
+    "boolean.not",
+    "boolean.or",
+    "boolean.parentheses",
+    "boolean.precedence",
+    "collection.bounds",
+    "collection.cardinality",
+    "collection.composition",
+    "collection.count",
+    "collection.empty",
+    "collection.filter",
+    "collection.index",
+    "collection.map",
+    "collection.null",
+    "collection.null_element",
+    "collection.output",
+    "collection.parameter",
+    "collection.quantifier.all",
+    "collection.quantifier.any",
+    "collection.structured",
+    "collection.three_valued",
+    "comparison.eq",
+    "comparison.ge",
+    "comparison.gt",
+    "comparison.le",
+    "comparison.lt",
+    "comparison.ne",
+    "comparison.ne_alt",
+    "cte.chained",
+    "cte.logical_schema",
+    "cte.non_recursive",
+    "date.compact",
+    "date.dot",
+    "date.iso",
+    "date.local_dmy",
+    "date.local_mdy",
+    "date.named",
+    "date.relative_ago",
+    "date.slash",
+    "datetime.offset",
+    "datetime.zulu",
+    "distinct",
+    "duration.clock_hms",
+    "duration.clock_ms",
+    "duration.compound",
+    "duration.decimal",
+    "duration.localised",
+    "duration.short_alias",
+    "field.alias",
+    "from.handle",
+    "from.identifier",
+    "from.quoted_source",
+    "in",
+    "in.not",
+    "is.false",
+    "is.not_false",
+    "is.not_null",
+    "is.not_true",
+    "is.not_unknown",
+    "is.null",
+    "is.predicate_unknown",
+    "is.true",
+    "is.unknown",
+    "limit",
+    "limit.underscore",
+    "natural.above",
+    "natural.at_least",
+    "natural.at_most",
+    "natural.below",
+    "natural.equal_to",
+    "natural.equals",
+    "natural.greater_than",
+    "natural.less_than",
+    "natural.more_than",
+    "natural.over",
+    "natural.under",
+    "null.three_valued",
+    "offset",
+    "offset.underscore",
+    "offset.without_limit",
+    "order.alias",
+    "order.asc",
+    "order.default_asc",
+    "order.desc",
+    "order.expression",
+    "order.expression_alias",
+    "order.mixed",
+    "order.multi",
+    "order.null_last",
+    "order.stable_tie",
+    "output.auto_multi",
+    "output.auto_single",
+    "output.csv",
+    "output.ids",
+    "output.jsonl",
+    "output.lines",
+    "output.tsv",
+    "output.urls",
+    "parameter.binding",
+    "predicate.between",
+    "predicate.not_between",
+    "projection.alias",
+    "projection.coalesce",
+    "projection.coalesce_fallback",
+    "projection.default_id",
+    "projection.field",
+    "projection.length",
+    "projection.lower",
+    "projection.star",
+    "projection.upper",
+    "result.position",
+    "scalar.arithmetic.add",
+    "scalar.arithmetic.divide",
+    "scalar.arithmetic.multiply",
+    "scalar.arithmetic.parentheses",
+    "scalar.case",
+    "scalar.case.nested_result",
+    "scalar.case.no_else",
+    "scalar.case.null_fallthrough",
+    "scalar.case.order",
+    "scalar.char",
+    "scalar.concat",
+    "scalar.constant_fold",
+    "scalar.function_nested",
+    "scalar.greatest",
+    "scalar.least",
+    "scalar.mixed_base",
+    "scalar.nullif",
+    "scalar.random_seeded",
+    "set.global_order_limit",
+    "set.union",
+    "set.union_all",
+    "string.case_sensitive",
+    "string.double_quote",
+    "string.doubled_quote",
+    "structured.member",
+    "temporal.infinity_between",
+    "temporal.infinity_negative",
+    "temporal.infinity_positive",
+    "temporal.localised",
+    "temporal.now_fixed",
+    "temporal.today_calendar",
+    "temporal.today_fixed",
+    "temporal.unit_baktun",
+    "temporal.unit_decade",
+    "text.contain",
+    "text.contains",
+    "text.does_not_contain",
+    "text.does_not_match",
+    "text.ilike",
+    "text.like",
+    "text.like.escape",
+    "text.like.single",
+    "text.match",
+    "text.matches",
+    "text.not_contains",
+    "text.not_ilike",
+    "text.not_like",
+    "text.not_matches",
+    "text.unquoted_literal",
+    "unicode.case_mapping",
+    "unicode.casefold_contains",
+    "unicode.codepoint_length",
+    "unicode.ilike_case",
+    "unicode.like_codepoint",
+    "unicode.normalisation_sensitive",
+    "unicode.ordering",
+    "unicode.regex",
+    "value.count_b",
+    "value.count_decimal_suffix",
+    "value.count_k",
+    "value.count_m",
+    "value.count_underscore",
+    "value.enum_case_insensitive",
+    "value.integer.binary",
+    "value.integer.hex",
+    "value.integer.octal",
+    "value.number.negative"
+  ],
+  "feature_to_existing_cases": {
+    "aggregate.avg": [
+      "aggregate_global_semantics"
+    ],
+    "aggregate.count_expression": [
+      "aggregate_global_semantics"
+    ],
+    "aggregate.count_star": [
+      "aggregate_global_semantics"
+    ],
+    "aggregate.empty_input": [
+      "aggregate_empty_input"
+    ],
+    "aggregate.filter": [
+      "aggregate_filter_semantics"
+    ],
+    "aggregate.group_by": [
+      "aggregate_group_by_having_unicode"
+    ],
+    "aggregate.having": [
+      "aggregate_group_by_having_unicode"
+    ],
+    "aggregate.max": [
+      "aggregate_global_semantics"
+    ],
+    "aggregate.min": [
+      "aggregate_global_semantics"
+    ],
+    "aggregate.sum": [
+      "aggregate_global_semantics"
+    ],
+    "boolean.and": [
+      "null_and_boolean_logic"
+    ],
+    "boolean.bare": [
+      "bare_boolean_predicate"
+    ],
+    "boolean.not": [
+      "double_not_boolean",
+      "null_and_boolean_logic"
+    ],
+    "boolean.or": [
+      "null_and_boolean_logic"
+    ],
+    "boolean.parentheses": [
+      "null_and_boolean_logic",
+      "parentheses_override_precedence"
+    ],
+    "boolean.precedence": [
+      "boolean_precedence"
+    ],
+    "collection.bounds": [
+      "collection_index_null_and_bounds"
+    ],
+    "collection.cardinality": [
+      "collection_query_semantics"
+    ],
+    "collection.composition": [
+      "collection_filter_map_composition"
+    ],
+    "collection.count": [
+      "collection_query_semantics",
+      "structured_collection_count"
+    ],
+    "collection.empty": [
+      "collection_all_predicate",
+      "collection_any_predicate",
+      "collection_not_any_predicate",
+      "collection_query_semantics"
+    ],
+    "collection.filter": [
+      "collection_filter_map_composition",
+      "collection_query_semantics"
+    ],
+    "collection.index": [
+      "collection_cli_integration",
+      "collection_index_null_and_bounds"
+    ],
+    "collection.map": [
+      "collection_filter_map_composition",
+      "collection_query_semantics"
+    ],
+    "collection.null": [
+      "collection_index_null_and_bounds"
+    ],
+    "collection.null_element": [
+      "collection_all_predicate",
+      "collection_query_semantics"
+    ],
+    "collection.output": [
+      "collection_cli_integration",
+      "collection_json_array_output"
+    ],
+    "collection.parameter": [
+      "collection_cli_integration",
+      "collection_index_with_bound_parameter"
+    ],
+    "collection.quantifier.all": [
+      "collection_all_predicate"
+    ],
+    "collection.quantifier.any": [
+      "collection_any_predicate",
+      "collection_not_any_predicate"
+    ],
+    "collection.structured": [
+      "structured_collection_count"
+    ],
+    "collection.three_valued": [
+      "collection_all_predicate",
+      "collection_any_predicate",
+      "collection_not_any_predicate",
+      "collection_query_semantics"
+    ],
+    "comparison.eq": [
+      "comparison_equal"
+    ],
+    "comparison.ge": [
+      "comparison_greater_or_equal",
+      "null_timestamp_last"
+    ],
+    "comparison.gt": [
+      "comparison_greater_than"
+    ],
+    "comparison.le": [
+      "comparison_less_or_equal"
+    ],
+    "comparison.lt": [
+      "chronological_same_day_subsort",
+      "comparison_less_than"
+    ],
+    "comparison.ne": [
+      "comparison_not_equal"
+    ],
+    "comparison.ne_alt": [
+      "comparison_not_equal_angle"
+    ],
+    "cte.chained": [
+      "cte_chained_logical_schema"
+    ],
+    "cte.logical_schema": [
+      "cte_chained_logical_schema"
+    ],
+    "cte.non_recursive": [
+      "cte_chained_logical_schema"
+    ],
+    "date.compact": [
+      "date_compact"
+    ],
+    "date.dot": [
+      "date_dot"
+    ],
+    "date.iso": [
+      "date_iso"
+    ],
+    "date.local_dmy": [
+      "date_local_dmy"
+    ],
+    "date.local_mdy": [
+      "date_local_mdy"
+    ],
+    "date.named": [
+      "date_named"
+    ],
+    "date.relative_ago": [
+      "relative_date_ago"
+    ],
+    "date.slash": [
+      "date_slash"
+    ],
+    "datetime.offset": [
+      "datetime_offset"
+    ],
+    "datetime.zulu": [
+      "datetime_zulu"
+    ],
+    "distinct": [
+      "distinct_null_collapse",
+      "distinct_projection"
+    ],
+    "duration.clock_hms": [
+      "duration_clock_hours_minutes_seconds"
+    ],
+    "duration.clock_ms": [
+      "duration_clock_minutes_seconds"
+    ],
+    "duration.compound": [
+      "duration_compound"
+    ],
+    "duration.decimal": [
+      "duration_decimal"
+    ],
+    "duration.localised": [
+      "duration_welsh_localised"
+    ],
+    "duration.short_alias": [
+      "duration_shared_short_alias"
+    ],
+    "field.alias": [
+      "field_aliases"
+    ],
+    "from.handle": [
+      "source_order_limit"
+    ],
+    "from.identifier": [
+      "bare_identifier_source"
+    ],
+    "from.quoted_source": [
+      "quoted_source"
+    ],
+    "in": [
+      "distinct_projection"
+    ],
+    "in.not": [
+      "not_in"
+    ],
+    "is.false": [
+      "is_false"
+    ],
+    "is.not_false": [
+      "is_not_false"
+    ],
+    "is.not_null": [
+      "is_not_null",
+      "offset_limit"
+    ],
+    "is.not_true": [
+      "is_not_true"
+    ],
+    "is.not_unknown": [
+      "is_not_unknown"
+    ],
+    "is.null": [
+      "null_and_boolean_logic"
+    ],
+    "is.predicate_unknown": [
+      "predicate_is_unknown"
+    ],
+    "is.true": [
+      "is_true"
+    ],
+    "is.unknown": [
+      "is_unknown"
+    ],
+    "limit": [
+      "source_order_limit"
+    ],
+    "limit.underscore": [
+      "limit_with_underscores"
+    ],
+    "natural.above": [
+      "natural_above"
+    ],
+    "natural.at_least": [
+      "natural_at_least"
+    ],
+    "natural.at_most": [
+      "natural_at_most"
+    ],
+    "natural.below": [
+      "natural_below"
+    ],
+    "natural.equal_to": [
+      "natural_equal_to"
+    ],
+    "natural.equals": [
+      "natural_equals"
+    ],
+    "natural.greater_than": [
+      "natural_greater_than"
+    ],
+    "natural.less_than": [
+      "natural_less_than"
+    ],
+    "natural.more_than": [
+      "natural_more_than"
+    ],
+    "natural.over": [
+      "natural_over"
+    ],
+    "natural.under": [
+      "natural_under"
+    ],
+    "null.three_valued": [
+      "ordinary_null_comparison_is_unknown"
+    ],
+    "offset": [
+      "offset_limit"
+    ],
+    "offset.underscore": [
+      "offset_with_underscores"
+    ],
+    "offset.without_limit": [
+      "offset_without_limit"
+    ],
+    "order.alias": [
+      "scalar_functions_and_alias_order"
+    ],
+    "order.asc": [
+      "chronological_same_day_subsort"
+    ],
+    "order.default_asc": [
+      "default_ascending_order"
+    ],
+    "order.desc": [
+      "descending_nulls_last",
+      "offset_limit"
+    ],
+    "order.expression": [
+      "scalar_arithmetic_projection_and_order"
+    ],
+    "order.expression_alias": [
+      "nested_scalar_functions_and_expression_order",
+      "scalar_arithmetic_projection_and_order"
+    ],
+    "order.mixed": [
+      "mixed_direction_order"
+    ],
+    "order.multi": [
+      "chronological_same_day_subsort",
+      "mixed_direction_order"
+    ],
+    "order.null_last": [
+      "descending_nulls_last",
+      "null_timestamp_last"
+    ],
+    "order.stable_tie": [
+      "stable_order_tie"
+    ],
+    "output.auto_multi": [
+      "auto_multiple_output"
+    ],
+    "output.auto_single": [
+      "auto_single_output"
+    ],
+    "output.csv": [
+      "count_suffix_and_enum_case"
+    ],
+    "output.ids": [
+      "legacy_ids_output"
+    ],
+    "output.jsonl": [
+      "null_timestamp_last"
+    ],
+    "output.lines": [
+      "source_order_limit"
+    ],
+    "output.tsv": [
+      "contains_case_insensitive"
+    ],
+    "output.urls": [
+      "legacy_urls_output"
+    ],
+    "parameter.binding": [
+      "bound_parameters",
+      "collection_cli_integration",
+      "collection_index_with_bound_parameter"
+    ],
+    "predicate.between": [
+      "chronological_same_day_subsort"
+    ],
+    "predicate.not_between": [
+      "not_between_inclusive_inverse"
+    ],
+    "projection.alias": [
+      "scalar_functions_and_alias_order"
+    ],
+    "projection.coalesce": [
+      "coalesce_multiple_arguments",
+      "scalar_functions_and_alias_order"
+    ],
+    "projection.coalesce_fallback": [
+      "coalesce_negative_fallback_is_numeric"
+    ],
+    "projection.default_id": [
+      "default_projection_id"
+    ],
+    "projection.field": [
+      "ordinary_field_projection"
+    ],
+    "projection.length": [
+      "scalar_functions_and_alias_order"
+    ],
+    "projection.lower": [
+      "scalar_functions_and_alias_order"
+    ],
+    "projection.star": [
+      "select_star_contract"
+    ],
+    "projection.upper": [
+      "upper_projection"
+    ],
+    "result.position": [
+      "final_position_distinct",
+      "final_position_offset"
+    ],
+    "scalar.arithmetic.add": [
+      "mixed_base_scalar_expression",
+      "nested_scalar_functions_and_expression_order",
+      "scalar_arithmetic_projection_and_order"
+    ],
+    "scalar.arithmetic.divide": [
+      "scalar_arithmetic_projection_and_order"
+    ],
+    "scalar.arithmetic.multiply": [
+      "scalar_arithmetic_projection_and_order"
+    ],
+    "scalar.arithmetic.parentheses": [
+      "scalar_arithmetic_projection_and_order"
+    ],
+    "scalar.case": [
+      "case_bucket_projection"
+    ],
+    "scalar.case.nested_result": [
+      "case_nested_scalar_results"
+    ],
+    "scalar.case.no_else": [
+      "case_without_else_returns_null"
+    ],
+    "scalar.case.null_fallthrough": [
+      "case_null_and_ordered_fallthrough"
+    ],
+    "scalar.case.order": [
+      "case_direct_ordering"
+    ],
+    "scalar.char": [
+      "char_unicode_projection"
+    ],
+    "scalar.concat": [
+      "concat_text_projection"
+    ],
+    "scalar.constant_fold": [
+      "scalar_constant_folding_semantics"
+    ],
+    "scalar.function_nested": [
+      "nested_scalar_functions_and_expression_order"
+    ],
+    "scalar.greatest": [
+      "greatest_scalar_semantics"
+    ],
+    "scalar.least": [
+      "least_scalar_semantics"
+    ],
+    "scalar.mixed_base": [
+      "mixed_base_scalar_expression"
+    ],
+    "scalar.nullif": [
+      "nullif_scalar_semantics"
+    ],
+    "scalar.random_seeded": [
+      "seeded_random_projection"
+    ],
+    "set.global_order_limit": [
+      "union_distinct_same_source"
+    ],
+    "set.union": [
+      "union_distinct_same_source"
+    ],
+    "set.union_all": [
+      "union_all_duplicate_preservation"
+    ],
+    "string.case_sensitive": [
+      "string_equality_is_case_sensitive"
+    ],
+    "string.double_quote": [
+      "double_quoted_string_literal"
+    ],
+    "string.doubled_quote": [
+      "doubled_quote_string_literal"
+    ],
+    "structured.member": [
+      "structured_collection_count"
+    ],
+    "temporal.infinity_between": [
+      "bounded_by_temporal_infinities"
+    ],
+    "temporal.infinity_negative": [
+      "negative_temporal_infinity"
+    ],
+    "temporal.infinity_positive": [
+      "positive_temporal_infinity"
+    ],
+    "temporal.localised": [
+      "today_welsh_relative"
+    ],
+    "temporal.now_fixed": [
+      "now_fixed_relative"
+    ],
+    "temporal.today_calendar": [
+      "today_calendar_relative"
+    ],
+    "temporal.today_fixed": [
+      "today_fixed_relative"
+    ],
+    "temporal.unit_baktun": [
+      "today_baktun_relative"
+    ],
+    "temporal.unit_decade": [
+      "today_decade_relative"
+    ],
+    "text.contain": [
+      "contain_singular"
+    ],
+    "text.contains": [
+      "contains_case_insensitive"
+    ],
+    "text.does_not_contain": [
+      "does_not_contain"
+    ],
+    "text.does_not_match": [
+      "does_not_match"
+    ],
+    "text.ilike": [
+      "ilike_contains"
+    ],
+    "text.like": [
+      "like_prefix"
+    ],
+    "text.like.escape": [
+      "like_escaped_percent"
+    ],
+    "text.like.single": [
+      "like_single_wildcard"
+    ],
+    "text.match": [
+      "match_singular"
+    ],
+    "text.matches": [
+      "matches_regex"
+    ],
+    "text.not_contains": [
+      "not_contains"
+    ],
+    "text.not_ilike": [
+      "not_ilike"
+    ],
+    "text.not_like": [
+      "not_like"
+    ],
+    "text.not_matches": [
+      "not_matches"
+    ],
+    "text.unquoted_literal": [
+      "unquoted_text_literal"
+    ],
+    "unicode.case_mapping": [
+      "unicode_lower_upper"
+    ],
+    "unicode.casefold_contains": [
+      "unicode_contains_casefold"
+    ],
+    "unicode.codepoint_length": [
+      "unicode_codepoint_length"
+    ],
+    "unicode.ilike_case": [
+      "unicode_ilike_special_case_equivalence"
+    ],
+    "unicode.like_codepoint": [
+      "unicode_like_one_codepoint"
+    ],
+    "unicode.normalisation_sensitive": [
+      "unicode_exact_normalisation_sensitive"
+    ],
+    "unicode.ordering": [
+      "unicode_codepoint_ordering"
+    ],
+    "unicode.regex": [
+      "unicode_regex_scripts"
+    ],
+    "value.count_b": [
+      "count_b_suffix"
+    ],
+    "value.count_decimal_suffix": [
+      "count_decimal_suffix"
+    ],
+    "value.count_k": [
+      "count_k_suffix"
+    ],
+    "value.count_m": [
+      "count_suffix_and_enum_case"
+    ],
+    "value.count_underscore": [
+      "count_underscore"
+    ],
+    "value.enum_case_insensitive": [
+      "count_suffix_and_enum_case"
+    ],
+    "value.integer.binary": [
+      "binary_integer_count"
+    ],
+    "value.integer.hex": [
+      "hex_integer_count"
+    ],
+    "value.integer.octal": [
+      "octal_integer_count"
+    ],
+    "value.number.negative": [
+      "coalesce_negative_fallback_is_numeric"
+    ]
+  },
+  "existing_cases": [
+    {
+      "id": "aggregate_empty_input",
+      "features": [
+        "aggregate.empty_input"
+      ]
+    },
+    {
+      "id": "aggregate_filter_semantics",
+      "features": [
+        "aggregate.filter"
+      ]
+    },
+    {
+      "id": "aggregate_global_semantics",
+      "features": [
+        "aggregate.avg",
+        "aggregate.count_expression",
+        "aggregate.count_star",
+        "aggregate.max",
+        "aggregate.min",
+        "aggregate.sum"
+      ]
+    },
+    {
+      "id": "aggregate_group_by_having_unicode",
+      "features": [
+        "aggregate.group_by",
+        "aggregate.having"
+      ]
+    },
+    {
+      "id": "auto_multiple_output",
+      "features": [
+        "output.auto_multi"
+      ]
+    },
+    {
+      "id": "auto_single_output",
+      "features": [
+        "output.auto_single"
+      ]
+    },
+    {
+      "id": "bare_boolean_predicate",
+      "features": [
+        "boolean.bare"
+      ]
+    },
+    {
+      "id": "bare_identifier_source",
+      "features": [
+        "from.identifier"
+      ]
+    },
+    {
+      "id": "binary_integer_count",
+      "features": [
+        "value.integer.binary"
+      ]
+    },
+    {
+      "id": "boolean_precedence",
+      "features": [
+        "boolean.precedence"
+      ]
+    },
+    {
+      "id": "bound_parameters",
+      "features": [
+        "parameter.binding"
+      ]
+    },
+    {
+      "id": "bounded_by_temporal_infinities",
+      "features": [
+        "temporal.infinity_between"
+      ]
+    },
+    {
+      "id": "case_bucket_projection",
+      "features": [
+        "scalar.case"
+      ]
+    },
+    {
+      "id": "case_direct_ordering",
+      "features": [
+        "scalar.case.order"
+      ]
+    },
+    {
+      "id": "case_nested_scalar_results",
+      "features": [
+        "scalar.case.nested_result"
+      ]
+    },
+    {
+      "id": "case_null_and_ordered_fallthrough",
+      "features": [
+        "scalar.case.null_fallthrough"
+      ]
+    },
+    {
+      "id": "case_without_else_returns_null",
+      "features": [
+        "scalar.case.no_else"
+      ]
+    },
+    {
+      "id": "char_unicode_projection",
+      "features": [
+        "scalar.char"
+      ]
+    },
+    {
+      "id": "chronological_same_day_subsort",
+      "features": [
+        "comparison.lt",
+        "order.asc",
+        "order.multi",
+        "predicate.between"
+      ]
+    },
+    {
+      "id": "coalesce_multiple_arguments",
+      "features": [
+        "projection.coalesce"
+      ]
+    },
+    {
+      "id": "coalesce_negative_fallback_is_numeric",
+      "features": [
+        "projection.coalesce_fallback",
+        "value.number.negative"
+      ]
+    },
+    {
+      "id": "collection_all_predicate",
+      "features": [
+        "collection.empty",
+        "collection.null_element",
+        "collection.quantifier.all",
+        "collection.three_valued"
+      ]
+    },
+    {
+      "id": "collection_any_predicate",
+      "features": [
+        "collection.empty",
+        "collection.quantifier.any",
+        "collection.three_valued"
+      ]
+    },
+    {
+      "id": "collection_cli_integration",
+      "features": [
+        "collection.index",
+        "collection.output",
+        "collection.parameter",
+        "parameter.binding"
+      ]
+    },
+    {
+      "id": "collection_filter_map_composition",
+      "features": [
+        "collection.composition",
+        "collection.filter",
+        "collection.map"
+      ]
+    },
+    {
+      "id": "collection_index_null_and_bounds",
+      "features": [
+        "collection.bounds",
+        "collection.index",
+        "collection.null"
+      ]
+    },
+    {
+      "id": "collection_index_with_bound_parameter",
+      "features": [
+        "collection.parameter",
+        "parameter.binding"
+      ]
+    },
+    {
+      "id": "collection_json_array_output",
+      "features": [
+        "collection.output"
+      ]
+    },
+    {
+      "id": "collection_not_any_predicate",
+      "features": [
+        "collection.empty",
+        "collection.quantifier.any",
+        "collection.three_valued"
+      ]
+    },
+    {
+      "id": "collection_query_semantics",
+      "features": [
+        "collection.cardinality",
+        "collection.count",
+        "collection.empty",
+        "collection.filter",
+        "collection.map",
+        "collection.null_element",
+        "collection.three_valued"
+      ]
+    },
+    {
+      "id": "comparison_equal",
+      "features": [
+        "comparison.eq"
+      ]
+    },
+    {
+      "id": "comparison_greater_or_equal",
+      "features": [
+        "comparison.ge"
+      ]
+    },
+    {
+      "id": "comparison_greater_than",
+      "features": [
+        "comparison.gt"
+      ]
+    },
+    {
+      "id": "comparison_less_or_equal",
+      "features": [
+        "comparison.le"
+      ]
+    },
+    {
+      "id": "comparison_less_than",
+      "features": [
+        "comparison.lt"
+      ]
+    },
+    {
+      "id": "comparison_not_equal",
+      "features": [
+        "comparison.ne"
+      ]
+    },
+    {
+      "id": "comparison_not_equal_angle",
+      "features": [
+        "comparison.ne_alt"
+      ]
+    },
+    {
+      "id": "concat_text_projection",
+      "features": [
+        "scalar.concat"
+      ]
+    },
+    {
+      "id": "contain_singular",
+      "features": [
+        "text.contain"
+      ]
+    },
+    {
+      "id": "contains_case_insensitive",
+      "features": [
+        "output.tsv",
+        "text.contains"
+      ]
+    },
+    {
+      "id": "convoluted_existing_language",
+      "features": []
+    },
+    {
+      "id": "count_b_suffix",
+      "features": [
+        "value.count_b"
+      ]
+    },
+    {
+      "id": "count_decimal_suffix",
+      "features": [
+        "value.count_decimal_suffix"
+      ]
+    },
+    {
+      "id": "count_k_suffix",
+      "features": [
+        "value.count_k"
+      ]
+    },
+    {
+      "id": "count_suffix_and_enum_case",
+      "features": [
+        "output.csv",
+        "value.count_m",
+        "value.enum_case_insensitive"
+      ]
+    },
+    {
+      "id": "count_underscore",
+      "features": [
+        "value.count_underscore"
+      ]
+    },
+    {
+      "id": "cte_chained_logical_schema",
+      "features": [
+        "cte.chained",
+        "cte.logical_schema",
+        "cte.non_recursive"
+      ]
+    },
+    {
+      "id": "date_compact",
+      "features": [
+        "date.compact"
+      ]
+    },
+    {
+      "id": "date_dot",
+      "features": [
+        "date.dot"
+      ]
+    },
+    {
+      "id": "date_iso",
+      "features": [
+        "date.iso"
+      ]
+    },
+    {
+      "id": "date_local_dmy",
+      "features": [
+        "date.local_dmy"
+      ]
+    },
+    {
+      "id": "date_local_mdy",
+      "features": [
+        "date.local_mdy"
+      ]
+    },
+    {
+      "id": "date_named",
+      "features": [
+        "date.named"
+      ]
+    },
+    {
+      "id": "date_slash",
+      "features": [
+        "date.slash"
+      ]
+    },
+    {
+      "id": "datetime_offset",
+      "features": [
+        "datetime.offset"
+      ]
+    },
+    {
+      "id": "datetime_zulu",
+      "features": [
+        "datetime.zulu"
+      ]
+    },
+    {
+      "id": "default_ascending_order",
+      "features": [
+        "order.default_asc"
+      ]
+    },
+    {
+      "id": "default_projection_id",
+      "features": [
+        "projection.default_id"
+      ]
+    },
+    {
+      "id": "descending_nulls_last",
+      "features": [
+        "order.desc",
+        "order.null_last"
+      ]
+    },
+    {
+      "id": "distinct_null_collapse",
+      "features": [
+        "distinct"
+      ]
+    },
+    {
+      "id": "distinct_projection",
+      "features": [
+        "distinct",
+        "in"
+      ]
+    },
+    {
+      "id": "does_not_contain",
+      "features": [
+        "text.does_not_contain"
+      ]
+    },
+    {
+      "id": "does_not_match",
+      "features": [
+        "text.does_not_match"
+      ]
+    },
+    {
+      "id": "double_not_boolean",
+      "features": [
+        "boolean.not"
+      ]
+    },
+    {
+      "id": "double_quoted_string_literal",
+      "features": [
+        "string.double_quote"
+      ]
+    },
+    {
+      "id": "doubled_quote_string_literal",
+      "features": [
+        "string.doubled_quote"
+      ]
+    },
+    {
+      "id": "duration_boundary",
+      "features": []
+    },
+    {
+      "id": "duration_clock_hours_minutes_seconds",
+      "features": [
+        "duration.clock_hms"
+      ]
+    },
+    {
+      "id": "duration_clock_minutes_seconds",
+      "features": [
+        "duration.clock_ms"
+      ]
+    },
+    {
+      "id": "duration_compound",
+      "features": [
+        "duration.compound"
+      ]
+    },
+    {
+      "id": "duration_decimal",
+      "features": [
+        "duration.decimal"
+      ]
+    },
+    {
+      "id": "duration_shared_short_alias",
+      "features": [
+        "duration.short_alias"
+      ]
+    },
+    {
+      "id": "duration_welsh_localised",
+      "features": [
+        "duration.localised"
+      ]
+    },
+    {
+      "id": "field_aliases",
+      "features": [
+        "field.alias"
+      ]
+    },
+    {
+      "id": "final_position_distinct",
+      "features": [
+        "result.position"
+      ]
+    },
+    {
+      "id": "final_position_offset",
+      "features": [
+        "result.position"
+      ]
+    },
+    {
+      "id": "greatest_scalar_semantics",
+      "features": [
+        "scalar.greatest"
+      ]
+    },
+    {
+      "id": "hex_integer_count",
+      "features": [
+        "value.integer.hex"
+      ]
+    },
+    {
+      "id": "ilike_contains",
+      "features": [
+        "text.ilike"
+      ]
+    },
+    {
+      "id": "is_false",
+      "features": [
+        "is.false"
+      ]
+    },
+    {
+      "id": "is_not_false",
+      "features": [
+        "is.not_false"
+      ]
+    },
+    {
+      "id": "is_not_null",
+      "features": [
+        "is.not_null"
+      ]
+    },
+    {
+      "id": "is_not_true",
+      "features": [
+        "is.not_true"
+      ]
+    },
+    {
+      "id": "is_not_unknown",
+      "features": [
+        "is.not_unknown"
+      ]
+    },
+    {
+      "id": "is_true",
+      "features": [
+        "is.true"
+      ]
+    },
+    {
+      "id": "is_unknown",
+      "features": [
+        "is.unknown"
+      ]
+    },
+    {
+      "id": "least_scalar_semantics",
+      "features": [
+        "scalar.least"
+      ]
+    },
+    {
+      "id": "legacy_ids_output",
+      "features": [
+        "output.ids"
+      ]
+    },
+    {
+      "id": "legacy_urls_output",
+      "features": [
+        "output.urls"
+      ]
+    },
+    {
+      "id": "like_escaped_percent",
+      "features": [
+        "text.like.escape"
+      ]
+    },
+    {
+      "id": "like_prefix",
+      "features": [
+        "text.like"
+      ]
+    },
+    {
+      "id": "like_single_wildcard",
+      "features": [
+        "text.like.single"
+      ]
+    },
+    {
+      "id": "limit_with_underscores",
+      "features": [
+        "limit.underscore"
+      ]
+    },
+    {
+      "id": "match_singular",
+      "features": [
+        "text.match"
+      ]
+    },
+    {
+      "id": "matches_regex",
+      "features": [
+        "text.matches"
+      ]
+    },
+    {
+      "id": "mixed_base_scalar_expression",
+      "features": [
+        "scalar.arithmetic.add",
+        "scalar.mixed_base"
+      ]
+    },
+    {
+      "id": "mixed_direction_order",
+      "features": [
+        "order.mixed",
+        "order.multi"
+      ]
+    },
+    {
+      "id": "natural_above",
+      "features": [
+        "natural.above"
+      ]
+    },
+    {
+      "id": "natural_at_least",
+      "features": [
+        "natural.at_least"
+      ]
+    },
+    {
+      "id": "natural_at_most",
+      "features": [
+        "natural.at_most"
+      ]
+    },
+    {
+      "id": "natural_below",
+      "features": [
+        "natural.below"
+      ]
+    },
+    {
+      "id": "natural_equal_to",
+      "features": [
+        "natural.equal_to"
+      ]
+    },
+    {
+      "id": "natural_equals",
+      "features": [
+        "natural.equals"
+      ]
+    },
+    {
+      "id": "natural_greater_than",
+      "features": [
+        "natural.greater_than"
+      ]
+    },
+    {
+      "id": "natural_less_than",
+      "features": [
+        "natural.less_than"
+      ]
+    },
+    {
+      "id": "natural_more_than",
+      "features": [
+        "natural.more_than"
+      ]
+    },
+    {
+      "id": "natural_over",
+      "features": [
+        "natural.over"
+      ]
+    },
+    {
+      "id": "natural_under",
+      "features": [
+        "natural.under"
+      ]
+    },
+    {
+      "id": "negative_temporal_infinity",
+      "features": [
+        "temporal.infinity_negative"
+      ]
+    },
+    {
+      "id": "nested_scalar_functions_and_expression_order",
+      "features": [
+        "order.expression_alias",
+        "scalar.arithmetic.add",
+        "scalar.function_nested"
+      ]
+    },
+    {
+      "id": "not_between_inclusive_inverse",
+      "features": [
+        "predicate.not_between"
+      ]
+    },
+    {
+      "id": "not_contains",
+      "features": [
+        "text.not_contains"
+      ]
+    },
+    {
+      "id": "not_ilike",
+      "features": [
+        "text.not_ilike"
+      ]
+    },
+    {
+      "id": "not_in",
+      "features": [
+        "in.not"
+      ]
+    },
+    {
+      "id": "not_like",
+      "features": [
+        "text.not_like"
+      ]
+    },
+    {
+      "id": "not_matches",
+      "features": [
+        "text.not_matches"
+      ]
+    },
+    {
+      "id": "now_fixed_relative",
+      "features": [
+        "temporal.now_fixed"
+      ]
+    },
+    {
+      "id": "null_and_boolean_logic",
+      "features": [
+        "boolean.and",
+        "boolean.not",
+        "boolean.or",
+        "boolean.parentheses",
+        "is.null"
+      ]
+    },
+    {
+      "id": "null_timestamp_last",
+      "features": [
+        "comparison.ge",
+        "order.null_last",
+        "output.jsonl"
+      ]
+    },
+    {
+      "id": "nullif_scalar_semantics",
+      "features": [
+        "scalar.nullif"
+      ]
+    },
+    {
+      "id": "octal_integer_count",
+      "features": [
+        "value.integer.octal"
+      ]
+    },
+    {
+      "id": "offset_limit",
+      "features": [
+        "is.not_null",
+        "offset",
+        "order.desc"
+      ]
+    },
+    {
+      "id": "offset_with_underscores",
+      "features": [
+        "offset.underscore"
+      ]
+    },
+    {
+      "id": "offset_without_limit",
+      "features": [
+        "offset.without_limit"
+      ]
+    },
+    {
+      "id": "ordinary_field_projection",
+      "features": [
+        "projection.field"
+      ]
+    },
+    {
+      "id": "ordinary_null_comparison_is_unknown",
+      "features": [
+        "null.three_valued"
+      ]
+    },
+    {
+      "id": "parentheses_override_precedence",
+      "features": [
+        "boolean.parentheses"
+      ]
+    },
+    {
+      "id": "positive_temporal_infinity",
+      "features": [
+        "temporal.infinity_positive"
+      ]
+    },
+    {
+      "id": "predicate_is_unknown",
+      "features": [
+        "is.predicate_unknown"
+      ]
+    },
+    {
+      "id": "quoted_source",
+      "features": [
+        "from.quoted_source"
+      ]
+    },
+    {
+      "id": "relative_date_ago",
+      "features": [
+        "date.relative_ago"
+      ]
+    },
+    {
+      "id": "scalar_arithmetic_projection_and_order",
+      "features": [
+        "order.expression",
+        "order.expression_alias",
+        "scalar.arithmetic.add",
+        "scalar.arithmetic.divide",
+        "scalar.arithmetic.multiply",
+        "scalar.arithmetic.parentheses"
+      ]
+    },
+    {
+      "id": "scalar_constant_folding_semantics",
+      "features": [
+        "scalar.constant_fold"
+      ]
+    },
+    {
+      "id": "scalar_functions_and_alias_order",
+      "features": [
+        "order.alias",
+        "projection.alias",
+        "projection.coalesce",
+        "projection.length",
+        "projection.lower"
+      ]
+    },
+    {
+      "id": "seeded_random_projection",
+      "features": [
+        "scalar.random_seeded"
+      ]
+    },
+    {
+      "id": "select_star_contract",
+      "features": [
+        "projection.star"
+      ]
+    },
+    {
+      "id": "source_order_limit",
+      "features": [
+        "from.handle",
+        "limit",
+        "output.lines"
+      ]
+    },
+    {
+      "id": "stable_order_tie",
+      "features": [
+        "order.stable_tie"
+      ]
+    },
+    {
+      "id": "string_equality_is_case_sensitive",
+      "features": [
+        "string.case_sensitive"
+      ]
+    },
+    {
+      "id": "structured_collection_count",
+      "features": [
+        "collection.count",
+        "collection.structured",
+        "structured.member"
+      ]
+    },
+    {
+      "id": "today_baktun_relative",
+      "features": [
+        "temporal.unit_baktun"
+      ]
+    },
+    {
+      "id": "today_calendar_relative",
+      "features": [
+        "temporal.today_calendar"
+      ]
+    },
+    {
+      "id": "today_decade_relative",
+      "features": [
+        "temporal.unit_decade"
+      ]
+    },
+    {
+      "id": "today_fixed_relative",
+      "features": [
+        "temporal.today_fixed"
+      ]
+    },
+    {
+      "id": "today_welsh_relative",
+      "features": [
+        "temporal.localised"
+      ]
+    },
+    {
+      "id": "unicode_codepoint_length",
+      "features": [
+        "unicode.codepoint_length"
+      ]
+    },
+    {
+      "id": "unicode_codepoint_ordering",
+      "features": [
+        "unicode.ordering"
+      ]
+    },
+    {
+      "id": "unicode_contains_casefold",
+      "features": [
+        "unicode.casefold_contains"
+      ]
+    },
+    {
+      "id": "unicode_exact_normalisation_sensitive",
+      "features": [
+        "unicode.normalisation_sensitive"
+      ]
+    },
+    {
+      "id": "unicode_ilike_special_case_equivalence",
+      "features": [
+        "unicode.ilike_case"
+      ]
+    },
+    {
+      "id": "unicode_like_one_codepoint",
+      "features": [
+        "unicode.like_codepoint"
+      ]
+    },
+    {
+      "id": "unicode_lower_upper",
+      "features": [
+        "unicode.case_mapping"
+      ]
+    },
+    {
+      "id": "unicode_regex_scripts",
+      "features": [
+        "unicode.regex"
+      ]
+    },
+    {
+      "id": "union_all_duplicate_preservation",
+      "features": [
+        "set.union_all"
+      ]
+    },
+    {
+      "id": "union_distinct_same_source",
+      "features": [
+        "set.global_order_limit",
+        "set.union"
+      ]
+    },
+    {
+      "id": "unquoted_text_literal",
+      "features": [
+        "text.unquoted_literal"
+      ]
+    },
+    {
+      "id": "upper_projection",
+      "features": [
+        "projection.upper"
+      ]
+    }
+  ],
+  "unregistered_existing_case_tags": [],
+  "parser_functions": {
+    "scalar": [
+      "CARDINALITY",
+      "CHAR",
+      "COALESCE",
+      "CONCAT",
+      "FILTER",
+      "GREATEST",
+      "LEAST",
+      "LENGTH",
+      "LOWER",
+      "MAP",
+      "NULLIF",
+      "POSITION",
+      "RANDOM",
+      "UPPER"
+    ],
+    "aggregate": [
+      "AVG",
+      "COUNT",
+      "MAX",
+      "MIN",
+      "SUM"
+    ]
+  },
+  "shared_cases": [
+    {
+      "id": "smoke.source_order_limit",
+      "features": [
+        "from.handle",
+        "limit"
+      ],
+      "path": "yt-sql/cases/smoke/source_order_limit/test.json"
+    }
+  ],
+  "coverage_dimensions": [
+    "valid_syntax",
+    "invalid_syntax",
+    "semantics",
+    "type_and_null",
+    "boundary",
+    "interaction",
+    "adversarial"
+  ],
+  "coverage_policy": "A feature is not complete merely because an existing case names it. Each applicable dimension requires reviewed evidence or a documented non-applicability reason."
+}

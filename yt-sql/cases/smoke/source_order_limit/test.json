@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "smoke.source_order_limit",
+  "description": "First ten source records in canonical source order",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.sql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "from.handle",
+    "limit"
+  ]
+}

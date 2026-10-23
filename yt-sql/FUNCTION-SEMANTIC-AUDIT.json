@@ -1,0 +1,729 @@
+{
+  "version": 1,
+  "status": "investigation_only_no_expectations_approved",
+  "sources": [
+    "python/yt_media_tools/query_parser.py",
+    "python/yt_media_tools/query_resolver.py",
+    "python/yt_media_tools/query_evaluator.py"
+  ],
+  "functions": [
+    {
+      "name": "AVG",
+      "kind": "aggregate",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "CARDINALITY",
+      "kind": "scalar",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "CHAR",
+      "kind": "scalar",
+      "parser_argument_shape": "at_least_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "COALESCE",
+      "kind": "scalar",
+      "parser_argument_shape": "at_least_two",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "CONCAT",
+      "kind": "scalar",
+      "parser_argument_shape": "at_least_two",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "COUNT",
+      "kind": "aggregate",
+      "parser_argument_shape": "star_or_one_or_collection_binding",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "FILTER",
+      "kind": "scalar",
+      "parser_argument_shape": "collection_binding_where",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "GREATEST",
+      "kind": "scalar",
+      "parser_argument_shape": "at_least_two",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "LEAST",
+      "kind": "scalar",
+      "parser_argument_shape": "at_least_two",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "LENGTH",
+      "kind": "scalar",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "LOWER",
+      "kind": "scalar",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "MAP",
+      "kind": "scalar",
+      "parser_argument_shape": "collection_binding_select",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "MAX",
+      "kind": "aggregate",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "MIN",
+      "kind": "aggregate",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "NULLIF",
+      "kind": "scalar",
+      "parser_argument_shape": "exactly_two",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "POSITION",
+      "kind": "scalar",
+      "parser_argument_shape": "zero",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "RANDOM",
+      "kind": "scalar",
+      "parser_argument_shape": "zero_or_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "SUM",
+      "kind": "aggregate",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
+      "name": "UPPER",
+      "kind": "scalar",
+      "parser_argument_shape": "exactly_one",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    }
+  ],
+  "exception_sites": [
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_integer_literal_text",
+      "exception": "QueryLexicalError",
+      "count": 3,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_number_text",
+      "exception": "QueryLexicalError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_validate_like_pattern",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect_identifier",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect_keyword",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_collection_predicate",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_from_source",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_group_by",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_having_predicate",
+      "exception": "QuerySyntaxError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_join_clause",
+      "exception": "QuerySyntaxError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_like_literal",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_literal",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_predicate",
+      "exception": "QuerySyntaxError",
+      "count": 8,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_query",
+      "exception": "QuerySyntaxError",
+      "count": 16,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_regex_literal",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_reference",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_references",
+      "exception": "QuerySyntaxError",
+      "count": 4,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_atom",
+      "exception": "QuerySyntaxError",
+      "count": 4,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_case",
+      "exception": "QuerySyntaxError",
+      "count": 5,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_function",
+      "exception": "QuerySyntaxError",
+      "count": 17,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_postfix",
+      "exception": "QuerySyntaxError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_select_list",
+      "exception": "QuerySyntaxError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_text_literal",
+      "exception": "QuerySyntaxError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "tokenise",
+      "exception": "QueryLexicalError",
+      "count": 6,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_common_case_kind",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_common_scalar_kind",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_parse_count_text",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_parse_duration_text",
+      "exception": "QuerySemanticError",
+      "count": 7,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query",
+      "exception": "QuerySemanticError",
+      "count": 3,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query.resolve_body",
+      "exception": "QuerySemanticError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_field",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_having",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_having",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_literal",
+      "exception": "QuerySemanticError",
+      "count": 5,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_predicate",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_predicate",
+      "exception": "QuerySemanticError",
+      "count": 8,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_query_body",
+      "exception": "QuerySemanticError",
+      "count": 8,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_scalar_expression",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_scalar_expression",
+      "exception": "QuerySemanticError",
+      "count": 27,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_union_order",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_union_common_kind",
+      "exception": "ValueError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_char_codepoint",
+      "exception": "QuerySemanticError",
+      "count": 3,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_group_compatibility",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_having_group_compatibility",
+      "exception": "QuerySemanticError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_position_placement",
+      "exception": "QuerySemanticError",
+      "count": 3,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_random_placement",
+      "exception": "QuerySemanticError",
+      "count": 4,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "resolve_query",
+      "exception": "QuerySemanticError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_scalar_function_values",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_coerce_char_codepoint",
+      "exception": "TypeError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_coerce_char_codepoint",
+      "exception": "ValueError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_binary",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_expression",
+      "exception": "AssertionError",
+      "count": 4,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_comparison",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_group_expression",
+      "exception": "AssertionError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_having",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_scalar_expression",
+      "exception": "AssertionError",
+      "count": 3,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "canonical_record_value",
+      "exception": "AssertionError",
+      "count": 1,
+      "classification": "requires_review"
+    }
+  ],
+  "limitations": [
+    "Function names and parser argument shapes are source-derived; semantic contracts require review.",
+    "Exception sites are investigation targets, not necessarily user-facing language errors.",
+    "Source locations are represented by structural scopes rather than formatting-sensitive line numbers.",
+    "No candidate output or existing feature tag is approved as normative coverage."
+  ]
+}

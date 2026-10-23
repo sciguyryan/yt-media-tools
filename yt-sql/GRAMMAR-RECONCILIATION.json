@@ -1,0 +1,483 @@
+{
+  "version": 1,
+  "status": "discovery_candidates_require_manual_review",
+  "parser": "python/yt_media_tools/query_parser.py",
+  "parser_implementation": "hand_written_recursive_descent",
+  "literal_keyword_calls": [
+    {
+      "word": "ALL",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "AND",
+      "methods": [
+        "parse_and",
+        "parse_having_and",
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "ANTI",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "AS",
+      "methods": [
+        "parse_collection_predicate",
+        "parse_query",
+        "parse_relation_references",
+        "parse_scalar_function",
+        "parse_select_list"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "ASC",
+      "methods": [
+        "parse_order_by"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "BETWEEN",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "BY",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "CASE",
+      "methods": [
+        "parse_scalar_case"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "CONTAIN",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "CONTAINS",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "CROSS",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": false
+    },
+    {
+      "word": "DESC",
+      "methods": [
+        "parse_order_by"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "DISTINCT",
+      "methods": [
+        "parse_having_predicate",
+        "parse_predicate",
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "DOES",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "ELSE",
+      "methods": [
+        "parse_scalar_case"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "END",
+      "methods": [
+        "parse_scalar_case"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "FALSE",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "FILTER",
+      "methods": [
+        "parse_scalar_function"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "FROM",
+      "methods": [
+        "parse_having_predicate",
+        "parse_predicate",
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "FULL",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": false
+    },
+    {
+      "word": "GROUP",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "HAVING",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "ILIKE",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "IN",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "INNER",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "IS",
+      "methods": [
+        "parse_having_predicate",
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "JOIN",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "LEFT",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "LIKE",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "LIMIT",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "MATCH",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "MATCHES",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "NATURAL",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": false
+    },
+    {
+      "word": "NOT",
+      "methods": [
+        "parse_having_not",
+        "parse_having_predicate",
+        "parse_not",
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "NULL",
+      "methods": [
+        "parse_having_predicate",
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "OF",
+      "methods": [
+        "parse_relation_references"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "OFFSET",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "ON",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "OR",
+      "methods": [
+        "parse_having_or",
+        "parse_or"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "ORDER",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "OUTER",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "RECURSIVE",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": false
+    },
+    {
+      "word": "RIGHT",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": false
+    },
+    {
+      "word": "SELECT",
+      "methods": [
+        "parse_query",
+        "parse_scalar_function"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "SEMI",
+      "methods": [
+        "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "THEN",
+      "methods": [
+        "parse_scalar_case"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "TRUE",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "UNION",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "UNKNOWN",
+      "methods": [
+        "parse_predicate"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "WHEN",
+      "methods": [
+        "parse_scalar_case"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "WHERE",
+      "methods": [
+        "parse_collection_predicate",
+        "parse_query",
+        "parse_scalar_function"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "WITH",
+      "methods": [
+        "parse_query"
+      ],
+      "registry_keyword_present": true
+    }
+  ],
+  "literal_token_calls": [
+    {
+      "token": "LPAREN",
+      "methods": [
+        "parse_collection_predicate",
+        "parse_predicate",
+        "parse_query",
+        "parse_scalar_function"
+      ]
+    },
+    {
+      "token": "RBRACKET",
+      "methods": [
+        "parse_scalar_postfix"
+      ]
+    },
+    {
+      "token": "RPAREN",
+      "methods": [
+        "parse_collection_predicate",
+        "parse_having_not",
+        "parse_predicate",
+        "parse_primary",
+        "parse_query",
+        "parse_relation_references",
+        "parse_scalar_atom",
+        "parse_scalar_function"
+      ]
+    }
+  ],
+  "unmatched_keyword_candidates": [
+    "CROSS",
+    "FULL",
+    "NATURAL",
+    "RECURSIVE",
+    "RIGHT"
+  ],
+  "unmatched_token_candidates": [
+    "LPAREN",
+    "RBRACKET",
+    "RPAREN"
+  ],
+  "diagnostic_exception_classes_by_module": [
+    {
+      "module": "query_evaluator.py",
+      "exception": "AssertionError",
+      "scope_groups": 8
+    },
+    {
+      "module": "query_evaluator.py",
+      "exception": "TypeError",
+      "scope_groups": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "exception": "ValueError",
+      "scope_groups": 1
+    },
+    {
+      "module": "query_parser.py",
+      "exception": "QueryLexicalError",
+      "scope_groups": 3
+    },
+    {
+      "module": "query_parser.py",
+      "exception": "QuerySyntaxError",
+      "scope_groups": 22
+    },
+    {
+      "module": "query_resolver.py",
+      "exception": "AssertionError",
+      "scope_groups": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "exception": "QuerySemanticError",
+      "scope_groups": 19
+    },
+    {
+      "module": "query_resolver.py",
+      "exception": "ValueError",
+      "scope_groups": 1
+    }
+  ],
+  "review_requirements": [
+    "Confirm keyword candidates are supported grammar forms, not incidental internal strings.",
+    "Confirm token candidates against lexer groups, operator spellings and contextual syntax.",
+    "Inspect dynamic and indirect parser branches not visible in literal-call discovery.",
+    "Classify diagnostic sites by actual user-facing syntax, semantic and runtime behaviour.",
+    "Add missing supported elements to the curated registry only after source review.",
+    "Do not count existing tags or generated candidate outputs as approved conformance coverage."
+  ]
+}

@@ -1,0 +1,2406 @@
+{
+  "generated_at": "2026-09-01T12:00:00+00:00",
+  "id": "python-v6-small",
+  "kind": "static",
+  "provenance": {
+    "generator": "python/yt_discover_tests/conformance/generate_dataset.py",
+    "generator_version": 6,
+    "profile": "small",
+    "seed": 31415926
+  },
+  "record_count": 60,
+  "record_digest_sha256": "a69fdfe91767b18232ddd8aefd6c563c6a5c01e4300c80c56a8fdaaf760ee545",
+  "records": [
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 787,
+      "duration": 3599,
+      "fixture_group": 1,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-1",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-1",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid001",
+      "is_live": false,
+      "like_count": 6988,
+      "live_status": null,
+      "release_timestamp": 1788208200,
+      "tags": [
+        "topic-1",
+        "group-1"
+      ],
+      "timestamp": 1788208200,
+      "title": "Mars: New Dawn",
+      "upload_date": "20260831",
+      "uploader": "Conformance Fixture",
+      "view_count": 1500000,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid001"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 516,
+      "duration": 3600,
+      "fixture_group": 2,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-2",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-2",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid002",
+      "is_live": false,
+      "like_count": 6092,
+      "live_status": null,
+      "release_timestamp": 1788164100,
+      "tags": [],
+      "timestamp": 1788164100,
+      "title": "mars: new dawn",
+      "upload_date": "20260831",
+      "uploader": "Conformance Fixture",
+      "view_count": 1500000,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid002"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 47,
+      "duration": 3601,
+      "fixture_group": 3,
+      "fixture_nullable": "g0",
+      "formats": [],
+      "id": "vid003",
+      "is_live": false,
+      "like_count": 7392,
+      "live_status": null,
+      "release_timestamp": 1788109200,
+      "tags": [
+        "topic-3",
+        "group-0"
+      ],
+      "timestamp": 1788109200,
+      "title": "Venus Weather",
+      "upload_date": "20260830",
+      "uploader": "Conformance Fixture",
+      "view_count": 250000,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid003"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 830,
+      "duration": 900,
+      "fixture_group": 0,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-4",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-4",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid004",
+      "is_live": false,
+      "like_count": 3876,
+      "live_status": "was_live",
+      "release_timestamp": 1788080400,
+      "tags": [
+        "topic-4",
+        "group-1"
+      ],
+      "timestamp": 1788080400,
+      "title": "Mars [LIVE]",
+      "upload_date": "20260830",
+      "uploader": "Conformance Fixture",
+      "view_count": 2000000,
+      "was_live": true,
+      "webpage_url": "https://fixture.invalid/watch/vid004"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1146,
+      "duration": 0,
+      "fixture_group": 1,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-5",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-5",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid005",
+      "is_live": false,
+      "like_count": 1248,
+      "live_status": null,
+      "release_timestamp": 1788004800,
+      "tags": [
+        "topic-0",
+        "group-2"
+      ],
+      "timestamp": 1788004800,
+      "title": "Jupiter Update",
+      "upload_date": "20260829",
+      "uploader": "Conformance Fixture",
+      "view_count": 0,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid005"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": null,
+      "duration": null,
+      "fixture_group": 2,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-6",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-6",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid006",
+      "is_live": false,
+      "like_count": null,
+      "live_status": null,
+      "release_timestamp": null,
+      "tags": [
+        "topic-1",
+        "group-0"
+      ],
+      "timestamp": null,
+      "title": "Untitled?",
+      "upload_date": "20260828",
+      "uploader": "Conformance Fixture",
+      "view_count": null,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid006"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1032,
+      "duration": 600,
+      "fixture_group": 3,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-7",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-7",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid007",
+      "is_live": false,
+      "like_count": 5516,
+      "live_status": null,
+      "release_timestamp": 1787875199,
+      "tags": [
+        "topic-2",
+        "skip",
+        "group-1"
+      ],
+      "timestamp": 1787875199,
+      "title": "MARS geology",
+      "upload_date": "20260827",
+      "uploader": "Conformance Fixture",
+      "view_count": 999999,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid007"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 825,
+      "duration": 600,
+      "fixture_group": 0,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-8",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-8",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid008",
+      "is_live": false,
+      "like_count": 7688,
+      "live_status": null,
+      "release_timestamp": 1787788801,
+      "tags": [
+        "topic-3",
+        "raw-8-a",
+        "group-2"
+      ],
+      "timestamp": 1787788801,
+      "title": "Moon & Mars",
+      "upload_date": "20260827",
+      "uploader": "Conformance Fixture",
+      "view_count": 1000000,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid008"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 724,
+      "duration": 1200,
+      "fixture_group": 1,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-9",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-9",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid009",
+      "is_live": false,
+      "like_count": 1769,
+      "live_status": null,
+      "release_timestamp": 1787767200,
+      "tags": [
+        "topic-4",
+        null,
+        "group-0"
+      ],
+      "timestamp": 1787767200,
+      "title": "Duplicate",
+      "upload_date": "20260826",
+      "uploader": "Conformance Fixture",
+      "view_count": 42,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid009"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 248,
+      "duration": 1200,
+      "fixture_group": 2,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-10",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-10",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid010",
+      "is_live": false,
+      "like_count": 4223,
+      "live_status": null,
+      "release_timestamp": 1787724000,
+      "tags": null,
+      "timestamp": 1787724000,
+      "title": "Duplicate",
+      "upload_date": "20260826",
+      "uploader": "Conformance Fixture",
+      "view_count": 42,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid010"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 559,
+      "duration": 1800,
+      "fixture_group": 3,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-11",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-11",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid011",
+      "is_live": false,
+      "like_count": 8735,
+      "live_status": null,
+      "release_timestamp": 1787652000,
+      "tags": [
+        "topic-1",
+        "group-2"
+      ],
+      "timestamp": 1787652000,
+      "title": "Regex .* literal",
+      "upload_date": "20260825",
+      "uploader": "Conformance Fixture",
+      "view_count": 12345,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid011"
+    },
+    {
+      "availability": "public",
+      "categories": null,
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 697,
+      "duration": 1801,
+      "fixture_group": 0,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-12",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-12",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid012",
+      "is_live": false,
+      "like_count": 2698,
+      "live_status": null,
+      "release_timestamp": 1787565600,
+      "tags": [
+        "topic-2",
+        "group-0"
+      ],
+      "timestamp": 1787565600,
+      "title": "100% Mars",
+      "upload_date": "20260824",
+      "uploader": "Conformance Fixture",
+      "view_count": 54321,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid012"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 448,
+      "duration": 30,
+      "fixture_group": 1,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-13",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-13",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid013",
+      "is_live": false,
+      "like_count": 2888,
+      "live_status": null,
+      "release_timestamp": 1787479200,
+      "tags": [
+        "topic-3",
+        "group-1"
+      ],
+      "timestamp": 1787479200,
+      "title": "O'Brien on Mars",
+      "upload_date": "20260823",
+      "uploader": "Conformance Fixture",
+      "view_count": 7,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid013"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1334,
+      "duration": 7200,
+      "fixture_group": 2,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-14",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-14",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid014",
+      "is_live": false,
+      "like_count": 8613,
+      "live_status": null,
+      "release_timestamp": 1787392800,
+      "tags": [
+        "topic-4",
+        "skip",
+        "group-2"
+      ],
+      "timestamp": 1787392800,
+      "title": "Unicode café Δ",
+      "upload_date": "20260822",
+      "uploader": "Conformance Fixture",
+      "view_count": 88888,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid014"
+    },
+    {
+      "availability": "private",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 683,
+      "duration": 300,
+      "fixture_group": 3,
+      "fixture_nullable": null,
+      "formats": null,
+      "id": "vid015",
+      "is_live": false,
+      "like_count": 2821,
+      "live_status": null,
+      "release_timestamp": 1787306400,
+      "tags": [
+        "topic-0",
+        "group-0"
+      ],
+      "timestamp": 1787306400,
+      "title": "Private observation",
+      "upload_date": "20260821",
+      "uploader": "Conformance Fixture",
+      "view_count": 10,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid015"
+    },
+    {
+      "availability": "subscriber_only",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 999,
+      "duration": 301,
+      "fixture_group": 0,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-16",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-16",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid016",
+      "is_live": false,
+      "like_count": 3060,
+      "live_status": null,
+      "release_timestamp": 1787220000,
+      "tags": [
+        "topic-1",
+        "raw-16-a",
+        "group-1"
+      ],
+      "timestamp": 1787220000,
+      "title": "Members observation",
+      "upload_date": "20260820",
+      "uploader": "Conformance Fixture",
+      "view_count": 11,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid016"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 672,
+      "duration": 0,
+      "fixture_group": 1,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-17",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-17",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid017",
+      "is_live": false,
+      "like_count": 7462,
+      "live_status": "is_upcoming",
+      "release_timestamp": 1787133600,
+      "tags": [
+        "topic-2",
+        "group-2"
+      ],
+      "timestamp": 1787133600,
+      "title": "Upcoming Mars",
+      "upload_date": "20260819",
+      "uploader": "Conformance Fixture",
+      "view_count": 0,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid017"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 787,
+      "duration": 86399,
+      "fixture_group": 2,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-18",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-18",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid018",
+      "is_live": false,
+      "like_count": 2091,
+      "live_status": null,
+      "release_timestamp": 1787047200,
+      "tags": [
+        "topic-3",
+        null,
+        "group-0"
+      ],
+      "timestamp": 1787047200,
+      "title": "Ancient Mars",
+      "upload_date": "20260818",
+      "uploader": "Conformance Fixture",
+      "view_count": 5000000,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid018"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 132,
+      "duration": 86400,
+      "fixture_group": 3,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-19",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-19",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid019",
+      "is_live": false,
+      "like_count": 4077,
+      "live_status": null,
+      "release_timestamp": 1786960800,
+      "tags": [
+        "topic-4",
+        "group-1"
+      ],
+      "timestamp": 1786960800,
+      "title": "One day exactly",
+      "upload_date": "20260817",
+      "uploader": "Conformance Fixture",
+      "view_count": 123,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid019"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 486,
+      "duration": 86401,
+      "fixture_group": 0,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-20",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-20",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid020",
+      "is_live": false,
+      "like_count": 2787,
+      "live_status": null,
+      "release_timestamp": 1786874400,
+      "tags": null,
+      "timestamp": 1786874400,
+      "title": "One day plus",
+      "upload_date": "20260816",
+      "uploader": "Conformance Fixture",
+      "view_count": 124,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid020"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1512,
+      "duration": 59,
+      "fixture_group": 1,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-21",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-21",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid021",
+      "is_live": false,
+      "like_count": 2114,
+      "live_status": null,
+      "release_timestamp": 1786788000,
+      "tags": [
+        "topic-1",
+        "skip",
+        "group-0"
+      ],
+      "timestamp": 1786788000,
+      "title": "Zero views",
+      "upload_date": "20260815",
+      "uploader": "Conformance Fixture",
+      "view_count": 0,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid021"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": null,
+      "duration": 60,
+      "fixture_group": 2,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-22",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-22",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid022",
+      "is_live": false,
+      "like_count": null,
+      "live_status": null,
+      "release_timestamp": 1786701600,
+      "tags": [
+        "topic-2",
+        "group-1"
+      ],
+      "timestamp": 1786701600,
+      "title": "Null views",
+      "upload_date": "20260814",
+      "uploader": "Conformance Fixture",
+      "view_count": null,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid022"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 625,
+      "duration": 61,
+      "fixture_group": 3,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-23",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-23",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid023",
+      "is_live": false,
+      "like_count": 5797,
+      "live_status": null,
+      "release_timestamp": 1786615200,
+      "tags": [
+        "topic-3",
+        "group-2"
+      ],
+      "timestamp": 1786615200,
+      "title": "Case Test",
+      "upload_date": "20260813",
+      "uploader": "Conformance Fixture",
+      "view_count": 100,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid023"
+    },
+    {
+      "availability": "public",
+      "categories": null,
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 606,
+      "duration": 62,
+      "fixture_group": 0,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-24",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-24",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid024",
+      "is_live": false,
+      "like_count": 1217,
+      "live_status": null,
+      "release_timestamp": 1786528800,
+      "tags": [
+        "topic-4",
+        "raw-24-a",
+        "group-0"
+      ],
+      "timestamp": 1786528800,
+      "title": "case test",
+      "upload_date": "20260812",
+      "uploader": "Conformance Fixture",
+      "view_count": 101,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid024"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1615,
+      "duration": 1000,
+      "fixture_group": 1,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-25",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-25",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid025",
+      "is_live": false,
+      "like_count": 156,
+      "live_status": null,
+      "release_timestamp": 1786442400,
+      "tags": [
+        "topic-0",
+        "group-1"
+      ],
+      "timestamp": 1786442400,
+      "title": "Tie A",
+      "upload_date": "20260811",
+      "uploader": "Conformance Fixture",
+      "view_count": 500,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid025"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 808,
+      "duration": 1000,
+      "fixture_group": 2,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-26",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-26",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid026",
+      "is_live": false,
+      "like_count": 2534,
+      "live_status": null,
+      "release_timestamp": 1786442400,
+      "tags": [
+        "topic-1",
+        "group-2"
+      ],
+      "timestamp": 1786442400,
+      "title": "Tie B",
+      "upload_date": "20260811",
+      "uploader": "Conformance Fixture",
+      "view_count": 500,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid026"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 932,
+      "duration": 1,
+      "fixture_group": 3,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-27",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-27",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid027",
+      "is_live": false,
+      "like_count": 2122,
+      "live_status": null,
+      "release_timestamp": 1785542400,
+      "tags": [
+        "topic-2",
+        null,
+        "group-0"
+      ],
+      "timestamp": 1785542400,
+      "title": "Boundary start",
+      "upload_date": "20260801",
+      "uploader": "Conformance Fixture",
+      "view_count": 1,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid027"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1646,
+      "duration": 2,
+      "fixture_group": 0,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-28",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-28",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid028",
+      "is_live": false,
+      "like_count": 5053,
+      "live_status": null,
+      "release_timestamp": 1785542399,
+      "tags": [
+        "topic-3",
+        "skip",
+        "group-1"
+      ],
+      "timestamp": 1785542399,
+      "title": "Before boundary",
+      "upload_date": "20260731",
+      "uploader": "Conformance Fixture",
+      "view_count": 2,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid028"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 782,
+      "duration": 3,
+      "fixture_group": 1,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-29",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-29",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid029",
+      "is_live": false,
+      "like_count": 2049,
+      "live_status": null,
+      "release_timestamp": 1767225600,
+      "tags": [
+        "topic-4",
+        "group-2"
+      ],
+      "timestamp": 1767225600,
+      "title": "Year start",
+      "upload_date": "20260101",
+      "uploader": "Conformance Fixture",
+      "view_count": 3,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid029"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1366,
+      "duration": 4,
+      "fixture_group": 2,
+      "fixture_nullable": null,
+      "formats": null,
+      "id": "vid030",
+      "is_live": false,
+      "like_count": 1184,
+      "live_status": null,
+      "release_timestamp": 1709208000,
+      "tags": null,
+      "timestamp": 1709208000,
+      "title": "Leap-era sample",
+      "upload_date": "20240229",
+      "uploader": "Conformance Fixture",
+      "view_count": 4,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid030"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1039,
+      "duration": 5,
+      "fixture_group": 3,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-31",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-31",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid031",
+      "is_live": false,
+      "like_count": 7375,
+      "live_status": null,
+      "release_timestamp": 1786363200,
+      "tags": [
+        "topic-1",
+        "group-1"
+      ],
+      "timestamp": 1786363200,
+      "title": "No upload date",
+      "upload_date": null,
+      "uploader": "Conformance Fixture",
+      "view_count": 5,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid031"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1484,
+      "duration": 6,
+      "fixture_group": 0,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-32",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-32",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid032",
+      "is_live": false,
+      "like_count": 219,
+      "live_status": null,
+      "release_timestamp": null,
+      "tags": [
+        "topic-2",
+        "raw-32-a",
+        "group-2"
+      ],
+      "timestamp": null,
+      "title": "No timestamp",
+      "upload_date": "20260810",
+      "uploader": "Conformance Fixture",
+      "view_count": 6,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid032"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 580,
+      "duration": 7,
+      "fixture_group": 1,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-33",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-33",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid033",
+      "is_live": true,
+      "like_count": 4301,
+      "live_status": "is_live",
+      "release_timestamp": 1786276800,
+      "tags": [
+        "topic-3",
+        "group-0"
+      ],
+      "timestamp": 1786276800,
+      "title": "Boolean live",
+      "upload_date": "20260809",
+      "uploader": "Conformance Fixture",
+      "view_count": 7,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid033"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1444,
+      "duration": 8,
+      "fixture_group": 2,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-34",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-34",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid034",
+      "is_live": false,
+      "like_count": 5128,
+      "live_status": null,
+      "release_timestamp": 1786190400,
+      "tags": [
+        "topic-4",
+        "group-1"
+      ],
+      "timestamp": 1786190400,
+      "title": "Large count",
+      "upload_date": "20260808",
+      "uploader": "Conformance Fixture",
+      "view_count": 9223372036,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid034"
+    },
+    {
+      "availability": null,
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 30,
+      "duration": 9,
+      "fixture_group": 3,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-35",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-35",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid035",
+      "is_live": false,
+      "like_count": 2691,
+      "live_status": null,
+      "release_timestamp": 1786104000,
+      "tags": [
+        "topic-0",
+        "skip",
+        "group-2"
+      ],
+      "timestamp": 1786104000,
+      "title": "Empty title sentinel",
+      "upload_date": "20260807",
+      "uploader": "Conformance Fixture",
+      "view_count": 9,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid035"
+    },
+    {
+      "availability": "public",
+      "categories": null,
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1564,
+      "duration": 10,
+      "fixture_group": 0,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-36",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-36",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid036",
+      "is_live": false,
+      "like_count": 6909,
+      "live_status": null,
+      "release_timestamp": 1786017600,
+      "tags": [
+        "topic-1",
+        null,
+        "group-0"
+      ],
+      "timestamp": 1786017600,
+      "title": "Final source row",
+      "upload_date": "20260806",
+      "uploader": "Conformance Fixture",
+      "view_count": 10,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid036"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1447,
+      "duration": 11,
+      "fixture_group": 1,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-37",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-37",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid037",
+      "is_live": false,
+      "like_count": 848,
+      "live_status": null,
+      "release_timestamp": 1785931200,
+      "tags": [
+        "topic-2",
+        "group-1"
+      ],
+      "timestamp": 1785931200,
+      "title": "Café composed é",
+      "upload_date": "20260805",
+      "uploader": "Conformance Fixture",
+      "view_count": 11,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid037"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1561,
+      "duration": 12,
+      "fixture_group": 2,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-38",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-38",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid038",
+      "is_live": false,
+      "like_count": 5682,
+      "live_status": null,
+      "release_timestamp": 1785844800,
+      "tags": [
+        "topic-3",
+        "group-2"
+      ],
+      "timestamp": 1785844800,
+      "title": "Café decomposed é",
+      "upload_date": "20260804",
+      "uploader": "Conformance Fixture",
+      "view_count": 12,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid038"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 684,
+      "duration": 13,
+      "fixture_group": 3,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-39",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-39",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid039",
+      "is_live": false,
+      "like_count": 9632,
+      "live_status": null,
+      "release_timestamp": 1785758400,
+      "tags": [
+        "topic-4",
+        "group-0"
+      ],
+      "timestamp": 1785758400,
+      "title": "Combining only ̧́",
+      "upload_date": "20260803",
+      "uploader": "Conformance Fixture",
+      "view_count": 13,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid039"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 380,
+      "duration": 14,
+      "fixture_group": 0,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-40",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-40",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid040",
+      "is_live": false,
+      "like_count": 1991,
+      "live_status": null,
+      "release_timestamp": 1785672000,
+      "tags": null,
+      "timestamp": 1785672000,
+      "title": "Emoji 😀",
+      "upload_date": "20260802",
+      "uploader": "Conformance Fixture",
+      "view_count": 14,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid040"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1756,
+      "duration": 15,
+      "fixture_group": 1,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-41",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-41",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid041",
+      "is_live": false,
+      "like_count": 6339,
+      "live_status": null,
+      "release_timestamp": 1785412800,
+      "tags": [
+        "topic-1",
+        "group-2"
+      ],
+      "timestamp": 1785412800,
+      "title": "Emoji family 👩‍👩‍👧‍👦",
+      "upload_date": "20260730",
+      "uploader": "Conformance Fixture",
+      "view_count": 15,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid041"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 49,
+      "duration": 16,
+      "fixture_group": 2,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-42",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-42",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid042",
+      "is_live": false,
+      "like_count": 9940,
+      "live_status": null,
+      "release_timestamp": 1785326400,
+      "tags": [
+        "topic-2",
+        "skip",
+        "group-0"
+      ],
+      "timestamp": 1785326400,
+      "title": "Flag 🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+      "upload_date": "20260729",
+      "uploader": "Conformance Fixture",
+      "view_count": 16,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid042"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 815,
+      "duration": 17,
+      "fixture_group": 3,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-43",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-43",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid043",
+      "is_live": false,
+      "like_count": 3124,
+      "live_status": null,
+      "release_timestamp": 1785240000,
+      "tags": [
+        "topic-3",
+        "group-1"
+      ],
+      "timestamp": 1785240000,
+      "title": "Variation ✈️",
+      "upload_date": "20260728",
+      "uploader": "Conformance Fixture",
+      "view_count": 17,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid043"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 86,
+      "duration": 18,
+      "fixture_group": 0,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-44",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-44",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid044",
+      "is_live": false,
+      "like_count": 7770,
+      "live_status": null,
+      "release_timestamp": 1785153600,
+      "tags": [
+        "topic-4",
+        "group-2"
+      ],
+      "timestamp": 1785153600,
+      "title": "Greek Σ σ ς",
+      "upload_date": "20260727",
+      "uploader": "Conformance Fixture",
+      "view_count": 18,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid044"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1547,
+      "duration": 19,
+      "fixture_group": 1,
+      "fixture_nullable": null,
+      "formats": null,
+      "id": "vid045",
+      "is_live": false,
+      "like_count": 1722,
+      "live_status": null,
+      "release_timestamp": 1785067200,
+      "tags": [
+        "topic-0",
+        null,
+        "group-0"
+      ],
+      "timestamp": 1785067200,
+      "title": "Turkish İ I ı i",
+      "upload_date": "20260726",
+      "uploader": "Conformance Fixture",
+      "view_count": 19,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid045"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 237,
+      "duration": 20,
+      "fixture_group": 2,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-46",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-46",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid046",
+      "is_live": false,
+      "like_count": 7710,
+      "live_status": null,
+      "release_timestamp": 1784980800,
+      "tags": [
+        "topic-1",
+        "group-1"
+      ],
+      "timestamp": 1784980800,
+      "title": "German Straße STRASSE",
+      "upload_date": "20260725",
+      "uploader": "Conformance Fixture",
+      "view_count": 20,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid046"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1862,
+      "duration": 21,
+      "fixture_group": 3,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-47",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-47",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid047",
+      "is_live": false,
+      "like_count": 583,
+      "live_status": null,
+      "release_timestamp": 1784894400,
+      "tags": [
+        "topic-2",
+        "group-2"
+      ],
+      "timestamp": 1784894400,
+      "title": "Kelvin K K k",
+      "upload_date": "20260724",
+      "uploader": "Conformance Fixture",
+      "view_count": 21,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid047"
+    },
+    {
+      "availability": "public",
+      "categories": null,
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 358,
+      "duration": 22,
+      "fixture_group": 0,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-48",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-48",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid048",
+      "is_live": false,
+      "like_count": 7816,
+      "live_status": null,
+      "release_timestamp": 1784808000,
+      "tags": [
+        "topic-3",
+        "raw-48-a",
+        "group-0"
+      ],
+      "timestamp": 1784808000,
+      "title": "Long s ſ S",
+      "upload_date": "20260723",
+      "uploader": "Conformance Fixture",
+      "view_count": 22,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid048"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 590,
+      "duration": 23,
+      "fixture_group": 1,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-49",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-49",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid049",
+      "is_live": false,
+      "like_count": 2318,
+      "live_status": null,
+      "release_timestamp": 1784721600,
+      "tags": [
+        "topic-4",
+        "skip",
+        "group-1"
+      ],
+      "timestamp": 1784721600,
+      "title": "CJK 東京漢字",
+      "upload_date": "20260722",
+      "uploader": "Conformance Fixture",
+      "view_count": 23,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid049"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1950,
+      "duration": 24,
+      "fixture_group": 2,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-50",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-50",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid050",
+      "is_live": false,
+      "like_count": 7857,
+      "live_status": null,
+      "release_timestamp": 1784635200,
+      "tags": null,
+      "timestamp": 1784635200,
+      "title": "Arabic مرحبا",
+      "upload_date": "20260721",
+      "uploader": "Conformance Fixture",
+      "view_count": 24,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid050"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 348,
+      "duration": 25,
+      "fixture_group": 3,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-51",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-51",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid051",
+      "is_live": false,
+      "like_count": 5872,
+      "live_status": null,
+      "release_timestamp": 1784548800,
+      "tags": [
+        "topic-1",
+        "group-0"
+      ],
+      "timestamp": 1784548800,
+      "title": "Hebrew שלום",
+      "upload_date": "20260720",
+      "uploader": "Conformance Fixture",
+      "view_count": 25,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid051"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 410,
+      "duration": 26,
+      "fixture_group": 0,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-52",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-52",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid052",
+      "is_live": false,
+      "like_count": 2677,
+      "live_status": null,
+      "release_timestamp": 1784462400,
+      "tags": [
+        "topic-2",
+        "group-1"
+      ],
+      "timestamp": 1784462400,
+      "title": "NBSP space",
+      "upload_date": "20260719",
+      "uploader": "Conformance Fixture",
+      "view_count": 26,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid052"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 430,
+      "duration": 27,
+      "fixture_group": 1,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-53",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-53",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid053",
+      "is_live": false,
+      "like_count": 6966,
+      "live_status": null,
+      "release_timestamp": 1784376000,
+      "tags": [
+        "topic-3",
+        "group-2"
+      ],
+      "timestamp": 1784376000,
+      "title": "Thin space",
+      "upload_date": "20260718",
+      "uploader": "Conformance Fixture",
+      "view_count": 27,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid053"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 257,
+      "duration": 28,
+      "fixture_group": 2,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-54",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-54",
+          "height": null,
+          "width": 1280
+        }
+      ],
+      "id": "vid054",
+      "is_live": false,
+      "like_count": 8781,
+      "live_status": null,
+      "release_timestamp": 1784289600,
+      "tags": [
+        "topic-4",
+        null,
+        "group-0"
+      ],
+      "timestamp": 1784289600,
+      "title": "RTL mark ‏text",
+      "upload_date": "20260717",
+      "uploader": "Conformance Fixture",
+      "view_count": 28,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid054"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 335,
+      "duration": 29,
+      "fixture_group": 3,
+      "fixture_nullable": null,
+      "formats": [
+        {
+          "format_id": "low-55",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-55",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid055",
+      "is_live": false,
+      "like_count": 4673,
+      "live_status": null,
+      "release_timestamp": 1784203200,
+      "tags": [
+        "topic-0",
+        "group-1"
+      ],
+      "timestamp": 1784203200,
+      "title": "Wildcards % _ \\ and fullwidth ％＿",
+      "upload_date": "20260716",
+      "uploader": "Conformance Fixture",
+      "view_count": 29,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid055"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 0",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1797,
+      "duration": 30,
+      "fixture_group": 0,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-56",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-56",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid056",
+      "is_live": false,
+      "like_count": 304,
+      "live_status": null,
+      "release_timestamp": 1784116800,
+      "tags": [
+        "topic-1",
+        "skip",
+        "group-2"
+      ],
+      "timestamp": 1784116800,
+      "title": "Astral 𐐷 𝄞",
+      "upload_date": "20260715",
+      "uploader": "Conformance Fixture",
+      "view_count": 30,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid056"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 1",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1573,
+      "duration": 31,
+      "fixture_group": 1,
+      "fixture_nullable": "g0",
+      "formats": [
+        {
+          "format_id": "low-57",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-57",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid057",
+      "is_live": false,
+      "like_count": 6539,
+      "live_status": null,
+      "release_timestamp": 1784030400,
+      "tags": [
+        "topic-2",
+        "group-0"
+      ],
+      "timestamp": 1784030400,
+      "title": "Line\nbreak",
+      "upload_date": "20260714",
+      "uploader": "Conformance Fixture",
+      "view_count": 31,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid057"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 2",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 1241,
+      "duration": 32,
+      "fixture_group": 2,
+      "fixture_nullable": "g1",
+      "formats": [
+        {
+          "format_id": "low-58",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-58",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid058",
+      "is_live": false,
+      "like_count": 6815,
+      "live_status": null,
+      "release_timestamp": 1783944000,
+      "tags": [
+        "topic-3",
+        "group-1"
+      ],
+      "timestamp": 1783944000,
+      "title": "Line separator  ",
+      "upload_date": "20260713",
+      "uploader": "Conformance Fixture",
+      "view_count": 32,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid058"
+    },
+    {
+      "availability": "public",
+      "categories": [
+        "Category 3",
+        "Fixture"
+      ],
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 468,
+      "duration": 33,
+      "fixture_group": 3,
+      "fixture_nullable": "g2",
+      "formats": [
+        {
+          "format_id": "low-59",
+          "height": 360,
+          "width": 640
+        },
+        {
+          "format_id": "high-59",
+          "height": 720,
+          "width": 1280
+        }
+      ],
+      "id": "vid059",
+      "is_live": false,
+      "like_count": 729,
+      "live_status": null,
+      "release_timestamp": 1783857600,
+      "tags": [
+        "topic-4",
+        "group-2"
+      ],
+      "timestamp": 1783857600,
+      "title": "Zero width joiner A‍B",
+      "upload_date": "20260712",
+      "uploader": "Conformance Fixture",
+      "view_count": 33,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid059"
+    },
+    {
+      "availability": "public",
+      "categories": null,
+      "channel": "Conformance Fixture",
+      "channel_id": "fixture-channel",
+      "comment_count": 497,
+      "duration": 34,
+      "fixture_group": 0,
+      "fixture_nullable": null,
+      "formats": null,
+      "id": "vid060",
+      "is_live": false,
+      "like_count": 8805,
+      "live_status": null,
+      "release_timestamp": 1783771200,
+      "tags": null,
+      "timestamp": 1783771200,
+      "title": "Zero width non-joiner A‌B",
+      "upload_date": "20260711",
+      "uploader": "Conformance Fixture",
+      "view_count": 34,
+      "was_live": false,
+      "webpage_url": "https://fixture.invalid/watch/vid060"
+    }
+  ],
+  "source": "@yt_sql_fixture",
+  "source_url": "https://www.youtube.com/@yt_sql_fixture/videos",
+  "version": 1
+}

@@ -1,0 +1,1170 @@
+{
+  "version": 1,
+  "status": "structural_discovery_only_not_semantic_certification",
+  "sources": [
+    "python/yt_media_tools/query_parser.py",
+    "python/yt_media_tools/query_resolver.py",
+    "python/yt_media_tools/query_evaluator.py"
+  ],
+  "lexer_token_alternatives": [
+    "SPACE",
+    "COMMENT",
+    "INFINITY",
+    "OP",
+    "LPAREN",
+    "LBRACKET",
+    "RBRACKET",
+    "DOT",
+    "ATIDENT",
+    "RPAREN",
+    "QIDENT",
+    "STRING",
+    "TEMPORAL",
+    "DATETIME",
+    "DATE",
+    "TIME",
+    "LITERAL_WORD",
+    "NUMBER",
+    "IDENT",
+    "COMMA",
+    "STAR",
+    "PLUS",
+    "MINUS",
+    "SLASH",
+    "PERCENT",
+    "MISMATCH"
+  ],
+  "rejection_and_exception_sites": [
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_integer_literal_text",
+      "exception": "QueryLexicalError",
+      "sites": 3
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_number_text",
+      "exception": "QueryLexicalError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_validate_like_pattern",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect_identifier",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect_keyword",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_collection_predicate",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_from_source",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_group_by",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_having_predicate",
+      "exception": "QuerySyntaxError",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_join_clause",
+      "exception": "QuerySyntaxError",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_like_literal",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_literal",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_predicate",
+      "exception": "QuerySyntaxError",
+      "sites": 8
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_query",
+      "exception": "QuerySyntaxError",
+      "sites": 16
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_regex_literal",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_reference",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_references",
+      "exception": "QuerySyntaxError",
+      "sites": 4
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_atom",
+      "exception": "QuerySyntaxError",
+      "sites": 4
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_case",
+      "exception": "QuerySyntaxError",
+      "sites": 5
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_function",
+      "exception": "QuerySyntaxError",
+      "sites": 17
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_postfix",
+      "exception": "QuerySyntaxError",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_select_list",
+      "exception": "QuerySyntaxError",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_text_literal",
+      "exception": "QuerySyntaxError",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "tokenise",
+      "exception": "QueryLexicalError",
+      "sites": 6
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_common_case_kind",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_common_scalar_kind",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_parse_count_text",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_parse_duration_text",
+      "exception": "QuerySemanticError",
+      "sites": 7
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query",
+      "exception": "QuerySemanticError",
+      "sites": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query.resolve_body",
+      "exception": "QuerySemanticError",
+      "sites": 2
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_field",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_having",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_having",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_literal",
+      "exception": "QuerySemanticError",
+      "sites": 5
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_predicate",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_predicate",
+      "exception": "QuerySemanticError",
+      "sites": 8
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_query_body",
+      "exception": "QuerySemanticError",
+      "sites": 8
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_scalar_expression",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_scalar_expression",
+      "exception": "QuerySemanticError",
+      "sites": 27
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_union_order",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_union_common_kind",
+      "exception": "ValueError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_char_codepoint",
+      "exception": "QuerySemanticError",
+      "sites": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_group_compatibility",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_having_group_compatibility",
+      "exception": "QuerySemanticError",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_position_placement",
+      "exception": "QuerySemanticError",
+      "sites": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_random_placement",
+      "exception": "QuerySemanticError",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "resolve_query",
+      "exception": "QuerySemanticError",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_scalar_function_values",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_coerce_char_codepoint",
+      "exception": "TypeError",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_coerce_char_codepoint",
+      "exception": "ValueError",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_binary",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_expression",
+      "exception": "AssertionError",
+      "sites": 4
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_comparison",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_group_expression",
+      "exception": "AssertionError",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_having",
+      "exception": "AssertionError",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_scalar_expression",
+      "exception": "AssertionError",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "canonical_record_value",
+      "exception": "AssertionError",
+      "sites": 1
+    }
+  ],
+  "conditional_branch_sites": [
+    {
+      "module": "query_parser.py",
+      "scope": "_bound_collection_reference",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_having_truth_test_suffix",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_having_truth_test_suffix",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_integer_literal_text",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_integer_literal_text",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_number_text",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_truth_test_suffix",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_parse_truth_test_suffix",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_scan_identifier",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_statement_clause_at_current",
+      "kind": "If",
+      "sites": 8
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_unescape_string",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "_validate_like_pattern",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "advance",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "consume_keyword",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect_identifier",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "expect_keyword",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_collection_predicate",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_from_source",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_group_by",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_having_not",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_having_predicate",
+      "kind": "If",
+      "sites": 6
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_having_predicate",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_join_clause",
+      "kind": "If",
+      "sites": 6
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_like_literal",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_literal",
+      "kind": "If",
+      "sites": 8
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_literal",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_natural_operator",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_not",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_order_by",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_predicate",
+      "kind": "If",
+      "sites": 34
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_predicate",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_primary",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_query",
+      "kind": "If",
+      "sites": 34
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_reference",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_references",
+      "kind": "If",
+      "sites": 8
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_relation_references",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_atom",
+      "kind": "If",
+      "sites": 12
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_atom",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_case",
+      "kind": "If",
+      "sites": 6
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_function",
+      "kind": "If",
+      "sites": 27
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_postfix",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_postfix",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_scalar_unary",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_select_list",
+      "kind": "If",
+      "sites": 7
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_select_list",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "parse_text_literal",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_parser.py",
+      "scope": "tokenise",
+      "kind": "If",
+      "sites": 13
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_common_case_kind",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_common_scalar_kind",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_diagnostic_position",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_fields_in_predicate",
+      "kind": "If",
+      "sites": 9
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_fields_outside_aggregates",
+      "kind": "If",
+      "sites": 9
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_generic_literal",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_is_constant_scalar_expression",
+      "kind": "If",
+      "sites": 5
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_parse_count_text",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_parse_duration_text",
+      "kind": "If",
+      "sites": 9
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_random_position",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query",
+      "kind": "If",
+      "sites": 7
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_composed_query.resolve_body",
+      "kind": "If",
+      "sites": 6
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_field",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_having",
+      "kind": "If",
+      "sites": 7
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_literal",
+      "kind": "If",
+      "sites": 16
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_predicate",
+      "kind": "If",
+      "sites": 21
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_query_body",
+      "kind": "If",
+      "sites": 18
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_scalar_expression",
+      "kind": "If",
+      "sites": 73
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_scalar_expression",
+      "kind": "IfExp",
+      "sites": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_resolve_union_order",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_scalar_kind",
+      "kind": "If",
+      "sites": 9
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_scalar_query_type",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_scalar_query_type",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_union_common_kind",
+      "kind": "If",
+      "sites": 5
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_char_codepoint",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_group_compatibility",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_having_group_compatibility",
+      "kind": "If",
+      "sites": 7
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_position_placement",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_random_placement",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_value_preserving_function_type",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "resolve_query",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_aggregate_query",
+      "kind": "If",
+      "sites": 6
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_aggregate_query",
+      "kind": "IfExp",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_composed_query",
+      "kind": "If",
+      "sites": 16
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_composed_query",
+      "kind": "IfExp",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_existence_join",
+      "kind": "If",
+      "sites": 10
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_existence_join",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_query_body",
+      "kind": "If",
+      "sites": 5
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_row_producing_join",
+      "kind": "If",
+      "sites": 7
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_row_producing_join",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_scalar_function_values",
+      "kind": "If",
+      "sites": 13
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_apply_scalar_function_values",
+      "kind": "IfExp",
+      "sites": 6
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_bind_collection_element",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_coerce_char_codepoint",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_compile_like_pattern",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_compile_like_pattern",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_equality_join_fields",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_equality_join_key_fields",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_equality_join_key_fields.collect",
+      "kind": "If",
+      "sites": 6
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_binary",
+      "kind": "If",
+      "sites": 8
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_expression",
+      "kind": "If",
+      "sites": 31
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_boolean_expression",
+      "kind": "IfExp",
+      "sites": 9
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_comparison",
+      "kind": "If",
+      "sites": 11
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_group_expression",
+      "kind": "If",
+      "sites": 23
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_group_expression",
+      "kind": "IfExp",
+      "sites": 5
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_having",
+      "kind": "If",
+      "sites": 7
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_having",
+      "kind": "IfExp",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_random",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_scalar_expression",
+      "kind": "If",
+      "sites": 50
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_evaluate_scalar_expression",
+      "kind": "IfExp",
+      "sites": 13
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_exact_like_literal",
+      "kind": "If",
+      "sites": 4
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_hash_join_index",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_hash_join_matches",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_join_key",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_join_key",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_materialise_relation_reference",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_materialise_relation_reference",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_project_result_rows",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_records_for_source",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_runtime_indexed_value",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_runtime_indexed_value",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_runtime_member_value",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_slice_final_result",
+      "kind": "If",
+      "sites": 3
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_stable_random_identity",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "apply_query",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "apply_query",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "canonical_record_value",
+      "kind": "If",
+      "sites": 14
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "evaluate",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "evaluate_scalar_expression",
+      "kind": "If",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "like_matches",
+      "kind": "If",
+      "sites": 2
+    }
+  ],
+  "limitations": [
+    "Lexer alternatives are extracted from the recursive-descent lexer, not an exhaustive grammar specification.",
+    "Raised exception names include implementation failures as well as language diagnostics; classification requires review.",
+    "Conditional branch counts indicate investigation targets, not independent grammar alternatives or test coverage.",
+    "The hand-written parser grammar and semantic acceptance/rejection paths require manual examination.",
+    "No discovered item counts as an approved conformance test."
+  ]
+}

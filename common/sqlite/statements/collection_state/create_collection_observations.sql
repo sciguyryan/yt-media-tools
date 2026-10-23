@@ -1,0 +1,1 @@
+CREATE TABLE collection_observations (collection_id TEXT PRIMARY KEY, fingerprint_version INTEGER NOT NULL, sequence_fingerprint TEXT NOT NULL, target_count INTEGER NOT NULL CHECK (target_count >= 0), observed_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')));

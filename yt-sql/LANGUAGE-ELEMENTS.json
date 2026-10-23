@@ -1,0 +1,1876 @@
+{
+  "version": 1,
+  "status": "initial_curated_seed_requires_manual_language_audit",
+  "approved_cases": [],
+  "elements": [
+    {
+      "id": "feature:aggregate.avg",
+      "category": "feature",
+      "name": "aggregate.avg",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.count_expression",
+      "category": "feature",
+      "name": "aggregate.count_expression",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.count_star",
+      "category": "feature",
+      "name": "aggregate.count_star",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.empty_input",
+      "category": "feature",
+      "name": "aggregate.empty_input",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.filter",
+      "category": "feature",
+      "name": "aggregate.filter",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.group_by",
+      "category": "feature",
+      "name": "aggregate.group_by",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.having",
+      "category": "feature",
+      "name": "aggregate.having",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.max",
+      "category": "feature",
+      "name": "aggregate.max",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.min",
+      "category": "feature",
+      "name": "aggregate.min",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.sum",
+      "category": "feature",
+      "name": "aggregate.sum",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.and",
+      "category": "feature",
+      "name": "boolean.and",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.bare",
+      "category": "feature",
+      "name": "boolean.bare",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.not",
+      "category": "feature",
+      "name": "boolean.not",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.or",
+      "category": "feature",
+      "name": "boolean.or",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.parentheses",
+      "category": "feature",
+      "name": "boolean.parentheses",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.precedence",
+      "category": "feature",
+      "name": "boolean.precedence",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.bounds",
+      "category": "feature",
+      "name": "collection.bounds",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.cardinality",
+      "category": "feature",
+      "name": "collection.cardinality",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.composition",
+      "category": "feature",
+      "name": "collection.composition",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.count",
+      "category": "feature",
+      "name": "collection.count",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.empty",
+      "category": "feature",
+      "name": "collection.empty",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.filter",
+      "category": "feature",
+      "name": "collection.filter",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.index",
+      "category": "feature",
+      "name": "collection.index",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.map",
+      "category": "feature",
+      "name": "collection.map",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.null",
+      "category": "feature",
+      "name": "collection.null",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.null_element",
+      "category": "feature",
+      "name": "collection.null_element",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.output",
+      "category": "feature",
+      "name": "collection.output",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.parameter",
+      "category": "feature",
+      "name": "collection.parameter",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.quantifier.all",
+      "category": "feature",
+      "name": "collection.quantifier.all",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.quantifier.any",
+      "category": "feature",
+      "name": "collection.quantifier.any",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.structured",
+      "category": "feature",
+      "name": "collection.structured",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.three_valued",
+      "category": "feature",
+      "name": "collection.three_valued",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.eq",
+      "category": "feature",
+      "name": "comparison.eq",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.ge",
+      "category": "feature",
+      "name": "comparison.ge",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.gt",
+      "category": "feature",
+      "name": "comparison.gt",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.le",
+      "category": "feature",
+      "name": "comparison.le",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.lt",
+      "category": "feature",
+      "name": "comparison.lt",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.ne",
+      "category": "feature",
+      "name": "comparison.ne",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.ne_alt",
+      "category": "feature",
+      "name": "comparison.ne_alt",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:cte.chained",
+      "category": "feature",
+      "name": "cte.chained",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:cte.logical_schema",
+      "category": "feature",
+      "name": "cte.logical_schema",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:cte.non_recursive",
+      "category": "feature",
+      "name": "cte.non_recursive",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.compact",
+      "category": "feature",
+      "name": "date.compact",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.dot",
+      "category": "feature",
+      "name": "date.dot",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.iso",
+      "category": "feature",
+      "name": "date.iso",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.local_dmy",
+      "category": "feature",
+      "name": "date.local_dmy",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.local_mdy",
+      "category": "feature",
+      "name": "date.local_mdy",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.named",
+      "category": "feature",
+      "name": "date.named",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.relative_ago",
+      "category": "feature",
+      "name": "date.relative_ago",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.slash",
+      "category": "feature",
+      "name": "date.slash",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:datetime.offset",
+      "category": "feature",
+      "name": "datetime.offset",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:datetime.zulu",
+      "category": "feature",
+      "name": "datetime.zulu",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:distinct",
+      "category": "feature",
+      "name": "distinct",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.clock_hms",
+      "category": "feature",
+      "name": "duration.clock_hms",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.clock_ms",
+      "category": "feature",
+      "name": "duration.clock_ms",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.compound",
+      "category": "feature",
+      "name": "duration.compound",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.decimal",
+      "category": "feature",
+      "name": "duration.decimal",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.localised",
+      "category": "feature",
+      "name": "duration.localised",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.short_alias",
+      "category": "feature",
+      "name": "duration.short_alias",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:field.alias",
+      "category": "feature",
+      "name": "field.alias",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:from.handle",
+      "category": "feature",
+      "name": "from.handle",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:from.identifier",
+      "category": "feature",
+      "name": "from.identifier",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:from.quoted_source",
+      "category": "feature",
+      "name": "from.quoted_source",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:in",
+      "category": "feature",
+      "name": "in",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:in.not",
+      "category": "feature",
+      "name": "in.not",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.false",
+      "category": "feature",
+      "name": "is.false",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_false",
+      "category": "feature",
+      "name": "is.not_false",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_null",
+      "category": "feature",
+      "name": "is.not_null",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_true",
+      "category": "feature",
+      "name": "is.not_true",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_unknown",
+      "category": "feature",
+      "name": "is.not_unknown",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.null",
+      "category": "feature",
+      "name": "is.null",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.predicate_unknown",
+      "category": "feature",
+      "name": "is.predicate_unknown",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.true",
+      "category": "feature",
+      "name": "is.true",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.unknown",
+      "category": "feature",
+      "name": "is.unknown",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:limit",
+      "category": "feature",
+      "name": "limit",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:limit.underscore",
+      "category": "feature",
+      "name": "limit.underscore",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.above",
+      "category": "feature",
+      "name": "natural.above",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.at_least",
+      "category": "feature",
+      "name": "natural.at_least",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.at_most",
+      "category": "feature",
+      "name": "natural.at_most",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.below",
+      "category": "feature",
+      "name": "natural.below",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.equal_to",
+      "category": "feature",
+      "name": "natural.equal_to",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.equals",
+      "category": "feature",
+      "name": "natural.equals",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.greater_than",
+      "category": "feature",
+      "name": "natural.greater_than",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.less_than",
+      "category": "feature",
+      "name": "natural.less_than",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.more_than",
+      "category": "feature",
+      "name": "natural.more_than",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.over",
+      "category": "feature",
+      "name": "natural.over",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.under",
+      "category": "feature",
+      "name": "natural.under",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:null.three_valued",
+      "category": "feature",
+      "name": "null.three_valued",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:offset",
+      "category": "feature",
+      "name": "offset",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:offset.underscore",
+      "category": "feature",
+      "name": "offset.underscore",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:offset.without_limit",
+      "category": "feature",
+      "name": "offset.without_limit",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.alias",
+      "category": "feature",
+      "name": "order.alias",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.asc",
+      "category": "feature",
+      "name": "order.asc",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.default_asc",
+      "category": "feature",
+      "name": "order.default_asc",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.desc",
+      "category": "feature",
+      "name": "order.desc",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.expression",
+      "category": "feature",
+      "name": "order.expression",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.expression_alias",
+      "category": "feature",
+      "name": "order.expression_alias",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.mixed",
+      "category": "feature",
+      "name": "order.mixed",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.multi",
+      "category": "feature",
+      "name": "order.multi",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.null_last",
+      "category": "feature",
+      "name": "order.null_last",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.stable_tie",
+      "category": "feature",
+      "name": "order.stable_tie",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.auto_multi",
+      "category": "feature",
+      "name": "output.auto_multi",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.auto_single",
+      "category": "feature",
+      "name": "output.auto_single",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.csv",
+      "category": "feature",
+      "name": "output.csv",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.ids",
+      "category": "feature",
+      "name": "output.ids",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.jsonl",
+      "category": "feature",
+      "name": "output.jsonl",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.lines",
+      "category": "feature",
+      "name": "output.lines",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.tsv",
+      "category": "feature",
+      "name": "output.tsv",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.urls",
+      "category": "feature",
+      "name": "output.urls",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:parameter.binding",
+      "category": "feature",
+      "name": "parameter.binding",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:predicate.between",
+      "category": "feature",
+      "name": "predicate.between",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:predicate.not_between",
+      "category": "feature",
+      "name": "predicate.not_between",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.alias",
+      "category": "feature",
+      "name": "projection.alias",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.coalesce",
+      "category": "feature",
+      "name": "projection.coalesce",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.coalesce_fallback",
+      "category": "feature",
+      "name": "projection.coalesce_fallback",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.default_id",
+      "category": "feature",
+      "name": "projection.default_id",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.field",
+      "category": "feature",
+      "name": "projection.field",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.length",
+      "category": "feature",
+      "name": "projection.length",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.lower",
+      "category": "feature",
+      "name": "projection.lower",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.star",
+      "category": "feature",
+      "name": "projection.star",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.upper",
+      "category": "feature",
+      "name": "projection.upper",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:result.position",
+      "category": "feature",
+      "name": "result.position",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.add",
+      "category": "feature",
+      "name": "scalar.arithmetic.add",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.divide",
+      "category": "feature",
+      "name": "scalar.arithmetic.divide",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.multiply",
+      "category": "feature",
+      "name": "scalar.arithmetic.multiply",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.parentheses",
+      "category": "feature",
+      "name": "scalar.arithmetic.parentheses",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case",
+      "category": "feature",
+      "name": "scalar.case",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.nested_result",
+      "category": "feature",
+      "name": "scalar.case.nested_result",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.no_else",
+      "category": "feature",
+      "name": "scalar.case.no_else",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.null_fallthrough",
+      "category": "feature",
+      "name": "scalar.case.null_fallthrough",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.order",
+      "category": "feature",
+      "name": "scalar.case.order",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.char",
+      "category": "feature",
+      "name": "scalar.char",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.concat",
+      "category": "feature",
+      "name": "scalar.concat",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.constant_fold",
+      "category": "feature",
+      "name": "scalar.constant_fold",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.function_nested",
+      "category": "feature",
+      "name": "scalar.function_nested",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.greatest",
+      "category": "feature",
+      "name": "scalar.greatest",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.least",
+      "category": "feature",
+      "name": "scalar.least",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.mixed_base",
+      "category": "feature",
+      "name": "scalar.mixed_base",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.nullif",
+      "category": "feature",
+      "name": "scalar.nullif",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.random_seeded",
+      "category": "feature",
+      "name": "scalar.random_seeded",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:set.global_order_limit",
+      "category": "feature",
+      "name": "set.global_order_limit",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:set.union",
+      "category": "feature",
+      "name": "set.union",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:set.union_all",
+      "category": "feature",
+      "name": "set.union_all",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:string.case_sensitive",
+      "category": "feature",
+      "name": "string.case_sensitive",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:string.double_quote",
+      "category": "feature",
+      "name": "string.double_quote",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:string.doubled_quote",
+      "category": "feature",
+      "name": "string.doubled_quote",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:structured.member",
+      "category": "feature",
+      "name": "structured.member",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.infinity_between",
+      "category": "feature",
+      "name": "temporal.infinity_between",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.infinity_negative",
+      "category": "feature",
+      "name": "temporal.infinity_negative",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.infinity_positive",
+      "category": "feature",
+      "name": "temporal.infinity_positive",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.localised",
+      "category": "feature",
+      "name": "temporal.localised",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.now_fixed",
+      "category": "feature",
+      "name": "temporal.now_fixed",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.today_calendar",
+      "category": "feature",
+      "name": "temporal.today_calendar",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.today_fixed",
+      "category": "feature",
+      "name": "temporal.today_fixed",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.unit_baktun",
+      "category": "feature",
+      "name": "temporal.unit_baktun",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.unit_decade",
+      "category": "feature",
+      "name": "temporal.unit_decade",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.contain",
+      "category": "feature",
+      "name": "text.contain",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.contains",
+      "category": "feature",
+      "name": "text.contains",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.does_not_contain",
+      "category": "feature",
+      "name": "text.does_not_contain",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.does_not_match",
+      "category": "feature",
+      "name": "text.does_not_match",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.ilike",
+      "category": "feature",
+      "name": "text.ilike",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.like",
+      "category": "feature",
+      "name": "text.like",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.like.escape",
+      "category": "feature",
+      "name": "text.like.escape",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.like.single",
+      "category": "feature",
+      "name": "text.like.single",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.match",
+      "category": "feature",
+      "name": "text.match",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.matches",
+      "category": "feature",
+      "name": "text.matches",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_contains",
+      "category": "feature",
+      "name": "text.not_contains",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_ilike",
+      "category": "feature",
+      "name": "text.not_ilike",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_like",
+      "category": "feature",
+      "name": "text.not_like",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_matches",
+      "category": "feature",
+      "name": "text.not_matches",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.unquoted_literal",
+      "category": "feature",
+      "name": "text.unquoted_literal",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.case_mapping",
+      "category": "feature",
+      "name": "unicode.case_mapping",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.casefold_contains",
+      "category": "feature",
+      "name": "unicode.casefold_contains",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.codepoint_length",
+      "category": "feature",
+      "name": "unicode.codepoint_length",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.ilike_case",
+      "category": "feature",
+      "name": "unicode.ilike_case",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.like_codepoint",
+      "category": "feature",
+      "name": "unicode.like_codepoint",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.normalisation_sensitive",
+      "category": "feature",
+      "name": "unicode.normalisation_sensitive",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.ordering",
+      "category": "feature",
+      "name": "unicode.ordering",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.regex",
+      "category": "feature",
+      "name": "unicode.regex",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_b",
+      "category": "feature",
+      "name": "value.count_b",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_decimal_suffix",
+      "category": "feature",
+      "name": "value.count_decimal_suffix",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_k",
+      "category": "feature",
+      "name": "value.count_k",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_m",
+      "category": "feature",
+      "name": "value.count_m",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_underscore",
+      "category": "feature",
+      "name": "value.count_underscore",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.enum_case_insensitive",
+      "category": "feature",
+      "name": "value.enum_case_insensitive",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.integer.binary",
+      "category": "feature",
+      "name": "value.integer.binary",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.integer.hex",
+      "category": "feature",
+      "name": "value.integer.hex",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.integer.octal",
+      "category": "feature",
+      "name": "value.integer.octal",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.number.negative",
+      "category": "feature",
+      "name": "value.number.negative",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:AVG",
+      "category": "function",
+      "name": "AVG",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:CARDINALITY",
+      "category": "function",
+      "name": "CARDINALITY",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:CHAR",
+      "category": "function",
+      "name": "CHAR",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:COALESCE",
+      "category": "function",
+      "name": "COALESCE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:CONCAT",
+      "category": "function",
+      "name": "CONCAT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:COUNT",
+      "category": "function",
+      "name": "COUNT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:FILTER",
+      "category": "function",
+      "name": "FILTER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:GREATEST",
+      "category": "function",
+      "name": "GREATEST",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:LEAST",
+      "category": "function",
+      "name": "LEAST",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:LENGTH",
+      "category": "function",
+      "name": "LENGTH",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:LOWER",
+      "category": "function",
+      "name": "LOWER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:MAP",
+      "category": "function",
+      "name": "MAP",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:MAX",
+      "category": "function",
+      "name": "MAX",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:MIN",
+      "category": "function",
+      "name": "MIN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:NULLIF",
+      "category": "function",
+      "name": "NULLIF",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:POSITION",
+      "category": "function",
+      "name": "POSITION",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:RANDOM",
+      "category": "function",
+      "name": "RANDOM",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:SUM",
+      "category": "function",
+      "name": "SUM",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:UPPER",
+      "category": "function",
+      "name": "UPPER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ALL",
+      "category": "keyword",
+      "name": "ALL",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:AND",
+      "category": "keyword",
+      "name": "AND",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ANTI",
+      "category": "keyword",
+      "name": "ANTI",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:AS",
+      "category": "keyword",
+      "name": "AS",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ASC",
+      "category": "keyword",
+      "name": "ASC",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:BETWEEN",
+      "category": "keyword",
+      "name": "BETWEEN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:BY",
+      "category": "keyword",
+      "name": "BY",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:CASE",
+      "category": "keyword",
+      "name": "CASE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:CONTAIN",
+      "category": "keyword",
+      "name": "CONTAIN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:CONTAINS",
+      "category": "keyword",
+      "name": "CONTAINS",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:DESC",
+      "category": "keyword",
+      "name": "DESC",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:DISTINCT",
+      "category": "keyword",
+      "name": "DISTINCT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:DOES",
+      "category": "keyword",
+      "name": "DOES",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ELSE",
+      "category": "keyword",
+      "name": "ELSE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:END",
+      "category": "keyword",
+      "name": "END",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:FALSE",
+      "category": "keyword",
+      "name": "FALSE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:FILTER",
+      "category": "keyword",
+      "name": "FILTER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:FROM",
+      "category": "keyword",
+      "name": "FROM",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:GROUP",
+      "category": "keyword",
+      "name": "GROUP",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:HAVING",
+      "category": "keyword",
+      "name": "HAVING",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ILIKE",
+      "category": "keyword",
+      "name": "ILIKE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:IN",
+      "category": "keyword",
+      "name": "IN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:INNER",
+      "category": "keyword",
+      "name": "INNER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:IS",
+      "category": "keyword",
+      "name": "IS",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:JOIN",
+      "category": "keyword",
+      "name": "JOIN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:LEFT",
+      "category": "keyword",
+      "name": "LEFT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:LIKE",
+      "category": "keyword",
+      "name": "LIKE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:LIMIT",
+      "category": "keyword",
+      "name": "LIMIT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:MATCH",
+      "category": "keyword",
+      "name": "MATCH",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:MATCHES",
+      "category": "keyword",
+      "name": "MATCHES",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:NOT",
+      "category": "keyword",
+      "name": "NOT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:NULL",
+      "category": "keyword",
+      "name": "NULL",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OF",
+      "category": "keyword",
+      "name": "OF",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OFFSET",
+      "category": "keyword",
+      "name": "OFFSET",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ON",
+      "category": "keyword",
+      "name": "ON",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OR",
+      "category": "keyword",
+      "name": "OR",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ORDER",
+      "category": "keyword",
+      "name": "ORDER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OUTER",
+      "category": "keyword",
+      "name": "OUTER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:SELECT",
+      "category": "keyword",
+      "name": "SELECT",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:SEMI",
+      "category": "keyword",
+      "name": "SEMI",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:THEN",
+      "category": "keyword",
+      "name": "THEN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:TRUE",
+      "category": "keyword",
+      "name": "TRUE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:UNION",
+      "category": "keyword",
+      "name": "UNION",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:UNKNOWN",
+      "category": "keyword",
+      "name": "UNKNOWN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:WHEN",
+      "category": "keyword",
+      "name": "WHEN",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:WHERE",
+      "category": "keyword",
+      "name": "WHERE",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:WITH",
+      "category": "keyword",
+      "name": "WITH",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:!=",
+      "category": "operator",
+      "name": "!=",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:%",
+      "category": "operator",
+      "name": "%",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:*",
+      "category": "operator",
+      "name": "*",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:+",
+      "category": "operator",
+      "name": "+",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:-",
+      "category": "operator",
+      "name": "-",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:/",
+      "category": "operator",
+      "name": "/",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:<",
+      "category": "operator",
+      "name": "<",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:<=",
+      "category": "operator",
+      "name": "<=",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:<>",
+      "category": "operator",
+      "name": "<>",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:=",
+      "category": "operator",
+      "name": "=",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:>",
+      "category": "operator",
+      "name": ">",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:>=",
+      "category": "operator",
+      "name": ">=",
+      "review_status": "pending",
+      "approved_case_ids": []
+    }
+  ]
+}

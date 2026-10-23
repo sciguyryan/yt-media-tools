@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Executable entry point for yt-discover."""
+"""Compatibility launcher; implementation now lives under python/."""
 
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "python"))
 from yt_media_tools.discover_application import main
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

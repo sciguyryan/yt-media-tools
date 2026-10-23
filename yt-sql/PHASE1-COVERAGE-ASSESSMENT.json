@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "status": "provisional_actionable_review_not_certified_coverage",
+  "summary": {
+    "registered_elements": 267,
+    "reviewed_elements": 0,
+    "approved_cases": 0
+  },
+  "review_queues": {
+    "supported_keyword_candidates_missing_registry": [],
+    "symbolic_lexer_tokens_missing_operator_registry": [],
+    "textual_predicate_spellings_missing_keyword_registry": [],
+    "recognised_unsupported_forms_needing_negative_cases": [
+      "CROSS",
+      "FULL",
+      "NATURAL",
+      "RECURSIVE",
+      "RIGHT"
+    ]
+  },
+  "priority_actions": [
+    "Confirm candidate spellings against actual lexer, parser and evaluator semantics before curating registry entries.",
+    "Separate arithmetic operators, wildcard tokens and punctuation from predicate operators where appropriate.",
+    "Record explicit negative cases for deliberately unsupported grammar forms without registering them as supported syntax.",
+    "Review each function signature and every semantic rejection category, including type, arity and nullability behaviour.",
+    "Produce approved portable cases before claiming minimum CI coverage; candidate results cannot satisfy the gate.",
+    "Keep the curated registry under review because static source discovery cannot prove completeness."
+  ],
+  "coverage_policy": "No candidate expectation is authoritative until reviewed and approved; the review mechanism and reviewer are not prescribed."
+}

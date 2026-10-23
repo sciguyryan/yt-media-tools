@@ -1,0 +1,668 @@
+{
+  "version": 1,
+  "status": "static_discovery_not_grammar_or_semantic_certification",
+  "sources": {
+    "parser": "python/yt_media_tools/query_parser.py",
+    "coverage": "yt-sql/COVERAGE-INVENTORY.json"
+  },
+  "parser_methods": [
+    {
+      "name": "parse_and"
+    },
+    {
+      "name": "parse_collection_predicate"
+    },
+    {
+      "name": "parse_from_source"
+    },
+    {
+      "name": "parse_group_by"
+    },
+    {
+      "name": "parse_having_and"
+    },
+    {
+      "name": "parse_having_not"
+    },
+    {
+      "name": "parse_having_or"
+    },
+    {
+      "name": "parse_having_predicate"
+    },
+    {
+      "name": "parse_join_clause"
+    },
+    {
+      "name": "parse_like_literal"
+    },
+    {
+      "name": "parse_literal"
+    },
+    {
+      "name": "parse_natural_operator"
+    },
+    {
+      "name": "parse_not"
+    },
+    {
+      "name": "parse_or"
+    },
+    {
+      "name": "parse_order_by"
+    },
+    {
+      "name": "parse_predicate"
+    },
+    {
+      "name": "parse_primary"
+    },
+    {
+      "name": "parse_query"
+    },
+    {
+      "name": "parse_regex_literal"
+    },
+    {
+      "name": "parse_relation_reference"
+    },
+    {
+      "name": "parse_relation_references"
+    },
+    {
+      "name": "parse_scalar_additive"
+    },
+    {
+      "name": "parse_scalar_atom"
+    },
+    {
+      "name": "parse_scalar_case"
+    },
+    {
+      "name": "parse_scalar_expression"
+    },
+    {
+      "name": "parse_scalar_function"
+    },
+    {
+      "name": "parse_scalar_multiplicative"
+    },
+    {
+      "name": "parse_scalar_postfix"
+    },
+    {
+      "name": "parse_scalar_unary"
+    },
+    {
+      "name": "parse_select_list"
+    },
+    {
+      "name": "parse_text_literal"
+    }
+  ],
+  "literal_keyword_calls": {
+    "ALL": [
+      "parse_query"
+    ],
+    "AND": [
+      "_at_expression_boundary",
+      "parse_and",
+      "parse_having_and",
+      "parse_predicate"
+    ],
+    "ANTI": [
+      "parse_join_clause"
+    ],
+    "AS": [
+      "parse_collection_predicate",
+      "parse_query",
+      "parse_relation_references",
+      "parse_scalar_function",
+      "parse_select_list"
+    ],
+    "ASC": [
+      "parse_order_by"
+    ],
+    "BETWEEN": [
+      "parse_predicate"
+    ],
+    "BY": [
+      "parse_query"
+    ],
+    "CASE": [
+      "parse_scalar_atom",
+      "parse_scalar_case"
+    ],
+    "CONTAIN": [
+      "parse_predicate"
+    ],
+    "CONTAINS": [
+      "parse_predicate"
+    ],
+    "CROSS": [
+      "parse_join_clause"
+    ],
+    "DESC": [
+      "parse_order_by"
+    ],
+    "DISTINCT": [
+      "parse_having_predicate",
+      "parse_predicate",
+      "parse_query"
+    ],
+    "DOES": [
+      "parse_predicate"
+    ],
+    "ELSE": [
+      "_at_expression_boundary",
+      "parse_scalar_case"
+    ],
+    "END": [
+      "_at_expression_boundary",
+      "parse_scalar_case"
+    ],
+    "FALSE": [
+      "parse_predicate"
+    ],
+    "FILTER": [
+      "parse_scalar_function"
+    ],
+    "FROM": [
+      "parse_having_predicate",
+      "parse_predicate",
+      "parse_query"
+    ],
+    "FULL": [
+      "parse_join_clause"
+    ],
+    "GROUP": [
+      "_statement_clause_at_current",
+      "parse_query"
+    ],
+    "HAVING": [
+      "_statement_clause_at_current",
+      "parse_query"
+    ],
+    "ILIKE": [
+      "parse_predicate"
+    ],
+    "IN": [
+      "parse_predicate"
+    ],
+    "INNER": [
+      "parse_join_clause"
+    ],
+    "IS": [
+      "_parse_having_truth_test_suffix",
+      "_parse_truth_test_suffix",
+      "parse_having_predicate",
+      "parse_predicate"
+    ],
+    "JOIN": [
+      "parse_join_clause"
+    ],
+    "LEFT": [
+      "parse_join_clause"
+    ],
+    "LIKE": [
+      "parse_predicate"
+    ],
+    "LIMIT": [
+      "_at_expression_boundary",
+      "_statement_clause_at_current",
+      "parse_query"
+    ],
+    "MATCH": [
+      "parse_predicate"
+    ],
+    "MATCHES": [
+      "parse_predicate"
+    ],
+    "NATURAL": [
+      "parse_join_clause"
+    ],
+    "NOT": [
+      "_parse_having_truth_test_suffix",
+      "_parse_truth_test_suffix",
+      "parse_having_not",
+      "parse_having_predicate",
+      "parse_not",
+      "parse_predicate"
+    ],
+    "NULL": [
+      "parse_having_predicate",
+      "parse_predicate"
+    ],
+    "OF": [
+      "parse_relation_references"
+    ],
+    "OFFSET": [
+      "_at_expression_boundary",
+      "_statement_clause_at_current",
+      "parse_query"
+    ],
+    "ON": [
+      "parse_join_clause"
+    ],
+    "OR": [
+      "_at_expression_boundary",
+      "parse_having_or",
+      "parse_or"
+    ],
+    "ORDER": [
+      "_at_expression_boundary",
+      "_statement_clause_at_current",
+      "parse_query"
+    ],
+    "OUTER": [
+      "parse_join_clause"
+    ],
+    "RECURSIVE": [
+      "parse_query"
+    ],
+    "RIGHT": [
+      "parse_join_clause"
+    ],
+    "SELECT": [
+      "parse_query",
+      "parse_scalar_function"
+    ],
+    "SEMI": [
+      "parse_join_clause"
+    ],
+    "THEN": [
+      "_at_expression_boundary",
+      "parse_scalar_case"
+    ],
+    "TRUE": [
+      "parse_predicate"
+    ],
+    "UNION": [
+      "parse_query"
+    ],
+    "UNKNOWN": [
+      "parse_predicate"
+    ],
+    "WHEN": [
+      "_at_expression_boundary",
+      "parse_scalar_case"
+    ],
+    "WHERE": [
+      "_statement_clause_at_current",
+      "parse_collection_predicate",
+      "parse_query",
+      "parse_scalar_function"
+    ],
+    "WITH": [
+      "parse_query"
+    ]
+  },
+  "diagnostic_raise_sites": [
+    {
+      "method": "_parse_integer_literal_text",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "_parse_integer_literal_text",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "_parse_integer_literal_text",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "_parse_number_text",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "expect",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "expect_identifier",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "expect_keyword",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_collection_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_from_source",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_group_by",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_having_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_having_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_join_clause",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_join_clause",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_like_literal",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_literal",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_predicate",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_query",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_regex_literal",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_relation_reference",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_relation_references",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_relation_references",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_relation_references",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_relation_references",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_atom",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_atom",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_atom",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_atom",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_case",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_case",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_case",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_case",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_case",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_postfix",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_scalar_postfix",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_select_list",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_select_list",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_text_literal",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "tokenise",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "tokenise",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "tokenise",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "tokenise",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "tokenise",
+      "exception": "QueryLexicalError"
+    },
+    {
+      "method": "tokenise",
+      "exception": "QueryLexicalError"
+    }
+  ],
+  "function_names": {
+    "scalar": [
+      "CARDINALITY",
+      "CHAR",
+      "COALESCE",
+      "CONCAT",
+      "FILTER",
+      "GREATEST",
+      "LEAST",
+      "LENGTH",
+      "LOWER",
+      "MAP",
+      "NULLIF",
+      "POSITION",
+      "RANDOM",
+      "UPPER"
+    ],
+    "aggregate": [
+      "AVG",
+      "COUNT",
+      "MAX",
+      "MIN",
+      "SUM"
+    ]
+  },
+  "registered_features_without_tagged_existing_cases": [],
+  "review_priorities": [
+    "Audit grammar alternatives and token definitions not discoverable from literal keyword calls.",
+    "Verify function arity, aliases, argument types, NULL behaviour and diagnostic categories against runtime semantics.",
+    "Map each supported grammar production, operator and function to positive, negative, boundary and interaction cases.",
+    "Treat existing case feature tags as evidence of intent, not verified coverage.",
+    "Audit resolver, semantic and evaluator rejection paths separately from parser errors.",
+    "Keep candidate expected results provisional until their intended semantics are reviewed."
+  ]
+}

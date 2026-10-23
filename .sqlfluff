@@ -1,0 +1,11 @@
+# Canonical SQLite statements are linted with SQLFluff, not Ruff.
+[sqlfluff]
+dialect = sqlite
+templater = raw
+max_line_length = 120
+# Start conservatively: formatting is opt-in until the existing statement corpus is normalised.
+exclude_rules = LT05
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 4
