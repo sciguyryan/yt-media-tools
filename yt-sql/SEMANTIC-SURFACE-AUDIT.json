@@ -379,6 +379,12 @@
     },
     {
       "module": "query_evaluator.py",
+      "scope": "_order_rows",
+      "exception": "TypeError",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
       "scope": "canonical_record_value",
       "exception": "AssertionError",
       "sites": 1
@@ -875,7 +881,7 @@
       "module": "query_evaluator.py",
       "scope": "_apply_aggregate_query",
       "kind": "IfExp",
-      "sites": 3
+      "sites": 2
     },
     {
       "module": "query_evaluator.py",
@@ -1080,6 +1086,12 @@
       "scope": "_materialise_relation_reference",
       "kind": "IfExp",
       "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_order_rows",
+      "kind": "If",
+      "sites": 1
     },
     {
       "module": "query_evaluator.py",

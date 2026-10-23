@@ -714,6 +714,13 @@
     },
     {
       "module": "query_evaluator.py",
+      "scope": "_order_rows",
+      "exception": "TypeError",
+      "count": 1,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_evaluator.py",
       "scope": "canonical_record_value",
       "exception": "AssertionError",
       "count": 1,

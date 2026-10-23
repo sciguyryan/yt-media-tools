@@ -439,7 +439,7 @@
     {
       "module": "query_evaluator.py",
       "exception": "TypeError",
-      "scope_groups": 1
+      "scope_groups": 2
     },
     {
       "module": "query_evaluator.py",
