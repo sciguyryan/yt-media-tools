@@ -12,14 +12,6 @@ The initial approved case establishes a narrow conformance baseline, not compreh
 
 The existing test and dataset audit is in `EXISTING-TEST-INVENTORY.json`. Python test removal is explicitly deferred until each migrated case is proven equivalent and implementation-specific assertions are retained. Parallel execution should use pytest-xdist with isolated cache and temporary state per worker.
 
-## Tied LIMIT/OFFSET boundary comparison (non-normative primitive)
-
-`typed_values.compare_tied_slice` validates a LIMIT/OFFSET result against an independently reviewed full ordered relation and its complete-key tie-group sizes. A slice intersecting a tied group may contain any eligible submultiset of the required size; groups must still appear in their specified order, and duplicate multiplicity remains significant. The function rejects invalid partitions and slice parameters. It does not infer ties from projected columns, establish the correctness of the supplied full relation, or change the version 1 case manifest. In particular, the provisional `offset_limit` migration remains outside the normative corpus until its complete ordering-key groups and expected selection are independently reviewed.
-
-## Tied ordering-key groups (comparison primitive)
-
-`typed_values.compare_tied_groups` supports a reviewed partial-order comparison: consecutive ordering-key groups retain their sequence, while rows within each group are compared as multisets, including duplicate multiplicity. The caller supplies group sizes from an independent analysis of the complete `ORDER BY` keys; projected row values alone cannot reliably reveal ties. A row crossing a group boundary fails comparison. This is a standalone comparison primitive, **not yet a normative manifest `order` mode**. No corpus case is admitted on this basis until the manifest contract can describe and validate the relevant ordering keys and ambiguous slice boundaries.
-
 ## Coverage inventory
 
 The Phase 1 source-derived baseline is `COVERAGE-INVENTORY.json`, and the existing Python test audit is `EXISTING-TEST-INVENTORY.json`. **Both files are built together** by running `python yt-sql/build_coverage_inventory.py` from the repository root. Run `python yt-sql/build_coverage_inventory.py --check` to check both files for drift without modifying them. The builder reads the feature registry, Python conformance cases, parser function names, dataset specifications and test-file inventory. Existing per-file migration classifications are retained when rebuilding; newly discovered test files default to retention pending review. The historical `source_snapshot` field is retained as provenance, not regenerated as a claim about the current working tree. See `COVERAGE-POLICY.md` for coverage dimensions, limitations and the mandatory review-before-approval rule for generated expected results.
@@ -265,4 +257,16 @@ The `migration-proposals/` directory holds candidate translations of existing Py
 
 ## Tied ordering in portable cases
 
-A version 1 case may specify `"order": "tied"` with a `group_sizes` array. Each positive size describes a consecutive group of rows with equal complete `ORDER BY` keys. Groups remain ordered, but rows within each group compare as multisets, retaining duplicate multiplicity. The sizes must sum to the expected row count. The partition must be established from an independently reviewed analysis of the query and its input, not inferred from projected values or the implementation’s observed row sequence. `group_sizes` is forbidden for `ordered` and `unordered` cases. Tied ordering is valid only for row outcomes. This contract does not resolve a `LIMIT` or `OFFSET` boundary that cuts through a tied group; such cases require separate review and must not be admitted on this basis alone.
+A version 1 case may specify `"order": "tied"` and a `group_sizes` array. Each positive size identifies a consecutive group of rows with equal complete `ORDER BY` keys. The groups retain their specified order, while rows within each group compare as multisets, preserving duplicate multiplicity. Group sizes must sum to the expected row count.
+
+The group partition must be established by independent review of the query and its input data. Projected values and an implementation's observed row sequence are not sufficient to establish ordering-key equality. `group_sizes` is permitted only with `"order": "tied"`, and tied ordering applies only to row outcomes. This contract does not cover `LIMIT` or `OFFSET` boundaries that divide a tied group.
+
+### Tied-group comparison
+
+`typed_values.compare_tied_groups` implements the tied-group comparison used by the version 1 outcome contract. It checks the sequence of groups and compares the rows within each group as multisets. Rows crossing group boundaries do not match. The caller supplies the independently established group sizes; the comparator does not infer ordering keys from the projected rows.
+
+### Tied LIMIT/OFFSET boundary comparison
+
+`typed_values.compare_tied_slice` is a separate, non-normative comparison primitive. It checks a sliced result against an independently reviewed complete ordered relation and its full ordering-key group partition. Where a slice boundary divides a tied group, any eligible submultiset of the required size may match. Group order and duplicate multiplicity remain significant. Invalid partitions and slice parameters are rejected.
+
+The primitive does not establish the correctness of the supplied complete relation or its group partition, and it is not a version 1 manifest ordering mode. The provisional `offset_limit` migration remains outside the normative corpus pending independent review of its ordering-key groups and permitted selections.
