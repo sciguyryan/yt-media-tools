@@ -54,3 +54,16 @@ The guarded formatter in `format_safely.py` checks each `.ysql` query with Disco
 Run a read-only repository check with `python yt-sql/sqlfluff/format_safely.py yt-sql/cases`. To apply changes after every target has passed validation, use `python yt-sql/sqlfluff/format_safely.py --write path/to/query.ysql`. Only `.ysql` files are accepted. Do not configure editor format-on-save to call SQLFluff's raw `fix` command; use this guarded command only after validating the editor's invocation and file-save behaviour. The command does not provide an editor protocol or an atomic multi-file transaction.
 
 The grammar audit must be run using the Python environment containing SQLFluff 4.4.0. Missing dependencies and launcher exceptions are infrastructure errors, not unsupported grammar cases. The representative 25-query matrix passed parsing in the maintainer's environment; safe formatting of the entire matrix still requires local verification before broad format-on-save is recommended.
+
+## Everyday formatting commands
+
+Run the guarded formatter from the repository root using the same Python environment as SQLFluff 4.4.0. The default target is `yt-sql/cases`, and both commands accept optional `.ysql` files or directories:
+
+```bash
+python scripts/ytsql_format.py check
+python scripts/ytsql_format.py format
+python scripts/ytsql_format.py check path/to/query.ysql
+python scripts/ytsql_format.py format path/to/query.ysql
+```
+
+`check` is read-only and returns a non-zero exit status if a query needs formatting or fails validation. `format` writes changes only after all selected queries pass the guarded validation checks. The commands never modify `.sql` files or use the SQLite SQLFluff configuration. Use `check` in automation; use `format` explicitly for local edits. The original `format_safely.py` interface remains available, with `--check` and `--write` options. These commands do not yet constitute an editor format-on-save protocol.

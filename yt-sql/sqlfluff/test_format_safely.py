@@ -60,6 +60,40 @@ class SafeFormattingTests(unittest.TestCase):
         ):
             format_checked(original)
 
+    def test_check_fails_when_formatting_is_needed(self) -> None:
+        import tempfile
+        from format_safely import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            query = Path(directory) / "example.ysql"
+            query.write_text("SELECT id FROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
+            with patch("format_safely.format_checked", return_value="SELECT\n    id FROM @yt_sql_fixture LIMIT 1\n"):
+                self.assertEqual(main(["--check", str(query)]), 1)
+            self.assertEqual(query.read_text(encoding="utf-8"), "SELECT id FROM @yt_sql_fixture LIMIT 1\n")
+
+    def test_format_writes_only_validated_changes(self) -> None:
+        import tempfile
+        from format_safely import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            query = Path(directory) / "example.ysql"
+            query.write_text("SELECT id FROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
+            formatted = "SELECT\n    id FROM @yt_sql_fixture LIMIT 1\n"
+            with patch("format_safely.format_checked", return_value=formatted):
+                self.assertEqual(main(["--write", str(query)]), 0)
+            self.assertEqual(query.read_text(encoding="utf-8"), formatted)
+
+    def test_check_succeeds_for_unchanged_query(self) -> None:
+        import tempfile
+        from format_safely import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            query = Path(directory) / "example.ysql"
+            original = "SELECT id FROM @yt_sql_fixture LIMIT 1\n"
+            query.write_text(original, encoding="utf-8")
+            with patch("format_safely.format_checked", return_value=original):
+                self.assertEqual(main(["--check", str(query)]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

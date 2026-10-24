@@ -77,12 +77,15 @@ def format_checked(source: str) -> str:
     return formatted
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("paths", nargs="+", type=Path, help=".ysql files or directories")
-    parser.add_argument("--write", action="store_true", help="Write only after every file passes validation")
-    args = parser.parse_args()
-    paths = sorted({file for path in args.paths for file in (path.rglob("*.ysql") if path.is_dir() else (path,))})
+    parser.add_argument("paths", nargs="*", type=Path, help=".ysql files or directories (default: yt-sql/cases)")
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--check", action="store_true", help="Fail if any query needs formatting")
+    action.add_argument("--write", action="store_true", help="Write only after every file passes validation")
+    args = parser.parse_args(argv)
+    targets = args.paths or [ROOT / "yt-sql/cases"]
+    paths = sorted({file for path in targets for file in (path.rglob("*.ysql") if path.is_dir() else (path,))})
     if not paths or any(path.suffix != ".ysql" or not path.is_file() for path in paths):
         parser.error("Provide existing .ysql files or directories containing them")
     changes = {}
@@ -101,6 +104,10 @@ def main() -> int:
         for path, content in changes.items():
             path.write_text(content, encoding="utf-8")
     print(f"Checked {len(paths)} .ysql files; {len(changes)} would change" + (" (written)" if args.write else ""))
+    if args.check and changes:
+        for path in changes:
+            print(f"Needs formatting: {path}", file=sys.stderr)
+        return 1
     return 0
 
 
