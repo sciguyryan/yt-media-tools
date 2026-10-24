@@ -14,5 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install pinned SQLFluff
         run: python -m pip install -r common/sqlite/requirements-lint.txt
-      - name: Verify YT-SQL dialect and normative query formatting
+      - name: Audit YT-SQL grammar coverage
+        run: python yt-sql/sqlfluff/audit_grammar.py
+      - name: Check YT-SQL formatting without modifying files
+        run: python scripts/ytsql_format.py check
+      - name: Verify YT-SQL dialect and formatting safety
         run: python -m unittest discover -s yt-sql/sqlfluff -p 'test_*.py'

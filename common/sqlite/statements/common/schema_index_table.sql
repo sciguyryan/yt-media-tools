@@ -1,4 +1,3 @@
-SELECT
-    tbl_name
+SELECT tbl_name
 FROM sqlite_master
 WHERE type = 'index' AND name = ?

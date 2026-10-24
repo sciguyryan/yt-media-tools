@@ -1,3 +1,1 @@
-SELECT
-    video_id
-FROM source_entries;
+SELECT video_id FROM source_entries;
