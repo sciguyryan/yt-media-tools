@@ -1,1 +1,3 @@
-SELECT video_id FROM metadata_records;
+SELECT
+    video_id
+FROM metadata_records;

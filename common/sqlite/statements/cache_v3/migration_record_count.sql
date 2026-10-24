@@ -1,1 +1,3 @@
-SELECT COUNT(*) FROM metadata_records;
+SELECT
+    COUNT(*)
+FROM metadata_records;

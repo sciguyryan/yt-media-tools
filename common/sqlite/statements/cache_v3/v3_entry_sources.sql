@@ -1,1 +1,3 @@
-SELECT DISTINCT source_url FROM source_entries
+SELECT DISTINCT
+    source_url
+FROM source_entries
