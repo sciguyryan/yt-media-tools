@@ -2,7 +2,7 @@
 
 This directory contains implementation-independent YT-SQL language tests. It is separate from the operational SQLite statements in `common/sqlite/`.
 
-Each case has `query.sql`, `test.json` and `expected.json`. `test.json` names one or more datasets, parameter bindings, language features and whether rows are ordered. Expected outputs describe observable columns and typed values, or an expected diagnostic category. Negative error tests are ordinary passing tests when the specified error occurs.
+Each case has `query.ysql`, `test.json` and `expected.json`. `test.json` names one or more datasets, parameter bindings, language features and whether rows are ordered. Expected outputs describe observable columns and typed values, or an expected diagnostic category. Negative error tests are ordinary passing tests when the specified error occurs.
 
 The committed `python-v6-small` and `python-v6-normal` fixtures contain portable materialised records from the deterministic generator (version 6, seed 31415926). Source and facet topology fixtures are also committed and independently validated. The fixture format and validation rules are described below.
 
@@ -216,7 +216,7 @@ Promotion explicitly refuses a missing or symlinked `expected.json`; initial adm
 
 ### Admission of new portable cases
 
-A new case may be prepared with `test.json` and `query.sql`, referencing an existing validated dataset, but without `expected.json`. This is a provisional case, **not** a valid member of the normative corpus: `validate_corpus.py` continues to reject it until admission. The Python adapter, candidate staging and independent review preflight accept this narrowly defined missing-expectation state; other case structure and dataset checks remain in force.
+A new case may be prepared with `test.json` and `query.ysql`, referencing an existing validated dataset, but without `expected.json`. This is a provisional case, **not** a valid member of the normative corpus: `validate_corpus.py` continues to reject it until admission. The Python adapter, candidate staging and independent review preflight accept this narrowly defined missing-expectation state; other case structure and dataset checks remain in force.
 
 After generating an observation, stage it with `--configuration`, obtain a separately authored approval record using `record_review.py`, then run `python yt-sql/admit_candidate.py CASE CANDIDATE REVIEW`. Admission requires a verified version 2 candidate, current query/manifest/dataset digests and an independent approval bound to the exact candidate bytes. It creates `expected.json` only if absent, refuses stale recovery artefacts and does not modify existing expectations. Replacement remains the separate, explicit `promote_candidate.py --replace` workflow. Admission publishes a fully written expectation without overwriting another process's file; interrupted temporary artefacts require inspection before retrying.
 

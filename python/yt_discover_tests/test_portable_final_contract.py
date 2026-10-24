@@ -44,14 +44,14 @@ def test_case_version_rejects_boolean(tmp_path: Path) -> None:
     case.mkdir(parents=True)
     (tmp_path / "datasets").mkdir()
     (tmp_path / "datasets" / "fixture.json").write_text('{"id":"fixture"}', encoding="utf-8")
-    (case / "query.sql").write_text("SELECT 1", encoding="utf-8")
+    (case / "query.ysql").write_text("SELECT 1", encoding="utf-8")
     (case / "test.json").write_text(
         json.dumps(
             {
                 "version": True,
                 "id": "example",
                 "datasets": ["fixture"],
-                "query": "query.sql",
+                "query": "query.ysql",
                 "expected": "expected.json",
                 "order": "ordered",
             }
@@ -68,9 +68,9 @@ def test_expected_version_rejects_boolean(tmp_path: Path) -> None:
     case.mkdir(parents=True)
     (tmp_path / "datasets").mkdir()
     (tmp_path / "datasets" / "fixture.json").write_text('{"id":"fixture"}', encoding="utf-8")
-    (case / "query.sql").write_text("SELECT 1", encoding="utf-8")
+    (case / "query.ysql").write_text("SELECT 1", encoding="utf-8")
     (case / "test.json").write_text(
-        '{"version":1,"id":"example","datasets":["fixture"],"query":"query.sql","expected":"expected.json","order":"ordered"}',
+        '{"version":1,"id":"example","datasets":["fixture"],"query":"query.ysql","expected":"expected.json","order":"ordered"}',
         encoding="utf-8",
     )
     (case / "expected.json").write_text('{"version":true,"outcome":"rows","columns":[],"rows":[]}', encoding="utf-8")

@@ -52,7 +52,7 @@ def test_lexical_failure_is_portable_syntax(tmp_path: Path) -> None:
     shutil.copytree(ROOT / "yt-sql" / "datasets", root / "datasets")
     destination = root / "cases" / "smoke" / "source_order_limit"
     shutil.copytree(CASE, destination)
-    (destination / "query.sql").write_text("SELECT id FROM @yt_sql_fixture WHERE !", encoding="utf-8")
+    (destination / "query.ysql").write_text("SELECT id FROM @yt_sql_fixture WHERE !", encoding="utf-8")
     assert adapter.observe(destination, root=root) == {
         "version": 1,
         "outcome": "error",
@@ -70,7 +70,7 @@ def _topology_case(tmp_path: Path, dataset: str, query: str) -> tuple[Path, Path
     manifest = json.loads((case / "test.json").read_text(encoding="utf-8"))
     manifest["datasets"] = [dataset]
     (case / "test.json").write_text(json.dumps(manifest), encoding="utf-8")
-    (case / "query.sql").write_text(query, encoding="utf-8")
+    (case / "query.ysql").write_text(query, encoding="utf-8")
     return root, case
 
 

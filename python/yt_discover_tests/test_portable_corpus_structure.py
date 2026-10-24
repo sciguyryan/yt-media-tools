@@ -24,7 +24,7 @@ def test_corpus_has_cases() -> None:
 def test_case_resources_are_complete(manifest: Path) -> None:
     case = _read(manifest)
     assert case["version"] == 1
-    assert case["query"] == "query.sql"
+    assert case["query"] == "query.ysql"
     assert case["expected"] == "expected.json"
     assert case["order"] in {"ordered", "unordered"}
     assert case["datasets"]

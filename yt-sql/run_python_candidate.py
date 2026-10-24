@@ -168,7 +168,7 @@ def observe(case: Path, *, configuration: str = "default", root: Path = ROOT) ->
         ) from exc
 
     try:
-        query_text = (case / "query.sql").read_text(encoding="utf-8")
+        query_text = (case / "query.ysql").read_text(encoding="utf-8")
         query = parse_query(_bind_portable_parameters(query_text, manifest.get("parameters", {})))
     except QueryLexicalError:
         # Tokenisation failures have a stable portable syntax meaning.

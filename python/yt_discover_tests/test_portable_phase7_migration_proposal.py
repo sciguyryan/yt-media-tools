@@ -11,7 +11,7 @@ PROPOSAL = ROOT / "yt-sql/migration-proposals/offset_limit"
 
 def test_offset_limit_proposal_matches_source_and_independent_fixture_oracle() -> None:
     source = (ROOT / "python/yt_discover_tests/conformance/cases.py").read_text(encoding="utf-8")
-    query = (PROPOSAL / "query.sql").read_text(encoding="utf-8").strip()
+    query = (PROPOSAL / "query.ysql").read_text(encoding="utf-8").strip()
     assert query in source
     fixture = json.loads((ROOT / "yt-sql/datasets/python-v6-small.json").read_text(encoding="utf-8"))
     eligible = [record for record in fixture["records"] if record["view_count"] is not None]

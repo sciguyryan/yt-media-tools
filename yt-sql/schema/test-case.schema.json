@@ -32,7 +32,7 @@
       "uniqueItems": true
     },
     "query": {
-      "const": "query.sql"
+      "const": "query.ysql"
     },
     "expected": {
       "const": "expected.json"

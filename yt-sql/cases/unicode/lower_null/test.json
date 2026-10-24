@@ -5,7 +5,7 @@
   "datasets": [
     "python-v6-small"
   ],
-  "query": "query.sql",
+  "query": "query.ysql",
   "expected": "expected.json",
   "order": "ordered",
   "features": [

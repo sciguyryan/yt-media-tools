@@ -38,7 +38,7 @@ def stage(
         case_id = validate_case(case, root=root, allow_missing_expected=True)
         manifest = _load(case / "test.json")
         outcome = _validate(_load(observed))
-        query_bytes = (case / "query.sql").read_bytes()
+        query_bytes = (case / "query.ysql").read_bytes()
         dataset_digests = {
             name: _digest((root / "datasets" / f"{name}.json").read_bytes()) for name in manifest["datasets"]
         }

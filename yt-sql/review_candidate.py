@@ -58,7 +58,7 @@ def inspect(case: Path, candidate_path: Path, *, root: Path = ROOT) -> dict[str,
             configs = manifest.get("execution", {}).get("configurations", [{"id": "default", "settings": {}}])
             if candidate["execution_configuration"] not in configs:
                 raise ReviewError("execution configuration does not match current manifest")
-        if candidate["query_sha256"] != _digest(case / "query.sql"):
+        if candidate["query_sha256"] != _digest(case / "query.ysql"):
             raise ReviewError("query digest mismatch")
         if candidate["manifest_sha256"] != _digest(case / "test.json"):
             raise ReviewError("manifest digest mismatch")

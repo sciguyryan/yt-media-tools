@@ -83,7 +83,7 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
         (type(manifest["version"]) is not int or manifest["version"] != 1)
         or not isinstance(case_id, str)
         or re.fullmatch(r"[a-z][a-z0-9_.-]+", case_id) is None
-        or manifest["query"] != "query.sql"
+        or manifest["query"] != "query.ysql"
         or manifest["expected"] != "expected.json"
         or manifest["order"] not in ("ordered", "unordered", "tied")
     ):
@@ -125,7 +125,7 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
         except ParameterError as exc:
             raise CorpusError(f"{case_id}: {exc}") from exc
     try:
-        query = (directory / "query.sql").read_text(encoding="utf-8")
+        query = (directory / "query.ysql").read_text(encoding="utf-8")
         if any(0xD800 <= ord(char) <= 0xDFFF for char in query):
             raise CorpusError(f"{case_id}: invalid Unicode surrogate in query")
         if not query.strip():

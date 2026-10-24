@@ -7,7 +7,7 @@ YT-SQL needs one independently reviewable definition of observable language beha
 ## Core decisions
 
 - Keep the corpus at the repository root in `yt-sql/`, distinct from operational SQLite statements in `common/sqlite/`.
-- Store each test as `query.sql`, `test.json` and `expected.json`. The manifest declares a stable ID, referenced dataset or datasets, parameters, feature tags and comparison mode.
+- Store each test as `query.ysql`, `test.json` and `expected.json`. The manifest declares a stable ID, referenced dataset or datasets, parameters, feature tags and comparison mode.
 - Use portable, versioned, deterministic datasets. Audit existing Python synthetic generators and fixtures before promoting their outputs; do not make the permanent corpus depend on running Python to produce data.
 - Define expected results independently of the implementation under test. Do not mechanically bless Python output as the oracle. Record observable column names, ordering, types, values, duplicates and diagnostics.
 - Permit batch execution against the current Python implementation to generate candidate expectations, but require review and approval before any generated output becomes normative. The review requirement does not prescribe a reviewer or method.
@@ -28,7 +28,7 @@ yt-sql/
     dataset.schema.json
   datasets/
   cases/<feature>/<case-id>/
-    query.sql
+    query.ysql
     test.json
     expected.json
   expectations/
