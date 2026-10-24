@@ -24,3 +24,5 @@ The integration is still limited to the normative query subset. SQLFluff's SQLit
 The separate predicate regression checks parse and format both `ILIKE` and `NOT ILIKE`, including a Unicode literal, and verify formatting idempotence. These checks exercise the formatter grammar only and do not promote additional portable conformance cases.
 
 The predicate regression suite exercises `CONTAINS`, `CONTAIN`, `MATCHES`, `MATCH`, `ILIKE` and `LIKE`, including `NOT` and `DOES NOT` forms recognised by Discover. Each case checks parsing before and after formatting, operator preservation, Unicode literal preservation and idempotence. These are formatter parsing checks rather than an assertion that the inherited SQLite grammar matches all YT-SQL expression rules.
+
+The regression suite also covers `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` with Unicode literals. These constructs already parse through the inherited grammar; the additional tests guard against formatter regressions without extending the dialect or claiming complete YT-SQL coverage.

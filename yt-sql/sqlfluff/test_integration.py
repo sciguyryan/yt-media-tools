@@ -105,6 +105,27 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+    def test_distinctness_predicates_parse_and_format(self) -> None:
+        # Discover supports SQL-style null-safe distinctness predicates.
+        # Preserve the NOT modifier and the right-hand Unicode literal.
+        for operator in ("IS DISTINCT FROM", "IS NOT DISTINCT FROM"):
+            with self.subTest(operator=operator):
+                original = f"SELECT id FROM @yt_sql_fixture WHERE title {operator} 'straße' LIMIT 1\n"
+                parsed = invoke("parse", "-", source=original)
+                self.assertEqual(parsed.returncode, 0, parsed.stdout + parsed.stderr)
+                self.assertNotIn("unparsable:", parsed.stdout.lower())
+                first = invoke("format", "-", source=original)
+                self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+                self.assertIn("'straße'", first.stdout)
+                self.assertIn("@yt_sql_fixture", first.stdout)
+                self.assertIn(operator, first.stdout.upper())
+                reparsed = invoke("parse", "-", source=first.stdout)
+                self.assertEqual(reparsed.returncode, 0, reparsed.stdout + reparsed.stderr)
+                self.assertNotIn("unparsable:", reparsed.stdout.lower())
+                second = invoke("format", "-", source=first.stdout)
+                self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+                self.assertEqual(first.stdout, second.stdout)
+
     def test_unformatted_fixture_query(self) -> None:
         original = "select upper('straße') as result from @yt_sql_fixture limit 1\n"
         first = invoke("format", "-", source=original)
