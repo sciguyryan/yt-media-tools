@@ -1,0 +1,11 @@
+# Experimental YT-SQL formatting configuration, independent of SQLite SQL.
+[sqlfluff]
+dialect = ytsql
+templater = raw
+sql_file_exts = .ysql
+max_line_length = 120
+exclude_rules = LT05
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 4
