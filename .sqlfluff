@@ -9,3 +9,7 @@ exclude_rules = LT05
 [sqlfluff:indentation]
 indent_unit = space
 tab_space_size = 4
+
+# Match the established multiline SELECT presentation for both dialects.
+[sqlfluff:rules:layout.select_targets]
+single_target_policy = new_line

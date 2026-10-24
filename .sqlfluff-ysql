@@ -1,34 +1,16 @@
-# Experimental YT-SQL formatting configuration, independent of SQLite SQL.
+# YT-SQL extends SQLFluff's SQLite dialect; use the same native layout rules.
 [sqlfluff]
 dialect = ytsql
 templater = raw
 sql_file_exts = .ysql
 max_line_length = 120
+# Unordered LIMIT is valid YT-SQL; this semantic lint exception is intentional.
 exclude_rules = LT05, AM09
 
 [sqlfluff:indentation]
 indent_unit = space
 tab_space_size = 4
 
-# Use the same readable, clause-oriented layout expected for project SQL.
+# Match the established multiline SELECT presentation for both dialects.
 [sqlfluff:rules:layout.select_targets]
 single_target_policy = new_line
-
-[sqlfluff:layout:type:from_clause]
-line_position = alone:strict
-
-[sqlfluff:layout:type:where_clause]
-line_position = alone:strict
-
-[sqlfluff:layout:type:limit_clause]
-line_position = leading:strict
-
-[sqlfluff:layout:type:groupby_clause]
-line_position = alone:strict
-
-[sqlfluff:layout:type:having_clause]
-line_position = alone:strict
-
-[sqlfluff:layout:type:join_clause]
-line_position = alone:strict
-keyword_line_position = leading

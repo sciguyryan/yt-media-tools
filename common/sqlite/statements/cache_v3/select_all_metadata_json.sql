@@ -1,1 +1,3 @@
-SELECT raw_json FROM metadata_records
+SELECT
+    raw_json
+FROM metadata_records

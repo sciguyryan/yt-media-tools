@@ -60,11 +60,17 @@ class SafeFormattingTests(unittest.TestCase):
         ):
             format_checked(original)
 
-    def test_compact_unicode_query_receives_multiline_house_style(self) -> None:
+    def test_native_sqlfluff_formatting_is_not_post_processed(self) -> None:
         original = "SELECT UPPER('straße') AS result FROM @yt_sql_fixture LIMIT 1\n"
-        expected = "SELECT\n    UPPER('straße') AS result\nFROM @yt_sql_fixture\nLIMIT 1\n"
-        self.assertEqual(format_checked(original), expected)
-        self.assertEqual(format_checked(expected), expected)
+        native = "SELECT\n    UPPER('straße') AS result\nFROM @yt_sql_fixture LIMIT 1\n"
+        outputs = ["file:\n", native, "file:\n", native]
+
+        def fake_run(args, **kwargs):
+            return subprocess.CompletedProcess(args, 0, outputs.pop(0), "")
+
+        with patch("format_safely.subprocess.run", side_effect=fake_run):
+            self.assertEqual(format_checked(original), native)
+        self.assertEqual(outputs, [])
 
     def test_progress_renders_counts_and_finishes_line(self) -> None:
         import io

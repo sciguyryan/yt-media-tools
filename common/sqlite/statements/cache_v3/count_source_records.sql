@@ -1,2 +1,4 @@
-SELECT COUNT(*) FROM metadata_records
+SELECT
+    COUNT(*)
+FROM metadata_records
 WHERE source_url = ?;

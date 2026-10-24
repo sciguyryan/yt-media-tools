@@ -24,6 +24,48 @@ def invoke(command: str, *args: str, source: str | None = None) -> subprocess.Co
 
 
 class SQLFluffYTSQLTests(unittest.TestCase):
+    def test_sqlite_and_ytsql_formatting_parity(self) -> None:
+        """Shared SQL constructs must follow the same SQLFluff layout policy."""
+        sqlite_config = ROOT / ".sqlfluff"
+        examples = (
+            "SELECT id FROM {source} LIMIT 10\n",
+            "SELECT UPPER('straße') AS result FROM {source} LIMIT 1\n",
+            "SELECT id, title FROM {source} WHERE id > 1 ORDER BY id LIMIT 5\n",
+            "SELECT\n    id\nFROM {source}\nLIMIT 10\n",
+        )
+        for template in examples:
+            with self.subTest(template=template):
+                sqlite_source = template.format(source="fixture")
+                ytsql_source = template.format(source="@yt_sql_fixture")
+                sqlite = subprocess.run(
+                    [sys.executable, "-m", "sqlfluff", "format", "--config", str(sqlite_config), "-"],
+                    cwd=ROOT,
+                    input=sqlite_source,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                ytsql = invoke("format", "-", source=ytsql_source)
+                self.assertEqual(sqlite.returncode, 0, sqlite.stdout + sqlite.stderr)
+                self.assertEqual(ytsql.returncode, 0, ytsql.stdout + ytsql.stderr)
+                self.assertEqual(ytsql.stdout.replace("@yt_sql_fixture", "fixture"), sqlite.stdout)
+                self.assertTrue(sqlite.stdout.startswith("SELECT\n    "), sqlite.stdout)
+                for formatted, is_ytsql in ((sqlite.stdout, False), (ytsql.stdout, True)):
+                    again = (
+                        invoke("format", "-", source=formatted)
+                        if is_ytsql
+                        else subprocess.run(
+                            [sys.executable, "-m", "sqlfluff", "format", "--config", str(sqlite_config), "-"],
+                            cwd=ROOT,
+                            input=formatted,
+                            text=True,
+                            capture_output=True,
+                            check=False,
+                        )
+                    )
+                    self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
+                    self.assertEqual(again.stdout, formatted)
+
     def test_normative_corpus_lints(self) -> None:
         result = invoke("lint", str(CASES))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
