@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE (view_count IS NULL OR view_count = 0) AND NOT is_live
+ORDER BY source_index ASC

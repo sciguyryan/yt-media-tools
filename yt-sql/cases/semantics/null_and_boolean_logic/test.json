@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "semantics.null_and_boolean_logic",
+  "description": "NULL predicates and parenthesised Boolean logic",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "is.null",
+    "boolean.or",
+    "boolean.and",
+    "boolean.not",
+    "boolean.parentheses"
+  ]
+}

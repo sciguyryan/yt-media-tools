@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.comparison_equal",
+  "description": "Equality comparison with NULL exclusion",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.eq"
+  ]
+}

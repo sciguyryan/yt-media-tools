@@ -1827,6 +1827,24 @@
   },
   "shared_cases": [
     {
+      "id": "semantics.comparison_equal",
+      "features": [
+        "comparison.eq"
+      ],
+      "path": "yt-sql/cases/semantics/comparison_equal/test.json"
+    },
+    {
+      "id": "semantics.null_and_boolean_logic",
+      "features": [
+        "is.null",
+        "boolean.or",
+        "boolean.and",
+        "boolean.not",
+        "boolean.parentheses"
+      ],
+      "path": "yt-sql/cases/semantics/null_and_boolean_logic/test.json"
+    },
+    {
       "id": "smoke.source_order_limit",
       "features": [
         "from.handle",

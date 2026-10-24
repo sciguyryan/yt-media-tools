@@ -8,7 +8,7 @@ This review establishes the migration backlog from the existing source-derived i
 - Registered feature entries in the coverage-gap matrix: **189**.
 - Function entries in the coverage-gap matrix: **19**.
 - Python test files classified in the migration inventory: **211**.
-- Normative portable corpus cases currently present: **7**.
+- Normative portable corpus cases currently present: **9**.
 - Curated language elements pending review: **267** of 267.
 
 The gap matrix currently records its dimensions as unverified. Existing feature tags are useful discovery evidence, not proof that valid syntax, errors, types, boundaries, interactions or adversarial cases have been independently checked.
@@ -67,3 +67,9 @@ The existing `offset_limit` proposal remains provisional. Its tied LIMIT/OFFSET 
 Six portable cases now exercise `UPPER` and `LOWER` with explicit expected values: sharp-s expansion, dotted-I expansion, composed and decomposed accents, and NULL propagation for each function. They are stored under `cases/unicode/` and execute through the permanent Python conformance harness. The original Python Unicode regression tests remain in place because they also cover implementation-specific output and optimiser behaviour.
 
 These cases specify their exact results without deriving expected strings from Python's Unicode library at test time. They do not yet define a complete, versioned Unicode mapping profile. A later conformance increment must resolve Unicode version dependencies, broader case mappings, locale behaviour and coverage for the remaining scalar functions before claiming cross-language completeness.
+
+## NULL and comparison migration increment
+
+Two independently enumerated expectations from the committed `python-v6-small` fixture are now approved: `semantics.null_and_boolean_logic` and `semantics.comparison_equal`. Both pass the Python portable runner. The original Python conformance cases remain intact.
+
+`comparison_not_equal` is deliberately deferred: its existing `source_index <= 36` predicate produced no rows through the portable runner against the committed dataset, while straightforward record-position enumeration predicted non-empty results. The source-index contract and fixture projection need reconciliation before approving a portable expectation.
