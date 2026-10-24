@@ -63,6 +63,25 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+    def test_text_predicate_variants_parse_and_format(self) -> None:
+        operators = (
+            "CONTAINS",
+            "NOT MATCHES",
+        )
+        for operator in operators:
+            with self.subTest(operator=operator):
+                original = f"SELECT id FROM @yt_sql_fixture WHERE title {operator} 'straße' LIMIT 1\n"
+                parsed = invoke("parse", "-", source=original)
+                self.assertEqual(parsed.returncode, 0, parsed.stdout + parsed.stderr)
+                self.assertNotIn("unparsable:", parsed.stdout.lower())
+                formatted = invoke("format", "-", source=original)
+                self.assertEqual(formatted.returncode, 0, formatted.stdout + formatted.stderr)
+                self.assertIn("'straße'", formatted.stdout)
+                self.assertIn("@yt_sql_fixture", formatted.stdout)
+                second = invoke("format", "-", source=formatted.stdout)
+                self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+                self.assertEqual(formatted.stdout, second.stdout)
+
     def test_unformatted_fixture_query(self) -> None:
         original = "select upper('straße') as result from @yt_sql_fixture limit 1\n"
         first = invoke("format", "-", source=original)

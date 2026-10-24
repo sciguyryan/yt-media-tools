@@ -9,7 +9,7 @@ python yt-sql/sqlfluff/run.py parse --config .sqlfluff-ysql yt-sql/cases/unicode
 python yt-sql/sqlfluff/run.py lint --config .sqlfluff-ysql yt-sql/cases/unicode/upper_sharp_s/query.ysql
 ```
 
-The dialect currently inherits SQLite's grammar and adds support for the `@yt_sql_fixture` source reference and the `ILIKE`/`NOT ILIKE` predicate omitted by SQLFluff's SQLite grammar. This is an initial compatibility scaffold, **not complete YT-SQL syntax support**. Do not enable mandatory linting or automatic formatting for the entire corpus until valid syntax, semantic preservation and idempotence have been verified, including deliberately unusual parser fixtures. SQLFluff must never define YT-SQL validity independently of Discover's parser.
+The dialect currently inherits SQLite's grammar and adds support for the `@yt_sql_fixture` source reference and the YT-SQL `ILIKE`, `CONTAINS`, `MATCHES` and related negated predicate spellings omitted by SQLFluff's SQLite grammar. This is an initial compatibility scaffold, **not complete YT-SQL syntax support**. Do not enable mandatory linting or automatic formatting for the entire corpus until valid syntax, semantic preservation and idempotence have been verified, including deliberately unusual parser fixtures. SQLFluff must never define YT-SQL validity independently of Discover's parser.
 
 The normative corpus is checked independently from SQLite SQL in `.github/workflows/ytsql-sql-quality.yml`. Run the same checks locally:
 
@@ -22,3 +22,5 @@ The tests lint every normative `.ysql` query and check formatter idempotence, in
 The integration is still limited to the normative query subset. SQLFluff's SQLite-derived grammar is not a substitute for Discover's authoritative parser; no claim of full YT-SQL grammar coverage or general semantic equivalence is made.
 
 The separate predicate regression checks parse and format both `ILIKE` and `NOT ILIKE`, including a Unicode literal, and verify formatting idempotence. These checks exercise the formatter grammar only and do not promote additional portable conformance cases.
+
+The predicate regression suite additionally covers `CONTAIN`, `MATCH`, `NOT` and `DOES NOT` spellings. These are formatter parsing checks rather than an assertion that the inherited SQLite grammar matches all YT-SQL expression rules.
