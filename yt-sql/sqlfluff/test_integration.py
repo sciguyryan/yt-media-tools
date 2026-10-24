@@ -152,6 +152,25 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+    def test_parenthesised_boolean_expression_formats_without_changing_grouping(self) -> None:
+        # Parentheses are semantic, not merely layout. Guard mixed AND/OR
+        # expressions against formatting that changes their grouping.
+        original = "SELECT id FROM @yt_sql_fixture WHERE (view_count > 10 AND title IS NOT NULL) OR id = 3 LIMIT 5\n"
+        parsed = invoke("parse", "-", source=original)
+        self.assertEqual(parsed.returncode, 0, parsed.stdout + parsed.stderr)
+        self.assertNotIn("unparsable:", parsed.stdout.lower())
+        first = invoke("format", "-", source=original)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.assertIn("@yt_sql_fixture", first.stdout)
+        self.assertIn("(view_count > 10 AND title IS NOT NULL)", " ".join(first.stdout.split()))
+        self.assertIn("OR id = 3", " ".join(first.stdout.split()))
+        reparsed = invoke("parse", "-", source=first.stdout)
+        self.assertEqual(reparsed.returncode, 0, reparsed.stdout + reparsed.stderr)
+        self.assertNotIn("unparsable:", reparsed.stdout.lower())
+        second = invoke("format", "-", source=first.stdout)
+        self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertEqual(first.stdout, second.stdout)
+
     def test_unformatted_fixture_query(self) -> None:
         original = "select upper('straße') as result from @yt_sql_fixture limit 1\n"
         first = invoke("format", "-", source=original)

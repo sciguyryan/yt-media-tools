@@ -29,6 +29,8 @@ The regression suite also covers `IS DISTINCT FROM` and `IS NOT DISTINCT FROM` w
 
 The regression suite additionally covers `BETWEEN`, `NOT BETWEEN`, `IN`, `NOT IN`, `IS NULL` and `IS NOT NULL` through the inherited grammar, checking reparsing and formatter idempotence without introducing unnecessary dialect overrides.
 
+The regression suite also checks parenthesised Boolean expressions combining `AND`, `OR`, comparisons and `IS NOT NULL`. The formatter must retain explicit grouping and produce idempotent output.
+
 ## Maintaining compatibility with YT-SQL
 
 The SQLFluff dialect must evolve alongside the authoritative YT-SQL language implementation. Any change that introduces, modifies or removes YT-SQL syntax must include a review of the SQLFluff integration as part of the same development work. This applies to functions, operators, predicates, expressions, clauses, literals, source references and other language constructs.
