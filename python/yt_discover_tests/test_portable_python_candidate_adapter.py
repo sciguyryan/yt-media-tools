@@ -605,3 +605,21 @@ def test_timestamp_parameter_filters_portable_source_records(
     manifest["parameters"] = {"cutoff": {"type": "timestamp", "value": timestamp}}
     (case / "test.json").write_text(json.dumps(manifest), encoding="utf-8")
     assert _adapter().observe(case, root=root)["rows"] == expected
+
+
+def test_static_fixture_source_index_is_one_based(tmp_path: Path) -> None:
+    root, case = _topology_case(
+        tmp_path,
+        "python-v6-small",
+        "SELECT id FROM @yt_sql_fixture WHERE source_index <= 2 ORDER BY source_index ASC",
+    )
+    assert _adapter().observe(case, root=root)["rows"] == [["vid001"], ["vid002"]]
+
+
+def test_static_fixture_inequality_uses_source_positions(tmp_path: Path) -> None:
+    root, case = _topology_case(
+        tmp_path,
+        "python-v6-small",
+        "SELECT id FROM @yt_sql_fixture WHERE view_count != 42 AND source_index <= 3 ORDER BY source_index ASC",
+    )
+    assert _adapter().observe(case, root=root)["rows"] == [["vid001"], ["vid002"], ["vid003"]]

@@ -132,6 +132,11 @@ def observe(case: Path, *, configuration: str = "default", root: Path = ROOT) ->
     ):
         raise AdapterError("only static, source-topology and facet-topology datasets are supported")
     records = [dict(record) for record in dataset["records"]]
+    if dataset["kind"] == "static":
+        # Match the acquisition contract: source positions are one-based and
+        # derived from the ordered source, not stored metadata fields.
+        for source_index, record in enumerate(records, start=1):
+            record["source_index"] = source_index
     # Topology is authoritative. In particular, an empty facet remains a
     # declared binding rather than silently acquiring its parent source.
     if dataset["kind"] == "static":
