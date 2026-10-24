@@ -4,7 +4,7 @@ dialect = ytsql
 templater = raw
 sql_file_exts = .ysql
 max_line_length = 120
-exclude_rules = LT05
+exclude_rules = LT05, AM09
 
 [sqlfluff:indentation]
 indent_unit = space
