@@ -132,6 +132,8 @@ def test_case_listing_does_not_execute_adapter(
     assert run_conformance.main() == 0
     assert capsys.readouterr().out.splitlines() == [
         "semantics.comparison_equal",
+        "semantics.comparison_not_equal",
+        "semantics.comparison_not_equal_angle",
         "semantics.null_and_boolean_logic",
         "smoke.source_order_limit",
         "unicode.lower_dotted_i",

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.comparison_not_equal_angle",
+  "description": "Inequality comparison (<>) with NULL exclusion and source-position boundary",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.ne_alt"
+  ]
+}

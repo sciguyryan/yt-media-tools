@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE view_count != 42 AND source_index <= 36
+ORDER BY source_index ASC

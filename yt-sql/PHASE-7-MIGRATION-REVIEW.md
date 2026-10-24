@@ -8,7 +8,7 @@ This review establishes the migration backlog from the existing source-derived i
 - Registered feature entries in the coverage-gap matrix: **189**.
 - Function entries in the coverage-gap matrix: **19**.
 - Python test files classified in the migration inventory: **211**.
-- Normative portable corpus cases currently present: **9**.
+- Normative portable corpus cases currently present: **11**.
 - Curated language elements pending review: **267** of 267.
 
 The gap matrix currently records its dimensions as unverified. Existing feature tags are useful discovery evidence, not proof that valid syntax, errors, types, boundaries, interactions or adversarial cases have been independently checked.
@@ -72,4 +72,4 @@ These cases specify their exact results without deriving expected strings from P
 
 Two independently enumerated expectations from the committed `python-v6-small` fixture are now approved: `semantics.null_and_boolean_logic` and `semantics.comparison_equal`. Both pass the Python portable runner. The original Python conformance cases remain intact.
 
-`comparison_not_equal` is deliberately deferred: its existing `source_index <= 36` predicate produced no rows through the portable runner against the committed dataset, while straightforward record-position enumeration predicted non-empty results. The source-index contract and fixture projection need reconciliation before approving a portable expectation.
+The `source_index` fixture projection has been reconciled to one-based source positions. The two inequality spellings, `comparison_not_equal` (`!=`) and `comparison_not_equal_angle` (`<>`), are now approved as separate portable cases against the committed small fixture. Their identical 32-row expectations are independently enumerated from the source-position boundary and explicit non-NULL values. The original Python cases remain in place.
