@@ -14,6 +14,20 @@ from yt_media_tools.query_parser import parse_query  # noqa: E402
 
 def main() -> int:
     cases = json.loads((HERE / "syntax_matrix.json").read_text(encoding="utf-8"))["cases"]
+    # Fail before reporting grammar gaps if SQLFluff is unavailable in this interpreter.
+    dependency = subprocess.run(
+        [sys.executable, "-c", "import sqlfluff; assert sqlfluff.__version__ == '4.4.0'"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if dependency.returncode:
+        print(
+            "SQLFluff 4.4.0 is unavailable in the current Python interpreter: " + dependency.stderr.strip(),
+            file=sys.stderr,
+        )
+        return 2
     results = []
     for case in cases:
         query = case["query"]
@@ -29,6 +43,9 @@ def main() -> int:
             capture_output=True,
             check=False,
         )
+        if "Traceback (most recent call last)" in parsed.stderr or "ModuleNotFoundError" in parsed.stderr:
+            print(f"SQLFluff launcher failed for {case['id']}: {parsed.stderr.strip()}", file=sys.stderr)
+            return 2
         success = (
             parsed.returncode == 0
             and "unparsable:" not in parsed.stdout.lower()
