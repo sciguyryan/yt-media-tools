@@ -8,7 +8,7 @@ This review establishes the migration backlog from the existing source-derived i
 - Registered feature entries in the coverage-gap matrix: **189**.
 - Function entries in the coverage-gap matrix: **19**.
 - Python test files classified in the migration inventory: **211**.
-- Normative portable corpus cases currently present: **1**.
+- Normative portable corpus cases currently present: **7**.
 - Curated language elements pending review: **267** of 267.
 
 The gap matrix currently records its dimensions as unverified. Existing feature tags are useful discovery evidence, not proof that valid syntax, errors, types, boundaries, interactions or adversarial cases have been independently checked.

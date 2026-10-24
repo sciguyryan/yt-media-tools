@@ -8,7 +8,7 @@ The committed `python-v6-small` and `python-v6-normal` fixtures contain portable
 
 Every case defaults to passing. `expectations/python.json` and `expectations/rust.json` may record justified implementation-specific `xfail` entries, including a reason and preferably an issue. An unexpected pass (XPASS) must fail the suite. A known failure must match its recorded failure category; an unrelated crash must not count as XFAIL. A query expected to produce a language error is **not** an xfail.
 
-The initial approved case establishes a narrow conformance baseline, not comprehensive language coverage. Existing independent Python oracle tests and other language tests remain in place until equivalent coverage has been reviewed. Portable fixtures, typed encodings, source/facet identity, result comparison and diagnostic categories are governed by the contracts below. Production output must not be used to author normative expectations without independent semantic review.
+The initial approved cases establish a narrow conformance baseline, not comprehensive language coverage. Existing independent Python oracle tests and other language tests remain in place until equivalent coverage has been reviewed. Portable fixtures, typed encodings, source/facet identity, result comparison and diagnostic categories are governed by the contracts below. Production output must not be used to author normative expectations without independent semantic review.
 
 The existing test and dataset audit is in `EXISTING-TEST-INVENTORY.json`. Python test removal is explicitly deferred until each migrated case is proven equivalent and implementation-specific assertions are retained. Parallel execution should use pytest-xdist with isolated cache and temporary state per worker.
 
