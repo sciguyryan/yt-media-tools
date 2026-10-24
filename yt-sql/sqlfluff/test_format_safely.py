@@ -60,6 +60,42 @@ class SafeFormattingTests(unittest.TestCase):
         ):
             format_checked(original)
 
+    def test_progress_renders_counts_and_finishes_line(self) -> None:
+        import io
+        from format_safely import _show_progress
+
+        output = io.StringIO()
+        _show_progress(0, 4, stream=output, interactive=True)
+        _show_progress(2, 4, stream=output, interactive=True)
+        _show_progress(4, 4, stream=output, interactive=True)
+        self.assertIn("0/4 (0%)", output.getvalue())
+        self.assertIn("2/4 (50%)", output.getvalue())
+        self.assertIn("4/4 (100%)", output.getvalue())
+        self.assertTrue(output.getvalue().endswith("\n"))
+
+    def test_progress_is_silent_for_non_interactive_output(self) -> None:
+        import io
+        from format_safely import _show_progress
+
+        output = io.StringIO()
+        _show_progress(1, 2, stream=output, interactive=False)
+        self.assertEqual(output.getvalue(), "")
+
+    def test_progress_does_not_affect_read_only_checks(self) -> None:
+        import tempfile
+        from format_safely import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("a.ysql", "b.ysql"):
+                (root / name).write_text("SELECT id FROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
+            with (
+                patch("format_safely.format_checked", side_effect=lambda query: query),
+                patch("format_safely.sys.stderr.isatty", return_value=False),
+            ):
+                self.assertEqual(main(["--check", str(root)]), 0)
+            self.assertEqual(len(list(root.glob("*.ysql"))), 2)
+
     def test_check_fails_when_formatting_is_needed(self) -> None:
         import tempfile
         from format_safely import main

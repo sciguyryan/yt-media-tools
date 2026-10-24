@@ -5,6 +5,7 @@ No file is modified unless the formatted result passes all safety checks.
 
 import argparse
 import dataclasses
+import os
 import re
 import subprocess
 import sys
@@ -77,6 +78,18 @@ def format_checked(source: str) -> str:
     return formatted
 
 
+def _show_progress(completed: int, total: int, *, stream: object, interactive: bool) -> None:
+    """Render one bounded progress line without polluting redirected output."""
+    if not interactive:
+        return
+    width = 28
+    filled = width * completed // total
+    bar = "#" * filled + "-" * (width - filled)
+    print(f"\rYT-SQL [{bar}] {completed}/{total} ({completed * 100 // total}%)", end="", file=stream, flush=True)
+    if completed == total:
+        print(file=stream, flush=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("paths", nargs="*", type=Path, help=".ysql files or directories (default: yt-sql/cases)")
@@ -89,15 +102,20 @@ def main(argv: list[str] | None = None) -> int:
     if not paths or any(path.suffix != ".ysql" or not path.is_file() for path in paths):
         parser.error("Provide existing .ysql files or directories containing them")
     changes = {}
-    for path in paths:
+    interactive = sys.stderr.isatty() and os.environ.get("CI", "").lower() not in {"1", "true", "yes"}
+    _show_progress(0, len(paths), stream=sys.stderr, interactive=interactive)
+    for index, path in enumerate(paths, start=1):
         try:
             original = path.read_text(encoding="utf-8")
             formatted = format_checked(original)
             if original != formatted:
                 changes[path] = formatted
         except (ValueError, OSError, RuntimeError) as exc:
+            if interactive:
+                print(file=sys.stderr)
             print(f"Formatting blocked for {path}: {exc}", file=sys.stderr)
             return 1
+        _show_progress(index, len(paths), stream=sys.stderr, interactive=interactive)
     # Validate every target before writing any of them. This is not a
     # transactional filesystem operation; unexpected I/O errors can still occur.
     if args.write:

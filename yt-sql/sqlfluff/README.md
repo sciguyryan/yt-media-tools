@@ -67,3 +67,7 @@ python scripts/ytsql_format.py format path/to/query.ysql
 ```
 
 `check` is read-only and returns a non-zero exit status if a query needs formatting or fails validation. `format` writes changes only after all selected queries pass the guarded validation checks. The commands never modify `.sql` files or use the SQLite SQLFluff configuration. Use `check` in automation; use `format` explicitly for local edits. The original `format_safely.py` interface remains available, with `--check` and `--write` options. These commands do not yet constitute an editor format-on-save protocol.
+
+## Progress reporting
+
+The repository-level `check` and `format` commands display a dependency-free progress bar on interactive terminals, including the number of `.ysql` files validated and the completion percentage. Progress is written to standard error so that ordinary command output remains readable. Redirected output and CI runs suppress the bar and retain the final summary. The bar tracks validation, not file writes: in `format` mode every selected query is validated before any file is modified.
