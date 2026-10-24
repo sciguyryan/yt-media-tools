@@ -526,6 +526,7 @@
     "python/yt_discover_tests/test_portable_timestamp_precision.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_typed_values.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_unicode_fixture_audit.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_precommit_cache.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_projection.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_provenance.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_provider_capabilities.py": "retain: implementation/integration pending review",

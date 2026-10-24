@@ -115,3 +115,6 @@ Thumbs.db
 
 # Rust editor and language-server artefacts
 /rust/.rust-analyzer/
+
+# Local pre-staging check results and pytest outcome snapshots
+/.cache/pre-commit/
