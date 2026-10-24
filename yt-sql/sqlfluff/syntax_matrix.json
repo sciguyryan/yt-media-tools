@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "purpose": "Representative, authoritative-parser-accepted formatter grammar probes; not exhaustive conformance",
+  "cases": [
+    {
+      "id": "projection_alias",
+      "query": "SELECT id AS video_id, title FROM @yt_sql_fixture LIMIT 3\n"
+    },
+    {
+      "id": "distinct",
+      "query": "SELECT DISTINCT title FROM @yt_sql_fixture LIMIT 3\n"
+    },
+    {
+      "id": "order_offset",
+      "query": "SELECT id FROM @yt_sql_fixture ORDER BY id DESC LIMIT 5 OFFSET 2\n"
+    },
+    {
+      "id": "group_having",
+      "query": "SELECT title, COUNT(*) AS total FROM @yt_sql_fixture GROUP BY title HAVING COUNT(*) > 1 LIMIT 5\n"
+    },
+    {
+      "id": "aggregate_filter",
+      "query": "SELECT COUNT(*) FILTER (WHERE title IS NOT NULL) AS total FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "case_expression",
+      "query": "SELECT CASE WHEN view_count > 5 THEN 'high' ELSE 'low' END AS tier FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "coalesce",
+      "query": "SELECT COALESCE(title, 'missing') AS value FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "arithmetic",
+      "query": "SELECT (view_count + 2) * 3 AS score FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "cte",
+      "query": "WITH chosen AS (SELECT id FROM @yt_sql_fixture LIMIT 5) SELECT id FROM chosen LIMIT 2\n"
+    },
+    {
+      "id": "union",
+      "query": "SELECT id FROM @yt_sql_fixture UNION SELECT id FROM @yt_sql_fixture LIMIT 5\n"
+    },
+    {
+      "id": "join",
+      "query": "SELECT a.id FROM @yt_sql_fixture AS a INNER JOIN @yt_sql_fixture AS b ON a.id = b.id LIMIT 5\n"
+    },
+    {
+      "id": "left_join",
+      "query": "SELECT a.id FROM @yt_sql_fixture AS a LEFT JOIN @yt_sql_fixture AS b ON a.id = b.id LIMIT 5\n"
+    },
+    {
+      "id": "boolean_grouping",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE (view_count > 10 AND title IS NOT NULL) OR id = 3 LIMIT 5\n"
+    },
+    {
+      "id": "predicate_ilike",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE title ILIKE '%straße%' LIMIT 1\n"
+    },
+    {
+      "id": "predicate_contains",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE title DOES NOT CONTAIN 'straße' LIMIT 1\n"
+    },
+    {
+      "id": "predicate_matches",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE title MATCHES '.*' LIMIT 1\n"
+    },
+    {
+      "id": "distinctness",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE title IS NOT DISTINCT FROM 'straße' LIMIT 1\n"
+    },
+    {
+      "id": "between",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE view_count BETWEEN 1 AND 10 LIMIT 1\n"
+    },
+    {
+      "id": "in_list",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE id IN (1, 2, 3) LIMIT 1\n"
+    },
+    {
+      "id": "null_test",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE title IS NULL LIMIT 1\n"
+    },
+    {
+      "id": "quoted_identifier",
+      "query": "SELECT `title` FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "array_index",
+      "query": "SELECT tags[0] AS first_tag FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "member_access",
+      "query": "SELECT metadata.author AS author FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "comment",
+      "query": "# query comment\nSELECT id FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "hex_number",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE view_count > 0x10 LIMIT 1\n"
+    }
+  ]
+}

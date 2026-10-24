@@ -40,3 +40,9 @@ If the existing SQLFluff grammar already supports the change correctly, add or e
 Keep the YT-SQL SQLFluff configuration and checks independent of SQLite SQL linting. Do not weaken grammar validation or suppress errors merely to accommodate unsupported syntax. Record any remaining limitations explicitly, and do not enable automatic formatting for constructs whose safe handling has not been established.
 
 The portable YT-SQL conformance corpus should provide representative cases for new language features so that future changes can be checked consistently across implementations.
+
+## Consolidated grammar audit
+
+The representative grammar matrix in `syntax_matrix.json` contains queries accepted by Discover's authoritative parser. Run `python yt-sql/sqlfluff/audit_grammar.py` to obtain a machine-readable SQLFluff parsing gap report across projections, aggregates, grouping, CTEs, set operations, joins, expressions, predicates, literals and comments. The audit deliberately reports unsupported constructs without treating the SQLite-derived dialect as a source of language validity. Its output is diagnostic, not an assertion of formatter safety or semantic equivalence. The accompanying unit test ensures that the examples remain valid YT-SQL as the language evolves.
+
+This is the first of the planned closing increments. Resolve significant gaps and establish safe formatting boundaries before enabling general automatic formatting.
