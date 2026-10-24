@@ -100,3 +100,7 @@ Both tools can report the external operations they invoke with `--debug-external
 ## Source layout
 
 The Python implementation, tests, benchmarks and yt-dlp plugin live under `python/`. The Rust implementation remains under `rust/`. The existing root commands `./yt-discover.py` and `./yt-download.py` are retained as compatibility launchers; their implementations have moved, but command-line invocation does not need to change. The root test and benchmark commands also forward to their Python implementations.
+
+### Local pre-staging quality gate
+
+Activate the repository virtual environment, install the pinned Python development requirements, run `npm ci`, and ensure Rust/Cargo is installed. From the repository root, run `python pre-commit.py` before staging changes. The script runs Markdown linting, Ruff autofix and formatting followed by verification, JSON validation, generated YT-SQL artefact freshness checks, SQLite SQLFluff linting, the YT-SQL grammar audit and formatter check, SQLFluff integration tests, and the full Python and Rust suites via `run-tests.py`. It stops at the first failure; pass `--keep-going` to collect failures across the complete battery. The script does not stage or commit files. Ruff's initial passes may modify files, so inspect `git diff` afterwards. SQLite and YT-SQL formatting checks are read-only; use the existing SQLFluff and YT-SQL formatter commands explicitly to apply SQL changes.
