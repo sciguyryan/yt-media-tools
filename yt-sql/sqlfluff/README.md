@@ -71,3 +71,7 @@ python scripts/ytsql_format.py format path/to/query.ysql
 ## Progress reporting
 
 The repository-level `check` and `format` commands display a dependency-free progress bar on interactive terminals, including the number of `.ysql` files validated and the completion percentage. Progress is written to standard error so that ordinary command output remains readable. Redirected output and CI runs suppress the bar and retain the final summary. The bar tracks validation, not file writes: in `format` mode every selected query is validated before any file is modified.
+
+## Formatting layout
+
+The YT-SQL configuration places SELECT targets on separate lines, and guarded formatting places simple trailing LIMIT clauses on their own lines. The formatter checks the authoritative parse structure before writing, so formatting that changes the query meaning is rejected. Use `python scripts/ytsql_format.py check` to detect non-compliant queries and `python scripts/ytsql_format.py format` to apply validated changes recursively to `yt-sql/cases`.

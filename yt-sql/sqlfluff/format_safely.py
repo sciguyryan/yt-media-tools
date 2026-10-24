@@ -41,6 +41,20 @@ def structural_tree(value: object) -> object:
     return value
 
 
+def _normalise_trailing_limit(query: str) -> str:
+    """Place a simple trailing LIMIT clause on its own line.
+
+    This deliberately narrow layout correction is validated by the authoritative
+    parser before any write. Complex LIMIT forms remain SQLFluff-owned.
+    """
+    return re.sub(
+        r"(?m)(?<=\S)[ \t]+(LIMIT[ \t]+[0-9]+(?:[ \t]+OFFSET[ \t]+[0-9]+)?)[ \t]*$",
+        r"\n\1",
+        query,
+        flags=re.IGNORECASE,
+    )
+
+
 def format_checked(source: str) -> str:
     """Return a verified formatted query or raise without changing the input."""
     original_tree = structural_tree(parse_query(source))
@@ -61,7 +75,7 @@ def format_checked(source: str) -> str:
         return result.stdout
 
     invoke("parse", source)
-    formatted = invoke("format", source)
+    formatted = _normalise_trailing_limit(invoke("format", source))
     invoke("parse", formatted)
 
     # The AST does not retain comments. Preserve their exact spelling and order
@@ -73,7 +87,7 @@ def format_checked(source: str) -> str:
         raise ValueError("Formatting changed or removed query comments")
     if structural_tree(parse_query(formatted)) != original_tree:
         raise ValueError("Formatting changed the authoritative YT-SQL parse tree")
-    if invoke("format", formatted) != formatted:
+    if _normalise_trailing_limit(invoke("format", formatted)) != formatted:
         raise ValueError("SQLFluff formatting is not idempotent")
     return formatted
 

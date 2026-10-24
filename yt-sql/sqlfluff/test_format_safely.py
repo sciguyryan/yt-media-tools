@@ -60,6 +60,12 @@ class SafeFormattingTests(unittest.TestCase):
         ):
             format_checked(original)
 
+    def test_compact_unicode_query_receives_multiline_house_style(self) -> None:
+        original = "SELECT UPPER('straße') AS result FROM @yt_sql_fixture LIMIT 1\n"
+        expected = "SELECT\n    UPPER('straße') AS result\nFROM @yt_sql_fixture\nLIMIT 1\n"
+        self.assertEqual(format_checked(original), expected)
+        self.assertEqual(format_checked(expected), expected)
+
     def test_progress_renders_counts_and_finishes_line(self) -> None:
         import io
         from format_safely import _show_progress
