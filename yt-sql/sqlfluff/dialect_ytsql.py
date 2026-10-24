@@ -25,3 +25,8 @@ class TableReferenceSegment(sqlite.get_segment("TableReferenceSegment")):
 
 
 ytsql_dialect.replace(TableReferenceSegment=TableReferenceSegment)
+
+# SQLite narrows the inherited LIKE grammar to LIKE alone. YT-SQL also
+# supports ILIKE; restore this alternative without changing SQLite linting.
+ytsql_dialect.sets("unreserved_keywords").add("ILIKE")
+ytsql_dialect.replace(LikeGrammar=OneOf("LIKE", "ILIKE"))

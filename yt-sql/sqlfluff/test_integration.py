@@ -41,6 +41,28 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 # literal spelling, including Unicode, must not go unnoticed.
                 self.assertEqual(original, first.stdout)
 
+    def test_ilike_predicates_parse_and_format(self) -> None:
+        # SQLite's SQLFluff dialect deliberately omits ILIKE. YT-SQL accepts
+        # it, including NOT ILIKE, so guard this extension independently.
+        queries = (
+            "SELECT id FROM @yt_sql_fixture WHERE title ILIKE '%straße%' LIMIT 1\n",
+            "SELECT id FROM @yt_sql_fixture WHERE title NOT ILIKE '%a%' LIMIT 1\n",
+        )
+        for query in queries:
+            with self.subTest(query=query):
+                parsed = invoke("parse", "-", source=query)
+                self.assertEqual(parsed.returncode, 0, parsed.stdout + parsed.stderr)
+                self.assertNotIn("unparsable:", parsed.stdout.lower())
+                first = invoke("format", "-", source=query)
+                self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+                self.assertIn("ILIKE", first.stdout)
+                self.assertIn("@yt_sql_fixture", first.stdout)
+                if "straße" in query:
+                    self.assertIn("'%straße%'", first.stdout)
+                second = invoke("format", "-", source=first.stdout)
+                self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+                self.assertEqual(first.stdout, second.stdout)
+
     def test_unformatted_fixture_query(self) -> None:
         original = "select upper('straße') as result from @yt_sql_fixture limit 1\n"
         first = invoke("format", "-", source=original)
