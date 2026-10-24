@@ -126,6 +126,32 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+    def test_range_membership_and_null_predicates(self) -> None:
+        # These YT-SQL constructs use the inherited grammar. Protect them
+        # against formatter regressions without adding duplicate dialect rules.
+        queries = (
+            "SELECT id FROM @yt_sql_fixture WHERE view_count BETWEEN 10 AND 20 LIMIT 5\n",
+            "SELECT id FROM @yt_sql_fixture WHERE view_count NOT BETWEEN 10 AND 20 LIMIT 5\n",
+            "SELECT id FROM @yt_sql_fixture WHERE id IN (1, 2, 3) LIMIT 5\n",
+            "SELECT id FROM @yt_sql_fixture WHERE id NOT IN (1, 2, 3) LIMIT 5\n",
+            "SELECT id FROM @yt_sql_fixture WHERE title IS NULL LIMIT 5\n",
+            "SELECT id FROM @yt_sql_fixture WHERE title IS NOT NULL LIMIT 5\n",
+        )
+        for original in queries:
+            with self.subTest(query=original):
+                parsed = invoke("parse", "-", source=original)
+                self.assertEqual(parsed.returncode, 0, parsed.stdout + parsed.stderr)
+                self.assertNotIn("unparsable:", parsed.stdout.lower())
+                first = invoke("format", "-", source=original)
+                self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+                self.assertIn("@yt_sql_fixture", first.stdout)
+                reparsed = invoke("parse", "-", source=first.stdout)
+                self.assertEqual(reparsed.returncode, 0, reparsed.stdout + reparsed.stderr)
+                self.assertNotIn("unparsable:", reparsed.stdout.lower())
+                second = invoke("format", "-", source=first.stdout)
+                self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+                self.assertEqual(first.stdout, second.stdout)
+
     def test_unformatted_fixture_query(self) -> None:
         original = "select upper('straße') as result from @yt_sql_fixture limit 1\n"
         first = invoke("format", "-", source=original)
