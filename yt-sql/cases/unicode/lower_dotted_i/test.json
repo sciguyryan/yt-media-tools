@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.lower_dotted_i",
+  "description": "Lowercase dotted capital I expands to i plus combining dot.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.sql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.lower"
+  ]
+}

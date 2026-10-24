@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.lower_null",
+  "description": "LOWER propagates NULL.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.sql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.lower"
+  ]
+}

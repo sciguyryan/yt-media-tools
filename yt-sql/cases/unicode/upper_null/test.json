@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.upper_null",
+  "description": "UPPER propagates NULL.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.sql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper"
+  ]
+}

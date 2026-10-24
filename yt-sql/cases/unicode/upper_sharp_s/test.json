@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.upper_sharp_s",
+  "description": "Full uppercase mapping expands German sharp s.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.sql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper"
+  ]
+}

@@ -61,3 +61,9 @@ The identifiers below occur in the existing Python conformance inventory. They a
 The migration batches above do not exhaust the 157 existing cases or establish completeness. After migration, systematically enumerate every registered function and supported grammar alternative against valid, invalid, NULL/type, boundary, interaction and adversarial assertions. Add maximal coherent torture queries and reproducible malformed-input tests. Document any unsupported combinations rather than silently omitting them.
 
 The existing `offset_limit` proposal remains provisional. Its tied LIMIT/OFFSET boundary cannot be certified using ordinary exact-row comparison. The separate tied-slice primitive does not itself make that proposal normative.
+
+## First approved Unicode scalar cases
+
+Six portable cases now exercise `UPPER` and `LOWER` with explicit expected values: sharp-s expansion, dotted-I expansion, composed and decomposed accents, and NULL propagation for each function. They are stored under `cases/unicode/` and execute through the permanent Python conformance harness. The original Python Unicode regression tests remain in place because they also cover implementation-specific output and optimiser behaviour.
+
+These cases specify their exact results without deriving expected strings from Python's Unicode library at test time. They do not yet define a complete, versioned Unicode mapping profile. A later conformance increment must resolve Unicode version dependencies, broader case mappings, locale behaviour and coverage for the remaining scalar functions before claiming cross-language completeness.

@@ -15,7 +15,7 @@ from run_conformance import HarnessError, run  # noqa: E402
 
 
 def test_approved_smoke_case_passes() -> None:
-    result = run()
+    result = run(case_ids=("smoke.source_order_limit",))
     assert result["counts"] == {"pass": 1, "fail": 0, "error": 0, "xfail": 0, "xpass": 0}
 
 
@@ -33,7 +33,7 @@ def test_changed_approved_expectation_is_failure(tmp_path: Path) -> None:
     payload = json.loads(expected.read_text(encoding="utf-8"))
     payload["rows"] = []
     expected.write_text(json.dumps(payload), encoding="utf-8")
-    assert run(root=corpus)["counts"]["fail"] == 1
+    assert run(root=corpus, case_ids=("smoke.source_order_limit",))["counts"]["fail"] == 1
 
 
 def test_xfail_never_masks_adapter_crash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -52,7 +52,7 @@ def test_xfail_never_masks_adapter_crash(tmp_path: Path, monkeypatch: pytest.Mon
     import run_python_candidate
 
     monkeypatch.setattr(run_python_candidate, "observe", lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("crash")))
-    result = run(root=corpus)
+    result = run(root=corpus, case_ids=("smoke.source_order_limit",))
     assert result["counts"]["error"] == 1
     assert result["counts"]["xfail"] == 0
 
@@ -70,7 +70,7 @@ def test_xpass_is_failure(tmp_path: Path) -> None:
         "category": "outcome-mismatch",
     }
     manifest.write_text(json.dumps(payload), encoding="utf-8")
-    assert run(root=corpus)["counts"]["xpass"] == 1
+    assert run(root=corpus, case_ids=("smoke.source_order_limit",))["counts"]["xpass"] == 1
 
 
 def test_registered_adapter_is_invoked_with_explicit_context(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -84,7 +84,7 @@ def test_registered_adapter_is_invoked_with_explicit_context(monkeypatch: pytest
         return run_python_candidate.observe(case, configuration=configuration, root=root)
 
     monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", fake_adapter)
-    report = run(configuration="default")
+    report = run(configuration="default", case_ids=("smoke.source_order_limit",))
     assert report["counts"]["pass"] == 1
     assert len(calls) == 1
     assert calls[0][1:] == ("default", ROOT / "yt-sql")
@@ -97,7 +97,7 @@ def test_registered_adapter_crash_is_not_conformance_mismatch(monkeypatch: pytes
         raise RuntimeError("adapter unavailable")
 
     monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", crash)
-    report = run()
+    report = run(case_ids=("smoke.source_order_limit",))
     assert report["counts"]["error"] == 1
     assert report["results"][0]["detail"] == "RuntimeError: adapter unavailable"
 
@@ -130,7 +130,15 @@ def test_case_listing_does_not_execute_adapter(
     monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", crash)
     monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--list-cases"])
     assert run_conformance.main() == 0
-    assert capsys.readouterr().out.strip() == "smoke.source_order_limit"
+    assert capsys.readouterr().out.splitlines() == [
+        "smoke.source_order_limit",
+        "unicode.lower_dotted_i",
+        "unicode.lower_null",
+        "unicode.upper_composed_accent",
+        "unicode.upper_decomposed_accent",
+        "unicode.upper_null",
+        "unicode.upper_sharp_s",
+    ]
 
 
 def test_report_file_is_deterministic_and_matches_stdout(
@@ -157,7 +165,9 @@ def test_report_file_written_for_conformance_failure(tmp_path: Path, monkeypatch
     monkeypatch.setitem(
         conformance_adapters.ADAPTERS, "python", lambda *args: {"status": "success", "columns": [], "rows": []}
     )
-    monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--report-file", str(output)])
+    monkeypatch.setattr(
+        sys, "argv", ["run_conformance.py", "--report-file", str(output), "--case", "smoke.source_order_limit"]
+    )
     assert run_conformance.main() == 1
     assert json.loads(output.read_text(encoding="utf-8"))["counts"]["error"] == 1
 

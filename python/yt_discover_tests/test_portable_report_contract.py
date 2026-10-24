@@ -46,5 +46,6 @@ def test_duplicate_json_key_is_rejected(tmp_path: Path) -> None:
 
 def test_saved_report_can_be_validated(tmp_path: Path) -> None:
     path = tmp_path / "report.json"
-    path.write_text(json.dumps(run()), encoding="utf-8")
-    assert load_report(path)["counts"]["pass"] == 1
+    report = run()
+    path.write_text(json.dumps(report), encoding="utf-8")
+    assert load_report(path) == report

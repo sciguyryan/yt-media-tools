@@ -1833,6 +1833,48 @@
         "limit"
       ],
       "path": "yt-sql/cases/smoke/source_order_limit/test.json"
+    },
+    {
+      "id": "unicode.lower_dotted_i",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_dotted_i/test.json"
+    },
+    {
+      "id": "unicode.lower_null",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_null/test.json"
+    },
+    {
+      "id": "unicode.upper_composed_accent",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_composed_accent/test.json"
+    },
+    {
+      "id": "unicode.upper_decomposed_accent",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_decomposed_accent/test.json"
+    },
+    {
+      "id": "unicode.upper_null",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_null/test.json"
+    },
+    {
+      "id": "unicode.upper_sharp_s",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_sharp_s/test.json"
     }
   ],
   "coverage_dimensions": [
