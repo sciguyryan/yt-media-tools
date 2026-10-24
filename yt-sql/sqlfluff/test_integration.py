@@ -64,9 +64,28 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(first.stdout, second.stdout)
 
     def test_text_predicate_variants_parse_and_format(self) -> None:
+        # Discover accepts both long and short operator spellings, with NOT
+        # and DOES NOT forms. Exercise each explicitly: a formatter must not
+        # silently discard or rewrite an operator it cannot parse.
         operators = (
             "CONTAINS",
+            "CONTAIN",
+            "MATCHES",
+            "MATCH",
+            "ILIKE",
+            "LIKE",
+            "NOT CONTAINS",
+            "NOT CONTAIN",
             "NOT MATCHES",
+            "NOT MATCH",
+            "NOT ILIKE",
+            "NOT LIKE",
+            "DOES NOT CONTAINS",
+            "DOES NOT CONTAIN",
+            "DOES NOT MATCHES",
+            "DOES NOT MATCH",
+            "DOES NOT ILIKE",
+            "DOES NOT LIKE",
         )
         for operator in operators:
             with self.subTest(operator=operator):
@@ -74,13 +93,17 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 parsed = invoke("parse", "-", source=original)
                 self.assertEqual(parsed.returncode, 0, parsed.stdout + parsed.stderr)
                 self.assertNotIn("unparsable:", parsed.stdout.lower())
-                formatted = invoke("format", "-", source=original)
-                self.assertEqual(formatted.returncode, 0, formatted.stdout + formatted.stderr)
-                self.assertIn("'straße'", formatted.stdout)
-                self.assertIn("@yt_sql_fixture", formatted.stdout)
-                second = invoke("format", "-", source=formatted.stdout)
+                first = invoke("format", "-", source=original)
+                self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+                self.assertIn("'straße'", first.stdout)
+                self.assertIn("@yt_sql_fixture", first.stdout)
+                self.assertIn(f"title {operator} 'straße'", " ".join(first.stdout.split()))
+                reparsed = invoke("parse", "-", source=first.stdout)
+                self.assertEqual(reparsed.returncode, 0, reparsed.stdout + reparsed.stderr)
+                self.assertNotIn("unparsable:", reparsed.stdout.lower())
+                second = invoke("format", "-", source=first.stdout)
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
-                self.assertEqual(formatted.stdout, second.stdout)
+                self.assertEqual(first.stdout, second.stdout)
 
     def test_unformatted_fixture_query(self) -> None:
         original = "select upper('straße') as result from @yt_sql_fixture limit 1\n"
