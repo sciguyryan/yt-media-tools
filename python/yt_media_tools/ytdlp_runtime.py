@@ -101,7 +101,7 @@ def format_command(command: Sequence[str], *, redact_sensitive: bool = False) ->
         return shlex.join(command)
     rendered: list[str] = []
     redact_next = False
-    for value in command:
+    for index, value in enumerate(command):
         if redact_next:
             rendered.append("<redacted>")
             redact_next = False
@@ -109,4 +109,8 @@ def format_command(command: Sequence[str], *, redact_sensitive: bool = False) ->
         rendered.append(value)
         if value in {"--cookies", "--cookies-from-browser", "--proxy"}:
             redact_next = True
+        elif value == "--add-headers" and index + 1 < len(command):
+            header = command[index + 1].casefold()
+            if header.startswith(("authorization:", "cookie:", "proxy-authorization:")):
+                redact_next = True
     return shlex.join(rendered)

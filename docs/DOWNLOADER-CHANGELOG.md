@@ -4,6 +4,13 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+- [cli] Add repeatable `-v`/`--verbose` diagnostics for resolved Downloader plans and planned or executed yt-dlp commands.
+- [observability] Report profile, input, output, format, authentication, archive, temporary-path and queue policy on standard error, with setting provenance at `-vv`.
+- [security] Redact cookies, proxies, authentication headers and sensitive extractor arguments from verbose command diagnostics.
+- [maintenance] Classify verbosity as invocation-scoped and advance the Downloader machine contract to version 5.
+- [test] Cover verbosity levels, stdout/stderr isolation, setting provenance, quiet defaults and command redaction.
+- [docs] Document verbose runtime diagnostics and their relationship to dry-run, explain and external-invocation debugging.
+
 - Prevent annotated row-removal queues from passing leading-hyphen bare YouTube video IDs to yt-dlp as option-like positional arguments; canonicalise only those IDs to watch URLs before invocation.
 - Verify Discover collection titles through JSON loading, the bundled metadata bridge and yt-dlp template and hook-visible playlist fields.
 - Clarify that `collection.metadata.title` supplies both `playlist_title` and the preferred `playlist` value without changing ordered collection membership.

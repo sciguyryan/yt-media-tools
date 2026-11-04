@@ -69,7 +69,7 @@ DEFAULTS_FILE = SCRIPT_DIR / "defaults.json"
 PROFILE_VERSION = 3
 LEGACY_PROFILE_VERSIONS = frozenset({2})
 RUN_MANIFEST_SCHEMA_VERSION = 1
-MACHINE_CONTRACT_VERSION = 4
+MACHINE_CONTRACT_VERSION = 5
 PLAN_SCHEMA_VERSION = 4
 CAPABILITIES_SCHEMA_VERSION = 1
 CONFIG_VALIDATION_SCHEMA_VERSION = 1
@@ -236,7 +236,9 @@ CLI_DESTINATION_CLASSES = {
             "version",
         }
     ),
-    "execution-mode": frozenset({"explain", "explain_json", "dry_run", "debug_external", "debug_external_unsafe"}),
+    "execution-mode": frozenset(
+        {"explain", "explain_json", "dry_run", "verbose", "debug_external", "debug_external_unsafe"}
+    ),
     "reporting-side-effect": frozenset(
         {
             "collection_continuation_ignore",
@@ -1424,6 +1426,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Print the resolved yt-dlp command without running it.",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Report the resolved plan and redacted yt-dlp command to standard error; repeat for setting sources.",
     )
     parser.add_argument(
         "--debug-external",
@@ -4155,6 +4164,64 @@ def format_command(command: Sequence[str]) -> str:
     return format_ytdlp_command(command)
 
 
+def format_diagnostic_command(command: Sequence[str]) -> str:
+    """Return a shell-readable command with credential-bearing values removed."""
+    return format_ytdlp_command(redact_command(command), redact_sensitive=True)
+
+
+def _verbose(level: int, message: str, *, minimum: int = 1) -> None:
+    """Write one Downloader diagnostic without changing standard output."""
+    if level >= minimum:
+        print(f"yt-download: {message}", file=sys.stderr)
+
+
+def _verbose_plan(level: int, plan: DownloadPlan) -> None:
+    """Report the useful operational surface of one resolved download plan."""
+    if level < 1:
+        return
+    profile = plan.profile.name if plan.profile is not None else "none"
+    source = _input_source_payload(plan.input_source)
+    kind = str(source["kind"])
+    if kind == "direct":
+        input_text = f"direct ({len(source['targets'])} target(s))"
+    elif kind == "collection":
+        input_text = f"collection {source['path']} ({len(source['targets'])} target(s))"
+    elif kind == "batch-file":
+        input_text = f"batch file {source['path']}"
+    else:
+        input_text = "standard input"
+    output_home = (
+        plan.output_profile.path
+        if plan.output_profile is not None and plan.output_profile.path is not None
+        else "yt-dlp default"
+    )
+    output_template = (
+        plan.output_profile.output
+        if plan.output_profile is not None and plan.output_profile.output is not None
+        else "yt-dlp default"
+    )
+    queue = "rows" if plan.remove_completed_rows else ("ids" if plan.remove_completed_ids else "disabled")
+    _verbose(level, f"profile={profile}; input={input_text}.")
+    _verbose(level, f"output-home={output_home}; output-template={output_template}.")
+    _verbose(
+        level,
+        f"format={plan.policy.effective_format_selector}; sort={plan.policy.sort_selector}; "
+        f"playlist-items={plan.policy.playlist_item_spec or 'all'}.",
+    )
+    _verbose(
+        level,
+        f"cookies={plan.cookies_source}; archive={plan.policy.archive_file}; "
+        f"temporary-path={plan.policy.temp_path}; queue-removal={queue}.",
+    )
+    for key, source_name in sorted(plan.setting_sources.items()):
+        _verbose(level, f"setting {key}: {source_name}.", minimum=2)
+
+
+def _verbose_command(level: int, command: Sequence[str]) -> None:
+    """Report one executable command through the safe diagnostic formatter."""
+    _verbose(level, f"yt-dlp command: {format_diagnostic_command(command)}")
+
+
 def run(command: Sequence[str], *, dry_run: bool) -> int:
     """Run yt-dlp and return its exit status."""
     if dry_run:
@@ -4388,11 +4455,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(str(exc))
 
     if args.explain_json:
+        _verbose_plan(args.verbose, plan)
         print(json.dumps(explain_plan_payload(plan), indent=2, ensure_ascii=False))
         return 0
     if args.explain:
+        _verbose_plan(args.verbose, plan)
         print(format_plan_explanation(plan))
         return 0
+
+    _verbose_plan(args.verbose, plan)
 
     manifest_targets: list[str] | None = None
     manifest_started_at: str | None = None
@@ -4515,17 +4586,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 effective_plan = dataclasses.replace(plan, input_source=reconciled)
             if continuation is not None and not args.dry_run and not effective_plan.input_source.direct_targets:
+                _verbose(
+                    args.verbose, "yt-dlp execution skipped because collection continuation has no remaining targets."
+                )
                 exit_status = 0
             else:
-                exit_status = run(
-                    effective_plan.command(
-                        output_event_file=output_event_file,
-                        continuation_identity=input_source.collection_identity
-                        if continuation is not None and completed is not None
-                        else None,
-                    ),
-                    dry_run=args.dry_run,
+                command = effective_plan.command(
+                    output_event_file=output_event_file,
+                    continuation_identity=input_source.collection_identity
+                    if continuation is not None and completed is not None
+                    else None,
                 )
+                _verbose_command(args.verbose, command)
+                exit_status = run(command, dry_run=args.dry_run)
             # Never infer success from yt-dlp's process exit alone. Only the
             # structured after_move callback supplies durable completion evidence.
             # A fully recorded collection has no remaining continuation work.
@@ -4548,7 +4621,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     print(f"Warning: unable to reconcile collection completion state ({exc}).", file=sys.stderr)
     except CollectionStateError as exc:
         print(f"Warning: collection state unavailable ({exc}); processing all targets.", file=sys.stderr)
-        exit_status = run(plan.command(output_event_file=output_event_file), dry_run=args.dry_run)
+        command = plan.command(output_event_file=output_event_file)
+        _verbose_command(args.verbose, command)
+        exit_status = run(command, dry_run=args.dry_run)
 
     queue_report_payload: dict[str, object] | None = None
     if (args.remove_completed_ids or args.remove_completed_rows) and not args.dry_run:

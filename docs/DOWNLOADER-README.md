@@ -208,6 +208,15 @@ Explain the fully resolved download plan without executing yt-dlp:
 
 The explanation shows the selected profile, effective format and playlist policy, authentication source, input source, archive and temporary paths, queue behaviour, the final yt-dlp command, and where explicitly configured parameter values came from. Use `--explain-json` for a machine-readable form suitable for scripts and regression checks. Explain mode does not require yt-dlp to be installed and does not mutate queue files.
 
+Use `-v` or `--verbose` during a normal run to report the resolved profile, input and output policy, format selection, authentication source, archive, temporary path, queue-removal policy and the effective yt-dlp command. Repeat the option as `-vv` to include the origin of explicitly configured settings. Verbose diagnostics are written to standard error so yt-dlp output and Downloader's machine-readable standard output remain separate.
+
+```bash
+./yt-download.py -v VIDEO_ID
+./yt-download.py -vv --resolution 1080 VIDEO_ID
+```
+
+Verbose command diagnostics always redact cookie sources, proxy values, authentication-bearing headers and sensitive extractor arguments. `--debug-external` remains available for structured external-invocation diagnostics, while `--explain` remains the complete non-executing plan inspection surface.
+
 ## Machine contract and profile schema
 
 Emit Downloader's versioned machine contract without requiring yt-dlp or a configured download target:
@@ -229,6 +238,8 @@ Print only the resolved `yt-dlp` command without executing it:
 ```
 
 Dry-run mode does not mutate queue files.
+
+Verbose mode may be combined with dry-run. The exact dry-run command remains on standard output, while the redacted plan and command diagnostics are written to standard error.
 
 ## Run manifests and output integrity
 

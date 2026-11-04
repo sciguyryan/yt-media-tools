@@ -94,3 +94,18 @@ def test_format_command_can_redact_sensitive_option_values() -> None:
     )
 
     assert rendered == "yt-dlp --proxy '<redacted>' --cookies '<redacted>'"
+
+
+def test_format_command_redacts_only_sensitive_header_values() -> None:
+    rendered = ytdlp_runtime.format_command(
+        [
+            "yt-dlp",
+            "--add-headers",
+            "User-Agent:Example",
+            "--add-headers",
+            "Authorization:Bearer secret",
+        ],
+        redact_sensitive=True,
+    )
+
+    assert rendered == "yt-dlp --add-headers User-Agent:Example --add-headers '<redacted>'"

@@ -7,7 +7,7 @@ import json
 
 def test_machine_contract_versions_are_explicit(downloader) -> None:
     contract = downloader.machine_contract()
-    assert contract["contract_version"] == downloader.MACHINE_CONTRACT_VERSION == 4
+    assert contract["contract_version"] == downloader.MACHINE_CONTRACT_VERSION == 5
     assert contract["downloader"] == {
         "name": downloader.PROGRAM_NAME,
         "version": downloader.PROGRAM_VERSION,
