@@ -4,6 +4,13 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [cli] Add a validated `--proxy URL` acquisition policy with explicit HTTP, HTTPS, SOCKS version and remote-DNS semantics.
+- [feature] Apply one proxy configuration to yt-dlp extraction and enumeration, YouTube.js fetches and ytmusicapi requests while retaining it across provider fallback.
+- [security] Fail closed instead of retrying directly when a provider cannot initialise its proxy transport, and redact credential-bearing proxy values from normal command and integration diagnostics.
+- [maintenance] Add pinned Node fetch and protocol-specific proxy-agent dependencies for YouTube.js HTTP, HTTPS, SOCKS4/SOCKS4a and SOCKS5/SOCKS5h transport.
+- [test] Cover proxy parsing, canonicalisation, remote DNS, credentials, IPv6, invalid URLs, every yt-dlp command path, optional-provider adaptation and diagnostic redaction.
+- [docs] Document supported proxy schemes, DNS behaviour, provider coverage, fallback guarantees and credential handling.
+
 - [performance] Avoid rescanning complete regex-recognised ASCII identifiers in the canonical yt-sql lexer while preserving Unicode identifier and lexical error semantics.
 - [benchmark] Retain four complete-parser and four tokenisation workloads for comparable parser performance measurements.
 - [docs] Record the measured 6-9% complete-parser improvement, conclude the Python lexer micro-optimisation investigation and defer any Rust parser prototype to a separate experiment.

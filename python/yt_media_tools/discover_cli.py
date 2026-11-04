@@ -13,6 +13,7 @@ from pathlib import Path
 
 from yt_media_tools.cache import default_cache_path
 from yt_media_tools.discover_constants import DEFAULT_ARCHIVE_FILE, PROGRAM_VERSION
+from yt_media_tools.network_proxy import ProxyConfiguration, parse_proxy_url
 from yt_media_tools.query import (
     Binary,
     Field,
@@ -446,6 +447,14 @@ def non_negative_int(value: str) -> int:
     return parsed
 
 
+def proxy_url(value: str) -> ProxyConfiguration:
+    """Parse a CLI proxy URL while preserving argparse's validation boundary."""
+    try:
+        return parse_proxy_url(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
@@ -536,6 +545,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         metavar="FILE",
         help="use cookies from FILE; if omitted, cookies.txt beside yt-discover.py is used when present",
+    )
+    compatibility.add_argument(
+        "--proxy",
+        type=proxy_url,
+        metavar="URL",
+        help="route all network acquisition through an HTTP, HTTPS or SOCKS proxy URL",
     )
 
     selection = parser.add_argument_group("selection and ordering")

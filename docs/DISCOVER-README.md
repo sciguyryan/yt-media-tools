@@ -746,6 +746,14 @@ Verbose mode reports source resolution, the yt-dlp command, acquisition progress
 
 Existing acquisition controls remain available, including `--items`, `--date`, `--after`, `--before`, `--match-filter`, `--exclude-live`, `--exclude-upcoming`, and downloader-archive exclusion. These are kept separate from the local query language where they represent yt-dlp acquisition policy rather than metadata query semantics.
 
+Use `--proxy URL` to route every network acquisition through one HTTP, HTTPS or SOCKS proxy. Discover accepts `http`, `https`, `socks4`, `socks4a`, `socks5` and `socks5h` URLs with an explicit host and port. `socks4a` and `socks5h` send destination hostnames to the proxy for resolution; `socks4` and `socks5` resolve them locally. The proxy is applied to yt-dlp extraction and enumeration, YouTube.js acquisition, and ytmusicapi acquisition. If an optional provider cannot initialise its proxy transport, normal provider fallback remains available, but the fallback yt-dlp request retains the same proxy. Discover never retries the request directly.
+
+```bash
+./yt-discover.py --proxy socks5h://127.0.0.1:45678 VIDEO_ID
+```
+
+Credentials may be included using ordinary URL user information. Discover redacts the complete proxy value from dry-run, verbose and external-invocation command diagnostics. Unsafe external diagnostics remain the only explicit opt-in path that can reveal it.
+
 If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to authentication-capable acquisition backends automatically. The file is optional. yt-dlp consumes the Netscape file directly; when YouTube.js channel enumeration is selected, Discover translates applicable cookies into the HTTP Cookie header required by YouTube.js at the adapter boundary. Use `--cookies FILE` to override the script-local default for a run. An explicitly selected cookie file must exist.
 
 ```bash

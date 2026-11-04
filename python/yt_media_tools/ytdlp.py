@@ -23,6 +23,7 @@ from .ytdlp_runtime import (
     ensure_executable,
     format_command,
 )
+from .network_proxy import ProxyConfiguration
 
 
 DEFAULT_COOKIES_FILE = Path(__file__).resolve().parent.parent / "cookies.txt"
@@ -111,7 +112,7 @@ ProgressCallback = Callable[[str, AcquisitionStats, str | None], None]
 
 def shell_join(command: list[str]) -> str:
     """Compatibility wrapper for the shared yt-dlp command formatter."""
-    return format_command(command)
+    return format_command(command, redact_sensitive=True)
 
 
 def ensure_ytdlp() -> None:
@@ -132,6 +133,7 @@ def build_metadata_command(
     date_after: str | None = None,
     date_before: str | None = None,
     match_filters: tuple[str, ...] = (),
+    proxy: ProxyConfiguration | None = None,
 ) -> list[str]:
     """Build a command that emits one full JSON object per successfully extracted video."""
     command = [
@@ -146,6 +148,8 @@ def build_metadata_command(
         command,
         cookies_file=cookies_file if cookies_file is not None and cookies_file.is_file() else None,
     )
+    if proxy is not None:
+        command.extend(("--proxy", proxy.url))
     if extractor_args:
         command.extend(("--extractor-args", extractor_args))
     if date:
@@ -298,6 +302,7 @@ def build_lazy_flat_command(
     cookies_file: Path | None = DEFAULT_COOKIES_FILE,
     extractor_args: str = DEFAULT_EXTRACTOR_ARGS,
     playlist_items: str | None = None,
+    proxy: ProxyConfiguration | None = None,
 ) -> list[str]:
     """Build a lazy flat-playlist command for incremental channel enumeration."""
     command = [
@@ -313,6 +318,8 @@ def build_lazy_flat_command(
         command,
         cookies_file=cookies_file if cookies_file is not None and cookies_file.is_file() else None,
     )
+    if proxy is not None:
+        command.extend(("--proxy", proxy.url))
     combined_args = extractor_args.strip()
     approximate = "youtubetab:approximate_date"
     if combined_args:
@@ -331,6 +338,7 @@ def build_video_metadata_command(
     *,
     cookies_file: Path | None = DEFAULT_COOKIES_FILE,
     extractor_args: str = DEFAULT_EXTRACTOR_ARGS,
+    proxy: ProxyConfiguration | None = None,
 ) -> list[str]:
     """Build one yt-dlp command that fully extracts a known set of YouTube video IDs."""
     command = [
@@ -345,6 +353,8 @@ def build_video_metadata_command(
         command,
         cookies_file=cookies_file if cookies_file is not None and cookies_file.is_file() else None,
     )
+    if proxy is not None:
+        command.extend(("--proxy", proxy.url))
     if extractor_args:
         command.extend(("--extractor-args", extractor_args))
     command.extend(f"https://www.youtube.com/watch?v={video_id}" for video_id in video_ids)

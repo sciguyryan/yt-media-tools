@@ -696,6 +696,7 @@ def _run_application(argv: list[str] | None = None) -> int:
     command = build_metadata_command(
         source.canonical_url,
         cookies_file=cookies_file,
+        proxy=args.proxy,
         playlist_items=args.items,
         date=args.date,
         date_after=args.after,
@@ -757,7 +758,7 @@ def _run_application(argv: list[str] | None = None) -> int:
             print(f"backend: requested={requested_backend} selected={selected_backend}")
             if fallback_reason:
                 print(f"fallback: {fallback_reason}")
-            flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
+            flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file, proxy=args.proxy)
             if selected_backend == "youtubejs":
                 print("enumeration: YouTube.js continuation-driven channel videos feed")
             else:
@@ -772,6 +773,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                     source_command = build_metadata_command(
                         source_spec.canonical_url,
                         cookies_file=cookies_file,
+                        proxy=args.proxy,
                         playlist_items=args.items,
                         date=args.date,
                         date_after=args.after,
@@ -900,9 +902,12 @@ def _run_application(argv: list[str] | None = None) -> int:
                                 dates=date_context,
                                 progress=progress,
                                 cookies_file=cookies_file,
+                                proxy=args.proxy,
                             )
                         else:
-                            flat_command = build_lazy_flat_command(source_spec.canonical_url, cookies_file=cookies_file)
+                            flat_command = build_lazy_flat_command(
+                                source_spec.canonical_url, cookies_file=cookies_file, proxy=args.proxy
+                            )
                             _verbose(
                                 args.verbose,
                                 f"Enumerating {_source_boundary_label(source_value, request_facet)}"
@@ -921,7 +926,9 @@ def _run_application(argv: list[str] | None = None) -> int:
                             f"falling back to yt-dlp lightweight enumeration ({exc}).",
                             file=sys.stderr,
                         )
-                        flat_command = build_lazy_flat_command(source_spec.canonical_url, cookies_file=cookies_file)
+                        flat_command = build_lazy_flat_command(
+                            source_spec.canonical_url, cookies_file=cookies_file, proxy=args.proxy
+                        )
                         try:
                             flat_entries, enumeration_stats_for_source = enumerate_all_flat(
                                 flat_command,
@@ -975,6 +982,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                                 specialised_fallback_providers=specialised_providers[1:],
                                 specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
+                                proxy=args.proxy,
                             )
                         except YtDlpError as exc:
                             print(f"Error: {exc}.", file=sys.stderr)
@@ -1017,6 +1025,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                     source_command = build_metadata_command(
                         source_spec.canonical_url,
                         cookies_file=cookies_file,
+                        proxy=args.proxy,
                         playlist_items=args.items,
                         date=args.date,
                         date_after=args.after,
@@ -1097,7 +1106,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                 f"Skipped source acquisition: {plan.reason}.",
             )
         elif plan.targeted:
-            flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
+            flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file, proxy=args.proxy)
             _verbose(args.verbose, f"Enumerating lightweight channel metadata lazily with {selected_backend}...")
             try:
                 if selected_backend == "youtubejs":
@@ -1114,6 +1123,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                             acquisition_observability=not requires_detailed,
                         ),
                         cookies_file=cookies_file,
+                        proxy=args.proxy,
                     )
                 else:
                     if args.verbose >= 2:
@@ -1245,6 +1255,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                                 specialised_fallback_providers=specialised_providers[1:],
                                 specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
+                                proxy=args.proxy,
                             )
                         else:
                             raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
@@ -1258,6 +1269,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                                 specialised_fallback_providers=specialised_providers[1:],
                                 specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
+                                proxy=args.proxy,
                             )
                     except YtDlpError as exc:
                         print(f"Error: {exc}.", file=sys.stderr)
@@ -1292,7 +1304,9 @@ def _run_application(argv: list[str] | None = None) -> int:
                 and not args.schema
             )
             if enumeration_only:
-                flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
+                flat_command = build_lazy_flat_command(
+                    source.canonical_url, cookies_file=cookies_file, proxy=args.proxy
+                )
                 _verbose(args.verbose, "Enumerating authoritative lightweight metadata without detailed extraction...")
                 try:
                     progress = _enumeration_progress(
@@ -1355,7 +1369,9 @@ def _run_application(argv: list[str] | None = None) -> int:
                     and not (args.date or args.after or args.before or any(item.strip() for item in args.match_filter))
                 )
                 if cache_first_full:
-                    flat_command = build_lazy_flat_command(source.canonical_url, cookies_file=cookies_file)
+                    flat_command = build_lazy_flat_command(
+                        source.canonical_url, cookies_file=cookies_file, proxy=args.proxy
+                    )
                     if args.verbose >= 2:
                         _verbose(args.verbose, f"Flat yt-dlp command: {shell_join(flat_command)}")
                     prior_order = metadata_cache.source_entry_ids(source.canonical_url)
@@ -1488,6 +1504,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                                 specialised_fallback_providers=specialised_providers[1:],
                                 specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
+                                proxy=args.proxy,
                             )
                         else:
                             raw_records, acquisition_stats, cache_stats = _cached_or_refresh_metadata(
@@ -1501,6 +1518,7 @@ def _run_application(argv: list[str] | None = None) -> int:
                                 specialised_fallback_providers=specialised_providers[1:],
                                 specialised_provider_coverage=specialised_coverage,
                                 project_root=Path(__file__).resolve().parent.parent,
+                                proxy=args.proxy,
                             )
                     except YtDlpError as exc:
                         print(f"Error: {exc}.", file=sys.stderr)

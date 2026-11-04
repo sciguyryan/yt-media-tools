@@ -465,6 +465,7 @@
     "python/yt_discover_tests/test_limit_termination.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_metadata_requirement_pruning.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_multi_source_facets.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_network_proxy.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_null_safe_comparison.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_numeric_literals.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_observability.py": "retain: implementation/integration pending review",

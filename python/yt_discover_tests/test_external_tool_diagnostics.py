@@ -31,6 +31,30 @@ def test_command_diagnostics_redact_sensitive_arguments() -> None:
     assert "--format best" in text
 
 
+def test_command_and_library_diagnostics_redact_proxy_values() -> None:
+    configure_external_diagnostics(enabled=True)
+    command_text = format_invocation(
+        ToolInvocation(
+            tool="yt-dlp",
+            operation="extract",
+            purpose="metadata acquisition",
+            argv=("yt-dlp", "--proxy", "socks5h://user:secret@127.0.0.1:1080"),
+        )
+    )
+    library_text = format_invocation(
+        ToolInvocation(
+            tool="ytmusicapi",
+            operation="YTMusic.get_song",
+            purpose="metadata acquisition",
+            arguments={"proxy": "socks5h://user:secret@127.0.0.1:1080"},
+        )
+    )
+
+    assert "secret" not in command_text + library_text
+    assert command_text.count("<redacted>") == 1
+    assert "proxy: <redacted>" in library_text
+
+
 def test_library_diagnostics_are_annotated_without_fake_command_line() -> None:
     configure_external_diagnostics(enabled=True)
     text = format_invocation(

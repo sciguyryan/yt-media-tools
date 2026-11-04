@@ -95,6 +95,18 @@ def append_authentication_options(
         command.extend(("--cookies-from-browser", cookies_from_browser))
 
 
-def format_command(command: Sequence[str]) -> str:
+def format_command(command: Sequence[str], *, redact_sensitive: bool = False) -> str:
     """Return a shell-readable representation of a command for diagnostics."""
-    return shlex.join(command)
+    if not redact_sensitive:
+        return shlex.join(command)
+    rendered: list[str] = []
+    redact_next = False
+    for value in command:
+        if redact_next:
+            rendered.append("<redacted>")
+            redact_next = False
+            continue
+        rendered.append(value)
+        if value in {"--cookies", "--cookies-from-browser", "--proxy"}:
+            redact_next = True
+    return shlex.join(rendered)

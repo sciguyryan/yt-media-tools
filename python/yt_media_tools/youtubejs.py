@@ -17,10 +17,27 @@ from .cookies import CookieFileError, cookie_header_from_netscape_file
 from .external_tools import ToolInvocation, emit_invocation
 from .dates import DateContext, parse_date_literal
 from .ytdlp import AcquisitionStats, EnumerationStats, ProgressCallback
+from .network_proxy import ProxyConfiguration
 
 
 class YouTubeJsError(RuntimeError):
     """Raised when the optional YouTube.js backend cannot enumerate a channel."""
+
+
+def _bridge_environment(*, cookies_file: Path | None, proxy: ProxyConfiguration | None) -> tuple[dict[str, str], str]:
+    """Build an isolated bridge environment without inherited Discover credentials."""
+    env = os.environ.copy()
+    env.pop("YT_DISCOVER_YOUTUBEJS_COOKIE", None)
+    env.pop("YT_DISCOVER_PROXY", None)
+    if cookies_file is not None:
+        try:
+            cookie_header, _ = cookie_header_from_netscape_file(cookies_file)
+        except CookieFileError as exc:
+            raise YouTubeJsError(str(exc)) from exc
+        env["YT_DISCOVER_YOUTUBEJS_COOKIE"] = cookie_header
+    if proxy is not None:
+        env["YT_DISCOVER_PROXY"] = proxy.url
+    return env, "present" if proxy is not None else "absent"
 
 
 def _published_date(text: str, dates: DateContext) -> tuple[date, timedelta] | None:
@@ -81,6 +98,7 @@ def acquire_basic_info(
     video_ids: list[str],
     *,
     cookies_file: Path | None = None,
+    proxy: ProxyConfiguration | None = None,
 ) -> tuple[list[dict[str, Any]], AcquisitionStats]:
     """Acquire the production-authorised exact scalar surface through getBasicInfo()."""
     node = shutil.which("node")
@@ -93,21 +111,18 @@ def acquire_basic_info(
         return [], AcquisitionStats()
 
     command = [node, str(bridge), "--basic-info", *video_ids]
-    env = os.environ.copy()
-    env.pop("YT_DISCOVER_YOUTUBEJS_COOKIE", None)
-    if cookies_file is not None:
-        try:
-            cookie_header, _ = cookie_header_from_netscape_file(cookies_file)
-        except CookieFileError as exc:
-            raise YouTubeJsError(str(exc)) from exc
-        env["YT_DISCOVER_YOUTUBEJS_COOKIE"] = cookie_header
+    env, proxy_state = _bridge_environment(cookies_file=cookies_file, proxy=proxy)
     emit_invocation(
         ToolInvocation(
             tool="youtubejs",
             operation="getBasicInfo",
             purpose="authoritative exact-scalar metadata acquisition",
             argv=tuple(command),
-            arguments={"video_ids": tuple(video_ids), "cookie": "present" if cookies_file is not None else "absent"},
+            arguments={
+                "video_ids": tuple(video_ids),
+                "cookie": "present" if cookies_file is not None else "absent",
+                "proxy": proxy_state,
+            },
         )
     )
     try:
@@ -173,6 +188,7 @@ def enumerate_until_date_boundary(
     dates: DateContext,
     progress: ProgressCallback | None = None,
     cookies_file: Path | None = None,
+    proxy: ProxyConfiguration | None = None,
 ) -> tuple[list[dict[str, Any]], EnumerationStats]:
     """Enumerate channel videos through YouTube.js and terminate continuation paging early."""
     node = shutil.which("node")
@@ -183,21 +199,18 @@ def enumerate_until_date_boundary(
         raise YouTubeJsError(f"YouTube.js bridge script is missing: {bridge}")
 
     command = [node, str(bridge), "--enumerate-channel-videos", source_url]
-    env = os.environ.copy()
-    env.pop("YT_DISCOVER_YOUTUBEJS_COOKIE", None)
-    if cookies_file is not None:
-        try:
-            cookie_header, _ = cookie_header_from_netscape_file(cookies_file)
-        except CookieFileError as exc:
-            raise YouTubeJsError(str(exc)) from exc
-        env["YT_DISCOVER_YOUTUBEJS_COOKIE"] = cookie_header
+    env, proxy_state = _bridge_environment(cookies_file=cookies_file, proxy=proxy)
     emit_invocation(
         ToolInvocation(
             tool="youtubejs",
             operation="Innertube channel enumeration",
             purpose="lightweight channel enumeration",
             argv=tuple(command),
-            arguments={"source_url": source_url, "cookie": "present" if cookies_file is not None else "absent"},
+            arguments={
+                "source_url": source_url,
+                "cookie": "present" if cookies_file is not None else "absent",
+                "proxy": proxy_state,
+            },
         )
     )
     try:
@@ -290,6 +303,7 @@ def enumerate_all(
     dates: DateContext,
     progress: ProgressCallback | None = None,
     cookies_file: Path | None = None,
+    proxy: ProxyConfiguration | None = None,
 ) -> tuple[list[dict[str, Any]], EnumerationStats]:
     """Enumerate a complete channel facet through YouTube.js.
 
@@ -306,4 +320,5 @@ def enumerate_all(
         dates=dates,
         progress=progress,
         cookies_file=cookies_file,
+        proxy=proxy,
     )

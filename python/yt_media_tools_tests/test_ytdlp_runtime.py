@@ -85,3 +85,12 @@ def test_authentication_options_support_browser_cookie_source() -> None:
 def test_format_command_quotes_shell_sensitive_arguments() -> None:
     rendered = ytdlp_runtime.format_command(["yt-dlp", "--cookies", "/tmp/a b/cookies.txt"])
     assert rendered == "yt-dlp --cookies '/tmp/a b/cookies.txt'"
+
+
+def test_format_command_can_redact_sensitive_option_values() -> None:
+    rendered = ytdlp_runtime.format_command(
+        ["yt-dlp", "--proxy", "socks5h://user:secret@127.0.0.1:1080", "--cookies", "/secret/cookies.txt"],
+        redact_sensitive=True,
+    )
+
+    assert rendered == "yt-dlp --proxy '<redacted>' --cookies '<redacted>'"

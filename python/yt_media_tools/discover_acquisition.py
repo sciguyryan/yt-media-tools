@@ -27,6 +27,7 @@ from yt_media_tools.metadata import normalise_record
 from yt_media_tools.query import Query, QuerySchema, QuerySyntaxError, apply_query, resolve_query
 from yt_media_tools.youtubejs import YouTubeJsError, acquire_basic_info as acquire_youtubejs_basic_info
 from yt_media_tools.ytmusic import YtMusicApiError, acquire_song_metadata as acquire_ytmusic_song_metadata
+from yt_media_tools.network_proxy import ProxyConfiguration
 from yt_media_tools.ytdlp import (
     AcquisitionStats,
     build_video_metadata_command,
@@ -211,6 +212,7 @@ def _cached_or_refresh_metadata(
     specialised_fallback_providers: tuple[str, ...] = (),
     specialised_provider_coverage: tuple[tuple[str, frozenset[str]], ...] = (),
     project_root: Path | None = None,
+    proxy: ProxyConfiguration | None = None,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats]:
     """Reuse fresh source-scoped cache rows and refresh only stale or missing videos."""
     cached_by_id: dict[str, dict] = {}
@@ -277,15 +279,21 @@ def _cached_or_refresh_metadata(
                     verbose,
                     f"Acquiring minimum-sufficient exact metadata for {len(provider_ids)} videos with YouTube.js...",
                 )
+                youtubejs_kwargs = {"cookies_file": cookies_file}
+                if proxy is not None:
+                    youtubejs_kwargs["proxy"] = proxy
                 provider_records, provider_stats = acquire_youtubejs_basic_info(
-                    project_root, provider_ids, cookies_file=cookies_file
+                    project_root, provider_ids, **youtubejs_kwargs
                 )
             elif provider == "ytmusicapi":
                 _verbose(
                     verbose,
                     f"Acquiring minimum-sufficient music metadata for {len(provider_ids)} videos with ytmusicapi...",
                 )
-                provider_records, provider_stats = acquire_ytmusic_song_metadata(provider_ids)
+                if proxy is None:
+                    provider_records, provider_stats = acquire_ytmusic_song_metadata(provider_ids)
+                else:
+                    provider_records, provider_stats = acquire_ytmusic_song_metadata(provider_ids, proxy=proxy)
             else:
                 continue
         except (YouTubeJsError, YtMusicApiError) as exc:
@@ -317,7 +325,7 @@ def _cached_or_refresh_metadata(
             )
 
     if remaining_ids:
-        command = build_video_metadata_command(remaining_ids, cookies_file=cookies_file)
+        command = build_video_metadata_command(remaining_ids, cookies_file=cookies_file, proxy=proxy)
         _verbose(
             verbose, f"Refreshing detailed metadata for {len(remaining_ids)} cache-miss/stale videos with yt-dlp..."
         )
@@ -400,6 +408,7 @@ def _limit_aware_cached_acquire(
     specialised_fallback_providers: tuple[str, ...] = (),
     specialised_provider_coverage: tuple[tuple[str, frozenset[str]], ...] = (),
     project_root: Path | None = None,
+    proxy: ProxyConfiguration | None = None,
     batch_size: int = 25,
 ) -> tuple[list[dict], AcquisitionStats, CacheStats, bool, int, int]:
     """Acquire source-order candidates in batches until LIMIT authoritative matches exist.
@@ -433,6 +442,7 @@ def _limit_aware_cached_acquire(
             specialised_fallback_providers=specialised_fallback_providers,
             specialised_provider_coverage=specialised_provider_coverage,
             project_root=project_root,
+            proxy=proxy,
         )
         _merge_acquisition_stats(acquisition, batch_acquisition)
         cache_stats = _merge_cache_stats(cache_stats, batch_cache)

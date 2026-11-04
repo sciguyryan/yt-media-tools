@@ -71,6 +71,37 @@ async function loadLibrary() {
   };
 }
 
+async function innertubeOptions() {
+  const options = { generate_session_locally: true };
+  const proxy = process.env.YT_DISCOVER_PROXY;
+  if (!proxy) return options;
+
+  let fetch;
+  let agentForRequest;
+  try {
+    ({ default: fetch } = await import('node-fetch'));
+    const protocol = new URL(proxy).protocol;
+    if (protocol.startsWith('socks')) {
+      const { SocksProxyAgent } = await import('socks-proxy-agent');
+      const agent = new SocksProxyAgent(proxy);
+      agentForRequest = () => agent;
+    } else {
+      const [{ HttpProxyAgent }, { HttpsProxyAgent }] = await Promise.all([
+        import('http-proxy-agent'),
+        import('https-proxy-agent'),
+      ]);
+      const httpAgent = new HttpProxyAgent(proxy);
+      const httpsAgent = new HttpsProxyAgent(proxy);
+      agentForRequest = (url) => url.protocol === 'https:' ? httpsAgent : httpAgent;
+    }
+  } catch (error) {
+    throw new Error(`proxy support dependencies are unavailable: ${error?.message || String(error)}`);
+  }
+
+  options.fetch = (input, init = {}) => fetch(input, { ...init, agent: agentForRequest });
+  return options;
+}
+
 async function resolveChannelId(yt, url) {
   const endpoint = await yt.resolveURL(url);
   const payload = endpoint?.payload || {};
@@ -83,7 +114,7 @@ async function resolveChannelId(yt, url) {
 
 async function enumerateChannelVideos(url) {
   const { Innertube } = await loadLibrary();
-  const yt = await Innertube.create({ generate_session_locally: true });
+  const yt = await Innertube.create(await innertubeOptions());
   const channelId = await resolveChannelId(yt, url);
   const channel = await yt.getChannel(channelId);
   let feed = await channel.getVideos();
@@ -175,7 +206,7 @@ function basicInfoRecord(info, videoId, elapsedMs) {
 async function acquireBasicInfo(videoIds) {
   const { Innertube } = await loadLibrary();
   const cookie = process.env.YT_DISCOVER_YOUTUBEJS_COOKIE;
-  const options = { generate_session_locally: true };
+  const options = await innertubeOptions();
   if (cookie) options.cookie = cookie;
   // Keep one Innertube session for the complete requested batch. Besides avoiding repeated
   // session construction, this preserves the production benchmark's demonstrated cost advantage.

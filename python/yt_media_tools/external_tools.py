@@ -59,7 +59,7 @@ _SENSITIVE_OPTIONS = {
     "--client-certificate-key",
     "--client-certificate-password",
 }
-_SENSITIVE_ARGUMENT_NAMES = {"cookie", "cookies", "password", "token", "authorization", "headers"}
+_SENSITIVE_ARGUMENT_NAMES = {"cookie", "cookies", "password", "token", "authorization", "headers", "proxy"}
 
 
 def registered_tools() -> tuple[ExternalTool, ...]:

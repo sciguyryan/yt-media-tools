@@ -8,6 +8,7 @@ from typing import Any
 
 from .external_tools import ToolInvocation, emit_invocation
 from .ytdlp import AcquisitionStats
+from .network_proxy import ProxyConfiguration, requests_proxy_mapping
 
 
 class YtMusicApiError(RuntimeError):
@@ -29,7 +30,9 @@ def _integer(value: object) -> int | None:
         return None
 
 
-def acquire_song_metadata(video_ids: list[str]) -> tuple[list[dict[str, Any]], AcquisitionStats]:
+def acquire_song_metadata(
+    video_ids: list[str], *, proxy: ProxyConfiguration | None = None
+) -> tuple[list[dict[str, Any]], AcquisitionStats]:
     """Acquire the production-authorised exact scalar surface through ``YTMusic.get_song``.
 
     Eligibility is established by the caller from independent source evidence. Provider-native
@@ -42,7 +45,7 @@ def acquire_song_metadata(video_ids: list[str]) -> tuple[list[dict[str, Any]], A
     except ImportError as exc:
         raise YtMusicApiError("ytmusicapi is not installed") from exc
     try:
-        client = module.YTMusic()
+        client = module.YTMusic() if proxy is None else module.YTMusic(proxies=requests_proxy_mapping(proxy))
     except Exception as exc:  # noqa: BLE001 - third-party construction is an integration boundary.
         raise YtMusicApiError(f"could not initialise ytmusicapi: {exc}") from exc
 
@@ -59,6 +62,7 @@ def acquire_song_metadata(video_ids: list[str]) -> tuple[list[dict[str, Any]], A
                     "video_id": video_id,
                     "authentication": "anonymous",
                     "signature_timestamp": signature_timestamp,
+                    "proxy": "present" if proxy is not None else "absent",
                 },
             )
         )
