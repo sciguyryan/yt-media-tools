@@ -9,6 +9,8 @@ This file is the authoritative changelog for yt-discover. Active development and
 - [security] Fail closed instead of retrying directly when a provider cannot initialise its proxy transport, and redact credential-bearing proxy values from normal command and integration diagnostics.
 - [maintenance] Add pinned Node fetch and protocol-specific proxy-agent dependencies for YouTube.js HTTP, HTTPS, SOCKS4/SOCKS4a and SOCKS5/SOCKS5h transport.
 - [test] Cover proxy parsing, canonicalisation, remote DNS, credentials, IPv6, invalid URLs, every yt-dlp command path, optional-provider adaptation and diagnostic redaction.
+- [fix] Adapt YouTube.js platform-native requests at the node-fetch proxy boundary so proxied channel enumeration preserves the URL, method, headers, body, redirect policy and cancellation signal.
+- [test] Reproduce the cross-implementation Request failure and cover the proxied YouTube.js fetch adapter without network access.
 - [docs] Document supported proxy schemes, DNS behaviour, provider coverage, fallback guarantees and credential handling.
 
 - [performance] Avoid rescanning complete regex-recognised ASCII identifiers in the canonical yt-sql lexer while preserving Unicode identifier and lexical error semantics.

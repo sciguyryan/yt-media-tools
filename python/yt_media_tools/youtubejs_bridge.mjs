@@ -71,6 +71,23 @@ async function loadLibrary() {
   };
 }
 
+export function nodeFetchArguments(input, init = {}) {
+  if (!input || typeof input !== 'object' || typeof input.url !== 'string') {
+    return [input, init];
+  }
+
+  // YouTube.js uses the platform-native Request implementation, while the
+  // proxy agents below require node-fetch. node-fetch cannot consume a Request
+  // created by another Fetch implementation, so retain the request properties
+  // it needs and pass the URL as the cross-implementation boundary.
+  return [input.url, {
+    method: input.method,
+    redirect: input.redirect,
+    signal: input.signal,
+    ...init,
+  }];
+}
+
 async function innertubeOptions() {
   const options = { generate_session_locally: true };
   const proxy = process.env.YT_DISCOVER_PROXY;
@@ -98,7 +115,10 @@ async function innertubeOptions() {
     throw new Error(`proxy support dependencies are unavailable: ${error?.message || String(error)}`);
   }
 
-  options.fetch = (input, init = {}) => fetch(input, { ...init, agent: agentForRequest });
+  options.fetch = (input, init = {}) => {
+    const [fetchInput, fetchInit] = nodeFetchArguments(input, init);
+    return fetch(fetchInput, { ...fetchInit, agent: agentForRequest });
+  };
   return options;
 }
 
@@ -257,8 +277,10 @@ async function main() {
   throw new Error('expected --check, --basic-info <video-id> [...], --benchmark-basic-info <video-id> [...], or --enumerate-channel-videos <url>');
 }
 
-main().catch((error) => {
-  const message = error?.stack || error?.message || String(error);
-  process.stderr.write(`[yt-discover:youtubejs] ${message}\n`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    const message = error?.stack || error?.message || String(error);
+    process.stderr.write(`[yt-discover:youtubejs] ${message}\n`);
+    process.exitCode = 1;
+  });
+}
