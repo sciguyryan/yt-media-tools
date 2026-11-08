@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-downloader. Active development a
 
 ## Active development
 
+- [cli] Add repeatable invocation-scoped `--retryable-http-status CODE` temporary-failure signalling for caller-selected HTTP client errors.
+- [observability] Relay yt-dlp diagnostics unchanged while detecting configured statuses and retaining queue, collection and manifest reconciliation before exit.
+- [test] Cover configurable status validation, temporary-failure translation, diagnostic relay and unconfigured failures.
+
 - [cli] Add repeatable `-v`/`--verbose` diagnostics for resolved Downloader plans and planned or executed yt-dlp commands.
 - [observability] Report profile, input, output, format, authentication, archive, temporary-path and queue policy on standard error, with setting provenance at `-vv`.
 - [security] Redact cookies, proxies, authentication headers and sensitive extractor arguments from verbose command diagnostics.

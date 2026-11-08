@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 
 from yt_media_tools import discover_application, discover_cli
+from yt_media_tools.retryable_http import configure_retryable_http_statuses
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,6 +24,25 @@ def test_cookie_override_is_parsed_as_path() -> None:
     parser = discover_cli.build_parser()
     args = parser.parse_args(["--cookies", "/tmp/example-cookies.txt", "@example"])
     assert args.cookies == Path("/tmp/example-cookies.txt")
+
+
+def test_retryable_http_statuses_are_repeatable() -> None:
+    parser = discover_cli.build_parser()
+    args = parser.parse_args(["--retryable-http-status", "403", "--retryable-http-status", "429", "@example"])
+    assert args.retryable_http_status == [403, 429]
+
+
+def test_retryable_http_observation_uses_temporary_failure_exit(monkeypatch, capsys) -> None:
+    def simulated_application(_argv):
+        observer = configure_retryable_http_statuses((403, 429))
+        observer.observe_text("ERROR: HTTP Error 429: Too Many Requests")
+        return 0
+
+    monkeypatch.setattr(discover_application, "_run_application", simulated_application)
+
+    assert discover_application.main([]) == 75
+    assert "retryable HTTP status observed: 429" in capsys.readouterr().err
+    configure_retryable_http_statuses(())
 
 
 def test_cache_compaction_is_an_explicit_introspection_mode() -> None:

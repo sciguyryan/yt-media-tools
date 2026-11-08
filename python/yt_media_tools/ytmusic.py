@@ -9,6 +9,7 @@ from typing import Any
 from .external_tools import ToolInvocation, emit_invocation
 from .ytdlp import AcquisitionStats
 from .network_proxy import ProxyConfiguration, requests_proxy_mapping
+from .retryable_http import current_retryable_http_observer
 
 
 class YtMusicApiError(RuntimeError):
@@ -47,6 +48,7 @@ def acquire_song_metadata(
     try:
         client = module.YTMusic() if proxy is None else module.YTMusic(proxies=requests_proxy_mapping(proxy))
     except Exception as exc:  # noqa: BLE001 - third-party construction is an integration boundary.
+        current_retryable_http_observer().observe_exception(exc)
         raise YtMusicApiError(f"could not initialise ytmusicapi: {exc}") from exc
 
     signature_timestamp = _current_signature_timestamp()
@@ -68,7 +70,8 @@ def acquire_song_metadata(
         )
         try:
             payload = client.get_song(video_id, signatureTimestamp=signature_timestamp)
-        except Exception:  # noqa: BLE001 - individual provider failures fall back conservatively.
+        except Exception as exc:  # noqa: BLE001 - individual provider failures fall back conservatively.
+            current_retryable_http_observer().observe_exception(exc)
             stats.record_skip(video_id, "ytmusicapi-error")
             continue
         if not isinstance(payload, dict):

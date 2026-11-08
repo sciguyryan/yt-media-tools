@@ -109,6 +109,11 @@ from yt_media_tools.query import (
     resolve_query,
 )
 from yt_media_tools.report import RunReport, write_report
+from yt_media_tools.retryable_http import (
+    TEMPORARY_FAILURE_EXIT_STATUS,
+    configure_retryable_http_statuses,
+    current_retryable_http_observer,
+)
 from yt_media_tools.source_resolution import format_backend_resolution, observed_ytdlp_resolutions
 from yt_media_tools.sources import SourceSpec, resolve_source_request, source_capabilities
 from yt_media_tools.staged_predicates import matches_at_enumeration, rejects_at_enumeration
@@ -322,6 +327,7 @@ def _run_application(argv: list[str] | None = None) -> int:
     parser = build_parser()
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(raw_argv)
+    configure_retryable_http_statuses(args.retryable_http_status)
     explicit_cache = any(item == "--cache" or item.startswith("--cache=") for item in raw_argv)
     configure_external_diagnostics(enabled=args.debug_external, unsafe=args.debug_external_unsafe)
 
@@ -2072,7 +2078,7 @@ def main(argv: list[str] | None = None) -> int:
     """
     token = _active_maintenance_cache.set(None)
     try:
-        return _run_application(argv)
+        status = _run_application(argv)
     finally:
         cache_path = _active_maintenance_cache.get()
         _active_maintenance_cache.reset(token)
@@ -2084,3 +2090,9 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"Warning: optional metadata-cache maintenance deferred ({outcome.reason}).", file=sys.stderr)
             except (MaintenancePolicyError, OSError, RuntimeError, ValueError) as exc:
                 print(f"Warning: optional metadata-cache maintenance unavailable ({exc}).", file=sys.stderr)
+    observer = current_retryable_http_observer()
+    if observer.observed:
+        rendered = ", ".join(str(item) for item in observer.observed)
+        print(f"yt-discover: retryable HTTP status observed: {rendered}.", file=sys.stderr)
+        return TEMPORARY_FAILURE_EXIT_STATUS
+    return status

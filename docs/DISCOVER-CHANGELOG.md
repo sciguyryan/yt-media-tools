@@ -4,6 +4,10 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [cli] Add repeatable `--retryable-http-status CODE` temporary-failure signalling for caller-selected HTTP client errors.
+- [observability] Detect configured statuses across yt-dlp, YouTube.js and ytmusicapi boundaries while preserving external diagnostics and normal cache maintenance.
+- [test] Cover status validation, narrow diagnostic recognition, structured exception status discovery and exit-status translation.
+
 - [cli] Add a validated `--proxy URL` acquisition policy with explicit HTTP, HTTPS, SOCKS version and remote-DNS semantics.
 - [feature] Apply one proxy configuration to yt-dlp extraction and enumeration, YouTube.js fetches and ytmusicapi requests while retaining it across provider fallback.
 - [security] Fail closed instead of retrying directly when a provider cannot initialise its proxy transport, and redact credential-bearing proxy values from normal command and integration diagnostics.

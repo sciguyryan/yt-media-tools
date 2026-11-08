@@ -348,6 +348,12 @@ The public CLI surface is deliberately classified by persistence semantics. Reus
 
 `socket-timeout` is a positive number of seconds. `ip-family` is either `"ipv4"` or `"ipv6"` and maps to yt-dlp's mutually exclusive `--force-ipv4` or `--force-ipv6`. Proxy and source-address values are passed to yt-dlp without inventing a separate Downloader network syntax. As with other profile settings, these values may be supplied through typed `$values.*` references.
 
+Orchestrators can request a temporary-failure signal for selected HTTP client errors by repeating `--retryable-http-status CODE`. Codes must be between 400 and 499. Downloader relays yt-dlp's standard error unchanged; if a configured status is observed, it completes queue, collection-state and manifest reconciliation before returning exit status 75. Supplying no codes preserves ordinary standalone behaviour. This invocation-scoped control is deliberately not profileable: Downloader reports the condition but does not reconnect a proxy or retry the complete invocation itself.
+
+```bash
+./yt-download.py --retryable-http-status 403 --retryable-http-status 429 VIDEO_ID
+```
+
 `--explain` and `--explain-json` include these resolved operational values and their configured archive/temporary paths. Sensitive extractor-argument values such as tokens, keys and credentials are redacted from explanation output. `--dry-run` remains an exact command preview and therefore may contain explicitly configured sensitive values; treat its output accordingly.
 
 ## Declarative format policy

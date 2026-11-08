@@ -18,6 +18,13 @@ def test_runtime_files_are_script_relative(downloader) -> None:
     assert downloader.DEFAULTS_FILE == downloader.SCRIPT_DIR / "defaults.json"
 
 
+def test_retryable_http_statuses_are_repeatable(downloader) -> None:
+    args = downloader.build_parser().parse_args(
+        ["--retryable-http-status", "403", "--retryable-http-status", "429", "abc"]
+    )
+    assert args.retryable_http_status == [403, 429]
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [

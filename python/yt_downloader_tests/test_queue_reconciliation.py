@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -137,6 +138,46 @@ def test_run_reports_keyboard_interruption_without_raising(downloader, monkeypat
 
     monkeypatch.setattr(downloader.subprocess, "run", interrupt)
     assert downloader.run(["yt-dlp", "abc"], dry_run=False) == 130
+
+
+def test_run_returns_temporary_failure_for_configured_http_status(downloader, monkeypatch, capsys) -> None:
+    class Process:
+        stderr = io.StringIO("ERROR: HTTP Error 403: Forbidden\n")
+
+        @staticmethod
+        def wait():
+            return 1
+
+    monkeypatch.setattr(downloader.subprocess, "Popen", lambda *args, **kwargs: Process())
+
+    status = downloader.run(
+        ["yt-dlp", "abc"],
+        dry_run=False,
+        retryable_http_statuses=(403, 429),
+    )
+
+    assert status == 75
+    assert "ERROR: HTTP Error 403: Forbidden" in capsys.readouterr().err
+
+
+def test_run_preserves_exit_status_for_unconfigured_http_error(downloader, monkeypatch) -> None:
+    class Process:
+        stderr = io.StringIO("ERROR: HTTP Error 404: Not Found\n")
+
+        @staticmethod
+        def wait():
+            return 1
+
+    monkeypatch.setattr(downloader.subprocess, "Popen", lambda *args, **kwargs: Process())
+
+    assert (
+        downloader.run(
+            ["yt-dlp", "abc"],
+            dry_run=False,
+            retryable_http_statuses=(403, 429),
+        )
+        == 1
+    )
 
 
 def test_main_generates_queue_report_and_retry_file_from_simulated_partial_run(

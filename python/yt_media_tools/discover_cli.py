@@ -14,6 +14,7 @@ from pathlib import Path
 from yt_media_tools.cache import default_cache_path
 from yt_media_tools.discover_constants import DEFAULT_ARCHIVE_FILE, PROGRAM_VERSION
 from yt_media_tools.network_proxy import ProxyConfiguration, parse_proxy_url
+from yt_media_tools.retryable_http import http_client_status
 from yt_media_tools.query import (
     Binary,
     Field,
@@ -551,6 +552,14 @@ def build_parser() -> argparse.ArgumentParser:
         type=proxy_url,
         metavar="URL",
         help="route all network acquisition through an HTTP, HTTPS or SOCKS proxy URL",
+    )
+    compatibility.add_argument(
+        "--retryable-http-status",
+        action="append",
+        default=[],
+        type=http_client_status,
+        metavar="CODE",
+        help="exit temporarily unsuccessful after observing HTTP client status CODE; repeat for multiple codes",
     )
 
     selection = parser.add_argument_group("selection and ordering")

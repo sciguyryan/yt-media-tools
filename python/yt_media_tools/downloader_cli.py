@@ -44,6 +44,11 @@ from yt_media_tools.collection_interchange import (
     COLLECTION_TYPE_PLAYLIST,
 )
 from yt_media_tools.external_tools import ToolInvocation, configure_external_diagnostics, emit_invocation
+from yt_media_tools.retryable_http import (
+    TEMPORARY_FAILURE_EXIT_STATUS,
+    RetryableHttpObserver,
+    http_client_status,
+)
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -237,7 +242,15 @@ CLI_DESTINATION_CLASSES = {
         }
     ),
     "execution-mode": frozenset(
-        {"explain", "explain_json", "dry_run", "verbose", "debug_external", "debug_external_unsafe"}
+        {
+            "explain",
+            "explain_json",
+            "dry_run",
+            "verbose",
+            "debug_external",
+            "debug_external_unsafe",
+            "retryable_http_status",
+        }
     ),
     "reporting-side-effect": frozenset(
         {
@@ -1219,6 +1232,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--proxy",
         metavar="URL",
         help="Use the HTTP, HTTPS or SOCKS proxy URL accepted by yt-dlp.",
+    )
+    parser.add_argument(
+        "--retryable-http-status",
+        action="append",
+        default=[],
+        type=http_client_status,
+        metavar="CODE",
+        help="exit temporarily unsuccessful after observing HTTP client status CODE; repeat for multiple codes",
     )
     parser.add_argument(
         "--socket-timeout",
@@ -4222,7 +4243,7 @@ def _verbose_command(level: int, command: Sequence[str]) -> None:
     _verbose(level, f"yt-dlp command: {format_diagnostic_command(command)}")
 
 
-def run(command: Sequence[str], *, dry_run: bool) -> int:
+def run(command: Sequence[str], *, dry_run: bool, retryable_http_statuses: Sequence[int] = ()) -> int:
     """Run yt-dlp and return its exit status."""
     if dry_run:
         emit_invocation(
@@ -4236,16 +4257,46 @@ def run(command: Sequence[str], *, dry_run: bool) -> int:
     emit_invocation(
         ToolInvocation(tool="yt-dlp", operation="download", purpose="media acquisition", argv=tuple(command))
     )
+    process: subprocess.Popen[str] | None = None
     try:
-        completed = subprocess.run(command, check=False)
+        if not retryable_http_statuses:
+            completed = subprocess.run(command, check=False)
+            return completed.returncode
+        observer = RetryableHttpObserver(retryable_http_statuses)
+        process = subprocess.Popen(
+            command,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert process.stderr is not None
+        pending: list[str] = []
+        while character := process.stderr.read(1):
+            sys.stderr.write(character)
+            sys.stderr.flush()
+            pending.append(character)
+            if character in "\r\n":
+                observer.observe_text("".join(pending))
+                pending.clear()
+        if pending:
+            observer.observe_text("".join(pending))
+        return_code = process.wait()
     except KeyboardInterrupt:
+        if process is not None and process.poll() is None:
+            process.terminate()
+            process.wait()
         print("Interrupted.", file=sys.stderr)
         return 130
     except OSError as exc:
         print(f"Error: unable to start yt-dlp: {exc}", file=sys.stderr)
         return 1
 
-    return completed.returncode
+    if observer.observed:
+        rendered = ", ".join(str(item) for item in observer.observed)
+        print(f"yt-download: retryable HTTP status observed: {rendered}.", file=sys.stderr)
+        return TEMPORARY_FAILURE_EXIT_STATUS
+    return return_code
 
 
 def _uses_collection_indexed_filenames(plan: DownloadPlan) -> bool:
@@ -4265,6 +4316,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     configure_external_diagnostics(enabled=args.debug_external, unsafe=args.debug_external_unsafe)
+
+    def execute(command: Sequence[str]) -> int:
+        if args.retryable_http_status:
+            return run(
+                command,
+                dry_run=args.dry_run,
+                retryable_http_statuses=args.retryable_http_status,
+            )
+        return run(command, dry_run=args.dry_run)
 
     if args._remove_completed_id is not None:
         input_file, video_id = args._remove_completed_id
@@ -4598,7 +4658,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     else None,
                 )
                 _verbose_command(args.verbose, command)
-                exit_status = run(command, dry_run=args.dry_run)
+                exit_status = execute(command)
             # Never infer success from yt-dlp's process exit alone. Only the
             # structured after_move callback supplies durable completion evidence.
             # A fully recorded collection has no remaining continuation work.
@@ -4623,7 +4683,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Warning: collection state unavailable ({exc}); processing all targets.", file=sys.stderr)
         command = plan.command(output_event_file=output_event_file)
         _verbose_command(args.verbose, command)
-        exit_status = run(command, dry_run=args.dry_run)
+        exit_status = execute(command)
 
     queue_report_payload: dict[str, object] | None = None
     if (args.remove_completed_ids or args.remove_completed_rows) and not args.dry_run:

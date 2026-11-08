@@ -754,6 +754,12 @@ Use `--proxy URL` to route every network acquisition through one HTTP, HTTPS or 
 
 Credentials may be included using ordinary URL user information. Discover redacts the complete proxy value from dry-run, verbose and external-invocation command diagnostics. Unsafe external diagnostics remain the only explicit opt-in path that can reveal it.
 
+Orchestrators can request a temporary-failure signal for selected HTTP client errors by repeating `--retryable-http-status CODE`. Codes must be between 400 and 499. When a configured status is observed in yt-dlp, YouTube.js or ytmusicapi diagnostics, Discover preserves the original diagnostic on standard error and exits with status 75 after normal cache maintenance. Supplying no codes preserves ordinary standalone behaviour. Discover does not reconnect a proxy or retry acquisition itself; the caller retains ownership of that policy.
+
+```bash
+./yt-discover.py --retryable-http-status 403 --retryable-http-status 429 VIDEO_ID
+```
+
 If `cookies.txt` exists beside `yt-discover.py`, Discover supplies it to authentication-capable acquisition backends automatically. The file is optional. yt-dlp consumes the Netscape file directly; when YouTube.js channel enumeration is selected, Discover translates applicable cookies into the HTTP Cookie header required by YouTube.js at the adapter boundary. Use `--cookies FILE` to override the script-local default for a run. An explicitly selected cookie file must exist.
 
 ```bash

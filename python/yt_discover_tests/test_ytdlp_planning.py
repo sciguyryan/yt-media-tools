@@ -90,6 +90,32 @@ def test_load_metadata_keeps_unexplained_nonzero_exit_fatal(tmp_path, monkeypatc
         load_metadata(["yt-dlp", "dummy"])
 
 
+def test_load_metadata_observes_configured_http_errors(tmp_path, monkeypatch) -> None:
+    from yt_media_tools.retryable_http import (
+        configure_retryable_http_statuses,
+        current_retryable_http_observer,
+    )
+    from yt_media_tools.ytdlp import load_metadata
+
+    fake = tmp_path / "yt-dlp"
+    fake.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, sys\n"
+        "print('ERROR: HTTP Error 403: Forbidden', file=sys.stderr)\n"
+        "print(json.dumps({'id': 'abc123XYZ00'}))\n",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", str(tmp_path) + __import__("os").pathsep + __import__("os").environ.get("PATH", ""))
+    configure_retryable_http_statuses((403, 429))
+
+    records, _stats = load_metadata(["yt-dlp", "dummy"])
+
+    assert records == [{"id": "abc123XYZ00"}]
+    assert current_retryable_http_observer().observed == (403,)
+    configure_retryable_http_statuses(())
+
+
 def test_flat_enumeration_preserves_acquisition_telemetry(tmp_path, monkeypatch) -> None:
     fake = tmp_path / "yt-dlp"
     fake.write_text(

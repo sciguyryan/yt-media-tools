@@ -24,6 +24,7 @@ from .ytdlp_runtime import (
     format_command,
 )
 from .network_proxy import ProxyConfiguration
+from .retryable_http import current_retryable_http_observer
 
 
 DEFAULT_COOKIES_FILE = Path(__file__).resolve().parent.parent / "cookies.txt"
@@ -225,6 +226,7 @@ def load_metadata(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            current_retryable_http_observer().observe_text(raw_line)
             line = raw_line.rstrip("\n")
             if line.startswith("ERROR:"):
                 stats.error_lines += 1
@@ -402,6 +404,7 @@ def enumerate_until_date_boundary(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            current_retryable_http_observer().observe_text(raw_line)
             line = raw_line.rstrip("\n")
             if line.startswith("ERROR:"):
                 stats.acquisition.error_lines += 1
@@ -542,6 +545,7 @@ def enumerate_until_known_overlap(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            current_retryable_http_observer().observe_text(raw_line)
             line = raw_line.rstrip("\n")
             if line.startswith("ERROR:"):
                 stats.acquisition.error_lines += 1
@@ -631,6 +635,7 @@ def enumerate_until_match_limit(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            current_retryable_http_observer().observe_text(raw_line)
             line = raw_line.rstrip("\n")
             if line.startswith("ERROR:"):
                 stats.acquisition.error_lines += 1

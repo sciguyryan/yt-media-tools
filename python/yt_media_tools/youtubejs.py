@@ -18,6 +18,7 @@ from .external_tools import ToolInvocation, emit_invocation
 from .dates import DateContext, parse_date_literal
 from .ytdlp import AcquisitionStats, EnumerationStats, ProgressCallback
 from .network_proxy import ProxyConfiguration
+from .retryable_http import current_retryable_http_observer
 
 
 class YouTubeJsError(RuntimeError):
@@ -141,6 +142,7 @@ def acquire_basic_info(
     if completed.stderr:
         sys.stderr.write(completed.stderr)
         sys.stderr.flush()
+        current_retryable_http_observer().observe_text(completed.stderr)
     if completed.returncode != 0:
         raise YouTubeJsError(f"YouTube.js bridge exited with status {completed.returncode}")
 
@@ -160,6 +162,7 @@ def acquire_basic_info(
             continue
         video_id = payload.get("id")
         if payload.get("ok") is not True:
+            current_retryable_http_observer().observe_text(str(payload.get("error") or ""))
             if isinstance(video_id, str) and video_id:
                 stats.record_skip(video_id, "youtubejs-error")
             continue
@@ -237,6 +240,7 @@ def enumerate_until_date_boundary(
         for raw_line in process.stderr:
             sys.stderr.write(raw_line)
             sys.stderr.flush()
+            current_retryable_http_observer().observe_text(raw_line)
 
     stderr_thread = threading.Thread(target=read_stderr, name="yt-discover-youtubejs-stderr", daemon=True)
     stderr_thread.start()
