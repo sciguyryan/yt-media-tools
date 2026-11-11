@@ -24,4 +24,5 @@ jobs:
           python yt-sql/export_portable_topology.py --check
           python yt-sql/export_portable_facets.py --check
           python yt-sql/build_coverage_inventory.py --check
+          python yt-sql/build_semantic_retirement_audit.py --check
           python yt-sql/build_unicode_fixture_audit.py --check
