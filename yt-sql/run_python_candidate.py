@@ -125,7 +125,13 @@ def _bind_portable_parameters(query: str, parameters: dict[str, object]) -> str:
     return "".join(result)
 
 
-def observe(case: Path, *, configuration: str = "default", root: Path = ROOT) -> dict[str, object]:
+def observe(
+    case: Path,
+    *,
+    configuration: str = "default",
+    root: Path = ROOT,
+    optimisation_override: str | None = None,
+) -> dict[str, object]:
     """Execute a supported case using declared portable source bindings."""
     validate_case(case, root=root, allow_missing_expected=True)
     manifest = _load(case / "test.json")
@@ -229,7 +235,9 @@ def observe(case: Path, *, configuration: str = "default", root: Path = ROOT) ->
         )
     except QuerySemanticError as exc:
         return classify_semantic(exc)
-    optimisation = settings.get("optimisation", "enabled")
+    if optimisation_override not in (None, "enabled", "disabled"):
+        raise AdapterError("optimisation override must be enabled or disabled")
+    optimisation = optimisation_override or settings.get("optimisation", "enabled")
     # The public evaluator accepts this flag, so it is passed rather than simulated.
     result = apply_query(execution_records, resolved, relational_optimisation=optimisation == "enabled")
     columns = [term.output_name for term in resolved.select]

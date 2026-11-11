@@ -496,6 +496,7 @@
     "python/yt_discover_tests/test_portable_dataset_profiles.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_dataset_validation.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_diagnostics.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_portable_differential.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_execution_config.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_facet_topology.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_final_contract.py": "retain: implementation/integration pending review",
