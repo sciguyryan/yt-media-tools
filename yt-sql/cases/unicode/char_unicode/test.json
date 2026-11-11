@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.char_unicode",
+  "description": "CHAR constructs Unicode code points including supplementary characters",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

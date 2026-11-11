@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.greatest_numeric",
+  "description": "GREATEST selects maximum among signed integers",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.greatest"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.nullif_equal",
+  "description": "NULLIF returns NULL on equal arguments",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.nullif"
+  ]
+}

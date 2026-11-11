@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.concat_null",
+  "description": "CONCAT propagates NULL",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

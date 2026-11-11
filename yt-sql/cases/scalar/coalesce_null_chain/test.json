@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.coalesce_null_chain",
+  "description": "COALESCE skips two NULL arguments",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.coalesce"
+  ]
+}

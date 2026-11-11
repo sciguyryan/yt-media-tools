@@ -1896,6 +1896,55 @@
       "path": "yt-sql/cases/ordering/order_tied_view_count_page/test.json"
     },
     {
+      "id": "scalar.coalesce_null_chain",
+      "features": [
+        "scalar.coalesce"
+      ],
+      "path": "yt-sql/cases/scalar/coalesce_null_chain/test.json"
+    },
+    {
+      "id": "scalar.concat_null",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/scalar/concat_null/test.json"
+    },
+    {
+      "id": "scalar.concat_unicode",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/scalar/concat_unicode/test.json"
+    },
+    {
+      "id": "scalar.greatest_numeric",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/scalar/greatest_numeric/test.json"
+    },
+    {
+      "id": "scalar.least_null",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/scalar/least_null/test.json"
+    },
+    {
+      "id": "scalar.nullif_distinct",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/scalar/nullif_distinct/test.json"
+    },
+    {
+      "id": "scalar.nullif_equal",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/scalar/nullif_equal/test.json"
+    },
+    {
       "id": "semantics.comparison_equal",
       "features": [
         "comparison.eq"
@@ -1934,6 +1983,20 @@
         "limit"
       ],
       "path": "yt-sql/cases/smoke/source_order_limit/test.json"
+    },
+    {
+      "id": "unicode.char_unicode",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/unicode/char_unicode/test.json"
+    },
+    {
+      "id": "unicode.length_codepoints",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_codepoints/test.json"
     },
     {
       "id": "unicode.lower_dotted_i",

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.least_null",
+  "description": "LEAST propagates NULL",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.least"
+  ]
+}

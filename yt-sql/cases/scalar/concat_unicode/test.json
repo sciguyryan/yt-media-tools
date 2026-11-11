@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.concat_unicode",
+  "description": "CONCAT preserves combining marks and supplementary characters",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}
