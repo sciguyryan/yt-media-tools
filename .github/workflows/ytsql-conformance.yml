@@ -42,3 +42,32 @@ jobs:
           name: ytsql-python-${{ matrix.os }}-${{ matrix.python-version }}
           path: conformance-python.json
           if-no-files-found: ignore
+
+  platform-parity:
+    name: Compare portable platform reports
+    needs: python-conformance
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all environment reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ytsql-python-*
+          path: platform-reports
+      - name: Certify complete nine-environment report set
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          root = Path('platform-reports')
+          expected = {f'ytsql-python-{os}-{version}' for os in ('ubuntu-latest', 'macos-latest', 'windows-latest') for version in ('3.12', '3.13', '3.14')}
+          actual = {path.name for path in root.iterdir() if path.is_dir()} if root.exists() else set()
+          if actual != expected:
+              print(f'Missing: {sorted(expected - actual)}; unexpected: {sorted(actual - expected)}', file=sys.stderr)
+              sys.exit(1)
+          PY
+      - name: Compare approved outcomes across platforms
+        shell: bash
+        run: python yt-sql/compare_platform_reports.py platform-reports/*/conformance-python.json
