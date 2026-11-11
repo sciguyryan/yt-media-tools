@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_one",
+  "description": "Independent function conformance: position one.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

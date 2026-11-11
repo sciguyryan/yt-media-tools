@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "function-conformance.nested_coalesce",
+  "description": "Independent function conformance: nested coalesce.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.coalesce",
+    "projection.length"
+  ]
+}

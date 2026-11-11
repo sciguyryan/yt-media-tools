@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.aggregate_three_sum",
+  "description": "Independently specified function semantics for aggregate three sum.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.sum"
+  ]
+}

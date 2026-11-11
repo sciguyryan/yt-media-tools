@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.upper_mixed",
+  "description": "Independent function conformance: upper mixed.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.upper"
+  ]
+}

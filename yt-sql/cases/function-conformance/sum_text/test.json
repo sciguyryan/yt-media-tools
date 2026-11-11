@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.sum_text",
+  "description": "Independent function conformance: sum text.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.sum"
+  ]
+}

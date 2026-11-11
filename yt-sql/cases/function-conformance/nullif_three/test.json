@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.nullif_three",
+  "description": "Independent function conformance: nullif three.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.nullif"
+  ]
+}

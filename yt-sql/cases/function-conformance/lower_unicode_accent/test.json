@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.lower_unicode_accent",
+  "description": "Independently specified function semantics for lower unicode accent.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower"
+  ]
+}

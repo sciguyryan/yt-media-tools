@@ -1,0 +1,3 @@
+SELECT
+    LEAST(GREATEST(3, 8), 5) AS result
+FROM @yt_sql_fixture LIMIT 1

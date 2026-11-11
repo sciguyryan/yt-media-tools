@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.nullif_second_null",
+  "description": "Independent function conformance: nullif second null.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.nullif"
+  ]
+}

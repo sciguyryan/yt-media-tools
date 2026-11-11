@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.aggregate_count_literal",
+  "description": "Independently specified function semantics for aggregate count literal.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.count_expression"
+  ]
+}

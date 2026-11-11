@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.cardinality_zero",
+  "description": "Independent function conformance: cardinality zero.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.cardinality"
+  ]
+}

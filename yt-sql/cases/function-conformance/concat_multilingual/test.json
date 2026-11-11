@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_multilingual",
+  "description": "Independent function conformance: concat multilingual.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

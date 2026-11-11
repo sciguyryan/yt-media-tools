@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.count_two",
+  "description": "Independent function conformance: count two.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.count_expression"
+  ]
+}

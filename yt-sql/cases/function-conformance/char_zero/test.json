@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_zero",
+  "description": "Independent function conformance: char zero.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

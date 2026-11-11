@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.nullif_text_equal",
+  "description": "Independent function conformance: nullif text equal.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.nullif"
+  ]
+}

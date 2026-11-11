@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.greatest_null_first",
+  "description": "Independently specified function semantics for greatest null first.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.greatest"
+  ]
+}

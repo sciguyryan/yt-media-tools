@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "function-conformance.unknown_function",
+  "description": "Independent function conformance: unknown function.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": []
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "function-conformance.nested_text",
+  "description": "Independent function conformance: nested text.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower",
+    "projection.upper",
+    "scalar.concat"
+  ]
+}

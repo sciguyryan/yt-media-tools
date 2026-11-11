@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.min_two",
+  "description": "Independently specified function semantics for min two.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.min"
+  ]
+}

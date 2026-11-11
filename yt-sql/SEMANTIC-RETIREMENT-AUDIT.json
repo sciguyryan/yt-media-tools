@@ -9,10 +9,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 107,
-    "legacy_test_files": 218,
-    "test_functions": 1693,
-    "assertion_sites": 4198
+    "normative_manifests": 254,
+    "legacy_test_files": 219,
+    "test_functions": 1694,
+    "assertion_sites": 4202
   },
   "normative_cases": [
     {
@@ -42,6 +42,594 @@
     {
       "id": "aggregate.sum_text_type_error",
       "manifest": "yt-sql/cases/aggregate/sum_text_type_error/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_avg_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_avg_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_count_expression",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_count_expression/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_count_literal",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_count_literal/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_count_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_count_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_avg_source",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_first_avg_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_count_source",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_first_count_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_count_star",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_first_count_star/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_max_source",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_first_max_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_min_source",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_first_min_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_sum_source",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_first_sum_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_max_add",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_max_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_max_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_max_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_min_add",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_min_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_min_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_min_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_sum_add",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_sum_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_sum_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_avg",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_three_avg/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_count",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_three_count/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_max",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_three_max/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_min",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_three_min/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_sum",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_three_sum/test.json"
+    },
+    {
+      "id": "function-conformance.avg_text",
+      "manifest": "yt-sql/cases/function-conformance/avg_text/test.json"
+    },
+    {
+      "id": "function-conformance.avg_two",
+      "manifest": "yt-sql/cases/function-conformance/avg_two/test.json"
+    },
+    {
+      "id": "function-conformance.avg_zero",
+      "manifest": "yt-sql/cases/function-conformance/avg_zero/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_filter",
+      "manifest": "yt-sql/cases/function-conformance/cardinality_filter/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_first",
+      "manifest": "yt-sql/cases/function-conformance/cardinality_first/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_two",
+      "manifest": "yt-sql/cases/function-conformance/cardinality_two/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_zero",
+      "manifest": "yt-sql/cases/function-conformance/cardinality_zero/test.json"
+    },
+    {
+      "id": "function-conformance.char_ascii",
+      "manifest": "yt-sql/cases/function-conformance/char_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.char_digit",
+      "manifest": "yt-sql/cases/function-conformance/char_digit/test.json"
+    },
+    {
+      "id": "function-conformance.char_latin1",
+      "manifest": "yt-sql/cases/function-conformance/char_latin1/test.json"
+    },
+    {
+      "id": "function-conformance.char_null",
+      "manifest": "yt-sql/cases/function-conformance/char_null/test.json"
+    },
+    {
+      "id": "function-conformance.char_null_only",
+      "manifest": "yt-sql/cases/function-conformance/char_null_only/test.json"
+    },
+    {
+      "id": "function-conformance.char_space",
+      "manifest": "yt-sql/cases/function-conformance/char_space/test.json"
+    },
+    {
+      "id": "function-conformance.char_three_null",
+      "manifest": "yt-sql/cases/function-conformance/char_three_null/test.json"
+    },
+    {
+      "id": "function-conformance.char_two",
+      "manifest": "yt-sql/cases/function-conformance/char_two/test.json"
+    },
+    {
+      "id": "function-conformance.char_upper",
+      "manifest": "yt-sql/cases/function-conformance/char_upper/test.json"
+    },
+    {
+      "id": "function-conformance.char_zero",
+      "manifest": "yt-sql/cases/function-conformance/char_zero/test.json"
+    },
+    {
+      "id": "function-conformance.char_zero_args",
+      "manifest": "yt-sql/cases/function-conformance/char_zero_args/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_all_null",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_all_null/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_empty_string",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_empty_string/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_falsey_zero",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_falsey_zero/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_first",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_first/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_nested",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_nested/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_nullif_distinct",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_nullif_distinct/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_one",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_one/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_second",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_second/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_short_circuit",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_short_circuit/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_string_null",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_string_null/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_three",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_three/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_unicode",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_unicode/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_zero",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_zero/test.json"
+    },
+    {
+      "id": "function-conformance.concat_empty",
+      "manifest": "yt-sql/cases/function-conformance/concat_empty/test.json"
+    },
+    {
+      "id": "function-conformance.concat_empty_middle",
+      "manifest": "yt-sql/cases/function-conformance/concat_empty_middle/test.json"
+    },
+    {
+      "id": "function-conformance.concat_multilingual",
+      "manifest": "yt-sql/cases/function-conformance/concat_multilingual/test.json"
+    },
+    {
+      "id": "function-conformance.concat_nested_upper",
+      "manifest": "yt-sql/cases/function-conformance/concat_nested_upper/test.json"
+    },
+    {
+      "id": "function-conformance.concat_null_later",
+      "manifest": "yt-sql/cases/function-conformance/concat_null_later/test.json"
+    },
+    {
+      "id": "function-conformance.concat_numbers_as_text",
+      "manifest": "yt-sql/cases/function-conformance/concat_numbers_as_text/test.json"
+    },
+    {
+      "id": "function-conformance.concat_one",
+      "manifest": "yt-sql/cases/function-conformance/concat_one/test.json"
+    },
+    {
+      "id": "function-conformance.concat_three",
+      "manifest": "yt-sql/cases/function-conformance/concat_three/test.json"
+    },
+    {
+      "id": "function-conformance.concat_three_null",
+      "manifest": "yt-sql/cases/function-conformance/concat_three_null/test.json"
+    },
+    {
+      "id": "function-conformance.concat_unicode_emoji",
+      "manifest": "yt-sql/cases/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.concat_zero",
+      "manifest": "yt-sql/cases/function-conformance/concat_zero/test.json"
+    },
+    {
+      "id": "function-conformance.count_two",
+      "manifest": "yt-sql/cases/function-conformance/count_two/test.json"
+    },
+    {
+      "id": "function-conformance.filter_none",
+      "manifest": "yt-sql/cases/function-conformance/filter_none/test.json"
+    },
+    {
+      "id": "function-conformance.filter_one",
+      "manifest": "yt-sql/cases/function-conformance/filter_one/test.json"
+    },
+    {
+      "id": "function-conformance.filter_zero",
+      "manifest": "yt-sql/cases/function-conformance/filter_zero/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_equal",
+      "manifest": "yt-sql/cases/function-conformance/greatest_equal/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_negative",
+      "manifest": "yt-sql/cases/function-conformance/greatest_negative/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_null",
+      "manifest": "yt-sql/cases/function-conformance/greatest_null/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_null_first",
+      "manifest": "yt-sql/cases/function-conformance/greatest_null_first/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_one",
+      "manifest": "yt-sql/cases/function-conformance/greatest_one/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_single_nested",
+      "manifest": "yt-sql/cases/function-conformance/greatest_single_nested/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_text",
+      "manifest": "yt-sql/cases/function-conformance/greatest_text/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_zero",
+      "manifest": "yt-sql/cases/function-conformance/greatest_zero/test.json"
+    },
+    {
+      "id": "function-conformance.least_equal",
+      "manifest": "yt-sql/cases/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "function-conformance.least_negative",
+      "manifest": "yt-sql/cases/function-conformance/least_negative/test.json"
+    },
+    {
+      "id": "function-conformance.least_null",
+      "manifest": "yt-sql/cases/function-conformance/least_null/test.json"
+    },
+    {
+      "id": "function-conformance.least_null_first",
+      "manifest": "yt-sql/cases/function-conformance/least_null_first/test.json"
+    },
+    {
+      "id": "function-conformance.least_one",
+      "manifest": "yt-sql/cases/function-conformance/least_one/test.json"
+    },
+    {
+      "id": "function-conformance.least_single_nested",
+      "manifest": "yt-sql/cases/function-conformance/least_single_nested/test.json"
+    },
+    {
+      "id": "function-conformance.least_text",
+      "manifest": "yt-sql/cases/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "function-conformance.least_zero",
+      "manifest": "yt-sql/cases/function-conformance/least_zero/test.json"
+    },
+    {
+      "id": "function-conformance.length_arabic",
+      "manifest": "yt-sql/cases/function-conformance/length_arabic/test.json"
+    },
+    {
+      "id": "function-conformance.length_ascii",
+      "manifest": "yt-sql/cases/function-conformance/length_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.length_char",
+      "manifest": "yt-sql/cases/function-conformance/length_char/test.json"
+    },
+    {
+      "id": "function-conformance.length_cjk",
+      "manifest": "yt-sql/cases/function-conformance/length_cjk/test.json"
+    },
+    {
+      "id": "function-conformance.length_combining",
+      "manifest": "yt-sql/cases/function-conformance/length_combining/test.json"
+    },
+    {
+      "id": "function-conformance.length_concat",
+      "manifest": "yt-sql/cases/function-conformance/length_concat/test.json"
+    },
+    {
+      "id": "function-conformance.length_emoji",
+      "manifest": "yt-sql/cases/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.length_emoji_pair",
+      "manifest": "yt-sql/cases/function-conformance/length_emoji_pair/test.json"
+    },
+    {
+      "id": "function-conformance.length_empty",
+      "manifest": "yt-sql/cases/function-conformance/length_empty/test.json"
+    },
+    {
+      "id": "function-conformance.length_null",
+      "manifest": "yt-sql/cases/function-conformance/length_null/test.json"
+    },
+    {
+      "id": "function-conformance.length_two",
+      "manifest": "yt-sql/cases/function-conformance/length_two/test.json"
+    },
+    {
+      "id": "function-conformance.length_upper",
+      "manifest": "yt-sql/cases/function-conformance/length_upper/test.json"
+    },
+    {
+      "id": "function-conformance.length_zero",
+      "manifest": "yt-sql/cases/function-conformance/length_zero/test.json"
+    },
+    {
+      "id": "function-conformance.lower_ascii",
+      "manifest": "yt-sql/cases/function-conformance/lower_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.lower_digit",
+      "manifest": "yt-sql/cases/function-conformance/lower_digit/test.json"
+    },
+    {
+      "id": "function-conformance.lower_empty",
+      "manifest": "yt-sql/cases/function-conformance/lower_empty/test.json"
+    },
+    {
+      "id": "function-conformance.lower_kelvin",
+      "manifest": "yt-sql/cases/function-conformance/lower_kelvin/test.json"
+    },
+    {
+      "id": "function-conformance.lower_mixed",
+      "manifest": "yt-sql/cases/function-conformance/lower_mixed/test.json"
+    },
+    {
+      "id": "function-conformance.lower_null",
+      "manifest": "yt-sql/cases/function-conformance/lower_null/test.json"
+    },
+    {
+      "id": "function-conformance.lower_punctuation",
+      "manifest": "yt-sql/cases/function-conformance/lower_punctuation/test.json"
+    },
+    {
+      "id": "function-conformance.lower_two",
+      "manifest": "yt-sql/cases/function-conformance/lower_two/test.json"
+    },
+    {
+      "id": "function-conformance.lower_unicode_accent",
+      "manifest": "yt-sql/cases/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "function-conformance.lower_zero",
+      "manifest": "yt-sql/cases/function-conformance/lower_zero/test.json"
+    },
+    {
+      "id": "function-conformance.map_lower",
+      "manifest": "yt-sql/cases/function-conformance/map_lower/test.json"
+    },
+    {
+      "id": "function-conformance.map_upper",
+      "manifest": "yt-sql/cases/function-conformance/map_upper/test.json"
+    },
+    {
+      "id": "function-conformance.map_zero",
+      "manifest": "yt-sql/cases/function-conformance/map_zero/test.json"
+    },
+    {
+      "id": "function-conformance.max_two",
+      "manifest": "yt-sql/cases/function-conformance/max_two/test.json"
+    },
+    {
+      "id": "function-conformance.max_zero",
+      "manifest": "yt-sql/cases/function-conformance/max_zero/test.json"
+    },
+    {
+      "id": "function-conformance.min_two",
+      "manifest": "yt-sql/cases/function-conformance/min_two/test.json"
+    },
+    {
+      "id": "function-conformance.min_zero",
+      "manifest": "yt-sql/cases/function-conformance/min_zero/test.json"
+    },
+    {
+      "id": "function-conformance.nested_coalesce",
+      "manifest": "yt-sql/cases/function-conformance/nested_coalesce/test.json"
+    },
+    {
+      "id": "function-conformance.nested_nullif",
+      "manifest": "yt-sql/cases/function-conformance/nested_nullif/test.json"
+    },
+    {
+      "id": "function-conformance.nested_text",
+      "manifest": "yt-sql/cases/function-conformance/nested_text/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_coalesce",
+      "manifest": "yt-sql/cases/function-conformance/nullif_coalesce/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_empty",
+      "manifest": "yt-sql/cases/function-conformance/nullif_empty/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_equal_numeric",
+      "manifest": "yt-sql/cases/function-conformance/nullif_equal_numeric/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_first_null",
+      "manifest": "yt-sql/cases/function-conformance/nullif_first_null/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_nested",
+      "manifest": "yt-sql/cases/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_one",
+      "manifest": "yt-sql/cases/function-conformance/nullif_one/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_second_null",
+      "manifest": "yt-sql/cases/function-conformance/nullif_second_null/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_text_equal",
+      "manifest": "yt-sql/cases/function-conformance/nullif_text_equal/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_text_unequal",
+      "manifest": "yt-sql/cases/function-conformance/nullif_text_unequal/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_three",
+      "manifest": "yt-sql/cases/function-conformance/nullif_three/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_unequal_numeric",
+      "manifest": "yt-sql/cases/function-conformance/nullif_unequal_numeric/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_zero",
+      "manifest": "yt-sql/cases/function-conformance/nullif_zero/test.json"
+    },
+    {
+      "id": "function-conformance.position_first",
+      "manifest": "yt-sql/cases/function-conformance/position_first/test.json"
+    },
+    {
+      "id": "function-conformance.position_one",
+      "manifest": "yt-sql/cases/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_range",
+      "manifest": "yt-sql/cases/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.random_two",
+      "manifest": "yt-sql/cases/function-conformance/random_two/test.json"
+    },
+    {
+      "id": "function-conformance.random_unseeded_range",
+      "manifest": "yt-sql/cases/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.sum_text",
+      "manifest": "yt-sql/cases/function-conformance/sum_text/test.json"
+    },
+    {
+      "id": "function-conformance.sum_two",
+      "manifest": "yt-sql/cases/function-conformance/sum_two/test.json"
+    },
+    {
+      "id": "function-conformance.sum_zero",
+      "manifest": "yt-sql/cases/function-conformance/sum_zero/test.json"
+    },
+    {
+      "id": "function-conformance.unknown_function",
+      "manifest": "yt-sql/cases/function-conformance/unknown_function/test.json"
+    },
+    {
+      "id": "function-conformance.upper_ascii",
+      "manifest": "yt-sql/cases/function-conformance/upper_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.upper_digit",
+      "manifest": "yt-sql/cases/function-conformance/upper_digit/test.json"
+    },
+    {
+      "id": "function-conformance.upper_empty",
+      "manifest": "yt-sql/cases/function-conformance/upper_empty/test.json"
+    },
+    {
+      "id": "function-conformance.upper_mixed",
+      "manifest": "yt-sql/cases/function-conformance/upper_mixed/test.json"
+    },
+    {
+      "id": "function-conformance.upper_null",
+      "manifest": "yt-sql/cases/function-conformance/upper_null/test.json"
+    },
+    {
+      "id": "function-conformance.upper_punctuation",
+      "manifest": "yt-sql/cases/function-conformance/upper_punctuation/test.json"
+    },
+    {
+      "id": "function-conformance.upper_sharp_s",
+      "manifest": "yt-sql/cases/function-conformance/upper_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.upper_two",
+      "manifest": "yt-sql/cases/function-conformance/upper_two/test.json"
+    },
+    {
+      "id": "function-conformance.upper_unicode_accent",
+      "manifest": "yt-sql/cases/function-conformance/upper_unicode_accent/test.json"
+    },
+    {
+      "id": "function-conformance.upper_zero",
+      "manifest": "yt-sql/cases/function-conformance/upper_zero/test.json"
     },
     {
       "id": "interaction.boolean_not_and_page",
@@ -31765,6 +32353,32 @@
         {
           "name": "test_detects_missing_empty_relation",
           "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_portable_function_conformance_matrix.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_every_registered_function_has_portable_examples",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
             {
               "kind": "assert"
             }

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_upper",
+  "description": "Independently specified function semantics for length upper.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length",
+    "projection.upper"
+  ]
+}

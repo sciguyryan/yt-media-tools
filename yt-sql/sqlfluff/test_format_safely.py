@@ -21,6 +21,19 @@ class SafeFormattingTests(unittest.TestCase):
         self.assertEqual(actual, format_checked(actual, engine=engine))
         self.assertIn("'straße'", actual)
 
+    def test_count_literal_is_not_rewritten_as_count_star(self) -> None:
+        """CV04 is unsafe for YT-SQL's authoritative expression contract."""
+        from format_safely import ReusableSQLFluff
+
+        engine = ReusableSQLFluff()
+        for expression in ("COUNT(1)", "COUNT(NULL)", "COUNT(source_index)"):
+            with self.subTest(expression=expression):
+                source = f"SELECT {expression} AS result FROM @yt_sql_fixture LIMIT 1\n"
+                formatted = format_checked(source, engine=engine)
+                self.assertIn(expression, formatted)
+                self.assertEqual(structural_tree(parse_query(source)), structural_tree(parse_query(formatted)))
+                self.assertEqual(formatted, format_checked(formatted, engine=engine))
+
     def test_batch_initialises_sqlfluff_once(self) -> None:
         import tempfile
         from format_safely import main

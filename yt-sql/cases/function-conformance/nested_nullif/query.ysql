@@ -1,0 +1,3 @@
+SELECT
+    COALESCE(NULLIF(3, 3), 11) AS result
+FROM @yt_sql_fixture LIMIT 1

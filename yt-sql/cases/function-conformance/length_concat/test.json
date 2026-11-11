@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_concat",
+  "description": "Independently specified function semantics for length concat.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length",
+    "scalar.concat"
+  ]
+}

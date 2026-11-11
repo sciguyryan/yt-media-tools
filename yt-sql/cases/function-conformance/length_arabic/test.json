@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_arabic",
+  "description": "Independently specified function semantics for length arabic.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

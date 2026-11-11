@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_null_only",
+  "description": "Independently specified function semantics for char null only.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_emoji",
+  "description": "Independent function conformance: length emoji.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

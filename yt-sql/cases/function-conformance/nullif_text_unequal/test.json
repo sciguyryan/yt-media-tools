@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.nullif_text_unequal",
+  "description": "Independently specified function semantics for nullif text unequal.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.nullif"
+  ]
+}

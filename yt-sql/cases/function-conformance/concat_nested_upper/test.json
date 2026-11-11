@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_nested_upper",
+  "description": "Independently specified function semantics for concat nested upper.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower",
+    "projection.upper",
+    "scalar.concat"
+  ]
+}

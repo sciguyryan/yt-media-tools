@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.coalesce_short_circuit",
+  "description": "Independent function conformance: coalesce short circuit.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.coalesce"
+  ]
+}

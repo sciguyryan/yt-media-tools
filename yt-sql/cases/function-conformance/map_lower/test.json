@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_lower",
+  "description": "Independently specified function semantics for map lower.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map",
+    "projection.lower"
+  ]
+}

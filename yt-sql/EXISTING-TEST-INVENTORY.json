@@ -502,6 +502,7 @@
     "python/yt_discover_tests/test_portable_final_contract.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_fixture_checks.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_fixture_relationships.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_portable_function_conformance_matrix.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_function_semantic_audit.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_grammar_candidate_review.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_grammar_reconciliation.py": "retain: implementation/integration pending review",

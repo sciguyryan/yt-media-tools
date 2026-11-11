@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.aggregate_three_avg",
+  "description": "Independently specified function semantics for aggregate three avg.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.avg"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_upper",
+  "description": "Independently specified function semantics for char upper.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.upper",
+    "scalar.char"
+  ]
+}

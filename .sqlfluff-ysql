@@ -4,8 +4,9 @@ dialect = ytsql
 templater = raw
 sql_file_exts = .ysql
 max_line_length = 120
-# Unordered LIMIT is valid YT-SQL; this semantic lint exception is intentional.
-exclude_rules = LT05, AM09
+# Unordered LIMIT is valid YT-SQL. CV04 rewrites COUNT(1) to COUNT(*),
+# changing the authoritative parse tree; keep literal arguments intact.
+exclude_rules = LT05, AM09, CV04
 
 [sqlfluff:indentation]
 indent_unit = space

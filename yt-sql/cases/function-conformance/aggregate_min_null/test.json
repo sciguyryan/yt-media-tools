@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.aggregate_min_null",
+  "description": "Independently specified function semantics for aggregate min null.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.min"
+  ]
+}

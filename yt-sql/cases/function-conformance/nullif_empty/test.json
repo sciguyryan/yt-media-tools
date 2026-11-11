@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.nullif_empty",
+  "description": "Independently specified function semantics for nullif empty.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.nullif"
+  ]
+}

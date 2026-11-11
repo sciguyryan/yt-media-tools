@@ -1876,6 +1876,1051 @@
       "path": "yt-sql/cases/aggregate/sum_text_type_error/test.json"
     },
     {
+      "id": "function-conformance.aggregate_avg_null",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_avg_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_count_expression",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_count_expression/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_count_literal",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_count_literal/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_count_null",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_count_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_avg_source",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_first_avg_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_count_source",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_first_count_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_count_star",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_first_count_star/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_max_source",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_first_max_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_min_source",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_first_min_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_first_sum_source",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_first_sum_source/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_max_add",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_max_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_max_null",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_max_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_min_add",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_min_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_min_null",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_min_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_sum_add",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_sum_null",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_sum_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_avg",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_three_avg/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_count",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_three_count/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_max",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_three_max/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_min",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_three_min/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_three_sum",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_three_sum/test.json"
+    },
+    {
+      "id": "function-conformance.avg_text",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/function-conformance/avg_text/test.json"
+    },
+    {
+      "id": "function-conformance.avg_two",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/function-conformance/avg_two/test.json"
+    },
+    {
+      "id": "function-conformance.avg_zero",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/function-conformance/avg_zero/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_filter",
+      "features": [
+        "collection.cardinality",
+        "collection.filter"
+      ],
+      "path": "yt-sql/cases/function-conformance/cardinality_filter/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_first",
+      "features": [
+        "collection.cardinality"
+      ],
+      "path": "yt-sql/cases/function-conformance/cardinality_first/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_two",
+      "features": [
+        "collection.cardinality"
+      ],
+      "path": "yt-sql/cases/function-conformance/cardinality_two/test.json"
+    },
+    {
+      "id": "function-conformance.cardinality_zero",
+      "features": [
+        "collection.cardinality"
+      ],
+      "path": "yt-sql/cases/function-conformance/cardinality_zero/test.json"
+    },
+    {
+      "id": "function-conformance.char_ascii",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.char_digit",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_digit/test.json"
+    },
+    {
+      "id": "function-conformance.char_latin1",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_latin1/test.json"
+    },
+    {
+      "id": "function-conformance.char_null",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_null/test.json"
+    },
+    {
+      "id": "function-conformance.char_null_only",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_null_only/test.json"
+    },
+    {
+      "id": "function-conformance.char_space",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_space/test.json"
+    },
+    {
+      "id": "function-conformance.char_three_null",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_three_null/test.json"
+    },
+    {
+      "id": "function-conformance.char_two",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_two/test.json"
+    },
+    {
+      "id": "function-conformance.char_upper",
+      "features": [
+        "projection.upper",
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_upper/test.json"
+    },
+    {
+      "id": "function-conformance.char_zero",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_zero/test.json"
+    },
+    {
+      "id": "function-conformance.char_zero_args",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_zero_args/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_all_null",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_all_null/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_empty_string",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_empty_string/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_falsey_zero",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_falsey_zero/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_first",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_first/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_nested",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_nested/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_nullif_distinct",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_nullif_distinct/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_one",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_one/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_second",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_second/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_short_circuit",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_short_circuit/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_string_null",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_string_null/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_three",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_three/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_unicode",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_unicode/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_zero",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_zero/test.json"
+    },
+    {
+      "id": "function-conformance.concat_empty",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_empty/test.json"
+    },
+    {
+      "id": "function-conformance.concat_empty_middle",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_empty_middle/test.json"
+    },
+    {
+      "id": "function-conformance.concat_multilingual",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_multilingual/test.json"
+    },
+    {
+      "id": "function-conformance.concat_nested_upper",
+      "features": [
+        "projection.lower",
+        "projection.upper",
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_nested_upper/test.json"
+    },
+    {
+      "id": "function-conformance.concat_null_later",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_null_later/test.json"
+    },
+    {
+      "id": "function-conformance.concat_numbers_as_text",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_numbers_as_text/test.json"
+    },
+    {
+      "id": "function-conformance.concat_one",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_one/test.json"
+    },
+    {
+      "id": "function-conformance.concat_three",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_three/test.json"
+    },
+    {
+      "id": "function-conformance.concat_three_null",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_three_null/test.json"
+    },
+    {
+      "id": "function-conformance.concat_unicode_emoji",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.concat_zero",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_zero/test.json"
+    },
+    {
+      "id": "function-conformance.count_two",
+      "features": [
+        "aggregate.count_expression"
+      ],
+      "path": "yt-sql/cases/function-conformance/count_two/test.json"
+    },
+    {
+      "id": "function-conformance.filter_none",
+      "features": [
+        "collection.filter"
+      ],
+      "path": "yt-sql/cases/function-conformance/filter_none/test.json"
+    },
+    {
+      "id": "function-conformance.filter_one",
+      "features": [
+        "collection.filter"
+      ],
+      "path": "yt-sql/cases/function-conformance/filter_one/test.json"
+    },
+    {
+      "id": "function-conformance.filter_zero",
+      "features": [
+        "collection.filter"
+      ],
+      "path": "yt-sql/cases/function-conformance/filter_zero/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_equal",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_equal/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_negative",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_negative/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_null",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_null/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_null_first",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_null_first/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_one",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_one/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_single_nested",
+      "features": [
+        "scalar.greatest",
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_single_nested/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_text",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_text/test.json"
+    },
+    {
+      "id": "function-conformance.greatest_zero",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_zero/test.json"
+    },
+    {
+      "id": "function-conformance.least_equal",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "function-conformance.least_negative",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_negative/test.json"
+    },
+    {
+      "id": "function-conformance.least_null",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_null/test.json"
+    },
+    {
+      "id": "function-conformance.least_null_first",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_null_first/test.json"
+    },
+    {
+      "id": "function-conformance.least_one",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_one/test.json"
+    },
+    {
+      "id": "function-conformance.least_single_nested",
+      "features": [
+        "scalar.greatest",
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_single_nested/test.json"
+    },
+    {
+      "id": "function-conformance.least_text",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "function-conformance.least_zero",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_zero/test.json"
+    },
+    {
+      "id": "function-conformance.length_arabic",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_arabic/test.json"
+    },
+    {
+      "id": "function-conformance.length_ascii",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.length_char",
+      "features": [
+        "projection.length",
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_char/test.json"
+    },
+    {
+      "id": "function-conformance.length_cjk",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_cjk/test.json"
+    },
+    {
+      "id": "function-conformance.length_combining",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_combining/test.json"
+    },
+    {
+      "id": "function-conformance.length_concat",
+      "features": [
+        "projection.length",
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_concat/test.json"
+    },
+    {
+      "id": "function-conformance.length_emoji",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.length_emoji_pair",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_emoji_pair/test.json"
+    },
+    {
+      "id": "function-conformance.length_empty",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_empty/test.json"
+    },
+    {
+      "id": "function-conformance.length_null",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_null/test.json"
+    },
+    {
+      "id": "function-conformance.length_two",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_two/test.json"
+    },
+    {
+      "id": "function-conformance.length_upper",
+      "features": [
+        "projection.length",
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_upper/test.json"
+    },
+    {
+      "id": "function-conformance.length_zero",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_zero/test.json"
+    },
+    {
+      "id": "function-conformance.lower_ascii",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.lower_digit",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_digit/test.json"
+    },
+    {
+      "id": "function-conformance.lower_empty",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_empty/test.json"
+    },
+    {
+      "id": "function-conformance.lower_kelvin",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_kelvin/test.json"
+    },
+    {
+      "id": "function-conformance.lower_mixed",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_mixed/test.json"
+    },
+    {
+      "id": "function-conformance.lower_null",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_null/test.json"
+    },
+    {
+      "id": "function-conformance.lower_punctuation",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_punctuation/test.json"
+    },
+    {
+      "id": "function-conformance.lower_two",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_two/test.json"
+    },
+    {
+      "id": "function-conformance.lower_unicode_accent",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "function-conformance.lower_zero",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_zero/test.json"
+    },
+    {
+      "id": "function-conformance.map_lower",
+      "features": [
+        "collection.map",
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/map_lower/test.json"
+    },
+    {
+      "id": "function-conformance.map_upper",
+      "features": [
+        "collection.map",
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/map_upper/test.json"
+    },
+    {
+      "id": "function-conformance.map_zero",
+      "features": [
+        "collection.map"
+      ],
+      "path": "yt-sql/cases/function-conformance/map_zero/test.json"
+    },
+    {
+      "id": "function-conformance.max_two",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/function-conformance/max_two/test.json"
+    },
+    {
+      "id": "function-conformance.max_zero",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/function-conformance/max_zero/test.json"
+    },
+    {
+      "id": "function-conformance.min_two",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/function-conformance/min_two/test.json"
+    },
+    {
+      "id": "function-conformance.min_zero",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/function-conformance/min_zero/test.json"
+    },
+    {
+      "id": "function-conformance.nested_coalesce",
+      "features": [
+        "projection.coalesce",
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/nested_coalesce/test.json"
+    },
+    {
+      "id": "function-conformance.nested_nullif",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nested_nullif/test.json"
+    },
+    {
+      "id": "function-conformance.nested_text",
+      "features": [
+        "projection.lower",
+        "projection.upper",
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/nested_text/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_coalesce",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_coalesce/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_empty",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_empty/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_equal_numeric",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_equal_numeric/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_first_null",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_first_null/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_nested",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_one",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_one/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_second_null",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_second_null/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_text_equal",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_text_equal/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_text_unequal",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_text_unequal/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_three",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_three/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_unequal_numeric",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_unequal_numeric/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_zero",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_zero/test.json"
+    },
+    {
+      "id": "function-conformance.position_first",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_first/test.json"
+    },
+    {
+      "id": "function-conformance.position_one",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_range",
+      "features": [
+        "scalar.random_seeded"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.random_two",
+      "features": [
+        "scalar.random_seeded"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_two/test.json"
+    },
+    {
+      "id": "function-conformance.random_unseeded_range",
+      "features": [
+        "scalar.random_seeded"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.sum_text",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/sum_text/test.json"
+    },
+    {
+      "id": "function-conformance.sum_two",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/sum_two/test.json"
+    },
+    {
+      "id": "function-conformance.sum_zero",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/function-conformance/sum_zero/test.json"
+    },
+    {
+      "id": "function-conformance.unknown_function",
+      "features": [],
+      "path": "yt-sql/cases/function-conformance/unknown_function/test.json"
+    },
+    {
+      "id": "function-conformance.upper_ascii",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_ascii/test.json"
+    },
+    {
+      "id": "function-conformance.upper_digit",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_digit/test.json"
+    },
+    {
+      "id": "function-conformance.upper_empty",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_empty/test.json"
+    },
+    {
+      "id": "function-conformance.upper_mixed",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_mixed/test.json"
+    },
+    {
+      "id": "function-conformance.upper_null",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_null/test.json"
+    },
+    {
+      "id": "function-conformance.upper_punctuation",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_punctuation/test.json"
+    },
+    {
+      "id": "function-conformance.upper_sharp_s",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.upper_two",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_two/test.json"
+    },
+    {
+      "id": "function-conformance.upper_unicode_accent",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_unicode_accent/test.json"
+    },
+    {
+      "id": "function-conformance.upper_zero",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_zero/test.json"
+    },
+    {
       "id": "interaction.boolean_not_and_page",
       "features": [
         "not",

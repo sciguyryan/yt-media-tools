@@ -1,0 +1,1 @@
+SELECT RANDOM(1, 2) AS result FROM @yt_sql_fixture LIMIT 1

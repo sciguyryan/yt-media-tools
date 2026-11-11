@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_empty_middle",
+  "description": "Independently specified function semantics for concat empty middle.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

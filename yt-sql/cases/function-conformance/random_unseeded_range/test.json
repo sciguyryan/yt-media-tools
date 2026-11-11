@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_unseeded_range",
+  "description": "Independently specified function semantics for random unseeded range.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.random_seeded"
+  ]
+}

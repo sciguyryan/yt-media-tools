@@ -1,0 +1,3 @@
+SELECT
+    CONCAT('A', '1') AS result
+FROM @yt_sql_fixture LIMIT 1

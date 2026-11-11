@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.upper_digit",
+  "description": "Independently specified function semantics for upper digit.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.upper"
+  ]
+}

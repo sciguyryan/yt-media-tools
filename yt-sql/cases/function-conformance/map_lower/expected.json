@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "result"
+  ],
+  "rows": [
+    [
+      {
+        "type": "array",
+        "value": [
+          "topic-1",
+          "group-1"
+        ]
+      }
+    ]
+  ]
+}

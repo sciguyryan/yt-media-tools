@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.avg_two",
+  "description": "Independently specified function semantics for avg two.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.avg"
+  ]
+}

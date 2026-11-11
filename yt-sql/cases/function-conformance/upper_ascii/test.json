@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.upper_ascii",
+  "description": "Independent function conformance: upper ascii.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.upper"
+  ]
+}

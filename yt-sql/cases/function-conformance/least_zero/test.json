@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.least_zero",
+  "description": "Independently specified function semantics for least zero.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.least"
+  ]
+}

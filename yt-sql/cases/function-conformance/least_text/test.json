@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.least_text",
+  "description": "Independent function conformance: least text.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.least"
+  ]
+}

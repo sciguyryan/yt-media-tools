@@ -1,0 +1,3 @@
+SELECT
+    LENGTH(COALESCE(NULL, 'test')) AS result
+FROM @yt_sql_fixture LIMIT 1

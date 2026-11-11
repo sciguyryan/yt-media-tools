@@ -1,0 +1,3 @@
+SELECT
+    CASE WHEN RANDOM(7) >= 0 AND RANDOM(7) < 1 THEN 1 ELSE 0 END AS result
+FROM @yt_sql_fixture LIMIT 1
