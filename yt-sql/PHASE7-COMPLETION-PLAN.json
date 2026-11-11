@@ -1,0 +1,5910 @@
+{
+  "version": 1,
+  "status": "planned_not_certified",
+  "source_files": [
+    "LANGUAGE-ELEMENTS.json",
+    "PHASE1-COMPLETENESS.json",
+    "COVERAGE-GAP-MATRIX.json"
+  ],
+  "coverage_dimensions": [
+    "valid_syntax",
+    "invalid_syntax",
+    "semantics",
+    "types_and_null",
+    "boundaries",
+    "interactions",
+    "adversarial"
+  ],
+  "phases": {
+    "1": "Reconcile source inventory, obligations and unsupported syntax; no semantic certification",
+    "2": "Core expressions, ordering, pagination, relational and set semantics",
+    "3": "Functions, collections, Unicode, temporal and type semantics",
+    "4": "Negative, boundary, adversarial and interaction tests",
+    "5": "Python/Rust, optimiser and platform differential verification",
+    "6": "Evidence reconciliation and final certification gate"
+  },
+  "elements": [
+    {
+      "id": "feature:aggregate.avg",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.count_expression",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.count_star",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.empty_input",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.filter",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.group_by",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.having",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.max",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.min",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:aggregate.sum",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.and",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.bare",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.not",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.or",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.parentheses",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:boolean.precedence",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.bounds",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.cardinality",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.composition",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.count",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.empty",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.filter",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.index",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.map",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.null",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.null_element",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.output",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.parameter",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.quantifier.all",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.quantifier.any",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.structured",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:collection.three_valued",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.eq",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.ge",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.gt",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.le",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.lt",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.ne",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.ne_alt",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:cte.chained",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:cte.logical_schema",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:cte.non_recursive",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.compact",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.dot",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.iso",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.local_dmy",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.local_mdy",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.named",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.relative_ago",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:date.slash",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:datetime.offset",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:datetime.zulu",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:distinct",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.clock_hms",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.clock_ms",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.compound",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.decimal",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.localised",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:duration.short_alias",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:field.alias",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:from.handle",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:from.identifier",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:from.quoted_source",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:in",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:in.not",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.false",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_false",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_null",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_true",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.not_unknown",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.null",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.predicate_unknown",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.true",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:is.unknown",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:limit",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:limit.underscore",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.above",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.at_least",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.at_most",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.below",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.equal_to",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.equals",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.greater_than",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.less_than",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.more_than",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.over",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:natural.under",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:null.three_valued",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:offset",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:offset.underscore",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:offset.without_limit",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.alias",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.asc",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.default_asc",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.desc",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.expression",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.expression_alias",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.mixed",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.multi",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.null_last",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:order.stable_tie",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.auto_multi",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.auto_single",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.csv",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.ids",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.jsonl",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.lines",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.tsv",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:output.urls",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:parameter.binding",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:predicate.between",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:predicate.not_between",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.alias",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.coalesce",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.coalesce_fallback",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.default_id",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.field",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.length",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.lower",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.star",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:projection.upper",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:result.position",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.add",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.divide",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.multiply",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.arithmetic.parentheses",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.nested_result",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.no_else",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.null_fallthrough",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.case.order",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.char",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.concat",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.constant_fold",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.function_nested",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.greatest",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.least",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.mixed_base",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.nullif",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:scalar.random_seeded",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:set.global_order_limit",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:set.union",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:set.union_all",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:string.case_sensitive",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:string.double_quote",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:string.doubled_quote",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:structured.member",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.infinity_between",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.infinity_negative",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.infinity_positive",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.localised",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.now_fixed",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.today_calendar",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.today_fixed",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.unit_baktun",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:temporal.unit_decade",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.contain",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.contains",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.does_not_contain",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.does_not_match",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.ilike",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.like",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.like.escape",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.like.single",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.match",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.matches",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_contains",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_ilike",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_like",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_matches",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.unquoted_literal",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.case_mapping",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.casefold_contains",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.codepoint_length",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.ilike_case",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.like_codepoint",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.normalisation_sensitive",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.ordering",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:unicode.regex",
+      "category": "feature",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_b",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_decimal_suffix",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_k",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_m",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.count_underscore",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.enum_case_insensitive",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.integer.binary",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.integer.hex",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.integer.octal",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:value.number.negative",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:AVG",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:CARDINALITY",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:CHAR",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:COALESCE",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:CONCAT",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:COUNT",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:FILTER",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:GREATEST",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:LEAST",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:LENGTH",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:LOWER",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:MAP",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:MAX",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:MIN",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:NULLIF",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:POSITION",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:RANDOM",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:SUM",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:UPPER",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ALL",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:AND",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ANTI",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:AS",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ASC",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:BETWEEN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:BY",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:CASE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:CONTAIN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:CONTAINS",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:DESC",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:DISTINCT",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:DOES",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ELSE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:END",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:FALSE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:FILTER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:FROM",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:GROUP",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:HAVING",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ILIKE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:IN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:INNER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:IS",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:JOIN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:LEFT",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:LIKE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:LIMIT",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:MATCH",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:MATCHES",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:NOT",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:NULL",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OF",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OFFSET",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ON",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OR",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:ORDER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OUTER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:SELECT",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:SEMI",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:THEN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:TRUE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:UNION",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:UNKNOWN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:WHEN",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:WHERE",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:WITH",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:!=",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:%",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:*",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:+",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:-",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:/",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:<",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:<=",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:<>",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:=",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:>",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "operator:>=",
+      "category": "operator",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    }
+  ],
+  "unsupported_syntax_negative_case_queue": [
+    "CROSS",
+    "FULL",
+    "NATURAL",
+    "RECURSIVE",
+    "RIGHT"
+  ],
+  "certification_rule": "Every applicable dimension requires independently reviewed case evidence or an explicit reviewed not-applicable reason; tagged legacy tests and generated outputs are not proof."
+}
