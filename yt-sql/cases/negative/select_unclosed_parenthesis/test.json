@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "negative.select_unclosed_parenthesis",
+  "description": "Reject select unclosed parenthesis.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": []
+}

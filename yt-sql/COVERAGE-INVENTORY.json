@@ -1876,6 +1876,51 @@
       "path": "yt-sql/cases/aggregate/sum_text_type_error/test.json"
     },
     {
+      "id": "negative.invalid_count_text",
+      "features": [],
+      "path": "yt-sql/cases/negative/invalid_count_text/test.json"
+    },
+    {
+      "id": "negative.limit_negative",
+      "features": [],
+      "path": "yt-sql/cases/negative/limit_negative/test.json"
+    },
+    {
+      "id": "negative.offset_negative",
+      "features": [],
+      "path": "yt-sql/cases/negative/offset_negative/test.json"
+    },
+    {
+      "id": "negative.order_missing_expression",
+      "features": [],
+      "path": "yt-sql/cases/negative/order_missing_expression/test.json"
+    },
+    {
+      "id": "negative.select_missing_projection",
+      "features": [],
+      "path": "yt-sql/cases/negative/select_missing_projection/test.json"
+    },
+    {
+      "id": "negative.select_trailing_comma",
+      "features": [],
+      "path": "yt-sql/cases/negative/select_trailing_comma/test.json"
+    },
+    {
+      "id": "negative.select_unclosed_parenthesis",
+      "features": [],
+      "path": "yt-sql/cases/negative/select_unclosed_parenthesis/test.json"
+    },
+    {
+      "id": "negative.unknown_column",
+      "features": [],
+      "path": "yt-sql/cases/negative/unknown_column/test.json"
+    },
+    {
+      "id": "negative.where_missing_operand",
+      "features": [],
+      "path": "yt-sql/cases/negative/where_missing_operand/test.json"
+    },
+    {
       "id": "ordering.order_source_position_beyond_end",
       "features": [
         "order_by",

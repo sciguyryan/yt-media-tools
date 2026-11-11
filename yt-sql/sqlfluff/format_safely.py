@@ -5,6 +5,7 @@ No file is modified unless the formatted result passes all safety checks.
 
 import argparse
 import dataclasses
+import json
 import os
 import re
 import subprocess
@@ -117,6 +118,24 @@ def format_checked(source: str, *, engine: ReusableSQLFluff | None = None) -> st
     return formatted
 
 
+def _is_expected_error_case(path: Path) -> bool:
+    """Do not require invalid YT-SQL to pass the positive-query formatter.
+
+    Negative cases remain subject to corpus validation and execution. This
+    exemption applies only to cases declaring an expected error outcome.
+    """
+    if path.name != "query.ysql":
+        return False
+    expectation = path.with_name("expected.json")
+    if not expectation.is_file():
+        return False
+    try:
+        document = json.loads(expectation.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Unable to inspect expected outcome for {path}: {exc}") from exc
+    return isinstance(document, dict) and document.get("outcome") == "error"
+
+
 def _show_progress(completed: int, total: int, *, stream: object, interactive: bool) -> None:
     """Render one bounded progress line without polluting redirected output."""
     if not interactive:
@@ -141,6 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     if not paths or any(path.suffix != ".ysql" or not path.is_file() for path in paths):
         parser.error("Provide existing .ysql files or directories containing them")
     changes = {}
+    skipped_errors = 0
     try:
         engine = ReusableSQLFluff()
     except (ImportError, RuntimeError, ValueError) as exc:
@@ -150,6 +170,10 @@ def main(argv: list[str] | None = None) -> int:
     _show_progress(0, len(paths), stream=sys.stderr, interactive=interactive)
     for index, path in enumerate(paths, start=1):
         try:
+            if _is_expected_error_case(path):
+                skipped_errors += 1
+                _show_progress(index, len(paths), stream=sys.stderr, interactive=interactive)
+                continue
             original = path.read_text(encoding="utf-8")
             formatted = format_checked(original, engine=engine)
             if original != formatted:
@@ -165,7 +189,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.write:
         for path, content in changes.items():
             path.write_text(content, encoding="utf-8")
-    print(f"Checked {len(paths)} .ysql files; {len(changes)} would change" + (" (written)" if args.write else ""))
+    print(
+        f"Checked {len(paths) - skipped_errors} .ysql files; skipped {skipped_errors} expected-error cases; "
+        f"{len(changes)} would change" + (" (written)" if args.write else "")
+    )
     if args.check and changes:
         for path in changes:
             print(f"Needs formatting: {path}", file=sys.stderr)

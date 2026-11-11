@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "negative.select_missing_projection",
+  "description": "Reject select missing projection.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": []
+}

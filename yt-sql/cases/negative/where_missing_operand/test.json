@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "negative.where_missing_operand",
+  "description": "Reject where missing operand.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": []
+}

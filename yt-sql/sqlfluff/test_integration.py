@@ -1,5 +1,6 @@
 """Regression checks for the pinned, process-local SQLFluff YT-SQL integration."""
 
+import json
 import subprocess
 import sys
 import unittest
@@ -106,12 +107,31 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                     again = invoke("format", "-", source=formatted).stdout if is_ytsql else format_sqlite(formatted)
                     self.assertEqual(again, formatted)
 
+    @staticmethod
+    def _format_eligible_queries() -> list[Path]:
+        """Only successful-result cases belong to the formatter contract.
+
+        Expected-error queries are still exercised by portable conformance;
+        malformed syntax must not be rewritten or required to lint cleanly.
+        """
+        eligible = []
+        for query in sorted(CASES.rglob("*.ysql")):
+            expectation = query.with_name("expected.json")
+            if not expectation.is_file():
+                raise AssertionError(f"Missing expectation for {query}")
+            document = json.loads(expectation.read_text(encoding="utf-8"))
+            if document.get("outcome") != "error":
+                eligible.append(query)
+        return eligible
+
     def test_normative_corpus_lints(self) -> None:
-        result = invoke("lint", str(CASES))
+        queries = self._format_eligible_queries()
+        self.assertTrue(queries, "No positive normative queries to lint")
+        result = invoke("lint", *(str(query) for query in queries))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_normative_corpus_formatting_is_idempotent(self) -> None:
-        for query in sorted(CASES.rglob("*.ysql")):
+        for query in self._format_eligible_queries():
             with self.subTest(query=query.relative_to(ROOT)):
                 original = query.read_text(encoding="utf-8")
                 first = invoke("format", "-", source=original)

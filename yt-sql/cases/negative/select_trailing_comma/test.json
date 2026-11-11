@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "negative.select_trailing_comma",
+  "description": "Reject select trailing comma.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": []
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "negative.unknown_column",
+  "description": "Reject unknown column.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": []
+}
