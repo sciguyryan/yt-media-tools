@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.lower_kelvin_sign",
+  "description": "Unicode case mapping of Kelvin sign.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.lower"
+  ]
+}

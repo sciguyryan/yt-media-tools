@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.length_regional_indicator",
+  "description": "Flag sequence contains two Unicode scalar values.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.length"
+  ]
+}

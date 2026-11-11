@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.length_arabic",
+  "description": "Arabic script scalar length.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.length"
+  ]
+}

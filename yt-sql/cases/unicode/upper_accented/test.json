@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.upper_accented",
+  "description": "Composed Latin accent uppercase mapping.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper"
+  ]
+}

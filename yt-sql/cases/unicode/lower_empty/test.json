@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.lower_empty",
+  "description": "Empty string lowercasing.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.lower"
+  ]
+}

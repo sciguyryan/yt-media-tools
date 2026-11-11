@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.length_variation_selector",
+  "description": "Variation selector counts as separate scalar value.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.length"
+  ]
+}

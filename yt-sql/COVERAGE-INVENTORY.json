@@ -2118,11 +2118,123 @@
       "path": "yt-sql/cases/unicode/char_unicode/test.json"
     },
     {
+      "id": "unicode.concat_composed_decomposed",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/unicode/concat_composed_decomposed/test.json"
+    },
+    {
+      "id": "unicode.concat_emoji",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/unicode/concat_emoji/test.json"
+    },
+    {
+      "id": "unicode.concat_empty",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/unicode/concat_empty/test.json"
+    },
+    {
+      "id": "unicode.concat_multiscript",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/unicode/concat_multiscript/test.json"
+    },
+    {
+      "id": "unicode.length_arabic",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_arabic/test.json"
+    },
+    {
+      "id": "unicode.length_cjk",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_cjk/test.json"
+    },
+    {
       "id": "unicode.length_codepoints",
       "features": [
         "scalar.length"
       ],
       "path": "yt-sql/cases/unicode/length_codepoints/test.json"
+    },
+    {
+      "id": "unicode.length_crlf",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_crlf/test.json"
+    },
+    {
+      "id": "unicode.length_empty",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_empty/test.json"
+    },
+    {
+      "id": "unicode.length_nonbmp",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_nonbmp/test.json"
+    },
+    {
+      "id": "unicode.length_regional_indicator",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_regional_indicator/test.json"
+    },
+    {
+      "id": "unicode.length_variation_selector",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_variation_selector/test.json"
+    },
+    {
+      "id": "unicode.length_zwj_emoji",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/unicode/length_zwj_emoji/test.json"
+    },
+    {
+      "id": "unicode.lower_accented",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_accented/test.json"
+    },
+    {
+      "id": "unicode.lower_armenian",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_armenian/test.json"
+    },
+    {
+      "id": "unicode.lower_cyrillic",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_cyrillic/test.json"
+    },
+    {
+      "id": "unicode.lower_deseret",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_deseret/test.json"
     },
     {
       "id": "unicode.lower_dotted_i",
@@ -2132,11 +2244,74 @@
       "path": "yt-sql/cases/unicode/lower_dotted_i/test.json"
     },
     {
+      "id": "unicode.lower_emoji_unchanged",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_emoji_unchanged/test.json"
+    },
+    {
+      "id": "unicode.lower_empty",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_empty/test.json"
+    },
+    {
+      "id": "unicode.lower_fullwidth",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_fullwidth/test.json"
+    },
+    {
+      "id": "unicode.lower_greek_omega",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_greek_omega/test.json"
+    },
+    {
+      "id": "unicode.lower_greek_sigma",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_greek_sigma/test.json"
+    },
+    {
+      "id": "unicode.lower_kelvin_sign",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_kelvin_sign/test.json"
+    },
+    {
       "id": "unicode.lower_null",
       "features": [
         "scalar.lower"
       ],
       "path": "yt-sql/cases/unicode/lower_null/test.json"
+    },
+    {
+      "id": "unicode.lower_turkish_capital_i",
+      "features": [
+        "scalar.lower"
+      ],
+      "path": "yt-sql/cases/unicode/lower_turkish_capital_i/test.json"
+    },
+    {
+      "id": "unicode.upper_accented",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_accented/test.json"
+    },
+    {
+      "id": "unicode.upper_armenian",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_armenian/test.json"
     },
     {
       "id": "unicode.upper_composed_accent",
@@ -2146,11 +2321,67 @@
       "path": "yt-sql/cases/unicode/upper_composed_accent/test.json"
     },
     {
+      "id": "unicode.upper_cyrillic",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_cyrillic/test.json"
+    },
+    {
       "id": "unicode.upper_decomposed_accent",
       "features": [
         "scalar.upper"
       ],
       "path": "yt-sql/cases/unicode/upper_decomposed_accent/test.json"
+    },
+    {
+      "id": "unicode.upper_deseret",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_deseret/test.json"
+    },
+    {
+      "id": "unicode.upper_emoji_unchanged",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_emoji_unchanged/test.json"
+    },
+    {
+      "id": "unicode.upper_empty",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_empty/test.json"
+    },
+    {
+      "id": "unicode.upper_fullwidth",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_fullwidth/test.json"
+    },
+    {
+      "id": "unicode.upper_greek_omega",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_greek_omega/test.json"
+    },
+    {
+      "id": "unicode.upper_greek_sigma",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "unicode.upper_ligature",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_ligature/test.json"
     },
     {
       "id": "unicode.upper_null",
@@ -2165,6 +2396,13 @@
         "scalar.upper"
       ],
       "path": "yt-sql/cases/unicode/upper_sharp_s/test.json"
+    },
+    {
+      "id": "unicode.upper_turkish_dotless_i",
+      "features": [
+        "scalar.upper"
+      ],
+      "path": "yt-sql/cases/unicode/upper_turkish_dotless_i/test.json"
     }
   ],
   "coverage_dimensions": [

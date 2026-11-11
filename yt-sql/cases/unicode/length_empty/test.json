@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.length_empty",
+  "description": "Empty Unicode string length is zero.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.length"
+  ]
+}

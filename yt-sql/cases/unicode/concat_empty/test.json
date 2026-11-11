@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.concat_empty",
+  "description": "Empty string concatenation identity.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

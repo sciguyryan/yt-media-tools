@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.lower_turkish_capital_i",
+  "description": "Unicode case conversion independent of Turkish locale.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.lower"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.upper_ligature",
+  "description": "Unicode uppercase expansion of ligature.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper"
+  ]
+}

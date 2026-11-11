@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.length_nonbmp",
+  "description": "Supplementary-plane scalar counts as one character.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.length"
+  ]
+}

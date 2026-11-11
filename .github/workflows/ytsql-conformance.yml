@@ -9,17 +9,26 @@ permissions:
 
 jobs:
   python-conformance:
-    runs-on: ubuntu-latest
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
+      - name: Record runtime Unicode data version
+        run: python -c "import platform, sys, unicodedata; print(platform.platform(), sys.version, 'Unicode', unicodedata.unidata_version)"
       - name: Check approved portable conformance
         run: python yt-sql/run_conformance.py --implementation python --report-file conformance-python.json
       - name: Validate generated conformance report
         if: always()
+        shell: bash
         run: |
           if [ -f conformance-python.json ]; then
             python yt-sql/validate_report.py conformance-python.json
@@ -30,6 +39,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ytsql-python-conformance
+          name: ytsql-python-${{ matrix.os }}-${{ matrix.python-version }}
           path: conformance-python.json
           if-no-files-found: ignore

@@ -1,0 +1,3 @@
+SELECT
+    LOWER('𐐀') AS result
+FROM @yt_sql_fixture LIMIT 1

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.upper_emoji_unchanged",
+  "description": "Non-cased supplementary-plane character remains unchanged.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper"
+  ]
+}

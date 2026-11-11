@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "unicode.concat_composed_decomposed",
+  "description": "Concatenation does not implicitly normalise Unicode.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}
