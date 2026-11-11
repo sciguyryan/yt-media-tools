@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.nested_coalesce_nullif",
+  "description": "Independent conformance for nested coalesce nullif.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.coalesce"
+  ]
+}

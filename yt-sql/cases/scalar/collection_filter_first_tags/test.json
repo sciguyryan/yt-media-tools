@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.collection_filter_first_tags",
+  "description": "Collection collection.filter against the first fixture row with independently enumerated elements.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter"
+  ]
+}

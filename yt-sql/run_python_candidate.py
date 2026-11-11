@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -31,6 +32,15 @@ def _portable(value: object) -> object:
         return value
     if type(value) is int:
         return {"type": "integer", "value": str(value)}
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise AdapterError("non-finite floating-point result")
+        # A binary floating-point result is an approximation. Preserve the
+        # exact represented value rather than silently rounding to a decimal
+        # whose precision would depend on the adapter's formatting policy.
+        return {"type": "decimal", "value": format(Decimal.from_float(value), "f")}
+    if isinstance(value, (list, tuple)):
+        return {"type": "array", "value": [_portable(item) for item in value]}
     if isinstance(value, Decimal):
         if not value.is_finite():
             raise AdapterError("non-finite decimal result")

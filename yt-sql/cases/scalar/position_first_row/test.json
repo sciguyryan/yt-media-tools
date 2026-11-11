@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.position_first_row",
+  "description": "Independent conformance for position first row.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.position"
+  ]
+}

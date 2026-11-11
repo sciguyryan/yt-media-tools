@@ -1,0 +1,3 @@
+SELECT
+    SUM(title) AS result
+FROM @yt_sql_fixture

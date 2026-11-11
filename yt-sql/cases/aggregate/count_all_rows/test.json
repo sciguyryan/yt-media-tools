@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "aggregate.count_all_rows",
+  "description": "Independent conformance for count all rows.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.count"
+  ]
+}

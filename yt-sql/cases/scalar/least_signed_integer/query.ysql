@@ -1,0 +1,3 @@
+SELECT
+    LEAST(-12, 0, 19) AS result
+FROM @yt_sql_fixture LIMIT 1

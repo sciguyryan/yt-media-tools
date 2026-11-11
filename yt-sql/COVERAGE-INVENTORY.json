@@ -1827,6 +1827,55 @@
   },
   "shared_cases": [
     {
+      "id": "aggregate.avg_source_positions",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/aggregate/avg_source_positions/test.json"
+    },
+    {
+      "id": "aggregate.avg_text_type_error",
+      "features": [
+        "aggregate.avg"
+      ],
+      "path": "yt-sql/cases/aggregate/avg_text_type_error/test.json"
+    },
+    {
+      "id": "aggregate.count_all_rows",
+      "features": [
+        "aggregate.count"
+      ],
+      "path": "yt-sql/cases/aggregate/count_all_rows/test.json"
+    },
+    {
+      "id": "aggregate.maximum_source_position",
+      "features": [
+        "aggregate.max"
+      ],
+      "path": "yt-sql/cases/aggregate/maximum_source_position/test.json"
+    },
+    {
+      "id": "aggregate.minimum_source_position",
+      "features": [
+        "aggregate.min"
+      ],
+      "path": "yt-sql/cases/aggregate/minimum_source_position/test.json"
+    },
+    {
+      "id": "aggregate.sum_source_positions",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/aggregate/sum_source_positions/test.json"
+    },
+    {
+      "id": "aggregate.sum_text_type_error",
+      "features": [
+        "aggregate.sum"
+      ],
+      "path": "yt-sql/cases/aggregate/sum_text_type_error/test.json"
+    },
+    {
       "id": "ordering.order_source_position_beyond_end",
       "features": [
         "order_by",
@@ -1896,11 +1945,46 @@
       "path": "yt-sql/cases/ordering/order_tied_view_count_page/test.json"
     },
     {
+      "id": "scalar.cardinality_first_tags",
+      "features": [
+        "scalar.cardinality"
+      ],
+      "path": "yt-sql/cases/scalar/cardinality_first_tags/test.json"
+    },
+    {
+      "id": "scalar.char_multiple_codepoints",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/scalar/char_multiple_codepoints/test.json"
+    },
+    {
       "id": "scalar.coalesce_null_chain",
       "features": [
         "scalar.coalesce"
       ],
       "path": "yt-sql/cases/scalar/coalesce_null_chain/test.json"
+    },
+    {
+      "id": "scalar.collection_filter_first_tags",
+      "features": [
+        "collection.filter"
+      ],
+      "path": "yt-sql/cases/scalar/collection_filter_first_tags/test.json"
+    },
+    {
+      "id": "scalar.collection_map_first_tags",
+      "features": [
+        "collection.map"
+      ],
+      "path": "yt-sql/cases/scalar/collection_map_first_tags/test.json"
+    },
+    {
+      "id": "scalar.concat_nested_null",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/scalar/concat_nested_null/test.json"
     },
     {
       "id": "scalar.concat_null",
@@ -1924,11 +2008,39 @@
       "path": "yt-sql/cases/scalar/greatest_numeric/test.json"
     },
     {
+      "id": "scalar.greatest_text",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/scalar/greatest_text/test.json"
+    },
+    {
       "id": "scalar.least_null",
       "features": [
         "scalar.least"
       ],
       "path": "yt-sql/cases/scalar/least_null/test.json"
+    },
+    {
+      "id": "scalar.least_signed_integer",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/scalar/least_signed_integer/test.json"
+    },
+    {
+      "id": "scalar.length_combining_sequence",
+      "features": [
+        "scalar.length"
+      ],
+      "path": "yt-sql/cases/scalar/length_combining_sequence/test.json"
+    },
+    {
+      "id": "scalar.nested_coalesce_nullif",
+      "features": [
+        "scalar.coalesce"
+      ],
+      "path": "yt-sql/cases/scalar/nested_coalesce_nullif/test.json"
     },
     {
       "id": "scalar.nullif_distinct",
@@ -1943,6 +2055,13 @@
         "scalar.nullif"
       ],
       "path": "yt-sql/cases/scalar/nullif_equal/test.json"
+    },
+    {
+      "id": "scalar.position_first_row",
+      "features": [
+        "scalar.position"
+      ],
+      "path": "yt-sql/cases/scalar/position_first_row/test.json"
     },
     {
       "id": "semantics.comparison_equal",
@@ -1983,6 +2102,13 @@
         "limit"
       ],
       "path": "yt-sql/cases/smoke/source_order_limit/test.json"
+    },
+    {
+      "id": "temporal.upload_date_exact",
+      "features": [
+        "temporal.comparison"
+      ],
+      "path": "yt-sql/cases/temporal/upload_date_exact/test.json"
     },
     {
       "id": "unicode.char_unicode",

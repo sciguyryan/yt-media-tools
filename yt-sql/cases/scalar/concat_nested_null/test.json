@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.concat_nested_null",
+  "description": "Independent conformance for concat nested null.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

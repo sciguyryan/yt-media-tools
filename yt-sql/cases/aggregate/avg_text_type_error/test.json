@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "aggregate.avg_text_type_error",
+  "description": "AVG requires numeric arguments; text is a type error.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.avg"
+  ]
+}

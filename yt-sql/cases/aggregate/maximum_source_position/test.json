@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "aggregate.maximum_source_position",
+  "description": "Independent conformance for maximum source position.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.max"
+  ]
+}

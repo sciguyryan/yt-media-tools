@@ -12,21 +12,81 @@ CONFIG = ROOT / ".sqlfluff-ysql"
 CASES = ROOT / "yt-sql/cases"
 
 
+# Keep one real SQLFluff linter alive for the parser/formatter contract tests.
+# The CLI boundary remains covered by the corpus lint test and a dedicated smoke test.
+from format_safely import ReusableSQLFluff  # noqa: E402
+from sqlfluff.core import FluffConfig, Linter  # noqa: E402
+
+_ENGINE = None
+_SQLITE_ENGINE = None
+
+
 def invoke(command: str, *args: str, source: str | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(LAUNCHER), command, "--config", str(CONFIG), *args],
-        cwd=ROOT,
-        input=source,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    global _ENGINE
+    if command not in {"parse", "format"} or args != ("-",):
+        return subprocess.run(
+            [sys.executable, str(LAUNCHER), command, "--config", str(CONFIG), *args],
+            cwd=ROOT,
+            input=source,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    if _ENGINE is None:
+        _ENGINE = ReusableSQLFluff()
+    try:
+        if command == "parse":
+            _ENGINE.parse(source or "")
+            output = "file:\n"
+        else:
+            output = _ENGINE.format(source or "")
+        return subprocess.CompletedProcess([command], 0, output, "")
+    except ValueError as exc:
+        return subprocess.CompletedProcess([command], 1, "", str(exc))
 
 
 class SQLFluffYTSQLTests(unittest.TestCase):
+    def test_collection_binding_syntax_parses_and_formats(self) -> None:
+        """The custom dialect must preserve both collection binding forms."""
+        from format_safely import format_checked
+
+        if _ENGINE is None:
+            engine = ReusableSQLFluff()
+        else:
+            engine = _ENGINE
+        for query in (
+            "SELECT FILTER(tags AS item WHERE item = 'topic-1') AS result FROM @yt_sql_fixture LIMIT 1\n",
+            "SELECT MAP(tags AS item SELECT UPPER(item)) AS result FROM @yt_sql_fixture LIMIT 1\n",
+        ):
+            with self.subTest(query=query):
+                formatted = format_checked(query, engine=engine)
+                self.assertEqual(formatted, format_checked(formatted, engine=engine))
+
+    def test_cli_parse_and_format_smoke(self) -> None:
+        """Retain genuine subprocess coverage for the SQLFluff entry point."""
+        query = "SELECT id FROM @yt_sql_fixture LIMIT 1\n"
+        for command in ("parse", "format"):
+            result = subprocess.run(
+                [sys.executable, str(LAUNCHER), command, "--config", str(CONFIG), "-"],
+                cwd=ROOT,
+                input=query,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_sqlite_and_ytsql_formatting_parity(self) -> None:
         """Shared SQL constructs must follow the same SQLFluff layout policy."""
-        sqlite_config = ROOT / ".sqlfluff"
+        global _SQLITE_ENGINE
+        if _SQLITE_ENGINE is None:
+            _SQLITE_ENGINE = Linter(config=FluffConfig.from_root(extra_config_path=str(ROOT / ".sqlfluff")))
+
+        def format_sqlite(source: str) -> str:
+            result = _SQLITE_ENGINE.lint_string_wrapped(source, fix=True)
+            self.assertFalse(result.count_tmp_prs_errors()[1], "SQLite SQLFluff parse errors")
+            return result.paths[0].files[0].fix_string()[0]
+
         examples = (
             "SELECT id FROM {source} LIMIT 10\n",
             "SELECT UPPER('straße') AS result FROM {source} LIMIT 1\n",
@@ -37,34 +97,14 @@ class SQLFluffYTSQLTests(unittest.TestCase):
             with self.subTest(template=template):
                 sqlite_source = template.format(source="fixture")
                 ytsql_source = template.format(source="@yt_sql_fixture")
-                sqlite = subprocess.run(
-                    [sys.executable, "-m", "sqlfluff", "format", "--config", str(sqlite_config), "-"],
-                    cwd=ROOT,
-                    input=sqlite_source,
-                    text=True,
-                    capture_output=True,
-                    check=False,
-                )
+                sqlite = format_sqlite(sqlite_source)
                 ytsql = invoke("format", "-", source=ytsql_source)
-                self.assertEqual(sqlite.returncode, 0, sqlite.stdout + sqlite.stderr)
                 self.assertEqual(ytsql.returncode, 0, ytsql.stdout + ytsql.stderr)
-                self.assertEqual(ytsql.stdout.replace("@yt_sql_fixture", "fixture"), sqlite.stdout)
-                self.assertTrue(sqlite.stdout.startswith("SELECT\n    "), sqlite.stdout)
-                for formatted, is_ytsql in ((sqlite.stdout, False), (ytsql.stdout, True)):
-                    again = (
-                        invoke("format", "-", source=formatted)
-                        if is_ytsql
-                        else subprocess.run(
-                            [sys.executable, "-m", "sqlfluff", "format", "--config", str(sqlite_config), "-"],
-                            cwd=ROOT,
-                            input=formatted,
-                            text=True,
-                            capture_output=True,
-                            check=False,
-                        )
-                    )
-                    self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
-                    self.assertEqual(again.stdout, formatted)
+                self.assertEqual(ytsql.stdout.replace("@yt_sql_fixture", "fixture"), sqlite)
+                self.assertTrue(sqlite.startswith("SELECT\n    "), sqlite)
+                for formatted, is_ytsql in ((sqlite, False), (ytsql.stdout, True)):
+                    again = invoke("format", "-", source=formatted).stdout if is_ytsql else format_sqlite(formatted)
+                    self.assertEqual(again, formatted)
 
     def test_normative_corpus_lints(self) -> None:
         result = invoke("lint", str(CASES))

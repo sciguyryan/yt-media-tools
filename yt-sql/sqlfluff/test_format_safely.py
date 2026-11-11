@@ -12,6 +12,30 @@ from yt_media_tools.query_parser import parse_query  # noqa: E402
 
 
 class SafeFormattingTests(unittest.TestCase):
+    def test_reusable_engine_preserves_native_formatting(self) -> None:
+        from format_safely import ReusableSQLFluff
+
+        engine = ReusableSQLFluff()
+        original = "SELECT UPPER('straße') AS result FROM @yt_sql_fixture LIMIT 1\n"
+        actual = format_checked(original, engine=engine)
+        self.assertEqual(actual, format_checked(actual, engine=engine))
+        self.assertIn("'straße'", actual)
+
+    def test_batch_initialises_sqlfluff_once(self) -> None:
+        import tempfile
+        from format_safely import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for index in range(6):
+                (root / f"{index}.ysql").write_text("SELECT\n    id\nFROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
+            with patch("format_safely.ReusableSQLFluff") as factory:
+                factory.return_value.parse.return_value = None
+                factory.return_value.format.side_effect = lambda value: value
+                self.assertEqual(main(["--check", str(root)]), 0)
+                factory.assert_called_once_with()
+                self.assertEqual(factory.return_value.format.call_count, 12)
+
     def test_layout_does_not_change_structural_tree(self) -> None:
         first = "SELECT id FROM @yt_sql_fixture WHERE id = 1 LIMIT 2\n"
         second = "SELECT\n    id FROM @yt_sql_fixture\nWHERE id = 1 LIMIT 2\n"
@@ -102,7 +126,8 @@ class SafeFormattingTests(unittest.TestCase):
             for name in ("a.ysql", "b.ysql"):
                 (root / name).write_text("SELECT id FROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
             with (
-                patch("format_safely.format_checked", side_effect=lambda query: query),
+                patch("format_safely.ReusableSQLFluff"),
+                patch("format_safely.format_checked", side_effect=lambda query, **kwargs: query),
                 patch("format_safely.sys.stderr.isatty", return_value=False),
             ):
                 self.assertEqual(main(["--check", str(root)]), 0)
@@ -115,7 +140,10 @@ class SafeFormattingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             query = Path(directory) / "example.ysql"
             query.write_text("SELECT id FROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
-            with patch("format_safely.format_checked", return_value="SELECT\n    id FROM @yt_sql_fixture LIMIT 1\n"):
+            with (
+                patch("format_safely.ReusableSQLFluff"),
+                patch("format_safely.format_checked", return_value="SELECT\n    id FROM @yt_sql_fixture LIMIT 1\n"),
+            ):
                 self.assertEqual(main(["--check", str(query)]), 1)
             self.assertEqual(query.read_text(encoding="utf-8"), "SELECT id FROM @yt_sql_fixture LIMIT 1\n")
 
@@ -127,7 +155,7 @@ class SafeFormattingTests(unittest.TestCase):
             query = Path(directory) / "example.ysql"
             query.write_text("SELECT id FROM @yt_sql_fixture LIMIT 1\n", encoding="utf-8")
             formatted = "SELECT\n    id FROM @yt_sql_fixture LIMIT 1\n"
-            with patch("format_safely.format_checked", return_value=formatted):
+            with patch("format_safely.ReusableSQLFluff"), patch("format_safely.format_checked", return_value=formatted):
                 self.assertEqual(main(["--write", str(query)]), 0)
             self.assertEqual(query.read_text(encoding="utf-8"), formatted)
 
@@ -139,7 +167,7 @@ class SafeFormattingTests(unittest.TestCase):
             query = Path(directory) / "example.ysql"
             original = "SELECT id FROM @yt_sql_fixture LIMIT 1\n"
             query.write_text(original, encoding="utf-8")
-            with patch("format_safely.format_checked", return_value=original):
+            with patch("format_safely.ReusableSQLFluff"), patch("format_safely.format_checked", return_value=original):
                 self.assertEqual(main(["--check", str(query)]), 0)
 
 

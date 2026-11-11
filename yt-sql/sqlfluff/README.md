@@ -9,7 +9,7 @@ python yt-sql/sqlfluff/run.py parse --config .sqlfluff-ysql yt-sql/cases/unicode
 python yt-sql/sqlfluff/run.py lint --config .sqlfluff-ysql yt-sql/cases/unicode/upper_sharp_s/query.ysql
 ```
 
-The dialect currently inherits SQLite's grammar and adds support for the `@yt_sql_fixture` source reference and the YT-SQL `ILIKE`, `CONTAINS`, `MATCHES` and related negated predicate spellings omitted by SQLFluff's SQLite grammar. This is an initial compatibility scaffold, **not complete YT-SQL syntax support**. Do not enable mandatory linting or automatic formatting for the entire corpus until valid syntax, semantic preservation and idempotence have been verified, including deliberately unusual parser fixtures. SQLFluff must never define YT-SQL validity independently of Discover's parser.
+The dialect currently inherits SQLite's grammar and adds support for the `@yt_sql_fixture` source reference the YT-SQL `ILIKE`, `CONTAINS`, `MATCHES` and related negated predicate spellings omitted by SQLFluff's SQLite grammar, and collection `FILTER`/`MAP` binding expressions. This is an initial compatibility scaffold, **not complete YT-SQL syntax support**. Do not enable mandatory linting or automatic formatting for the entire corpus until valid syntax, semantic preservation and idempotence have been verified, including deliberately unusual parser fixtures. SQLFluff must never define YT-SQL validity independently of Discover's parser.
 
 The normative corpus is checked independently from SQLite SQL in `.github/workflows/ytsql-sql-quality.yml`. Run the same checks locally:
 
@@ -53,7 +53,7 @@ The guarded formatter in `format_safely.py` checks each `.ysql` query with Disco
 
 Run a read-only repository check with `python yt-sql/sqlfluff/format_safely.py yt-sql/cases`. To apply changes after every target has passed validation, use `python yt-sql/sqlfluff/format_safely.py --write path/to/query.ysql`. Only `.ysql` files are accepted. Do not configure editor format-on-save to call SQLFluff's raw `fix` command; use this guarded command only after validating the editor's invocation and file-save behaviour. The command does not provide an editor protocol or an atomic multi-file transaction.
 
-The grammar audit must be run using the Python environment containing SQLFluff 4.4.0. Missing dependencies and launcher exceptions are infrastructure errors, not unsupported grammar cases. The representative 25-query matrix passed parsing in the maintainer's environment; safe formatting of the entire matrix still requires local verification before broad format-on-save is recommended.
+The grammar audit must be run using the Python environment containing SQLFluff 4.4.0. Missing dependencies and launcher exceptions are infrastructure errors, not unsupported grammar cases. The representative 27-query matrix passed parsing in the development environment; safe formatting of the entire matrix still requires local verification before broad format-on-save is recommended.
 
 ## Everyday formatting commands
 
@@ -75,3 +75,9 @@ The repository-level `check` and `format` commands display a dependency-free pro
 ## Formatting layout
 
 SQLFluff 4.4.0 owns all formatting and line-breaking decisions. Both SQLite and YT-SQL configurations set `layout.select_targets.single_target_policy = new_line`, so even single-target `SELECT` clauses use a consistent multiline layout. The configurations also share indentation and line-length settings; YT-SQL’s AM09 exception reflects its semantics rather than a separate visual style. The guarded command validates SQLFluff output but never inserts or adjusts layout itself. SQLFluff may still keep short trailing clauses together where its shared native layout rules permit it. Use `python scripts/ytsql_format.py check` to detect changes and `python scripts/ytsql_format.py format` to apply validated changes recursively to `yt-sql/cases`.
+
+## Batch performance and validation
+
+`format_safely.py` initialises one pinned SQLFluff 4.4.0 linter for a complete batch instead of launching separate parser and formatter subprocesses for every query. Each query still undergoes SQLFluff parsing before and after formatting, independent authoritative-parser structural comparison, exact comment preservation and a second formatting pass to establish idempotence. The grammar audit similarly reuses one linter, and the integration suite retains real CLI smoke tests while sharing an in-process linter for repeated parse/format assertions. These changes improve throughput without removing semantic safeguards.
+
+Benchmark the same corpus and SQLFluff version on the same machine before comparing timings. The observed development-environment results for the earlier 41-query corpus were approximately 3.1 seconds for guarded formatting, 10.7 seconds for the integration suite and 0.6 seconds for the grammar audit. Those figures are not guarantees for CI or larger corpora, and the previous workstation measurements are not a controlled baseline. For large batches, startup amortisation is valuable but each query must still pass every safety check.

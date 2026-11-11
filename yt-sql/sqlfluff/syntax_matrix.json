@@ -101,6 +101,14 @@
     {
       "id": "hex_number",
       "query": "SELECT id FROM @yt_sql_fixture WHERE view_count > 0x10 LIMIT 1\n"
+    },
+    {
+      "id": "collection_filter",
+      "query": "SELECT FILTER(tags AS tag WHERE tag = 'topic-1') AS result FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "collection_map",
+      "query": "SELECT MAP(tags AS tag SELECT UPPER(tag)) AS result FROM @yt_sql_fixture LIMIT 1\n"
     }
   ]
 }

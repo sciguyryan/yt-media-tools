@@ -1,0 +1,4 @@
+SELECT
+    FILTER(tags AS tag WHERE tag = 'topic-1') AS result
+FROM @yt_sql_fixture
+ORDER BY source_index LIMIT 1

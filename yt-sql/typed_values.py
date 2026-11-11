@@ -31,6 +31,8 @@ def _typed(value: object) -> tuple[str, object]:
     if not isinstance(value, dict) or set(value) != {"type", "value"}:
         raise TypedValueError("typed value must contain exactly type and value")
     kind, raw = value["type"], value["value"]
+    if kind == "array" and isinstance(raw, list):
+        return ("array", tuple(_typed(item) for item in raw))
     if kind == "integer" and isinstance(raw, str) and _INTEGER.fullmatch(raw):
         return ("integer", int(raw))
     if kind == "decimal" and isinstance(raw, str) and _DECIMAL.fullmatch(raw):

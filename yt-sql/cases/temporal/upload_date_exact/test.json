@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.upload_date_exact",
+  "description": "Temporal equality for upload_date_exact.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.comparison"
+  ]
+}

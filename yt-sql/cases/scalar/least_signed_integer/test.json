@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.least_signed_integer",
+  "description": "Independent conformance for least signed integer.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.least"
+  ]
+}

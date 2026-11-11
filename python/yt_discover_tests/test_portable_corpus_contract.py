@@ -27,7 +27,12 @@ def corpus(tmp_path: Path) -> Path:
 
 
 def _case(root: Path) -> Path:
-    return next((root / "cases").rglob("expected.json"))
+    """Select a rows-outcome fixture by its behaviour, not filesystem order."""
+    for path in sorted((root / "cases").rglob("expected.json")):
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if value.get("outcome") == "rows" and value.get("rows"):
+            return path
+    raise AssertionError("the test corpus needs a non-empty rows outcome")
 
 
 @pytest.mark.parametrize("change", ["mixed", "missing", "width", "category", "unknown"])

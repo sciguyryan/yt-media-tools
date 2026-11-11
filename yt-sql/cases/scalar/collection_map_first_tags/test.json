@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.collection_map_first_tags",
+  "description": "Collection collection.map against the first fixture row with independently enumerated elements.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

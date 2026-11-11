@@ -41,7 +41,41 @@ def structural_tree(value: object) -> object:
     return value
 
 
-def format_checked(source: str) -> str:
+class ReusableSQLFluff:
+    """Keep the pinned SQLFluff dialect and linter alive across a file batch."""
+
+    def __init__(self) -> None:
+        import importlib.util
+
+        import sqlfluff
+        from sqlfluff.core import FluffConfig, Linter, dialects
+
+        if sqlfluff.__version__ != "4.4.0" or not hasattr(dialects, "_dialect_lookup"):
+            raise RuntimeError("YT-SQL formatting requires compatible SQLFluff 4.4.0")
+        name = "sqlfluff.dialects.dialect_ytsql"
+        if name not in sys.modules:
+            spec = importlib.util.spec_from_file_location(name, HERE / "dialect_ytsql.py")
+            if spec is None or spec.loader is None:
+                raise RuntimeError("Unable to load YT-SQL SQLFluff dialect")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            spec.loader.exec_module(module)
+        dialects._dialect_lookup["ytsql"] = ("dialect_ytsql", "ytsql_dialect")
+        self.linter = Linter(config=FluffConfig.from_root(extra_config_path=str(ROOT / ".sqlfluff-ysql")))
+
+    def parse(self, query: str) -> None:
+        parsed = self.linter.parse_string(query)
+        if parsed.tree is None or parsed.violations:
+            raise ValueError(f"SQLFluff parse failed: {parsed.violations!r}")
+
+    def format(self, query: str) -> str:
+        result = self.linter.lint_string_wrapped(query, fix=True)
+        if result.count_tmp_prs_errors()[1]:
+            raise ValueError("SQLFluff formatting encountered a parse error")
+        return result.paths[0].files[0].fix_string()[0]
+
+
+def format_checked(source: str, *, engine: ReusableSQLFluff | None = None) -> str:
     """Return a verified formatted query or raise without changing the input."""
     original_tree = structural_tree(parse_query(source))
 
@@ -60,9 +94,14 @@ def format_checked(source: str) -> str:
             raise ValueError(f"SQLFluff {command} failed: {(result.stderr + result.stdout)[-1200:]}")
         return result.stdout
 
-    invoke("parse", source)
-    formatted = invoke("format", source)
-    invoke("parse", formatted)
+    if engine is None:
+        invoke("parse", source)
+        formatted = invoke("format", source)
+        invoke("parse", formatted)
+    else:
+        engine.parse(source)
+        formatted = engine.format(source)
+        engine.parse(formatted)
 
     # The AST does not retain comments. Preserve their exact spelling and order
     # separately, including inline comments; reject ambiguous rewrites.
@@ -73,7 +112,7 @@ def format_checked(source: str) -> str:
         raise ValueError("Formatting changed or removed query comments")
     if structural_tree(parse_query(formatted)) != original_tree:
         raise ValueError("Formatting changed the authoritative YT-SQL parse tree")
-    if invoke("format", formatted) != formatted:
+    if (engine.format(formatted) if engine is not None else invoke("format", formatted)) != formatted:
         raise ValueError("SQLFluff formatting is not idempotent")
     return formatted
 
@@ -102,12 +141,17 @@ def main(argv: list[str] | None = None) -> int:
     if not paths or any(path.suffix != ".ysql" or not path.is_file() for path in paths):
         parser.error("Provide existing .ysql files or directories containing them")
     changes = {}
+    try:
+        engine = ReusableSQLFluff()
+    except (ImportError, RuntimeError, ValueError) as exc:
+        print(f"Unable to initialise SQLFluff: {exc}", file=sys.stderr)
+        return 2
     interactive = sys.stderr.isatty() and os.environ.get("CI", "").lower() not in {"1", "true", "yes"}
     _show_progress(0, len(paths), stream=sys.stderr, interactive=interactive)
     for index, path in enumerate(paths, start=1):
         try:
             original = path.read_text(encoding="utf-8")
-            formatted = format_checked(original)
+            formatted = format_checked(original, engine=engine)
             if original != formatted:
                 changes[path] = formatted
         except (ValueError, OSError, RuntimeError) as exc:

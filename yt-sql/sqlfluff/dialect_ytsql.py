@@ -5,7 +5,7 @@ extensions narrow and validate every addition against the portable corpus.
 """
 
 from sqlfluff.core.dialects import load_raw_dialect
-from sqlfluff.core.parser import OneOf, Ref, Sequence
+from sqlfluff.core.parser import Bracketed, OneOf, Ref, Sequence
 
 sqlite = load_raw_dialect("sqlite")
 ytsql_dialect = sqlite.copy_as(
@@ -28,7 +28,9 @@ ytsql_dialect.replace(TableReferenceSegment=TableReferenceSegment)
 
 # SQLite narrows the inherited LIKE grammar to LIKE alone. YT-SQL also
 # supports ILIKE; restore this alternative without changing SQLite linting.
-ytsql_dialect.sets("unreserved_keywords").update({"ILIKE", "CONTAINS", "CONTAIN", "MATCHES", "MATCH", "DOES"})
+ytsql_dialect.sets("unreserved_keywords").update(
+    {"ILIKE", "CONTAINS", "CONTAIN", "MATCHES", "MATCH", "DOES", "FILTER", "MAP"}
+)
 ytsql_dialect.replace(
     LikeGrammar=OneOf("LIKE", "ILIKE", "CONTAINS", "CONTAIN", "MATCHES", "MATCH"),
     LikeExpressionGrammar=Sequence(
@@ -38,3 +40,48 @@ ytsql_dialect.replace(
         Sequence("ESCAPE", Ref("Tail_Recurse_Expression_A_Grammar"), optional=True),
     ),
 )
+
+
+# Collection bindings are a YT-SQL extension to ordinary SQL functions.
+# Keep the standard function_name/function_contents segment shape so SQLFluff
+# layout rules can inspect them without special cases or suppressed checks.
+class CollectionFunctionNameSegment(sqlite.get_segment("FunctionNameSegment")):
+    match_grammar = OneOf("FILTER", "MAP")
+
+
+class CollectionFunctionContentsSegment(sqlite.get_segment("FunctionContentsSegment")):
+    match_grammar = OneOf(
+        Bracketed(
+            Ref("ExpressionSegment"),
+            "AS",
+            Ref("SingleIdentifierGrammar"),
+            "WHERE",
+            Ref("ExpressionSegment"),
+        ),
+        Bracketed(
+            Ref("ExpressionSegment"),
+            "AS",
+            Ref("SingleIdentifierGrammar"),
+            "SELECT",
+            Ref("ExpressionSegment"),
+        ),
+    )
+
+
+ytsql_dialect.add(
+    CollectionFunctionNameSegment=CollectionFunctionNameSegment,
+    CollectionFunctionContentsSegment=CollectionFunctionContentsSegment,
+)
+
+
+class FunctionSegment(sqlite.get_segment("FunctionSegment")):
+    match_grammar = OneOf(
+        Sequence(
+            Ref("CollectionFunctionNameSegment"),
+            Ref("CollectionFunctionContentsSegment"),
+        ),
+        sqlite.get_segment("FunctionSegment").match_grammar,
+    )
+
+
+ytsql_dialect.replace(FunctionSegment=FunctionSegment)

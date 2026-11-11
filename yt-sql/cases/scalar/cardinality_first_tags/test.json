@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.cardinality_first_tags",
+  "description": "Independent conformance for cardinality first tags.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.cardinality"
+  ]
+}

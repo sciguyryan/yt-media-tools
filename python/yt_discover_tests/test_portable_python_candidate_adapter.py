@@ -39,8 +39,14 @@ def test_portable_value_encodings() -> None:
     adapter = _adapter()
     assert adapter._portable(42) == {"type": "integer", "value": "42"}
     assert adapter._portable(True) is True
-    with pytest.raises(adapter.AdapterError, match="unsupported"):
-        adapter._portable(1.25)
+    assert adapter._portable(1.25) == {"type": "decimal", "value": "1.25"}
+    assert adapter._portable([None, 42, "é"]) == {
+        "type": "array",
+        "value": [None, {"type": "integer", "value": "42"}, "é"],
+    }
+    for value in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(adapter.AdapterError, match="non-finite"):
+            adapter._portable(value)
 
 
 def test_lexical_failure_is_portable_syntax(tmp_path: Path) -> None:

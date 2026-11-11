@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "scalar.length_combining_sequence",
+  "description": "Independent conformance for length combining sequence.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.length"
+  ]
+}
