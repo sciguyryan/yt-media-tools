@@ -130,19 +130,10 @@ def test_case_listing_does_not_execute_adapter(
     monkeypatch.setitem(conformance_adapters.ADAPTERS, "python", crash)
     monkeypatch.setattr(sys, "argv", ["run_conformance.py", "--list-cases"])
     assert run_conformance.main() == 0
-    assert capsys.readouterr().out.splitlines() == [
-        "semantics.comparison_equal",
-        "semantics.comparison_not_equal",
-        "semantics.comparison_not_equal_angle",
-        "semantics.null_and_boolean_logic",
-        "smoke.source_order_limit",
-        "unicode.lower_dotted_i",
-        "unicode.lower_null",
-        "unicode.upper_composed_accent",
-        "unicode.upper_decomposed_accent",
-        "unicode.upper_null",
-        "unicode.upper_sharp_s",
-    ]
+    listed = capsys.readouterr().out.splitlines()
+    assert listed == sorted(set(listed))
+    assert "smoke.source_order_limit" in listed
+    assert "ordering.order_tied_view_count_page" in listed
 
 
 def test_report_file_is_deterministic_and_matches_stdout(

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "ordering.order_source_position_page",
+  "description": "One-based source-position ordering across an interior page",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

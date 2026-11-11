@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "ordering.order_tied_view_count",
+  "description": "Deterministic secondary ID key across repeated view-count ties",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit"
+  ]
+}

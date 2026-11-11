@@ -1827,6 +1827,40 @@
   },
   "shared_cases": [
     {
+      "id": "ordering.order_source_position_desc",
+      "features": [
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/ordering/order_source_position_desc/test.json"
+    },
+    {
+      "id": "ordering.order_source_position_page",
+      "features": [
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/ordering/order_source_position_page/test.json"
+    },
+    {
+      "id": "ordering.order_tied_view_count",
+      "features": [
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/ordering/order_tied_view_count/test.json"
+    },
+    {
+      "id": "ordering.order_tied_view_count_page",
+      "features": [
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/ordering/order_tied_view_count_page/test.json"
+    },
+    {
       "id": "semantics.comparison_equal",
       "features": [
         "comparison.eq"

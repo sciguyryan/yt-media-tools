@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "ordering.order_source_position_desc",
+  "description": "Descending source position with an exact top-seven boundary",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit"
+  ]
+}
