@@ -180,8 +180,16 @@ def main(arguments: list[str] | None = None) -> int:
         selected = available
     if Path.cwd().resolve() != ROOT:
         parser.error("Run this command from the repository root")
-    if sys.prefix == sys.base_prefix:
-        parser.error("Activate the repository virtual environment first")
+    # Prefer the repository environment even when the invoking shell has not
+    # activated it. Re-execution also makes imports used by the test preflight
+    # resolve from the same interpreter as the subprocess commands.
+    repository_python = ROOT / ".venv" / "bin" / "python"
+    if os.name == "nt":
+        repository_python = ROOT / ".venv" / "Scripts" / "python.exe"
+    if not repository_python.is_file():
+        parser.error(f"Repository virtual environment not found at {repository_python}; create it first")
+    if Path(sys.prefix).resolve() != (ROOT / ".venv").resolve():
+        os.execv(str(repository_python), [str(repository_python), str(Path(__file__).resolve()), *sys.argv[1:]])
     cache = load_cache()
     if args.failed_only:
         selected = [check for check in selected if cache["checks"].get(check.name, {}).get("status") == "FAIL"]

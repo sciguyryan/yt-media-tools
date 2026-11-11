@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "ordering.order_tied_view_count_ascending_page",
+  "description": "Pagination splits a tied numeric group under an explicit descending tie breaker",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

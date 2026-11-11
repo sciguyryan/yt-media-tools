@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "ordering.order_tied_view_count_ascending",
+  "description": "Ascending numeric ties are resolved by descending identifier",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit"
+  ]
+}

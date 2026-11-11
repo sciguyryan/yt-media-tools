@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "ordering.order_source_position_beyond_end",
+  "description": "Pagination beginning at the end of the source is empty",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

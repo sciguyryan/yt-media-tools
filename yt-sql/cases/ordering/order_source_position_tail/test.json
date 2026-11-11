@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "ordering.order_source_position_tail",
+  "description": "Descending pagination crossing the end returns only remaining rows",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}
