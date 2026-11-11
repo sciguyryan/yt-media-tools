@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "interaction.nested_predicate_with_page",
+  "description": "Exercise adversarial predicate and pagination composition.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "between",
+    "in",
+    "and",
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

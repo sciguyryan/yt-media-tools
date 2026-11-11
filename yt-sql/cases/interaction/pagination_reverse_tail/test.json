@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "interaction.pagination_reverse_tail",
+  "description": "Exercise interacting YT-SQL semantics: order_by, limit, offset.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

@@ -1876,6 +1876,185 @@
       "path": "yt-sql/cases/aggregate/sum_text_type_error/test.json"
     },
     {
+      "id": "interaction.boolean_not_and_page",
+      "features": [
+        "not",
+        "and",
+        "or",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/boolean_not_and_page/test.json"
+    },
+    {
+      "id": "interaction.boolean_or_overlap_dedup",
+      "features": [
+        "between",
+        "or",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/boolean_or_overlap_dedup/test.json"
+    },
+    {
+      "id": "interaction.boolean_parentheses_page",
+      "features": [
+        "and",
+        "or",
+        "parentheses",
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/interaction/boolean_parentheses_page/test.json"
+    },
+    {
+      "id": "interaction.coalesce_nullif_concat",
+      "features": [
+        "coalesce",
+        "nullif",
+        "concat"
+      ],
+      "path": "yt-sql/cases/interaction/coalesce_nullif_concat/test.json"
+    },
+    {
+      "id": "interaction.filter_cardinality",
+      "features": [
+        "cardinality",
+        "filter",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/filter_cardinality/test.json"
+    },
+    {
+      "id": "interaction.filter_then_map",
+      "features": [
+        "filter",
+        "map",
+        "upper",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/filter_then_map/test.json"
+    },
+    {
+      "id": "interaction.greatest_least_nested",
+      "features": [
+        "greatest",
+        "least"
+      ],
+      "path": "yt-sql/cases/interaction/greatest_least_nested/test.json"
+    },
+    {
+      "id": "interaction.map_cardinality",
+      "features": [
+        "cardinality",
+        "map",
+        "upper",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/map_cardinality/test.json"
+    },
+    {
+      "id": "interaction.map_then_filter",
+      "features": [
+        "filter",
+        "map",
+        "upper",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/map_then_filter/test.json"
+    },
+    {
+      "id": "interaction.nested_casefold_length",
+      "features": [
+        "length",
+        "upper",
+        "lower"
+      ],
+      "path": "yt-sql/cases/interaction/nested_casefold_length/test.json"
+    },
+    {
+      "id": "interaction.nested_predicate_with_page",
+      "features": [
+        "between",
+        "in",
+        "and",
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/interaction/nested_predicate_with_page/test.json"
+    },
+    {
+      "id": "interaction.nested_unicode_concat",
+      "features": [
+        "concat",
+        "upper",
+        "lower",
+        "char"
+      ],
+      "path": "yt-sql/cases/interaction/nested_unicode_concat/test.json"
+    },
+    {
+      "id": "interaction.null_chain_fallback",
+      "features": [
+        "coalesce",
+        "nullif"
+      ],
+      "path": "yt-sql/cases/interaction/null_chain_fallback/test.json"
+    },
+    {
+      "id": "interaction.null_predicate_disjunction",
+      "features": [
+        "is_null",
+        "or",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/interaction/null_predicate_disjunction/test.json"
+    },
+    {
+      "id": "interaction.null_through_nested_scalar",
+      "features": [
+        "length",
+        "coalesce",
+        "nullif"
+      ],
+      "path": "yt-sql/cases/interaction/null_through_nested_scalar/test.json"
+    },
+    {
+      "id": "interaction.pagination_last_row",
+      "features": [
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/interaction/pagination_last_row/test.json"
+    },
+    {
+      "id": "interaction.pagination_reverse_tail",
+      "features": [
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/interaction/pagination_reverse_tail/test.json"
+    },
+    {
+      "id": "interaction.predicate_empty_page",
+      "features": [
+        "and",
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/interaction/predicate_empty_page/test.json"
+    },
+    {
       "id": "negative.invalid_count_text",
       "features": [],
       "path": "yt-sql/cases/negative/invalid_count_text/test.json"

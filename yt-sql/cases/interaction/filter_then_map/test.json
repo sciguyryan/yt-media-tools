@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "interaction.filter_then_map",
+  "description": "Exercise interacting YT-SQL semantics: filter, map, upper, order_by, limit.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "filter",
+    "map",
+    "upper",
+    "order_by",
+    "limit"
+  ]
+}

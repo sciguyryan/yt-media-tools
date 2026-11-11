@@ -1,0 +1,3 @@
+SELECT
+    COALESCE(NULLIF('same', 'same'), CONCAT('fallback', '-', '🦉')) AS result
+FROM @yt_sql_fixture LIMIT 1

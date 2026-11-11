@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "interaction.map_cardinality",
+  "description": "Exercise interacting YT-SQL semantics: cardinality, map, upper, order_by, limit.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "cardinality",
+    "map",
+    "upper",
+    "order_by",
+    "limit"
+  ]
+}

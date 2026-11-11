@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "interaction.coalesce_nullif_concat",
+  "description": "Exercise interacting YT-SQL semantics: coalesce, nullif, concat.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "coalesce",
+    "nullif",
+    "concat"
+  ]
+}

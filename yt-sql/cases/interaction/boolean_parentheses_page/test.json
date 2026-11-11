@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "interaction.boolean_parentheses_page",
+  "description": "Exercise adversarial predicate and pagination composition.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "and",
+    "or",
+    "parentheses",
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

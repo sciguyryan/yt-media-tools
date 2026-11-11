@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "interaction.nested_casefold_length",
+  "description": "Exercise interacting YT-SQL semantics: length, upper, lower.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "length",
+    "upper",
+    "lower"
+  ]
+}

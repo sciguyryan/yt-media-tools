@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "interaction.greatest_least_nested",
+  "description": "Exercise interacting YT-SQL semantics: greatest, least.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "greatest",
+    "least"
+  ]
+}

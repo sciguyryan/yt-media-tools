@@ -1,0 +1,7 @@
+# Phase 4.2 - Interaction and adversarial conformance
+
+This increment adds 18 independently authored portable expectations for combinations of scalar functions, nested collection transformations, Boolean grouping, range and membership predicates, NULL propagation, Unicode, ordering and pagination. The queries execute against the canonical static `python-v6-small` fixture. Their expectations are committed separately and are not generated from engine output.
+
+The interaction batch exercises both composition orders of `MAP` and `FILTER`, `CARDINALITY` over transformed collections, nested `COALESCE`/`NULLIF`, case conversion with Unicode and `CHAR`, overlapping disjunctions, exclusion predicates, empty pages, and boundaries at the end of a 60-record source.
+
+These tests do not yet establish exhaustive interaction coverage. In particular, JOIN/CTE/set-operation combinations, multi-source acquisition, grouped aggregate/HAVING interactions, complex temporal expressions, and deeply nested query plans still require explicit normative cases or an independently documented limitation. The diagnostic-contract discrepancies identified in Phase 4.1 remain unresolved. Do not retire legacy semantic tests on the strength of this increment alone. Phase 5 must add differential/metamorphic and cross-platform evidence, and Phase 6 must verify every supported function and statement before legacy retirement.

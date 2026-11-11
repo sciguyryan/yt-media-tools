@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "interaction.null_predicate_disjunction",
+  "description": "Exercise adversarial predicate and pagination composition.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "is_null",
+    "or",
+    "order_by",
+    "limit"
+  ]
+}

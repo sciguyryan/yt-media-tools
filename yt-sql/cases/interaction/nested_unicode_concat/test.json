@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "interaction.nested_unicode_concat",
+  "description": "Exercise interacting YT-SQL semantics: concat, upper, lower, char.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "concat",
+    "upper",
+    "lower",
+    "char"
+  ]
+}
