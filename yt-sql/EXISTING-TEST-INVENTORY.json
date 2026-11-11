@@ -507,6 +507,7 @@
     "python/yt_discover_tests/test_portable_grammar_reconciliation.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_language_element_registry.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_language_surface_audit.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_portable_metamorphic.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_operator_spelling_audit.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_outcome_comparison.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_portable_parameters.py": "retain: implementation/integration pending review",

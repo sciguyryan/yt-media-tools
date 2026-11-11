@@ -4,6 +4,9 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [test] Check approved portable YT-SQL cases under surrounding-whitespace and CRLF transport variations against independently authored outcomes.
+- [docs] Define the narrow Phase 5.3 metamorphic scope and retain the cross-platform and Phase 6 coverage limitations.
+
 - [cli] Add repeatable `--retryable-http-status CODE` temporary-failure signalling for caller-selected HTTP client errors.
 - [observability] Detect configured statuses across yt-dlp, YouTube.js and ytmusicapi boundaries while preserving external diagnostics and normal cache maintenance.
 - [test] Cover status validation, narrow diagnostic recognition, structured exception status discovery and exit-status translation.
