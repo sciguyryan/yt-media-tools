@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_invalid_numeric_field",
+  "description": "Portable POSITION or text-function contract: length invalid numeric field.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

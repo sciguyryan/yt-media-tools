@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_in_arithmetic",
+  "description": "Portable POSITION or text-function contract: position in arithmetic.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

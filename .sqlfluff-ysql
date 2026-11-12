@@ -6,7 +6,8 @@ sql_file_exts = .ysql
 max_line_length = 120
 # Unordered LIMIT is valid YT-SQL. CV04 rewrites COUNT(1) to COUNT(*),
 # changing the authoritative parse tree; keep literal arguments intact.
-exclude_rules = LT05, AM09, CV04
+# ST06 reorders SELECT targets, changing positional output-column semantics.
+exclude_rules = LT05, AM09, CV04, ST06
 
 [sqlfluff:indentation]
 indent_unit = space

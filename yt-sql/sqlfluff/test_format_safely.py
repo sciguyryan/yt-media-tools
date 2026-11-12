@@ -34,6 +34,17 @@ class SafeFormattingTests(unittest.TestCase):
                 self.assertEqual(structural_tree(parse_query(source)), structural_tree(parse_query(formatted)))
                 self.assertEqual(formatted, format_checked(formatted, engine=engine))
 
+    def test_select_projection_order_is_not_rewritten(self) -> None:
+        """ST06 is unsafe because SELECT column order is observable."""
+        from format_safely import ReusableSQLFluff
+
+        source = "SELECT POSITION() AS position, id FROM @yt_sql_fixture ORDER BY source_index LIMIT 2 OFFSET 1\n"
+        engine = ReusableSQLFluff()
+        formatted = format_checked(source, engine=engine)
+        self.assertEqual(structural_tree(parse_query(source)), structural_tree(parse_query(formatted)))
+        self.assertLess(formatted.index("POSITION()"), formatted.index("id"))
+        self.assertEqual(formatted, format_checked(formatted, engine=engine))
+
     def test_comment_markers_inside_literals_are_not_comments(self) -> None:
         self.assertEqual(_query_comments("SELECT 'video # title' AS result\n"), [])
         self.assertEqual(_query_comments("SELECT 'a--b', \"#quoted\" FROM @yt_sql_fixture\n"), [])

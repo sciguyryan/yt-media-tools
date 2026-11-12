@@ -1,0 +1,1 @@
+SELECT COALESCE(POSITION(), 1) FROM @yt_sql_fixture

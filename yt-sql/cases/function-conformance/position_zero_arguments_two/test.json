@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_zero_arguments_two",
+  "description": "Portable POSITION or text-function contract: position zero arguments two.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

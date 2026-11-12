@@ -2733,6 +2733,13 @@
       "path": "yt-sql/cases/function-conformance/length_fixture_family/test.json"
     },
     {
+      "id": "function-conformance.length_invalid_numeric_field",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_invalid_numeric_field/test.json"
+    },
+    {
       "id": "function-conformance.length_null",
       "features": [
         "projection.length"
@@ -2816,6 +2823,13 @@
         "projection.lower"
       ],
       "path": "yt-sql/cases/function-conformance/lower_greek_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.lower_invalid_numeric_field",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_invalid_numeric_field/test.json"
     },
     {
       "id": "function-conformance.lower_kelvin",
@@ -3049,6 +3063,27 @@
       "path": "yt-sql/cases/function-conformance/nullif_zero/test.json"
     },
     {
+      "id": "function-conformance.position_argument_identifier",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_argument_identifier/test.json"
+    },
+    {
+      "id": "function-conformance.position_descending_order",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_descending_order/test.json"
+    },
+    {
+      "id": "function-conformance.position_empty_result",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_empty_result/test.json"
+    },
+    {
       "id": "function-conformance.position_first",
       "features": [
         "result.position"
@@ -3056,11 +3091,67 @@
       "path": "yt-sql/cases/function-conformance/position_first/test.json"
     },
     {
+      "id": "function-conformance.position_in_arithmetic",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_in_arithmetic/test.json"
+    },
+    {
+      "id": "function-conformance.position_in_group",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_in_group/test.json"
+    },
+    {
+      "id": "function-conformance.position_in_order",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_in_order/test.json"
+    },
+    {
+      "id": "function-conformance.position_in_where",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_in_where/test.json"
+    },
+    {
+      "id": "function-conformance.position_nested_coalesce",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_nested_coalesce/test.json"
+    },
+    {
       "id": "function-conformance.position_one",
       "features": [
         "result.position"
       ],
       "path": "yt-sql/cases/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "function-conformance.position_order_alias",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_order_alias/test.json"
+    },
+    {
+      "id": "function-conformance.position_second_after_offset",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_second_after_offset/test.json"
+    },
+    {
+      "id": "function-conformance.position_zero_arguments_two",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_zero_arguments_two/test.json"
     },
     {
       "id": "function-conformance.random_seeded_range",
@@ -3150,6 +3241,13 @@
         "projection.upper"
       ],
       "path": "yt-sql/cases/function-conformance/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.upper_invalid_numeric_field",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_invalid_numeric_field/test.json"
     },
     {
       "id": "function-conformance.upper_lower_nested",

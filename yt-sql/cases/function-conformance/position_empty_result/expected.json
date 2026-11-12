@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "position",
+    "id"
+  ],
+  "rows": []
+}

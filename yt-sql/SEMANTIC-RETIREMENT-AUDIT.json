@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 608,
+    "normative_manifests": 622,
     "legacy_test_files": 224,
     "test_functions": 1695,
-    "assertion_sites": 4216
+    "assertion_sites": 4215
   },
   "normative_cases": [
     {
@@ -529,6 +529,10 @@
       "manifest": "yt-sql/cases/function-conformance/length_fixture_family/test.json"
     },
     {
+      "id": "function-conformance.length_invalid_numeric_field",
+      "manifest": "yt-sql/cases/function-conformance/length_invalid_numeric_field/test.json"
+    },
+    {
       "id": "function-conformance.length_null",
       "manifest": "yt-sql/cases/function-conformance/length_null/test.json"
     },
@@ -575,6 +579,10 @@
     {
       "id": "function-conformance.lower_greek_sigma",
       "manifest": "yt-sql/cases/function-conformance/lower_greek_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.lower_invalid_numeric_field",
+      "manifest": "yt-sql/cases/function-conformance/lower_invalid_numeric_field/test.json"
     },
     {
       "id": "function-conformance.lower_kelvin",
@@ -705,12 +713,56 @@
       "manifest": "yt-sql/cases/function-conformance/nullif_zero/test.json"
     },
     {
+      "id": "function-conformance.position_argument_identifier",
+      "manifest": "yt-sql/cases/function-conformance/position_argument_identifier/test.json"
+    },
+    {
+      "id": "function-conformance.position_descending_order",
+      "manifest": "yt-sql/cases/function-conformance/position_descending_order/test.json"
+    },
+    {
+      "id": "function-conformance.position_empty_result",
+      "manifest": "yt-sql/cases/function-conformance/position_empty_result/test.json"
+    },
+    {
       "id": "function-conformance.position_first",
       "manifest": "yt-sql/cases/function-conformance/position_first/test.json"
     },
     {
+      "id": "function-conformance.position_in_arithmetic",
+      "manifest": "yt-sql/cases/function-conformance/position_in_arithmetic/test.json"
+    },
+    {
+      "id": "function-conformance.position_in_group",
+      "manifest": "yt-sql/cases/function-conformance/position_in_group/test.json"
+    },
+    {
+      "id": "function-conformance.position_in_order",
+      "manifest": "yt-sql/cases/function-conformance/position_in_order/test.json"
+    },
+    {
+      "id": "function-conformance.position_in_where",
+      "manifest": "yt-sql/cases/function-conformance/position_in_where/test.json"
+    },
+    {
+      "id": "function-conformance.position_nested_coalesce",
+      "manifest": "yt-sql/cases/function-conformance/position_nested_coalesce/test.json"
+    },
+    {
       "id": "function-conformance.position_one",
       "manifest": "yt-sql/cases/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "function-conformance.position_order_alias",
+      "manifest": "yt-sql/cases/function-conformance/position_order_alias/test.json"
+    },
+    {
+      "id": "function-conformance.position_second_after_offset",
+      "manifest": "yt-sql/cases/function-conformance/position_second_after_offset/test.json"
+    },
+    {
+      "id": "function-conformance.position_zero_arguments_two",
+      "manifest": "yt-sql/cases/function-conformance/position_zero_arguments_two/test.json"
     },
     {
       "id": "function-conformance.random_seeded_range",
@@ -763,6 +815,10 @@
     {
       "id": "function-conformance.upper_greek_sigma",
       "manifest": "yt-sql/cases/function-conformance/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.upper_invalid_numeric_field",
+      "manifest": "yt-sql/cases/function-conformance/upper_invalid_numeric_field/test.json"
     },
     {
       "id": "function-conformance.upper_lower_nested",
@@ -27453,19 +27509,6 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_position_numbers_after_ordering_before_offset_and_limit",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_position_numbers_aggregate_result",
           "assertion_sites": [
             {
@@ -27487,6 +27530,16 @@
         },
         {
           "name": "test_position_order_and_slice_differential",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_position_projection_does_not_mutate_source_records",
           "assertion_sites": [
             {
               "kind": "assert"
@@ -42773,6 +42826,14 @@
         "function-conformance.lower_fixture_greek",
         "function-conformance.lower_fixture_turkish",
         "function-conformance.upper_fixture_german"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_numbers_after_ordering_before_offset_and_limit",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_second_after_offset"
       ]
     }
   ],

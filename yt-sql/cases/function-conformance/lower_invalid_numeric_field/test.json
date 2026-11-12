@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.lower_invalid_numeric_field",
+  "description": "Portable POSITION or text-function contract: lower invalid numeric field.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower"
+  ]
+}

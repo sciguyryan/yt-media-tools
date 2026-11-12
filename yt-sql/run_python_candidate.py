@@ -186,8 +186,11 @@ def observe(
             "non-numeric-aggregate",
             "invalid-char-codepoint",
             "invalid-concat-argument",
+            "invalid-text-function-argument",
         }:
             return _validate({"version": 1, "outcome": "error", "error": {"category": "type"}})
+        if exc.context.category == "semantic" and exc.context.reason == "invalid-position-placement":
+            return _validate({"version": 1, "outcome": "error", "error": {"category": "syntax"}})
         raise AdapterError(
             f"unclassified Python language diagnostic: {exc.context.category}/{exc.context.reason}"
         ) from exc

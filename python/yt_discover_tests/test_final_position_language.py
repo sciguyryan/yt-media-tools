@@ -42,14 +42,16 @@ def test_position_is_rejected_outside_standalone_projection(sql):
         resolve_query(query, QuerySchema([{"id": "a"}]))
 
 
-def test_position_numbers_after_ordering_before_offset_and_limit():
+def test_position_projection_does_not_mutate_source_records():
+    """Keep implementation-specific source immutability outside portable fixtures."""
     from yt_media_tools.query_evaluator import apply_query
 
     records = [{"id": "c"}, {"id": "a"}, {"id": "d"}, {"id": "b"}]
-    sql = "SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1"
-    resolved = resolve_query(parse_query(sql), QuerySchema(records))
-    result = apply_query(records, resolved)
-    assert [(row["position"], row["id"]) for row in result] == [(2, "b"), (3, "c")]
+    resolved = resolve_query(
+        parse_query("SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1"),
+        QuerySchema(records),
+    )
+    apply_query(records, resolved)
     assert all("position" not in row for row in records)
 
 

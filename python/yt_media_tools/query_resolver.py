@@ -752,12 +752,22 @@ def _resolve_scalar_expression(
         if expression.name in {"LOWER", "UPPER"}:
             kind = _scalar_kind(args[0])
             if kind not in {"string", "mixed", "unknown", None}:
-                raise QuerySemanticError(source, f"{expression.name} requires a text field.", expression.position)
+                raise QuerySemanticError(
+                    source,
+                    f"{expression.name} requires a text field.",
+                    expression.position,
+                    reason="invalid-text-function-argument",
+                )
             result_kind = "string"
         elif expression.name == "LENGTH":
             kind = _scalar_kind(args[0])
             if kind not in {"string", "mixed", "unknown", None}:
-                raise QuerySemanticError(source, "LENGTH requires a text value.", expression.position)
+                raise QuerySemanticError(
+                    source,
+                    "LENGTH requires a text value.",
+                    expression.position,
+                    reason="invalid-text-function-argument",
+                )
             result_kind = "integer"
         elif expression.name == "CARDINALITY":
             collection_type = _scalar_query_type(args[0], schema)
@@ -1184,6 +1194,7 @@ def _validate_position_placement(query: Query) -> None:
                 query.source,
                 "ORDER BY cannot depend on a POSITION() projection.",
                 order.position,
+                reason="invalid-position-placement",
             )
     for node in walk_ast(query, descend=lambda node: node is query or not isinstance(node, Query)):
         if not isinstance(node, ScalarFunction) or node.name != "POSITION":
@@ -1193,6 +1204,7 @@ def _validate_position_placement(query: Query) -> None:
                 query.source,
                 "POSITION() is allowed only as a standalone final SELECT projection.",
                 node.position,
+                reason="invalid-position-placement",
             )
 
 

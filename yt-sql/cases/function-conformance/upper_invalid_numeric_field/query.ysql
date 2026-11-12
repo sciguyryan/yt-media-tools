@@ -1,0 +1,1 @@
+SELECT UPPER(view_count) FROM @yt_sql_fixture
