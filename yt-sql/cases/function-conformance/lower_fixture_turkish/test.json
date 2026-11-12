@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.lower_fixture_turkish",
+  "description": "Reviewed field-based Unicode behaviour: lower fixture turkish",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower"
+  ]
+}

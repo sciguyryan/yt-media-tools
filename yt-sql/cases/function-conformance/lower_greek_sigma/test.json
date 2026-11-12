@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.lower_greek_sigma",
+  "description": "Reviewed Unicode/text obligation: lower greek sigma",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower"
+  ]
+}

@@ -14,7 +14,7 @@ from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.output import write_records
-from yt_media_tools.query import apply_query, evaluate_scalar_expression, parse_query, resolve_query
+from yt_media_tools.query import apply_query, parse_query, resolve_query
 from yt_media_tools.schema import QuerySchema
 
 
@@ -85,35 +85,6 @@ def test_matches_handles_non_latin_scripts_and_supplementary_characters() -> Non
         "vid051",
         "vid056",
     ]
-
-
-def test_lower_upper_and_length_follow_python_unicode_string_semantics() -> None:
-    records, _, resolved = _resolve(
-        "SELECT id, LOWER(title) AS lo, UPPER(title) AS hi, LENGTH(title) AS n "
-        "FROM @yt_sql_fixture WHERE id IN ('vid038','vid041','vid044','vid045','vid046') ORDER BY source_index"
-    )
-    selected = apply_query(records, resolved)
-    projected = [
-        {
-            "id": row["id"],
-            "lo": evaluate_scalar_expression(
-                next(term for term in resolved.select if term.output_name == "lo").expression, row
-            ),
-            "hi": evaluate_scalar_expression(
-                next(term for term in resolved.select if term.output_name == "hi").expression, row
-            ),
-            "n": evaluate_scalar_expression(
-                next(term for term in resolved.select if term.output_name == "n").expression, row
-            ),
-        }
-        for row in selected
-    ]
-    by_id = {row["id"]: row for row in projected}
-    assert by_id["vid038"]["n"] == len("Café decomposed é")
-    assert by_id["vid041"]["n"] == len("Emoji family 👩‍👩‍👧‍👦")
-    assert by_id["vid044"]["lo"] == "Greek Σ σ ς".lower()
-    assert by_id["vid045"]["lo"] == "Turkish İ I ı i".lower()
-    assert by_id["vid046"]["hi"] == "German Straße STRASSE".upper()
 
 
 def test_ordering_uses_unmodified_unicode_string_values() -> None:

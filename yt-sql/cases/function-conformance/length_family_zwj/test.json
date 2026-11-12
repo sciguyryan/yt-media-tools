@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_family_zwj",
+  "description": "Reviewed Unicode/text obligation: length family zwj",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

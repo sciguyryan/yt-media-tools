@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_char_combining",
+  "description": "Reviewed Unicode/text obligation: concat char combining",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.concat"
+  ]
+}

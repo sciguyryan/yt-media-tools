@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_decomposed_accent",
+  "description": "Reviewed Unicode/text obligation: length decomposed accent",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

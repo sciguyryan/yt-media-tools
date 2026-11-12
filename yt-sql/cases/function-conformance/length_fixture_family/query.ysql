@@ -1,0 +1,4 @@
+SELECT
+    LENGTH(title) AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid041'

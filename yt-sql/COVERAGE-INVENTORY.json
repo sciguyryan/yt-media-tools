@@ -2242,6 +2242,13 @@
       "path": "yt-sql/cases/function-conformance/char_upper/test.json"
     },
     {
+      "id": "function-conformance.char_upper_expansion",
+      "features": [
+        "projection.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_upper_expansion/test.json"
+    },
+    {
       "id": "function-conformance.char_upper_sharp_s",
       "features": [
         "scalar.char"
@@ -2354,6 +2361,13 @@
         "projection.coalesce"
       ],
       "path": "yt-sql/cases/function-conformance/coalesce_zero/test.json"
+    },
+    {
+      "id": "function-conformance.concat_char_combining",
+      "features": [
+        "projection.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_char_combining/test.json"
     },
     {
       "id": "function-conformance.concat_empty",
@@ -2648,6 +2662,13 @@
       "path": "yt-sql/cases/function-conformance/length_combining/test.json"
     },
     {
+      "id": "function-conformance.length_composed_accent",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_composed_accent/test.json"
+    },
+    {
       "id": "function-conformance.length_concat",
       "features": [
         "projection.length",
@@ -2656,11 +2677,25 @@
       "path": "yt-sql/cases/function-conformance/length_concat/test.json"
     },
     {
+      "id": "function-conformance.length_decomposed_accent",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_decomposed_accent/test.json"
+    },
+    {
       "id": "function-conformance.length_emoji",
       "features": [
         "projection.length"
       ],
       "path": "yt-sql/cases/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.length_emoji_flag",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_emoji_flag/test.json"
     },
     {
       "id": "function-conformance.length_emoji_pair",
@@ -2677,11 +2712,46 @@
       "path": "yt-sql/cases/function-conformance/length_empty/test.json"
     },
     {
+      "id": "function-conformance.length_family_zwj",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_family_zwj/test.json"
+    },
+    {
+      "id": "function-conformance.length_fixture_decomposed",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_fixture_decomposed/test.json"
+    },
+    {
+      "id": "function-conformance.length_fixture_family",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_fixture_family/test.json"
+    },
+    {
       "id": "function-conformance.length_null",
       "features": [
         "projection.length"
       ],
       "path": "yt-sql/cases/function-conformance/length_null/test.json"
+    },
+    {
+      "id": "function-conformance.length_null_chain",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_null_chain/test.json"
+    },
+    {
+      "id": "function-conformance.length_turkish_dotted_i",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_turkish_dotted_i/test.json"
     },
     {
       "id": "function-conformance.length_two",
@@ -2727,6 +2797,27 @@
       "path": "yt-sql/cases/function-conformance/lower_empty/test.json"
     },
     {
+      "id": "function-conformance.lower_fixture_greek",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_fixture_greek/test.json"
+    },
+    {
+      "id": "function-conformance.lower_fixture_turkish",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_fixture_turkish/test.json"
+    },
+    {
+      "id": "function-conformance.lower_greek_sigma",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_greek_sigma/test.json"
+    },
+    {
       "id": "function-conformance.lower_kelvin",
       "features": [
         "projection.lower"
@@ -2755,6 +2846,20 @@
       "path": "yt-sql/cases/function-conformance/lower_punctuation/test.json"
     },
     {
+      "id": "function-conformance.lower_sharp_s",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.lower_turkish_dotted_i",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_turkish_dotted_i/test.json"
+    },
+    {
       "id": "function-conformance.lower_two",
       "features": [
         "projection.lower"
@@ -2767,6 +2872,13 @@
         "projection.lower"
       ],
       "path": "yt-sql/cases/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "function-conformance.lower_upper_nested",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_upper_nested/test.json"
     },
     {
       "id": "function-conformance.lower_zero",
@@ -3019,6 +3131,34 @@
       "path": "yt-sql/cases/function-conformance/upper_empty/test.json"
     },
     {
+      "id": "function-conformance.upper_fixture_german",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_fixture_german/test.json"
+    },
+    {
+      "id": "function-conformance.upper_german_street",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_german_street/test.json"
+    },
+    {
+      "id": "function-conformance.upper_greek_sigma",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.upper_lower_nested",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_lower_nested/test.json"
+    },
+    {
       "id": "function-conformance.upper_mixed",
       "features": [
         "projection.upper"
@@ -3045,6 +3185,13 @@
         "projection.upper"
       ],
       "path": "yt-sql/cases/function-conformance/upper_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.upper_turkish_dotless_i",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_turkish_dotless_i/test.json"
     },
     {
       "id": "function-conformance.upper_two",

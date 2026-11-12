@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "result"
+  ],
+  "rows": [
+    [
+      "turkish i̇ i ı i"
+    ]
+  ]
+}

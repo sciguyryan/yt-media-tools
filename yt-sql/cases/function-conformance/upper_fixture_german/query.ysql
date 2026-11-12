@@ -1,0 +1,4 @@
+SELECT
+    UPPER(title) AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid046'

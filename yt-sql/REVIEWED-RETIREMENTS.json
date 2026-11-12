@@ -98,6 +98,18 @@
       "case_ids": [
         "function-conformance.concat_field_projection_order"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_lower_upper_and_length_follow_python_unicode_string_semantics",
+      "assertions": 5,
+      "case_ids": [
+        "function-conformance.length_fixture_decomposed",
+        "function-conformance.length_fixture_family",
+        "function-conformance.lower_fixture_greek",
+        "function-conformance.lower_fixture_turkish",
+        "function-conformance.upper_fixture_german"
+      ]
     }
   ],
   "module_reviews": [

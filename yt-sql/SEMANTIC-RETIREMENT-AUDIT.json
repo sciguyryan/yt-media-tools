@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 587,
+    "normative_manifests": 608,
     "legacy_test_files": 224,
-    "test_functions": 1696,
-    "assertion_sites": 4221
+    "test_functions": 1695,
+    "assertion_sites": 4216
   },
   "normative_cases": [
     {
@@ -253,6 +253,10 @@
       "manifest": "yt-sql/cases/function-conformance/char_upper/test.json"
     },
     {
+      "id": "function-conformance.char_upper_expansion",
+      "manifest": "yt-sql/cases/function-conformance/char_upper_expansion/test.json"
+    },
+    {
       "id": "function-conformance.char_upper_sharp_s",
       "manifest": "yt-sql/cases/function-conformance/char_upper_sharp_s/test.json"
     },
@@ -315,6 +319,10 @@
     {
       "id": "function-conformance.coalesce_zero",
       "manifest": "yt-sql/cases/function-conformance/coalesce_zero/test.json"
+    },
+    {
+      "id": "function-conformance.concat_char_combining",
+      "manifest": "yt-sql/cases/function-conformance/concat_char_combining/test.json"
     },
     {
       "id": "function-conformance.concat_empty",
@@ -481,12 +489,24 @@
       "manifest": "yt-sql/cases/function-conformance/length_combining/test.json"
     },
     {
+      "id": "function-conformance.length_composed_accent",
+      "manifest": "yt-sql/cases/function-conformance/length_composed_accent/test.json"
+    },
+    {
       "id": "function-conformance.length_concat",
       "manifest": "yt-sql/cases/function-conformance/length_concat/test.json"
     },
     {
+      "id": "function-conformance.length_decomposed_accent",
+      "manifest": "yt-sql/cases/function-conformance/length_decomposed_accent/test.json"
+    },
+    {
       "id": "function-conformance.length_emoji",
       "manifest": "yt-sql/cases/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.length_emoji_flag",
+      "manifest": "yt-sql/cases/function-conformance/length_emoji_flag/test.json"
     },
     {
       "id": "function-conformance.length_emoji_pair",
@@ -497,8 +517,28 @@
       "manifest": "yt-sql/cases/function-conformance/length_empty/test.json"
     },
     {
+      "id": "function-conformance.length_family_zwj",
+      "manifest": "yt-sql/cases/function-conformance/length_family_zwj/test.json"
+    },
+    {
+      "id": "function-conformance.length_fixture_decomposed",
+      "manifest": "yt-sql/cases/function-conformance/length_fixture_decomposed/test.json"
+    },
+    {
+      "id": "function-conformance.length_fixture_family",
+      "manifest": "yt-sql/cases/function-conformance/length_fixture_family/test.json"
+    },
+    {
       "id": "function-conformance.length_null",
       "manifest": "yt-sql/cases/function-conformance/length_null/test.json"
+    },
+    {
+      "id": "function-conformance.length_null_chain",
+      "manifest": "yt-sql/cases/function-conformance/length_null_chain/test.json"
+    },
+    {
+      "id": "function-conformance.length_turkish_dotted_i",
+      "manifest": "yt-sql/cases/function-conformance/length_turkish_dotted_i/test.json"
     },
     {
       "id": "function-conformance.length_two",
@@ -525,6 +565,18 @@
       "manifest": "yt-sql/cases/function-conformance/lower_empty/test.json"
     },
     {
+      "id": "function-conformance.lower_fixture_greek",
+      "manifest": "yt-sql/cases/function-conformance/lower_fixture_greek/test.json"
+    },
+    {
+      "id": "function-conformance.lower_fixture_turkish",
+      "manifest": "yt-sql/cases/function-conformance/lower_fixture_turkish/test.json"
+    },
+    {
+      "id": "function-conformance.lower_greek_sigma",
+      "manifest": "yt-sql/cases/function-conformance/lower_greek_sigma/test.json"
+    },
+    {
       "id": "function-conformance.lower_kelvin",
       "manifest": "yt-sql/cases/function-conformance/lower_kelvin/test.json"
     },
@@ -541,12 +593,24 @@
       "manifest": "yt-sql/cases/function-conformance/lower_punctuation/test.json"
     },
     {
+      "id": "function-conformance.lower_sharp_s",
+      "manifest": "yt-sql/cases/function-conformance/lower_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.lower_turkish_dotted_i",
+      "manifest": "yt-sql/cases/function-conformance/lower_turkish_dotted_i/test.json"
+    },
+    {
       "id": "function-conformance.lower_two",
       "manifest": "yt-sql/cases/function-conformance/lower_two/test.json"
     },
     {
       "id": "function-conformance.lower_unicode_accent",
       "manifest": "yt-sql/cases/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "function-conformance.lower_upper_nested",
+      "manifest": "yt-sql/cases/function-conformance/lower_upper_nested/test.json"
     },
     {
       "id": "function-conformance.lower_zero",
@@ -689,6 +753,22 @@
       "manifest": "yt-sql/cases/function-conformance/upper_empty/test.json"
     },
     {
+      "id": "function-conformance.upper_fixture_german",
+      "manifest": "yt-sql/cases/function-conformance/upper_fixture_german/test.json"
+    },
+    {
+      "id": "function-conformance.upper_german_street",
+      "manifest": "yt-sql/cases/function-conformance/upper_german_street/test.json"
+    },
+    {
+      "id": "function-conformance.upper_greek_sigma",
+      "manifest": "yt-sql/cases/function-conformance/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.upper_lower_nested",
+      "manifest": "yt-sql/cases/function-conformance/upper_lower_nested/test.json"
+    },
+    {
       "id": "function-conformance.upper_mixed",
       "manifest": "yt-sql/cases/function-conformance/upper_mixed/test.json"
     },
@@ -703,6 +783,10 @@
     {
       "id": "function-conformance.upper_sharp_s",
       "manifest": "yt-sql/cases/function-conformance/upper_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.upper_turkish_dotless_i",
+      "manifest": "yt-sql/cases/function-conformance/upper_turkish_dotless_i/test.json"
     },
     {
       "id": "function-conformance.upper_two",
@@ -41580,28 +41664,6 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_lower_upper_and_length_follow_python_unicode_string_semantics",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_matches_handles_non_latin_scripts_and_supplementary_characters",
           "assertion_sites": [
             {
@@ -42699,6 +42761,18 @@
       "assertions": 2,
       "case_ids": [
         "function-conformance.concat_field_projection_order"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_lower_upper_and_length_follow_python_unicode_string_semantics",
+      "assertions": 5,
+      "case_ids": [
+        "function-conformance.length_fixture_decomposed",
+        "function-conformance.length_fixture_family",
+        "function-conformance.lower_fixture_greek",
+        "function-conformance.lower_fixture_turkish",
+        "function-conformance.upper_fixture_german"
       ]
     }
   ],

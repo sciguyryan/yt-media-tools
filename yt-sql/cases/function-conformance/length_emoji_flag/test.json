@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_emoji_flag",
+  "description": "Reviewed Unicode/text obligation: length emoji flag",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

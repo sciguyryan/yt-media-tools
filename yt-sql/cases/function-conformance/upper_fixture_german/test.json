@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.upper_fixture_german",
+  "description": "Reviewed field-based Unicode behaviour: upper fixture german",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.upper"
+  ]
+}
