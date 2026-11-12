@@ -4,7 +4,13 @@ The normative portable corpus is the intended authority for YT-SQL semantics. A 
 
 ## Public query-to-case authoring tool
 
-Run `python scripts/ytsql_query_to_case.py path/to/query.ysql /tmp/yt-sql-draft --id draft.my_case` from the repository root. Use `--dataset` to select a declared portable dataset and `--order` to specify `ordered` or `unordered` comparison. The destination must not exist and must be outside `yt-sql/cases/`. The tool emits `query.ysql`, `test.json`, `expected.json` and `REVIEW.json`.
+List available engine fixtures with `python scripts/ytsql_query_to_case.py --list-datasets`. The tool discovers committed static, source-topology and facet-topology datasets directly from `yt-sql/datasets/` rather than maintaining a second dataset list. To create a complete draft for a proposed case:
+
+```bash
+python scripts/ytsql_query_to_case.py path/to/query.ysql /tmp/yt-sql-draft --id scalar.my_case --dataset python-v6-normal --feature scalar.lower --description "Reviewed text behaviour"
+```
+
+The destination must not exist and must be outside `yt-sql/cases/`. The tool emits `query.ysql`, `test.json` (the case manifest), `expected.json` and `REVIEW.json`. It prints the precise target directory (`yt-sql/cases/scalar/my_case/` in the example) and the manifest location. The runner discovers `test.json` manifests automatically; no central case list needs editing. Once the expectation has been independently reviewed and corrected as needed, copy only the three portable files into the printed target and validate the corpus. The generated files are structurally ready for inclusion, **not automatically approved**.
 
 **Every generated result is fallible.** The tool observes the current Python implementation, which may contain parser, type, NULL, arithmetic, optimisation or diagnostic defects. The generated expectation is a candidate only. The accompanying review record is marked `unverified`, and the tool warns on every successful run. The standard conformance harness does not load these drafts, and the authoring tool is not required to execute approved portable fixtures.
 

@@ -41,7 +41,45 @@ def test_never_write_unreviewed_case_into_normative_tree(tmp_path: Path) -> None
             dataset="python-v6-small",
             order="ordered",
         )
-    with pytest.raises(ValueError, match="start with"):
-        MODULE.draft(
-            query, tmp_path / "output", case_id="normative.example", dataset="python-v6-small", order="ordered"
-        )
+    with pytest.raises(ValueError, match="dot-separated"):
+        MODULE.draft(query, tmp_path / "output", case_id="Invalid Name", dataset="python-v6-small", order="ordered")
+
+
+def test_discover_engine_datasets_and_generate_ready_manifest(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    available = MODULE.datasets()
+    assert {
+        "python-v6-small",
+        "python-v6-normal",
+        "heterogeneous-sources-v1",
+        "heterogeneous-facets-v1",
+    } <= available.keys()
+    query = ROOT / "yt-sql/cases/scalar/coalesce_null_chain/query.ysql"
+    destination = tmp_path / "draft"
+    MODULE.draft(
+        query,
+        destination,
+        case_id="scalar.coalesce_new_case",
+        dataset="python-v6-normal",
+        order="ordered",
+        description="Review candidate",
+        features=("scalar.coalesce",),
+    )
+    manifest = json.loads((destination / "test.json").read_text())
+    assert manifest["datasets"] == ["python-v6-normal"]
+    assert manifest["features"] == ["scalar.coalesce"]
+    assert manifest["description"] == "Review candidate"
+    assert (destination / "expected.json").exists()
+    output = capsys.readouterr().out
+    assert "cases/scalar/coalesce_new_case" in output
+    assert "test.json" in output
+    assert "No central case manifest edit is required" in output
+
+
+def test_generator_rejects_unknown_dataset_before_creating_files(tmp_path: Path) -> None:
+    query = ROOT / "yt-sql/cases/scalar/coalesce_null_chain/query.ysql"
+    destination = tmp_path / "draft"
+    with pytest.raises(ValueError, match="unknown or unsupported dataset"):
+        MODULE.draft(query, destination, case_id="scalar.example", dataset="missing", order="ordered")
+    assert not destination.exists()

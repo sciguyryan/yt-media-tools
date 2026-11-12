@@ -12,8 +12,8 @@
     "language_elements": 267,
     "normative_manifests": 650,
     "legacy_test_files": 224,
-    "test_functions": 1682,
-    "assertion_sites": 4194
+    "test_functions": 1684,
+    "assertion_sites": 4204
   },
   "normative_cases": [
     {
@@ -42638,6 +42638,37 @@
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
         {
+          "name": "test_discover_engine_datasets_and_generate_ready_manifest",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
           "name": "test_draft_is_explicitly_unverified",
           "assertion_sites": [
             {
@@ -42649,6 +42680,19 @@
             {
               "kind": "assert"
             },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_generator_rejects_unknown_dataset_before_creating_files",
+          "assertion_sites": [
             {
               "kind": "assert"
             },
