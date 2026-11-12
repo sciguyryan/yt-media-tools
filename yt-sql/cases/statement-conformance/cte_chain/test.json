@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.cte_chain",
+  "description": "cte chain",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "with",
+    "cte",
+    "multiple_ctes"
+  ]
+}

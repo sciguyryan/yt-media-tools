@@ -1,0 +1,13 @@
+WITH chosen AS (
+    SELECT
+        fixture_group
+    FROM @yt_sql_fixture
+    WHERE source_index <= 8
+)
+
+SELECT
+    fixture_group,
+    COUNT(*) AS n
+FROM chosen
+GROUP BY fixture_group
+ORDER BY fixture_group

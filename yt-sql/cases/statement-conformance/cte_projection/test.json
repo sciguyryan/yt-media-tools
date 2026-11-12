@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "statement.cte_projection",
+  "description": "cte projection",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "with",
+    "cte",
+    "where",
+    "order_by"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "statement.offset_exact_end",
+  "description": "offset exact end",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "offset",
+    "boundary"
+  ]
+}

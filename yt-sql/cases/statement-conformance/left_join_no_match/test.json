@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.left_join_no_match",
+  "description": "left join no match",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "left_join",
+    "on",
+    "where"
+  ]
+}

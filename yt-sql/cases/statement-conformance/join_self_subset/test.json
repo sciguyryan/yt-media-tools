@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.join_self_subset",
+  "description": "join self subset",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join",
+    "on",
+    "where"
+  ]
+}

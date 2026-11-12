@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "statement.projection_alias",
+  "description": "projection alias",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "select",
+    "alias",
+    "order_by",
+    "limit"
+  ]
+}

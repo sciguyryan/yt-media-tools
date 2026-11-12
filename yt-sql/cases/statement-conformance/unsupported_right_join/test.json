@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "statement.unsupported_right_join",
+  "description": "unsupported right join",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "right_join",
+    "unsupported"
+  ]
+}

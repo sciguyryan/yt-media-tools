@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE source_index IN (1, NULL, 3)
+ORDER BY source_index

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.invalid_where_after_group",
+  "description": "invalid where after group",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "group_by",
+    "where",
+    "invalid"
+  ]
+}

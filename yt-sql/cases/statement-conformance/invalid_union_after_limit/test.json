@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.invalid_union_after_limit",
+  "description": "invalid union after limit",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "union_all",
+    "limit",
+    "invalid"
+  ]
+}

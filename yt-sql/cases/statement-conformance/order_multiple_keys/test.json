@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "statement.order_multiple_keys",
+  "description": "order multiple keys",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order_by",
+    "multiple_keys"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "statement.where_case_expression",
+  "description": "where case expression",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "where",
+    "case"
+  ]
+}

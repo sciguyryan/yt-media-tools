@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "statement.union_all_duplicates",
+  "description": "union all duplicates",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "union_all",
+    "duplicates"
+  ]
+}

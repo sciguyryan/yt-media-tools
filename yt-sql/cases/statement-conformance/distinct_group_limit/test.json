@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "statement.distinct_group_limit",
+  "description": "distinct group limit",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "distinct",
+    "order_by",
+    "limit",
+    "offset"
+  ]
+}

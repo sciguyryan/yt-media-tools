@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "statement.projection_expression",
+  "description": "projection expression",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "select",
+    "arithmetic",
+    "where",
+    "between"
+  ]
+}

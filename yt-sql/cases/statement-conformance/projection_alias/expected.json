@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "video_id"
+  ],
+  "rows": [
+    [
+      "vid001"
+    ],
+    [
+      "vid002"
+    ],
+    [
+      "vid003"
+    ]
+  ]
+}

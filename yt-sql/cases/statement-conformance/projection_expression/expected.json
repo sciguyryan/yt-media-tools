@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "shifted"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      }
+    ]
+  ]
+}

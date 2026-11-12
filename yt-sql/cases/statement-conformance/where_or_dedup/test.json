@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.where_or_dedup",
+  "description": "where or dedup",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "where",
+    "or",
+    "between"
+  ]
+}

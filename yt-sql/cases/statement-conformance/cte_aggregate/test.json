@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.cte_aggregate",
+  "description": "cte aggregate",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "with",
+    "cte",
+    "group_by"
+  ]
+}

@@ -1,0 +1,12 @@
+WITH chosen AS (
+    SELECT
+        id,
+        source_index
+    FROM @yt_sql_fixture
+    WHERE source_index <= 4
+)
+
+SELECT
+    id
+FROM chosen
+ORDER BY source_index DESC

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.group_count",
+  "description": "group count",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "group_by",
+    "count",
+    "order_by"
+  ]
+}

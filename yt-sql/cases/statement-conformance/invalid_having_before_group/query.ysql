@@ -1,0 +1,1 @@
+SELECT fixture_group FROM @yt_sql_fixture HAVING COUNT(*) > 1 GROUP BY fixture_group

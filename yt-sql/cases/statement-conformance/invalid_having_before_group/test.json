@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.invalid_having_before_group",
+  "description": "invalid having before group",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "having",
+    "group_by",
+    "invalid"
+  ]
+}

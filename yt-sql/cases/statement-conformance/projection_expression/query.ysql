@@ -1,0 +1,5 @@
+SELECT
+    source_index + 10 AS shifted
+FROM @yt_sql_fixture
+WHERE source_index BETWEEN 1 AND 3
+ORDER BY source_index

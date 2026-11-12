@@ -3373,6 +3373,263 @@
       "path": "yt-sql/cases/smoke/source_order_limit/test.json"
     },
     {
+      "id": "statement.aggregate_filter",
+      "features": [
+        "aggregate",
+        "where",
+        "between"
+      ],
+      "path": "yt-sql/cases/statement-conformance/aggregate_filter/test.json"
+    },
+    {
+      "id": "statement.cte_aggregate",
+      "features": [
+        "with",
+        "cte",
+        "group_by"
+      ],
+      "path": "yt-sql/cases/statement-conformance/cte_aggregate/test.json"
+    },
+    {
+      "id": "statement.cte_chain",
+      "features": [
+        "with",
+        "cte",
+        "multiple_ctes"
+      ],
+      "path": "yt-sql/cases/statement-conformance/cte_chain/test.json"
+    },
+    {
+      "id": "statement.cte_projection",
+      "features": [
+        "with",
+        "cte",
+        "where",
+        "order_by"
+      ],
+      "path": "yt-sql/cases/statement-conformance/cte_projection/test.json"
+    },
+    {
+      "id": "statement.distinct_group",
+      "features": [
+        "distinct",
+        "order_by"
+      ],
+      "path": "yt-sql/cases/statement-conformance/distinct_group/test.json"
+    },
+    {
+      "id": "statement.distinct_group_limit",
+      "features": [
+        "distinct",
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/statement-conformance/distinct_group_limit/test.json"
+    },
+    {
+      "id": "statement.group_count",
+      "features": [
+        "group_by",
+        "count",
+        "order_by"
+      ],
+      "path": "yt-sql/cases/statement-conformance/group_count/test.json"
+    },
+    {
+      "id": "statement.invalid_having_before_group",
+      "features": [
+        "having",
+        "group_by",
+        "invalid"
+      ],
+      "path": "yt-sql/cases/statement-conformance/invalid_having_before_group/test.json"
+    },
+    {
+      "id": "statement.invalid_union_after_limit",
+      "features": [
+        "union_all",
+        "limit",
+        "invalid"
+      ],
+      "path": "yt-sql/cases/statement-conformance/invalid_union_after_limit/test.json"
+    },
+    {
+      "id": "statement.invalid_where_after_group",
+      "features": [
+        "group_by",
+        "where",
+        "invalid"
+      ],
+      "path": "yt-sql/cases/statement-conformance/invalid_where_after_group/test.json"
+    },
+    {
+      "id": "statement.join_cte",
+      "features": [
+        "join",
+        "with",
+        "cte"
+      ],
+      "path": "yt-sql/cases/statement-conformance/join_cte/test.json"
+    },
+    {
+      "id": "statement.join_self_subset",
+      "features": [
+        "join",
+        "on",
+        "where"
+      ],
+      "path": "yt-sql/cases/statement-conformance/join_self_subset/test.json"
+    },
+    {
+      "id": "statement.left_join_no_match",
+      "features": [
+        "left_join",
+        "on",
+        "where"
+      ],
+      "path": "yt-sql/cases/statement-conformance/left_join_no_match/test.json"
+    },
+    {
+      "id": "statement.limit_offset_middle",
+      "features": [
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/statement-conformance/limit_offset_middle/test.json"
+    },
+    {
+      "id": "statement.offset_exact_end",
+      "features": [
+        "offset",
+        "boundary"
+      ],
+      "path": "yt-sql/cases/statement-conformance/offset_exact_end/test.json"
+    },
+    {
+      "id": "statement.order_multiple_keys",
+      "features": [
+        "order_by",
+        "multiple_keys"
+      ],
+      "path": "yt-sql/cases/statement-conformance/order_multiple_keys/test.json"
+    },
+    {
+      "id": "statement.projection_alias",
+      "features": [
+        "select",
+        "alias",
+        "order_by",
+        "limit"
+      ],
+      "path": "yt-sql/cases/statement-conformance/projection_alias/test.json"
+    },
+    {
+      "id": "statement.projection_expression",
+      "features": [
+        "select",
+        "arithmetic",
+        "where",
+        "between"
+      ],
+      "path": "yt-sql/cases/statement-conformance/projection_expression/test.json"
+    },
+    {
+      "id": "statement.union_all_duplicates",
+      "features": [
+        "union_all",
+        "duplicates"
+      ],
+      "path": "yt-sql/cases/statement-conformance/union_all_duplicates/test.json"
+    },
+    {
+      "id": "statement.union_cte",
+      "features": [
+        "union_all",
+        "cte"
+      ],
+      "path": "yt-sql/cases/statement-conformance/union_cte/test.json"
+    },
+    {
+      "id": "statement.union_deduplicates",
+      "features": [
+        "union",
+        "set",
+        "deduplication"
+      ],
+      "path": "yt-sql/cases/statement-conformance/union_deduplicates/test.json"
+    },
+    {
+      "id": "statement.union_page",
+      "features": [
+        "union",
+        "order_by",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/statement-conformance/union_page/test.json"
+    },
+    {
+      "id": "statement.unsupported_full_join",
+      "features": [
+        "full_join",
+        "unsupported"
+      ],
+      "path": "yt-sql/cases/statement-conformance/unsupported_full_join/test.json"
+    },
+    {
+      "id": "statement.unsupported_right_join",
+      "features": [
+        "right_join",
+        "unsupported"
+      ],
+      "path": "yt-sql/cases/statement-conformance/unsupported_right_join/test.json"
+    },
+    {
+      "id": "statement.where_and_order",
+      "features": [
+        "where",
+        "and",
+        "order_by"
+      ],
+      "path": "yt-sql/cases/statement-conformance/where_and_order/test.json"
+    },
+    {
+      "id": "statement.where_case_expression",
+      "features": [
+        "where",
+        "case"
+      ],
+      "path": "yt-sql/cases/statement-conformance/where_case_expression/test.json"
+    },
+    {
+      "id": "statement.where_in_null",
+      "features": [
+        "where",
+        "in",
+        "null"
+      ],
+      "path": "yt-sql/cases/statement-conformance/where_in_null/test.json"
+    },
+    {
+      "id": "statement.where_not_in",
+      "features": [
+        "where",
+        "not_in",
+        "and"
+      ],
+      "path": "yt-sql/cases/statement-conformance/where_not_in/test.json"
+    },
+    {
+      "id": "statement.where_or_dedup",
+      "features": [
+        "where",
+        "or",
+        "between"
+      ],
+      "path": "yt-sql/cases/statement-conformance/where_or_dedup/test.json"
+    },
+    {
       "id": "temporal.upload_date_exact",
       "features": [
         "temporal.comparison"

@@ -1,0 +1,6 @@
+SELECT
+    fixture_group,
+    COUNT(*) AS n
+FROM @yt_sql_fixture
+GROUP BY fixture_group
+ORDER BY fixture_group

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.aggregate_filter",
+  "description": "aggregate filter",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate",
+    "where",
+    "between"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "statement.where_not_in",
+  "description": "where not in",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "where",
+    "not_in",
+    "and"
+  ]
+}
