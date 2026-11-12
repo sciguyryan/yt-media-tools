@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_decomposed_accent",
+  "description": "Independently specified Unicode CHAR expression semantics",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

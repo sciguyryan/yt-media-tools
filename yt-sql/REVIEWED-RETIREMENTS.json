@@ -18,6 +18,43 @@
       "case_ids": [
         "function-conformance.concat_middle_null"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_constructs_unicode_scalar_values",
+      "assertions": 4,
+      "case_ids": [
+        "function-conformance.char_ascii",
+        "function-conformance.char_latin1",
+        "function-conformance.char_grinning_scalar",
+        "function-conformance.char_gothic_scalar"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_accepts_integer_valued_scalar_expressions",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.char_integer_expression"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_null_propagates",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.char_null_only",
+        "function-conformance.char_three_null"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_can_construct_pattern_text_for_existing_text_functions",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.char_lower_sigma",
+        "function-conformance.char_upper_sharp_s"
+      ]
     }
   ]
 }

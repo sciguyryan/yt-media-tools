@@ -1,0 +1,3 @@
+SELECT
+    CHAR(60 + 5, 32, (70 - 4)) AS result
+FROM @yt_sql_fixture LIMIT 1

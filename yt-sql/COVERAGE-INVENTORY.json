@@ -2080,6 +2080,20 @@
       "path": "yt-sql/cases/function-conformance/char_ascii/test.json"
     },
     {
+      "id": "function-conformance.char_decomposed_accent",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_decomposed_accent/test.json"
+    },
+    {
+      "id": "function-conformance.char_decomposed_length",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_decomposed_length/test.json"
+    },
+    {
       "id": "function-conformance.char_digit",
       "features": [
         "scalar.char"
@@ -2087,11 +2101,39 @@
       "path": "yt-sql/cases/function-conformance/char_digit/test.json"
     },
     {
+      "id": "function-conformance.char_gothic_scalar",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_gothic_scalar/test.json"
+    },
+    {
+      "id": "function-conformance.char_grinning_scalar",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_grinning_scalar/test.json"
+    },
+    {
+      "id": "function-conformance.char_integer_expression",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_integer_expression/test.json"
+    },
+    {
       "id": "function-conformance.char_latin1",
       "features": [
         "scalar.char"
       ],
       "path": "yt-sql/cases/function-conformance/char_latin1/test.json"
+    },
+    {
+      "id": "function-conformance.char_lower_sigma",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_lower_sigma/test.json"
     },
     {
       "id": "function-conformance.char_null",
@@ -2135,6 +2177,13 @@
         "scalar.char"
       ],
       "path": "yt-sql/cases/function-conformance/char_upper/test.json"
+    },
+    {
+      "id": "function-conformance.char_upper_sharp_s",
+      "features": [
+        "scalar.char"
+      ],
+      "path": "yt-sql/cases/function-conformance/char_upper_sharp_s/test.json"
     },
     {
       "id": "function-conformance.char_zero",

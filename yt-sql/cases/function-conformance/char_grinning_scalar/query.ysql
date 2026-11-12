@@ -1,0 +1,3 @@
+SELECT
+    CHAR(128512) AS result
+FROM @yt_sql_fixture LIMIT 1

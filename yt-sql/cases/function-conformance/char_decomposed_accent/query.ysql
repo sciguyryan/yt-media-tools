@@ -1,0 +1,3 @@
+SELECT
+    CHAR(101, 769) AS result
+FROM @yt_sql_fixture LIMIT 1
