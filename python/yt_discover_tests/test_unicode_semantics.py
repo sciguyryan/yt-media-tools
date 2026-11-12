@@ -34,11 +34,6 @@ def _resolve(query: str):
     return records, parsed, resolved
 
 
-def _ids(query: str) -> list[str]:
-    records, _, resolved = _resolve(query)
-    return [str(record["id"]) for record in apply_query(records, resolved)]
-
-
 def test_unicode_scalar_constant_folding_is_observationally_equivalent() -> None:
     records, parsed, original = _resolve(
         "SELECT LOWER('İ') AS lo, UPPER('straße') AS hi, LENGTH('👩‍👩‍👧‍👦') AS n FROM @yt_sql_fixture LIMIT 1"
