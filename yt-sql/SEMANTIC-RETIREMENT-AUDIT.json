@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 660,
+    "normative_manifests": 662,
     "legacy_test_files": 225,
-    "test_functions": 1687,
-    "assertion_sites": 4216
+    "test_functions": 1686,
+    "assertion_sites": 4214
   },
   "normative_cases": [
     {
@@ -1207,6 +1207,14 @@
     {
       "id": "semantics.like_unquoted_pattern_error",
       "manifest": "yt-sql/cases/semantics/like_unquoted_pattern_error/test.json"
+    },
+    {
+      "id": "semantics.newline_multi_wildcard",
+      "manifest": "yt-sql/cases/semantics/newline_multi_wildcard/test.json"
+    },
+    {
+      "id": "semantics.newline_single_wildcard",
+      "manifest": "yt-sql/cases/semantics/newline_single_wildcard/test.json"
     },
     {
       "id": "semantics.not_like_mars_prefix",
@@ -29763,19 +29771,6 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_like_wildcards_cover_newlines_and_unicode_code_points",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_optimizer_preserves_like_and_matches_without_unproven_cross_rewrite",
           "assertion_sites": [
             {
@@ -43079,6 +43074,17 @@
       "assertions": 1,
       "case_ids": [
         "semantics.does_not_like_alias"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_wildcards_cover_newlines_and_unicode_code_points",
+      "assertions": 2,
+      "case_ids": [
+        "semantics.newline_single_wildcard",
+        "semantics.newline_multi_wildcard",
+        "function-conformance.unicode_like_codepoint_1",
+        "function-conformance.unicode_like_codepoint_4"
       ]
     }
   ],

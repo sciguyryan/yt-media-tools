@@ -45,18 +45,6 @@ def test_like_semantics(source: str, expected: list[bool | None]) -> None:
     assert [evaluate(query.predicate, record) for record in records] == expected
 
 
-def test_like_wildcards_cover_newlines_and_unicode_code_points() -> None:
-    records = [
-        {"id": "newline", "title": "a\nb"},
-        {"id": "unicode", "title": "a😀b"},
-        {"id": "two", "title": "a😀😀b"},
-    ]
-    one = _resolved("WHERE title LIKE 'a_b'", records)
-    many = _resolved("WHERE title LIKE 'a%b'", records)
-    assert [evaluate(one.predicate, record) for record in records] == [True, True, False]
-    assert [evaluate(many.predicate, record) for record in records] == [True, True, True]
-
-
 def test_like_backslash_quotes_percent_underscore_and_backslash() -> None:
     records = [
         {"id": "percent", "title": "100%"},

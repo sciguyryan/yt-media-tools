@@ -3977,6 +3977,20 @@
       "path": "yt-sql/cases/semantics/like_unquoted_pattern_error/test.json"
     },
     {
+      "id": "semantics.newline_multi_wildcard",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/newline_multi_wildcard/test.json"
+    },
+    {
+      "id": "semantics.newline_single_wildcard",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/newline_single_wildcard/test.json"
+    },
+    {
       "id": "semantics.not_like_mars_prefix",
       "features": [
         "predicate.like"

@@ -608,17 +608,6 @@
     },
     {
       "source": "python/yt_discover_tests/test_like_predicates.py",
-      "test": "test_like_wildcards_cover_newlines_and_unicode_code_points",
-      "terms": [
-        "LIKE",
-        "UNICODE"
-      ],
-      "assert_sites": 2,
-      "parametrised": false,
-      "disposition": "retain_pending_assertion_level_review"
-    },
-    {
-      "source": "python/yt_discover_tests/test_like_predicates.py",
       "test": "test_like_backslash_quotes_percent_underscore_and_backslash",
       "terms": [
         "LIKE"

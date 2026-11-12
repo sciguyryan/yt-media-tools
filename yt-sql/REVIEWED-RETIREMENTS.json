@@ -257,6 +257,17 @@
       "case_ids": [
         "semantics.does_not_like_alias"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_wildcards_cover_newlines_and_unicode_code_points",
+      "assertions": 2,
+      "case_ids": [
+        "semantics.newline_single_wildcard",
+        "semantics.newline_multi_wildcard",
+        "function-conformance.unicode_like_codepoint_1",
+        "function-conformance.unicode_like_codepoint_4"
+      ]
     }
   ],
   "module_reviews": [

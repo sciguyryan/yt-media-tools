@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.newline_single_wildcard",
+  "description": "LIKE Line_break matches the embedded newline in vid057; underscores match a single Unicode code point and percent matches a sequence including newline",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}
