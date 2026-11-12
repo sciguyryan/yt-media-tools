@@ -2,6 +2,8 @@
 
 This directory contains implementation-independent YT-SQL language tests. It is separate from the operational SQLite statements in `common/sqlite/`.
 
+Every `test.json` beneath `cases/` declares exactly one test, discovered recursively without central registration. A missing `query.ysql` or `expected.json`, malformed manifest, unknown dataset or duplicate ID is a structural test failure, never a silently skipped case. The validator fails with a non-zero status; the Python unittest adapter also reports malformed declared cases as individually failing tests. Structural failures are distinct from YT-SQL parser or execution diagnostics.
+
 Each case has `query.ysql`, `test.json` and `expected.json`. `test.json` names one or more datasets, parameter bindings, language features and whether rows are ordered. Expected outputs describe observable columns and typed values, or an expected diagnostic category. Negative error tests are ordinary passing tests when the specified error occurs.
 
 The committed `python-v6-small` and `python-v6-normal` fixtures contain portable materialised records from the deterministic generator (version 6, seed 31415926). Source and facet topology fixtures are also committed and independently validated. The fixture format and validation rules are described below.

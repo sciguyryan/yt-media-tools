@@ -12,8 +12,8 @@
     "language_elements": 267,
     "normative_manifests": 650,
     "legacy_test_files": 224,
-    "test_functions": 1684,
-    "assertion_sites": 4204
+    "test_functions": 1687,
+    "assertion_sites": 4213
   },
   "normative_cases": [
     {
@@ -30427,6 +30427,41 @@
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
         {
+          "name": "test_duplicate_ids_fail_as_individual_cases",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_incomplete_declared_case_is_a_failing_unittest",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
           "name": "test_individual_case_is_selectable",
           "assertion_sites": [
             {
@@ -30450,6 +30485,19 @@
             },
             {
               "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_malformed_manifest_remains_discoverable",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
             }
           ],
           "replacement_case_ids": [],

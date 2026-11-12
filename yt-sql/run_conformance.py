@@ -10,7 +10,7 @@ from pathlib import Path
 
 from compare_outcomes import outcomes_match
 from conformance_adapters import resolve
-from validate_corpus import ROOT, CorpusError, _load, validate_corpus
+from validate_corpus import ROOT, CorpusError, _load, discover_cases, validate_corpus
 from validate_report import validate_report
 
 
@@ -33,7 +33,7 @@ def run(
 
     validate_corpus(root)
     overrides = _load(root / "expectations" / f"{implementation}.json")["expectations"]
-    paths = sorted((root / "cases").rglob("test.json"))
+    paths = discover_cases(root)
     by_id = {_load(path)["id"]: path for path in paths}
     if case_ids is not None:
         if not case_ids:

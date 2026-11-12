@@ -170,8 +170,13 @@ def validate_case(directory: Path, *, root: Path = ROOT, allow_missing_expected:
     return case_id
 
 
+def discover_cases(root: Path = ROOT) -> list[Path]:
+    """Every test.json declares a case, including structurally invalid cases."""
+    return sorted((root / "cases").rglob("test.json"))
+
+
 def validate_corpus(root: Path = ROOT) -> int:
-    paths = sorted((root / "cases").rglob("test.json"))
+    paths = discover_cases(root)
     if not paths:
         raise CorpusError("no corpus cases found")
     ids: set[str] = set()
