@@ -10,9 +10,9 @@
   "counts": {
     "language_elements": 267,
     "normative_manifests": 566,
-    "legacy_test_files": 221,
-    "test_functions": 1699,
-    "assertion_sites": 4219
+    "legacy_test_files": 224,
+    "test_functions": 1704,
+    "assertion_sites": 4230
   },
   "normative_cases": [
     {
@@ -30246,6 +30246,61 @@
       "retirement_decision": "retain_pending_assertion_level_review"
     },
     {
+      "path": "python/yt_discover_tests/test_normative_unittest_integration.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_individual_case_is_selectable",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_invalid_shards_fail_closed",
+          "assertion_sites": [
+            {
+              "kind": "raises"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_shards_cover_all_cases_once",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_normative_ysql_unittest.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
       "path": "python/yt_discover_tests/test_null_safe_comparison.py",
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
@@ -35250,6 +35305,39 @@
           "assertion_sites": [
             {
               "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_precommit_ysql_conformance.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_dedicated_check_is_available",
+          "assertion_sites": [
+            {
+              "kind": "assertIn"
+            },
+            {
+              "kind": "assertIn"
+            },
+            {
+              "kind": "assertIn"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_default_gate_does_not_duplicate_normative_corpus",
+          "assertion_sites": [
+            {
+              "kind": "assertEqual"
             }
           ],
           "replacement_case_ids": [],

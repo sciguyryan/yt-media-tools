@@ -15,3 +15,11 @@ To promote a candidate, independently determine the intended semantics, inspect 
 For each legacy semantic assertion, identify the exact expected behaviour and its normative replacement case IDs, review equivalent values, types, errors and relevant execution conditions, and distinguish language semantics from implementation-specific or infrastructure tests. Preserve any assertion without independently reviewed replacement evidence. The retirement audit currently reports `not_certified` and `retain_pending_assertion_level_review` for unresolved obligations. Do not interpret these statuses as permission to delete tests.
 
 Phase 6 certification requires exhaustive function, expression, statement, parser, negative, boundary, interaction and torture coverage, plus explicit legacy assertion reconciliation. The current increment does not assert that this gate has been met.
+
+## Python unittest integration
+
+The portable corpus is exposed as individual `unittest.TestCase` methods by `python/yt_discover_tests/test_normative_ysql_unittest.py`. Each method reads the committed `.ysql` query and approved JSON expectation. No semantic expectation is duplicated in Python source. Discovery validates the corpus once per process rather than once per case.
+
+Run all cases with `python scripts/ytsql_unittest.py`, or distribute them across isolated processes with `python scripts/ytsql_unittest.py --workers 4`. Select a case with `python scripts/ytsql_unittest.py --case smoke.source_order_limit`. Standard `unittest discover` also discovers these methods, and `-k` can select individual methods. Workers use stable, disjoint ordinal shards; each case is executed exactly once. Process isolation avoids shared adapter state, although parallelism is optional because process startup and repeated corpus validation can outweigh its benefit for small suites.
+
+This integration does not author expectations or certify coverage. Legacy semantic tests must only be retired after an independently reviewed, assertion-level replacement audit. Existing implementation and harness tests remain necessary.

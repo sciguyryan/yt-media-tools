@@ -52,6 +52,7 @@ def checks() -> list[Check]:
         Check("ysql-format", (python, "scripts/ytsql_format.py", "check")),
         Check("sqlfluff-tests", (python, "-m", "unittest", "discover", "-s", "yt-sql/sqlfluff", "-p", "test_*.py")),
         Check("python-tests", (python, "run-tests.py", "--python")),
+        Check("ysql-conformance", (python, "scripts/ytsql_unittest.py", "--workers", "4")),
         Check("rust-tests", (python, "run-tests.py", "--rust")),
     ]
 
@@ -178,6 +179,11 @@ def main(arguments: list[str] | None = None) -> int:
         selected = [check for check in available if check.name in set(args.only)]
     else:
         selected = available
+    # The ordinary pytest discovery already collects NormativeYTSQLCases. Running
+    # both checks would execute the entire portable corpus twice. Retain the
+    # dedicated check for focused execution without duplicating the default gate.
+    if any(check.name == "python-tests" for check in selected):
+        selected = [check for check in selected if check.name != "ysql-conformance"]
     if Path.cwd().resolve() != ROOT:
         parser.error("Run this command from the repository root")
     # Prefer the repository environment even when the invoking shell has not
