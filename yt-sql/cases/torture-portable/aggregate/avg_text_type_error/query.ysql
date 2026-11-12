@@ -1,0 +1,4 @@
+select
+  AVG(title) 	 as  result 
+ from  @yt_sql_fixture
+  

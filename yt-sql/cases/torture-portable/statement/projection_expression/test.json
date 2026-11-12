@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "torture.statement.projection_expression",
+  "description": "Seeded lexical stress of statement.projection_expression; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "arithmetic",
+    "between",
+    "select",
+    "torture.lexical",
+    "where"
+  ]
+}

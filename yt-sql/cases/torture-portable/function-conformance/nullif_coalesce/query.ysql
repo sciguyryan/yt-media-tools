@@ -1,0 +1,4 @@
+SELECT
+	nullif(COALESCE(null,  7),  7) AS  result
+FROM  @yt_sql_fixture 	 limit 	 1
+  

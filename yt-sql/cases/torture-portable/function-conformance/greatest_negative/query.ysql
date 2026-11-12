@@ -1,0 +1,4 @@
+SELECT
+greatest(-8, -3,	-5)  AS 	 result
+from 	 @yt_sql_fixture	limit 1
+  

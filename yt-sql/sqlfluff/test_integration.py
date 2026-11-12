@@ -116,6 +116,10 @@ class SQLFluffYTSQLTests(unittest.TestCase):
         """
         eligible = []
         for query in sorted(CASES.rglob("*.ysql")):
+            # Lexical torture intentionally perturbs layout; requiring canonical
+            # formatting here would erase the behaviour under test.
+            if "torture-portable" in query.parts:
+                continue
             expectation = query.with_name("expected.json")
             if not expectation.is_file():
                 raise AssertionError(f"Missing expectation for {query}")

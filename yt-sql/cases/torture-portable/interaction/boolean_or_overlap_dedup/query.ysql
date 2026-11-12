@@ -1,0 +1,6 @@
+select 
+ id
+	from 	 @yt_sql_fixture
+	where  (source_index BETWEEN 	 1 	 and  3)  OR (source_index 	 between  2 AND 	 4) 
+ order BY	source_index	ASC limit  4 
+ 

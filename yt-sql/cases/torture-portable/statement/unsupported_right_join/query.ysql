@@ -1,0 +1,1 @@
+SELECT  l.id	FROM 	 @yt_sql_fixture  as l	RIGHT JOIN 	 @yt_sql_fixture 	 as r on l.id  =	r.id

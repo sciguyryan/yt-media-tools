@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.ordering.order_source_position_desc",
+  "description": "Seeded lexical stress of ordering.order_source_position_desc; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "limit",
+    "order_by",
+    "torture.lexical"
+  ]
+}

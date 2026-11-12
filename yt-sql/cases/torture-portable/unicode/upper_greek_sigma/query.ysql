@@ -1,0 +1,4 @@
+SELECT 
+ UPPER('ὀδυσσεύς')	AS 	 result
+  FROM  @yt_sql_fixture	limit	1
+  

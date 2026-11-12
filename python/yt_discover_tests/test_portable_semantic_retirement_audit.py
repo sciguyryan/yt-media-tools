@@ -27,9 +27,7 @@ def test_retirement_audit_does_not_certify_unreviewed_replacements() -> None:
     assert audit["counts"]["legacy_test_files"] == len(audit["legacy_tests"])
     assert audit["counts"]["normative_manifests"] == len(audit["normative_cases"])
     assert all(entry["migration_status"] == "not_certified" for entry in audit["language_obligations"])
-    assert all(
-        entry["retirement_decision"] == "retain_pending_assertion_level_review" for entry in audit["legacy_tests"]
-    )
+    assert all(entry["retirement_decision"] == "retain_pending_assertion_level_review" for entry in audit["legacy_tests"])
     assert audit["counts"]["test_functions"] == sum(len(entry["tests"]) for entry in audit["legacy_tests"])
     assert audit["counts"]["assertion_sites"] == sum(
         len(test["assertion_sites"]) for entry in audit["legacy_tests"] for test in entry["tests"]

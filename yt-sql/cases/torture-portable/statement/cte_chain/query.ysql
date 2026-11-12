@@ -1,0 +1,19 @@
+with	stage_one AS (
+	SELECT
+id,
+source_index 
+ FROM @yt_sql_fixture
+	WHERE 	 source_index	<=  6 
+ ),
+stage_two as  (
+SELECT
+id, 
+ source_index 
+ FROM	stage_one
+  where	source_index >	3
+	)
+	SELECT
+id 
+ FROM 	 stage_two
+  ORDER	BY	source_index
+	

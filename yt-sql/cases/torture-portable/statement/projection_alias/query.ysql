@@ -1,0 +1,5 @@
+SELECT
+id  AS video_id
+	from @yt_sql_fixture
+  ORDER 	 BY 	 source_index	ASC 	 LIMIT  3 
+ 

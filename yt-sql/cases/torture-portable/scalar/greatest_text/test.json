@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.scalar.greatest_text",
+  "description": "Seeded lexical stress of scalar.greatest_text; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.greatest",
+    "torture.lexical"
+  ]
+}

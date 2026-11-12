@@ -1,0 +1,6 @@
+SELECT
+  id 
+ FROM	@yt_sql_fixture
+	WHERE 	 view_count	is 	 NOT NULL
+ORDER 	 by  view_count 	 DESC, 	 id  asc LIMIT 12
+	

@@ -1,0 +1,3 @@
+select
+  MIN(source_index) 	 AS result 
+ from 	 @yt_sql_fixture

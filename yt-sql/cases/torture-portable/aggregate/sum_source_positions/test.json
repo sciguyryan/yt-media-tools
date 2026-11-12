@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.aggregate.sum_source_positions",
+  "description": "Seeded lexical stress of aggregate.sum_source_positions; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.sum",
+    "torture.lexical"
+  ]
+}

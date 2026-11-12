@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "fixture_group"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ]
+  ]
+}

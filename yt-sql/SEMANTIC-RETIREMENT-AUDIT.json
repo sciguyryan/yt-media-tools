@@ -9,7 +9,7 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 283,
+    "normative_manifests": 566,
     "legacy_test_files": 220,
     "test_functions": 1697,
     "assertion_sites": 4212
@@ -978,6 +978,1138 @@
     {
       "id": "temporal.upload_date_exact",
       "manifest": "yt-sql/cases/temporal/upload_date_exact/test.json"
+    },
+    {
+      "id": "torture.aggregate.avg_source_positions",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/avg_source_positions/test.json"
+    },
+    {
+      "id": "torture.aggregate.avg_text_type_error",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/avg_text_type_error/test.json"
+    },
+    {
+      "id": "torture.aggregate.count_all_rows",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/count_all_rows/test.json"
+    },
+    {
+      "id": "torture.aggregate.maximum_source_position",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/maximum_source_position/test.json"
+    },
+    {
+      "id": "torture.aggregate.minimum_source_position",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/minimum_source_position/test.json"
+    },
+    {
+      "id": "torture.aggregate.sum_source_positions",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/sum_source_positions/test.json"
+    },
+    {
+      "id": "torture.aggregate.sum_text_type_error",
+      "manifest": "yt-sql/cases/torture-portable/aggregate/sum_text_type_error/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_avg_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_avg_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_count_expression",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_expression/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_count_literal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_literal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_count_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_avg_source",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_avg_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_count_source",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_count_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_count_star",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_count_star/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_max_source",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_max_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_min_source",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_min_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_sum_source",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_sum_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_max_add",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_max_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_min_add",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_min_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_sum_add",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_sum_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_avg",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_avg/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_count",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_count/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_max",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_max/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_min",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_min/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_sum",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_sum/test.json"
+    },
+    {
+      "id": "torture.function-conformance.avg_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/avg_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.avg_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/avg_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.avg_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/avg_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_filter",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/cardinality_filter/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_first",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/cardinality_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/cardinality_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/cardinality_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_ascii",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_digit",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_digit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_latin1",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_latin1/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_null_only",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_null_only/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_space",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_space/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_three_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_three_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_upper",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_zero_args",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_zero_args/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_all_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_all_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_empty_string",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_empty_string/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_falsey_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_falsey_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_first",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_nested",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_nullif_distinct",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_nullif_distinct/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_second",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_second/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_short_circuit",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_short_circuit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_string_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_string_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_three",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_three/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_unicode",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_unicode/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_empty",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_empty_middle",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_empty_middle/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_multilingual",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_multilingual/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_nested_upper",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_nested_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_null_later",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_null_later/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_numbers_as_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_numbers_as_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_three",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_three/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_three_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_three_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_unicode_emoji",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.count_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/count_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.filter_none",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/filter_none/test.json"
+    },
+    {
+      "id": "torture.function-conformance.filter_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/filter_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.filter_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/filter_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_equal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_negative",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_negative/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_null_first",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_null_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_single_nested",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_single_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_equal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_negative",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_negative/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_null_first",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_null_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_single_nested",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_single_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_arabic",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_arabic/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_ascii",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_char",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_char/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_cjk",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_cjk/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_combining",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_combining/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_concat",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_concat/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_emoji",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_emoji_pair",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_emoji_pair/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_empty",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_upper",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_ascii",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_digit",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_digit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_empty",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_kelvin",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_kelvin/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_mixed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_mixed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_punctuation",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_punctuation/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_unicode_accent",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.map_lower",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/map_lower/test.json"
+    },
+    {
+      "id": "torture.function-conformance.map_upper",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/map_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.map_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/map_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.max_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/max_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.max_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/max_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.min_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/min_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.min_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/min_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nested_coalesce",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nested_coalesce/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nested_nullif",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nested_nullif/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nested_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nested_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_coalesce",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_coalesce/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_empty",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_equal_numeric",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_equal_numeric/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_first_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_first_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_nested",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_second_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_second_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_text_equal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_text_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_text_unequal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_text_unequal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_three",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_three/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_unequal_numeric",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_unequal_numeric/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_first",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_one",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_range",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_unseeded_range",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.sum_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/sum_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.sum_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/sum_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.sum_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/sum_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unknown_function",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unknown_function/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_ascii",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_digit",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_digit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_empty",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_mixed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_mixed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_punctuation",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_punctuation/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_sharp_s",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_sharp_s/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_unicode_accent",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_unicode_accent/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_zero",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_zero/test.json"
+    },
+    {
+      "id": "torture.interaction.boolean_not_and_page",
+      "manifest": "yt-sql/cases/torture-portable/interaction/boolean_not_and_page/test.json"
+    },
+    {
+      "id": "torture.interaction.boolean_or_overlap_dedup",
+      "manifest": "yt-sql/cases/torture-portable/interaction/boolean_or_overlap_dedup/test.json"
+    },
+    {
+      "id": "torture.interaction.boolean_parentheses_page",
+      "manifest": "yt-sql/cases/torture-portable/interaction/boolean_parentheses_page/test.json"
+    },
+    {
+      "id": "torture.interaction.coalesce_nullif_concat",
+      "manifest": "yt-sql/cases/torture-portable/interaction/coalesce_nullif_concat/test.json"
+    },
+    {
+      "id": "torture.interaction.filter_cardinality",
+      "manifest": "yt-sql/cases/torture-portable/interaction/filter_cardinality/test.json"
+    },
+    {
+      "id": "torture.interaction.filter_then_map",
+      "manifest": "yt-sql/cases/torture-portable/interaction/filter_then_map/test.json"
+    },
+    {
+      "id": "torture.interaction.greatest_least_nested",
+      "manifest": "yt-sql/cases/torture-portable/interaction/greatest_least_nested/test.json"
+    },
+    {
+      "id": "torture.interaction.map_cardinality",
+      "manifest": "yt-sql/cases/torture-portable/interaction/map_cardinality/test.json"
+    },
+    {
+      "id": "torture.interaction.map_then_filter",
+      "manifest": "yt-sql/cases/torture-portable/interaction/map_then_filter/test.json"
+    },
+    {
+      "id": "torture.interaction.nested_casefold_length",
+      "manifest": "yt-sql/cases/torture-portable/interaction/nested_casefold_length/test.json"
+    },
+    {
+      "id": "torture.interaction.nested_predicate_with_page",
+      "manifest": "yt-sql/cases/torture-portable/interaction/nested_predicate_with_page/test.json"
+    },
+    {
+      "id": "torture.interaction.nested_unicode_concat",
+      "manifest": "yt-sql/cases/torture-portable/interaction/nested_unicode_concat/test.json"
+    },
+    {
+      "id": "torture.interaction.null_chain_fallback",
+      "manifest": "yt-sql/cases/torture-portable/interaction/null_chain_fallback/test.json"
+    },
+    {
+      "id": "torture.interaction.null_predicate_disjunction",
+      "manifest": "yt-sql/cases/torture-portable/interaction/null_predicate_disjunction/test.json"
+    },
+    {
+      "id": "torture.interaction.null_through_nested_scalar",
+      "manifest": "yt-sql/cases/torture-portable/interaction/null_through_nested_scalar/test.json"
+    },
+    {
+      "id": "torture.interaction.pagination_last_row",
+      "manifest": "yt-sql/cases/torture-portable/interaction/pagination_last_row/test.json"
+    },
+    {
+      "id": "torture.interaction.pagination_reverse_tail",
+      "manifest": "yt-sql/cases/torture-portable/interaction/pagination_reverse_tail/test.json"
+    },
+    {
+      "id": "torture.interaction.predicate_empty_page",
+      "manifest": "yt-sql/cases/torture-portable/interaction/predicate_empty_page/test.json"
+    },
+    {
+      "id": "torture.negative.invalid_count_text",
+      "manifest": "yt-sql/cases/torture-portable/negative/invalid_count_text/test.json"
+    },
+    {
+      "id": "torture.negative.limit_negative",
+      "manifest": "yt-sql/cases/torture-portable/negative/limit_negative/test.json"
+    },
+    {
+      "id": "torture.negative.offset_negative",
+      "manifest": "yt-sql/cases/torture-portable/negative/offset_negative/test.json"
+    },
+    {
+      "id": "torture.negative.order_missing_expression",
+      "manifest": "yt-sql/cases/torture-portable/negative/order_missing_expression/test.json"
+    },
+    {
+      "id": "torture.negative.select_missing_projection",
+      "manifest": "yt-sql/cases/torture-portable/negative/select_missing_projection/test.json"
+    },
+    {
+      "id": "torture.negative.select_trailing_comma",
+      "manifest": "yt-sql/cases/torture-portable/negative/select_trailing_comma/test.json"
+    },
+    {
+      "id": "torture.negative.select_unclosed_parenthesis",
+      "manifest": "yt-sql/cases/torture-portable/negative/select_unclosed_parenthesis/test.json"
+    },
+    {
+      "id": "torture.negative.unknown_column",
+      "manifest": "yt-sql/cases/torture-portable/negative/unknown_column/test.json"
+    },
+    {
+      "id": "torture.negative.where_missing_operand",
+      "manifest": "yt-sql/cases/torture-portable/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_beyond_end",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_source_position_beyond_end/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_desc",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_source_position_desc/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_page",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_source_position_page/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_tail",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_source_position_tail/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_tied_view_count/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count_ascending",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_ascending/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count_ascending_page",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_ascending_page/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count_page",
+      "manifest": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_page/test.json"
+    },
+    {
+      "id": "torture.scalar.cardinality_first_tags",
+      "manifest": "yt-sql/cases/torture-portable/scalar/cardinality_first_tags/test.json"
+    },
+    {
+      "id": "torture.scalar.char_multiple_codepoints",
+      "manifest": "yt-sql/cases/torture-portable/scalar/char_multiple_codepoints/test.json"
+    },
+    {
+      "id": "torture.scalar.coalesce_null_chain",
+      "manifest": "yt-sql/cases/torture-portable/scalar/coalesce_null_chain/test.json"
+    },
+    {
+      "id": "torture.scalar.collection_filter_first_tags",
+      "manifest": "yt-sql/cases/torture-portable/scalar/collection_filter_first_tags/test.json"
+    },
+    {
+      "id": "torture.scalar.collection_map_first_tags",
+      "manifest": "yt-sql/cases/torture-portable/scalar/collection_map_first_tags/test.json"
+    },
+    {
+      "id": "torture.scalar.concat_nested_null",
+      "manifest": "yt-sql/cases/torture-portable/scalar/concat_nested_null/test.json"
+    },
+    {
+      "id": "torture.scalar.concat_null",
+      "manifest": "yt-sql/cases/torture-portable/scalar/concat_null/test.json"
+    },
+    {
+      "id": "torture.scalar.concat_unicode",
+      "manifest": "yt-sql/cases/torture-portable/scalar/concat_unicode/test.json"
+    },
+    {
+      "id": "torture.scalar.greatest_numeric",
+      "manifest": "yt-sql/cases/torture-portable/scalar/greatest_numeric/test.json"
+    },
+    {
+      "id": "torture.scalar.greatest_text",
+      "manifest": "yt-sql/cases/torture-portable/scalar/greatest_text/test.json"
+    },
+    {
+      "id": "torture.scalar.least_null",
+      "manifest": "yt-sql/cases/torture-portable/scalar/least_null/test.json"
+    },
+    {
+      "id": "torture.scalar.least_signed_integer",
+      "manifest": "yt-sql/cases/torture-portable/scalar/least_signed_integer/test.json"
+    },
+    {
+      "id": "torture.scalar.length_combining_sequence",
+      "manifest": "yt-sql/cases/torture-portable/scalar/length_combining_sequence/test.json"
+    },
+    {
+      "id": "torture.scalar.nested_coalesce_nullif",
+      "manifest": "yt-sql/cases/torture-portable/scalar/nested_coalesce_nullif/test.json"
+    },
+    {
+      "id": "torture.scalar.nullif_distinct",
+      "manifest": "yt-sql/cases/torture-portable/scalar/nullif_distinct/test.json"
+    },
+    {
+      "id": "torture.scalar.nullif_equal",
+      "manifest": "yt-sql/cases/torture-portable/scalar/nullif_equal/test.json"
+    },
+    {
+      "id": "torture.scalar.position_first_row",
+      "manifest": "yt-sql/cases/torture-portable/scalar/position_first_row/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_equal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_equal/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_not_equal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_not_equal/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_not_equal_angle",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_not_equal_angle/test.json"
+    },
+    {
+      "id": "torture.semantics.null_and_boolean_logic",
+      "manifest": "yt-sql/cases/torture-portable/semantics/null_and_boolean_logic/test.json"
+    },
+    {
+      "id": "torture.smoke.source_order_limit",
+      "manifest": "yt-sql/cases/torture-portable/smoke/source_order_limit/test.json"
+    },
+    {
+      "id": "torture.statement.aggregate_filter",
+      "manifest": "yt-sql/cases/torture-portable/statement/aggregate_filter/test.json"
+    },
+    {
+      "id": "torture.statement.cte_aggregate",
+      "manifest": "yt-sql/cases/torture-portable/statement/cte_aggregate/test.json"
+    },
+    {
+      "id": "torture.statement.cte_chain",
+      "manifest": "yt-sql/cases/torture-portable/statement/cte_chain/test.json"
+    },
+    {
+      "id": "torture.statement.cte_projection",
+      "manifest": "yt-sql/cases/torture-portable/statement/cte_projection/test.json"
+    },
+    {
+      "id": "torture.statement.distinct_group",
+      "manifest": "yt-sql/cases/torture-portable/statement/distinct_group/test.json"
+    },
+    {
+      "id": "torture.statement.distinct_group_limit",
+      "manifest": "yt-sql/cases/torture-portable/statement/distinct_group_limit/test.json"
+    },
+    {
+      "id": "torture.statement.group_count",
+      "manifest": "yt-sql/cases/torture-portable/statement/group_count/test.json"
+    },
+    {
+      "id": "torture.statement.invalid_having_before_group",
+      "manifest": "yt-sql/cases/torture-portable/statement/invalid_having_before_group/test.json"
+    },
+    {
+      "id": "torture.statement.invalid_union_after_limit",
+      "manifest": "yt-sql/cases/torture-portable/statement/invalid_union_after_limit/test.json"
+    },
+    {
+      "id": "torture.statement.invalid_where_after_group",
+      "manifest": "yt-sql/cases/torture-portable/statement/invalid_where_after_group/test.json"
+    },
+    {
+      "id": "torture.statement.join_cte",
+      "manifest": "yt-sql/cases/torture-portable/statement/join_cte/test.json"
+    },
+    {
+      "id": "torture.statement.join_self_subset",
+      "manifest": "yt-sql/cases/torture-portable/statement/join_self_subset/test.json"
+    },
+    {
+      "id": "torture.statement.left_join_no_match",
+      "manifest": "yt-sql/cases/torture-portable/statement/left_join_no_match/test.json"
+    },
+    {
+      "id": "torture.statement.limit_offset_middle",
+      "manifest": "yt-sql/cases/torture-portable/statement/limit_offset_middle/test.json"
+    },
+    {
+      "id": "torture.statement.offset_exact_end",
+      "manifest": "yt-sql/cases/torture-portable/statement/offset_exact_end/test.json"
+    },
+    {
+      "id": "torture.statement.order_multiple_keys",
+      "manifest": "yt-sql/cases/torture-portable/statement/order_multiple_keys/test.json"
+    },
+    {
+      "id": "torture.statement.projection_alias",
+      "manifest": "yt-sql/cases/torture-portable/statement/projection_alias/test.json"
+    },
+    {
+      "id": "torture.statement.projection_expression",
+      "manifest": "yt-sql/cases/torture-portable/statement/projection_expression/test.json"
+    },
+    {
+      "id": "torture.statement.union_all_duplicates",
+      "manifest": "yt-sql/cases/torture-portable/statement/union_all_duplicates/test.json"
+    },
+    {
+      "id": "torture.statement.union_cte",
+      "manifest": "yt-sql/cases/torture-portable/statement/union_cte/test.json"
+    },
+    {
+      "id": "torture.statement.union_deduplicates",
+      "manifest": "yt-sql/cases/torture-portable/statement/union_deduplicates/test.json"
+    },
+    {
+      "id": "torture.statement.union_page",
+      "manifest": "yt-sql/cases/torture-portable/statement/union_page/test.json"
+    },
+    {
+      "id": "torture.statement.unsupported_full_join",
+      "manifest": "yt-sql/cases/torture-portable/statement/unsupported_full_join/test.json"
+    },
+    {
+      "id": "torture.statement.unsupported_right_join",
+      "manifest": "yt-sql/cases/torture-portable/statement/unsupported_right_join/test.json"
+    },
+    {
+      "id": "torture.statement.where_and_order",
+      "manifest": "yt-sql/cases/torture-portable/statement/where_and_order/test.json"
+    },
+    {
+      "id": "torture.statement.where_case_expression",
+      "manifest": "yt-sql/cases/torture-portable/statement/where_case_expression/test.json"
+    },
+    {
+      "id": "torture.statement.where_in_null",
+      "manifest": "yt-sql/cases/torture-portable/statement/where_in_null/test.json"
+    },
+    {
+      "id": "torture.statement.where_not_in",
+      "manifest": "yt-sql/cases/torture-portable/statement/where_not_in/test.json"
+    },
+    {
+      "id": "torture.statement.where_or_dedup",
+      "manifest": "yt-sql/cases/torture-portable/statement/where_or_dedup/test.json"
+    },
+    {
+      "id": "torture.temporal.upload_date_exact",
+      "manifest": "yt-sql/cases/torture-portable/temporal/upload_date_exact/test.json"
+    },
+    {
+      "id": "torture.unicode.char_unicode",
+      "manifest": "yt-sql/cases/torture-portable/unicode/char_unicode/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_composed_decomposed",
+      "manifest": "yt-sql/cases/torture-portable/unicode/concat_composed_decomposed/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_emoji",
+      "manifest": "yt-sql/cases/torture-portable/unicode/concat_emoji/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_empty",
+      "manifest": "yt-sql/cases/torture-portable/unicode/concat_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_multiscript",
+      "manifest": "yt-sql/cases/torture-portable/unicode/concat_multiscript/test.json"
+    },
+    {
+      "id": "torture.unicode.length_arabic",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_arabic/test.json"
+    },
+    {
+      "id": "torture.unicode.length_cjk",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_cjk/test.json"
+    },
+    {
+      "id": "torture.unicode.length_codepoints",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_codepoints/test.json"
+    },
+    {
+      "id": "torture.unicode.length_crlf",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_crlf/test.json"
+    },
+    {
+      "id": "torture.unicode.length_empty",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.length_nonbmp",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_nonbmp/test.json"
+    },
+    {
+      "id": "torture.unicode.length_regional_indicator",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_regional_indicator/test.json"
+    },
+    {
+      "id": "torture.unicode.length_variation_selector",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_variation_selector/test.json"
+    },
+    {
+      "id": "torture.unicode.length_zwj_emoji",
+      "manifest": "yt-sql/cases/torture-portable/unicode/length_zwj_emoji/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_accented",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_accented/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_armenian",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_armenian/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_cyrillic",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_cyrillic/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_deseret",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_deseret/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_dotted_i",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_dotted_i/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_emoji_unchanged",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_emoji_unchanged/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_empty",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_fullwidth",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_fullwidth/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_greek_omega",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_greek_omega/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_greek_sigma",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_greek_sigma/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_kelvin_sign",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_kelvin_sign/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_null",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_null/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_turkish_capital_i",
+      "manifest": "yt-sql/cases/torture-portable/unicode/lower_turkish_capital_i/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_accented",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_accented/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_armenian",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_armenian/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_composed_accent",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_composed_accent/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_cyrillic",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_cyrillic/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_decomposed_accent",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_decomposed_accent/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_deseret",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_deseret/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_emoji_unchanged",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_emoji_unchanged/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_empty",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_fullwidth",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_fullwidth/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_greek_omega",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_greek_omega/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_greek_sigma",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_ligature",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_ligature/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_null",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_null/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_sharp_s",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_sharp_s/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_turkish_dotless_i",
+      "manifest": "yt-sql/cases/torture-portable/unicode/upper_turkish_dotless_i/test.json"
     },
     {
       "id": "unicode.char_unicode",

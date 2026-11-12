@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.map_lower",
+  "description": "Seeded lexical stress of function-conformance.map_lower; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map",
+    "projection.lower",
+    "torture.lexical"
+  ]
+}

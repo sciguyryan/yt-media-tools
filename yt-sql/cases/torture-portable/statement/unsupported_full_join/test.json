@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.statement.unsupported_full_join",
+  "description": "Seeded lexical stress of statement.unsupported_full_join; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "full_join",
+    "torture.lexical",
+    "unsupported"
+  ]
+}

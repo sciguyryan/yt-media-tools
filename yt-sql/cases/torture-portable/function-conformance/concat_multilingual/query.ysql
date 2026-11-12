@@ -1,0 +1,4 @@
+select
+concat('日本',  '語')  as  result
+FROM @yt_sql_fixture 	 limit  1
+	

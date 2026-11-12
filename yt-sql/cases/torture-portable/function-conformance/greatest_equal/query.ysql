@@ -1,0 +1,4 @@
+SELECT
+	GREATEST(2,	2) as	result
+  from @yt_sql_fixture	LIMIT 1
+  

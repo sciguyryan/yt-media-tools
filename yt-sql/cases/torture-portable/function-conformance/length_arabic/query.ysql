@@ -1,0 +1,4 @@
+SELECT
+	LENGTH('مرحبا')  as  result 
+ FROM 	 @yt_sql_fixture 	 LIMIT	1
+	

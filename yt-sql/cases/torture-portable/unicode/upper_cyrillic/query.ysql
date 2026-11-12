@@ -1,0 +1,4 @@
+select 
+ upper('привет')	as	result
+FROM @yt_sql_fixture	limit 1 
+ 

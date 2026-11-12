@@ -1,0 +1,4 @@
+select
+	length(UPPER('ab'))	as	result 
+ FROM @yt_sql_fixture  LIMIT 1 
+ 

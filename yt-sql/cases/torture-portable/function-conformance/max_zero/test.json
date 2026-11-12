@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.max_zero",
+  "description": "Seeded lexical stress of function-conformance.max_zero; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.max",
+    "torture.lexical"
+  ]
+}

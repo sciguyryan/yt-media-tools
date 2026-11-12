@@ -1,0 +1,5 @@
+SELECT
+  id
+	FROM 	 @yt_sql_fixture
+where  source_index  is 	 null	or source_index = 1 
+ order  BY  source_index 	 asc	LIMIT 1

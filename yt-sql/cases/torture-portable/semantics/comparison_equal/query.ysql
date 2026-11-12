@@ -1,0 +1,6 @@
+SELECT
+  id
+from	@yt_sql_fixture
+	WHERE view_count 	 = 	 42
+  order 	 by 	 source_index 	 ASC
+  

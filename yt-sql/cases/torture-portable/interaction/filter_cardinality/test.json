@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "torture.interaction.filter_cardinality",
+  "description": "Seeded lexical stress of interaction.filter_cardinality; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "cardinality",
+    "filter",
+    "limit",
+    "order_by",
+    "torture.lexical"
+  ]
+}

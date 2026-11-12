@@ -1,0 +1,3 @@
+SELECT
+LOWER('MiXeD 123') AS 	 result 
+ from 	 @yt_sql_fixture	LIMIT 	 1

@@ -1,0 +1,4 @@
+SELECT
+	CHAR(65, 769,	129417) 	 as	result
+  FROM  @yt_sql_fixture	LIMIT 	 1
+  

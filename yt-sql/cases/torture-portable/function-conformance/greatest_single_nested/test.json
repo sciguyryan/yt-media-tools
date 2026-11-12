@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.greatest_single_nested",
+  "description": "Seeded lexical stress of function-conformance.greatest_single_nested; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.greatest",
+    "scalar.least",
+    "torture.lexical"
+  ]
+}

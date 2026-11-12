@@ -49,6 +49,27 @@ class SafeFormattingTests(unittest.TestCase):
                 factory.assert_called_once_with()
                 self.assertEqual(factory.return_value.format.call_count, 12)
 
+    def test_portable_torture_skipped_without_weakening_other_checks(self) -> None:
+        import tempfile
+        from format_safely import main
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            torture = root / "torture-portable" / "scalar" / "example"
+            torture.mkdir(parents=True)
+            (torture / "query.ysql").write_text("sElEcT id fRoM @yt_sql_fixture\n", encoding="utf-8")
+            normal = root / "ordinary" / "example"
+            normal.mkdir(parents=True)
+            (normal / "query.ysql").write_text("SELECT id FROM @yt_sql_fixture\n", encoding="utf-8")
+            with patch("format_safely.ReusableSQLFluff") as factory:
+                factory.return_value.format.side_effect = lambda source: source
+                self.assertEqual(main(["--check", str(root)]), 0)
+                self.assertEqual(factory.return_value.format.call_count, 2)
+                factory.return_value.format.reset_mock()
+                factory.return_value.format.side_effect = lambda source: source + " "
+                self.assertEqual(main(["--check", str(root)]), 1)
+                self.assertEqual(factory.return_value.format.call_count, 2)
+
     def test_layout_does_not_change_structural_tree(self) -> None:
         first = "SELECT id FROM @yt_sql_fixture WHERE id = 1 LIMIT 2\n"
         second = "SELECT\n    id FROM @yt_sql_fixture\nWHERE id = 1 LIMIT 2\n"

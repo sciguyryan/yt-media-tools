@@ -1,0 +1,2 @@
+SELECT  position(1)	as	result 	 from	@yt_sql_fixture 	 LIMIT  1 
+ 

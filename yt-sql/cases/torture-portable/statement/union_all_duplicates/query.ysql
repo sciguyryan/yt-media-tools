@@ -1,0 +1,11 @@
+(SELECT
+id 
+ from 	 @yt_sql_fixture
+WHERE 	 source_index  <=  2)
+UNION	ALL 
+ (SELECT
+	id
+from 	 @yt_sql_fixture
+  WHERE source_index	BETWEEN	2  and 	 3)
+	order 	 BY id 
+ 

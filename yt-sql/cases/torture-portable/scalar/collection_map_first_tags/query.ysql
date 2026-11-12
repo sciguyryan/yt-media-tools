@@ -1,0 +1,5 @@
+select 
+ MAP(tags  AS tag 	 SELECT  UPPER(tag)) as	result
+  from @yt_sql_fixture 
+ ORDER  by 	 source_index 	 LIMIT	1
+	

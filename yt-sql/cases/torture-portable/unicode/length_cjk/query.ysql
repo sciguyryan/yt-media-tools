@@ -1,0 +1,3 @@
+SELECT
+  LENGTH('漢字')	as result
+  from  @yt_sql_fixture LIMIT 	 1

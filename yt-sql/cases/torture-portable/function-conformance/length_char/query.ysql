@@ -1,0 +1,4 @@
+SELECT
+	length(CHAR(65, 	 66, 	 67))	as	result
+FROM	@yt_sql_fixture	limit 	 1 
+ 

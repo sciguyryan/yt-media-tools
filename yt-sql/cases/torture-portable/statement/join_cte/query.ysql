@@ -1,0 +1,11 @@
+WITH 	 chosen 	 as 	 (
+  select
+id 
+ from	@yt_sql_fixture
+where	source_index	<=  3 
+ )
+  select
+	l.id
+from	@yt_sql_fixture  as l inner	JOIN chosen as  c  ON 	 l.id 	 =	c.id
+	ORDER BY 	 l.id
+	

@@ -1,0 +1,5 @@
+SELECT
+  id 
+ FROM	@yt_sql_fixture
+	order BY source_index  limit	4	offset 	 4
+  

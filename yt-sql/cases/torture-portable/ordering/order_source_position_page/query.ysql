@@ -1,0 +1,5 @@
+select
+id
+  FROM @yt_sql_fixture
+	ORDER 	 BY 	 source_index 	 asc	LIMIT  9 OFFSET 	 17
+	

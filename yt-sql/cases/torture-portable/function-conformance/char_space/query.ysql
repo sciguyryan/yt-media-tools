@@ -1,0 +1,4 @@
+SELECT
+	CHAR(32) 	 AS 	 result
+from @yt_sql_fixture  LIMIT  1
+  

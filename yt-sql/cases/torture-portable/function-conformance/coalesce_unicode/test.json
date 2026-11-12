@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.coalesce_unicode",
+  "description": "Seeded lexical stress of function-conformance.coalesce_unicode; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.coalesce",
+    "torture.lexical"
+  ]
+}

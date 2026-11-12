@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.negative.select_unclosed_parenthesis",
+  "description": "Seeded lexical stress of negative.select_unclosed_parenthesis; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

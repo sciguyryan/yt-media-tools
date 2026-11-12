@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.aggregate.minimum_source_position",
+  "description": "Seeded lexical stress of aggregate.minimum_source_position; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.min",
+    "torture.lexical"
+  ]
+}

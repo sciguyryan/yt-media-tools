@@ -1,0 +1,2 @@
+SELECT  NOT_A_FUNCTION(1)	AS	result 	 from	@yt_sql_fixture  LIMIT 	 1 
+ 

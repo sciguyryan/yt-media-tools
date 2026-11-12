@@ -1,0 +1,5 @@
+SELECT	distinct
+  fixture_group 
+ FROM @yt_sql_fixture
+	ORDER  by	fixture_group 
+ 

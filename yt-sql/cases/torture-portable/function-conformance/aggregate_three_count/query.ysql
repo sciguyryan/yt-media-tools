@@ -1,0 +1,5 @@
+SELECT
+count(*) as 	 result
+	from @yt_sql_fixture
+	WHERE 	 source_index <= 3
+  

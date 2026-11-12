@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "torture.statement.group_count",
+  "description": "Seeded lexical stress of statement.group_count; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "count",
+    "group_by",
+    "order_by",
+    "torture.lexical"
+  ]
+}

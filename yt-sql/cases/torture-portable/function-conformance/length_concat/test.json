@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.length_concat",
+  "description": "Seeded lexical stress of function-conformance.length_concat; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length",
+    "scalar.concat",
+    "torture.lexical"
+  ]
+}

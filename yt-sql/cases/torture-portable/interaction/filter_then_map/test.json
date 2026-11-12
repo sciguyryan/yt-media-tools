@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "torture.interaction.filter_then_map",
+  "description": "Seeded lexical stress of interaction.filter_then_map; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "filter",
+    "limit",
+    "map",
+    "order_by",
+    "torture.lexical",
+    "upper"
+  ]
+}

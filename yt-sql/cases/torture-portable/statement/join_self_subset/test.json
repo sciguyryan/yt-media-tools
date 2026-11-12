@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "torture.statement.join_self_subset",
+  "description": "Seeded lexical stress of statement.join_self_subset; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join",
+    "on",
+    "torture.lexical",
+    "where"
+  ]
+}

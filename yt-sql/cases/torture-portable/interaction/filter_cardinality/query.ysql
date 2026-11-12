@@ -1,0 +1,4 @@
+SELECT
+	CARDINALITY(FILTER(tags 	 as tag 	 where 	 tag  = 	 'topic-1'))  AS	result
+  FROM  @yt_sql_fixture
+order 	 BY 	 source_index LIMIT  1

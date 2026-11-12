@@ -1,0 +1,4 @@
+SELECT
+LENGTH(COALESCE(nullif('same', 'same'), 	 'fallback'))	as  result
+	from 	 @yt_sql_fixture 	 LIMIT 1 
+ 

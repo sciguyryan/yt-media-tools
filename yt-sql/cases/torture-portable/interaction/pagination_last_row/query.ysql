@@ -1,0 +1,5 @@
+SELECT
+  id
+from  @yt_sql_fixture
+  ORDER 	 by 	 source_index ASC	LIMIT  3 OFFSET 59
+  

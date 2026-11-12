@@ -1,0 +1,4 @@
+SELECT
+UPPER(NULL)	AS 	 result 
+ from  @yt_sql_fixture limit	1
+	

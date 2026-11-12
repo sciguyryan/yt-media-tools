@@ -1,0 +1,3 @@
+SELECT
+	CHAR(65, 	 NULL, 66)  AS	result
+	from	@yt_sql_fixture limit  1

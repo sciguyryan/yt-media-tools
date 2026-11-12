@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.statement.limit_offset_middle",
+  "description": "Seeded lexical stress of statement.limit_offset_middle; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "limit",
+    "offset",
+    "torture.lexical"
+  ]
+}

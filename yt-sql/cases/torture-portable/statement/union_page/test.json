@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "torture.statement.union_page",
+  "description": "Seeded lexical stress of statement.union_page; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "limit",
+    "offset",
+    "order_by",
+    "torture.lexical",
+    "union"
+  ]
+}

@@ -1,0 +1,5 @@
+SELECT
+  CARDINALITY(MAP(tags	AS	tag 	 SELECT  upper(tag))) 	 AS 	 result
+  from  @yt_sql_fixture
+ORDER 	 by source_index 	 limit 1
+  

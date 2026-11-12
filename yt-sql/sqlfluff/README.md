@@ -85,3 +85,5 @@ Benchmark the same corpus and SQLFluff version on the same machine before compar
 ## COUNT argument preservation
 
 SQLFluff rule CV04 is disabled for YT-SQL because its automatic rewrite of `COUNT(1)` to `COUNT(*)` changes the authoritative function-expression tree. The guarded formatter retains its strict structural comparison, and regression tests cover literal, NULL and field arguments to `COUNT`. Whitespace-only layout changes remain permissible; a formatter must not silently replace expressions even where some datasets yield the same result.
+
+The safe formatting command excludes committed `yt-sql/cases/torture-portable/` queries from canonical formatting, including when scanning the entire corpus. Their deliberate lexical variations must remain intact; they are checked by portable conformance and deterministic fixture regeneration instead. Ordinary positive queries retain strict parse-tree preservation and idempotence checks.

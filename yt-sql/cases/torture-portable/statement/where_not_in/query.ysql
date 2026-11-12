@@ -1,0 +1,5 @@
+select
+  id
+	from  @yt_sql_fixture
+	WHERE  source_index 	 NOT 	 IN	(1, 3,	5) AND  source_index <= 6
+order 	 BY source_index

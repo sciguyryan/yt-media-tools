@@ -1,0 +1,4 @@
+SELECT
+  LEAST(1,	null, 2)	AS 	 result 
+ from 	 @yt_sql_fixture 	 LIMIT 	 1
+  

@@ -1,0 +1,4 @@
+SELECT
+  CONCAT('prefix', 	 NULL)	as result
+from @yt_sql_fixture LIMIT 	 1
+  

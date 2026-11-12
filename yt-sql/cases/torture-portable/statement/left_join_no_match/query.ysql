@@ -1,0 +1,6 @@
+select
+  COALESCE(r.id,  l.id)  AS id 
+ FROM @yt_sql_fixture 	 AS  l	LEFT 	 JOIN @yt_sql_fixture AS  r  ON  l.id  =	r.id 	 and 	 r.source_index 	 > 60
+	WHERE l.source_index  <=	3
+	order 	 BY l.source_index 
+ 

@@ -1,0 +1,4 @@
+SELECT
+	COALESCE(0,  9) 	 as	result
+  from @yt_sql_fixture	limit 	 1
+	

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "torture.interaction.null_through_nested_scalar",
+  "description": "Seeded lexical stress of interaction.null_through_nested_scalar; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "coalesce",
+    "length",
+    "nullif",
+    "torture.lexical"
+  ]
+}

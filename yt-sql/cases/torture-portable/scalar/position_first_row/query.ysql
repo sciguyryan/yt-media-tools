@@ -1,0 +1,5 @@
+SELECT
+POSITION() 	 as	result
+  FROM	@yt_sql_fixture
+  ORDER BY 	 source_index LIMIT 	 1
+  

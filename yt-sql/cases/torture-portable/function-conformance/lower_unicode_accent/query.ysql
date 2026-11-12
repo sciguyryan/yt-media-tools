@@ -1,0 +1,4 @@
+SELECT
+LOWER('É') AS  result
+  FROM  @yt_sql_fixture 	 LIMIT  1
+	

@@ -1,0 +1,4 @@
+SELECT
+  concat('🦉', 	 '𐐀') 	 as  result
+  from @yt_sql_fixture	limit 	 1
+  

@@ -136,6 +136,15 @@ def _is_expected_error_case(path: Path) -> bool:
     return isinstance(document, dict) and document.get("outcome") == "error"
 
 
+def _is_portable_torture_case(path: Path) -> bool:
+    """Keep intentionally non-canonical lexical fixtures out of formatting.
+
+    These committed cases are validated by portable conformance and the
+    deterministic materialisation check, not by canonical SQLFluff layout.
+    """
+    return path.name == "query.ysql" and "torture-portable" in path.parts
+
+
 def _show_progress(completed: int, total: int, *, stream: object, interactive: bool) -> None:
     """Render one bounded progress line without polluting redirected output."""
     if not interactive:
@@ -161,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("Provide existing .ysql files or directories containing them")
     changes = {}
     skipped_errors = 0
+    skipped_torture = 0
     try:
         engine = ReusableSQLFluff()
     except (ImportError, RuntimeError, ValueError) as exc:
@@ -170,6 +180,10 @@ def main(argv: list[str] | None = None) -> int:
     _show_progress(0, len(paths), stream=sys.stderr, interactive=interactive)
     for index, path in enumerate(paths, start=1):
         try:
+            if _is_portable_torture_case(path):
+                skipped_torture += 1
+                _show_progress(index, len(paths), stream=sys.stderr, interactive=interactive)
+                continue
             if _is_expected_error_case(path):
                 skipped_errors += 1
                 _show_progress(index, len(paths), stream=sys.stderr, interactive=interactive)
@@ -190,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
         for path, content in changes.items():
             path.write_text(content, encoding="utf-8")
     print(
-        f"Checked {len(paths) - skipped_errors} .ysql files; skipped {skipped_errors} expected-error cases; "
+        f"Checked {len(paths) - skipped_errors - skipped_torture} .ysql files; skipped {skipped_errors} expected-error cases and {skipped_torture} portable torture cases; "
         f"{len(changes)} would change" + (" (written)" if args.write else "")
     )
     if args.check and changes:

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "scalar.cardinality_first_tags",
+  "source_query_sha256": "8b0189f61ccd668f8dcd4618951163629f9ec93a2af234f79897b47d30acc1d8",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from independently approved source case"
+}

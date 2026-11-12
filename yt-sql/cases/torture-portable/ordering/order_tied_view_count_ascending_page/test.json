@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "torture.ordering.order_tied_view_count_ascending_page",
+  "description": "Seeded lexical stress of ordering.order_tied_view_count_ascending_page; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "limit",
+    "offset",
+    "order_by",
+    "torture.lexical"
+  ]
+}

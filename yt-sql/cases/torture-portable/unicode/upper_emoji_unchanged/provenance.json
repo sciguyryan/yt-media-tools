@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "unicode.upper_emoji_unchanged",
+  "source_query_sha256": "5a2f2fb32ac29c47b18f7808812471ef5123661c7de5167366c8082ad1e15e6a",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from independently approved source case"
+}

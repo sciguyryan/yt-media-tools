@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.negative.limit_negative",
+  "description": "Seeded lexical stress of negative.limit_negative; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

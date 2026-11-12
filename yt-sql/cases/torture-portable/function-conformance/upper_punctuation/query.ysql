@@ -1,0 +1,4 @@
+SELECT
+  upper('!?') 	 AS result
+	from  @yt_sql_fixture LIMIT 1 
+ 

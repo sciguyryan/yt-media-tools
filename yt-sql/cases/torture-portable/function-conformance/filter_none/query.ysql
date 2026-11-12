@@ -1,0 +1,5 @@
+select
+  FILTER(tags	AS  tag  where 	 tag	=  'absent')  as 	 result
+from	@yt_sql_fixture
+where	source_index	=  1
+  

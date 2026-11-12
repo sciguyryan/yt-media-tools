@@ -1,0 +1,4 @@
+SELECT 
+ max(source_index) as 	 result
+	from  @yt_sql_fixture
+	

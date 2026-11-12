@@ -1,0 +1,2 @@
+SELECT	completely_unknown_column 	 FROM	@yt_sql_fixture
+  

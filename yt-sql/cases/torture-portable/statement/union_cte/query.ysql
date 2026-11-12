@@ -1,0 +1,14 @@
+WITH  chosen as	(
+	SELECT
+	id
+	FROM @yt_sql_fixture 
+ where source_index 	 <= 	 2
+)
+	(SELECT 
+ id
+	FROM  chosen)
+UNION all
+  (SELECT
+id
+FROM	chosen) 
+ order  BY  id

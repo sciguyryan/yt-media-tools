@@ -1,0 +1,3 @@
+SELECT
+  LEAST('a', 'z')  AS result
+from 	 @yt_sql_fixture	LIMIT 1

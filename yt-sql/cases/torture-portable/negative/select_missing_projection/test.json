@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.negative.select_missing_projection",
+  "description": "Seeded lexical stress of negative.select_missing_projection; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

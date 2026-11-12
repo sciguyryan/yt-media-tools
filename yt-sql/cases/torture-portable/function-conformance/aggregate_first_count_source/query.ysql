@@ -1,0 +1,5 @@
+SELECT
+	count(source_index) 	 AS	result
+  from @yt_sql_fixture 
+ WHERE  source_index	= 1
+  

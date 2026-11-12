@@ -1,0 +1,3 @@
+select 
+ CONCAT('a',  'b',	'c') 	 AS 	 result 
+ FROM 	 @yt_sql_fixture limit  1

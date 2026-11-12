@@ -1,0 +1,6 @@
+SELECT 
+ id
+  from @yt_sql_fixture
+WHERE  upload_date = '20260831'
+  ORDER by	source_index 
+ 

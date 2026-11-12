@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "torture.semantics.null_and_boolean_logic",
+  "description": "Seeded lexical stress of semantics.null_and_boolean_logic; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "boolean.and",
+    "boolean.not",
+    "boolean.or",
+    "boolean.parentheses",
+    "is.null",
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,5 @@
+SELECT
+AVG(source_index) 	 AS 	 result
+  FROM @yt_sql_fixture 
+ WHERE source_index =  1
+	

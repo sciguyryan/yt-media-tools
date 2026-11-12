@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "torture.statement.distinct_group_limit",
+  "description": "Seeded lexical stress of statement.distinct_group_limit; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "distinct",
+    "limit",
+    "offset",
+    "order_by",
+    "torture.lexical"
+  ]
+}

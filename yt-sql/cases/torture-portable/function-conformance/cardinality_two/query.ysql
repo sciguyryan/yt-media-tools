@@ -1,0 +1,2 @@
+select CARDINALITY(tags,  tags)	as  result  from 	 @yt_sql_fixture 	 limit	1
+	

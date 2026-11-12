@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.interaction.greatest_least_nested",
+  "description": "Seeded lexical stress of interaction.greatest_least_nested; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "greatest",
+    "least",
+    "torture.lexical"
+  ]
+}

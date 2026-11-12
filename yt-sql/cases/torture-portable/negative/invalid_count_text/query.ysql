@@ -1,0 +1,2 @@
+SELECT COUNT(title, id) 	 FROM	@yt_sql_fixture
+  

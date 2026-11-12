@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.cardinality_first",
+  "description": "Seeded lexical stress of function-conformance.cardinality_first; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.cardinality",
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "torture.statement.invalid_union_after_limit",
+  "description": "Seeded lexical stress of statement.invalid_union_after_limit; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "invalid",
+    "limit",
+    "torture.lexical",
+    "union_all"
+  ]
+}

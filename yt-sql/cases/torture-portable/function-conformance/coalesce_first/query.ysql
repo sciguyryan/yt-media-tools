@@ -1,0 +1,4 @@
+select
+	coalesce(7,  8)	AS	result 
+ FROM @yt_sql_fixture limit	1 
+ 

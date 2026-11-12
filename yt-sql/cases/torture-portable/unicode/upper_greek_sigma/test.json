@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.unicode.upper_greek_sigma",
+  "description": "Seeded lexical stress of unicode.upper_greek_sigma; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper",
+    "torture.lexical"
+  ]
+}

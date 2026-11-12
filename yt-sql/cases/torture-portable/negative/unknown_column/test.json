@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.negative.unknown_column",
+  "description": "Seeded lexical stress of negative.unknown_column; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "torture.statement.cte_projection",
+  "description": "Seeded lexical stress of statement.cte_projection; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "cte",
+    "order_by",
+    "torture.lexical",
+    "where",
+    "with"
+  ]
+}

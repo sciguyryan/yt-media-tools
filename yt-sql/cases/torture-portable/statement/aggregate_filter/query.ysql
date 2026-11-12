@@ -1,0 +1,7 @@
+SELECT
+COUNT(*) 	 AS  n,
+	min(source_index) AS	low,
+	MAX(source_index) AS high
+from	@yt_sql_fixture
+  WHERE  source_index 	 between  2  AND  6 
+ 

@@ -1,0 +1,4 @@
+SELECT
+	GREATEST('a', 'z')	as	result
+	FROM 	 @yt_sql_fixture  limit  1
+  

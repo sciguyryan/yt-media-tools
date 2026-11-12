@@ -1,0 +1,5 @@
+select
+	SUM(source_index) 	 AS	result
+  from @yt_sql_fixture 
+ where  source_index	<= 3
+  

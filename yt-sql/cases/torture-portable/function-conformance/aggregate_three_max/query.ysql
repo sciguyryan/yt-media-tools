@@ -1,0 +1,4 @@
+SELECT
+  MAX(source_index) AS 	 result
+	FROM @yt_sql_fixture
+where source_index 	 <=  3

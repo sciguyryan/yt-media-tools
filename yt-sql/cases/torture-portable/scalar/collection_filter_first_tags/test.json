@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.scalar.collection_filter_first_tags",
+  "description": "Seeded lexical stress of scalar.collection_filter_first_tags; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter",
+    "torture.lexical"
+  ]
+}

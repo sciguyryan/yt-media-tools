@@ -1,0 +1,2 @@
+SELECT	id from  @yt_sql_fixture  limit	2  OFFSET 	 -1
+	

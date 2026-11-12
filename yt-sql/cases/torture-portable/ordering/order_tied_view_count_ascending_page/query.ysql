@@ -1,0 +1,6 @@
+select
+  id
+FROM @yt_sql_fixture
+WHERE  view_count IS  not  NULL 
+ ORDER 	 by view_count ASC, id	desc 	 LIMIT 	 9  offset 2
+	

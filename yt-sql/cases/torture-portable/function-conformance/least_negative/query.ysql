@@ -1,0 +1,4 @@
+SELECT 
+ least(-8,  -3,  -5)  AS 	 result
+  FROM @yt_sql_fixture  LIMIT 	 1
+	

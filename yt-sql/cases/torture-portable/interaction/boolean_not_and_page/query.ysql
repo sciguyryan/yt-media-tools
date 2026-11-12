@@ -1,0 +1,6 @@
+SELECT
+  id 
+ from	@yt_sql_fixture
+WHERE	NOT 	 (source_index 	 < 	 4	OR source_index  > 	 7)  AND  source_index 	 != 	 6 
+ ORDER	BY	source_index desc	limit	2
+  

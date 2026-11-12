@@ -1,0 +1,2 @@
+SELECT SUM() 	 as result 	 from	@yt_sql_fixture  limit  1
+	

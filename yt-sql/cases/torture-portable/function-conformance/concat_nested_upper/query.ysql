@@ -1,0 +1,4 @@
+SELECT
+  CONCAT(UPPER('ab'), LOWER('CD'))	as result 
+ FROM	@yt_sql_fixture	LIMIT	1 
+ 

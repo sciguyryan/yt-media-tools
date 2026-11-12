@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.negative.invalid_count_text",
+  "description": "Seeded lexical stress of negative.invalid_count_text; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

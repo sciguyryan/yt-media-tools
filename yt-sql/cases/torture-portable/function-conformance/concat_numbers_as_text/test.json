@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.concat_numbers_as_text",
+  "description": "Seeded lexical stress of function-conformance.concat_numbers_as_text; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat",
+    "torture.lexical"
+  ]
+}

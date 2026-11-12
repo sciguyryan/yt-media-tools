@@ -1,0 +1,6 @@
+SELECT
+  l.id 
+ FROM	@yt_sql_fixture 	 AS	l 	 INNER  join	@yt_sql_fixture  AS  r	ON l.id	= r.id 
+ where  l.source_index 	 <= 3 
+ ORDER 	 BY  l.source_index
+	

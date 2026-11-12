@@ -1,0 +1,4 @@
+SELECT
+	UPPER('ա')	AS  result
+from 	 @yt_sql_fixture 	 LIMIT	1
+	

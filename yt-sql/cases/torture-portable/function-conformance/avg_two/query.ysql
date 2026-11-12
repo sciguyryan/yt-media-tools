@@ -1,0 +1,1 @@
+select  AVG(1, 2) AS result from @yt_sql_fixture 	 limit 	 1

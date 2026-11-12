@@ -3637,6 +3637,2403 @@
       "path": "yt-sql/cases/temporal/upload_date_exact/test.json"
     },
     {
+      "id": "torture.aggregate.avg_source_positions",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/avg_source_positions/test.json"
+    },
+    {
+      "id": "torture.aggregate.avg_text_type_error",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/avg_text_type_error/test.json"
+    },
+    {
+      "id": "torture.aggregate.count_all_rows",
+      "features": [
+        "aggregate.count",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/count_all_rows/test.json"
+    },
+    {
+      "id": "torture.aggregate.maximum_source_position",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/maximum_source_position/test.json"
+    },
+    {
+      "id": "torture.aggregate.minimum_source_position",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/minimum_source_position/test.json"
+    },
+    {
+      "id": "torture.aggregate.sum_source_positions",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/sum_source_positions/test.json"
+    },
+    {
+      "id": "torture.aggregate.sum_text_type_error",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/aggregate/sum_text_type_error/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_avg_null",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_avg_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_count_expression",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_expression/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_count_literal",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_literal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_count_null",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_avg_source",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_avg_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_count_source",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_count_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_count_star",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_count_star/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_max_source",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_max_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_min_source",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_min_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_first_sum_source",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_sum_source/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_max_add",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_max_null",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_min_add",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_min_null",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_sum_add",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_sum_null",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_avg",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_avg/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_count",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_count/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_max",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_max/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_min",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_min/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_three_sum",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_sum/test.json"
+    },
+    {
+      "id": "torture.function-conformance.avg_text",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/avg_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.avg_two",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/avg_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.avg_zero",
+      "features": [
+        "aggregate.avg",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/avg_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_filter",
+      "features": [
+        "collection.cardinality",
+        "collection.filter",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/cardinality_filter/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_first",
+      "features": [
+        "collection.cardinality",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/cardinality_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_two",
+      "features": [
+        "collection.cardinality",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/cardinality_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.cardinality_zero",
+      "features": [
+        "collection.cardinality",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/cardinality_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_ascii",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_digit",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_digit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_latin1",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_latin1/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_null",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_null_only",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_null_only/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_space",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_space/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_three_null",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_three_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_two",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_upper",
+      "features": [
+        "projection.upper",
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_zero",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_zero_args",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/char_zero_args/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_all_null",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_all_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_empty_string",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_empty_string/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_falsey_zero",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_falsey_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_first",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_nested",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_nullif_distinct",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_nullif_distinct/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_one",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_second",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_second/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_short_circuit",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_short_circuit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_string_null",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_string_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_three",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_three/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_unicode",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_unicode/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_zero",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_empty",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_empty_middle",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_empty_middle/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_multilingual",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_multilingual/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_nested_upper",
+      "features": [
+        "projection.lower",
+        "projection.upper",
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_nested_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_null_later",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_null_later/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_numbers_as_text",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_numbers_as_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_one",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_three",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_three/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_three_null",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_three_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_unicode_emoji",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_zero",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/concat_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.count_two",
+      "features": [
+        "aggregate.count_expression",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/count_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.filter_none",
+      "features": [
+        "collection.filter",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/filter_none/test.json"
+    },
+    {
+      "id": "torture.function-conformance.filter_one",
+      "features": [
+        "collection.filter",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/filter_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.filter_zero",
+      "features": [
+        "collection.filter",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/filter_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_equal",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_negative",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_negative/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_null",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_null_first",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_null_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_one",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_single_nested",
+      "features": [
+        "scalar.greatest",
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_single_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_text",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.greatest_zero",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_equal",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_negative",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_negative/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_null",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_null_first",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_null_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_one",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_single_nested",
+      "features": [
+        "scalar.greatest",
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_single_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_text",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_zero",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_arabic",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_arabic/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_ascii",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_char",
+      "features": [
+        "projection.length",
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_char/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_cjk",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_cjk/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_combining",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_combining/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_concat",
+      "features": [
+        "projection.length",
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_concat/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_emoji",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_emoji_pair",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_emoji_pair/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_empty",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_null",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_two",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_upper",
+      "features": [
+        "projection.length",
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_zero",
+      "features": [
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_ascii",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_digit",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_digit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_empty",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_kelvin",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_kelvin/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_mixed",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_mixed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_null",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_punctuation",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_punctuation/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_two",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_unicode_accent",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_zero",
+      "features": [
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/lower_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.map_lower",
+      "features": [
+        "collection.map",
+        "projection.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/map_lower/test.json"
+    },
+    {
+      "id": "torture.function-conformance.map_upper",
+      "features": [
+        "collection.map",
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/map_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.map_zero",
+      "features": [
+        "collection.map",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/map_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.max_two",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/max_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.max_zero",
+      "features": [
+        "aggregate.max",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/max_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.min_two",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/min_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.min_zero",
+      "features": [
+        "aggregate.min",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/min_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nested_coalesce",
+      "features": [
+        "projection.coalesce",
+        "projection.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nested_coalesce/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nested_nullif",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nested_nullif/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nested_text",
+      "features": [
+        "projection.lower",
+        "projection.upper",
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nested_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_coalesce",
+      "features": [
+        "projection.coalesce",
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_coalesce/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_empty",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_equal_numeric",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_equal_numeric/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_first_null",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_first_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_nested",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_one",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_second_null",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_second_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_text_equal",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_text_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_text_unequal",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_text_unequal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_three",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_three/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_unequal_numeric",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_unequal_numeric/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_zero",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_first",
+      "features": [
+        "result.position",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/position_first/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_one",
+      "features": [
+        "result.position",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_range",
+      "features": [
+        "scalar.random_seeded",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_two",
+      "features": [
+        "scalar.random_seeded",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_unseeded_range",
+      "features": [
+        "scalar.random_seeded",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.sum_text",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/sum_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.sum_two",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/sum_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.sum_zero",
+      "features": [
+        "aggregate.sum",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/sum_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unknown_function",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/unknown_function/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_ascii",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_ascii/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_digit",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_digit/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_empty",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_mixed",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_mixed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_null",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_punctuation",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_punctuation/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_sharp_s",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_sharp_s/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_two",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_unicode_accent",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_unicode_accent/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_zero",
+      "features": [
+        "projection.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/upper_zero/test.json"
+    },
+    {
+      "id": "torture.interaction.boolean_not_and_page",
+      "features": [
+        "and",
+        "limit",
+        "not",
+        "or",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/boolean_not_and_page/test.json"
+    },
+    {
+      "id": "torture.interaction.boolean_or_overlap_dedup",
+      "features": [
+        "between",
+        "limit",
+        "or",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/boolean_or_overlap_dedup/test.json"
+    },
+    {
+      "id": "torture.interaction.boolean_parentheses_page",
+      "features": [
+        "and",
+        "limit",
+        "offset",
+        "or",
+        "order_by",
+        "parentheses",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/boolean_parentheses_page/test.json"
+    },
+    {
+      "id": "torture.interaction.coalesce_nullif_concat",
+      "features": [
+        "coalesce",
+        "concat",
+        "nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/coalesce_nullif_concat/test.json"
+    },
+    {
+      "id": "torture.interaction.filter_cardinality",
+      "features": [
+        "cardinality",
+        "filter",
+        "limit",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/filter_cardinality/test.json"
+    },
+    {
+      "id": "torture.interaction.filter_then_map",
+      "features": [
+        "filter",
+        "limit",
+        "map",
+        "order_by",
+        "torture.lexical",
+        "upper"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/filter_then_map/test.json"
+    },
+    {
+      "id": "torture.interaction.greatest_least_nested",
+      "features": [
+        "greatest",
+        "least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/greatest_least_nested/test.json"
+    },
+    {
+      "id": "torture.interaction.map_cardinality",
+      "features": [
+        "cardinality",
+        "limit",
+        "map",
+        "order_by",
+        "torture.lexical",
+        "upper"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/map_cardinality/test.json"
+    },
+    {
+      "id": "torture.interaction.map_then_filter",
+      "features": [
+        "filter",
+        "limit",
+        "map",
+        "order_by",
+        "torture.lexical",
+        "upper"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/map_then_filter/test.json"
+    },
+    {
+      "id": "torture.interaction.nested_casefold_length",
+      "features": [
+        "length",
+        "lower",
+        "torture.lexical",
+        "upper"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/nested_casefold_length/test.json"
+    },
+    {
+      "id": "torture.interaction.nested_predicate_with_page",
+      "features": [
+        "and",
+        "between",
+        "in",
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/nested_predicate_with_page/test.json"
+    },
+    {
+      "id": "torture.interaction.nested_unicode_concat",
+      "features": [
+        "char",
+        "concat",
+        "lower",
+        "torture.lexical",
+        "upper"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/nested_unicode_concat/test.json"
+    },
+    {
+      "id": "torture.interaction.null_chain_fallback",
+      "features": [
+        "coalesce",
+        "nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/null_chain_fallback/test.json"
+    },
+    {
+      "id": "torture.interaction.null_predicate_disjunction",
+      "features": [
+        "is_null",
+        "limit",
+        "or",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/null_predicate_disjunction/test.json"
+    },
+    {
+      "id": "torture.interaction.null_through_nested_scalar",
+      "features": [
+        "coalesce",
+        "length",
+        "nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/null_through_nested_scalar/test.json"
+    },
+    {
+      "id": "torture.interaction.pagination_last_row",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/pagination_last_row/test.json"
+    },
+    {
+      "id": "torture.interaction.pagination_reverse_tail",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/pagination_reverse_tail/test.json"
+    },
+    {
+      "id": "torture.interaction.predicate_empty_page",
+      "features": [
+        "and",
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/predicate_empty_page/test.json"
+    },
+    {
+      "id": "torture.negative.invalid_count_text",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/invalid_count_text/test.json"
+    },
+    {
+      "id": "torture.negative.limit_negative",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/limit_negative/test.json"
+    },
+    {
+      "id": "torture.negative.offset_negative",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/offset_negative/test.json"
+    },
+    {
+      "id": "torture.negative.order_missing_expression",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/order_missing_expression/test.json"
+    },
+    {
+      "id": "torture.negative.select_missing_projection",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/select_missing_projection/test.json"
+    },
+    {
+      "id": "torture.negative.select_trailing_comma",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/select_trailing_comma/test.json"
+    },
+    {
+      "id": "torture.negative.select_unclosed_parenthesis",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/select_unclosed_parenthesis/test.json"
+    },
+    {
+      "id": "torture.negative.unknown_column",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/unknown_column/test.json"
+    },
+    {
+      "id": "torture.negative.where_missing_operand",
+      "features": [
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_beyond_end",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_source_position_beyond_end/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_desc",
+      "features": [
+        "limit",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_source_position_desc/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_page",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_source_position_page/test.json"
+    },
+    {
+      "id": "torture.ordering.order_source_position_tail",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_source_position_tail/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count",
+      "features": [
+        "limit",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_tied_view_count/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count_ascending",
+      "features": [
+        "limit",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_ascending/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count_ascending_page",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_ascending_page/test.json"
+    },
+    {
+      "id": "torture.ordering.order_tied_view_count_page",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_page/test.json"
+    },
+    {
+      "id": "torture.scalar.cardinality_first_tags",
+      "features": [
+        "scalar.cardinality",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/cardinality_first_tags/test.json"
+    },
+    {
+      "id": "torture.scalar.char_multiple_codepoints",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/char_multiple_codepoints/test.json"
+    },
+    {
+      "id": "torture.scalar.coalesce_null_chain",
+      "features": [
+        "scalar.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/coalesce_null_chain/test.json"
+    },
+    {
+      "id": "torture.scalar.collection_filter_first_tags",
+      "features": [
+        "collection.filter",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/collection_filter_first_tags/test.json"
+    },
+    {
+      "id": "torture.scalar.collection_map_first_tags",
+      "features": [
+        "collection.map",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/collection_map_first_tags/test.json"
+    },
+    {
+      "id": "torture.scalar.concat_nested_null",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/concat_nested_null/test.json"
+    },
+    {
+      "id": "torture.scalar.concat_null",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/concat_null/test.json"
+    },
+    {
+      "id": "torture.scalar.concat_unicode",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/concat_unicode/test.json"
+    },
+    {
+      "id": "torture.scalar.greatest_numeric",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/greatest_numeric/test.json"
+    },
+    {
+      "id": "torture.scalar.greatest_text",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/greatest_text/test.json"
+    },
+    {
+      "id": "torture.scalar.least_null",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/least_null/test.json"
+    },
+    {
+      "id": "torture.scalar.least_signed_integer",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/least_signed_integer/test.json"
+    },
+    {
+      "id": "torture.scalar.length_combining_sequence",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/length_combining_sequence/test.json"
+    },
+    {
+      "id": "torture.scalar.nested_coalesce_nullif",
+      "features": [
+        "scalar.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/nested_coalesce_nullif/test.json"
+    },
+    {
+      "id": "torture.scalar.nullif_distinct",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/nullif_distinct/test.json"
+    },
+    {
+      "id": "torture.scalar.nullif_equal",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/nullif_equal/test.json"
+    },
+    {
+      "id": "torture.scalar.position_first_row",
+      "features": [
+        "scalar.position",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/scalar/position_first_row/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_equal",
+      "features": [
+        "comparison.eq",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/comparison_equal/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_not_equal",
+      "features": [
+        "comparison.ne",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/comparison_not_equal/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_not_equal_angle",
+      "features": [
+        "comparison.ne_alt",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/comparison_not_equal_angle/test.json"
+    },
+    {
+      "id": "torture.semantics.null_and_boolean_logic",
+      "features": [
+        "boolean.and",
+        "boolean.not",
+        "boolean.or",
+        "boolean.parentheses",
+        "is.null",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/null_and_boolean_logic/test.json"
+    },
+    {
+      "id": "torture.smoke.source_order_limit",
+      "features": [
+        "from.handle",
+        "limit",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/smoke/source_order_limit/test.json"
+    },
+    {
+      "id": "torture.statement.aggregate_filter",
+      "features": [
+        "aggregate",
+        "between",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/aggregate_filter/test.json"
+    },
+    {
+      "id": "torture.statement.cte_aggregate",
+      "features": [
+        "cte",
+        "group_by",
+        "torture.lexical",
+        "with"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/cte_aggregate/test.json"
+    },
+    {
+      "id": "torture.statement.cte_chain",
+      "features": [
+        "cte",
+        "multiple_ctes",
+        "torture.lexical",
+        "with"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/cte_chain/test.json"
+    },
+    {
+      "id": "torture.statement.cte_projection",
+      "features": [
+        "cte",
+        "order_by",
+        "torture.lexical",
+        "where",
+        "with"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/cte_projection/test.json"
+    },
+    {
+      "id": "torture.statement.distinct_group",
+      "features": [
+        "distinct",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/distinct_group/test.json"
+    },
+    {
+      "id": "torture.statement.distinct_group_limit",
+      "features": [
+        "distinct",
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/distinct_group_limit/test.json"
+    },
+    {
+      "id": "torture.statement.group_count",
+      "features": [
+        "count",
+        "group_by",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/group_count/test.json"
+    },
+    {
+      "id": "torture.statement.invalid_having_before_group",
+      "features": [
+        "group_by",
+        "having",
+        "invalid",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/invalid_having_before_group/test.json"
+    },
+    {
+      "id": "torture.statement.invalid_union_after_limit",
+      "features": [
+        "invalid",
+        "limit",
+        "torture.lexical",
+        "union_all"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/invalid_union_after_limit/test.json"
+    },
+    {
+      "id": "torture.statement.invalid_where_after_group",
+      "features": [
+        "group_by",
+        "invalid",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/invalid_where_after_group/test.json"
+    },
+    {
+      "id": "torture.statement.join_cte",
+      "features": [
+        "cte",
+        "join",
+        "torture.lexical",
+        "with"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/join_cte/test.json"
+    },
+    {
+      "id": "torture.statement.join_self_subset",
+      "features": [
+        "join",
+        "on",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/join_self_subset/test.json"
+    },
+    {
+      "id": "torture.statement.left_join_no_match",
+      "features": [
+        "left_join",
+        "on",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/left_join_no_match/test.json"
+    },
+    {
+      "id": "torture.statement.limit_offset_middle",
+      "features": [
+        "limit",
+        "offset",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/limit_offset_middle/test.json"
+    },
+    {
+      "id": "torture.statement.offset_exact_end",
+      "features": [
+        "boundary",
+        "offset",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/offset_exact_end/test.json"
+    },
+    {
+      "id": "torture.statement.order_multiple_keys",
+      "features": [
+        "multiple_keys",
+        "order_by",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/order_multiple_keys/test.json"
+    },
+    {
+      "id": "torture.statement.projection_alias",
+      "features": [
+        "alias",
+        "limit",
+        "order_by",
+        "select",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/projection_alias/test.json"
+    },
+    {
+      "id": "torture.statement.projection_expression",
+      "features": [
+        "arithmetic",
+        "between",
+        "select",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/projection_expression/test.json"
+    },
+    {
+      "id": "torture.statement.union_all_duplicates",
+      "features": [
+        "duplicates",
+        "torture.lexical",
+        "union_all"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/union_all_duplicates/test.json"
+    },
+    {
+      "id": "torture.statement.union_cte",
+      "features": [
+        "cte",
+        "torture.lexical",
+        "union_all"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/union_cte/test.json"
+    },
+    {
+      "id": "torture.statement.union_deduplicates",
+      "features": [
+        "deduplication",
+        "set",
+        "torture.lexical",
+        "union"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/union_deduplicates/test.json"
+    },
+    {
+      "id": "torture.statement.union_page",
+      "features": [
+        "limit",
+        "offset",
+        "order_by",
+        "torture.lexical",
+        "union"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/union_page/test.json"
+    },
+    {
+      "id": "torture.statement.unsupported_full_join",
+      "features": [
+        "full_join",
+        "torture.lexical",
+        "unsupported"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/unsupported_full_join/test.json"
+    },
+    {
+      "id": "torture.statement.unsupported_right_join",
+      "features": [
+        "right_join",
+        "torture.lexical",
+        "unsupported"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/unsupported_right_join/test.json"
+    },
+    {
+      "id": "torture.statement.where_and_order",
+      "features": [
+        "and",
+        "order_by",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/where_and_order/test.json"
+    },
+    {
+      "id": "torture.statement.where_case_expression",
+      "features": [
+        "case",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/where_case_expression/test.json"
+    },
+    {
+      "id": "torture.statement.where_in_null",
+      "features": [
+        "in",
+        "null",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/where_in_null/test.json"
+    },
+    {
+      "id": "torture.statement.where_not_in",
+      "features": [
+        "and",
+        "not_in",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/where_not_in/test.json"
+    },
+    {
+      "id": "torture.statement.where_or_dedup",
+      "features": [
+        "between",
+        "or",
+        "torture.lexical",
+        "where"
+      ],
+      "path": "yt-sql/cases/torture-portable/statement/where_or_dedup/test.json"
+    },
+    {
+      "id": "torture.temporal.upload_date_exact",
+      "features": [
+        "temporal.comparison",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/upload_date_exact/test.json"
+    },
+    {
+      "id": "torture.unicode.char_unicode",
+      "features": [
+        "scalar.char",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/char_unicode/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_composed_decomposed",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/concat_composed_decomposed/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_emoji",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/concat_emoji/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_empty",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/concat_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.concat_multiscript",
+      "features": [
+        "scalar.concat",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/concat_multiscript/test.json"
+    },
+    {
+      "id": "torture.unicode.length_arabic",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_arabic/test.json"
+    },
+    {
+      "id": "torture.unicode.length_cjk",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_cjk/test.json"
+    },
+    {
+      "id": "torture.unicode.length_codepoints",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_codepoints/test.json"
+    },
+    {
+      "id": "torture.unicode.length_crlf",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_crlf/test.json"
+    },
+    {
+      "id": "torture.unicode.length_empty",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.length_nonbmp",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_nonbmp/test.json"
+    },
+    {
+      "id": "torture.unicode.length_regional_indicator",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_regional_indicator/test.json"
+    },
+    {
+      "id": "torture.unicode.length_variation_selector",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_variation_selector/test.json"
+    },
+    {
+      "id": "torture.unicode.length_zwj_emoji",
+      "features": [
+        "scalar.length",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/length_zwj_emoji/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_accented",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_accented/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_armenian",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_armenian/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_cyrillic",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_cyrillic/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_deseret",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_deseret/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_dotted_i",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_dotted_i/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_emoji_unchanged",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_emoji_unchanged/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_empty",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_fullwidth",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_fullwidth/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_greek_omega",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_greek_omega/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_greek_sigma",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_greek_sigma/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_kelvin_sign",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_kelvin_sign/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_null",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_null/test.json"
+    },
+    {
+      "id": "torture.unicode.lower_turkish_capital_i",
+      "features": [
+        "scalar.lower",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/lower_turkish_capital_i/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_accented",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_accented/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_armenian",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_armenian/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_composed_accent",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_composed_accent/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_cyrillic",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_cyrillic/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_decomposed_accent",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_decomposed_accent/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_deseret",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_deseret/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_emoji_unchanged",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_emoji_unchanged/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_empty",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_empty/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_fullwidth",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_fullwidth/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_greek_omega",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_greek_omega/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_greek_sigma",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_ligature",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_ligature/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_null",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_null/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_sharp_s",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_sharp_s/test.json"
+    },
+    {
+      "id": "torture.unicode.upper_turkish_dotless_i",
+      "features": [
+        "scalar.upper",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/unicode/upper_turkish_dotless_i/test.json"
+    },
+    {
       "id": "unicode.char_unicode",
       "features": [
         "scalar.char"

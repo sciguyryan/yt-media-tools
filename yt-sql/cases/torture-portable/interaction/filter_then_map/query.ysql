@@ -1,0 +1,5 @@
+SELECT
+  MAP(FILTER(tags 	 AS 	 tag WHERE 	 tag = 'topic-1') 	 as	item	SELECT  UPPER(item)) as	result
+	FROM  @yt_sql_fixture 
+ order  BY	source_index 	 limit 1 
+ 

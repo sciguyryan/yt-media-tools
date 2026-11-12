@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.unknown_function",
+  "description": "Seeded lexical stress of function-conformance.unknown_function; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

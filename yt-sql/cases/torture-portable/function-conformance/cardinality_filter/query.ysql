@@ -1,0 +1,5 @@
+select
+CARDINALITY(FILTER(tags 	 AS tag 	 WHERE	tag 	 = 'topic-1')) as result
+  from 	 @yt_sql_fixture
+	where	source_index =  1
+  

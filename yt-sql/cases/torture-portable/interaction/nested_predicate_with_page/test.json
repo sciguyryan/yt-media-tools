@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "id": "torture.interaction.nested_predicate_with_page",
+  "description": "Seeded lexical stress of interaction.nested_predicate_with_page; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "and",
+    "between",
+    "in",
+    "limit",
+    "offset",
+    "order_by",
+    "torture.lexical"
+  ]
+}

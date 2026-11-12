@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id"
+  ],
+  "rows": [
+    [
+      "vid004"
+    ],
+    [
+      "vid005"
+    ],
+    [
+      "vid006"
+    ]
+  ]
+}

@@ -1,0 +1,5 @@
+select	distinct 
+ fixture_group 
+ FROM	@yt_sql_fixture
+order  BY 	 fixture_group 	 DESC  limit 2 OFFSET 	 1
+	

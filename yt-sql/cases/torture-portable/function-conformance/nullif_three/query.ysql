@@ -1,0 +1,2 @@
+select 	 NULLIF(1, 2,  3) as result	FROM 	 @yt_sql_fixture 	 LIMIT 1
+	

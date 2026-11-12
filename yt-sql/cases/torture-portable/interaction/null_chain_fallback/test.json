@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.interaction.null_chain_fallback",
+  "description": "Seeded lexical stress of interaction.null_chain_fallback; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "coalesce",
+    "nullif",
+    "torture.lexical"
+  ]
+}

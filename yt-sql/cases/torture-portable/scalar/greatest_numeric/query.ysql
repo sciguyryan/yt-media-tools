@@ -1,0 +1,4 @@
+select
+	GREATEST(-4, 	 0, 17, 	 3)	AS  result
+	from 	 @yt_sql_fixture  LIMIT 	 1
+	

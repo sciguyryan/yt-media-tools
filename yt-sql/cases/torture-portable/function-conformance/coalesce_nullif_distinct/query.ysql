@@ -1,0 +1,4 @@
+SELECT
+  COALESCE(NULLIF(3,  4),	5)  AS 	 result
+  from 	 @yt_sql_fixture 	 LIMIT 	 1
+  

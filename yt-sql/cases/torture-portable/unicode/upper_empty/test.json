@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.unicode.upper_empty",
+  "description": "Seeded lexical stress of unicode.upper_empty; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.upper",
+    "torture.lexical"
+  ]
+}

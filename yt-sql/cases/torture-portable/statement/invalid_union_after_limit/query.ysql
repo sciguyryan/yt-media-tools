@@ -1,0 +1,1 @@
+SELECT id  from @yt_sql_fixture  order  by  id	LIMIT	2	UNION  all  SELECT id FROM @yt_sql_fixture

@@ -1,0 +1,2 @@
+select FROM 	 @yt_sql_fixture 
+ 

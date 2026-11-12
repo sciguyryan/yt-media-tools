@@ -1,0 +1,3 @@
+SELECT
+  UPPER('é') 	 as result
+from	@yt_sql_fixture  limit  1

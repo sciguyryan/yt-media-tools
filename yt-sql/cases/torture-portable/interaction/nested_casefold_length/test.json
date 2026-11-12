@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "torture.interaction.nested_casefold_length",
+  "description": "Seeded lexical stress of interaction.nested_casefold_length; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "length",
+    "lower",
+    "torture.lexical",
+    "upper"
+  ]
+}

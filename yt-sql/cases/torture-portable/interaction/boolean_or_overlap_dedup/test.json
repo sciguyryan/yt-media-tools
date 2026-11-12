@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "torture.interaction.boolean_or_overlap_dedup",
+  "description": "Seeded lexical stress of interaction.boolean_or_overlap_dedup; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "between",
+    "limit",
+    "or",
+    "order_by",
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.statement.offset_exact_end",
+  "description": "Seeded lexical stress of statement.offset_exact_end; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "boundary",
+    "offset",
+    "torture.lexical"
+  ]
+}

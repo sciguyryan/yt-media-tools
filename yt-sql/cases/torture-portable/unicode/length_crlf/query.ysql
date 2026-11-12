@@ -1,0 +1,4 @@
+SELECT
+  LENGTH('a
+b')	as	result
+from  @yt_sql_fixture	limit 1
