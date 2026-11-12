@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.unicode_contains_composed",
+  "description": "CONTAINS matches composed Unicode under casefold",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.unicode"
+  ]
+}

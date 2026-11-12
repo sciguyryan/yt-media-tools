@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.unicode_like_line_separator",
+  "description": "LIKE percent matches Unicode line separator",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.unicode"
+  ]
+}

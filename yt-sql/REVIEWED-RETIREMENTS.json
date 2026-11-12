@@ -148,6 +148,43 @@
         "function-conformance.position_zero_arguments_two",
         "function-conformance.position_one"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_exact_text_comparison_does_not_normalise_unicode",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.unicode_exact_composed",
+        "function-conformance.unicode_exact_decomposed"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_contains_uses_unicode_casefold_without_normalising",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.unicode_contains_casefold_sharp_s",
+        "function-conformance.unicode_contains_composed",
+        "function-conformance.unicode_contains_decomposed_mismatch"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_ilike_does_not_normalise_composed_and_decomposed_forms",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.unicode_ilike_composed",
+        "function-conformance.unicode_ilike_decomposed_mismatch"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_like_percent_spans_ascii_newline_and_unicode_line_separator",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.unicode_like_ascii_newline",
+        "function-conformance.unicode_like_line_separator"
+      ]
     }
   ],
   "module_reviews": [

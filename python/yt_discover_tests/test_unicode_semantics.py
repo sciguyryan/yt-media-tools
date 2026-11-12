@@ -40,17 +40,6 @@ def _ids(query: str) -> list[str]:
     return [str(record["id"]) for record in apply_query(records, resolved)]
 
 
-def test_exact_text_comparison_does_not_normalise_unicode() -> None:
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title = 'Café composed é'") == ["vid037"]
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title = 'Café decomposed é'") == ["vid038"]
-
-
-def test_contains_uses_unicode_casefold_without_normalising() -> None:
-    assert "vid046" in _ids("SELECT id FROM @yt_sql_fixture WHERE title CONTAINS 'strasse'")
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title CONTAINS 'CAFÉ COMPOSED'") == ["vid037"]
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title CONTAINS 'CAFÉ DECOMPOSED'") == []
-
-
 @pytest.mark.parametrize(
     ("pattern", "expected"),
     (
@@ -137,13 +126,3 @@ def test_all_unicode_anchor_titles_survive_projection_unchanged() -> None:
     actual = [(str(row["id"]), str(row["title"])) for row in selected]
     expected = [(str(row["id"]), str(row["title"])) for row in records if 37 <= int(row["source_index"]) <= 60]
     assert actual == expected
-
-
-def test_like_percent_spans_ascii_newline_and_unicode_line_separator() -> None:
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title LIKE 'Line%break'") == ["vid057"]
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title LIKE 'Line separator %'") == ["vid058"]
-
-
-def test_ilike_does_not_normalise_composed_and_decomposed_forms() -> None:
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title ILIKE '%café composed%'") == ["vid037"]
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title ILIKE '%café decomposed%'") == []

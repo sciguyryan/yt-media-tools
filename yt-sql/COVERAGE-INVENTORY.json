@@ -3231,6 +3231,69 @@
       "path": "yt-sql/cases/function-conformance/sum_zero/test.json"
     },
     {
+      "id": "function-conformance.unicode_contains_casefold_sharp_s",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_contains_casefold_sharp_s/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_contains_composed",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_contains_composed/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_contains_decomposed_mismatch",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_contains_decomposed_mismatch/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_exact_composed",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_exact_composed/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_exact_decomposed",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_exact_decomposed/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_ilike_composed",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ilike_composed/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_ilike_decomposed_mismatch",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ilike_decomposed_mismatch/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_ascii_newline",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_ascii_newline/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_line_separator",
+      "features": [
+        "predicate.unicode"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_line_separator/test.json"
+    },
+    {
       "id": "function-conformance.unknown_function",
       "features": [],
       "path": "yt-sql/cases/function-conformance/unknown_function/test.json"
