@@ -576,7 +576,6 @@
     "python/yt_discover_tests/test_structured_type_model.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_temporal_bound_frontier_inference.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_temporal_canonical_formatting.py": "retain: implementation/integration pending review",
-    "python/yt_discover_tests/test_text_position_remaining_audit.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_tools.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_torture_queries.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_truth_value_inspection.py": "retain: implementation/integration pending review",

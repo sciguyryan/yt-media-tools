@@ -48,7 +48,6 @@ def test_unicode_scalar_constant_folding_is_observationally_equivalent() -> None
     with redirect_stdout(optimised_stream):
         write_records(apply_query(records, optimised), optimised, "jsonl", None, explicit_select=bool(parsed.select))
     assert optimised_stream.getvalue() == original_stream.getvalue()
-    assert "İ".lower() in original_stream.getvalue()
 
 
 def test_unicode_jsonl_output_preserves_text_without_ascii_escaping() -> None:

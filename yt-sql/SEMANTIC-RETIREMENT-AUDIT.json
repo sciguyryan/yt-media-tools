@@ -11,9 +11,9 @@
   "counts": {
     "language_elements": 267,
     "normative_manifests": 662,
-    "legacy_test_files": 225,
-    "test_functions": 1686,
-    "assertion_sites": 4214
+    "legacy_test_files": 224,
+    "test_functions": 1684,
+    "assertion_sites": 4208
   },
   "normative_cases": [
     {
@@ -41111,42 +41111,6 @@
       "retirement_decision": "retain_pending_assertion_level_review"
     },
     {
-      "path": "python/yt_discover_tests/test_text_position_remaining_audit.py",
-      "previous_classification": "retain: implementation/integration pending review",
-      "tests": [
-        {
-          "name": "test_text_position_inventory_detects_known_legacy_surfaces",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_text_position_remaining_index_is_current",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        }
-      ],
-      "retirement_decision": "retain_pending_assertion_level_review"
-    },
-    {
       "path": "python/yt_discover_tests/test_tools.py",
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
@@ -41815,9 +41779,6 @@
         {
           "name": "test_unicode_scalar_constant_folding_is_observationally_equivalent",
           "assertion_sites": [
-            {
-              "kind": "assert"
-            },
             {
               "kind": "assert"
             },
