@@ -17,3 +17,9 @@ The POSITION ordering-and-pagination semantic assertion previously embedded in `
 The formatter's ST06 rule was also disabled for YT-SQL because rearranging SELECT targets changes observable column order. A regression test protects the target ordering while retaining the authoritative parse-tree and idempotence checks. This exception applies to YT-SQL only, not SQLite.
 
 This continuation does not certify the entire text/POSITION family. In particular, all parameterised POSITION interactions, nested CTE behaviour, Unicode textual predicates and the broader cross-module assertion inventory still require a comprehensive retirement audit before 6.5a.1 can be declared complete. Passing the Python adapter alone is not independent proof of the normative expectations.
+
+## POSITION query-block follow-up
+
+Five independently specified portable cases now exercise final-result numbering for a grouped aggregate, inner and outer CTE scopes, preservation of an inner query's numbering across an outer sort, and ordered source sequence. These cases use the canonical small dataset and do not depend on the Python optimiser's internal representation.
+
+The previously retained Python tests for invalid POSITION arity, prohibited expression placement, and ordering by a POSITION alias have been retired after matching each parameterised variant to an existing portable negative case. Their replacement identifiers are recorded in `REVIEWED-RETIREMENTS.json`. Optimiser differential, query-property, parser round-trip, and source-immutability checks remain in Python because their implementation-specific assertions are not superseded by a single portable observation. Further cross-module text and POSITION review remains necessary before declaring 6.5a.1 complete.

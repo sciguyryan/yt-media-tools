@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_grouped_count",
+  "description": "POSITION numbers the final aggregate result, not its source rows.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

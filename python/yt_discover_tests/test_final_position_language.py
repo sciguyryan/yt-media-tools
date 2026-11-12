@@ -20,28 +20,6 @@ def test_position_projection_parses_and_canonicalises():
     assert resolved.select[0].kind == "integer"
 
 
-@pytest.mark.parametrize("expression", ["POSITION(1)", "POSITION(id)", "POSITION(1, 2)"])
-def test_position_requires_zero_arguments(expression):
-    with pytest.raises(QuerySyntaxError, match="POSITION requires no arguments"):
-        parse_query(f"SELECT {expression} FROM @fixture")
-
-
-@pytest.mark.parametrize(
-    "sql",
-    [
-        "SELECT id FROM @fixture WHERE POSITION() > 0",
-        "SELECT id FROM @fixture ORDER BY POSITION()",
-        "SELECT POSITION() + 1 FROM @fixture",
-        "SELECT COALESCE(POSITION(), 1) FROM @fixture",
-        "SELECT id FROM @fixture GROUP BY POSITION()",
-    ],
-)
-def test_position_is_rejected_outside_standalone_projection(sql):
-    query = parse_query(sql)
-    with pytest.raises((QuerySemanticError, QuerySyntaxError), match="POSITION"):
-        resolve_query(query, QuerySchema([{"id": "a"}]))
-
-
 def test_position_projection_does_not_mutate_source_records():
     """Keep implementation-specific source immutability outside portable fixtures."""
     from yt_media_tools.query_evaluator import apply_query
@@ -73,12 +51,6 @@ def test_position_numbers_aggregate_result():
     resolved = resolve_query(parse_query(sql), QuerySchema(records))
     result = apply_query(records, resolved)
     assert [(row["position"], row["total"]) for row in result] == [(1, 1), (2, 2)]
-
-
-def test_position_alias_cannot_order_the_result():
-    query = parse_query("SELECT POSITION() AS position, id FROM @fixture ORDER BY position")
-    with pytest.raises(QuerySemanticError, match="ORDER BY cannot depend"):
-        resolve_query(query, QuerySchema([{"id": "a"}]))
 
 
 def test_position_properties_are_final_stage_without_metadata_requirements():

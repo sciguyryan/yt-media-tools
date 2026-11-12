@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_cte_inner_sequence",
+  "description": "Outer ordering preserves the inner query block POSITION values.",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

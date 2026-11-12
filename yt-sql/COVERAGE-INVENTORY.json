@@ -3070,6 +3070,27 @@
       "path": "yt-sql/cases/function-conformance/position_argument_identifier/test.json"
     },
     {
+      "id": "function-conformance.position_cte_inner_offset",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_cte_inner_offset/test.json"
+    },
+    {
+      "id": "function-conformance.position_cte_inner_sequence",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_cte_inner_sequence/test.json"
+    },
+    {
+      "id": "function-conformance.position_cte_outer_sequence",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_cte_outer_sequence/test.json"
+    },
+    {
       "id": "function-conformance.position_descending_order",
       "features": [
         "result.position"
@@ -3089,6 +3110,13 @@
         "result.position"
       ],
       "path": "yt-sql/cases/function-conformance/position_first/test.json"
+    },
+    {
+      "id": "function-conformance.position_grouped_count",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_grouped_count/test.json"
     },
     {
       "id": "function-conformance.position_in_arithmetic",
@@ -3145,6 +3173,13 @@
         "result.position"
       ],
       "path": "yt-sql/cases/function-conformance/position_second_after_offset/test.json"
+    },
+    {
+      "id": "function-conformance.position_source_sequence",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_source_sequence/test.json"
     },
     {
       "id": "function-conformance.position_zero_arguments_two",

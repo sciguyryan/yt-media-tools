@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 622,
+    "normative_manifests": 627,
     "legacy_test_files": 224,
-    "test_functions": 1695,
-    "assertion_sites": 4215
+    "test_functions": 1692,
+    "assertion_sites": 4212
   },
   "normative_cases": [
     {
@@ -717,6 +717,18 @@
       "manifest": "yt-sql/cases/function-conformance/position_argument_identifier/test.json"
     },
     {
+      "id": "function-conformance.position_cte_inner_offset",
+      "manifest": "yt-sql/cases/function-conformance/position_cte_inner_offset/test.json"
+    },
+    {
+      "id": "function-conformance.position_cte_inner_sequence",
+      "manifest": "yt-sql/cases/function-conformance/position_cte_inner_sequence/test.json"
+    },
+    {
+      "id": "function-conformance.position_cte_outer_sequence",
+      "manifest": "yt-sql/cases/function-conformance/position_cte_outer_sequence/test.json"
+    },
+    {
       "id": "function-conformance.position_descending_order",
       "manifest": "yt-sql/cases/function-conformance/position_descending_order/test.json"
     },
@@ -727,6 +739,10 @@
     {
       "id": "function-conformance.position_first",
       "manifest": "yt-sql/cases/function-conformance/position_first/test.json"
+    },
+    {
+      "id": "function-conformance.position_grouped_count",
+      "manifest": "yt-sql/cases/function-conformance/position_grouped_count/test.json"
     },
     {
       "id": "function-conformance.position_in_arithmetic",
@@ -759,6 +775,10 @@
     {
       "id": "function-conformance.position_second_after_offset",
       "manifest": "yt-sql/cases/function-conformance/position_second_after_offset/test.json"
+    },
+    {
+      "id": "function-conformance.position_source_sequence",
+      "manifest": "yt-sql/cases/function-conformance/position_source_sequence/test.json"
     },
     {
       "id": "function-conformance.position_zero_arguments_two",
@@ -27433,16 +27453,6 @@
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
         {
-          "name": "test_position_alias_cannot_order_the_result",
-          "assertion_sites": [
-            {
-              "kind": "raises"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_position_canonical_round_trip_in_nested_cte",
           "assertion_sites": [
             {
@@ -27483,16 +27493,6 @@
           "assertion_sites": [
             {
               "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_position_is_rejected_outside_standalone_projection",
-          "assertion_sites": [
-            {
-              "kind": "raises"
             }
           ],
           "replacement_case_ids": [],
@@ -27590,16 +27590,6 @@
             },
             {
               "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_position_requires_zero_arguments",
-          "assertion_sites": [
-            {
-              "kind": "raises"
             }
           ],
           "replacement_case_ids": [],
@@ -42834,6 +42824,36 @@
       "assertions": 2,
       "case_ids": [
         "function-conformance.position_second_after_offset"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_alias_cannot_order_the_result",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.position_order_alias"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_is_rejected_outside_standalone_projection",
+      "assertions": 5,
+      "case_ids": [
+        "function-conformance.position_in_where",
+        "function-conformance.position_in_order",
+        "function-conformance.position_in_arithmetic",
+        "function-conformance.position_nested_coalesce",
+        "function-conformance.position_in_group"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_requires_zero_arguments",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.position_argument_identifier",
+        "function-conformance.position_zero_arguments_two",
+        "function-conformance.position_one"
       ]
     }
   ],
