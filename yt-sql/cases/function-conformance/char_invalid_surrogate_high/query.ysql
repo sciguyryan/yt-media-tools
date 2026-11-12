@@ -1,0 +1,1 @@
+SELECT CHAR(57343) AS result FROM @yt_sql_fixture LIMIT 1

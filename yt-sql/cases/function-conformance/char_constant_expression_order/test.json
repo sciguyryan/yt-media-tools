@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_constant_expression_order",
+  "description": "Constant CHAR expressions retain their exact observable result in projections and ordering",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

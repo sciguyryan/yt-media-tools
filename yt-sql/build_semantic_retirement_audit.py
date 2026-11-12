@@ -116,6 +116,23 @@ def build() -> dict[str, object]:
         if missing:
             raise ValueError(f"Missing replacement cases for {retirement['test']}: {missing}")
 
+    for review in retirements.get("module_reviews", []):
+        source = ROOT / review["source"]
+        if not source.is_file():
+            raise ValueError(f"Reviewed module missing: {source}")
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        actual = {
+            node.name
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+        }
+        retained = review["retained"]
+        named = {item["test"] for item in retained}
+        if len(named) != len(retained) or actual != named or any(not item.get("reason") for item in retained):
+            raise ValueError(f"Incomplete reviewed-module accounting: {review['source']}; remaining={sorted(actual)}")
+        if review["status"] != "portable_assertions_migrated":
+            raise ValueError(f"Invalid reviewed-module status: {review['source']}")
+
     mapped = []
     for element in elements:
         entry = planned[element["id"]]
@@ -161,6 +178,7 @@ def build() -> dict[str, object]:
         "language_obligations": mapped,
         "legacy_tests": files,
         "reviewed_retirements": retirements["retirements"],
+        "reviewed_modules": retirements.get("module_reviews", []),
         "retirement_policy": (
             "Every legacy semantic assertion needs an independently reviewed normative replacement "
             "before retirement. Retain implementation-specific assertions and infrastructure tests. "

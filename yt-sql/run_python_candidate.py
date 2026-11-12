@@ -182,7 +182,11 @@ def observe(
             "ambiguous-field",
         }:
             return _validate({"version": 1, "outcome": "error", "error": {"category": "resolution"}})
-        if exc.context.category == "semantic" and exc.context.reason == "non-numeric-aggregate":
+        if exc.context.category == "semantic" and exc.context.reason in {
+            "non-numeric-aggregate",
+            "invalid-char-codepoint",
+            "invalid-concat-argument",
+        }:
             return _validate({"version": 1, "outcome": "error", "error": {"category": "type"}})
         raise AdapterError(
             f"unclassified Python language diagnostic: {exc.context.category}/{exc.context.reason}"

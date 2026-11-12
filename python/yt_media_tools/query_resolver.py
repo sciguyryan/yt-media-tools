@@ -773,13 +773,20 @@ def _resolve_scalar_expression(
             for arg in args:
                 kind = _scalar_kind(arg)
                 if kind not in {"string", "mixed", "unknown", None}:
-                    raise QuerySemanticError(source, "CONCAT requires text values.", expression.position)
+                    raise QuerySemanticError(
+                        source, "CONCAT requires text values.", expression.position, reason="invalid-concat-argument"
+                    )
             result_kind = "string"
         elif expression.name == "CHAR":
             for arg in args:
                 kind = _scalar_kind(arg)
                 if kind is not None and not _is_numeric_kind(kind):
-                    raise QuerySemanticError(source, "CHAR requires integer code-point values.", expression.position)
+                    raise QuerySemanticError(
+                        source,
+                        "CHAR requires integer code-point values.",
+                        expression.position,
+                        reason="invalid-char-codepoint",
+                    )
                 if _is_constant_scalar_expression(arg):
                     value = evaluate_scalar_expression(arg, {})
                     if value is not None:
@@ -898,15 +905,20 @@ def _validate_char_codepoint(value: Any, source: str, position: int) -> int:
     try:
         return _coerce_char_codepoint(value)
     except TypeError as exc:
-        raise QuerySemanticError(source, "CHAR requires integer code-point values.", position) from exc
+        raise QuerySemanticError(
+            source, "CHAR requires integer code-point values.", position, reason="invalid-char-codepoint"
+        ) from exc
     except ValueError as exc:
         if isinstance(value, (int, float)) and not isinstance(value, bool) and float(value).is_integer():
             raise QuerySemanticError(
                 source,
                 "CHAR code points must be Unicode scalar values from 0 to 1114111, excluding surrogates.",
                 position,
+                reason="invalid-char-codepoint",
             ) from exc
-        raise QuerySemanticError(source, "CHAR requires integer code-point values.", position) from exc
+        raise QuerySemanticError(
+            source, "CHAR requires integer code-point values.", position, reason="invalid-char-codepoint"
+        ) from exc
 
 
 def _resolve_predicate(

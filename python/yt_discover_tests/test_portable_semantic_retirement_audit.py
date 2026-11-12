@@ -52,3 +52,23 @@ def test_reviewed_retirements_have_explicit_portable_evidence() -> None:
         tree = ast.parse(source)
         names = {node.name for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
         assert retirement["test"] not in names
+
+
+def test_reviewed_modules_account_for_every_remaining_test() -> None:
+    """A reviewed module must not silently retain unclassified portable tests."""
+    ledger = json.loads((ROOT / "yt-sql/REVIEWED-RETIREMENTS.json").read_text(encoding="utf-8"))
+    assert {entry["source"] for entry in ledger["module_reviews"]} == {
+        "python/yt_discover_tests/test_char_function.py",
+        "python/yt_discover_tests/test_concat_function.py",
+    }
+    for review in ledger["module_reviews"]:
+        tree = ast.parse((ROOT / review["source"]).read_text(encoding="utf-8"))
+        remaining = {
+            node.name
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+        }
+        retained = {item["test"] for item in review["retained"]}
+        assert review["status"] == "portable_assertions_migrated"
+        assert remaining == retained
+        assert all(item["reason"] for item in review["retained"])

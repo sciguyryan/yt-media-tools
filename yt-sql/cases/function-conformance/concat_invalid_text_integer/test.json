@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_invalid_text_integer",
+  "description": "Reject integer argument to CONCAT",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

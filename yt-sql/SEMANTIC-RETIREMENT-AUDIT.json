@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 576,
+    "normative_manifests": 587,
     "legacy_test_files": 224,
-    "test_functions": 1699,
-    "assertion_sites": 4224
+    "test_functions": 1696,
+    "assertion_sites": 4221
   },
   "normative_cases": [
     {
@@ -161,6 +161,10 @@
       "manifest": "yt-sql/cases/function-conformance/char_ascii/test.json"
     },
     {
+      "id": "function-conformance.char_constant_expression_order",
+      "manifest": "yt-sql/cases/function-conformance/char_constant_expression_order/test.json"
+    },
+    {
       "id": "function-conformance.char_decomposed_accent",
       "manifest": "yt-sql/cases/function-conformance/char_decomposed_accent/test.json"
     },
@@ -185,12 +189,44 @@
       "manifest": "yt-sql/cases/function-conformance/char_integer_expression/test.json"
     },
     {
+      "id": "function-conformance.char_invalid_above_max",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_above_max/test.json"
+    },
+    {
+      "id": "function-conformance.char_invalid_computed_overflow",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_computed_overflow/test.json"
+    },
+    {
+      "id": "function-conformance.char_invalid_float",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_float/test.json"
+    },
+    {
+      "id": "function-conformance.char_invalid_negative",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_negative/test.json"
+    },
+    {
+      "id": "function-conformance.char_invalid_surrogate_high",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_surrogate_high/test.json"
+    },
+    {
+      "id": "function-conformance.char_invalid_surrogate_low",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_surrogate_low/test.json"
+    },
+    {
+      "id": "function-conformance.char_invalid_text",
+      "manifest": "yt-sql/cases/function-conformance/char_invalid_text/test.json"
+    },
+    {
       "id": "function-conformance.char_latin1",
       "manifest": "yt-sql/cases/function-conformance/char_latin1/test.json"
     },
     {
       "id": "function-conformance.char_lower_sigma",
       "manifest": "yt-sql/cases/function-conformance/char_lower_sigma/test.json"
+    },
+    {
+      "id": "function-conformance.char_normalisation_inequality",
+      "manifest": "yt-sql/cases/function-conformance/char_normalisation_inequality/test.json"
     },
     {
       "id": "function-conformance.char_null",
@@ -289,8 +325,16 @@
       "manifest": "yt-sql/cases/function-conformance/concat_empty_middle/test.json"
     },
     {
+      "id": "function-conformance.concat_field_projection_order",
+      "manifest": "yt-sql/cases/function-conformance/concat_field_projection_order/test.json"
+    },
+    {
       "id": "function-conformance.concat_four_with_empty",
       "manifest": "yt-sql/cases/function-conformance/concat_four_with_empty/test.json"
+    },
+    {
+      "id": "function-conformance.concat_invalid_text_integer",
+      "manifest": "yt-sql/cases/function-conformance/concat_invalid_text_integer/test.json"
     },
     {
       "id": "function-conformance.concat_middle_null",
@@ -22639,22 +22683,6 @@
       "previous_classification": "review: language semantics",
       "tests": [
         {
-          "name": "test_char_concatenates_multiple_codepoints_without_normalising",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_char_constant_folding_is_observationally_equivalent",
           "assertion_sites": [
             {
@@ -22668,16 +22696,6 @@
             },
             {
               "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_char_rejects_invalid_constant_arguments",
-          "assertion_sites": [
-            {
-              "kind": "raises"
             }
           ],
           "replacement_case_ids": [],
@@ -24885,29 +24903,6 @@
             {
               "kind": "assert"
             },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_concat_rejects_invalid_arity_or_types",
-          "assertion_sites": [
-            {
-              "kind": "raises"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_concat_supports_field_projection_and_ordering",
-          "assertion_sites": [
             {
               "kind": "assert"
             },
@@ -34687,6 +34682,25 @@
           "replacement_review": "not_reviewed"
         },
         {
+          "name": "test_reviewed_modules_account_for_every_remaining_test",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
           "name": "test_reviewed_retirements_have_explicit_portable_evidence",
           "assertion_sites": [
             {
@@ -42642,6 +42656,71 @@
       "case_ids": [
         "function-conformance.char_lower_sigma",
         "function-conformance.char_upper_sharp_s"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_concatenates_multiple_codepoints_without_normalising",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.char_decomposed_accent",
+        "function-conformance.char_decomposed_length",
+        "function-conformance.char_normalisation_inequality"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_rejects_invalid_constant_arguments",
+      "assertions": 8,
+      "case_ids": [
+        "function-conformance.char_zero_args",
+        "function-conformance.char_invalid_text",
+        "function-conformance.char_invalid_float",
+        "function-conformance.char_invalid_negative",
+        "function-conformance.char_invalid_surrogate_low",
+        "function-conformance.char_invalid_surrogate_high",
+        "function-conformance.char_invalid_above_max",
+        "function-conformance.char_invalid_computed_overflow"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "test": "test_concat_rejects_invalid_arity_or_types",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.concat_one",
+        "function-conformance.concat_zero",
+        "function-conformance.concat_invalid_text_integer"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "test": "test_concat_supports_field_projection_and_ordering",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.concat_field_projection_order"
+      ]
+    }
+  ],
+  "reviewed_modules": [
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_char_constant_folding_is_observationally_equivalent",
+          "reason": "Inspect optimiser folded expression fields and fold-constant-function decision; observable result covered by function-conformance.char_constant_expression_order"
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_concat_constant_folds",
+          "reason": "Inspect optimiser folding field and decision; observable CONCAT result covered by function-conformance.concat_video_title"
+        }
       ]
     }
   ],

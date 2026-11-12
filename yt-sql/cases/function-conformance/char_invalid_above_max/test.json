@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_invalid_above_max",
+  "description": "Reject code point above Unicode maximum",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

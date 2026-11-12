@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.char_normalisation_inequality",
+  "description": "Composed and decomposed Unicode text compare unequal without normalisation",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.char"
+  ]
+}

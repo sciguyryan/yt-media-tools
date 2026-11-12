@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_field_projection_order",
+  "description": "CONCAT over fields and expression ordering",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

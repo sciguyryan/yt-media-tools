@@ -55,6 +55,71 @@
         "function-conformance.char_lower_sigma",
         "function-conformance.char_upper_sharp_s"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_concatenates_multiple_codepoints_without_normalising",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.char_decomposed_accent",
+        "function-conformance.char_decomposed_length",
+        "function-conformance.char_normalisation_inequality"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "test": "test_char_rejects_invalid_constant_arguments",
+      "assertions": 8,
+      "case_ids": [
+        "function-conformance.char_zero_args",
+        "function-conformance.char_invalid_text",
+        "function-conformance.char_invalid_float",
+        "function-conformance.char_invalid_negative",
+        "function-conformance.char_invalid_surrogate_low",
+        "function-conformance.char_invalid_surrogate_high",
+        "function-conformance.char_invalid_above_max",
+        "function-conformance.char_invalid_computed_overflow"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "test": "test_concat_rejects_invalid_arity_or_types",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.concat_one",
+        "function-conformance.concat_zero",
+        "function-conformance.concat_invalid_text_integer"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "test": "test_concat_supports_field_projection_and_ordering",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.concat_field_projection_order"
+      ]
+    }
+  ],
+  "module_reviews": [
+    {
+      "source": "python/yt_discover_tests/test_char_function.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_char_constant_folding_is_observationally_equivalent",
+          "reason": "Inspect optimiser folded expression fields and fold-constant-function decision; observable result covered by function-conformance.char_constant_expression_order"
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_concat_constant_folds",
+          "reason": "Inspect optimiser folding field and decision; observable CONCAT result covered by function-conformance.concat_video_title"
+        }
+      ]
     }
   ]
 }
