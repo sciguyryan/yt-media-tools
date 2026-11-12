@@ -585,7 +585,8 @@
     "python/yt_discover_tests/test_youtubejs_production_acquisition.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_youtubejs_publish_date.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_ytdlp_planning.py": "retain: implementation/integration pending review",
-    "python/yt_discover_tests/test_ytmusicapi_production_acquisition.py": "retain: implementation/integration pending review"
+    "python/yt_discover_tests/test_ytmusicapi_production_acquisition.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_ytsql_query_to_case.py": "retain: implementation/integration pending review"
   },
   "migration_policy": "Do not remove Python tests until equivalent portable cases have passed and remaining implementation-specific assertions are explicitly retained."
 }

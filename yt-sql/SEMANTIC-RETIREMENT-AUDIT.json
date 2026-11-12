@@ -10,9 +10,9 @@
   "counts": {
     "language_elements": 267,
     "normative_manifests": 566,
-    "legacy_test_files": 220,
-    "test_functions": 1697,
-    "assertion_sites": 4212
+    "legacy_test_files": 221,
+    "test_functions": 1699,
+    "assertion_sites": 4219
   },
   "normative_cases": [
     {
@@ -42462,6 +42462,48 @@
             },
             {
               "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_ytsql_query_to_case.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_draft_is_explicitly_unverified",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_never_write_unreviewed_case_into_normative_tree",
+          "assertion_sites": [
+            {
+              "kind": "raises"
+            },
+            {
+              "kind": "raises"
             }
           ],
           "replacement_case_ids": [],

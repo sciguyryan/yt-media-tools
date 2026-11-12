@@ -41,7 +41,8 @@ def test_portable_value_encodings() -> None:
     assert adapter._portable(True) is True
     assert adapter._portable(1.25) == {"type": "decimal", "value": "1.25"}
     assert adapter._portable([None, 42, "é"]) == {
-        "type": "array", "value": [None, {"type": "integer", "value": "42"}, "é"]
+        "type": "array",
+        "value": [None, {"type": "integer", "value": "42"}, "é"],
     }
     for value in (float("nan"), float("inf"), float("-inf")):
         with pytest.raises(adapter.AdapterError, match="non-finite"):
