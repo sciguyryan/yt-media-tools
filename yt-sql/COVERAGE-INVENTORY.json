@@ -3942,6 +3942,34 @@
       "path": "yt-sql/cases/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "semantics.ilike_mars_prefix",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/ilike_mars_prefix/test.json"
+    },
+    {
+      "id": "semantics.like_literal_underscore",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/like_literal_underscore/test.json"
+    },
+    {
+      "id": "semantics.like_mars_prefix",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/like_mars_prefix/test.json"
+    },
+    {
+      "id": "semantics.not_like_mars_prefix",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/not_like_mars_prefix/test.json"
+    },
+    {
       "id": "semantics.null_and_boolean_logic",
       "features": [
         "is.null",

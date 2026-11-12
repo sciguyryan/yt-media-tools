@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.ilike_mars_prefix",
+  "description": "Text predicate ILIKE on committed fixture titles",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}
