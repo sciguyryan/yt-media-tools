@@ -136,7 +136,6 @@ def test_case_listing_does_not_execute_adapter(
     assert "ordering.order_tied_view_count_page" in listed
 
 
-
 def test_report_file_is_deterministic_and_matches_stdout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

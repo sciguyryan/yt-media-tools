@@ -97,6 +97,25 @@ def build() -> dict[str, object]:
     if set(inventory["python_test_files"]) != {entry["path"] for entry in files}:
         raise ValueError("Existing-test inventory differs; rebuild it before this audit")
 
+    retirement_path = SQL_ROOT / "REVIEWED-RETIREMENTS.json"
+    retirements = read_json(retirement_path) if retirement_path.exists() else {"version": 1, "retirements": []}
+    if retirements["version"] != 1:
+        raise ValueError("Unsupported retirement evidence version")
+    for retirement in retirements["retirements"]:
+        source = ROOT / retirement["source"]
+        if not source.is_file() or not retirement["case_ids"] or retirement["assertions"] < 1:
+            raise ValueError(f"Incomplete retirement evidence: {retirement}")
+        names = {
+            node.name
+            for node in ast.walk(ast.parse(source.read_text(encoding="utf-8")))
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        if retirement["test"] in names:
+            raise ValueError(f"Retired test is still present: {retirement['test']}")
+        missing = sorted(set(retirement["case_ids"]) - set(manifests))
+        if missing:
+            raise ValueError(f"Missing replacement cases for {retirement['test']}: {missing}")
+
     mapped = []
     for element in elements:
         entry = planned[element["id"]]
@@ -130,6 +149,7 @@ def build() -> dict[str, object]:
             "yt-sql/PHASE7-COMPLETION-PLAN.json",
             "yt-sql/COVERAGE-GAP-MATRIX.json",
             "yt-sql/EXISTING-TEST-INVENTORY.json",
+            "yt-sql/REVIEWED-RETIREMENTS.json",
         ],
         "counts": {
             "language_elements": len(elements),
@@ -140,6 +160,7 @@ def build() -> dict[str, object]:
         "normative_cases": [{"id": key, "manifest": value} for key, value in sorted(manifests.items())],
         "language_obligations": mapped,
         "legacy_tests": files,
+        "reviewed_retirements": retirements["retirements"],
         "retirement_policy": (
             "Every legacy semantic assertion needs an independently reviewed normative replacement "
             "before retirement. Retain implementation-specific assertions and infrastructure tests. "

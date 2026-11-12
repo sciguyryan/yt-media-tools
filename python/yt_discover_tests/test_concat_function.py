@@ -40,15 +40,6 @@ def _project(query: str) -> object:
     return canonical_record_value(row, resolved.select[0])
 
 
-def test_concat_joins_text_in_argument_order() -> None:
-    assert _project("SELECT CONCAT('video', ' # ', 'title') AS value FROM @yt_sql_fixture LIMIT 1") == "video # title"
-    assert _project("SELECT CONCAT('a', '', 'b', 'c') AS value FROM @yt_sql_fixture LIMIT 1") == "abc"
-
-
-def test_concat_propagates_null() -> None:
-    assert _project("SELECT CONCAT('a', NULL, 'b') AS value FROM @yt_sql_fixture LIMIT 1") is None
-
-
 @pytest.mark.parametrize(
     ("query", "message"),
     (

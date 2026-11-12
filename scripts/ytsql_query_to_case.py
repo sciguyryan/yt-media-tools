@@ -44,21 +44,39 @@ def draft(query: Path, destination: Path, *, case_id: str, dataset: str, order: 
         case = Path(temporary)
         (case / "query.ysql").write_bytes(source)
         manifest = {
-            "version": 1, "id": case_id, "description": "Unverified Python-generated candidate",
-            "datasets": [dataset], "query": "query.ysql", "expected": "expected.json", "order": order,
+            "version": 1,
+            "id": case_id,
+            "description": "Unverified Python-generated candidate",
+            "datasets": [dataset],
+            "query": "query.ysql",
+            "expected": "expected.json",
+            "order": order,
         }
         (case / "test.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         result = observe(case, root=SQL_ROOT)
         review = {
-            "version": 1, "status": "unverified", "reference_implementation": "python",
-            "source_sha256": hashlib.sha256(source).hexdigest(), "warning": WARNING,
-            "review_required": ["syntax and intent", "result values and column order", "types and coercions", "NULL and boundary behaviour", "error classification"],
+            "version": 1,
+            "status": "unverified",
+            "reference_implementation": "python",
+            "source_sha256": hashlib.sha256(source).hexdigest(),
+            "warning": WARNING,
+            "review_required": [
+                "syntax and intent",
+                "result values and column order",
+                "types and coercions",
+                "NULL and boundary behaviour",
+                "error classification",
+            ],
         }
         destination.mkdir(parents=True, exist_ok=False)
         for name in ("query.ysql", "test.json"):
             (destination / name).write_bytes((case / name).read_bytes())
-        (destination / "expected.json").write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        (destination / "REVIEW.json").write_text(json.dumps(review, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        (destination / "expected.json").write_text(
+            json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        (destination / "REVIEW.json").write_text(
+            json.dumps(review, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
     print(WARNING, file=sys.stderr)
     print(f"Unverified candidate written to {destination}")
 

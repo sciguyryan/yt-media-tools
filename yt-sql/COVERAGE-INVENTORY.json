@@ -2258,6 +2258,20 @@
       "path": "yt-sql/cases/function-conformance/concat_empty_middle/test.json"
     },
     {
+      "id": "function-conformance.concat_four_with_empty",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_four_with_empty/test.json"
+    },
+    {
+      "id": "function-conformance.concat_middle_null",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_middle_null/test.json"
+    },
+    {
       "id": "function-conformance.concat_multilingual",
       "features": [
         "scalar.concat"
@@ -2314,6 +2328,13 @@
         "scalar.concat"
       ],
       "path": "yt-sql/cases/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.concat_video_title",
+      "features": [
+        "scalar.concat"
+      ],
+      "path": "yt-sql/cases/function-conformance/concat_video_title/test.json"
     },
     {
       "id": "function-conformance.concat_zero",

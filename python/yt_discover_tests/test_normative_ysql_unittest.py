@@ -31,7 +31,8 @@ def selected_cases(*, shard_index: int = 0, shard_count: int = 1) -> list[tuple[
     if selected_id and selected_id not in {case_id for case_id, _ in entries}:
         raise ValueError(f"unknown normative case ID: {selected_id}")
     return [
-        entry for index, entry in enumerate(entries)
+        entry
+        for index, entry in enumerate(entries)
         if index % shard_count == shard_index and (selected_id is None or entry[0] == selected_id)
     ]
 
@@ -41,13 +42,10 @@ def _case_test(case_id: str, directory: Path):
         manifest = _load(directory / "test.json")
         expected = _load(directory / "expected.json")
         actual = observe(directory, root=CORPUS)
-        match = outcomes_match(
-            expected, actual, order=manifest["order"], group_sizes=manifest.get("group_sizes")
-        )
+        match = outcomes_match(expected, actual, order=manifest["order"], group_sizes=manifest.get("group_sizes"))
         self.assertTrue(
             match,
-            f"{case_id}\nQuery: {directory / 'query.ysql'}\n"
-            f"Expected: {expected!r}\nObserved: {actual!r}",
+            f"{case_id}\nQuery: {directory / 'query.ysql'}\nExpected: {expected!r}\nObserved: {actual!r}",
         )
 
     return test

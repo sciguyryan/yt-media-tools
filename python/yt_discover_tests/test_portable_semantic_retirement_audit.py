@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import subprocess
 import sys
@@ -27,8 +28,27 @@ def test_retirement_audit_does_not_certify_unreviewed_replacements() -> None:
     assert audit["counts"]["legacy_test_files"] == len(audit["legacy_tests"])
     assert audit["counts"]["normative_manifests"] == len(audit["normative_cases"])
     assert all(entry["migration_status"] == "not_certified" for entry in audit["language_obligations"])
-    assert all(entry["retirement_decision"] == "retain_pending_assertion_level_review" for entry in audit["legacy_tests"])
+    assert all(
+        entry["retirement_decision"] == "retain_pending_assertion_level_review" for entry in audit["legacy_tests"]
+    )
     assert audit["counts"]["test_functions"] == sum(len(entry["tests"]) for entry in audit["legacy_tests"])
     assert audit["counts"]["assertion_sites"] == sum(
         len(test["assertion_sites"]) for entry in audit["legacy_tests"] for test in entry["tests"]
     )
+
+
+def test_reviewed_retirements_have_explicit_portable_evidence() -> None:
+    """Do not silently lose approved replacement cases after retiring legacy tests."""
+    audit = json.loads((ROOT / "yt-sql/SEMANTIC-RETIREMENT-AUDIT.json").read_text(encoding="utf-8"))
+    ledger = json.loads((ROOT / "yt-sql/REVIEWED-RETIREMENTS.json").read_text(encoding="utf-8"))
+    available = {entry["id"] for entry in audit["normative_cases"]}
+    assert audit["reviewed_retirements"] == ledger["retirements"]
+    assert ledger["retirements"]
+    for retirement in ledger["retirements"]:
+        assert retirement["assertions"] > 0
+        assert retirement["case_ids"]
+        assert set(retirement["case_ids"]) <= available
+        source = (ROOT / retirement["source"]).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        names = {node.name for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+        assert retirement["test"] not in names

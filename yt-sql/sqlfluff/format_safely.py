@@ -7,7 +7,6 @@ import argparse
 import dataclasses
 import json
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -76,6 +75,40 @@ class ReusableSQLFluff:
         return result.paths[0].files[0].fix_string()[0]
 
 
+def _query_comments(query: str) -> list[str]:
+    """Collect actual line comments, ignoring markers inside quoted literals.
+
+    YT-SQL permits doubled quote escapes. A literal containing ``#`` is not a
+    comment and must not be compared as one during safe formatting.
+    """
+    comments: list[str] = []
+    index = 0
+    quote: str | None = None
+    while index < len(query):
+        character = query[index]
+        if quote is not None:
+            if character == quote:
+                if index + 1 < len(query) and query[index + 1] == quote:
+                    index += 2
+                    continue
+                quote = None
+            index += 1
+            continue
+        if character in ("'", '"'):
+            quote = character
+            index += 1
+            continue
+        if character == "#" or query.startswith("--", index):
+            end = index
+            while end < len(query) and query[end] not in "\r\n":
+                end += 1
+            comments.append(query[index:end])
+            index = end
+            continue
+        index += 1
+    return comments
+
+
 def format_checked(source: str, *, engine: ReusableSQLFluff | None = None) -> str:
     """Return a verified formatted query or raise without changing the input."""
     original_tree = structural_tree(parse_query(source))
@@ -104,12 +137,9 @@ def format_checked(source: str, *, engine: ReusableSQLFluff | None = None) -> st
         formatted = engine.format(source)
         engine.parse(formatted)
 
-    # The AST does not retain comments. Preserve their exact spelling and order
-    # separately, including inline comments; reject ambiguous rewrites.
-    def comments(text: str) -> list[str]:
-        return re.findall(r"#[^\r\n]*", text)
-
-    if comments(source) != comments(formatted):
+    # The AST does not retain comments. Preserve genuine comment spelling and
+    # order without mistaking comment markers inside string literals for comments.
+    if _query_comments(source) != _query_comments(formatted):
         raise ValueError("Formatting changed or removed query comments")
     if structural_tree(parse_query(formatted)) != original_tree:
         raise ValueError("Formatting changed the authoritative YT-SQL parse tree")

@@ -72,15 +72,20 @@ def test_nested_collection_order_and_duplicate_multiplicity() -> None:
     assert module.compare_rows([[left], [left]], [[same], [same]], ordered=False)
     assert not module.compare_rows([[left], [left]], [[same]], ordered=False)
     assert not module.compare_rows([[left]], [[reversed_items]], ordered=True)
-    assert not module.compare_rows([[left]], [[{"type": "array", "value": ["e\u0301", None, {"type": "integer", "value": "2"}]}]], ordered=True)
+    assert not module.compare_rows(
+        [[left]], [[{"type": "array", "value": ["e\u0301", None, {"type": "integer", "value": "2"}]}]], ordered=True
+    )
 
 
-@pytest.mark.parametrize("invalid", [
-    {"type": "array", "value": "not-an-array"},
-    {"type": "array", "value": [1]},
-    {"type": "array", "value": ["\ud800"]},
-    {"type": "array", "value": [{"type": "array", "value": [float("nan")]}]},
-])
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        {"type": "array", "value": "not-an-array"},
+        {"type": "array", "value": [1]},
+        {"type": "array", "value": ["\ud800"]},
+        {"type": "array", "value": [{"type": "array", "value": [float("nan")]}]},
+    ],
+)
 def test_reject_invalid_nested_collection_values(invalid: object) -> None:
     with pytest.raises(module.TypedValueError):
         module.validate_values([[invalid]], 1)

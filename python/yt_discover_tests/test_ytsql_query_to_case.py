@@ -34,6 +34,14 @@ def test_never_write_unreviewed_case_into_normative_tree(tmp_path: Path) -> None
     query = tmp_path / "query.ysql"
     query.write_text("SELECT 1 FROM @yt_sql_fixture LIMIT 1", encoding="utf-8")
     with pytest.raises(ValueError, match="outside"):
-        MODULE.draft(query, ROOT / "yt-sql/cases/draft-candidate", case_id="draft.example", dataset="python-v6-small", order="ordered")
+        MODULE.draft(
+            query,
+            ROOT / "yt-sql/cases/draft-candidate",
+            case_id="draft.example",
+            dataset="python-v6-small",
+            order="ordered",
+        )
     with pytest.raises(ValueError, match="start with"):
-        MODULE.draft(query, tmp_path / "output", case_id="normative.example", dataset="python-v6-small", order="ordered")
+        MODULE.draft(
+            query, tmp_path / "output", case_id="normative.example", dataset="python-v6-small", order="ordered"
+        )

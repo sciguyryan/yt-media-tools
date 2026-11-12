@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.concat_middle_null",
+  "description": "Independently reviewed CONCAT output migrated from legacy scalar assertion",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.concat"
+  ]
+}

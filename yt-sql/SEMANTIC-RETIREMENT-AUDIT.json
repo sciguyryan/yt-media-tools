@@ -5,14 +5,15 @@
     "yt-sql/LANGUAGE-ELEMENTS.json",
     "yt-sql/PHASE7-COMPLETION-PLAN.json",
     "yt-sql/COVERAGE-GAP-MATRIX.json",
-    "yt-sql/EXISTING-TEST-INVENTORY.json"
+    "yt-sql/EXISTING-TEST-INVENTORY.json",
+    "yt-sql/REVIEWED-RETIREMENTS.json"
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 566,
+    "normative_manifests": 569,
     "legacy_test_files": 224,
-    "test_functions": 1704,
-    "assertion_sites": 4230
+    "test_functions": 1703,
+    "assertion_sites": 4233
   },
   "normative_cases": [
     {
@@ -260,6 +261,14 @@
       "manifest": "yt-sql/cases/function-conformance/concat_empty_middle/test.json"
     },
     {
+      "id": "function-conformance.concat_four_with_empty",
+      "manifest": "yt-sql/cases/function-conformance/concat_four_with_empty/test.json"
+    },
+    {
+      "id": "function-conformance.concat_middle_null",
+      "manifest": "yt-sql/cases/function-conformance/concat_middle_null/test.json"
+    },
+    {
       "id": "function-conformance.concat_multilingual",
       "manifest": "yt-sql/cases/function-conformance/concat_multilingual/test.json"
     },
@@ -290,6 +299,10 @@
     {
       "id": "function-conformance.concat_unicode_emoji",
       "manifest": "yt-sql/cases/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "function-conformance.concat_video_title",
+      "manifest": "yt-sql/cases/function-conformance/concat_video_title/test.json"
     },
     {
       "id": "function-conformance.concat_zero",
@@ -24910,29 +24923,6 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_concat_joins_text_in_argument_order",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_concat_propagates_null",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_concat_rejects_invalid_arity_or_types",
           "assertion_sites": [
             {
@@ -34722,6 +34712,31 @@
           "assertion_sites": [],
           "replacement_case_ids": [],
           "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_reviewed_retirements_have_explicit_portable_evidence",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
         }
       ],
       "retirement_decision": "retain_pending_assertion_level_review"
@@ -42599,6 +42614,25 @@
         }
       ],
       "retirement_decision": "retain_pending_assertion_level_review"
+    }
+  ],
+  "reviewed_retirements": [
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "test": "test_concat_joins_text_in_argument_order",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.concat_video_title",
+        "function-conformance.concat_four_with_empty"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_concat_function.py",
+      "test": "test_concat_propagates_null",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.concat_middle_null"
+      ]
     }
   ],
   "retirement_policy": "Every legacy semantic assertion needs an independently reviewed normative replacement before retirement. Retain implementation-specific assertions and infrastructure tests. No equivalence or coverage is inferred from names, tags or successful execution alone."

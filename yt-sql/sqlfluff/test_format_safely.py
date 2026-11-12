@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from format_safely import format_checked, structural_tree  # noqa: E402
+from format_safely import _query_comments, format_checked, structural_tree  # noqa: E402
 from yt_media_tools.query_parser import parse_query  # noqa: E402
 
 
@@ -33,6 +33,26 @@ class SafeFormattingTests(unittest.TestCase):
                 self.assertIn(expression, formatted)
                 self.assertEqual(structural_tree(parse_query(source)), structural_tree(parse_query(formatted)))
                 self.assertEqual(formatted, format_checked(formatted, engine=engine))
+
+    def test_comment_markers_inside_literals_are_not_comments(self) -> None:
+        self.assertEqual(_query_comments("SELECT 'video # title' AS result\n"), [])
+        self.assertEqual(_query_comments("SELECT 'a--b', \"#quoted\" FROM @yt_sql_fixture\n"), [])
+        self.assertEqual(_query_comments("SELECT 'it''s # literal' # actual\n"), ["# actual"])
+        self.assertEqual(_query_comments("SELECT 1 -- real comment\n"), ["-- real comment"])
+
+    def test_real_comment_changes_are_rejected(self) -> None:
+        original = "SELECT 'video # title' AS result FROM @yt_sql_fixture # retain\n"
+        rewritten = original.replace("# retain", "# removed")
+        with (
+            patch(
+                "format_safely.subprocess.run",
+                side_effect=lambda args, **kwargs: subprocess.CompletedProcess(
+                    args, 0, rewritten if "format" in args else "file:\n", ""
+                ),
+            ),
+            self.assertRaisesRegex(ValueError, "changed or removed query comments"),
+        ):
+            format_checked(original)
 
     def test_batch_initialises_sqlfluff_once(self) -> None:
         import tempfile
