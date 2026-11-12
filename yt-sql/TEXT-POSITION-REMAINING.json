@@ -629,16 +629,6 @@
     },
     {
       "source": "python/yt_discover_tests/test_like_predicates.py",
-      "test": "test_like_requires_quoted_pattern",
-      "terms": [
-        "LIKE"
-      ],
-      "assert_sites": 0,
-      "parametrised": false,
-      "disposition": "retain_pending_assertion_level_review"
-    },
-    {
-      "source": "python/yt_discover_tests/test_like_predicates.py",
       "test": "test_like_terminal_escaped_backslash_is_supported",
       "terms": [
         "LIKE"
@@ -656,16 +646,6 @@
       ],
       "assert_sites": 0,
       "parametrised": true,
-      "disposition": "retain_pending_assertion_level_review"
-    },
-    {
-      "source": "python/yt_discover_tests/test_like_predicates.py",
-      "test": "test_does_not_like_alias_is_supported",
-      "terms": [
-        "LIKE"
-      ],
-      "assert_sites": 1,
-      "parametrised": false,
       "disposition": "retain_pending_assertion_level_review"
     },
     {

@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 658,
+    "normative_manifests": 660,
     "legacy_test_files": 225,
-    "test_functions": 1689,
-    "assertion_sites": 4218
+    "test_functions": 1687,
+    "assertion_sites": 4216
   },
   "normative_cases": [
     {
@@ -1189,6 +1189,10 @@
       "manifest": "yt-sql/cases/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "semantics.does_not_like_alias",
+      "manifest": "yt-sql/cases/semantics/does_not_like_alias/test.json"
+    },
+    {
       "id": "semantics.ilike_mars_prefix",
       "manifest": "yt-sql/cases/semantics/ilike_mars_prefix/test.json"
     },
@@ -1199,6 +1203,10 @@
     {
       "id": "semantics.like_mars_prefix",
       "manifest": "yt-sql/cases/semantics/like_mars_prefix/test.json"
+    },
+    {
+      "id": "semantics.like_unquoted_pattern_error",
+      "manifest": "yt-sql/cases/semantics/like_unquoted_pattern_error/test.json"
     },
     {
       "id": "semantics.not_like_mars_prefix",
@@ -29667,16 +29675,6 @@
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
         {
-          "name": "test_does_not_like_alias_is_supported",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_exact_case_sensitive_like_bypasses_regex_compilation",
           "assertion_sites": [
             {
@@ -29729,16 +29727,6 @@
           "assertion_sites": [
             {
               "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_like_requires_quoted_pattern",
-          "assertion_sites": [
-            {
-              "kind": "raises"
             }
           ],
           "replacement_case_ids": [],
@@ -43075,6 +43063,22 @@
       "assertions": 1,
       "case_ids": [
         "function-conformance.unicode_projection_anchor_titles"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_requires_quoted_pattern",
+      "assertions": 1,
+      "case_ids": [
+        "semantics.like_unquoted_pattern_error"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_does_not_like_alias_is_supported",
+      "assertions": 1,
+      "case_ids": [
+        "semantics.does_not_like_alias"
       ]
     }
   ],

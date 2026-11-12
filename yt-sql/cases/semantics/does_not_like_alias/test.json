@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.does_not_like_alias",
+  "description": "DOES NOT LIKE alias negates a LIKE predicate",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}

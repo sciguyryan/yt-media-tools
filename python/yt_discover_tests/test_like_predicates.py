@@ -68,11 +68,6 @@ def test_like_backslash_quotes_percent_underscore_and_backslash() -> None:
     assert apply_query(records, _resolved(r"WHERE title LIKE 'a\\b'", records))[0]["id"] == "slash"
 
 
-def test_like_requires_quoted_pattern() -> None:
-    with pytest.raises(QuerySyntaxError, match="quoted text"):
-        parse_query("WHERE title LIKE Mars%")
-
-
 def test_like_terminal_escaped_backslash_is_supported() -> None:
     records = [{"id": "slash", "title": "abc\\"}]
     query = _resolved(r"WHERE title LIKE 'abc\\'", records)
@@ -84,12 +79,6 @@ def test_like_requires_text_field(operator: str) -> None:
     records = [{"id": "a", "view_count": 10}]
     with pytest.raises(QuerySyntaxError, match=f"{operator} requires a text field"):
         _resolved(f"WHERE view_count {operator} '10'", records)
-
-
-def test_does_not_like_alias_is_supported() -> None:
-    records = [{"id": "a", "title": "Mars"}, {"id": "b", "title": "Venus"}]
-    query = _resolved("WHERE title DOES NOT LIKE 'Mars%'", records)
-    assert [row["id"] for row in apply_query(records, query)] == ["b"]
 
 
 def test_optimizer_preserves_like_and_matches_without_unproven_cross_rewrite() -> None:
