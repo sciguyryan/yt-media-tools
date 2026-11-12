@@ -11,9 +11,9 @@
   "counts": {
     "language_elements": 267,
     "normative_manifests": 658,
-    "legacy_test_files": 224,
-    "test_functions": 1687,
-    "assertion_sites": 4213
+    "legacy_test_files": 225,
+    "test_functions": 1689,
+    "assertion_sites": 4218
   },
   "normative_cases": [
     {
@@ -41117,6 +41117,42 @@
         {
           "name": "test_temporal_relative_aliases_normalise_before_resolution",
           "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_text_position_remaining_audit.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_text_position_inventory_detects_known_legacy_surfaces",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_text_position_remaining_index_is_current",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
             {
               "kind": "assert"
             }
