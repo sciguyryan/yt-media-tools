@@ -3280,6 +3280,34 @@
       "path": "yt-sql/cases/function-conformance/unicode_ilike_decomposed_mismatch/test.json"
     },
     {
+      "id": "function-conformance.unicode_ilike_kelvin",
+      "features": [
+        "operator.ilike"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ilike_kelvin/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_ilike_long_s",
+      "features": [
+        "operator.ilike"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ilike_long_s/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_ilike_sharp_s_literal",
+      "features": [
+        "operator.ilike"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ilike_sharp_s_literal/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_ilike_turkish_i",
+      "features": [
+        "operator.ilike"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ilike_turkish_i/test.json"
+    },
+    {
       "id": "function-conformance.unicode_like_ascii_newline",
       "features": [
         "predicate.unicode"
@@ -3287,11 +3315,81 @@
       "path": "yt-sql/cases/function-conformance/unicode_like_ascii_newline/test.json"
     },
     {
+      "id": "function-conformance.unicode_like_codepoint_1",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_codepoint_1/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_codepoint_2",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_codepoint_2/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_codepoint_3",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_codepoint_3/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_codepoint_4",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_codepoint_4/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_codepoint_5",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_codepoint_5/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_codepoint_6",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_codepoint_6/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_like_fullwidth_literal",
+      "features": [
+        "operator.like"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_like_fullwidth_literal/test.json"
+    },
+    {
       "id": "function-conformance.unicode_like_line_separator",
       "features": [
         "predicate.unicode"
       ],
       "path": "yt-sql/cases/function-conformance/unicode_like_line_separator/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_matches_scripts",
+      "features": [
+        "operator.matches"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_matches_scripts/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_ordering_raw_titles",
+      "features": [
+        "operator.order_by"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_ordering_raw_titles/test.json"
+    },
+    {
+      "id": "function-conformance.unicode_projection_anchor_titles",
+      "features": [
+        "statement.select"
+      ],
+      "path": "yt-sql/cases/function-conformance/unicode_projection_anchor_titles/test.json"
     },
     {
       "id": "function-conformance.unknown_function",

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.unicode_like_codepoint_5",
+  "description": "Unicode LIKE underscore counts scalar code points",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "operator.like"
+  ]
+}

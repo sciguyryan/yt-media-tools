@@ -1,0 +1,4 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE id = 'vid048' AND title ILIKE '%s%'

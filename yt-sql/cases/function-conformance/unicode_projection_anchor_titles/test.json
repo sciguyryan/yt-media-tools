@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.unicode_projection_anchor_titles",
+  "description": "Unicode titles survive projection without normalisation",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "statement.select"
+  ]
+}

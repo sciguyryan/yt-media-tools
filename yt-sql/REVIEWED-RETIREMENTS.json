@@ -185,6 +185,62 @@
         "function-conformance.unicode_like_ascii_newline",
         "function-conformance.unicode_like_line_separator"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_like_underscore_counts_unicode_codepoints",
+      "assertions": 6,
+      "case_ids": [
+        "function-conformance.unicode_like_codepoint_1",
+        "function-conformance.unicode_like_codepoint_2",
+        "function-conformance.unicode_like_codepoint_3",
+        "function-conformance.unicode_like_codepoint_4",
+        "function-conformance.unicode_like_codepoint_5",
+        "function-conformance.unicode_like_codepoint_6"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_like_does_not_treat_fullwidth_wildcards_as_ascii_wildcards",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.unicode_like_fullwidth_literal"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_ilike_unicode_special_case_contract_is_locked_down",
+      "assertions": 4,
+      "case_ids": [
+        "function-conformance.unicode_ilike_turkish_i",
+        "function-conformance.unicode_ilike_kelvin",
+        "function-conformance.unicode_ilike_long_s",
+        "function-conformance.unicode_ilike_sharp_s_literal"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_matches_handles_non_latin_scripts_and_supplementary_characters",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.unicode_matches_scripts"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_ordering_uses_unmodified_unicode_string_values",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.unicode_ordering_raw_titles"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "test": "test_all_unicode_anchor_titles_survive_projection_unchanged",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.unicode_projection_anchor_titles"
+      ]
     }
   ],
   "module_reviews": [

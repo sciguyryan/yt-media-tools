@@ -6,7 +6,6 @@ import io
 from contextlib import redirect_stdout
 from datetime import datetime
 
-import pytest
 
 from yt_discover_tests.conformance.generate_dataset import GENERATED_AT
 from yt_discover_tests.conformance.test_records import cached_records
@@ -40,53 +39,6 @@ def _ids(query: str) -> list[str]:
     return [str(record["id"]) for record in apply_query(records, resolved)]
 
 
-@pytest.mark.parametrize(
-    ("pattern", "expected"),
-    (
-        ("Emoji _", ["vid040"]),
-        ("Flag _______", ["vid042"]),
-        ("Variation __", ["vid043"]),
-        ("Astral _ _", ["vid056"]),
-        ("Zero width joiner A_B", ["vid059"]),
-        ("Zero width non-joiner A_B", ["vid060"]),
-    ),
-)
-def test_like_underscore_counts_unicode_codepoints(pattern: str, expected: list[str]) -> None:
-    assert _ids(f"SELECT id FROM @yt_sql_fixture WHERE title LIKE '{pattern}' ORDER BY source_index") == expected
-
-
-def test_like_does_not_treat_fullwidth_wildcards_as_ascii_wildcards() -> None:
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title LIKE '%fullwidth ％＿'") == ["vid055"]
-
-
-def test_ilike_unicode_special_case_contract_is_locked_down() -> None:
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE id = 'vid045' AND title ILIKE '%i%'") == ["vid045"]
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE id = 'vid047' AND title ILIKE '%k%'") == ["vid047"]
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE id = 'vid048' AND title ILIKE '%s%'") == ["vid048"]
-    # Unicode-aware regex case-insensitivity does not expand sharp-s to ``ss``.
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE id = 'vid046' AND title ILIKE '%straße%'") == ["vid046"]
-
-
-def test_matches_handles_non_latin_scripts_and_supplementary_characters() -> None:
-    assert _ids("SELECT id FROM @yt_sql_fixture WHERE title MATCHES '東京|مرحبا|שלום|𐐷' ORDER BY source_index") == [
-        "vid049",
-        "vid050",
-        "vid051",
-        "vid056",
-    ]
-
-
-def test_ordering_uses_unmodified_unicode_string_values() -> None:
-    wanted = {"vid044", "vid045", "vid046", "vid047", "vid048", "vid049", "vid050", "vid051"}
-    rows = [row for row in _records() if row["id"] in wanted]
-    expected = [str(row["id"]) for row in sorted(rows, key=lambda row: str(row["title"]))]
-    actual = _ids(
-        "SELECT id FROM @yt_sql_fixture WHERE id IN "
-        "('vid044','vid045','vid046','vid047','vid048','vid049','vid050','vid051') ORDER BY title"
-    )
-    assert actual == expected
-
-
 def test_unicode_scalar_constant_folding_is_observationally_equivalent() -> None:
     records, parsed, original = _resolve(
         "SELECT LOWER('İ') AS lo, UPPER('straße') AS hi, LENGTH('👩‍👩‍👧‍👦') AS n FROM @yt_sql_fixture LIMIT 1"
@@ -116,13 +68,3 @@ def test_unicode_jsonl_output_preserves_text_without_ascii_escaping() -> None:
     assert "東京" in text
     assert "مرحبا" in text
     assert "שלום" in text
-
-
-def test_all_unicode_anchor_titles_survive_projection_unchanged() -> None:
-    records, _, resolved = _resolve(
-        "SELECT id, title FROM @yt_sql_fixture WHERE source_index BETWEEN 37 AND 60 ORDER BY source_index"
-    )
-    selected = apply_query(records, resolved)
-    actual = [(str(row["id"]), str(row["title"])) for row in selected]
-    expected = [(str(row["id"]), str(row["title"])) for row in records if 37 <= int(row["source_index"]) <= 60]
-    assert actual == expected

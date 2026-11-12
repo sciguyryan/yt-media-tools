@@ -23,3 +23,9 @@ The portable corpus is exposed as individual `unittest.TestCase` methods by `pyt
 Run all cases with `python scripts/ytsql_unittest.py`, or distribute them across isolated processes with `python scripts/ytsql_unittest.py --workers 4`. Select a case with `python scripts/ytsql_unittest.py --case smoke.source_order_limit`. Standard `unittest discover` also discovers these methods, and `-k` can select individual methods. Workers use stable, disjoint ordinal shards; each case is executed exactly once. Process isolation avoids shared adapter state, although parallelism is optional because process startup and repeated corpus validation can outweigh its benefit for small suites.
 
 This integration does not author expectations or certify coverage. Legacy semantic tests must only be retired after an independently reviewed, assertion-level replacement audit. Existing implementation and harness tests remain necessary.
+
+## Phase 6.5a.1 Unicode predicate reconciliation
+
+The Unicode semantics module's portable LIKE wildcard, fullwidth wildcard, ILIKE special-case, regular-expression, ordering and exact-projection assertions now have reviewed portable replacements under `cases/function-conformance/`. Their corresponding Python test functions were retired and linked by exact case ID in `REVIEWED-RETIREMENTS.json`. The portable ordering expectation is derived from the fixture's literal Unicode title values, not copied from a Python query result.
+
+The remaining Unicode optimiser-equivalence test examines optimiser behaviour and JSONL serialisation; the JSONL output test checks Python-specific output escaping. Those checks remain in Python pending a distinct portable output-format contract. This reconciliation does not establish that all cross-module text or POSITION assertions have been migrated, nor does it close Phase 6.5a.1.

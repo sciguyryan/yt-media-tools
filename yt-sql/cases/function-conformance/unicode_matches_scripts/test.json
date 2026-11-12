@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.unicode_matches_scripts",
+  "description": "Regex matches across scripts and supplementary scalars",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "operator.matches"
+  ]
+}
