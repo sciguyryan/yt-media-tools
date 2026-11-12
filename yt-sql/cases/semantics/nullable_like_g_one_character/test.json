@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.nullable_like_g_one_character",
+  "description": "Nullable text predicate fixture_nullable LIKE 'g_' on the committed fixture; NULL does not satisfy WHERE",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}

@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 654,
+    "normative_manifests": 658,
     "legacy_test_files": 224,
     "test_functions": 1687,
     "assertion_sites": 4213
@@ -1207,6 +1207,22 @@
     {
       "id": "semantics.null_and_boolean_logic",
       "manifest": "yt-sql/cases/semantics/null_and_boolean_logic/test.json"
+    },
+    {
+      "id": "semantics.nullable_ilike_g_prefix",
+      "manifest": "yt-sql/cases/semantics/nullable_ilike_g_prefix/test.json"
+    },
+    {
+      "id": "semantics.nullable_like_g_one_character",
+      "manifest": "yt-sql/cases/semantics/nullable_like_g_one_character/test.json"
+    },
+    {
+      "id": "semantics.nullable_like_g_prefix",
+      "manifest": "yt-sql/cases/semantics/nullable_like_g_prefix/test.json"
+    },
+    {
+      "id": "semantics.nullable_not_like_g_prefix",
+      "manifest": "yt-sql/cases/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
       "id": "smoke.source_order_limit",
