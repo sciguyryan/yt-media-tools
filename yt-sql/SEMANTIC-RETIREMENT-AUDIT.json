@@ -10,9 +10,9 @@
   "counts": {
     "language_elements": 267,
     "normative_manifests": 283,
-    "legacy_test_files": 219,
-    "test_functions": 1694,
-    "assertion_sites": 4202
+    "legacy_test_files": 220,
+    "test_functions": 1697,
+    "assertion_sites": 4212
   },
   "normative_cases": [
     {
@@ -33866,6 +33866,64 @@
             },
             {
               "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_portable_torture_metamorphic.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_lexical_transformations_preserve_literals_and_bindings",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_seeded_variants_are_reproducible_and_vary",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_selected_relational_and_function_cases_against_normative_expectations",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "fail"
             }
           ],
           "replacement_case_ids": [],
