@@ -1,0 +1,6 @@
+SELECT
+  id
+	from  @yt_sql_fixture
+	WHERE 	 title  = 	 'Café decomposed é'
+ORDER	BY	source_index
+	

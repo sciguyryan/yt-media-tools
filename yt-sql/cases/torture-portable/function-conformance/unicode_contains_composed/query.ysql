@@ -1,0 +1,6 @@
+select 
+ id
+FROM @yt_sql_fixture
+WHERE	title CONTAINS 	 'CAFÉ COMPOSED'
+	ORDER 	 by source_index
+	

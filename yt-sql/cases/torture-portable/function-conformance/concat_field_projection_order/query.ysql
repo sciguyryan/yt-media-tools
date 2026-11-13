@@ -1,0 +1,6 @@
+select
+	CONCAT(id,  ' # ',  title) 	 AS	annotated
+	FROM @yt_sql_fixture
+	where  source_index 	 <= 5
+  ORDER BY title,  id, 	 source_index
+  

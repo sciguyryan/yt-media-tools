@@ -1,0 +1,6 @@
+select
+id 
+ from  @yt_sql_fixture
+where 	 title	LIKE 	 '100\%'
+order by  source_index
+	

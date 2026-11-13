@@ -1,0 +1,6 @@
+select
+	id
+  FROM 	 @yt_sql_fixture 
+ where title 	 LIKE '%\\ %'
+ORDER  BY source_index 
+ 

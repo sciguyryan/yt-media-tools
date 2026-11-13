@@ -1,0 +1,6 @@
+SELECT
+	position()	AS  position,
+  id
+	FROM @yt_sql_fixture
+	where  id = 	 'nonexistent'
+	order	by	source_index

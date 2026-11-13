@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.lower_two_arguments_rejected",
+  "description": "Seeded lexical stress of function-conformance.lower_two_arguments_rejected; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower",
+    "torture.lexical"
+  ]
+}

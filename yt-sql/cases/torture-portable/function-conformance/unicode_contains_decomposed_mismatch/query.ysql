@@ -1,0 +1,5 @@
+select
+  id 
+ from	@yt_sql_fixture
+where  title	CONTAINS  'CAFÉ DECOMPOSED'
+order  BY 	 source_index

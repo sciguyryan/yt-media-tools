@@ -1,0 +1,4 @@
+SELECT
+	LENGTH(title, 	 id)
+from @yt_sql_fixture
+  

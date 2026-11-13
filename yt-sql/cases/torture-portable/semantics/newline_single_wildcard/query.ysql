@@ -1,0 +1,6 @@
+SELECT
+id
+FROM	@yt_sql_fixture
+where title	LIKE	'Line_break'
+	order  BY  source_index 
+ 

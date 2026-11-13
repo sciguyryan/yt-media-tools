@@ -1,0 +1,6 @@
+select
+  id 
+ from  @yt_sql_fixture
+	where 	 title	LIKE 'Line separator %'
+	order	BY source_index
+	

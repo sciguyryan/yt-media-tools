@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.unicode_like_codepoint_1",
+  "description": "Seeded lexical stress of function-conformance.unicode_like_codepoint_1; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "operator.like",
+    "torture.lexical"
+  ]
+}

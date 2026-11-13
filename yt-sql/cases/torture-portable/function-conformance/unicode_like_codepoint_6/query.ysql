@@ -1,0 +1,6 @@
+SELECT 
+ id
+FROM	@yt_sql_fixture
+  where  title 	 LIKE	'Zero width non-joiner A_B'
+order	by source_index
+  

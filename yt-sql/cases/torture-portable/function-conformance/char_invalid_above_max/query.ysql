@@ -1,0 +1,2 @@
+SELECT 	 CHAR(1114112)	as  result	from	@yt_sql_fixture	limit  1
+	

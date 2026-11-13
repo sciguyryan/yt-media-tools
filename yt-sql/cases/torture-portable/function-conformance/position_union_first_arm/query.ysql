@@ -1,0 +1,10 @@
+SELECT
+  POSITION()  AS position,
+  id
+  from  @yt_sql_fixture
+	UNION  ALL
+  SELECT
+	1  as  position,
+  id
+FROM 	 @yt_sql_fixture
+  

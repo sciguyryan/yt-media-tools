@@ -1,0 +1,6 @@
+SELECT
+  id,
+	title
+	FROM  @yt_sql_fixture 
+ WHERE 	 source_index	between  37 AND	60
+ORDER BY	source_index

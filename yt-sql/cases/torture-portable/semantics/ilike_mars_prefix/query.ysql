@@ -1,0 +1,6 @@
+select 
+ id
+	FROM 	 @yt_sql_fixture
+	WHERE  title ILIKE  'mars%' 
+ ORDER	BY  source_index
+	

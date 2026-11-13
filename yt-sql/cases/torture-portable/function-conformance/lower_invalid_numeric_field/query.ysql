@@ -1,0 +1,2 @@
+SELECT  LOWER(view_count) 	 FROM	@yt_sql_fixture
+	

@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 682,
+    "normative_manifests": 798,
     "legacy_test_files": 224,
     "test_functions": 1677,
     "assertion_sites": 4198
@@ -1589,12 +1589,72 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/char_ascii/test.json"
     },
     {
+      "id": "torture.function-conformance.char_constant_expression_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_constant_expression_order/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_decomposed_accent",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_decomposed_accent/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_decomposed_length",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_decomposed_length/test.json"
+    },
+    {
       "id": "torture.function-conformance.char_digit",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/char_digit/test.json"
     },
     {
+      "id": "torture.function-conformance.char_gothic_scalar",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_gothic_scalar/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_grinning_scalar",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_grinning_scalar/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_integer_expression",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_integer_expression/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_above_max",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_above_max/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_computed_overflow",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_computed_overflow/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_float",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_float/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_negative",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_negative/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_surrogate_high",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_surrogate_high/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_surrogate_low",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_surrogate_low/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_invalid_text",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_invalid_text/test.json"
+    },
+    {
       "id": "torture.function-conformance.char_latin1",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/char_latin1/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_lower_sigma",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_lower_sigma/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_normalisation_inequality",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_normalisation_inequality/test.json"
     },
     {
       "id": "torture.function-conformance.char_null",
@@ -1619,6 +1679,14 @@
     {
       "id": "torture.function-conformance.char_upper",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/char_upper/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_upper_expansion",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_upper_expansion/test.json"
+    },
+    {
+      "id": "torture.function-conformance.char_upper_sharp_s",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/char_upper_sharp_s/test.json"
     },
     {
       "id": "torture.function-conformance.char_zero",
@@ -1681,12 +1749,32 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_zero/test.json"
     },
     {
+      "id": "torture.function-conformance.concat_char_combining",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_char_combining/test.json"
+    },
+    {
       "id": "torture.function-conformance.concat_empty",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_empty/test.json"
     },
     {
       "id": "torture.function-conformance.concat_empty_middle",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_empty_middle/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_field_projection_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_field_projection_order/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_four_with_empty",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_four_with_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_invalid_text_integer",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_invalid_text_integer/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_middle_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_middle_null/test.json"
     },
     {
       "id": "torture.function-conformance.concat_multilingual",
@@ -1719,6 +1807,10 @@
     {
       "id": "torture.function-conformance.concat_unicode_emoji",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_unicode_emoji/test.json"
+    },
+    {
+      "id": "torture.function-conformance.concat_video_title",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_video_title/test.json"
     },
     {
       "id": "torture.function-conformance.concat_zero",
@@ -1825,12 +1917,24 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/length_combining/test.json"
     },
     {
+      "id": "torture.function-conformance.length_composed_accent",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_composed_accent/test.json"
+    },
+    {
       "id": "torture.function-conformance.length_concat",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/length_concat/test.json"
     },
     {
+      "id": "torture.function-conformance.length_decomposed_accent",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_decomposed_accent/test.json"
+    },
+    {
       "id": "torture.function-conformance.length_emoji",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/length_emoji/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_emoji_flag",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_emoji_flag/test.json"
     },
     {
       "id": "torture.function-conformance.length_emoji_pair",
@@ -1841,12 +1945,40 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/length_empty/test.json"
     },
     {
+      "id": "torture.function-conformance.length_family_zwj",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_family_zwj/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_fixture_decomposed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_fixture_decomposed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_fixture_family",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_fixture_family/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_invalid_numeric_field",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_invalid_numeric_field/test.json"
+    },
+    {
       "id": "torture.function-conformance.length_null",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/length_null/test.json"
     },
     {
+      "id": "torture.function-conformance.length_null_chain",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_null_chain/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_turkish_dotted_i",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_turkish_dotted_i/test.json"
+    },
+    {
       "id": "torture.function-conformance.length_two",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/length_two/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_two_arguments_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/length_two_arguments_rejected/test.json"
     },
     {
       "id": "torture.function-conformance.length_upper",
@@ -1869,6 +2001,22 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_empty/test.json"
     },
     {
+      "id": "torture.function-conformance.lower_fixture_greek",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_fixture_greek/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_fixture_turkish",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_fixture_turkish/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_greek_sigma",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_greek_sigma/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_invalid_numeric_field",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_invalid_numeric_field/test.json"
+    },
+    {
       "id": "torture.function-conformance.lower_kelvin",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_kelvin/test.json"
     },
@@ -1881,16 +2029,36 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_null/test.json"
     },
     {
+      "id": "torture.function-conformance.lower_null_field",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_null_field/test.json"
+    },
+    {
       "id": "torture.function-conformance.lower_punctuation",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_punctuation/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_sharp_s",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_sharp_s/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_turkish_dotted_i",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_turkish_dotted_i/test.json"
     },
     {
       "id": "torture.function-conformance.lower_two",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_two/test.json"
     },
     {
+      "id": "torture.function-conformance.lower_two_arguments_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_two_arguments_rejected/test.json"
+    },
+    {
       "id": "torture.function-conformance.lower_unicode_accent",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_unicode_accent/test.json"
+    },
+    {
+      "id": "torture.function-conformance.lower_upper_nested",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/lower_upper_nested/test.json"
     },
     {
       "id": "torture.function-conformance.lower_zero",
@@ -1985,12 +2153,108 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_zero/test.json"
     },
     {
+      "id": "torture.function-conformance.position_argument_identifier",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_argument_identifier/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_cte_inner_offset",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_cte_inner_offset/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_cte_inner_sequence",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_cte_inner_sequence/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_cte_outer_sequence",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_cte_outer_sequence/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_derived_inner_sequence",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_derived_inner_sequence/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_descending_offset",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_descending_offset/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_descending_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_descending_order/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_distinct_numbering",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_distinct_numbering/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_empty_result",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_empty_result/test.json"
+    },
+    {
       "id": "torture.function-conformance.position_first",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/position_first/test.json"
     },
     {
+      "id": "torture.function-conformance.position_grouped_count",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_grouped_count/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_grouped_multi_count",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_grouped_multi_count/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_in_arithmetic",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_in_arithmetic/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_in_group",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_in_group/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_in_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_in_order/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_in_where",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_in_where/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_nested_coalesce",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_nested_coalesce/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_observed_sequence",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_observed_sequence/test.json"
+    },
+    {
       "id": "torture.function-conformance.position_one",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/position_one/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_order_alias",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_order_alias/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_outer_numbering_after_slice",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_outer_numbering_after_slice/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_second_after_offset",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_second_after_offset/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_source_sequence",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_source_sequence/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_union_first_arm",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_union_first_arm/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_union_second_arm",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_union_second_arm/test.json"
+    },
+    {
+      "id": "torture.function-conformance.position_zero_arguments_two",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/position_zero_arguments_two/test.json"
     },
     {
       "id": "torture.function-conformance.random_seeded_range",
@@ -2017,6 +2281,98 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/sum_zero/test.json"
     },
     {
+      "id": "torture.function-conformance.unicode_contains_casefold_sharp_s",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_contains_casefold_sharp_s/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_contains_composed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_contains_composed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_contains_decomposed_mismatch",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_contains_decomposed_mismatch/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_exact_composed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_exact_composed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_exact_decomposed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_exact_decomposed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ilike_composed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ilike_composed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ilike_decomposed_mismatch",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ilike_decomposed_mismatch/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ilike_kelvin",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ilike_kelvin/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ilike_long_s",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ilike_long_s/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ilike_sharp_s_literal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ilike_sharp_s_literal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ilike_turkish_i",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ilike_turkish_i/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_ascii_newline",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_ascii_newline/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_codepoint_1",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_codepoint_1/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_codepoint_2",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_codepoint_2/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_codepoint_3",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_codepoint_3/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_codepoint_4",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_codepoint_4/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_codepoint_5",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_codepoint_5/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_codepoint_6",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_codepoint_6/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_fullwidth_literal",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_fullwidth_literal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_like_line_separator",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_like_line_separator/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_matches_scripts",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_matches_scripts/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_ordering_raw_titles",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_ordering_raw_titles/test.json"
+    },
+    {
+      "id": "torture.function-conformance.unicode_projection_anchor_titles",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/unicode_projection_anchor_titles/test.json"
+    },
+    {
       "id": "torture.function-conformance.unknown_function",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/unknown_function/test.json"
     },
@@ -2031,6 +2387,26 @@
     {
       "id": "torture.function-conformance.upper_empty",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_empty/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_fixture_german",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_fixture_german/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_german_street",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_german_street/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_greek_sigma",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_greek_sigma/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_invalid_numeric_field",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_invalid_numeric_field/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_lower_nested",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_lower_nested/test.json"
     },
     {
       "id": "torture.function-conformance.upper_mixed",
@@ -2049,6 +2425,10 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_sharp_s/test.json"
     },
     {
+      "id": "torture.function-conformance.upper_turkish_dotless_i",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_turkish_dotless_i/test.json"
+    },
+    {
       "id": "torture.function-conformance.upper_two",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_two/test.json"
     },
@@ -2059,6 +2439,10 @@
     {
       "id": "torture.function-conformance.upper_zero",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_zero/test.json"
+    },
+    {
+      "id": "torture.function-conformance.upper_zero_arguments_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
       "id": "torture.interaction.boolean_not_and_page",
@@ -2281,8 +2665,88 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "torture.semantics.does_not_equal_spelling_rejected",
+      "manifest": "yt-sql/cases/torture-portable/semantics/does_not_equal_spelling_rejected/test.json"
+    },
+    {
+      "id": "torture.semantics.does_not_like_alias",
+      "manifest": "yt-sql/cases/torture-portable/semantics/does_not_like_alias/test.json"
+    },
+    {
+      "id": "torture.semantics.ilike_mars_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/ilike_mars_prefix/test.json"
+    },
+    {
+      "id": "torture.semantics.ilike_numeric_field_rejected",
+      "manifest": "yt-sql/cases/torture-portable/semantics/ilike_numeric_field_rejected/test.json"
+    },
+    {
+      "id": "torture.semantics.like_escaped_backslash_literal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_escaped_backslash_literal/test.json"
+    },
+    {
+      "id": "torture.semantics.like_escaped_percent_literal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_escaped_percent_literal/test.json"
+    },
+    {
+      "id": "torture.semantics.like_escaped_underscore_literal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_escaped_underscore_literal/test.json"
+    },
+    {
+      "id": "torture.semantics.like_literal_underscore",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_literal_underscore/test.json"
+    },
+    {
+      "id": "torture.semantics.like_mars_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_mars_prefix/test.json"
+    },
+    {
+      "id": "torture.semantics.like_numeric_field_rejected",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_numeric_field_rejected/test.json"
+    },
+    {
+      "id": "torture.semantics.like_unquoted_pattern_error",
+      "manifest": "yt-sql/cases/torture-portable/semantics/like_unquoted_pattern_error/test.json"
+    },
+    {
+      "id": "torture.semantics.matches_unterminated_regex_rejected",
+      "manifest": "yt-sql/cases/torture-portable/semantics/matches_unterminated_regex_rejected/test.json"
+    },
+    {
+      "id": "torture.semantics.newline_multi_wildcard",
+      "manifest": "yt-sql/cases/torture-portable/semantics/newline_multi_wildcard/test.json"
+    },
+    {
+      "id": "torture.semantics.newline_single_wildcard",
+      "manifest": "yt-sql/cases/torture-portable/semantics/newline_single_wildcard/test.json"
+    },
+    {
+      "id": "torture.semantics.not_ilike_mars_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/not_ilike_mars_prefix/test.json"
+    },
+    {
+      "id": "torture.semantics.not_like_mars_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/not_like_mars_prefix/test.json"
+    },
+    {
       "id": "torture.semantics.null_and_boolean_logic",
       "manifest": "yt-sql/cases/torture-portable/semantics/null_and_boolean_logic/test.json"
+    },
+    {
+      "id": "torture.semantics.nullable_ilike_g_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/nullable_ilike_g_prefix/test.json"
+    },
+    {
+      "id": "torture.semantics.nullable_like_g_one_character",
+      "manifest": "yt-sql/cases/torture-portable/semantics/nullable_like_g_one_character/test.json"
+    },
+    {
+      "id": "torture.semantics.nullable_like_g_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/nullable_like_g_prefix/test.json"
+    },
+    {
+      "id": "torture.semantics.nullable_not_like_g_prefix",
+      "manifest": "yt-sql/cases/torture-portable/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
       "id": "torture.smoke.source_order_limit",

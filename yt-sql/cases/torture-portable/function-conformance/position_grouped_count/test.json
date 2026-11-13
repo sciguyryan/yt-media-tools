@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.position_grouped_count",
+  "description": "Seeded lexical stress of function-conformance.position_grouped_count; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position",
+    "torture.lexical"
+  ]
+}

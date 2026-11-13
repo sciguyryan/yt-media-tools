@@ -43,27 +43,57 @@ def lexical_variants(query: str, seed: int, count: int) -> list[str]:
     if count < 1:
         raise ValueError("count must be positive")
     tokens = TOKEN.findall(query)
+    # Identifier spellings: aliases (after AS) and field references (after a
+    # dot). A bare token that spells one of these is an identifier occurrence,
+    # not a keyword: changing its case would rename projected columns or
+    # references and break the copied expectation. Function-call positions are
+    # recognisable by the following parenthesis and remain perturbable.
+    identifiers: set[str] = set()
+    for index, token in enumerate(tokens):
+        if token.casefold() in {"as", "."}:
+            for follower in tokens[index + 1 :]:
+                if follower.isspace():
+                    continue
+                if follower.isascii() and follower.isalpha():
+                    identifiers.add(follower.casefold())
+                break
     result: list[str] = []
     for iteration in range(count):
         rng = random.Random(f"{seed}:{iteration}")
         output: list[str] = []
-        previous = ""
-        for token in tokens:
+        for index, token in enumerate(tokens):
             if token.isspace():
-                if previous.startswith("--"):
+                if previous_comment(tokens, index):
                     output.append(token)
                 elif "\n" in token:
                     output.append(rng.choice(["\n", "\n  ", "\n\t", " \n "]))
                 else:
                     output.append(rng.choice([" ", "  ", "\t", " \t "]))
             elif token.upper() in KEYWORDS and token.isascii() and token.isalpha():
-                output.append(rng.choice([token.upper(), token.lower(), token]))
+                if token.casefold() in identifiers and _next_significant(tokens, index) != "(":
+                    output.append(token)
+                else:
+                    output.append(rng.choice([token.upper(), token.lower(), token]))
             else:
                 output.append(token)
-            if not token.isspace():
-                previous = token
         result.append("".join(output))
     return result
+
+
+def previous_comment(tokens: list[str], index: int) -> bool:
+    """Return whether the nearest preceding token opens a line comment."""
+    for token in reversed(tokens[:index]):
+        if not token.isspace():
+            return token.startswith("--")
+    return False
+
+
+def _next_significant(tokens: list[str], index: int) -> str:
+    """Return the next non-whitespace token, or the empty string."""
+    for token in tokens[index + 1 :]:
+        if not token.isspace():
+            return token
+    return ""
 
 
 def check_case(case: Path, *, root: Path, seed: int, variants: int) -> dict[str, object]:

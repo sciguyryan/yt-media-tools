@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "semantics.nullable_like_g_one_character",
+  "source_query_sha256": "7e28bcf2c4ded540560f0a6abf446a3348e781f1713f53ea7d9bec630a0ce56c",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from independently approved source case"
+}

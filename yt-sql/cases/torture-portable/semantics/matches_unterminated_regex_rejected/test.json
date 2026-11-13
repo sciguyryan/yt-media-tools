@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.matches_unterminated_regex_rejected",
+  "description": "Seeded lexical stress of semantics.matches_unterminated_regex_rejected; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.matches",
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,6 @@
+SELECT
+  id 
+ FROM @yt_sql_fixture 
+ WHERE 	 title	LIKE 'Variation __'
+ORDER	by source_index
+  

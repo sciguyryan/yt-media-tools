@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "position",
+    "total"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      }
+    ]
+  ]
+}

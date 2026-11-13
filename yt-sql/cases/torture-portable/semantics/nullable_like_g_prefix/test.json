@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.nullable_like_g_prefix",
+  "description": "Seeded lexical stress of semantics.nullable_like_g_prefix; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like",
+    "torture.lexical"
+  ]
+}

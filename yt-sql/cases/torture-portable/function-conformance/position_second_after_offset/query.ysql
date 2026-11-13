@@ -1,0 +1,6 @@
+SELECT
+	POSITION()  as 	 position,
+	id
+	FROM	@yt_sql_fixture
+	order  by source_index 	 LIMIT	2 OFFSET 	 1
+	

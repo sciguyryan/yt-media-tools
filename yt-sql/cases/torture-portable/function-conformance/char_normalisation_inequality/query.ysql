@@ -1,0 +1,4 @@
+SELECT
+	char(233)  AS  result
+from	@yt_sql_fixture 
+ WHERE  char(233) =	CHAR(101,	769) limit 	 1

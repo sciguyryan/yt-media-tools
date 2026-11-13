@@ -1,0 +1,7 @@
+SELECT  distinct
+  POSITION() AS  position,
+title 
+ FROM  @yt_sql_fixture
+  where  id  in ('vid003',	'vid009', 	 'vid010')
+	ORDER  BY  title	ASC
+	

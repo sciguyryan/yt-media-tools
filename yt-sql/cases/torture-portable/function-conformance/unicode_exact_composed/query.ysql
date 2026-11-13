@@ -1,0 +1,5 @@
+select 
+ id
+FROM	@yt_sql_fixture
+	WHERE  title = 'Café composed é'
+	ORDER  by	source_index

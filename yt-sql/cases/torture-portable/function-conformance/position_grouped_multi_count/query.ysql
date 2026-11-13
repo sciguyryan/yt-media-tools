@@ -1,0 +1,8 @@
+SELECT
+	POSITION() 	 as  position, 
+ title,
+  COUNT(*) 	 AS  total 
+ FROM 	 @yt_sql_fixture
+WHERE id 	 in	('vid001',  'vid003',	'vid009', 	 'vid010')
+  GROUP 	 BY 	 title
+  order BY 	 title	asc

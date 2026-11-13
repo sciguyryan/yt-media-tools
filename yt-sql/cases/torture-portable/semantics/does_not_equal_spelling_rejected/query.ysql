@@ -1,0 +1,5 @@
+select
+	id 
+ from  @yt_sql_fixture 
+ WHERE  title 	 DOES 	 NOT EQUAL 	 'Mars'
+	

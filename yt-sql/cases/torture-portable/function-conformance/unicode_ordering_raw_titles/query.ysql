@@ -1,0 +1,5 @@
+SELECT
+id
+	from	@yt_sql_fixture
+WHERE  id 	 IN	('vid044',  'vid045',  'vid046', 	 'vid047',	'vid048', 	 'vid049',  'vid050',	'vid051')
+  ORDER	BY  title

@@ -1,0 +1,14 @@
+WITH 	 ranked as (
+select
+  POSITION()	as	position,
+	id
+  from 	 @yt_sql_fixture
+	WHERE  source_index  <= 	 3
+	order  by 	 id 	 asc 
+ )
+	SELECT 
+ position, 
+ id 
+ from 	 ranked 
+ order  by id	desc 
+ 

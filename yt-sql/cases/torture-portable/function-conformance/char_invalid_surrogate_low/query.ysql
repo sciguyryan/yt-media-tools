@@ -1,0 +1,1 @@
+SELECT 	 char(55296)	AS  result 	 from	@yt_sql_fixture 	 limit 	 1

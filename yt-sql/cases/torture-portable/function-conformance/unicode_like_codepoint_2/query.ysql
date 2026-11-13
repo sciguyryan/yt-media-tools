@@ -1,0 +1,6 @@
+select 
+ id
+  from	@yt_sql_fixture
+	WHERE  title LIKE	'Flag _______'
+	ORDER  BY	source_index
+	

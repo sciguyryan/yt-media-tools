@@ -1,0 +1,4 @@
+SELECT
+  LOWER('Σ σ ς')	AS result 
+ from @yt_sql_fixture limit 1
+	

@@ -1,0 +1,6 @@
+select
+	id
+	FROM  @yt_sql_fixture 
+ WHERE 	 title DOES 	 not	LIKE 	 'Mars%'
+  order  BY	source_index 
+ 

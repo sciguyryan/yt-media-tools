@@ -1,0 +1,5 @@
+SELECT
+	CHAR(65, 946, 128512) 	 as result 
+ from @yt_sql_fixture
+ORDER BY 	 CHAR(66	-  1)	limit  1 
+ 

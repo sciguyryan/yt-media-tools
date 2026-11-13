@@ -1,0 +1,6 @@
+select
+id
+FROM  @yt_sql_fixture 
+ WHERE title	MATCHES  '東京|مرحبا|שלום|𐐷'
+order by 	 source_index
+  

@@ -1,0 +1,6 @@
+select
+	id
+from 	 @yt_sql_fixture
+WHERE fixture_nullable  not  LIKE	'g%' 
+ order	BY 	 source_index
+  

@@ -1,0 +1,2 @@
+select  position(1, 2) 	 FROM 	 @yt_sql_fixture 
+ 

@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "title"
+  ],
+  "rows": [
+    [
+      "vid037",
+      "Café composed é"
+    ],
+    [
+      "vid038",
+      "Café decomposed é"
+    ],
+    [
+      "vid039",
+      "Combining only ̧́"
+    ],
+    [
+      "vid040",
+      "Emoji 😀"
+    ],
+    [
+      "vid041",
+      "Emoji family 👩‍👩‍👧‍👦"
+    ],
+    [
+      "vid042",
+      "Flag 🏴󠁧󠁢󠁷󠁬󠁳󠁿"
+    ],
+    [
+      "vid043",
+      "Variation ✈️"
+    ],
+    [
+      "vid044",
+      "Greek Σ σ ς"
+    ],
+    [
+      "vid045",
+      "Turkish İ I ı i"
+    ],
+    [
+      "vid046",
+      "German Straße STRASSE"
+    ],
+    [
+      "vid047",
+      "Kelvin K K k"
+    ],
+    [
+      "vid048",
+      "Long s ſ S"
+    ],
+    [
+      "vid049",
+      "CJK 東京漢字"
+    ],
+    [
+      "vid050",
+      "Arabic مرحبا"
+    ],
+    [
+      "vid051",
+      "Hebrew שלום"
+    ],
+    [
+      "vid052",
+      "NBSP space"
+    ],
+    [
+      "vid053",
+      "Thin space"
+    ],
+    [
+      "vid054",
+      "RTL mark ‏text"
+    ],
+    [
+      "vid055",
+      "Wildcards % _ \\ and fullwidth ％＿"
+    ],
+    [
+      "vid056",
+      "Astral 𐐷 𝄞"
+    ],
+    [
+      "vid057",
+      "Line\nbreak"
+    ],
+    [
+      "vid058",
+      "Line separator  "
+    ],
+    [
+      "vid059",
+      "Zero width joiner A‍B"
+    ],
+    [
+      "vid060",
+      "Zero width non-joiner A‌B"
+    ]
+  ]
+}

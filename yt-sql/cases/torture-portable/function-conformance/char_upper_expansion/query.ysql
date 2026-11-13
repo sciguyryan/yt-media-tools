@@ -1,0 +1,3 @@
+SELECT 
+ upper(CHAR(223))	AS result
+	from  @yt_sql_fixture	LIMIT 	 1

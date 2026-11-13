@@ -1,0 +1,7 @@
+SELECT
+  POSITION()	AS 	 position, 
+ id
+from  @yt_sql_fixture 
+ where	source_index 	 <=	3
+ORDER  by	source_index DESC  limit  2	OFFSET 	 1 
+ 

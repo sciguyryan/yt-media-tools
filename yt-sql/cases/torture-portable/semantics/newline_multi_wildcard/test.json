@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.newline_multi_wildcard",
+  "description": "Seeded lexical stress of semantics.newline_multi_wildcard; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like",
+    "torture.lexical"
+  ]
+}

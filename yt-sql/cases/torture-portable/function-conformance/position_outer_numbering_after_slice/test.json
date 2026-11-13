@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.position_outer_numbering_after_slice",
+  "description": "Seeded lexical stress of function-conformance.position_outer_numbering_after_slice; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position",
+    "torture.lexical"
+  ]
+}

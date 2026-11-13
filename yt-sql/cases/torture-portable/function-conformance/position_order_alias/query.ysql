@@ -1,0 +1,2 @@
+SELECT	POSITION()  AS  position,	id  FROM @yt_sql_fixture  ORDER BY  position 
+ 

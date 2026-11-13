@@ -1,0 +1,6 @@
+select
+  position() 	 AS position,
+	COUNT(*)	AS 	 total
+from @yt_sql_fixture
+WHERE 	 source_index	<= 	 3 
+ 

@@ -1,0 +1,2 @@
+SELECT 	 id 	 FROM @yt_sql_fixture	where  POSITION()	> 0 
+ 

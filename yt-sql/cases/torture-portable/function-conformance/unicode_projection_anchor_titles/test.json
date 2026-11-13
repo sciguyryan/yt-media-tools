@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.unicode_projection_anchor_titles",
+  "description": "Seeded lexical stress of function-conformance.unicode_projection_anchor_titles; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "statement.select",
+    "torture.lexical"
+  ]
+}
