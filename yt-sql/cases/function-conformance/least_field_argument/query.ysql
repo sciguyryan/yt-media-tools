@@ -1,1 +1,4 @@
-SELECT LEAST(duration, 3600) AS result FROM @yt_sql_fixture WHERE id = 'vid001'
+SELECT
+    LEAST(duration, 3600) AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid001'

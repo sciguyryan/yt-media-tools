@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "function-conformance.nullif_field_projection",
-  "source_query_sha256": "23d04d43dd3a54c3fac15544d487a565c7d96ebfdc2e529c643c4c938edd85f2",
+  "source_query_sha256": "292930fd26f09386a91ac3c60110c51615b48ce6e64555f94c4512f754dc45e9",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

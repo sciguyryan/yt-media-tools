@@ -1,1 +1,5 @@
-SELECT COALESCE(fixture_nullable, 'fallback') AS result FROM @yt_sql_fixture WHERE id IN ('vid009', 'vid010') ORDER BY id
+SELECT
+    COALESCE(fixture_nullable, 'fallback') AS result
+FROM @yt_sql_fixture
+WHERE id IN ('vid009', 'vid010')
+ORDER BY id

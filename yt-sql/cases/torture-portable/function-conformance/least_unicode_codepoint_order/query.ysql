@@ -1,2 +1,4 @@
-SELECT 	 least('é',  'é',  'ß')	AS result  from @yt_sql_fixture	LIMIT 	 1 
+SELECT 
+ least('é',  'é',  'ß')	AS result
+  from @yt_sql_fixture	LIMIT 	 1 
  

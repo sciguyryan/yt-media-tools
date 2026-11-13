@@ -1,2 +1,4 @@
-SELECT 	 NULLIF('é',	'é')	AS  result 	 from 	 @yt_sql_fixture  LIMIT  1 
+SELECT 
+ NULLIF('é',	'é')	AS  result 
+ from 	 @yt_sql_fixture  LIMIT  1 
  

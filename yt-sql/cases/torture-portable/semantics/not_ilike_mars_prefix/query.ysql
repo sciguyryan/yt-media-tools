@@ -1,7 +1,8 @@
 SELECT
 id 
  FROM @yt_sql_fixture
-  WHERE source_index 	 <= 	 16
+  WHERE
+source_index 	 <= 	 16
 AND title  not 	 ILIKE 	 'mars%' 
  ORDER	BY source_index
 	
