@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_where_rejected",
+  "description": "RANDOM is not allowed in WHERE predicates",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.placement"
+  ]
+}

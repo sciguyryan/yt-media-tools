@@ -1162,23 +1162,33 @@ def _validate_random_placement(query: Query) -> None:
     """Keep volatile randomness out of row-selection and grouping semantics."""
     if _contains_random(query.predicate):
         raise QuerySemanticError(
-            query.source, "RANDOM is not allowed in WHERE predicates.", _random_position(query.predicate)
+            query.source,
+            "RANDOM is not allowed in WHERE predicates.",
+            _random_position(query.predicate),
+            reason="invalid-random-placement",
         )
     if any(_contains_random(expression) for expression in query.group_by):
         raise QuerySemanticError(
             query.source,
             "RANDOM is not allowed in GROUP BY expressions.",
             min(_random_position(expression) for expression in query.group_by if _contains_random(expression)),
+            reason="invalid-random-placement",
         )
     if _contains_random(query.having):
         raise QuerySemanticError(
-            query.source, "RANDOM is not allowed in HAVING predicates.", _random_position(query.having)
+            query.source,
+            "RANDOM is not allowed in HAVING predicates.",
+            _random_position(query.having),
+            reason="invalid-random-placement",
         )
     for term in query.select:
         expression = term.expression
         if isinstance(expression, AggregateFunction) and _contains_random(expression.filter_predicate):
             raise QuerySemanticError(
-                query.source, "RANDOM is not allowed in aggregate FILTER predicates.", expression.position
+                query.source,
+                "RANDOM is not allowed in aggregate FILTER predicates.",
+                expression.position,
+                reason="invalid-random-placement",
             )
 
 

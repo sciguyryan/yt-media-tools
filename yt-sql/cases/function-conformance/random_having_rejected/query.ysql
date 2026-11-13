@@ -1,0 +1,6 @@
+SELECT
+    fixture_nullable AS bucket,
+    COUNT(*) AS n
+FROM @yt_sql_fixture
+GROUP BY fixture_nullable
+HAVING RANDOM() < 1

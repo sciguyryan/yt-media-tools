@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_seeded_value",
+  "description": "RANDOM with an explicit seed is a deterministic function of the seed and record identity",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.value"
+  ]
+}

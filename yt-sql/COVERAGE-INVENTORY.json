@@ -3623,11 +3623,74 @@
       "path": "yt-sql/cases/function-conformance/position_zero_arguments_two/test.json"
     },
     {
+      "id": "function-conformance.random_aggregate_filter_rejected",
+      "features": [
+        "random.placement"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_aggregate_filter_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_group_by_rejected",
+      "features": [
+        "random.placement"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_group_by_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_having_rejected",
+      "features": [
+        "random.placement"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_having_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_join_on_rejected",
+      "features": [
+        "random.placement"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_join_on_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_determinism",
+      "features": [
+        "random.value"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_determinism/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_order",
+      "features": [
+        "random.value"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_order/test.json"
+    },
+    {
       "id": "function-conformance.random_seeded_range",
       "features": [
         "scalar.random_seeded"
       ],
       "path": "yt-sql/cases/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_value",
+      "features": [
+        "random.value"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_value/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_value_large_seed",
+      "features": [
+        "random.value"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_value_large_seed/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_value_other_seed",
+      "features": [
+        "random.value"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_value_other_seed/test.json"
     },
     {
       "id": "function-conformance.random_two",
@@ -3637,11 +3700,25 @@
       "path": "yt-sql/cases/function-conformance/random_two/test.json"
     },
     {
+      "id": "function-conformance.random_unseeded_order_completeness",
+      "features": [
+        "random.value"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_unseeded_order_completeness/test.json"
+    },
+    {
       "id": "function-conformance.random_unseeded_range",
       "features": [
         "scalar.random_seeded"
       ],
       "path": "yt-sql/cases/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.random_where_rejected",
+      "features": [
+        "random.placement"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_where_rejected/test.json"
     },
     {
       "id": "function-conformance.sum_text",
@@ -6856,12 +6933,84 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/position_zero_arguments_two/test.json"
     },
     {
+      "id": "torture.function-conformance.random_aggregate_filter_rejected",
+      "features": [
+        "random.placement",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_aggregate_filter_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_group_by_rejected",
+      "features": [
+        "random.placement",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_group_by_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_having_rejected",
+      "features": [
+        "random.placement",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_having_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_join_on_rejected",
+      "features": [
+        "random.placement",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_join_on_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_determinism",
+      "features": [
+        "random.value",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_determinism/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_order",
+      "features": [
+        "random.value",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_order/test.json"
+    },
+    {
       "id": "torture.function-conformance.random_seeded_range",
       "features": [
         "scalar.random_seeded",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_value",
+      "features": [
+        "random.value",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_value_large_seed",
+      "features": [
+        "random.value",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value_large_seed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_value_other_seed",
+      "features": [
+        "random.value",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value_other_seed/test.json"
     },
     {
       "id": "torture.function-conformance.random_two",
@@ -6872,12 +7021,28 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/random_two/test.json"
     },
     {
+      "id": "torture.function-conformance.random_unseeded_order_completeness",
+      "features": [
+        "random.value",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_unseeded_order_completeness/test.json"
+    },
+    {
       "id": "torture.function-conformance.random_unseeded_range",
       "features": [
         "scalar.random_seeded",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_where_rejected",
+      "features": [
+        "random.placement",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_where_rejected/test.json"
     },
     {
       "id": "torture.function-conformance.sum_text",

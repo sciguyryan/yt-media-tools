@@ -199,6 +199,8 @@ def observe(
             "having-requires-group-by",
         }:
             return _validate({"version": 1, "outcome": "error", "error": {"category": "type"}})
+        if exc.context.category == "semantic" and exc.context.reason == "invalid-random-placement":
+            return _validate({"version": 1, "outcome": "error", "error": {"category": "syntax"}})
         if exc.context.category == "semantic" and exc.context.reason == "invalid-position-placement":
             return _validate({"version": 1, "outcome": "error", "error": {"category": "syntax"}})
         if exc.context.category == "semantic" and exc.context.reason == "unsupported-position-set-operation":
@@ -230,16 +232,16 @@ def observe(
             raise AdapterError(f"physical source/facet is not bound to the portable dataset: {request!r}")
     # The evaluator assumes a single physical request has already been scoped
     # by acquisition. For multiple requests it filters by both source and facet.
-    if len(requests) == 1:
-        execution_records = [records[i] for i in bindings[requests[0]]]
-    else:
-        execution_records = []
-        for source, facet in requests:
-            for i in bindings[(source, facet)]:
-                record = dict(records[i])
-                record["_yt_sql_source"] = source
-                record["_yt_sql_source_facet"] = facet
-                execution_records.append(record)
+    # Every execution record carries the binding keys regardless of request
+    # count: seeded RANDOM derives its record identity from them, and the
+    # identity must not depend on how many sources a query happens to touch.
+    execution_records = []
+    for source, facet in requests:
+        for i in bindings[(source, facet)]:
+            record = dict(records[i])
+            record["_yt_sql_source"] = source
+            record["_yt_sql_source_facet"] = facet
+            execution_records.append(record)
     source_schemas = {request: QuerySchema([records[i] for i in bindings[request]]) for request in requests}
     try:
         resolved = resolve_query(

@@ -117,6 +117,8 @@ The portable result contract permits JSON `null`, Boolean and string values dire
 
 `AVG` is defined as an exact rational. A quotient that terminates in decimal is serialised exactly; a non-terminating quotient is rounded to six fractional digits with ties resolved to even. Binary floating-point arithmetic never enters an `AVG` result, and implementations must reproduce this contract without binary-float conversion.
 
+`RANDOM` is volatile: an unseeded call draws from the implementation's randomness source, so unseeded values, run-to-run equality and cross-call inequality are never normative. `RANDOM(seed)` is a deterministic function of the seed and the record identity and is language law: the value is the top 53 bits of a BLAKE2b-256 digest (digest size 8, personalisation `yt-sql-rnd`) over the UTF-8 bytes of `"<seed>\0<identity>"`, divided by 2^53, where `<identity>` is the canonical JSON (sorted keys, no insignificant whitespace, non-ASCII preserved) of the first present members of `_yt_sql_source`, `_yt_sql_source_facet`, `extractor`, `extractor_key`, `webpage_url`, `url`, `id`. Every bound execution record carries the binding keys, so the identity is independent of how many sources a query touches. Volatile calls must not appear in `WHERE`, `GROUP BY`, `HAVING`, aggregate `FILTER` or `JOIN ON` predicates, and implementations must reject those placements.
+
 The corpus validator enforces the value shapes in committed `expected.json` files. This does not approve the expected values or define how an engine must serialise its runtime values. Parameter binding encodings and engine adapters remain separate future work. Expected outputs are reviewed before becoming normative.
 
 ## Portable language diagnostics

@@ -1,0 +1,4 @@
+SELECT
+	case 	 WHEN RANDOM(7)  - RANDOM(7)  =  0  THEN 1  ELSE	0 end	AS  result 
+ from 	 @yt_sql_fixture
+WHERE 	 id 	 = 	 'vid001'

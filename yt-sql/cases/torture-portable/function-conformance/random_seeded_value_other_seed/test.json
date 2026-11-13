@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.random_seeded_value_other_seed",
+  "description": "Seeded lexical stress of function-conformance.random_seeded_value_other_seed; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.value",
+    "torture.lexical"
+  ]
+}

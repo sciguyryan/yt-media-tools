@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_seeded_value_large_seed",
+  "description": "Large seed values are accepted and deterministic",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.value"
+  ]
+}

@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 900,
+    "normative_manifests": 922,
     "legacy_test_files": 224,
     "test_functions": 1641,
     "assertion_sites": 4136
@@ -1033,16 +1033,60 @@
       "manifest": "yt-sql/cases/function-conformance/position_zero_arguments_two/test.json"
     },
     {
+      "id": "function-conformance.random_aggregate_filter_rejected",
+      "manifest": "yt-sql/cases/function-conformance/random_aggregate_filter_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_group_by_rejected",
+      "manifest": "yt-sql/cases/function-conformance/random_group_by_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_having_rejected",
+      "manifest": "yt-sql/cases/function-conformance/random_having_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_join_on_rejected",
+      "manifest": "yt-sql/cases/function-conformance/random_join_on_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_determinism",
+      "manifest": "yt-sql/cases/function-conformance/random_seeded_determinism/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_order",
+      "manifest": "yt-sql/cases/function-conformance/random_seeded_order/test.json"
+    },
+    {
       "id": "function-conformance.random_seeded_range",
       "manifest": "yt-sql/cases/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_value",
+      "manifest": "yt-sql/cases/function-conformance/random_seeded_value/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_value_large_seed",
+      "manifest": "yt-sql/cases/function-conformance/random_seeded_value_large_seed/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_value_other_seed",
+      "manifest": "yt-sql/cases/function-conformance/random_seeded_value_other_seed/test.json"
     },
     {
       "id": "function-conformance.random_two",
       "manifest": "yt-sql/cases/function-conformance/random_two/test.json"
     },
     {
+      "id": "function-conformance.random_unseeded_order_completeness",
+      "manifest": "yt-sql/cases/function-conformance/random_unseeded_order_completeness/test.json"
+    },
+    {
       "id": "function-conformance.random_unseeded_range",
       "manifest": "yt-sql/cases/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "function-conformance.random_where_rejected",
+      "manifest": "yt-sql/cases/function-conformance/random_where_rejected/test.json"
     },
     {
       "id": "function-conformance.sum_text",
@@ -2665,16 +2709,60 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/position_zero_arguments_two/test.json"
     },
     {
+      "id": "torture.function-conformance.random_aggregate_filter_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_aggregate_filter_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_group_by_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_group_by_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_having_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_having_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_join_on_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_join_on_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_determinism",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_determinism/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_order/test.json"
+    },
+    {
       "id": "torture.function-conformance.random_seeded_range",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_value",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_value_large_seed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value_large_seed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_value_other_seed",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value_other_seed/test.json"
     },
     {
       "id": "torture.function-conformance.random_two",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/random_two/test.json"
     },
     {
+      "id": "torture.function-conformance.random_unseeded_order_completeness",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_unseeded_order_completeness/test.json"
+    },
+    {
       "id": "torture.function-conformance.random_unseeded_range",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/random_unseeded_range/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_where_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/random_where_rejected/test.json"
     },
     {
       "id": "torture.function-conformance.sum_text",

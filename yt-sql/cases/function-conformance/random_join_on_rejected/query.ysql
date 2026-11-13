@@ -1,0 +1,4 @@
+SELECT
+    id
+FROM @yt_sql_fixture AS l
+JOIN @yt_sql_fixture AS r ON RANDOM() > 0

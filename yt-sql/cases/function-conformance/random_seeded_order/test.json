@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_seeded_order",
+  "description": "ORDER BY a seeded RANDOM is deterministic and pinnable",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.value"
+  ]
+}

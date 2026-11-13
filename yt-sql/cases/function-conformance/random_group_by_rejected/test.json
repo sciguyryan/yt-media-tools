@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_group_by_rejected",
+  "description": "RANDOM is not allowed in GROUP BY expressions",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.placement"
+  ]
+}

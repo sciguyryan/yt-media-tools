@@ -167,6 +167,7 @@ def _validate_join_predicate(predicate: Any, source: str) -> None:
                 source,
                 "RANDOM is not allowed in JOIN ON predicates.",
                 node.position,
+                reason="invalid-random-placement",
             )
 
 

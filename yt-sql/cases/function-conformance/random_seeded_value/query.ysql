@@ -1,0 +1,4 @@
+SELECT
+    RANDOM(7) AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid001'

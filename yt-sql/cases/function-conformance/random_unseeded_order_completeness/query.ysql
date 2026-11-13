@@ -1,0 +1,9 @@
+SELECT
+    COUNT(*) AS n
+FROM (
+    SELECT
+        id
+    FROM @yt_sql_fixture
+    WHERE source_index <= 5
+    ORDER BY RANDOM()
+) AS ordered

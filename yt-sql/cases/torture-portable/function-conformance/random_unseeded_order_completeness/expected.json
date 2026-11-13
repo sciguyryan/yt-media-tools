@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "n"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      }
+    ]
+  ]
+}

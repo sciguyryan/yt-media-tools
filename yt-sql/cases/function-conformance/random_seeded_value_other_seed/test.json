@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.random_seeded_value_other_seed",
+  "description": "A different seed yields a different deterministic value",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "random.value"
+  ]
+}
