@@ -29,7 +29,7 @@ ytsql_dialect.replace(TableReferenceSegment=TableReferenceSegment)
 # SQLite narrows the inherited LIKE grammar to LIKE alone. YT-SQL also
 # supports ILIKE; restore this alternative without changing SQLite linting.
 ytsql_dialect.sets("unreserved_keywords").update(
-    {"ILIKE", "CONTAINS", "CONTAIN", "MATCHES", "MATCH", "DOES", "FILTER", "MAP"}
+    {"ILIKE", "CONTAINS", "CONTAIN", "MATCHES", "MATCH", "DOES", "FILTER", "MAP", "COUNT"}
 )
 ytsql_dialect.replace(
     LikeGrammar=OneOf("LIKE", "ILIKE", "CONTAINS", "CONTAIN", "MATCHES", "MATCH"),
@@ -46,7 +46,11 @@ ytsql_dialect.replace(
 # Keep the standard function_name/function_contents segment shape so SQLFluff
 # layout rules can inspect them without special cases or suppressed checks.
 class CollectionFunctionNameSegment(sqlite.get_segment("FunctionNameSegment")):
-    match_grammar = OneOf("FILTER", "MAP")
+    # COUNT is deliberately shared with the aggregate keyword: its collection
+    # binding form (COUNT(tags AS tag WHERE ...)) matches the binding contents
+    # below, while every standard aggregate form falls through to the ordinary
+    # function grammar. The two content shapes are mutually exclusive.
+    match_grammar = OneOf("FILTER", "MAP", "COUNT")
 
 
 class CollectionFunctionContentsSegment(sqlite.get_segment("FunctionContentsSegment")):

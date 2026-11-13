@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.filter_index_after_filter",
+  "description": "A filtered stable collection can be indexed without reordering",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter"
+  ]
+}

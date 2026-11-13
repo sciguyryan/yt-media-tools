@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_index_after_projection",
+  "description": "A projected stable collection can be indexed",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

@@ -1,0 +1,4 @@
+select
+	MAP(tags 	 AS 	 tag  count(*))	AS result
+FROM	@yt_sql_fixture 
+ 

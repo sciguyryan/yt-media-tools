@@ -57,7 +57,10 @@ def test_reviewed_retirements_have_explicit_portable_evidence() -> None:
 def test_reviewed_modules_account_for_every_remaining_test() -> None:
     """A reviewed module must not silently retain unclassified portable tests."""
     ledger = json.loads((ROOT / "yt-sql/REVIEWED-RETIREMENTS.json").read_text(encoding="utf-8"))
-    assert {entry["source"] for entry in ledger["module_reviews"]} == {
+    # The reviewed set grows as migration increments account for more modules;
+    # the originally reviewed modules must never silently drop their accounting.
+    reviewed = {entry["source"] for entry in ledger["module_reviews"]}
+    assert reviewed >= {
         "python/yt_discover_tests/test_char_function.py",
         "python/yt_discover_tests/test_concat_function.py",
     }

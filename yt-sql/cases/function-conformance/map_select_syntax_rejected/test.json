@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_select_syntax_rejected",
+  "description": "MAP requires a SELECT projection clause",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

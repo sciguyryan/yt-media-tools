@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.cardinality_null_elements",
+  "description": "CARDINALITY counts NULL elements inside a collection",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.cardinality"
+  ]
+}

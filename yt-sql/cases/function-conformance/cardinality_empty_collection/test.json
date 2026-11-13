@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.cardinality_empty_collection",
+  "description": "CARDINALITY over an empty collection is zero",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.cardinality"
+  ]
+}

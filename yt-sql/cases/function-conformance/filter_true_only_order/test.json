@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.filter_true_only_order",
+  "description": "FILTER keeps only true results in original order, dropping NULL elements",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter"
+  ]
+}

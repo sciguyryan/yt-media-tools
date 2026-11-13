@@ -1,0 +1,5 @@
+SELECT
+  FILTER(tags	AS 	 tag WHERE	tag 	 IS	not	NULL)[0]	AS  result
+FROM  @yt_sql_fixture
+  WHERE id	=  'vid009'
+	

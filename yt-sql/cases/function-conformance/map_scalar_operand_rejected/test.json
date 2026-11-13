@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_scalar_operand_rejected",
+  "description": "MAP rejects a scalar operand",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

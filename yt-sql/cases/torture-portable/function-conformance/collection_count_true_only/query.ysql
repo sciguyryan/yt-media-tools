@@ -1,0 +1,4 @@
+select
+	count(tags  as 	 tag WHERE  tag	IS  NOT NULL)	as 	 result
+  FROM @yt_sql_fixture
+	WHERE id = 'vid009'

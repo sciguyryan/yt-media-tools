@@ -1,0 +1,4 @@
+SELECT
+	count(title	AS	item 	 where  item = 'x')  as  result
+	from @yt_sql_fixture 
+ 

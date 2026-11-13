@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_null_elements_preserved",
+  "description": "MAP preserves NULL elements in position",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

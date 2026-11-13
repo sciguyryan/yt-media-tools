@@ -58,6 +58,7 @@ class SQLFluffYTSQLTests(unittest.TestCase):
         for query in (
             "SELECT FILTER(tags AS item WHERE item = 'topic-1') AS result FROM @yt_sql_fixture LIMIT 1\n",
             "SELECT MAP(tags AS item SELECT UPPER(item)) AS result FROM @yt_sql_fixture LIMIT 1\n",
+            "SELECT COUNT(tags AS item WHERE item = 'topic-1') AS result FROM @yt_sql_fixture LIMIT 1\n",
         ):
             with self.subTest(query=query):
                 formatted = format_checked(query, engine=engine)

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_filter_pipeline",
+  "description": "MAP over FILTER can reference outer row fields in its projection",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

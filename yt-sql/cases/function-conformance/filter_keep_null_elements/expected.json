@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "result"
+  ],
+  "rows": [
+    [
+      {
+        "type": "array",
+        "value": [
+          null
+        ]
+      }
+    ]
+  ]
+}

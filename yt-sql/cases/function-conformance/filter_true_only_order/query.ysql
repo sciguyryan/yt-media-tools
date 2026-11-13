@@ -1,0 +1,4 @@
+SELECT
+    FILTER(tags AS tag WHERE tag != 'skip') AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid007'

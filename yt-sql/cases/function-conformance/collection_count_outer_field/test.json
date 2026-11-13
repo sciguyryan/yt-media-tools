@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.collection_count_outer_field",
+  "description": "Collection COUNT can reference outer row fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.cardinality"
+  ]
+}

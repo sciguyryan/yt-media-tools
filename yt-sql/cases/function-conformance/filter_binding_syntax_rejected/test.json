@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.filter_binding_syntax_rejected",
+  "description": "FILTER requires the AS binding keyword",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.collection_count_true_only",
+  "description": "Collection COUNT counts only true predicate results, skipping NULL elements",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.cardinality"
+  ]
+}

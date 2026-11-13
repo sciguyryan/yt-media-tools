@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.filter_outer_field",
+  "description": "FILTER predicates can reference outer row fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter"
+  ]
+}

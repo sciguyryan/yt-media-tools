@@ -1,0 +1,5 @@
+select
+	filter(tags	as tag	WHERE	tag = 	 title)	AS 	 result 
+ FROM 	 @yt_sql_fixture
+where id 	 = 'vid009'
+  

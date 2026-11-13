@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.filter_null_vs_empty",
+  "description": "FILTER distinguishes a NULL collection from an empty one",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.filter"
+  ]
+}

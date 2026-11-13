@@ -1,0 +1,5 @@
+select
+	cardinality(tags)  AS 	 result
+  from	@yt_sql_fixture
+	WHERE id = 	 'vid009'
+  

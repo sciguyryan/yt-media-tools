@@ -1,0 +1,5 @@
+select 
+ MAP(tags AS	tag  select 	 tag) 	 as result
+FROM	@yt_sql_fixture
+  where id	IN 	 ('vid002', 'vid010')
+ORDER by	id

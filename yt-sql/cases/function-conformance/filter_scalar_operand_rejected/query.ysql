@@ -1,0 +1,3 @@
+SELECT
+    FILTER(title AS item WHERE item = 'x') AS result
+FROM @yt_sql_fixture

@@ -1,0 +1,5 @@
+select
+  CARDINALITY(tags)  as 	 result 
+ FROM 	 @yt_sql_fixture
+WHERE id 	 =  'vid002'
+  

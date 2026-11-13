@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "result"
+  ],
+  "rows": [
+    [
+      {
+        "type": "array",
+        "value": [
+          "TOPIC-4",
+          null,
+          "GROUP-0"
+        ]
+      }
+    ]
+  ]
+}

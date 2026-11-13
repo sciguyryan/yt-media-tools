@@ -1,0 +1,4 @@
+select 
+ cardinality(title) AS	result
+from 	 @yt_sql_fixture
+  

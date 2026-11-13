@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.map_aggregate_projection_rejected",
+  "description": "MAP projections cannot contain aggregate functions",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.map"
+  ]
+}

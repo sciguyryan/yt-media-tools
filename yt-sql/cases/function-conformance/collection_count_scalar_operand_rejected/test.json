@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.collection_count_scalar_operand_rejected",
+  "description": "Collection COUNT rejects a scalar operand",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.cardinality"
+  ]
+}

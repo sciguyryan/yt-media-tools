@@ -424,6 +424,170 @@
         "function-conformance.length_null",
         "function-conformance.coalesce_field_fallback"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "test": "test_cardinality_counts_all_elements_including_null_elements",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.cardinality_null_elements",
+        "function-conformance.cardinality_null_collection",
+        "function-conformance.cardinality_empty_collection"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "test": "test_collection_count_counts_only_true_predicate_results",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.collection_count_true_only"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "test": "test_collection_count_can_explicitly_count_null_elements",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.collection_count_null_elements"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "test": "test_collection_count_can_reference_outer_row_fields",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.collection_count_outer_field"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "test": "test_cardinality_rejects_scalar_operand_deterministically",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.cardinality_scalar_operand_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "test": "test_collection_count_rejects_scalar_operand_deterministically",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.collection_count_scalar_operand_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filter_keeps_only_true_predicate_results_in_original_order",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_true_only_order"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filter_preserves_null_and_empty_collection_distinction",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_null_vs_empty"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filter_can_explicitly_keep_null_elements",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_keep_null_elements"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filtered_stable_collection_can_be_indexed_without_reordering",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_index_after_filter"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filter_can_reference_outer_row_fields",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_outer_field",
+        "function-conformance.map_filter_pipeline"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filter_rejects_non_collection_operand_deterministically",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_scalar_operand_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "test": "test_filter_requires_explicit_binding_syntax",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.filter_binding_syntax_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_projects_each_element_in_original_order",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.map_null_elements_preserved"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_preserves_null_and_empty_collection_distinction",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.map_null_vs_empty"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_stable_collection_can_be_indexed_after_projection",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.map_index_after_projection"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_composes_with_filter_and_outer_row_fields",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.map_filter_pipeline"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_rejects_non_collection_operand_deterministically",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.map_scalar_operand_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_requires_explicit_binding_and_select_syntax",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.map_binding_syntax_rejected",
+        "function-conformance.map_select_syntax_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "test": "test_map_rejects_aggregate_projection",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.map_aggregate_projection_rejected"
+      ]
     }
   ],
   "module_reviews": [
@@ -438,12 +602,210 @@
       ]
     },
     {
+      "source": "python/yt_discover_tests/test_collection_cardinality_count.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_aggregate_count_remains_distinct_from_collection_count",
+          "reason": "Parser internals: the aggregate and collection forms of COUNT must resolve to distinct model nodes. The observable distinction is normative through the corpus's aggregate and collection cases."
+        },
+        {
+          "test": "test_cardinality_result_nullability_follows_collection_nullability",
+          "reason": "Type-model assertion: result nullability derives from collection nullability in the resolved type tree. Internal static typing, not an observable outcome."
+        },
+        {
+          "test": "test_collection_count_and_cardinality_round_trip_canonically",
+          "reason": "Canonical formatter round-trip contract for the collection count forms; the corpus has no normative canonical-text contract, so formatter idempotence stays a Python tool assertion."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_filtering.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_filter_composes_with_nested_quantifiers_and_structured_members",
+          "reason": "Structural gap: quantifier composition over structured collections requires fixture shapes and a typed-object outcome representation that do not exist yet; deferred to the Phase 6.6 dataset and typed-value contracts."
+        },
+        {
+          "test": "test_filter_function_does_not_change_aggregate_filter_syntax",
+          "reason": "Aggregate FILTER (WHERE ...) syntax belongs to the aggregation increment (6.5a.4); the parse-level distinction is a parser-model assertion."
+        },
+        {
+          "test": "test_filter_preserves_exact_collection_type_and_ordering_contract",
+          "reason": "Type-model assertion: FILTER preserves element type, nullability and ordering in the resolved type tree. Internal static typing."
+        },
+        {
+          "test": "test_filter_remains_contextual_when_not_called",
+          "reason": "Parser internals: an uncalled FILTER resolves as an identifier expression. No fixture field named FILTER exists to make this observable."
+        },
+        {
+          "test": "test_filter_round_trips_canonically",
+          "reason": "Canonical formatter round-trip contract for collection bindings; formatter idempotence is a Python tool assertion."
+        },
+        {
+          "test": "test_filter_unknown_ordered_collection_does_not_invent_positional_semantics",
+          "reason": "Fixture gap: no committed collection has unknown logical ordering, so the indexing rejection cannot be observed portably; retained pending a fixture with that property."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_collection_projection.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_map_can_project_nested_collection_values",
+          "reason": "Structural gap: projecting nested collections requires richer fixture collections and a typed-object outcome representation; deferred to the Phase 6.6 contracts."
+        },
+        {
+          "test": "test_map_can_project_structured_values_without_making_them_scalar",
+          "reason": "Structural gap: projecting structured elements requires a typed-object outcome representation; the portable contract cannot express object values yet."
+        },
+        {
+          "test": "test_map_filter_fusion_matches_materialised_evaluation",
+          "reason": "Optimiser contract: fused and materialised evaluation of MAP/FILTER pipelines must agree. Fusion behaviour is implementation-specific."
+        },
+        {
+          "test": "test_map_filter_pipeline_preserves_filter_then_projection_semantics",
+          "reason": "Pipeline contract: the fused evaluation_fusion_safe flag and element-wise semantics are implementation details of the optimiser."
+        },
+        {
+          "test": "test_map_filter_pipeline_preserves_nested_lexical_scope",
+          "reason": "Pipeline contract: nested element bindings must keep their lexical scope under fusion. Implementation-specific evaluation detail."
+        },
+        {
+          "test": "test_map_filter_pipeline_preserves_outer_row_references",
+          "reason": "Pipeline contract: outer row references must survive MAP/FILTER fusion. The observable outer-field semantics are normative through map_filter_pipeline; this pins the fused path."
+        },
+        {
+          "test": "test_map_filter_pipeline_with_random_remains_on_unfused_semantic_path",
+          "reason": "Optimiser safety contract: pipelines containing RANDOM must stay unfused. Optimiser safety is implementation-specific."
+        },
+        {
+          "test": "test_map_preserves_source_collection_nullability",
+          "reason": "Type-model assertion: MAP preserves source collection nullability in the resolved type tree. Internal static typing."
+        },
+        {
+          "test": "test_map_projection_is_optimiser_traversable",
+          "reason": "Optimiser contract: MAP projections must remain traversable as CollectionProjection nodes. Internal optimiser structure."
+        },
+        {
+          "test": "test_map_remains_contextual_when_not_called",
+          "reason": "Parser internals: an uncalled MAP resolves as an identifier expression. No fixture field named MAP exists to make this observable."
+        },
+        {
+          "test": "test_map_result_type_uses_projected_element_type_and_source_ordering",
+          "reason": "Type-model assertion: MAP result typing follows the projected element type and source ordering. Internal static typing over synthetic schemas."
+        },
+        {
+          "test": "test_map_round_trips_canonically",
+          "reason": "Canonical formatter round-trip contract for MAP bindings; formatter idempotence is a Python tool assertion."
+        },
+        {
+          "test": "test_map_supports_nested_scopes_and_outer_element_references",
+          "reason": "Structural gap: nested MAP over structured collections needs the typed-object outcome representation; deferred to the Phase 6.6 contracts."
+        },
+        {
+          "test": "test_map_unknown_order_collection_does_not_invent_positional_semantics",
+          "reason": "Fixture gap: no committed collection has unknown logical ordering, so the rejection cannot be observed portably; retained pending a fixture with that property."
+        }
+      ]
+    },
+    {
       "source": "python/yt_discover_tests/test_concat_function.py",
       "status": "portable_assertions_migrated",
       "retained": [
         {
           "test": "test_concat_constant_folds",
           "reason": "Inspect optimiser folding field and decision; observable CONCAT result covered by function-conformance.concat_video_title"
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_position_canonical_round_trip_in_nested_cte",
+          "reason": "Canonical formatter round-trip contract for POSITION inside CTEs; no normative canonical-text contract exists."
+        },
+        {
+          "test": "test_position_disables_unproven_source_prefix_termination",
+          "reason": "Planner contract: POSITION must disable unproven source-prefix LIMIT termination. Planner eligibility is implementation-specific."
+        },
+        {
+          "test": "test_position_is_scoped_to_its_own_query_block",
+          "reason": "Differential contract: optimised and unoptimised execution paths must agree for block-scoped POSITION queries; the corpus owns the semantic values."
+        },
+        {
+          "test": "test_position_optimiser_preserves_final_sequence",
+          "reason": "Differential contract: four execution paths must agree for ordered, sliced POSITION; the corpus owns the semantic values."
+        },
+        {
+          "test": "test_position_order_and_slice_differential",
+          "reason": "Differential contract: optimised and unoptimised, with and without relational optimisation, must agree for the four ordering and slicing shapes; the corpus owns the semantic values."
+        },
+        {
+          "test": "test_position_projection_does_not_mutate_source_records",
+          "reason": "Source-immutability contract: evaluation must not mutate input records. The handover retains implementation-specific immutability checks."
+        },
+        {
+          "test": "test_position_projection_parses_and_canonicalises",
+          "reason": "Parser and formatter internals: AST shape, canonical spelling and resolved kind are Python model details, not portable outcomes."
+        },
+        {
+          "test": "test_position_properties_are_final_stage_without_metadata_requirements",
+          "reason": "Query-properties analysis contract: POSITION stage and metadata depth drive the planner. Internal property analysis."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_exact_case_sensitive_like_bypasses_regex_compilation",
+          "reason": "Implementation fast path: exact-case LIKE must not invoke the regex compiler. Performance-path behaviour is not an observable language outcome."
+        },
+        {
+          "test": "test_ilike_and_wildcard_like_keep_regex_semantics",
+          "reason": "Implementation contract pinning which patterns reach the regex compiler with which case sensitivity; internal compilation behaviour."
+        },
+        {
+          "test": "test_like_formatting_is_stable",
+          "reason": "Canonical formatter contract for predicate spelling; the corpus has no normative canonical-text contract, so formatter stability stays a Python tool assertion."
+        },
+        {
+          "test": "test_like_terminal_escaped_backslash_is_supported",
+          "reason": "Pattern-terminal escaped backslash cannot be expressed portably: no committed dataset value ends with a backslash. Retained until a fixture value provides the terminal case."
+        },
+        {
+          "test": "test_optimizer_preserves_like_and_matches_without_unproven_cross_rewrite",
+          "reason": "Optimiser contract: LIKE and MATCHES predicates must survive optimisation unchanged with no rewrite decisions, guarding against unproven cross-rewrites. Optimiser behaviour is implementation-specific."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_new_scalar_functions_constant_fold",
+          "reason": "Optimiser contract: constant folding of the extrema functions must be observationally equivalent and record fold decisions. Folding behaviour is implementation-specific."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_unicode_semantics.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_unicode_jsonl_output_preserves_text_without_ascii_escaping",
+          "reason": "Python JSONL writer contract: non-ASCII text must be emitted unescaped. Output serialisation is an implementation surface, not a language outcome."
+        },
+        {
+          "test": "test_unicode_scalar_constant_folding_is_observationally_equivalent",
+          "reason": "Optimiser equivalence contract: constant folding of Unicode scalar functions must be observationally identical to unoptimised evaluation. Folding behaviour is implementation-specific."
         }
       ]
     }

@@ -14,7 +14,6 @@ from yt_media_tools.query import (
     resolve_query,
 )
 from yt_media_tools.query_model import QuerySyntaxError
-from yt_media_tools.query_properties import analyse_expression
 from yt_media_tools.query_types import CollectionOrdering, QueryType, StructuredMember
 from yt_media_tools.schema import FieldInfo, QuerySchema
 
@@ -80,18 +79,6 @@ def _projection_expression(source: str):
     return query.select[0].expression
 
 
-def test_map_projects_each_element_in_original_order() -> None:
-    expression = _projection_expression("SELECT MAP(tags AS tag SELECT UPPER(tag)) AS upper_tags")
-    assert isinstance(expression, CollectionProjection)
-    assert evaluate_scalar_expression(expression, {"tags": ["a", None, "b"]}) == ["A", None, "B"]
-
-
-def test_map_preserves_null_and_empty_collection_distinction() -> None:
-    expression = _projection_expression("SELECT MAP(tags AS tag SELECT tag) AS copied")
-    assert evaluate_scalar_expression(expression, {"tags": None}) is None
-    assert evaluate_scalar_expression(expression, {"tags": []}) == []
-
-
 def test_map_result_type_uses_projected_element_type_and_source_ordering() -> None:
     expression = _projection_expression("SELECT MAP(groups AS group SELECT group.target) AS targets")
     assert expression.resolved_type == QueryType.collection(
@@ -110,11 +97,6 @@ def test_map_preserves_source_collection_nullability() -> None:
     )
 
 
-def test_map_stable_collection_can_be_indexed_after_projection() -> None:
-    expression = _projection_expression("SELECT MAP(tags AS tag SELECT UPPER(tag))[1] AS second")
-    assert evaluate_scalar_expression(expression, {"tags": ["a", "b", "c"]}) == "B"
-
-
 def test_map_unknown_order_collection_does_not_invent_positional_semantics() -> None:
     try:
         _resolve("SELECT MAP(groups AS group SELECT group.target)[0] AS target")
@@ -122,17 +104,6 @@ def test_map_unknown_order_collection_does_not_invent_positional_semantics() -> 
         assert exc.message == "Collection indexing requires a stable logical collection ordering."
     else:
         raise AssertionError("Expected MAP over an unknown-order collection to remain non-indexable.")
-
-
-def test_map_composes_with_filter_and_outer_row_fields() -> None:
-    expression = _projection_expression(
-        "SELECT MAP(FILTER(tags AS tag WHERE tag IS NOT NULL) AS tag SELECT title) AS titles"
-    )
-    assert evaluate_scalar_expression(
-        expression,
-        {"title": "x", "tags": [None, "x", "y", "x"]},
-    ) == ["x", "x", "x"]
-    assert analyse_expression(expression).required_fields == frozenset({"tags", "title"})
 
 
 def test_map_supports_nested_scopes_and_outer_element_references() -> None:
@@ -176,44 +147,10 @@ def test_map_round_trips_canonically() -> None:
         assert format_query(parse_query(formatted)) == formatted
 
 
-def test_map_rejects_non_collection_operand_deterministically() -> None:
-    try:
-        _resolve("SELECT MAP(title AS item SELECT item) AS mapped")
-    except QuerySyntaxError as exc:
-        assert exc.message == "MAP requires a collection value; got string."
-    else:
-        raise AssertionError("Expected MAP over a scalar operand to be rejected.")
-
-
 def test_map_remains_contextual_when_not_called() -> None:
     expression = parse_query("SELECT MAP AS value").select[0].expression
     assert expression is not None
     assert getattr(expression, "name", None) == "MAP"
-
-
-def test_map_requires_explicit_binding_and_select_syntax() -> None:
-    try:
-        parse_query("SELECT MAP(tags tag SELECT tag) AS mapped")
-    except QuerySyntaxError as exc:
-        assert exc.message == "Expected AS after the MAP collection expression."
-    else:
-        raise AssertionError("Expected MAP without AS to be rejected.")
-
-    try:
-        parse_query("SELECT MAP(tags AS tag tag) AS mapped")
-    except QuerySyntaxError as exc:
-        assert exc.message == "Expected SELECT after the MAP element binding."
-    else:
-        raise AssertionError("Expected MAP without SELECT to be rejected.")
-
-
-def test_map_rejects_aggregate_projection() -> None:
-    try:
-        _resolve("SELECT MAP(tags AS tag SELECT COUNT(*)) AS mapped")
-    except QuerySyntaxError as exc:
-        assert exc.message == "MAP projection cannot contain aggregate functions."
-    else:
-        raise AssertionError("Expected aggregate MAP projection to be rejected.")
 
 
 def test_map_projection_is_optimiser_traversable() -> None:

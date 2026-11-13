@@ -587,6 +587,7 @@ def _resolve_scalar_expression(
                 source,
                 f"Collection COUNT requires a collection value; got {kind}.",
                 expression.position,
+                reason="invalid-collection-operand",
             )
         assert collection_type.element_type is not None
         predicate = _resolve_predicate(
@@ -623,6 +624,7 @@ def _resolve_scalar_expression(
                 source,
                 f"FILTER requires a collection value; got {kind}.",
                 expression.position,
+                reason="invalid-collection-operand",
             )
         assert collection_type.element_type is not None
         predicate = _resolve_predicate(
@@ -658,6 +660,7 @@ def _resolve_scalar_expression(
                 source,
                 f"MAP requires a collection value; got {kind}.",
                 expression.position,
+                reason="invalid-collection-operand",
             )
         assert collection_type.element_type is not None
         projection = _resolve_scalar_expression(
@@ -674,6 +677,7 @@ def _resolve_scalar_expression(
                 source,
                 "MAP projection cannot contain aggregate functions.",
                 expression.position,
+                reason="aggregate-in-collection-projection",
             )
         projection_type = _scalar_query_type(projection, schema)
         if projection_type is None:
@@ -778,6 +782,7 @@ def _resolve_scalar_expression(
                     source,
                     f"CARDINALITY requires a collection value; got {kind}.",
                     expression.position,
+                    reason="invalid-collection-operand",
                 )
             result_kind = "integer"
         elif expression.name == "CONCAT":

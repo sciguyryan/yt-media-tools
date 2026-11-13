@@ -1,0 +1,5 @@
+SELECT
+    FILTER(tags AS tag WHERE tag = 'topic-1') AS result
+FROM @yt_sql_fixture
+WHERE id IN ('vid002', 'vid010')
+ORDER BY id

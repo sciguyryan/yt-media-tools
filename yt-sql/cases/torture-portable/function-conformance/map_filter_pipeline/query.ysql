@@ -1,0 +1,5 @@
+SELECT
+  MAP(filter(tags  as tag	WHERE 	 tag IS  not NULL) 	 as tag	SELECT  title)  AS result 
+ FROM	@yt_sql_fixture
+  WHERE id = 	 'vid009'
+	

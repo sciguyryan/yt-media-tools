@@ -1,0 +1,4 @@
+SELECT
+MAP(tags tag	SELECT  tag) 	 AS 	 result
+	FROM @yt_sql_fixture
+	

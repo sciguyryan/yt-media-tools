@@ -1,0 +1,3 @@
+SELECT
+    FILTER(tags tag WHERE tag = 'x') AS result
+FROM @yt_sql_fixture
