@@ -17,7 +17,10 @@ def main() -> int:
 
     command = [sys.executable, "-m", "pytest"]
     if not serial:
-        command.extend(("-n", "3", "--dist", "load"))
+        # Worker count follows the machine and work-stealing re-balances the
+        # suite when the subprocess-heavy conformance harness tests saturate a
+        # worker; fixed small pools left the tail of the run single-threaded.
+        command.extend(("-n", "auto", "--dist", "worksteal"))
     command.extend(arguments)
     return subprocess.call(command)
 

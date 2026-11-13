@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.aggregate_bound_before_group",
+  "description": "A numeric bound directly before GROUP BY parses and groups",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.summary"
+  ]
+}

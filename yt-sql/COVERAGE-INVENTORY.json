@@ -1890,6 +1890,13 @@
       "path": "yt-sql/cases/function-conformance/aggregate_avg_null/test.json"
     },
     {
+      "id": "function-conformance.aggregate_bound_before_group",
+      "features": [
+        "aggregate.summary"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_bound_before_group/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_count_expression",
       "features": [
         "aggregate.count_expression"
@@ -4855,6 +4862,14 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_avg_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_bound_before_group",
+      "features": [
+        "aggregate.summary",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_bound_before_group/test.json"
     },
     {
       "id": "torture.function-conformance.aggregate_count_expression",

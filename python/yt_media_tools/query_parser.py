@@ -1466,7 +1466,23 @@ class Parser:
                 "Expected AND after the lower bound of BETWEEN.",
             )
             upper = self.parse_literal(
-                stop_keywords={"AND", "OR", "UNION", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
+                stop_keywords={
+                    "AND",
+                    "OR",
+                    "UNION",
+                    "ORDER",
+                    "LIMIT",
+                    "OFFSET",
+                    "THEN",
+                    "WHEN",
+                    "ELSE",
+                    "END",
+                    "GROUP",
+                    "HAVING",
+                    "WHERE",
+                    "FROM",
+                    "SELECT",
+                }
             )
             return Between(field, lower, upper, negated)
 
@@ -1621,8 +1637,28 @@ class Parser:
         stop_keywords: set[str] | None = None,
         stop_kinds: set[str] | None = None,
     ) -> Literal:
+        # Clause-leading keywords terminate a literal: a numeric bound directly
+        # followed by GROUP BY previously glued the clause into the value
+        # ("Could not understand count '10 GROUP BY ...'"). String literals and
+        # quoted forms are consumed whole before this loop and are unaffected.
         stop_keywords = (
-            {"AND", "OR", "UNION", "ORDER", "LIMIT", "OFFSET", "THEN", "WHEN", "ELSE", "END"}
+            {
+                "AND",
+                "OR",
+                "UNION",
+                "ORDER",
+                "LIMIT",
+                "OFFSET",
+                "THEN",
+                "WHEN",
+                "ELSE",
+                "END",
+                "GROUP",
+                "HAVING",
+                "WHERE",
+                "FROM",
+                "SELECT",
+            }
             if stop_keywords is None
             else stop_keywords
         )
