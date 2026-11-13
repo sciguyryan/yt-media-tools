@@ -939,6 +939,18 @@
     },
     {
       "module": "query_evaluator.py",
+      "scope": "_average_value",
+      "kind": "If",
+      "sites": 1
+    },
+    {
+      "module": "query_evaluator.py",
+      "scope": "_average_value",
+      "kind": "IfExp",
+      "sites": 2
+    },
+    {
+      "module": "query_evaluator.py",
       "scope": "_bind_collection_element",
       "kind": "If",
       "sites": 1

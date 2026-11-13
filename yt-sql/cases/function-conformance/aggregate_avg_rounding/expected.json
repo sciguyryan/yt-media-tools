@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "mean"
+  ],
+  "rows": [
+    [
+      {
+        "type": "decimal",
+        "value": "1083333.333333"
+      }
+    ]
+  ]
+}

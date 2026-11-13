@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "total",
+    "mean"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "12405912"
+      },
+      {
+        "type": "decimal",
+        "value": "620295.6"
+      }
+    ]
+  ]
+}

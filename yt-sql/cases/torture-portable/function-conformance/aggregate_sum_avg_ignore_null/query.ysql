@@ -1,0 +1,6 @@
+SELECT
+  sum(view_count) AS total,
+	avg(view_count) 	 as	mean
+from	@yt_sql_fixture
+where source_index  <= 22
+  

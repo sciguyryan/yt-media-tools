@@ -8,6 +8,8 @@ import random
 import re
 from dataclasses import replace
 from datetime import date, datetime
+from decimal import Decimal
+from fractions import Fraction
 from functools import lru_cache
 from typing import Any, Callable, Sequence
 
@@ -309,6 +311,34 @@ def evaluate_scalar_expression(
     if collection_bindings:
         return _evaluate_scalar_expression(expression, EvaluationContext(record, collection_bindings, {}))
     return _evaluate_scalar_expression(expression, record)
+
+
+def _average_value(total: object, count: int) -> Decimal:
+    """Return AVG under the portable precision contract.
+
+    The average is computed as an exact rational. A quotient that terminates
+    in decimal is emitted exactly; any other quotient is rounded to six
+    fractional digits, half to even, before serialisation. Binary floating
+    point never enters the result.
+    """
+    fraction = Fraction(total) / count
+    reduced = fraction.denominator
+    while reduced % 2 == 0:
+        reduced //= 2
+    while reduced % 5 == 0:
+        reduced //= 5
+    if reduced != 1:
+        fraction = Fraction(round(fraction, 6))
+    sign = "-" if fraction < 0 else ""
+    numerator, denominator = abs(fraction.numerator), fraction.denominator
+    integer, remainder = divmod(numerator, denominator)
+    digits: list[str] = []
+    while remainder:
+        remainder *= 10
+        digit, remainder = divmod(remainder, denominator)
+        digits.append(str(digit))
+    text = sign + (f"{integer}.{''.join(digits)}" if digits else str(integer))
+    return Decimal(text)
 
 
 def canonical_record_value(
@@ -668,7 +698,7 @@ def _evaluate_group_expression(expression: Any, group: Sequence[dict[str, Any]])
                 return None
         if expression.name == "AVG":
             try:
-                return sum(non_null) / len(non_null)
+                return _average_value(sum(non_null), len(non_null))
             except TypeError:
                 return None
         if expression.name == "MIN":

@@ -1,0 +1,4 @@
+SELECT
+    AVG(view_count) AS mean
+FROM @yt_sql_fixture
+WHERE id IN ('vid001', 'vid002', 'vid003')

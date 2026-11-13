@@ -678,6 +678,51 @@ def _seeded_random(rows: Rows) -> list[Any]:
     return result
 
 
+def _oracle_average(values: list[int]) -> str | None:
+    """Independent implementation of the portable AVG precision contract.
+
+    The average is an exact rational: a quotient terminating in decimal is
+    expanded exactly, and any other quotient is rounded to six fractional
+    digits with ties to even before expansion. Deliberately not shared with
+    the engine implementation.
+    """
+    if not values:
+        return None
+    from math import gcd
+
+    total, count = sum(values), len(values)
+    negative = total < 0
+    numerator, denominator = abs(total), count
+    common = gcd(numerator, denominator)
+    numerator, denominator = numerator // common, denominator // common
+    reduced = denominator
+    while reduced % 2 == 0:
+        reduced //= 2
+    while reduced % 5 == 0:
+        reduced //= 5
+    if reduced != 1:
+        quotient, rest = divmod(numerator * 10**6, denominator)
+        if 2 * rest > denominator or (2 * rest == denominator and quotient % 2 == 1):
+            quotient += 1
+        numerator, denominator = quotient, 10**6
+        common = gcd(numerator, denominator)
+        numerator, denominator = numerator // common, denominator // common
+
+    def expand(num: int, den: int) -> str:
+        integer, remainder = divmod(num, den)
+        digits: list[str] = []
+        while remainder:
+            remainder *= 10
+            digit, remainder = divmod(remainder, den)
+            digits.append(str(digit))
+        return f"{integer}.{''.join(digits)}" if digits else str(integer)
+
+    body = expand(numerator, denominator)
+    nonzero_fraction = "." in body and any(ch != "0" for ch in body.split(".", 1)[1])
+    prefix = "-" if negative and (not body.startswith("0.") or nonzero_fraction) else ""
+    return prefix + body
+
+
 def _aggregate_global(rows: Rows) -> list[Any]:
     values = [int(r["view_count"]) for r in rows if r.get("view_count") is not None]
     titles = [str(r["title"]) for r in rows if r.get("title") is not None]
@@ -686,7 +731,7 @@ def _aggregate_global(rows: Rows) -> list[Any]:
             "rows": len(rows),
             "known_views": len(values),
             "total_views": sum(values) if values else None,
-            "mean_views": (sum(values) / len(values)) if values else None,
+            "mean_views": _oracle_average(values),
             "first_title": min(titles) if titles else None,
             "last_title": max(titles) if titles else None,
         }

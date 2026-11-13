@@ -6,6 +6,7 @@ import csv
 import json
 import sys
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -19,6 +20,9 @@ def _serialisable(value: Any) -> Any:
     """Convert typed query values into stable output-friendly JSON values."""
     if isinstance(value, (date, datetime)):
         return value.isoformat()
+    if isinstance(value, Decimal):
+        # Decimals serialise as their exact decimal string, the portable form.
+        return str(value)
     if isinstance(value, tuple):
         return [_serialisable(item) for item in value]
     if isinstance(value, list):

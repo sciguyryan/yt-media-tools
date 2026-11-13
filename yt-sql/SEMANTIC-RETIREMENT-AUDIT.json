@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 896,
+    "normative_manifests": 900,
     "legacy_test_files": 224,
     "test_functions": 1641,
     "assertion_sites": 4136
@@ -51,6 +51,10 @@
     {
       "id": "function-conformance.aggregate_avg_null",
       "manifest": "yt-sql/cases/function-conformance/aggregate_avg_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_avg_rounding",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_avg_rounding/test.json"
     },
     {
       "id": "function-conformance.aggregate_bound_before_group",
@@ -163,6 +167,10 @@
     {
       "id": "function-conformance.aggregate_sum_add",
       "manifest": "yt-sql/cases/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_sum_avg_ignore_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_sum_avg_ignore_null/test.json"
     },
     {
       "id": "function-conformance.aggregate_sum_ignore_null",
@@ -1677,6 +1685,10 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_avg_null/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_avg_rounding",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_avg_rounding/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_bound_before_group",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_bound_before_group/test.json"
     },
@@ -1787,6 +1799,10 @@
     {
       "id": "torture.function-conformance.aggregate_sum_add",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_sum_avg_ignore_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_avg_ignore_null/test.json"
     },
     {
       "id": "torture.function-conformance.aggregate_sum_ignore_null",
