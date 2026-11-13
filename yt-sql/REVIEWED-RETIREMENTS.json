@@ -268,6 +268,83 @@
         "function-conformance.unicode_like_codepoint_1",
         "function-conformance.unicode_like_codepoint_4"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_semantics",
+      "assertions": 7,
+      "case_ids": [
+        "semantics.like_mars_prefix",
+        "semantics.ilike_mars_prefix",
+        "semantics.not_like_mars_prefix",
+        "semantics.nullable_like_g_prefix",
+        "semantics.nullable_ilike_g_prefix",
+        "semantics.nullable_not_like_g_prefix",
+        "semantics.newline_single_wildcard",
+        "semantics.like_literal_underscore",
+        "semantics.not_ilike_mars_prefix"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_backslash_quotes_percent_underscore_and_backslash",
+      "assertions": 3,
+      "case_ids": [
+        "semantics.like_escaped_percent_literal",
+        "semantics.like_escaped_underscore_literal",
+        "semantics.like_escaped_backslash_literal"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_requires_text_field",
+      "assertions": 2,
+      "case_ids": [
+        "semantics.like_numeric_field_rejected",
+        "semantics.ilike_numeric_field_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_is_deferred_until_after_distinct",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.position_distinct_numbering"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_numbers_aggregate_result",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.position_grouped_multi_count"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_without_order_reflects_observed_sequence_only",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_observed_sequence"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_block_scoping_semantics",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_derived_inner_sequence",
+        "function-conformance.position_outer_numbering_after_slice"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_compound_projections_fail_explicitly",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_union_first_arm",
+        "function-conformance.position_union_second_arm"
+      ]
     }
   ],
   "module_reviews": [

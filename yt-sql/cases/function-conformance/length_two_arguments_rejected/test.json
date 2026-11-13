@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_two_arguments_rejected",
+  "description": "LENGTH requires exactly one argument",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.length"
+  ]
+}

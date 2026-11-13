@@ -7,9 +7,7 @@ import pytest
 from yt_media_tools.optimizer import optimise_query
 import yt_media_tools.query_evaluator as evaluator_module
 from yt_media_tools.query import (
-    QuerySyntaxError,
     apply_query,
-    evaluate,
     format_query,
     like_matches,
     parse_query,
@@ -22,47 +20,17 @@ def _resolved(source: str, records: list[dict[str, object]]):
     return resolve_query(parse_query(source), QuerySchema(records))
 
 
-@pytest.mark.parametrize(
-    ("source", "expected"),
-    [
-        # Retained pending normative admission; the other six parametrisations
-        # are corpus-covered and retired (see reviewed retirement evidence).
-        ("WHERE title NOT ILIKE 'mars%'", [False, False, True, None]),
-    ],
-)
-def test_like_semantics(source: str, expected: list[bool | None]) -> None:
-    records = [
-        {"id": "a", "title": "Mars_mission"},
-        {"id": "b", "title": "mars Mission"},
-        {"id": "c", "title": "Venus mission"},
-        {"id": "d", "title": None},
-    ]
-    query = _resolved(source, records)
-    assert [evaluate(query.predicate, record) for record in records] == expected
-
-
-def test_like_backslash_quotes_percent_underscore_and_backslash() -> None:
-    records = [
-        {"id": "percent", "title": "100%"},
-        {"id": "underscore", "title": "a_b"},
-        {"id": "slash", "title": r"a\b"},
-    ]
-    assert apply_query(records, _resolved(r"WHERE title LIKE '100\%'", records))[0]["id"] == "percent"
-    assert apply_query(records, _resolved(r"WHERE title LIKE 'a\_b'", records))[0]["id"] == "underscore"
-    assert apply_query(records, _resolved(r"WHERE title LIKE 'a\\b'", records))[0]["id"] == "slash"
-
-
 def test_like_terminal_escaped_backslash_is_supported() -> None:
+    """Retained pending a committed fixture value ending with a backslash.
+
+    The escaped-percent, escaped-underscore and escaped-backslash assertions
+    are normative in the portable corpus. Only the pattern-terminal escaped
+    backslash remains here because no committed dataset value ends with a
+    backslash, so the obligation cannot be expressed portably yet.
+    """
     records = [{"id": "slash", "title": "abc\\"}]
     query = _resolved(r"WHERE title LIKE 'abc\\'", records)
     assert apply_query(records, query)[0]["id"] == "slash"
-
-
-@pytest.mark.parametrize("operator", ["LIKE", "ILIKE"])
-def test_like_requires_text_field(operator: str) -> None:
-    records = [{"id": "a", "view_count": 10}]
-    with pytest.raises(QuerySyntaxError, match=f"{operator} requires a text field"):
-        _resolved(f"WHERE view_count {operator} '10'", records)
 
 
 def test_optimizer_preserves_like_and_matches_without_unproven_cross_rewrite() -> None:

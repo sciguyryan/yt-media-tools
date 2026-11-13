@@ -1,0 +1,3 @@
+SELECT
+    UPPER()
+FROM @yt_sql_fixture

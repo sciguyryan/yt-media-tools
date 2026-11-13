@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.does_not_equal_spelling_rejected",
+  "description": "DOES NOT EQUAL is not a supported text-predicate spelling",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.lower_null_field",
+  "description": "LOWER propagates a NULL field value exactly like a NULL literal",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.lower"
+  ]
+}

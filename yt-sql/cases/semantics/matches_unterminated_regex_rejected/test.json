@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.matches_unterminated_regex_rejected",
+  "description": "MATCHES rejects an unterminated regular-expression pattern",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.matches"
+  ]
+}

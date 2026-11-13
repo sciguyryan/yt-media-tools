@@ -1046,7 +1046,10 @@ def _resolve_predicate(
             )
         if field.kind not in {"string", "mixed", "unknown"}:
             raise QuerySemanticError(
-                source, f"{node.operator} requires a text field, not {field.kind}.", field.position
+                source,
+                f"{node.operator} requires a text field, not {field.kind}.",
+                field.position,
+                reason="invalid-text-predicate-field",
             )
         if node.operator in {"LIKE", "ILIKE"}:
             _validate_like_pattern(str(node.value.value), source, node.value.position)
@@ -1186,6 +1189,7 @@ def _validate_position_placement(query: Query) -> None:
             query.source,
             "POSITION() in set-operation projections is not yet supported.",
             position_terms[0].expression.position,
+            reason="unsupported-position-set-operation",
         )
     position_aliases = {term.output_name.casefold() for term in position_terms}
     for order in query.order_by:
@@ -1424,6 +1428,7 @@ def _resolve_composed_query(
                         query.source,
                         "POSITION() in set-operation projections is not yet supported.",
                         expression.position,
+                        reason="unsupported-position-set-operation",
                     )
 
     def resolve_body(body: Query) -> Query:

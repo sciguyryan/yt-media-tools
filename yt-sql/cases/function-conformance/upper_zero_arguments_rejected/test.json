@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.upper_zero_arguments_rejected",
+  "description": "UPPER requires exactly one argument",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.upper"
+  ]
+}

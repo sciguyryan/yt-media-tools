@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.ilike_numeric_field_rejected",
+  "description": "ILIKE requires a text field and rejects numeric operands",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}

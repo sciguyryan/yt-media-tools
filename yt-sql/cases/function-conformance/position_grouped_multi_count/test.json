@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_grouped_multi_count",
+  "description": "POSITION numbering continues across every aggregated group",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

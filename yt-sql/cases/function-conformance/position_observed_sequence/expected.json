@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "position",
+    "id"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid001"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid002"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid003"
+    ]
+  ]
+}

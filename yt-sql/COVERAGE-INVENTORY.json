@@ -2768,6 +2768,13 @@
       "path": "yt-sql/cases/function-conformance/length_two/test.json"
     },
     {
+      "id": "function-conformance.length_two_arguments_rejected",
+      "features": [
+        "projection.length"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_two_arguments_rejected/test.json"
+    },
+    {
       "id": "function-conformance.length_upper",
       "features": [
         "projection.length",
@@ -2853,6 +2860,13 @@
       "path": "yt-sql/cases/function-conformance/lower_null/test.json"
     },
     {
+      "id": "function-conformance.lower_null_field",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_null_field/test.json"
+    },
+    {
       "id": "function-conformance.lower_punctuation",
       "features": [
         "projection.lower"
@@ -2879,6 +2893,13 @@
         "projection.lower"
       ],
       "path": "yt-sql/cases/function-conformance/lower_two/test.json"
+    },
+    {
+      "id": "function-conformance.lower_two_arguments_rejected",
+      "features": [
+        "projection.lower"
+      ],
+      "path": "yt-sql/cases/function-conformance/lower_two_arguments_rejected/test.json"
     },
     {
       "id": "function-conformance.lower_unicode_accent",
@@ -3091,6 +3112,13 @@
       "path": "yt-sql/cases/function-conformance/position_cte_outer_sequence/test.json"
     },
     {
+      "id": "function-conformance.position_derived_inner_sequence",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_derived_inner_sequence/test.json"
+    },
+    {
       "id": "function-conformance.position_descending_offset",
       "features": [
         "result.position"
@@ -3103,6 +3131,13 @@
         "result.position"
       ],
       "path": "yt-sql/cases/function-conformance/position_descending_order/test.json"
+    },
+    {
+      "id": "function-conformance.position_distinct_numbering",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_distinct_numbering/test.json"
     },
     {
       "id": "function-conformance.position_empty_result",
@@ -3124,6 +3159,13 @@
         "result.position"
       ],
       "path": "yt-sql/cases/function-conformance/position_grouped_count/test.json"
+    },
+    {
+      "id": "function-conformance.position_grouped_multi_count",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_grouped_multi_count/test.json"
     },
     {
       "id": "function-conformance.position_in_arithmetic",
@@ -3161,6 +3203,13 @@
       "path": "yt-sql/cases/function-conformance/position_nested_coalesce/test.json"
     },
     {
+      "id": "function-conformance.position_observed_sequence",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_observed_sequence/test.json"
+    },
+    {
       "id": "function-conformance.position_one",
       "features": [
         "result.position"
@@ -3175,6 +3224,13 @@
       "path": "yt-sql/cases/function-conformance/position_order_alias/test.json"
     },
     {
+      "id": "function-conformance.position_outer_numbering_after_slice",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_outer_numbering_after_slice/test.json"
+    },
+    {
       "id": "function-conformance.position_second_after_offset",
       "features": [
         "result.position"
@@ -3187,6 +3243,20 @@
         "result.position"
       ],
       "path": "yt-sql/cases/function-conformance/position_source_sequence/test.json"
+    },
+    {
+      "id": "function-conformance.position_union_first_arm",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_union_first_arm/test.json"
+    },
+    {
+      "id": "function-conformance.position_union_second_arm",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_union_second_arm/test.json"
     },
     {
       "id": "function-conformance.position_zero_arguments_two",
@@ -3514,6 +3584,13 @@
         "projection.upper"
       ],
       "path": "yt-sql/cases/function-conformance/upper_zero/test.json"
+    },
+    {
+      "id": "function-conformance.upper_zero_arguments_rejected",
+      "features": [
+        "projection.upper"
+      ],
+      "path": "yt-sql/cases/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
       "id": "interaction.boolean_not_and_page",
@@ -3949,6 +4026,13 @@
       "path": "yt-sql/cases/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "semantics.does_not_equal_spelling_rejected",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/does_not_equal_spelling_rejected/test.json"
+    },
+    {
       "id": "semantics.does_not_like_alias",
       "features": [
         "predicate.like"
@@ -3961,6 +4045,34 @@
         "predicate.like"
       ],
       "path": "yt-sql/cases/semantics/ilike_mars_prefix/test.json"
+    },
+    {
+      "id": "semantics.ilike_numeric_field_rejected",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/ilike_numeric_field_rejected/test.json"
+    },
+    {
+      "id": "semantics.like_escaped_backslash_literal",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/like_escaped_backslash_literal/test.json"
+    },
+    {
+      "id": "semantics.like_escaped_percent_literal",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/like_escaped_percent_literal/test.json"
+    },
+    {
+      "id": "semantics.like_escaped_underscore_literal",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/like_escaped_underscore_literal/test.json"
     },
     {
       "id": "semantics.like_literal_underscore",
@@ -3977,11 +4089,25 @@
       "path": "yt-sql/cases/semantics/like_mars_prefix/test.json"
     },
     {
+      "id": "semantics.like_numeric_field_rejected",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/like_numeric_field_rejected/test.json"
+    },
+    {
       "id": "semantics.like_unquoted_pattern_error",
       "features": [
         "predicate.like"
       ],
       "path": "yt-sql/cases/semantics/like_unquoted_pattern_error/test.json"
+    },
+    {
+      "id": "semantics.matches_unterminated_regex_rejected",
+      "features": [
+        "predicate.matches"
+      ],
+      "path": "yt-sql/cases/semantics/matches_unterminated_regex_rejected/test.json"
     },
     {
       "id": "semantics.newline_multi_wildcard",
@@ -3996,6 +4122,13 @@
         "predicate.like"
       ],
       "path": "yt-sql/cases/semantics/newline_single_wildcard/test.json"
+    },
+    {
+      "id": "semantics.not_ilike_mars_prefix",
+      "features": [
+        "predicate.like"
+      ],
+      "path": "yt-sql/cases/semantics/not_ilike_mars_prefix/test.json"
     },
     {
       "id": "semantics.not_like_mars_prefix",

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_distinct_numbering",
+  "description": "POSITION numbering runs over the DISTINCT-deduplicated final result",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

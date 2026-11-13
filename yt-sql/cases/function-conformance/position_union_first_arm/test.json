@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.position_union_first_arm",
+  "description": "POSITION in the first arm of a set operation is unsupported",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "result.position"
+  ]
+}

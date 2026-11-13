@@ -3,7 +3,7 @@
 import pytest
 
 from yt_media_tools.query_formatter import format_query
-from yt_media_tools.query_model import QuerySemanticError, QuerySyntaxError, ScalarFunction
+from yt_media_tools.query_model import ScalarFunction
 from yt_media_tools.query_parser import parse_query
 from yt_media_tools.query_resolver import resolve_query
 from yt_media_tools.schema import QuerySchema
@@ -31,26 +31,6 @@ def test_position_projection_does_not_mutate_source_records():
     )
     apply_query(records, resolved)
     assert all("position" not in row for row in records)
-
-
-def test_position_is_deferred_until_after_distinct():
-    from yt_media_tools.query_evaluator import apply_query
-
-    records = [{"title": "a"}, {"title": "a"}, {"title": "b"}]
-    sql = "SELECT DISTINCT POSITION() AS position, title FROM @fixture ORDER BY title ASC"
-    resolved = resolve_query(parse_query(sql), QuerySchema(records))
-    result = apply_query(records, resolved)
-    assert [(row["position"], row["title"]) for row in result] == [(1, "a"), (2, "b")]
-
-
-def test_position_numbers_aggregate_result():
-    from yt_media_tools.query_evaluator import apply_query
-
-    records = [{"title": "b"}, {"title": "a"}, {"title": "b"}]
-    sql = "SELECT POSITION() AS position, title, COUNT(*) AS total FROM @fixture GROUP BY title ORDER BY title ASC"
-    resolved = resolve_query(parse_query(sql), QuerySchema(records))
-    result = apply_query(records, resolved)
-    assert [(row["position"], row["total"]) for row in result] == [(1, 1), (2, 2)]
 
 
 def test_position_properties_are_final_stage_without_metadata_requirements():
@@ -124,28 +104,6 @@ def test_position_order_and_slice_differential(sql):
             assert apply_query(records, query, relational_optimisation=relational_optimisation) == baseline
 
 
-def test_position_without_order_reflects_observed_sequence_only():
-    from yt_media_tools.query_evaluator import apply_query
-
-    records = [{"id": "c"}, {"id": "a"}, {"id": "b"}]
-    query = resolve_query(parse_query("SELECT POSITION() AS position, id FROM @fixture"), QuerySchema(records))
-    rows = apply_query(records, query)
-    assert [row["position"] for row in rows] == list(range(1, len(rows) + 1))
-    assert sorted(row["id"] for row in rows) == ["a", "b", "c"]
-
-
-@pytest.mark.parametrize(
-    "sql",
-    [
-        "SELECT POSITION() AS position, id FROM @fixture UNION ALL SELECT 1 AS position, id FROM @fixture",
-        "SELECT 1 AS position, id FROM @fixture UNION ALL SELECT POSITION() AS position, id FROM @fixture",
-    ],
-)
-def test_position_compound_projections_fail_explicitly(sql):
-    with pytest.raises((QuerySemanticError, QuerySyntaxError), match="POSITION"):
-        resolve_query(parse_query(sql), QuerySchema([{"id": "a"}]))
-
-
 def test_position_canonical_round_trip_in_nested_cte():
     sql = (
         "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
@@ -159,14 +117,22 @@ def test_position_canonical_round_trip_in_nested_cte():
 @pytest.mark.parametrize(
     "sql",
     [
-        "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
-        "SELECT position, id FROM ranked ORDER BY id DESC",
-        "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) "
-        "SELECT position, id FROM ranked ORDER BY id DESC",
-        "SELECT position, id FROM (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
-        "AS ranked ORDER BY id DESC",
-        "SELECT POSITION() AS position, id FROM "
-        "(SELECT id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) AS ranked ORDER BY id DESC",
+        (
+            "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
+            "SELECT position, id FROM ranked ORDER BY id DESC"
+        ),
+        (
+            "WITH ranked AS (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) "
+            "SELECT position, id FROM ranked ORDER BY id DESC"
+        ),
+        (
+            "SELECT position, id FROM (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
+            "AS ranked ORDER BY id DESC"
+        ),
+        (
+            "SELECT POSITION() AS position, id FROM "
+            "(SELECT id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) AS ranked ORDER BY id DESC"
+        ),
     ],
 )
 def test_position_is_scoped_to_its_own_query_block(sql):
@@ -181,35 +147,3 @@ def test_position_is_scoped_to_its_own_query_block(sql):
     for candidate in (query, optimise_query(query).query):
         for relational_optimisation in (False, True):
             assert apply_query(records, candidate, relational_optimisation=relational_optimisation) == baseline
-
-
-@pytest.mark.parametrize(
-    ("sql", "expected"),
-    [
-        (
-            (
-                "SELECT position, id FROM (SELECT POSITION() AS position, id FROM @fixture ORDER BY id ASC) "
-                "AS ranked ORDER BY id DESC"
-            ),
-            [(4, "d"), (3, "c"), (2, "b"), (1, "a")],
-        ),
-        (
-            (
-                "SELECT POSITION() AS position, id FROM "
-                "(SELECT id FROM @fixture ORDER BY id ASC LIMIT 2 OFFSET 1) AS ranked ORDER BY id DESC"
-            ),
-            [(1, "c"), (2, "b")],
-        ),
-    ],
-)
-def test_position_block_scoping_semantics(sql, expected):
-    """Derived-table scoping values retained pending normative admission."""
-    from yt_media_tools.optimizer import optimise_query
-    from yt_media_tools.query_evaluator import apply_query
-
-    records = [{"id": value} for value in "dcba"]
-    query = resolve_query(parse_query(sql), QuerySchema(records))
-    for candidate in (query, optimise_query(query).query):
-        for relational_optimisation in (False, True):
-            rows = apply_query(records, candidate, relational_optimisation=relational_optimisation)
-            assert [(row["position"], row["id"]) for row in rows] == expected

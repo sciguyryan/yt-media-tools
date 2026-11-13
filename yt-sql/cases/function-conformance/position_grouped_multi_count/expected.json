@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "position",
+    "title",
+    "total"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "Duplicate",
+      {
+        "type": "integer",
+        "value": "2"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "Mars: New Dawn",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "Venus Weather",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ]
+  ]
+}

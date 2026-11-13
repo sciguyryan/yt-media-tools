@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 663,
+    "normative_manifests": 682,
     "legacy_test_files": 224,
-    "test_functions": 1685,
-    "assertion_sites": 4209
+    "test_functions": 1677,
+    "assertion_sites": 4198
   },
   "normative_cases": [
     {
@@ -549,6 +549,10 @@
       "manifest": "yt-sql/cases/function-conformance/length_two/test.json"
     },
     {
+      "id": "function-conformance.length_two_arguments_rejected",
+      "manifest": "yt-sql/cases/function-conformance/length_two_arguments_rejected/test.json"
+    },
+    {
       "id": "function-conformance.length_upper",
       "manifest": "yt-sql/cases/function-conformance/length_upper/test.json"
     },
@@ -597,6 +601,10 @@
       "manifest": "yt-sql/cases/function-conformance/lower_null/test.json"
     },
     {
+      "id": "function-conformance.lower_null_field",
+      "manifest": "yt-sql/cases/function-conformance/lower_null_field/test.json"
+    },
+    {
       "id": "function-conformance.lower_punctuation",
       "manifest": "yt-sql/cases/function-conformance/lower_punctuation/test.json"
     },
@@ -611,6 +619,10 @@
     {
       "id": "function-conformance.lower_two",
       "manifest": "yt-sql/cases/function-conformance/lower_two/test.json"
+    },
+    {
+      "id": "function-conformance.lower_two_arguments_rejected",
+      "manifest": "yt-sql/cases/function-conformance/lower_two_arguments_rejected/test.json"
     },
     {
       "id": "function-conformance.lower_unicode_accent",
@@ -729,12 +741,20 @@
       "manifest": "yt-sql/cases/function-conformance/position_cte_outer_sequence/test.json"
     },
     {
+      "id": "function-conformance.position_derived_inner_sequence",
+      "manifest": "yt-sql/cases/function-conformance/position_derived_inner_sequence/test.json"
+    },
+    {
       "id": "function-conformance.position_descending_offset",
       "manifest": "yt-sql/cases/function-conformance/position_descending_offset/test.json"
     },
     {
       "id": "function-conformance.position_descending_order",
       "manifest": "yt-sql/cases/function-conformance/position_descending_order/test.json"
+    },
+    {
+      "id": "function-conformance.position_distinct_numbering",
+      "manifest": "yt-sql/cases/function-conformance/position_distinct_numbering/test.json"
     },
     {
       "id": "function-conformance.position_empty_result",
@@ -747,6 +767,10 @@
     {
       "id": "function-conformance.position_grouped_count",
       "manifest": "yt-sql/cases/function-conformance/position_grouped_count/test.json"
+    },
+    {
+      "id": "function-conformance.position_grouped_multi_count",
+      "manifest": "yt-sql/cases/function-conformance/position_grouped_multi_count/test.json"
     },
     {
       "id": "function-conformance.position_in_arithmetic",
@@ -769,6 +793,10 @@
       "manifest": "yt-sql/cases/function-conformance/position_nested_coalesce/test.json"
     },
     {
+      "id": "function-conformance.position_observed_sequence",
+      "manifest": "yt-sql/cases/function-conformance/position_observed_sequence/test.json"
+    },
+    {
       "id": "function-conformance.position_one",
       "manifest": "yt-sql/cases/function-conformance/position_one/test.json"
     },
@@ -777,12 +805,24 @@
       "manifest": "yt-sql/cases/function-conformance/position_order_alias/test.json"
     },
     {
+      "id": "function-conformance.position_outer_numbering_after_slice",
+      "manifest": "yt-sql/cases/function-conformance/position_outer_numbering_after_slice/test.json"
+    },
+    {
       "id": "function-conformance.position_second_after_offset",
       "manifest": "yt-sql/cases/function-conformance/position_second_after_offset/test.json"
     },
     {
       "id": "function-conformance.position_source_sequence",
       "manifest": "yt-sql/cases/function-conformance/position_source_sequence/test.json"
+    },
+    {
+      "id": "function-conformance.position_union_first_arm",
+      "manifest": "yt-sql/cases/function-conformance/position_union_first_arm/test.json"
+    },
+    {
+      "id": "function-conformance.position_union_second_arm",
+      "manifest": "yt-sql/cases/function-conformance/position_union_second_arm/test.json"
     },
     {
       "id": "function-conformance.position_zero_arguments_two",
@@ -971,6 +1011,10 @@
     {
       "id": "function-conformance.upper_zero",
       "manifest": "yt-sql/cases/function-conformance/upper_zero/test.json"
+    },
+    {
+      "id": "function-conformance.upper_zero_arguments_rejected",
+      "manifest": "yt-sql/cases/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
       "id": "interaction.boolean_not_and_page",
@@ -1193,12 +1237,32 @@
       "manifest": "yt-sql/cases/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "semantics.does_not_equal_spelling_rejected",
+      "manifest": "yt-sql/cases/semantics/does_not_equal_spelling_rejected/test.json"
+    },
+    {
       "id": "semantics.does_not_like_alias",
       "manifest": "yt-sql/cases/semantics/does_not_like_alias/test.json"
     },
     {
       "id": "semantics.ilike_mars_prefix",
       "manifest": "yt-sql/cases/semantics/ilike_mars_prefix/test.json"
+    },
+    {
+      "id": "semantics.ilike_numeric_field_rejected",
+      "manifest": "yt-sql/cases/semantics/ilike_numeric_field_rejected/test.json"
+    },
+    {
+      "id": "semantics.like_escaped_backslash_literal",
+      "manifest": "yt-sql/cases/semantics/like_escaped_backslash_literal/test.json"
+    },
+    {
+      "id": "semantics.like_escaped_percent_literal",
+      "manifest": "yt-sql/cases/semantics/like_escaped_percent_literal/test.json"
+    },
+    {
+      "id": "semantics.like_escaped_underscore_literal",
+      "manifest": "yt-sql/cases/semantics/like_escaped_underscore_literal/test.json"
     },
     {
       "id": "semantics.like_literal_underscore",
@@ -1209,8 +1273,16 @@
       "manifest": "yt-sql/cases/semantics/like_mars_prefix/test.json"
     },
     {
+      "id": "semantics.like_numeric_field_rejected",
+      "manifest": "yt-sql/cases/semantics/like_numeric_field_rejected/test.json"
+    },
+    {
       "id": "semantics.like_unquoted_pattern_error",
       "manifest": "yt-sql/cases/semantics/like_unquoted_pattern_error/test.json"
+    },
+    {
+      "id": "semantics.matches_unterminated_regex_rejected",
+      "manifest": "yt-sql/cases/semantics/matches_unterminated_regex_rejected/test.json"
     },
     {
       "id": "semantics.newline_multi_wildcard",
@@ -1219,6 +1291,10 @@
     {
       "id": "semantics.newline_single_wildcard",
       "manifest": "yt-sql/cases/semantics/newline_single_wildcard/test.json"
+    },
+    {
+      "id": "semantics.not_ilike_mars_prefix",
+      "manifest": "yt-sql/cases/semantics/not_ilike_mars_prefix/test.json"
     },
     {
       "id": "semantics.not_like_mars_prefix",
@@ -27597,30 +27673,10 @@
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
         {
-          "name": "test_position_block_scoping_semantics",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_position_canonical_round_trip_in_nested_cte",
           "assertion_sites": [
             {
               "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_position_compound_projections_fail_explicitly",
-          "assertion_sites": [
-            {
-              "kind": "raises"
             }
           ],
           "replacement_case_ids": [],
@@ -27643,27 +27699,7 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_position_is_deferred_until_after_distinct",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_position_is_scoped_to_its_own_query_block",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_position_numbers_aggregate_result",
           "assertion_sites": [
             {
               "kind": "assert"
@@ -27739,19 +27775,6 @@
             {
               "kind": "assert"
             },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_position_without_order_reflects_observed_sequence_only",
-          "assertion_sites": [
             {
               "kind": "assert"
             },
@@ -29729,43 +29752,7 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_like_backslash_quotes_percent_underscore_and_backslash",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_like_formatting_is_stable",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_like_requires_text_field",
-          "assertion_sites": [
-            {
-              "kind": "raises"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_like_semantics",
           "assertion_sites": [
             {
               "kind": "assert"
@@ -43060,6 +43047,83 @@
         "semantics.newline_multi_wildcard",
         "function-conformance.unicode_like_codepoint_1",
         "function-conformance.unicode_like_codepoint_4"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_semantics",
+      "assertions": 7,
+      "case_ids": [
+        "semantics.like_mars_prefix",
+        "semantics.ilike_mars_prefix",
+        "semantics.not_like_mars_prefix",
+        "semantics.nullable_like_g_prefix",
+        "semantics.nullable_ilike_g_prefix",
+        "semantics.nullable_not_like_g_prefix",
+        "semantics.newline_single_wildcard",
+        "semantics.like_literal_underscore",
+        "semantics.not_ilike_mars_prefix"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_backslash_quotes_percent_underscore_and_backslash",
+      "assertions": 3,
+      "case_ids": [
+        "semantics.like_escaped_percent_literal",
+        "semantics.like_escaped_underscore_literal",
+        "semantics.like_escaped_backslash_literal"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_like_predicates.py",
+      "test": "test_like_requires_text_field",
+      "assertions": 2,
+      "case_ids": [
+        "semantics.like_numeric_field_rejected",
+        "semantics.ilike_numeric_field_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_is_deferred_until_after_distinct",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.position_distinct_numbering"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_numbers_aggregate_result",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.position_grouped_multi_count"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_without_order_reflects_observed_sequence_only",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_observed_sequence"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_block_scoping_semantics",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_derived_inner_sequence",
+        "function-conformance.position_outer_numbering_after_slice"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_final_position_language.py",
+      "test": "test_position_compound_projections_fail_explicitly",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.position_union_first_arm",
+        "function-conformance.position_union_second_arm"
       ]
     }
   ],

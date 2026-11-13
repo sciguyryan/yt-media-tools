@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.like_escaped_backslash_literal",
+  "description": "Backslash-escaped backslash matches a literal backslash character",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.like"
+  ]
+}
