@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YT-SQL Conformance Dashboard</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>YT-SQL Conformance Dashboard</h1>
+  <nav>
+    <button data-view="overview" class="active">Overview</button>
+    <button data-view="functions">Function Coverage</button>
+    <button data-view="legacy">Legacy Migration</button>
+    <button data-view="cases">Test Browser</button>
+  </nav>
+  <span id="mode-badge" title="Static snapshots embed the data at generation time; serve mode recomputes from the live tree.">serve</span>
+</header>
+<main>
+  <section id="view-overview" class="view"></section>
+  <section id="view-functions" class="view hidden"></section>
+  <section id="view-legacy" class="view hidden"></section>
+  <section id="view-cases" class="view hidden"></section>
+</main>
+<div id="detail-overlay" class="hidden"><div id="detail-panel"></div></div>
+<script src="/app.js"></script>
+<script src="/egg.js"></script>
+</body>
+</html>
