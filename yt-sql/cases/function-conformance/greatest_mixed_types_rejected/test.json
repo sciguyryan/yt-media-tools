@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.greatest_mixed_types_rejected",
+  "description": "GREATEST rejects arguments with incompatible types",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.greatest"
+  ]
+}

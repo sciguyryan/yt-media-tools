@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 798,
+    "normative_manifests": 816,
     "legacy_test_files": 224,
-    "test_functions": 1677,
-    "assertion_sites": 4198
+    "test_functions": 1669,
+    "assertion_sites": 4181
   },
   "normative_cases": [
     {
@@ -281,6 +281,10 @@
       "manifest": "yt-sql/cases/function-conformance/coalesce_falsey_zero/test.json"
     },
     {
+      "id": "function-conformance.coalesce_field_fallback",
+      "manifest": "yt-sql/cases/function-conformance/coalesce_field_fallback/test.json"
+    },
+    {
       "id": "function-conformance.coalesce_first",
       "manifest": "yt-sql/cases/function-conformance/coalesce_first/test.json"
     },
@@ -409,6 +413,10 @@
       "manifest": "yt-sql/cases/function-conformance/greatest_equal/test.json"
     },
     {
+      "id": "function-conformance.greatest_mixed_types_rejected",
+      "manifest": "yt-sql/cases/function-conformance/greatest_mixed_types_rejected/test.json"
+    },
+    {
       "id": "function-conformance.greatest_negative",
       "manifest": "yt-sql/cases/function-conformance/greatest_negative/test.json"
     },
@@ -433,12 +441,24 @@
       "manifest": "yt-sql/cases/function-conformance/greatest_text/test.json"
     },
     {
+      "id": "function-conformance.greatest_unicode_codepoint_order",
+      "manifest": "yt-sql/cases/function-conformance/greatest_unicode_codepoint_order/test.json"
+    },
+    {
       "id": "function-conformance.greatest_zero",
       "manifest": "yt-sql/cases/function-conformance/greatest_zero/test.json"
     },
     {
       "id": "function-conformance.least_equal",
       "manifest": "yt-sql/cases/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "function-conformance.least_field_argument",
+      "manifest": "yt-sql/cases/function-conformance/least_field_argument/test.json"
+    },
+    {
+      "id": "function-conformance.least_mixed_types_rejected",
+      "manifest": "yt-sql/cases/function-conformance/least_mixed_types_rejected/test.json"
     },
     {
       "id": "function-conformance.least_negative",
@@ -463,6 +483,10 @@
     {
       "id": "function-conformance.least_text",
       "manifest": "yt-sql/cases/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "function-conformance.least_unicode_codepoint_order",
+      "manifest": "yt-sql/cases/function-conformance/least_unicode_codepoint_order/test.json"
     },
     {
       "id": "function-conformance.least_zero",
@@ -689,12 +713,24 @@
       "manifest": "yt-sql/cases/function-conformance/nullif_equal_numeric/test.json"
     },
     {
+      "id": "function-conformance.nullif_field_projection",
+      "manifest": "yt-sql/cases/function-conformance/nullif_field_projection/test.json"
+    },
+    {
       "id": "function-conformance.nullif_first_null",
       "manifest": "yt-sql/cases/function-conformance/nullif_first_null/test.json"
     },
     {
+      "id": "function-conformance.nullif_mixed_types_rejected",
+      "manifest": "yt-sql/cases/function-conformance/nullif_mixed_types_rejected/test.json"
+    },
+    {
       "id": "function-conformance.nullif_nested",
       "manifest": "yt-sql/cases/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_normalisation_inequality",
+      "manifest": "yt-sql/cases/function-conformance/nullif_normalisation_inequality/test.json"
     },
     {
       "id": "function-conformance.nullif_one",
@@ -1709,6 +1745,10 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_falsey_zero/test.json"
     },
     {
+      "id": "torture.function-conformance.coalesce_field_fallback",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_field_fallback/test.json"
+    },
+    {
       "id": "torture.function-conformance.coalesce_first",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/coalesce_first/test.json"
     },
@@ -1837,6 +1877,10 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_equal/test.json"
     },
     {
+      "id": "torture.function-conformance.greatest_mixed_types_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_mixed_types_rejected/test.json"
+    },
+    {
       "id": "torture.function-conformance.greatest_negative",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_negative/test.json"
     },
@@ -1861,12 +1905,24 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_text/test.json"
     },
     {
+      "id": "torture.function-conformance.greatest_unicode_codepoint_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_unicode_codepoint_order/test.json"
+    },
+    {
       "id": "torture.function-conformance.greatest_zero",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/greatest_zero/test.json"
     },
     {
       "id": "torture.function-conformance.least_equal",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_field_argument",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_field_argument/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_mixed_types_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_mixed_types_rejected/test.json"
     },
     {
       "id": "torture.function-conformance.least_negative",
@@ -1891,6 +1947,10 @@
     {
       "id": "torture.function-conformance.least_text",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_unicode_codepoint_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/least_unicode_codepoint_order/test.json"
     },
     {
       "id": "torture.function-conformance.least_zero",
@@ -2117,12 +2177,24 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_equal_numeric/test.json"
     },
     {
+      "id": "torture.function-conformance.nullif_field_projection",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_field_projection/test.json"
+    },
+    {
       "id": "torture.function-conformance.nullif_first_null",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_first_null/test.json"
     },
     {
+      "id": "torture.function-conformance.nullif_mixed_types_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_mixed_types_rejected/test.json"
+    },
+    {
       "id": "torture.function-conformance.nullif_nested",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_normalisation_inequality",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/nullif_normalisation_inequality/test.json"
     },
     {
       "id": "torture.function-conformance.nullif_one",
@@ -38348,19 +38420,6 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_length_and_coalesce",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_limit_termination_disabled_by_distinct_but_allows_offset",
           "assertion_sites": [
             {
@@ -38599,101 +38658,7 @@
       "previous_classification": "review: language semantics",
       "tests": [
         {
-          "name": "test_extrema_null_propagates",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_field_dependent_extrema_and_nullif_work_in_projection_and_ordering",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_greatest_and_least_numeric_values",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_greatest_and_least_use_exact_unicode_ordering",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_new_scalar_functions_constant_fold",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_new_scalar_functions_reject_invalid_arity_or_types",
-          "assertion_sites": [
-            {
-              "kind": "raises"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_nullif_is_unicode_normalisation_sensitive",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_nullif_only_nulls_on_true_equality",
           "assertion_sites": [
             {
               "kind": "assert"
@@ -43588,6 +43553,85 @@
       "case_ids": [
         "function-conformance.position_union_first_arm",
         "function-conformance.position_union_second_arm"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_nullif_only_nulls_on_true_equality",
+      "assertions": 4,
+      "case_ids": [
+        "scalar.nullif_equal",
+        "scalar.nullif_distinct",
+        "function-conformance.nullif_second_null",
+        "function-conformance.nullif_first_null"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_nullif_is_unicode_normalisation_sensitive",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.nullif_normalisation_inequality",
+        "function-conformance.nullif_text_equal"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_greatest_and_least_numeric_values",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.greatest_negative",
+        "function-conformance.least_negative"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_greatest_and_least_use_exact_unicode_ordering",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.greatest_unicode_codepoint_order",
+        "function-conformance.least_unicode_codepoint_order"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_extrema_null_propagates",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.greatest_null",
+        "function-conformance.least_null"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_new_scalar_functions_reject_invalid_arity_or_types",
+      "assertions": 7,
+      "case_ids": [
+        "function-conformance.nullif_one",
+        "function-conformance.nullif_three",
+        "function-conformance.greatest_one",
+        "function-conformance.least_one",
+        "function-conformance.greatest_mixed_types_rejected",
+        "function-conformance.least_mixed_types_rejected",
+        "function-conformance.nullif_mixed_types_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_field_dependent_extrema_and_nullif_work_in_projection_and_ordering",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.least_field_argument",
+        "function-conformance.nullif_field_projection"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_row_shaping.py",
+      "test": "test_length_and_coalesce",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.length_null",
+        "function-conformance.coalesce_field_fallback"
       ]
     }
   ],

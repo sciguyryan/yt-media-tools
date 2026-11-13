@@ -2291,6 +2291,13 @@
       "path": "yt-sql/cases/function-conformance/coalesce_falsey_zero/test.json"
     },
     {
+      "id": "function-conformance.coalesce_field_fallback",
+      "features": [
+        "scalar.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_field_fallback/test.json"
+    },
+    {
       "id": "function-conformance.coalesce_first",
       "features": [
         "projection.coalesce"
@@ -2519,6 +2526,13 @@
       "path": "yt-sql/cases/function-conformance/greatest_equal/test.json"
     },
     {
+      "id": "function-conformance.greatest_mixed_types_rejected",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_mixed_types_rejected/test.json"
+    },
+    {
       "id": "function-conformance.greatest_negative",
       "features": [
         "scalar.greatest"
@@ -2562,6 +2576,13 @@
       "path": "yt-sql/cases/function-conformance/greatest_text/test.json"
     },
     {
+      "id": "function-conformance.greatest_unicode_codepoint_order",
+      "features": [
+        "scalar.greatest"
+      ],
+      "path": "yt-sql/cases/function-conformance/greatest_unicode_codepoint_order/test.json"
+    },
+    {
       "id": "function-conformance.greatest_zero",
       "features": [
         "scalar.greatest"
@@ -2574,6 +2595,20 @@
         "scalar.least"
       ],
       "path": "yt-sql/cases/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "function-conformance.least_field_argument",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_field_argument/test.json"
+    },
+    {
+      "id": "function-conformance.least_mixed_types_rejected",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_mixed_types_rejected/test.json"
     },
     {
       "id": "function-conformance.least_negative",
@@ -2617,6 +2652,13 @@
         "scalar.least"
       ],
       "path": "yt-sql/cases/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "function-conformance.least_unicode_codepoint_order",
+      "features": [
+        "scalar.least"
+      ],
+      "path": "yt-sql/cases/function-conformance/least_unicode_codepoint_order/test.json"
     },
     {
       "id": "function-conformance.least_zero",
@@ -3021,6 +3063,13 @@
       "path": "yt-sql/cases/function-conformance/nullif_equal_numeric/test.json"
     },
     {
+      "id": "function-conformance.nullif_field_projection",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_field_projection/test.json"
+    },
+    {
       "id": "function-conformance.nullif_first_null",
       "features": [
         "scalar.nullif"
@@ -3028,11 +3077,25 @@
       "path": "yt-sql/cases/function-conformance/nullif_first_null/test.json"
     },
     {
+      "id": "function-conformance.nullif_mixed_types_rejected",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_mixed_types_rejected/test.json"
+    },
+    {
       "id": "function-conformance.nullif_nested",
       "features": [
         "scalar.nullif"
       ],
       "path": "yt-sql/cases/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "function-conformance.nullif_normalisation_inequality",
+      "features": [
+        "scalar.nullif"
+      ],
+      "path": "yt-sql/cases/function-conformance/nullif_normalisation_inequality/test.json"
     },
     {
       "id": "function-conformance.nullif_one",
@@ -4979,6 +5042,14 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_falsey_zero/test.json"
     },
     {
+      "id": "torture.function-conformance.coalesce_field_fallback",
+      "features": [
+        "scalar.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_field_fallback/test.json"
+    },
+    {
       "id": "torture.function-conformance.coalesce_first",
       "features": [
         "projection.coalesce",
@@ -5239,6 +5310,14 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/greatest_equal/test.json"
     },
     {
+      "id": "torture.function-conformance.greatest_mixed_types_rejected",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_mixed_types_rejected/test.json"
+    },
+    {
       "id": "torture.function-conformance.greatest_negative",
       "features": [
         "scalar.greatest",
@@ -5288,6 +5367,14 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/greatest_text/test.json"
     },
     {
+      "id": "torture.function-conformance.greatest_unicode_codepoint_order",
+      "features": [
+        "scalar.greatest",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/greatest_unicode_codepoint_order/test.json"
+    },
+    {
       "id": "torture.function-conformance.greatest_zero",
       "features": [
         "scalar.greatest",
@@ -5302,6 +5389,22 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/least_equal/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_field_argument",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_field_argument/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_mixed_types_rejected",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_mixed_types_rejected/test.json"
     },
     {
       "id": "torture.function-conformance.least_negative",
@@ -5351,6 +5454,14 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/least_text/test.json"
+    },
+    {
+      "id": "torture.function-conformance.least_unicode_codepoint_order",
+      "features": [
+        "scalar.least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/least_unicode_codepoint_order/test.json"
     },
     {
       "id": "torture.function-conformance.least_zero",
@@ -5811,6 +5922,14 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/nullif_equal_numeric/test.json"
     },
     {
+      "id": "torture.function-conformance.nullif_field_projection",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_field_projection/test.json"
+    },
+    {
       "id": "torture.function-conformance.nullif_first_null",
       "features": [
         "scalar.nullif",
@@ -5819,12 +5938,28 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/nullif_first_null/test.json"
     },
     {
+      "id": "torture.function-conformance.nullif_mixed_types_rejected",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_mixed_types_rejected/test.json"
+    },
+    {
       "id": "torture.function-conformance.nullif_nested",
       "features": [
         "scalar.nullif",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/nullif_nested/test.json"
+    },
+    {
+      "id": "torture.function-conformance.nullif_normalisation_inequality",
+      "features": [
+        "scalar.nullif",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/nullif_normalisation_inequality/test.json"
     },
     {
       "id": "torture.function-conformance.nullif_one",

@@ -188,6 +188,7 @@ def observe(
             "invalid-concat-argument",
             "invalid-text-function-argument",
             "invalid-text-predicate-field",
+            "incompatible-scalar-argument",
         }:
             return _validate({"version": 1, "outcome": "error", "error": {"category": "type"}})
         if exc.context.category == "semantic" and exc.context.reason == "invalid-position-placement":

@@ -45,14 +45,6 @@ def test_scalar_functions_projection_and_order_alias() -> None:
     assert [project_record(record, query.select)["folded"] for record in selected] == ["alpha", "zulu", None]
 
 
-def test_length_and_coalesce() -> None:
-    records = [{"id": "a", "title": "abc"}, {"id": "b", "title": None}]
-    q1 = resolve("SELECT LENGTH(title) AS n FROM @x", records)
-    assert [project_record(r, q1.select)["n"] for r in records] == [3, None]
-    q2 = resolve("SELECT COALESCE(title, 'untitled') AS title FROM @x", records)
-    assert [project_record(r, q2.select)["title"] for r in records] == ["abc", "untitled"]
-
-
 def test_scalar_function_required_fields_are_underlying_fields() -> None:
     query = parse_query("SELECT LOWER(title) AS t, LENGTH(description) AS n FROM @x")
     assert required_query_fields(query) == {"title", "description"}

@@ -1,0 +1,2 @@
+SELECT 	 least('x',  1) FROM @yt_sql_fixture
+  

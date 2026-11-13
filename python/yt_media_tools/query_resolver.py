@@ -323,6 +323,7 @@ def _common_scalar_kind(expressions: Sequence[Any], source: str, position: int, 
         source,
         f"{function_name} arguments must have compatible types; got " + ", ".join(sorted(unique)) + ".",
         position,
+        reason="incompatible-scalar-argument",
     )
 
 

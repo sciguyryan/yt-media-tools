@@ -1,0 +1,1 @@
+SELECT 	 NULLIF(title, 	 'Duplicate')	AS  result  from  @yt_sql_fixture  WHERE 	 id  in 	 ('vid001', 'vid009') 	 order 	 BY 	 id

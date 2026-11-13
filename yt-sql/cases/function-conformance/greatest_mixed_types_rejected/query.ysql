@@ -1,0 +1,1 @@
+SELECT GREATEST(1, 'x') FROM @yt_sql_fixture

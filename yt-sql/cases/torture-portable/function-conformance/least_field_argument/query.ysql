@@ -1,0 +1,1 @@
+SELECT  LEAST(duration,	3600)	as	result 	 from @yt_sql_fixture 	 where	id = 	 'vid001'

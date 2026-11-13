@@ -345,6 +345,85 @@
         "function-conformance.position_union_first_arm",
         "function-conformance.position_union_second_arm"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_nullif_only_nulls_on_true_equality",
+      "assertions": 4,
+      "case_ids": [
+        "scalar.nullif_equal",
+        "scalar.nullif_distinct",
+        "function-conformance.nullif_second_null",
+        "function-conformance.nullif_first_null"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_nullif_is_unicode_normalisation_sensitive",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.nullif_normalisation_inequality",
+        "function-conformance.nullif_text_equal"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_greatest_and_least_numeric_values",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.greatest_negative",
+        "function-conformance.least_negative"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_greatest_and_least_use_exact_unicode_ordering",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.greatest_unicode_codepoint_order",
+        "function-conformance.least_unicode_codepoint_order"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_extrema_null_propagates",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.greatest_null",
+        "function-conformance.least_null"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_new_scalar_functions_reject_invalid_arity_or_types",
+      "assertions": 7,
+      "case_ids": [
+        "function-conformance.nullif_one",
+        "function-conformance.nullif_three",
+        "function-conformance.greatest_one",
+        "function-conformance.least_one",
+        "function-conformance.greatest_mixed_types_rejected",
+        "function-conformance.least_mixed_types_rejected",
+        "function-conformance.nullif_mixed_types_rejected"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_extrema_functions.py",
+      "test": "test_field_dependent_extrema_and_nullif_work_in_projection_and_ordering",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.least_field_argument",
+        "function-conformance.nullif_field_projection"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_row_shaping.py",
+      "test": "test_length_and_coalesce",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.length_null",
+        "function-conformance.coalesce_field_fallback"
+      ]
     }
   ],
   "module_reviews": [

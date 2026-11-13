@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.coalesce_field_fallback",
+  "description": "COALESCE falls back over NULL field values",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.coalesce"
+  ]
+}
