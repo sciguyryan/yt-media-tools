@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.aggregate_group_null_together",
+  "description": "Seeded lexical stress of function-conformance.aggregate_group_null_together; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "unordered",
+  "features": [
+    "aggregate.summary",
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,4 @@
+SELECT
+    id,
+    COUNT(*) AS n
+FROM @yt_sql_fixture

@@ -1,0 +1,9 @@
+SELECT 
+ count(*) 	 AS n,
+SUM(view_count) AS	total, 
+ AVG(view_count) AS  mean, 
+ MIN(view_count)	AS 	 low,
+  MAX(view_count)  as 	 high
+from @yt_sql_fixture 
+ WHERE 	 id  =  'nonexistent' 
+ 

@@ -1,0 +1,6 @@
+SELECT
+    fixture_nullable AS bucket,
+    COUNT(*) AS n
+FROM @yt_sql_fixture
+WHERE NOT (source_index > 10)
+GROUP BY fixture_nullable

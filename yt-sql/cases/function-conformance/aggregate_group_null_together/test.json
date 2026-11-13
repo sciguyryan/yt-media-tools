@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.aggregate_group_null_together",
+  "description": "NULL group keys form one group; unordered comparison",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "unordered",
+  "features": [
+    "aggregate.summary"
+  ]
+}

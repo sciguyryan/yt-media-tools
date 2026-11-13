@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 862,
+    "normative_manifests": 894,
     "legacy_test_files": 224,
-    "test_functions": 1649,
-    "assertion_sites": 4148
+    "test_functions": 1641,
+    "assertion_sites": 4136
   },
   "normative_cases": [
     {
@@ -45,6 +45,10 @@
       "manifest": "yt-sql/cases/aggregate/sum_text_type_error/test.json"
     },
     {
+      "id": "function-conformance.aggregate_alias_order",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_alias_order/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_avg_null",
       "manifest": "yt-sql/cases/function-conformance/aggregate_avg_null/test.json"
     },
@@ -53,12 +57,24 @@
       "manifest": "yt-sql/cases/function-conformance/aggregate_count_expression/test.json"
     },
     {
+      "id": "function-conformance.aggregate_count_expression_skips_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_count_expression_skips_null/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_count_literal",
       "manifest": "yt-sql/cases/function-conformance/aggregate_count_literal/test.json"
     },
     {
       "id": "function-conformance.aggregate_count_null",
       "manifest": "yt-sql/cases/function-conformance/aggregate_count_null/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_empty_input",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_empty_input/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_filter_after_where",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_filter_after_where/test.json"
     },
     {
       "id": "function-conformance.aggregate_first_avg_source",
@@ -85,6 +101,34 @@
       "manifest": "yt-sql/cases/function-conformance/aggregate_first_sum_source/test.json"
     },
     {
+      "id": "function-conformance.aggregate_group_by_rejected",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_group_by_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_group_null_together",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_group_null_together/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_grouped_column_rejected",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_grouped_column_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_having_alias_and_null_test",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_having_alias_and_null_test/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_having_direct",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_having_direct/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_having_requires_group_by",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_having_requires_group_by/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_in_scalar_wrapper",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_in_scalar_wrapper/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_max_add",
       "manifest": "yt-sql/cases/function-conformance/aggregate_max_add/test.json"
     },
@@ -97,12 +141,28 @@
       "manifest": "yt-sql/cases/function-conformance/aggregate_min_add/test.json"
     },
     {
+      "id": "function-conformance.aggregate_min_max_unicode_order",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_min_max_unicode_order/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_min_null",
       "manifest": "yt-sql/cases/function-conformance/aggregate_min_null/test.json"
     },
     {
+      "id": "function-conformance.aggregate_nested_rejected",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_nested_rejected/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_select_star_rejected",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_select_star_rejected/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_sum_add",
       "manifest": "yt-sql/cases/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_sum_ignore_null",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_sum_ignore_null/test.json"
     },
     {
       "id": "function-conformance.aggregate_sum_null",
@@ -127,6 +187,10 @@
     {
       "id": "function-conformance.aggregate_three_sum",
       "manifest": "yt-sql/cases/function-conformance/aggregate_three_sum/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_ungrouped_column_rejected",
+      "manifest": "yt-sql/cases/function-conformance/aggregate_ungrouped_column_rejected/test.json"
     },
     {
       "id": "function-conformance.avg_text",
@@ -1601,6 +1665,10 @@
       "manifest": "yt-sql/cases/torture-portable/aggregate/sum_text_type_error/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_alias_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_alias_order/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_avg_null",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_avg_null/test.json"
     },
@@ -1609,12 +1677,24 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_expression/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_count_expression_skips_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_expression_skips_null/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_count_literal",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_literal/test.json"
     },
     {
       "id": "torture.function-conformance.aggregate_count_null",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_count_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_empty_input",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_empty_input/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_filter_after_where",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_filter_after_where/test.json"
     },
     {
       "id": "torture.function-conformance.aggregate_first_avg_source",
@@ -1641,6 +1721,34 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_sum_source/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_group_by_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_group_by_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_group_null_together",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_group_null_together/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_grouped_column_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_grouped_column_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_having_alias_and_null_test",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_having_alias_and_null_test/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_having_direct",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_having_direct/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_having_requires_group_by",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_having_requires_group_by/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_in_scalar_wrapper",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_in_scalar_wrapper/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_max_add",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_add/test.json"
     },
@@ -1653,12 +1761,28 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_add/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_min_max_unicode_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_max_unicode_order/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_min_null",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_min_null/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_nested_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_nested_rejected/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_select_star_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_select_star_rejected/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_sum_add",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_sum_ignore_null",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_sum_ignore_null/test.json"
     },
     {
       "id": "torture.function-conformance.aggregate_sum_null",
@@ -1683,6 +1807,10 @@
     {
       "id": "torture.function-conformance.aggregate_three_sum",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_three_sum/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_ungrouped_column_rejected",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/aggregate_ungrouped_column_rejected/test.json"
     },
     {
       "id": "torture.function-conformance.avg_text",
@@ -18045,16 +18173,6 @@
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
         {
-          "name": "test_aggregate_alias_can_order_groups",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_aggregate_fields_are_included_in_planning_and_limit_cannot_terminate_early",
           "assertion_sites": [
             {
@@ -18063,26 +18181,6 @@
             {
               "kind": "assert"
             },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_empty_ungrouped_aggregate_retains_single_row",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_filter_where_is_applied_per_aggregate_after_where",
-          "assertion_sites": [
             {
               "kind": "assert"
             }
@@ -18111,73 +18209,11 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_having_supports_direct_aggregates_aliases_boolean_logic_and_null_tests",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_invalid_aggregate_semantics_are_rejected",
-          "assertion_sites": [
-            {
-              "kind": "raises"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
           "name": "test_optimizer_is_idempotent_and_preserves_aggregate_results",
           "assertion_sites": [
             {
               "kind": "assert"
             },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_scalar_wrappers_can_contain_aggregates",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_sum_avg_ignore_null_and_min_max_use_exact_unicode_order",
-          "assertion_sites": [
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            },
-            {
-              "kind": "assert"
-            }
-          ],
-          "replacement_case_ids": [],
-          "replacement_review": "not_reviewed"
-        },
-        {
-          "name": "test_ungrouped_count_star_and_count_expression",
-          "assertion_sites": [
             {
               "kind": "assert"
             }
@@ -43742,6 +43778,79 @@
       "case_ids": [
         "function-conformance.map_aggregate_projection_rejected"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_ungrouped_count_star_and_count_expression",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.aggregate_count_expression_skips_null"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_empty_ungrouped_aggregate_retains_single_row",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.aggregate_empty_input"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_sum_avg_ignore_null_and_min_max_use_exact_unicode_order",
+      "assertions": 3,
+      "case_ids": [
+        "function-conformance.aggregate_sum_ignore_null",
+        "function-conformance.aggregate_min_max_unicode_order"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_filter_where_is_applied_per_aggregate_after_where",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.aggregate_filter_after_where"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_having_supports_direct_aggregates_aliases_boolean_logic_and_null_tests",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.aggregate_having_direct",
+        "function-conformance.aggregate_having_alias_and_null_test"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_aggregate_alias_can_order_groups",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.aggregate_alias_order"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_scalar_wrappers_can_contain_aggregates",
+      "assertions": 1,
+      "case_ids": [
+        "function-conformance.aggregate_in_scalar_wrapper"
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "test": "test_invalid_aggregate_semantics_are_rejected",
+      "assertions": 8,
+      "case_ids": [
+        "aggregate.sum_text_type_error",
+        "aggregate.avg_text_type_error",
+        "function-conformance.aggregate_nested_rejected",
+        "function-conformance.aggregate_group_by_rejected",
+        "function-conformance.aggregate_select_star_rejected",
+        "function-conformance.aggregate_ungrouped_column_rejected",
+        "function-conformance.aggregate_grouped_column_rejected",
+        "function-conformance.aggregate_having_requires_group_by"
+      ]
     }
   ],
   "reviewed_modules": [
@@ -43960,6 +44069,28 @@
         {
           "test": "test_unicode_scalar_constant_folding_is_observationally_equivalent",
           "reason": "Optimiser equivalence contract: constant folding of Unicode scalar functions must be observationally identical to unoptimised evaluation. Folding behaviour is implementation-specific."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_aggregation.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_aggregate_fields_are_included_in_planning_and_limit_cannot_terminate_early",
+          "reason": "Planner contract: aggregate queries require complete input and cannot terminate early on LIMIT. Implementation-specific planning behaviour."
+        },
+        {
+          "test": "test_group_by_is_unicode_normalisation_sensitive_and_nulls_group_together",
+          "reason": "Normalisation-sensitive grouping is not expressible over the committed datasets: the composed/decomposed title pair lives in different sources of the heterogeneous fixture and cross-source grouping is not bindable. The NULL-grouping half is normative through aggregate_group_null_together; the normalisation half awaits a fixture with normalisation-variant duplicates inside one source (Phase 6.6)."
+        },
+        {
+          "test": "test_group_order_without_order_by_is_first_source_occurrence",
+          "reason": "Group order without ORDER BY is deliberately unspecified in the portable contract (unordered comparisons are multisets), so first-occurrence ordering cannot be normative. First-occurrence order remains an implementation detail."
+        },
+        {
+          "test": "test_optimizer_is_idempotent_and_preserves_aggregate_results",
+          "reason": "Optimiser contract: aggregate queries must be optimisation-idempotent and preserve results, including FILTER composition. Implementation-specific."
         }
       ]
     }

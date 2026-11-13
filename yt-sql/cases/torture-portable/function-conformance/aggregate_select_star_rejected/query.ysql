@@ -1,0 +1,5 @@
+select
+  * 
+ from 	 @yt_sql_fixture
+GROUP  BY	uploader
+  

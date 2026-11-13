@@ -1,0 +1,5 @@
+SELECT
+COUNT(*)  AS	all_rows,
+  COUNT(view_count)  AS	known
+FROM	@yt_sql_fixture
+	where source_index <=	22

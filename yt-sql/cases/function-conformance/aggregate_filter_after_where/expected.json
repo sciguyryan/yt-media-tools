@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "all_rows",
+    "short",
+    "long_views"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "7249999"
+      }
+    ]
+  ]
+}

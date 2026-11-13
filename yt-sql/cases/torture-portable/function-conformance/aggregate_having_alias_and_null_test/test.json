@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.aggregate_having_alias_and_null_test",
+  "description": "Seeded lexical stress of function-conformance.aggregate_having_alias_and_null_test; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.summary",
+    "torture.lexical"
+  ]
+}

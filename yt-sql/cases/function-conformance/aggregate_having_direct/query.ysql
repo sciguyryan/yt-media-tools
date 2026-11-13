@@ -1,0 +1,8 @@
+SELECT
+    fixture_nullable AS bucket,
+    COUNT(*) AS n
+FROM @yt_sql_fixture
+WHERE source_index <= 10 AND fixture_nullable IS NOT NULL
+GROUP BY fixture_nullable
+HAVING COUNT(*) > 2
+ORDER BY fixture_nullable ASC

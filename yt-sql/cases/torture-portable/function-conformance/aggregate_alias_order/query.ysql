@@ -1,0 +1,8 @@
+SELECT 
+ fixture_nullable AS 	 bucket,
+	count(*)	as n
+FROM 	 @yt_sql_fixture
+where source_index  <=	7  and	fixture_nullable	IS  NOT	NULL
+  group BY fixture_nullable
+ORDER 	 BY n 	 DESC
+  

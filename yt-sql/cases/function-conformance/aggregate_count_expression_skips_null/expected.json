@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "all_rows",
+    "known"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "22"
+      },
+      {
+        "type": "integer",
+        "value": "20"
+      }
+    ]
+  ]
+}

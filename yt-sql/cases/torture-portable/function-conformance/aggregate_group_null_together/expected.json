@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "bucket",
+    "n"
+  ],
+  "rows": [
+    [
+      "g1",
+      {
+        "type": "integer",
+        "value": "3"
+      }
+    ],
+    [
+      "g2",
+      {
+        "type": "integer",
+        "value": "2"
+      }
+    ],
+    [
+      "g0",
+      {
+        "type": "integer",
+        "value": "3"
+      }
+    ],
+    [
+      null,
+      {
+        "type": "integer",
+        "value": "2"
+      }
+    ]
+  ]
+}

@@ -1,0 +1,6 @@
+SELECT
+    COUNT(*) AS all_rows,
+    COUNT(*) FILTER (WHERE duration < 30s) AS short,
+    SUM(view_count) FILTER (WHERE duration >= 40s) AS long_views
+FROM @yt_sql_fixture
+WHERE source_index <= 8

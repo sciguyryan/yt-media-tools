@@ -1,0 +1,5 @@
+SELECT
+	COALESCE(AVG(view_count),  0) +  1 as adjusted
+from	@yt_sql_fixture
+WHERE	id	= 	 'nonexistent' 
+ 

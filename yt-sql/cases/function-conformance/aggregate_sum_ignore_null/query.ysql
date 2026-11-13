@@ -1,0 +1,4 @@
+SELECT
+    SUM(view_count) AS total
+FROM @yt_sql_fixture
+WHERE source_index <= 22

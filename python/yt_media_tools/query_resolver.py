@@ -716,7 +716,9 @@ def _resolve_scalar_expression(
             for arg in expression.args
         )
         if any(_contains_aggregate(arg) for arg in args):
-            raise QuerySemanticError(source, "Aggregate functions cannot be nested.", expression.position)
+            raise QuerySemanticError(
+                source, "Aggregate functions cannot be nested.", expression.position, reason="aggregate-nesting"
+            )
         filter_predicate = _resolve_predicate(expression.filter_predicate, schema, source, dates)
         if expression.name == "COUNT":
             result_kind = "integer"
@@ -1123,6 +1125,7 @@ def _validate_group_compatibility(expression: Any, group_by: tuple[Any, ...], so
         source,
         "Non-aggregate SELECT/ORDER BY expressions in an aggregate query must match a GROUP BY expression.",
         position,
+        reason="aggregate-must-match-group-by",
     )
 
 
@@ -1151,6 +1154,7 @@ def _validate_having_group_compatibility(node: Any, group_by: tuple[Any, ...], s
             source,
             "Non-aggregate HAVING expressions must match a GROUP BY expression or selected aggregate alias.",
             getattr(expression, "position", 0),
+            reason="having-must-match-group-by",
         )
 
 
@@ -1230,7 +1234,10 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
     for item in group_by:
         if _contains_aggregate(item):
             raise QuerySemanticError(
-                source, "GROUP BY expressions cannot contain aggregate functions.", getattr(item, "position", 0)
+                source,
+                "GROUP BY expressions cannot contain aggregate functions.",
+                getattr(item, "position", 0),
+                reason="group-by-aggregate",
             )
 
     select_terms: list[SelectTerm] = []
@@ -1245,6 +1252,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             source,
             "SELECT * is not supported in aggregate queries; select grouped and aggregate expressions explicitly.",
             effective_select[0].position,
+            reason="select-star-in-aggregate",
         )
     if len(effective_select) == 1 and effective_select[0].field == "*" and effective_select[0].expression is None:
         effective_select = tuple(
@@ -1360,6 +1368,7 @@ def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | 
             source,
             "HAVING requires GROUP BY or an aggregate expression.",
             _diagnostic_position(having),
+            reason="having-requires-group-by",
         )
     return resolved
 

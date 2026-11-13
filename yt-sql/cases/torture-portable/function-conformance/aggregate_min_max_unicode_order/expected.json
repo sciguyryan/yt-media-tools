@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "low",
+    "high"
+  ],
+  "rows": [
+    [
+      "Arabic مرحبا",
+      "Unicode café Δ"
+    ]
+  ]
+}

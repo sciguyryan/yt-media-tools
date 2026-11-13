@@ -170,7 +170,7 @@ def append_unique_ids(
     new_ids: list[str] = []
     duplicate_results = 0
     for record in records:
-        value = canonical_record_value(record, terms[0])
+        value = canonical_record_value(record, terms[0], materialised=True)
         if value is None:
             continue
         video_id = str(value)

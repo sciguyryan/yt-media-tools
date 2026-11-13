@@ -191,6 +191,12 @@ def observe(
             "incompatible-scalar-argument",
             "invalid-collection-operand",
             "aggregate-in-collection-projection",
+            "aggregate-nesting",
+            "aggregate-must-match-group-by",
+            "having-must-match-group-by",
+            "select-star-in-aggregate",
+            "group-by-aggregate",
+            "having-requires-group-by",
         }:
             return _validate({"version": 1, "outcome": "error", "error": {"category": "type"}})
         if exc.context.category == "semantic" and exc.context.reason == "invalid-position-placement":
@@ -254,7 +260,9 @@ def observe(
     # The public evaluator accepts this flag, so it is passed rather than simulated.
     result = apply_query(execution_records, resolved, relational_optimisation=optimisation == "enabled")
     columns = [term.output_name for term in resolved.select]
-    rows = [[_portable(canonical_record_value(row, term)) for term in resolved.select] for row in result]
+    rows = [
+        [_portable(canonical_record_value(row, term, materialised=True)) for term in resolved.select] for row in result
+    ]
     return _validate({"version": 1, "outcome": "rows", "columns": columns, "rows": rows})
 
 

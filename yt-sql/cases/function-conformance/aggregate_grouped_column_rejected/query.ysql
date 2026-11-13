@@ -1,0 +1,5 @@
+SELECT
+    uploader,
+    COUNT(*) AS n
+FROM @yt_sql_fixture
+GROUP BY title

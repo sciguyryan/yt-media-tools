@@ -1,0 +1,5 @@
+SELECT
+    MIN(title) AS low,
+    MAX(title) AS high
+FROM @yt_sql_fixture
+WHERE id IN ('vid014', 'vid040', 'vid044', 'vid045', 'vid046', 'vid049', 'vid050', 'vid051', 'vid056')

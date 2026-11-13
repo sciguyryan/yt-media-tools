@@ -312,8 +312,21 @@ def evaluate_scalar_expression(
 
 
 def canonical_record_value(
-    record: dict[str, Any], field: Field | RelationField | OrderTerm | SelectTerm | str, kind: str | None = None
+    record: dict[str, Any],
+    field: Field | RelationField | OrderTerm | SelectTerm | str,
+    kind: str | None = None,
+    *,
+    materialised: bool = False,
 ) -> Any:
+    """Return a value in its canonical portable shape.
+
+    ``materialised`` must be set when ``record`` is a final result row returned
+    by ``apply_query``. Such rows carry values under their output aliases and
+    no longer hold the execution-only result-row markers, so a select term
+    whose alias differs from its field name must be read by output name;
+    reading it by field name against a materialised row silently yields NULL
+    for grouped keys.
+    """
     if isinstance(field, RelationField):
         relation_record = EvaluationContext(record).relation_record(field.qualifier)
         if relation_record is None:
@@ -326,7 +339,9 @@ def canonical_record_value(
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
     elif isinstance(field, SelectTerm):
-        materialised_result = record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
+        materialised_result = (
+            materialised or record.get("_yt_sql_aggregate_result") is True or record.get("_yt_sql_result_row") is True
+        )
         aggregate_projection = field.expression is not None and _contains_aggregate(field.expression)
         volatile_projection = field.expression is not None and _contains_random(field.expression)
         deferred_position = _is_final_position(field)

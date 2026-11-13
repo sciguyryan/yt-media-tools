@@ -1,0 +1,4 @@
+select
+	sum(count(*))  AS  result
+from @yt_sql_fixture
+	

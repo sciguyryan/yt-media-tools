@@ -1,0 +1,5 @@
+SELECT
+  id
+  from 	 @yt_sql_fixture
+  group 	 by 	 COUNT(*)
+  

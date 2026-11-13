@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import pytest
 
 from yt_media_tools.dates import DateContext
 from yt_media_tools.optimizer import optimise_query
 from yt_media_tools.planner import plan_limit_termination, required_query_fields
-from yt_media_tools.query import QuerySyntaxError, apply_query, parse_query, resolve_query
+from yt_media_tools.query import apply_query, parse_query, resolve_query
 from yt_media_tools.schema import QuerySchema
 
 
@@ -30,30 +29,6 @@ def rows() -> list[dict]:
     ]
 
 
-def test_ungrouped_count_star_and_count_expression() -> None:
-    records = rows()
-    query = resolve("SELECT COUNT(*) AS total, COUNT(view_count) AS known FROM @fixture", records)
-    assert apply_query(records, query) == [{"total": 5, "known": 4}]
-
-
-def test_empty_ungrouped_aggregate_retains_single_row() -> None:
-    records = rows()
-    query = resolve(
-        "SELECT COUNT(*) AS n, SUM(view_count) AS total, AVG(view_count) AS mean, "
-        "MIN(title) AS first, MAX(title) AS last FROM @fixture WHERE id = 'missing'",
-        records,
-    )
-    assert apply_query(records, query) == [
-        {
-            "n": 0,
-            "total": None,
-            "mean": None,
-            "first": None,
-            "last": None,
-        }
-    ]
-
-
 def test_group_by_is_unicode_normalisation_sensitive_and_nulls_group_together() -> None:
     records = rows()
     query = resolve(
@@ -69,82 +44,6 @@ def test_group_order_without_order_by_is_first_source_occurrence() -> None:
     query = resolve("SELECT uploader, COUNT(*) AS n FROM @fixture GROUP BY uploader", records)
     selected = apply_query(records, query)
     assert [row["uploader"] for row in selected] == ["é", "e\u0301", None]
-
-
-def test_sum_avg_ignore_null_and_min_max_use_exact_unicode_order() -> None:
-    records = rows()
-    query = resolve(
-        "SELECT SUM(view_count) AS total, AVG(view_count) AS mean, MIN(title) AS first, MAX(title) AS last "
-        "FROM @fixture",
-        records,
-    )
-    result = apply_query(records, query)[0]
-    assert result["total"] == 130
-    assert result["mean"] == 32.5
-    assert result["first"] == min("β", "α", "é", "Ω")
-    assert result["last"] == max("β", "α", "é", "Ω")
-
-
-def test_filter_where_is_applied_per_aggregate_after_where() -> None:
-    records = rows()
-    query = resolve(
-        "SELECT COUNT(*) AS all_rows, COUNT(*) FILTER (WHERE duration < 30s) AS short, "
-        "SUM(view_count) FILTER (WHERE duration >= 40s) AS long_views FROM @fixture WHERE uploader IS NOT NULL",
-        records,
-    )
-    assert apply_query(records, query)[0] == {
-        "all_rows": 3,
-        "short": 1,
-        "long_views": 30,
-    }
-
-
-def test_having_supports_direct_aggregates_aliases_boolean_logic_and_null_tests() -> None:
-    records = rows()
-    direct = resolve(
-        "SELECT uploader, COUNT(*) AS n FROM @fixture GROUP BY uploader HAVING COUNT(*) > 1 ORDER BY uploader",
-        records,
-    )
-    alias = resolve(
-        "SELECT uploader, COUNT(*) AS n FROM @fixture GROUP BY uploader HAVING n > 1 AND NOT (SUM(view_count) IS NULL) ORDER BY uploader",
-        records,
-    )
-    # Both forms retain the same two-row groups.
-    assert {(r["uploader"], r["n"]) for r in apply_query(records, direct)} == {(None, 2), ("é", 2)}
-    assert {(r["uploader"], r["n"]) for r in apply_query(records, alias)} == {(None, 2), ("é", 2)}
-
-
-def test_aggregate_alias_can_order_groups() -> None:
-    records = rows()
-    query = resolve(
-        "SELECT uploader, SUM(view_count) AS total FROM @fixture GROUP BY uploader ORDER BY total DESC",
-        records,
-    )
-    assert [row["total"] for row in apply_query(records, query)] == [90, 30, 10]
-
-
-def test_scalar_wrappers_can_contain_aggregates() -> None:
-    records = rows()
-    query = resolve("SELECT COALESCE(AVG(view_count), 0) + 1 AS adjusted FROM @fixture", records)
-    assert apply_query(records, query)[0]["adjusted"] == 33.5
-
-
-@pytest.mark.parametrize(
-    "source, message",
-    [
-        ("SELECT id, COUNT(*) FROM @fixture", "must match a GROUP BY expression"),
-        ("SELECT uploader, COUNT(*) FROM @fixture GROUP BY title", "must match a GROUP BY expression"),
-        ("SELECT * FROM @fixture GROUP BY uploader", r"SELECT \* is not supported"),
-        ("SELECT SUM(title) FROM @fixture", "SUM requires a numeric value"),
-        ("SELECT AVG(title) FROM @fixture", "AVG requires a numeric value"),
-        ("SELECT SUM(COUNT(*)) FROM @fixture", "Aggregate functions cannot be nested"),
-        ("SELECT COUNT(*) FROM @fixture GROUP BY COUNT(*)", "GROUP BY expressions cannot contain aggregate"),
-        ("SELECT id FROM @fixture HAVING id = 'a'", "HAVING requires GROUP BY or an aggregate"),
-    ],
-)
-def test_invalid_aggregate_semantics_are_rejected(source: str, message: str) -> None:
-    with pytest.raises(QuerySyntaxError, match=message):
-        resolve(source, rows())
 
 
 def test_optimizer_is_idempotent_and_preserves_aggregate_results() -> None:
