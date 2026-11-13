@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 267,
-    "normative_manifests": 662,
+    "normative_manifests": 663,
     "legacy_test_files": 224,
-    "test_functions": 1684,
-    "assertion_sites": 4208
+    "test_functions": 1685,
+    "assertion_sites": 4209
   },
   "normative_cases": [
     {
@@ -727,6 +727,10 @@
     {
       "id": "function-conformance.position_cte_outer_sequence",
       "manifest": "yt-sql/cases/function-conformance/position_cte_outer_sequence/test.json"
+    },
+    {
+      "id": "function-conformance.position_descending_offset",
+      "manifest": "yt-sql/cases/function-conformance/position_descending_offset/test.json"
     },
     {
       "id": "function-conformance.position_descending_order",
@@ -27592,6 +27596,16 @@
       "path": "python/yt_discover_tests/test_final_position_language.py",
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
+        {
+          "name": "test_position_block_scoping_semantics",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
         {
           "name": "test_position_canonical_round_trip_in_nested_cte",
           "assertion_sites": [

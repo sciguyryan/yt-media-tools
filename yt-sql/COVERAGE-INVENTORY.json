@@ -3091,6 +3091,13 @@
       "path": "yt-sql/cases/function-conformance/position_cte_outer_sequence/test.json"
     },
     {
+      "id": "function-conformance.position_descending_offset",
+      "features": [
+        "result.position"
+      ],
+      "path": "yt-sql/cases/function-conformance/position_descending_offset/test.json"
+    },
+    {
       "id": "function-conformance.position_descending_order",
       "features": [
         "result.position"

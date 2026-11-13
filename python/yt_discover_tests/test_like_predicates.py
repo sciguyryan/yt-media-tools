@@ -25,13 +25,9 @@ def _resolved(source: str, records: list[dict[str, object]]):
 @pytest.mark.parametrize(
     ("source", "expected"),
     [
-        ("WHERE title LIKE 'Mars%'", [True, False, False, None]),
-        ("WHERE title ILIKE 'mars%'", [True, True, False, None]),
-        ("WHERE title NOT LIKE 'Mars%'", [False, True, True, None]),
+        # Retained pending normative admission; the other six parametrisations
+        # are corpus-covered and retired (see reviewed retirement evidence).
         ("WHERE title NOT ILIKE 'mars%'", [False, False, True, None]),
-        ("WHERE title LIKE '%mission%'", [True, False, True, None]),
-        ("WHERE title LIKE 'Mars_mission'", [True, False, False, None]),
-        (r"WHERE title LIKE 'Mars\_mission'", [True, False, False, None]),
     ],
 )
 def test_like_semantics(source: str, expected: list[bool | None]) -> None:
