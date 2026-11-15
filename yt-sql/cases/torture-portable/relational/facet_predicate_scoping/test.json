@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.facet_predicate_scoping",
+  "description": "Seeded lexical stress of relational.facet_predicate_scoping; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.selection",
+    "torture.lexical"
+  ]
+}

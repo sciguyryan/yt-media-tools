@@ -4378,6 +4378,14 @@
       "path": "yt-sql/cases/ordering/order_tied_view_count_page/test.json"
     },
     {
+      "id": "relational.cross_facet_union",
+      "features": [
+        "facet.selection",
+        "set.union"
+      ],
+      "path": "yt-sql/cases/relational/cross_facet_union/test.json"
+    },
+    {
       "id": "relational.cross_source_union_all",
       "features": [
         "from.handle",
@@ -4391,6 +4399,28 @@
         "facet.empty"
       ],
       "path": "yt-sql/cases/relational/empty_facet/test.json"
+    },
+    {
+      "id": "relational.empty_facet_in_union",
+      "features": [
+        "facet.empty",
+        "set.union_all"
+      ],
+      "path": "yt-sql/cases/relational/empty_facet_in_union/test.json"
+    },
+    {
+      "id": "relational.facet_predicate_scoping",
+      "features": [
+        "facet.selection"
+      ],
+      "path": "yt-sql/cases/relational/facet_predicate_scoping/test.json"
+    },
+    {
+      "id": "relational.facet_scoped_predicate",
+      "features": [
+        "facet.selection"
+      ],
+      "path": "yt-sql/cases/relational/facet_scoped_predicate/test.json"
     },
     {
       "id": "relational.facet_selection",
@@ -8088,6 +8118,15 @@
       "path": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_page/test.json"
     },
     {
+      "id": "torture.relational.cross_facet_union",
+      "features": [
+        "facet.selection",
+        "set.union",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/cross_facet_union/test.json"
+    },
+    {
       "id": "torture.relational.cross_source_union_all",
       "features": [
         "from.handle",
@@ -8103,6 +8142,31 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/relational/empty_facet/test.json"
+    },
+    {
+      "id": "torture.relational.empty_facet_in_union",
+      "features": [
+        "facet.empty",
+        "set.union_all",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/empty_facet_in_union/test.json"
+    },
+    {
+      "id": "torture.relational.facet_predicate_scoping",
+      "features": [
+        "facet.selection",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/facet_predicate_scoping/test.json"
+    },
+    {
+      "id": "torture.relational.facet_scoped_predicate",
+      "features": [
+        "facet.selection",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/facet_scoped_predicate/test.json"
     },
     {
       "id": "torture.relational.facet_selection",

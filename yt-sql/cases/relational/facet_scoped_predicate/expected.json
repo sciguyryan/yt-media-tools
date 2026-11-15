@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "view_count"
+  ],
+  "rows": [
+    [
+      "yt-channel-1",
+      {
+        "type": "integer",
+        "value": "1200"
+      }
+    ]
+  ]
+}

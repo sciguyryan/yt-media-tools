@@ -1,0 +1,10 @@
+SELECT
+    id
+FROM @youtube_channel OF videos
+WHERE view_count = 800
+UNION ALL
+SELECT
+    id
+FROM @youtube_playlist OF videos
+WHERE view_count = 800
+ORDER BY id ASC

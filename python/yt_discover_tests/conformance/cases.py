@@ -96,7 +96,6 @@ def _final_position_distinct(rows: Rows) -> list[Any]:
     return [{"position": index, "title": title} for index, title in enumerate(titles, start=1)]
 
 
-
 def _contains(rows: Rows) -> list[Any]:
     return (
         OracleQuery(rows)

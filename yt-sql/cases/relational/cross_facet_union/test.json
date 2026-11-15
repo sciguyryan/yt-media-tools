@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "relational.cross_facet_union",
+  "description": "A union composes facets from different sources",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.selection",
+    "set.union"
+  ]
+}

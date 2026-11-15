@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "relational.empty_facet_in_union",
+  "description": "An empty facet contributes nothing to a set operation",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.empty",
+    "set.union_all"
+  ]
+}

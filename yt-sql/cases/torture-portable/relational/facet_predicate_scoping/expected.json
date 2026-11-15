@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id"
+  ],
+  "rows": [
+    [
+      "yt-channel-2"
+    ],
+    [
+      "yt-playlist-1"
+    ]
+  ]
+}

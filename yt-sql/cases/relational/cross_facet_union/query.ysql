@@ -1,0 +1,8 @@
+SELECT
+    id
+FROM @youtube_channel OF videos
+UNION
+SELECT
+    id
+FROM @twitch_archive OF streams
+ORDER BY id ASC

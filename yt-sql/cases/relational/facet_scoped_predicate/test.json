@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.facet_scoped_predicate",
+  "description": "A WHERE predicate applies within the facet's bound records",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.selection"
+  ]
+}

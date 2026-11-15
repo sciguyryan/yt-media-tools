@@ -1,0 +1,8 @@
+SELECT
+    id
+FROM @youtube_channel OF shorts
+UNION ALL
+SELECT
+    id
+FROM @youtube_channel OF videos
+ORDER BY id ASC

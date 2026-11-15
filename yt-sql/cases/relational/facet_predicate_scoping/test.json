@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.facet_predicate_scoping",
+  "description": "The same predicate scopes independently per facet",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.selection"
+  ]
+}

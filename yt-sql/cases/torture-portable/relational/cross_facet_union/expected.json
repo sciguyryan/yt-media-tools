@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id"
+  ],
+  "rows": [
+    [
+      "shared-id"
+    ],
+    [
+      "twitch-1"
+    ],
+    [
+      "yt-channel-1"
+    ],
+    [
+      "yt-channel-2"
+    ]
+  ]
+}

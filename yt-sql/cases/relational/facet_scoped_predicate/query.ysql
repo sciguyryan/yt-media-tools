@@ -1,0 +1,6 @@
+SELECT
+    id,
+    view_count
+FROM @youtube_channel OF videos
+WHERE view_count >= 1000
+ORDER BY id ASC
