@@ -4451,6 +4451,27 @@
       "path": "yt-sql/cases/relational/normalisation_grouping/test.json"
     },
     {
+      "id": "relational.union_all_keeps_duplicates",
+      "features": [
+        "set.union_all"
+      ],
+      "path": "yt-sql/cases/relational/union_all_keeps_duplicates/test.json"
+    },
+    {
+      "id": "relational.union_collapses_duplicates",
+      "features": [
+        "set.union"
+      ],
+      "path": "yt-sql/cases/relational/union_collapses_duplicates/test.json"
+    },
+    {
+      "id": "relational.union_normalisation_sensitive",
+      "features": [
+        "set.union"
+      ],
+      "path": "yt-sql/cases/relational/union_normalisation_sensitive/test.json"
+    },
+    {
       "id": "scalar.cardinality_first_tags",
       "features": [
         "scalar.cardinality"
@@ -8148,6 +8169,30 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/relational/normalisation_grouping/test.json"
+    },
+    {
+      "id": "torture.relational.union_all_keeps_duplicates",
+      "features": [
+        "set.union_all",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/union_all_keeps_duplicates/test.json"
+    },
+    {
+      "id": "torture.relational.union_collapses_duplicates",
+      "features": [
+        "set.union",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/union_collapses_duplicates/test.json"
+    },
+    {
+      "id": "torture.relational.union_normalisation_sensitive",
+      "features": [
+        "set.union",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/union_normalisation_sensitive/test.json"
     },
     {
       "id": "torture.scalar.cardinality_first_tags",

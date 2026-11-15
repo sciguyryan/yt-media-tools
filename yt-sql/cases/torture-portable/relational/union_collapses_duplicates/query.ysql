@@ -1,0 +1,7 @@
+SELECT 
+ uploader 
+ FROM	@youtube_channel
+  UNION
+select 
+ uploader
+FROM  @youtube_channel

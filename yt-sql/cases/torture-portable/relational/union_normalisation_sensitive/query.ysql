@@ -1,0 +1,9 @@
+select
+title
+FROM	@youtube_channel
+	union
+  SELECT
+	title
+  FROM  @youtube_playlist
+ORDER	by  title 	 ASC 
+ 

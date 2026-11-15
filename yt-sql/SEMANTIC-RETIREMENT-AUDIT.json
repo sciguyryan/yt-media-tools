@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 998,
+    "normative_manifests": 1004,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4132
@@ -1479,6 +1479,18 @@
     {
       "id": "relational.normalisation_grouping",
       "manifest": "yt-sql/cases/relational/normalisation_grouping/test.json"
+    },
+    {
+      "id": "relational.union_all_keeps_duplicates",
+      "manifest": "yt-sql/cases/relational/union_all_keeps_duplicates/test.json"
+    },
+    {
+      "id": "relational.union_collapses_duplicates",
+      "manifest": "yt-sql/cases/relational/union_collapses_duplicates/test.json"
+    },
+    {
+      "id": "relational.union_normalisation_sensitive",
+      "manifest": "yt-sql/cases/relational/union_normalisation_sensitive/test.json"
     },
     {
       "id": "scalar.cardinality_first_tags",
@@ -3307,6 +3319,18 @@
     {
       "id": "torture.relational.normalisation_grouping",
       "manifest": "yt-sql/cases/torture-portable/relational/normalisation_grouping/test.json"
+    },
+    {
+      "id": "torture.relational.union_all_keeps_duplicates",
+      "manifest": "yt-sql/cases/torture-portable/relational/union_all_keeps_duplicates/test.json"
+    },
+    {
+      "id": "torture.relational.union_collapses_duplicates",
+      "manifest": "yt-sql/cases/torture-portable/relational/union_collapses_duplicates/test.json"
+    },
+    {
+      "id": "torture.relational.union_normalisation_sensitive",
+      "manifest": "yt-sql/cases/torture-portable/relational/union_normalisation_sensitive/test.json"
     },
     {
       "id": "torture.scalar.cardinality_first_tags",

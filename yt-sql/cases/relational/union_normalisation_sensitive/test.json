@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.union_normalisation_sensitive",
+  "description": "UNION deduplicates by exact value without normalising",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "set.union"
+  ]
+}

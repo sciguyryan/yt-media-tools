@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.union_all_keeps_duplicates",
+  "description": "UNION ALL keeps identical rows from repeated branches",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "set.union_all"
+  ]
+}

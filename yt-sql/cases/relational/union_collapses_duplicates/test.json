@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.union_collapses_duplicates",
+  "description": "UNION collapses identical rows to one",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "set.union"
+  ]
+}

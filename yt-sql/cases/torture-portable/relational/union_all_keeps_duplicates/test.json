@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.union_all_keeps_duplicates",
+  "description": "Seeded lexical stress of relational.union_all_keeps_duplicates; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "set.union_all",
+    "torture.lexical"
+  ]
+}

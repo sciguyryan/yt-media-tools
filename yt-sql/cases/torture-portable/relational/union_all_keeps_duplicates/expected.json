@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "uploader"
+  ],
+  "rows": [
+    [
+      "Channel A"
+    ],
+    [
+      "Channel A"
+    ],
+    [
+      "Channel A"
+    ],
+    [
+      "Channel A"
+    ]
+  ]
+}
