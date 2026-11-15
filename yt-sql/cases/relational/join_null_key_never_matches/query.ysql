@@ -1,0 +1,7 @@
+SELECT
+    l.id AS id,
+    l.duration AS duration,
+    r.id AS right_id
+FROM @youtube_channel OF videos AS l
+LEFT JOIN @twitch_archive AS r ON l.duration = r.duration
+ORDER BY id ASC

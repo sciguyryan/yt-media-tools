@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_semi_filters",
+  "description": "A semi join keeps only matching left rows with left columns",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.semi"
+  ]
+}

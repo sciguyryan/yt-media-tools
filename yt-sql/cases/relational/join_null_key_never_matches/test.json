@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "relational.join_null_key_never_matches",
+  "description": "A NULL join key matches nothing, even on a left join",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.left",
+    "facet.selection"
+  ]
+}

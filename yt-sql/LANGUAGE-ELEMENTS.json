@@ -552,9 +552,30 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:join.anti",
+      "category": "feature",
+      "name": "join.anti",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
       "id": "feature:join.inner",
       "category": "feature",
       "name": "join.inner",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:join.left",
+      "category": "feature",
+      "name": "join.left",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:join.semi",
+      "category": "feature",
+      "name": "join.semi",
       "review_status": "pending",
       "approved_case_ids": []
     },

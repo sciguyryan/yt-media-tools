@@ -2,9 +2,9 @@
   "version": 1,
   "status": "phase1_review_obligations_not_conformance_certification",
   "registry": {
-    "total": 276,
+    "total": 279,
     "categories": {
-      "feature": 198,
+      "feature": 201,
       "function": 19,
       "keyword": 47,
       "operator": 12
@@ -89,7 +89,10 @@
       "feature:is.predicate_unknown",
       "feature:is.true",
       "feature:is.unknown",
+      "feature:join.anti",
       "feature:join.inner",
+      "feature:join.left",
+      "feature:join.semi",
       "feature:limit",
       "feature:limit.underscore",
       "feature:natural.above",

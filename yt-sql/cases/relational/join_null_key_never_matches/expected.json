@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "duration",
+    "right_id"
+  ],
+  "rows": [
+    [
+      "yt-channel-1",
+      {
+        "type": "integer",
+        "value": "210"
+      },
+      null
+    ],
+    [
+      "yt-channel-2",
+      null,
+      null
+    ]
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.join_anti_filters",
+  "description": "Seeded lexical stress of relational.join_anti_filters; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.anti",
+    "torture.lexical"
+  ]
+}

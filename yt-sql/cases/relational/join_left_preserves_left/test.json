@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_left_preserves_left",
+  "description": "A left join preserves every left row, with NULLs for unmatched rights",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.left"
+  ]
+}

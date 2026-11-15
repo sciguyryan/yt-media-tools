@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.join_left_preserves_left",
+  "description": "Seeded lexical stress of relational.join_left_preserves_left; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.left",
+    "torture.lexical"
+  ]
+}

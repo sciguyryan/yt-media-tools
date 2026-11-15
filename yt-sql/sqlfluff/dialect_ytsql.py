@@ -37,6 +37,7 @@ class FacetSourceSegment(sqlite.get_segment("FromExpressionElementSegment")):
         Ref("AtSignLiteralSegment"),
         "OF",
         Ref("SingleIdentifierGrammar"),
+        Ref("AliasExpressionSegment", optional=True),
     )
 
 
@@ -52,6 +53,15 @@ ytsql_dialect.add(
 )
 ytsql_dialect.replace(
     FromExpressionElementSegment=FromExpressionElementSegment,
+)
+
+
+# SEMI and ANTI joins are YT-SQL existence joins: SEMI keeps matching left rows
+# and ANTI keeps non-matching ones, without exposing right-side columns. They
+# hook into the dialect's non-standard join-type extension point.
+ytsql_dialect.sets("unreserved_keywords").update({"SEMI", "ANTI"})
+ytsql_dialect.replace(
+    NonStandardJoinTypeKeywordsGrammar=OneOf("SEMI", "ANTI"),
 )
 
 # SQLite narrows the inherited LIKE grammar to LIKE alone. YT-SQL also

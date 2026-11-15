@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_inner_null_cells",
+  "description": "An inner join propagates NULL values from the matched pair",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner"
+  ]
+}

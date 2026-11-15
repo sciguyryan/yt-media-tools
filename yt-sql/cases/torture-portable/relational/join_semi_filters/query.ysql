@@ -1,0 +1,5 @@
+SELECT 
+ l.id AS  id
+FROM 	 @youtube_playlist 	 AS 	 l 
+ SEMI 	 join  @twitch_archive	as r 	 ON	l.id  =	r.id 
+ 

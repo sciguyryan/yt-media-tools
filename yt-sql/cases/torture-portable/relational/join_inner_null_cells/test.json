@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.join_inner_null_cells",
+  "description": "Seeded lexical stress of relational.join_inner_null_cells; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner",
+    "torture.lexical"
+  ]
+}

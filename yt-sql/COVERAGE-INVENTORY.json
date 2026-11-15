@@ -4400,11 +4400,47 @@
       "path": "yt-sql/cases/relational/facet_selection/test.json"
     },
     {
+      "id": "relational.join_anti_filters",
+      "features": [
+        "join.anti"
+      ],
+      "path": "yt-sql/cases/relational/join_anti_filters/test.json"
+    },
+    {
+      "id": "relational.join_inner_null_cells",
+      "features": [
+        "join.inner"
+      ],
+      "path": "yt-sql/cases/relational/join_inner_null_cells/test.json"
+    },
+    {
+      "id": "relational.join_left_preserves_left",
+      "features": [
+        "join.left"
+      ],
+      "path": "yt-sql/cases/relational/join_left_preserves_left/test.json"
+    },
+    {
+      "id": "relational.join_null_key_never_matches",
+      "features": [
+        "join.left",
+        "facet.selection"
+      ],
+      "path": "yt-sql/cases/relational/join_null_key_never_matches/test.json"
+    },
+    {
       "id": "relational.join_on_shared_identity",
       "features": [
         "join.inner"
       ],
       "path": "yt-sql/cases/relational/join_on_shared_identity/test.json"
+    },
+    {
+      "id": "relational.join_semi_filters",
+      "features": [
+        "join.semi"
+      ],
+      "path": "yt-sql/cases/relational/join_semi_filters/test.json"
     },
     {
       "id": "relational.normalisation_grouping",
@@ -8056,12 +8092,53 @@
       "path": "yt-sql/cases/torture-portable/relational/facet_selection/test.json"
     },
     {
+      "id": "torture.relational.join_anti_filters",
+      "features": [
+        "join.anti",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_anti_filters/test.json"
+    },
+    {
+      "id": "torture.relational.join_inner_null_cells",
+      "features": [
+        "join.inner",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_inner_null_cells/test.json"
+    },
+    {
+      "id": "torture.relational.join_left_preserves_left",
+      "features": [
+        "join.left",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_left_preserves_left/test.json"
+    },
+    {
+      "id": "torture.relational.join_null_key_never_matches",
+      "features": [
+        "facet.selection",
+        "join.left",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_null_key_never_matches/test.json"
+    },
+    {
       "id": "torture.relational.join_on_shared_identity",
       "features": [
         "join.inner",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/relational/join_on_shared_identity/test.json"
+    },
+    {
+      "id": "torture.relational.join_semi_filters",
+      "features": [
+        "join.semi",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_semi_filters/test.json"
     },
     {
       "id": "torture.relational.normalisation_grouping",

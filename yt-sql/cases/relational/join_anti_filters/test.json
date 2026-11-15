@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_anti_filters",
+  "description": "An anti join keeps only non-matching left rows with left columns",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.anti"
+  ]
+}
