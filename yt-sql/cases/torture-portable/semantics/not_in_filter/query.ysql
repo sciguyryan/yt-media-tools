@@ -1,0 +1,6 @@
+select 
+ id
+  FROM  @yt_sql_fixture
+WHERE	source_index	<= 6  AND 	 id  NOT in	('vid002', 'vid004') 
+ ORDER BY  source_index 
+ 

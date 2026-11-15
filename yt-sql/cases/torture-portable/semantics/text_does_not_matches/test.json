@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.text_does_not_matches",
+  "description": "Seeded lexical stress of semantics.text_does_not_matches; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "text.does_not_matches",
+    "torture.lexical"
+  ]
+}

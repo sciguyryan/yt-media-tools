@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.text_does_not_contains",
+  "description": "The DOES NOT CONTAINS spelling excludes substring matches",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "text.does_not_contains"
+  ]
+}

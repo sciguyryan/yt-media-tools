@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "semantics.is_not_null_filter",
+  "description": "IS NOT NULL selects non-NULL values",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered"
+}

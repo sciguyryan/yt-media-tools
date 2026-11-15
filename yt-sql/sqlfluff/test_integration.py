@@ -47,6 +47,7 @@ def invoke(command: str, *args: str, source: str | None = None) -> subprocess.Co
 
 
 class SQLFluffYTSQLTests(unittest.TestCase):
+        # Collection binding semantics are normative in the portable corpus (function-conformance.collection and random cases); this test guards the formatter only.
     def test_collection_binding_syntax_parses_and_formats(self) -> None:
         """The custom dialect must preserve both collection binding forms."""
         from format_safely import format_checked
@@ -148,6 +149,7 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 # literal spelling, including Unicode, must not go unnoticed.
                 self.assertEqual(original, first.stdout)
 
+        # ILIKE language semantics are normative through semantics.text_* and ilike cases; this test guards the formatter only.
     def test_ilike_predicates_parse_and_format(self) -> None:
         # SQLite's SQLFluff dialect deliberately omits ILIKE. YT-SQL accepts
         # it, including NOT ILIKE, so guard this extension independently.
@@ -170,6 +172,7 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+        # All nineteen spellings are normative through the semantics.text_* spelling cases; this test guards the formatter only.
     def test_text_predicate_variants_parse_and_format(self) -> None:
         # Discover accepts both long and short operator spellings, with NOT
         # and DOES NOT forms. Exercise each explicitly: a formatter must not
@@ -212,6 +215,7 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+        # Distinctness semantics are normative through semantics.distinct_from_value and siblings; this test guards the formatter only.
     def test_distinctness_predicates_parse_and_format(self) -> None:
         # Discover supports SQL-style null-safe distinctness predicates.
         # Preserve the NOT modifier and the right-hand Unicode literal.
@@ -233,6 +237,7 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
                 self.assertEqual(first.stdout, second.stdout)
 
+        # Range and NULL predicate semantics are normative through semantics.between_filter and siblings; this test guards the formatter only.
     def test_range_membership_and_null_predicates(self) -> None:
         # These YT-SQL constructs use the inherited grammar. Protect them
         # against formatter regressions without adding duplicate dialect rules.

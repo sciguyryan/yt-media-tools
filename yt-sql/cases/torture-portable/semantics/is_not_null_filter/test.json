@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.semantics.is_not_null_filter",
+  "description": "Seeded lexical stress of semantics.is_not_null_filter; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

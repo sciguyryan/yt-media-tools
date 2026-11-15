@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.between_filter",
+  "description": "Seeded lexical stress of semantics.between_filter; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.between",
+    "torture.lexical"
+  ]
+}

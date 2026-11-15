@@ -1,0 +1,4 @@
+select
+  count(*) AS  n
+	FROM	@yt_sql_fixture
+  WHERE  title 	 DOES 	 NOT	CONTAINS	'new'

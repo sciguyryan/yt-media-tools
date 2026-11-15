@@ -228,6 +228,14 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:comparison.distinct_from",
+      "category": "feature",
+      "name": "comparison.distinct_from",
+      "review_status": "pending",
+      "approved_case_ids": [],
+      "order": 5
+    },
+    {
       "id": "feature:comparison.eq",
       "category": "feature",
       "name": "comparison.eq",
@@ -275,6 +283,14 @@
       "name": "comparison.ne_alt",
       "review_status": "pending",
       "approved_case_ids": []
+    },
+    {
+      "id": "feature:comparison.not_distinct_from",
+      "category": "feature",
+      "name": "comparison.not_distinct_from",
+      "review_status": "pending",
+      "approved_case_ids": [],
+      "order": 6
     },
     {
       "id": "feature:cte.chained",
@@ -1117,6 +1133,22 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:text.does_not_contains",
+      "category": "feature",
+      "name": "text.does_not_contains",
+      "review_status": "pending",
+      "approved_case_ids": [],
+      "order": 3
+    },
+    {
+      "id": "feature:text.does_not_ilike",
+      "category": "feature",
+      "name": "text.does_not_ilike",
+      "review_status": "pending",
+      "approved_case_ids": [],
+      "order": 4
+    },
+    {
       "id": "feature:text.does_not_match",
       "category": "feature",
       "name": "text.does_not_match",
@@ -1166,6 +1198,14 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:text.not_contain",
+      "category": "feature",
+      "name": "text.not_contain",
+      "review_status": "pending",
+      "approved_case_ids": [],
+      "order": 1
+    },
+    {
       "id": "feature:text.not_contains",
       "category": "feature",
       "name": "text.not_contains",
@@ -1185,6 +1225,14 @@
       "name": "text.not_like",
       "review_status": "pending",
       "approved_case_ids": []
+    },
+    {
+      "id": "feature:text.not_match",
+      "category": "feature",
+      "name": "text.not_match",
+      "review_status": "pending",
+      "approved_case_ids": [],
+      "order": 2
     },
     {
       "id": "feature:text.not_matches",

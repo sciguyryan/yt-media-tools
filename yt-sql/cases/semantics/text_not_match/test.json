@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.text_not_match",
+  "description": "The short NOT MATCH spelling excludes regular-expression matches",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "text.not_match"
+  ]
+}

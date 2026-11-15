@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "semantics.not_in_filter",
+  "description": "NOT IN excludes listed values",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered"
+}

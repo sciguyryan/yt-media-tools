@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.between_filter",
+  "description": "BETWEEN filters a numeric range inclusively",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.between"
+  ]
+}

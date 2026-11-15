@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.text_contain_spelling",
+  "description": "The short CONTAIN spelling is a case-folded substring predicate",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "text.contain"
+  ]
+}

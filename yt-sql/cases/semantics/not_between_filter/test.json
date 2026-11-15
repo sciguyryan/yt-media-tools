@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.not_between_filter",
+  "description": "NOT BETWEEN excludes an inclusive numeric range and UNKNOWN rows",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.not_between"
+  ]
+}

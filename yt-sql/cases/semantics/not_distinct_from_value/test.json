@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.not_distinct_from_value",
+  "description": "IS NOT DISTINCT FROM matches equal values and rejects NULLs",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.not_distinct_from"
+  ]
+}

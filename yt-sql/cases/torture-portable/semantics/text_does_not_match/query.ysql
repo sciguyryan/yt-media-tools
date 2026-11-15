@@ -1,0 +1,5 @@
+SELECT 
+ COUNT(*) 	 AS	n 
+ from	@yt_sql_fixture
+WHERE  title	DOES	NOT 	 MATCH	'Mars'
+  

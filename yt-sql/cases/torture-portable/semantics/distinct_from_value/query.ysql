@@ -1,0 +1,6 @@
+select
+	id 
+ FROM  @yt_sql_fixture
+	where	source_index 	 <=	10 AND 	 title 	 is 	 DISTINCT	FROM 'Duplicate'
+	order 	 BY	source_index
+  

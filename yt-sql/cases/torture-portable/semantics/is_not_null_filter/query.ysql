@@ -1,0 +1,5 @@
+SELECT
+COUNT(*) 	 as	n
+FROM @yt_sql_fixture
+	where source_index	<=	16  AND  fixture_nullable 	 is 	 not 	 NULL 
+ 

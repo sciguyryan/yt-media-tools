@@ -1,0 +1,6 @@
+SELECT
+  id
+	from	@yt_sql_fixture
+	WHERE  source_index  BETWEEN 2 	 and 	 6
+	ORDER	BY	source_index 
+ 

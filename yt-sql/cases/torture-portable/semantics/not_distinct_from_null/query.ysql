@@ -1,0 +1,6 @@
+select
+  id
+	FROM	@yt_sql_fixture
+where	source_index	<= 16	AND  fixture_nullable	is not  distinct	from  NULL 
+ order 	 BY	source_index
+  
