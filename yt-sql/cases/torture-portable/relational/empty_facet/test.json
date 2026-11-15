@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.empty_facet",
+  "description": "Seeded lexical stress of relational.empty_facet; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.empty",
+    "torture.lexical"
+  ]
+}

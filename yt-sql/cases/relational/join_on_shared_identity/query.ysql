@@ -1,0 +1,7 @@
+SELECT
+    l.id AS id,
+    l.title AS title,
+    r.title AS other_title
+FROM @youtube_playlist AS l
+JOIN @twitch_archive AS r ON l.id = r.id
+ORDER BY id ASC

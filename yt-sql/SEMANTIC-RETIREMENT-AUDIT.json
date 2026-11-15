@@ -9,8 +9,8 @@
     "yt-sql/REVIEWED-RETIREMENTS.json"
   ],
   "counts": {
-    "language_elements": 273,
-    "normative_manifests": 978,
+    "language_elements": 276,
+    "normative_manifests": 988,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4132
@@ -1439,6 +1439,26 @@
     {
       "id": "ordering.order_tied_view_count_page",
       "manifest": "yt-sql/cases/ordering/order_tied_view_count_page/test.json"
+    },
+    {
+      "id": "relational.cross_source_union_all",
+      "manifest": "yt-sql/cases/relational/cross_source_union_all/test.json"
+    },
+    {
+      "id": "relational.empty_facet",
+      "manifest": "yt-sql/cases/relational/empty_facet/test.json"
+    },
+    {
+      "id": "relational.facet_selection",
+      "manifest": "yt-sql/cases/relational/facet_selection/test.json"
+    },
+    {
+      "id": "relational.join_on_shared_identity",
+      "manifest": "yt-sql/cases/relational/join_on_shared_identity/test.json"
+    },
+    {
+      "id": "relational.normalisation_grouping",
+      "manifest": "yt-sql/cases/relational/normalisation_grouping/test.json"
     },
     {
       "id": "scalar.cardinality_first_tags",
@@ -3227,6 +3247,26 @@
     {
       "id": "torture.ordering.order_tied_view_count_page",
       "manifest": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_page/test.json"
+    },
+    {
+      "id": "torture.relational.cross_source_union_all",
+      "manifest": "yt-sql/cases/torture-portable/relational/cross_source_union_all/test.json"
+    },
+    {
+      "id": "torture.relational.empty_facet",
+      "manifest": "yt-sql/cases/torture-portable/relational/empty_facet/test.json"
+    },
+    {
+      "id": "torture.relational.facet_selection",
+      "manifest": "yt-sql/cases/torture-portable/relational/facet_selection/test.json"
+    },
+    {
+      "id": "torture.relational.join_on_shared_identity",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_on_shared_identity/test.json"
+    },
+    {
+      "id": "torture.relational.normalisation_grouping",
+      "manifest": "yt-sql/cases/torture-portable/relational/normalisation_grouping/test.json"
     },
     {
       "id": "torture.scalar.cardinality_first_tags",
@@ -7164,6 +7204,112 @@
       "migration_status": "not_certified"
     },
     {
+      "id": "feature:facet.empty",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
+      "id": "feature:facet.selection",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
       "id": "feature:field.alias",
       "category": "feature",
       "primary_phase": 2,
@@ -7907,6 +8053,59 @@
     },
     {
       "id": "feature:is.unknown",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
+      "id": "feature:join.inner",
       "category": "feature",
       "primary_phase": 2,
       "required_dimensions": [

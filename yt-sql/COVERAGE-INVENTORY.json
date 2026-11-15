@@ -4378,6 +4378,43 @@
       "path": "yt-sql/cases/ordering/order_tied_view_count_page/test.json"
     },
     {
+      "id": "relational.cross_source_union_all",
+      "features": [
+        "from.handle",
+        "set.union_all"
+      ],
+      "path": "yt-sql/cases/relational/cross_source_union_all/test.json"
+    },
+    {
+      "id": "relational.empty_facet",
+      "features": [
+        "facet.empty"
+      ],
+      "path": "yt-sql/cases/relational/empty_facet/test.json"
+    },
+    {
+      "id": "relational.facet_selection",
+      "features": [
+        "facet.selection"
+      ],
+      "path": "yt-sql/cases/relational/facet_selection/test.json"
+    },
+    {
+      "id": "relational.join_on_shared_identity",
+      "features": [
+        "join.inner"
+      ],
+      "path": "yt-sql/cases/relational/join_on_shared_identity/test.json"
+    },
+    {
+      "id": "relational.normalisation_grouping",
+      "features": [
+        "aggregate.group_by",
+        "set.union_all"
+      ],
+      "path": "yt-sql/cases/relational/normalisation_grouping/test.json"
+    },
+    {
       "id": "scalar.cardinality_first_tags",
       "features": [
         "scalar.cardinality"
@@ -7992,6 +8029,48 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/ordering/order_tied_view_count_page/test.json"
+    },
+    {
+      "id": "torture.relational.cross_source_union_all",
+      "features": [
+        "from.handle",
+        "set.union_all",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/cross_source_union_all/test.json"
+    },
+    {
+      "id": "torture.relational.empty_facet",
+      "features": [
+        "facet.empty",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/empty_facet/test.json"
+    },
+    {
+      "id": "torture.relational.facet_selection",
+      "features": [
+        "facet.selection",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/facet_selection/test.json"
+    },
+    {
+      "id": "torture.relational.join_on_shared_identity",
+      "features": [
+        "join.inner",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_on_shared_identity/test.json"
+    },
+    {
+      "id": "torture.relational.normalisation_grouping",
+      "features": [
+        "aggregate.group_by",
+        "set.union_all",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/normalisation_grouping/test.json"
     },
     {
       "id": "torture.scalar.cardinality_first_tags",

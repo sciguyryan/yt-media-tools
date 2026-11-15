@@ -1,0 +1,15 @@
+select
+  title,
+count(*)	as 	 n
+	from	(
+  SELECT
+title 
+ FROM	@youtube_channel 
+ UNION  ALL 
+ SELECT
+	title
+  FROM	@youtube_playlist
+)  AS	combined
+  group BY  title
+  order	BY 	 title ASC
+	

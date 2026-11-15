@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.facet_selection",
+  "description": "A facet selection returns exactly its bound records",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.selection"
+  ]
+}

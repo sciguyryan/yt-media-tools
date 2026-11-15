@@ -1,0 +1,10 @@
+SELECT
+    id,
+    title
+FROM @youtube_channel
+UNION ALL
+SELECT
+    id,
+    title
+FROM @youtube_playlist
+ORDER BY id ASC

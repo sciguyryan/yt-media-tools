@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "title"
+  ],
+  "rows": [
+    [
+      "shared-id",
+      "Shared"
+    ],
+    [
+      "yt-channel-1",
+      "AMV Σ"
+    ],
+    [
+      "yt-channel-2",
+      "AMV é"
+    ],
+    [
+      "yt-playlist-1",
+      "AMV é"
+    ]
+  ]
+}

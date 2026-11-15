@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "title",
+    "other_title"
+  ],
+  "rows": [
+    [
+      "shared-id",
+      "Shared",
+      "Shared"
+    ]
+  ]
+}

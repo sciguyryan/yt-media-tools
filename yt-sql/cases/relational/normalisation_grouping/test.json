@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "relational.normalisation_grouping",
+  "description": "GROUP BY is normalisation-sensitive: composed and decomposed titles form separate groups",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.group_by",
+    "set.union_all"
+  ]
+}

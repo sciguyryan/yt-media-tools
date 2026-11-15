@@ -1,2 +1,6 @@
-SELECT	id	from 	 @yt_sql_fixture 	 where	view_count IS 	 not 	 NULL	order BY  view_count 	 DESC 	 LIMIT 	 5 offset 3
+SELECT
+	id
+	from 	 @yt_sql_fixture 
+ where	view_count IS 	 not 	 NULL
+	order BY  view_count 	 DESC 	 LIMIT 	 5 offset 3
   

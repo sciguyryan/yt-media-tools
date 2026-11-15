@@ -26,6 +26,34 @@ class TableReferenceSegment(sqlite.get_segment("TableReferenceSegment")):
 
 ytsql_dialect.replace(TableReferenceSegment=TableReferenceSegment)
 
+
+# The OF facet clause is a YT-SQL extension to the table expression:
+# FROM @source OF facet. Keep the standard alias and join machinery by
+# extending the from-expression element with the facet form as an alternative.
+class FacetSourceSegment(sqlite.get_segment("FromExpressionElementSegment")):
+    """A physical source with an optional facet selection."""
+
+    match_grammar = Sequence(
+        Ref("AtSignLiteralSegment"),
+        "OF",
+        Ref("SingleIdentifierGrammar"),
+    )
+
+
+class FromExpressionElementSegment(sqlite.get_segment("FromExpressionElementSegment")):
+    match_grammar = OneOf(
+        FacetSourceSegment.match_grammar,
+        sqlite.get_segment("FromExpressionElementSegment").match_grammar,
+    )
+
+
+ytsql_dialect.add(
+    FacetSourceSegment=FacetSourceSegment,
+)
+ytsql_dialect.replace(
+    FromExpressionElementSegment=FromExpressionElementSegment,
+)
+
 # SQLite narrows the inherited LIKE grammar to LIKE alone. YT-SQL also
 # supports ILIKE; restore this alternative without changing SQLite linting.
 ytsql_dialect.sets("unreserved_keywords").update(

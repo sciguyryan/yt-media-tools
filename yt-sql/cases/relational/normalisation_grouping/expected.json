@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "title",
+    "n"
+  ],
+  "rows": [
+    [
+      "AMV é",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ],
+    [
+      "AMV é",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ],
+    [
+      "AMV Σ",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ],
+    [
+      "Shared",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ]
+  ]
+}

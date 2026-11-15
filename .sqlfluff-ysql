@@ -7,7 +7,10 @@ max_line_length = 120
 # Unordered LIMIT is valid YT-SQL. CV04 rewrites COUNT(1) to COUNT(*),
 # changing the authoritative parse tree; keep literal arguments intact.
 # ST06 reorders SELECT targets, changing positional output-column semantics.
-exclude_rules = LT05, AM09, CV04, ST06
+# AM05 spells JOIN as INNER JOIN and AL09 drops self-aliases; both rewrite
+# the authoritative parse tree without changing observable output, so the
+# guarded formatter must not apply them.
+exclude_rules = LT05, AM09, CV04, ST06, AM05, AL09
 
 [sqlfluff:indentation]
 indent_unit = space

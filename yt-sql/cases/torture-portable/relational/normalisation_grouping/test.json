@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.relational.normalisation_grouping",
+  "description": "Seeded lexical stress of relational.normalisation_grouping; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "aggregate.group_by",
+    "set.union_all",
+    "torture.lexical"
+  ]
+}

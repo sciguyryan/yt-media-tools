@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.relational.cross_source_union_all",
+  "description": "Seeded lexical stress of relational.cross_source_union_all; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "from.handle",
+    "set.union_all",
+    "torture.lexical"
+  ]
+}

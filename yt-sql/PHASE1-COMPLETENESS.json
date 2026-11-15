@@ -2,9 +2,9 @@
   "version": 1,
   "status": "phase1_review_obligations_not_conformance_certification",
   "registry": {
-    "total": 273,
+    "total": 276,
     "categories": {
-      "feature": 195,
+      "feature": 198,
       "function": 19,
       "keyword": 47,
       "operator": 12
@@ -72,6 +72,8 @@
       "feature:duration.decimal",
       "feature:duration.localised",
       "feature:duration.short_alias",
+      "feature:facet.empty",
+      "feature:facet.selection",
       "feature:field.alias",
       "feature:from.handle",
       "feature:from.identifier",
@@ -87,6 +89,7 @@
       "feature:is.predicate_unknown",
       "feature:is.true",
       "feature:is.unknown",
+      "feature:join.inner",
       "feature:limit",
       "feature:limit.underscore",
       "feature:natural.above",

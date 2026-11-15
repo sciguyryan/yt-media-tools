@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "relational.cross_source_union_all",
+  "description": "UNION ALL preserves every record across sources, including normalisation variants",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "from.handle",
+    "set.union_all"
+  ]
+}

@@ -1367,6 +1367,50 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:facet.empty",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:facet.selection",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
       "id": "feature:field.alias",
       "category": "feature",
       "primary_phase": 2,
@@ -1676,6 +1720,28 @@
     },
     {
       "id": "feature:is.unknown",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "feature:join.inner",
       "category": "feature",
       "primary_phase": 2,
       "required_phases": [

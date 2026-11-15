@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.empty_facet",
+  "description": "An empty facet remains empty and does not acquire its parent source's records",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "facet.empty"
+  ]
+}

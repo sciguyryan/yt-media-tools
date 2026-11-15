@@ -1,0 +1,6 @@
+SELECT
+	id,
+	title
+	FROM	@youtube_channel OF	shorts
+order 	 BY 	 id 	 ASC 
+ 
