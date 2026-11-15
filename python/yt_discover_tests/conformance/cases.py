@@ -96,17 +96,6 @@ def _final_position_distinct(rows: Rows) -> list[Any]:
     return [{"position": index, "title": title} for index, title in enumerate(titles, start=1)]
 
 
-def _offset_limit(rows: Rows) -> list[Any]:
-    return (
-        OracleQuery(rows)
-        .where(lambda r: r["view_count"] is not None)
-        .order_by(lambda r: r["view_count"], descending=True)
-        .select(lambda r: r["id"])
-        .skip(3)
-        .take(5)
-        .to_list()
-    )
-
 
 def _contains(rows: Rows) -> list[Any]:
     return (
@@ -1249,12 +1238,6 @@ CASES = (
         features=("distinct", "in"),
     ),
     ConformanceCase(
-        "offset_limit",
-        "SELECT id FROM @yt_sql_fixture WHERE view_count IS NOT NULL ORDER BY view_count DESC LIMIT 5 OFFSET 3",
-        _offset_limit,
-        features=("is.not_null", "order.desc", "offset"),
-    ),
-    ConformanceCase(
         "contains_case_insensitive",
         "SELECT id, title FROM @yt_sql_fixture WHERE title CONTAINS 'mars' ORDER BY upload_date ASC",
         _contains,
@@ -1922,7 +1905,7 @@ CASES = (
         "offset_without_limit",
         "SELECT id FROM @yt_sql_fixture WHERE source_index <= 10 ORDER BY source_index ASC OFFSET 3",
         _ids_where(lambda r: int(r["source_index"]) <= 10, skip=3),
-        features=("offset.without_limit",),
+        features=("offset", "offset.without_limit"),
     ),
     ConformanceCase(
         "default_projection_id",

@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from yt_media_tools.dates import DateContext
-from yt_media_tools.output import project_record
 from yt_media_tools.planner import plan_limit_termination, required_query_fields
 from yt_media_tools.query import QuerySyntaxError, apply_query, parse_query, resolve_query
 from yt_media_tools.schema import QuerySchema
@@ -36,13 +35,6 @@ def test_offset_accepts_zero_and_rejects_negative_like_syntax() -> None:
     assert parse_query("SELECT id FROM @x OFFSET 0").offset == 0
     with pytest.raises(QuerySyntaxError, match="OFFSET requires"):
         parse_query("SELECT id FROM @x OFFSET -1")
-
-
-def test_scalar_functions_projection_and_order_alias() -> None:
-    records = [{"id": "a", "title": "Zulu"}, {"id": "b", "title": "alpha"}, {"id": "c", "title": None}]
-    query = resolve("SELECT LOWER(title) AS folded FROM @x ORDER BY folded ASC", records)
-    selected = apply_query(records, query)
-    assert [project_record(record, query.select)["folded"] for record in selected] == ["alpha", "zulu", None]
 
 
 def test_scalar_function_required_fields_are_underlying_fields() -> None:

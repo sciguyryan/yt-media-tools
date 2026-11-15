@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "ordering.order_by_projection_alias",
+  "description": "ORDER BY a projection alias orders by the projected values",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order.expression_alias"
+  ]
+}

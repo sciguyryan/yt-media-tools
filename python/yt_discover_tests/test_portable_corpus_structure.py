@@ -26,7 +26,8 @@ def test_case_resources_are_complete(manifest: Path) -> None:
     assert case["version"] == 1
     assert case["query"] == "query.ysql"
     assert case["expected"] == "expected.json"
-    assert case["order"] in {"ordered", "unordered"}
+    assert case["order"] in {"ordered", "unordered", "tied"}
+    assert ("group_sizes" in case) == (case["order"] == "tied")
     assert case["datasets"]
     assert (manifest.parent / case["query"]).read_text(encoding="utf-8").strip()
     expected = _read(manifest.parent / case["expected"])

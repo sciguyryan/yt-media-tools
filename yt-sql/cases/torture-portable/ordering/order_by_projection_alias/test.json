@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.ordering.order_by_projection_alias",
+  "description": "Seeded lexical stress of ordering.order_by_projection_alias; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order.expression_alias",
+    "torture.lexical"
+  ]
+}

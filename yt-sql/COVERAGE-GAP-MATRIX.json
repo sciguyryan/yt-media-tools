@@ -2449,8 +2449,7 @@
     {
       "feature": "is.not_null",
       "tagged_existing_cases": [
-        "is_not_null",
-        "offset_limit"
+        "is_not_null"
       ],
       "dimensions": {
         "valid_syntax": {
@@ -3206,7 +3205,7 @@
     {
       "feature": "offset",
       "tagged_existing_cases": [
-        "offset_limit"
+        "offset_without_limit"
       ],
       "dimensions": {
         "valid_syntax": {
@@ -3422,8 +3421,7 @@
     {
       "feature": "order.desc",
       "tagged_existing_cases": [
-        "descending_nulls_last",
-        "offset_limit"
+        "descending_nulls_last"
       ],
       "dimensions": {
         "valid_syntax": {

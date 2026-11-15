@@ -1,18 +1,24 @@
 {
   "version": 1,
   "id": "ordering.offset_limit",
-  "description": "Offset and limit after descending ordering of non-null view counts",
+  "description": "Offset and limit after descending ordering of non-null view counts, ties unordered",
   "datasets": [
     "python-v6-small"
   ],
   "query": "query.ysql",
   "expected": "expected.json",
-  "order": "ordered",
+  "order": "tied",
   "features": [
     "from.handle",
     "is.not_null",
     "order.desc",
     "limit",
     "offset"
+  ],
+  "group_sizes": [
+    2,
+    1,
+    1,
+    1
   ]
 }

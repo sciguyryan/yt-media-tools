@@ -1,4 +1,10 @@
-"""Protect the first Phase 7 migration proposal without granting approval."""
+"""Guard the Phase 7 migration-proposal boundary for the portable corpus.
+
+Proposals live outside cases/ and cannot be executed as approved expectations.
+The first proposal (offset_limit) completed its review and was admitted as
+ordering.offset_limit with the tied-order contract, so its proposal directory
+has been removed and its language semantics are normative.
+"""
 
 from __future__ import annotations
 
@@ -6,31 +12,19 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PROPOSAL = ROOT / "yt-sql/migration-proposals/offset_limit"
+PROPOSALS = ROOT / "yt-sql/migration-proposals"
 
 
-def test_offset_limit_proposal_matches_source_and_independent_fixture_oracle() -> None:
-    source = (ROOT / "python/yt_discover_tests/conformance/cases.py").read_text(encoding="utf-8")
-    query = (PROPOSAL / "query.ysql").read_text(encoding="utf-8").strip()
-    assert query in source
-    fixture = json.loads((ROOT / "yt-sql/datasets/python-v6-small.json").read_text(encoding="utf-8"))
-    eligible = [record for record in fixture["records"] if record["view_count"] is not None]
-    eligible.sort(key=lambda record: record["view_count"], reverse=True)
-    # This fixture has ties across the selected boundary. The proposed
-    # ordering is not normative until tie semantics are independently reviewed.
-    counts = [record["view_count"] for record in eligible]
-    assert any(counts[i] == counts[i + 1] for i in range(2, 8))
-    expected = json.loads((PROPOSAL / "proposed-expected.json").read_text(encoding="utf-8"))
-    assert expected == {
-        "version": 1,
-        "outcome": "rows",
-        "columns": ["id"],
-        "rows": [[record["id"]] for record in eligible[3:8]],
-    }
+def test_completed_offset_limit_proposal_is_normative() -> None:
+    case = ROOT / "yt-sql/cases/ordering/offset_limit"
+    assert (case / "expected.json").is_file()
+    manifest = json.loads((case / "test.json").read_text(encoding="utf-8"))
+    assert manifest["order"] == "tied"
+    assert manifest["group_sizes"] == [2, 1, 1, 1]
 
 
-def test_migration_proposal_is_not_normative() -> None:
-    manifest = json.loads((PROPOSAL / "test.json").read_text(encoding="utf-8"))
-    assert manifest["id"] == "ordering.offset_limit"
-    assert not (ROOT / "yt-sql/cases/ordering/offset_limit").exists()
-    assert not (PROPOSAL / "expected.json").exists()
+def test_no_pending_proposals_remain() -> None:
+    if not PROPOSALS.is_dir():
+        return
+    pending = [entry for entry in PROPOSALS.iterdir() if entry.is_dir()]
+    assert pending == [], pending

@@ -1,0 +1,6 @@
+select
+LOWER(title) 	 AS	folded, 
+ id
+FROM  @yt_sql_fixture
+  WHERE	source_index	<=	6  and id 	 not in 	 ('vid002')
+ORDER	BY 	 folded	asc

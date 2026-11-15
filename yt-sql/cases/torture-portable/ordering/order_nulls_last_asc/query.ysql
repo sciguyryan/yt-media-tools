@@ -1,0 +1,7 @@
+SELECT 
+ fixture_nullable as bucket,
+	id 
+ FROM 	 @yt_sql_fixture
+  where source_index 	 <= 	 10 
+ ORDER  by 	 bucket	ASC
+	

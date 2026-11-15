@@ -418,8 +418,7 @@
       "is_not_false"
     ],
     "is.not_null": [
-      "is_not_null",
-      "offset_limit"
+      "is_not_null"
     ],
     "is.not_true": [
       "is_not_true"
@@ -482,7 +481,7 @@
       "ordinary_null_comparison_is_unknown"
     ],
     "offset": [
-      "offset_limit"
+      "offset_without_limit"
     ],
     "offset.underscore": [
       "offset_with_underscores"
@@ -500,8 +499,7 @@
       "default_ascending_order"
     ],
     "order.desc": [
-      "descending_nulls_last",
-      "offset_limit"
+      "descending_nulls_last"
     ],
     "order.expression": [
       "scalar_arithmetic_projection_and_order"
@@ -1567,14 +1565,6 @@
       ]
     },
     {
-      "id": "offset_limit",
-      "features": [
-        "is.not_null",
-        "offset",
-        "order.desc"
-      ]
-    },
-    {
       "id": "offset_with_underscores",
       "features": [
         "offset.underscore"
@@ -1583,6 +1573,7 @@
     {
       "id": "offset_without_limit",
       "features": [
+        "offset",
         "offset.without_limit"
       ]
     },
@@ -4284,6 +4275,38 @@
       "id": "negative.where_missing_operand",
       "features": [],
       "path": "yt-sql/cases/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "ordering.offset_limit",
+      "features": [
+        "from.handle",
+        "is.not_null",
+        "order.desc",
+        "limit",
+        "offset"
+      ],
+      "path": "yt-sql/cases/ordering/offset_limit/test.json"
+    },
+    {
+      "id": "ordering.order_by_projection_alias",
+      "features": [
+        "order.expression_alias"
+      ],
+      "path": "yt-sql/cases/ordering/order_by_projection_alias/test.json"
+    },
+    {
+      "id": "ordering.order_nulls_last_asc",
+      "features": [
+        "order.null_last"
+      ],
+      "path": "yt-sql/cases/ordering/order_nulls_last_asc/test.json"
+    },
+    {
+      "id": "ordering.order_nulls_last_desc",
+      "features": [
+        "order.null_last"
+      ],
+      "path": "yt-sql/cases/ordering/order_nulls_last_desc/test.json"
     },
     {
       "id": "ordering.order_source_position_beyond_end",
@@ -7856,6 +7879,42 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "torture.ordering.offset_limit",
+      "features": [
+        "from.handle",
+        "is.not_null",
+        "limit",
+        "offset",
+        "order.desc",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/offset_limit/test.json"
+    },
+    {
+      "id": "torture.ordering.order_by_projection_alias",
+      "features": [
+        "order.expression_alias",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_by_projection_alias/test.json"
+    },
+    {
+      "id": "torture.ordering.order_nulls_last_asc",
+      "features": [
+        "order.null_last",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_nulls_last_asc/test.json"
+    },
+    {
+      "id": "torture.ordering.order_nulls_last_desc",
+      "features": [
+        "order.null_last",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/ordering/order_nulls_last_desc/test.json"
     },
     {
       "id": "torture.ordering.order_source_position_beyond_end",

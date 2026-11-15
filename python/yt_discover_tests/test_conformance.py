@@ -453,7 +453,7 @@ def test_large_profile_multikey_ordering_matches_oracle(conformance_large: Any) 
 
 @pytest.mark.stress
 def test_huge_profile_filter_sort_limit_matches_oracle(conformance_huge: Any) -> None:
-    case = next(case for case in CASES if case.name == "offset_limit")
+    case = next(case for case in CASES if case.name == "aggregate_filter")
     _assert_case(conformance_huge, case)
 
 
@@ -484,7 +484,7 @@ def test_custom_size_dataset_can_drive_same_oracle(conformance_dataset_factory: 
 
 def test_same_semantic_case_survives_different_seed(conformance_dataset_factory: Any) -> None:
     dataset = conformance_dataset_factory(size=389, seed=27182818)
-    case = next(case for case in CASES if case.name == "offset_limit")
+    case = next(case for case in CASES if case.name == "contains_case_insensitive")
     _assert_case(dataset, case)
 
 

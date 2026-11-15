@@ -1,6 +1,6 @@
 {
   "source_snapshot": "yt-media-tools-phase-3-sqlfluff-final-corrections.zip",
-  "existing_python_cases": 157,
+  "existing_python_cases": 156,
   "existing_case_ids": [
     "final_position_offset",
     "final_position_distinct",
@@ -9,7 +9,6 @@
     "duration_boundary",
     "null_timestamp_last",
     "distinct_projection",
-    "offset_limit",
     "contains_case_insensitive",
     "matches_regex",
     "like_prefix",

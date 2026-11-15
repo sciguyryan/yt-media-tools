@@ -670,6 +670,15 @@
         "function-conformance.length_of_nested_lower_field",
         "function-conformance.coalesce_arithmetic_field"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_row_shaping.py",
+      "test": "test_scalar_functions_projection_and_order_alias",
+      "assertions": 2,
+      "case_ids": [
+        "ordering.order_by_projection_alias",
+        "ordering.order_nulls_last_asc"
+      ]
     }
   ],
   "module_reviews": [
@@ -1098,6 +1107,32 @@
         {
           "test": "test_representative_queries_remain_valid_ytsql",
           "reason": "Runs the grammar audit tooling over the dialect matrix; infrastructure accounting, not language semantics. (module-level contract: test_representative_queries_remain_valid_ytsql)"
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_row_shaping.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_distinct_deduplicates_selected_projection_after_ordering",
+          "reason": "DISTINCT deduplication after ordering is a statement-surface obligation; owned by the statement track (statement.distinct_group and siblings are normative; this test uses synthetic records)."
+        },
+        {
+          "test": "test_limit_termination_disabled_by_distinct_but_allows_offset",
+          "reason": "Planner contract: DISTINCT disables LIMIT early termination. Implementation-specific planning behaviour."
+        },
+        {
+          "test": "test_offset_accepts_zero_and_rejects_negative_like_syntax",
+          "reason": "Statement-surface OFFSET syntax; owned by the statement track (negative cases are normative through statement-level diagnostics)."
+        },
+        {
+          "test": "test_offset_applies_before_limit",
+          "reason": "Statement-surface OFFSET-before-LIMIT semantics; owned by the statement track."
+        },
+        {
+          "test": "test_scalar_function_required_fields_are_underlying_fields",
+          "reason": "Planner contract: required-field analysis unwinds scalar functions. Implementation-specific planning behaviour."
         }
       ]
     }

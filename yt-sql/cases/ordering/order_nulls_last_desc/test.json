@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "ordering.order_nulls_last_desc",
+  "description": "NULL group keys order last under descending ordering",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order.null_last"
+  ]
+}

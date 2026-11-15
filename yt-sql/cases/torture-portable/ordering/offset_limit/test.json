@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "id": "torture.ordering.offset_limit",
+  "description": "Seeded lexical stress of ordering.offset_limit; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "tied",
+  "features": [
+    "from.handle",
+    "is.not_null",
+    "limit",
+    "offset",
+    "order.desc",
+    "torture.lexical"
+  ],
+  "group_sizes": [
+    2,
+    1,
+    1,
+    1
+  ]
+}
