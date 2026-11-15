@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.coalesce_arithmetic_field",
+  "description": "COALESCE evaluates scalar arithmetic over a field before the fallback",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.coalesce"
+  ]
+}

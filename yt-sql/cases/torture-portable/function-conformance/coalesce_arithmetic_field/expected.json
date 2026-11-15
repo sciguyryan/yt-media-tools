@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "result"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1500001"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "0"
+      }
+    ]
+  ]
+}

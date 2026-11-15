@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.length_of_nested_lower_field",
+  "description": "LENGTH composes over LOWER over a field value",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.function_nested"
+  ]
+}

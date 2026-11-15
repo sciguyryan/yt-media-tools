@@ -1988,6 +1988,13 @@
       "path": "yt-sql/cases/function-conformance/aggregate_first_sum_source/test.json"
     },
     {
+      "id": "function-conformance.aggregate_greatest_of_aggregates",
+      "features": [
+        "aggregate.summary"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_greatest_of_aggregates/test.json"
+    },
+    {
       "id": "function-conformance.aggregate_group_by_rejected",
       "features": [
         "aggregate.summary"
@@ -2042,6 +2049,13 @@
         "aggregate.max"
       ],
       "path": "yt-sql/cases/function-conformance/aggregate_max_add/test.json"
+    },
+    {
+      "id": "function-conformance.aggregate_max_min_of_length",
+      "features": [
+        "aggregate.summary"
+      ],
+      "path": "yt-sql/cases/function-conformance/aggregate_max_min_of_length/test.json"
     },
     {
       "id": "function-conformance.aggregate_max_null",
@@ -2436,6 +2450,13 @@
         "projection.coalesce"
       ],
       "path": "yt-sql/cases/function-conformance/coalesce_all_null/test.json"
+    },
+    {
+      "id": "function-conformance.coalesce_arithmetic_field",
+      "features": [
+        "scalar.coalesce"
+      ],
+      "path": "yt-sql/cases/function-conformance/coalesce_arithmetic_field/test.json"
     },
     {
       "id": "function-conformance.coalesce_empty_string",
@@ -3032,6 +3053,13 @@
         "projection.length"
       ],
       "path": "yt-sql/cases/function-conformance/length_null_chain/test.json"
+    },
+    {
+      "id": "function-conformance.length_of_nested_lower_field",
+      "features": [
+        "scalar.function_nested"
+      ],
+      "path": "yt-sql/cases/function-conformance/length_of_nested_lower_field/test.json"
     },
     {
       "id": "function-conformance.length_turkish_dotted_i",
@@ -3691,6 +3719,13 @@
         "random.value"
       ],
       "path": "yt-sql/cases/function-conformance/random_seeded_value_other_seed/test.json"
+    },
+    {
+      "id": "function-conformance.random_seeded_with_aggregate",
+      "features": [
+        "aggregate.summary"
+      ],
+      "path": "yt-sql/cases/function-conformance/random_seeded_with_aggregate/test.json"
     },
     {
       "id": "function-conformance.random_two",
@@ -5067,6 +5102,14 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_first_sum_source/test.json"
     },
     {
+      "id": "torture.function-conformance.aggregate_greatest_of_aggregates",
+      "features": [
+        "aggregate.summary",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_greatest_of_aggregates/test.json"
+    },
+    {
       "id": "torture.function-conformance.aggregate_group_by_rejected",
       "features": [
         "aggregate.summary",
@@ -5129,6 +5172,14 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_add/test.json"
+    },
+    {
+      "id": "torture.function-conformance.aggregate_max_min_of_length",
+      "features": [
+        "aggregate.summary",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/aggregate_max_min_of_length/test.json"
     },
     {
       "id": "torture.function-conformance.aggregate_max_null",
@@ -5579,6 +5630,14 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_all_null/test.json"
+    },
+    {
+      "id": "torture.function-conformance.coalesce_arithmetic_field",
+      "features": [
+        "scalar.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/coalesce_arithmetic_field/test.json"
     },
     {
       "id": "torture.function-conformance.coalesce_empty_string",
@@ -6259,6 +6318,14 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/length_null_chain/test.json"
+    },
+    {
+      "id": "torture.function-conformance.length_of_nested_lower_field",
+      "features": [
+        "scalar.function_nested",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/length_of_nested_lower_field/test.json"
     },
     {
       "id": "torture.function-conformance.length_turkish_dotted_i",
@@ -7011,6 +7078,14 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_value_other_seed/test.json"
+    },
+    {
+      "id": "torture.function-conformance.random_seeded_with_aggregate",
+      "features": [
+        "aggregate.summary",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/random_seeded_with_aggregate/test.json"
     },
     {
       "id": "torture.function-conformance.random_two",

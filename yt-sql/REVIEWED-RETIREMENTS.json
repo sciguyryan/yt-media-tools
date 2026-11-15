@@ -661,6 +661,15 @@
         "function-conformance.aggregate_grouped_column_rejected",
         "function-conformance.aggregate_having_requires_group_by"
       ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_expressions.py",
+      "test": "test_nested_scalar_functions_accept_expressions",
+      "assertions": 2,
+      "case_ids": [
+        "function-conformance.length_of_nested_lower_field",
+        "function-conformance.coalesce_arithmetic_field"
+      ]
     }
   ],
   "module_reviews": [
@@ -901,6 +910,52 @@
         {
           "test": "test_optimizer_is_idempotent_and_preserves_aggregate_results",
           "reason": "Optimiser contract: aggregate queries must be optimisation-idempotent and preserve results, including FILTER composition. Implementation-specific."
+        }
+      ]
+    },
+    {
+      "source": "python/yt_discover_tests/test_scalar_expressions.py",
+      "status": "portable_assertions_migrated",
+      "retained": [
+        {
+          "test": "test_arithmetic_precedence_and_parentheses",
+          "reason": "Scalar arithmetic surface: precedence and parenthesisation are expression-grammar contracts outside the function-group scope; owned by the scalar-expression track."
+        },
+        {
+          "test": "test_arithmetic_rejects_known_non_numeric_fields",
+          "reason": "Arithmetic type rejection over non-numeric fields; scalar-expression track surface."
+        },
+        {
+          "test": "test_duration_can_be_projected_as_minutes",
+          "reason": "Temporal duration projection; temporal track surface."
+        },
+        {
+          "test": "test_null_propagates_through_arithmetic",
+          "reason": "Arithmetic NULL propagation; scalar-expression track surface."
+        },
+        {
+          "test": "test_order_by_expression_can_reference_projection_alias",
+          "reason": "Ordering-by-projection-alias is an ordering-track obligation deferred with a pointer in the Phase 2 ledger."
+        },
+        {
+          "test": "test_order_by_projection_alias_resolves_to_expression",
+          "reason": "Same ordering-track deferral as the projection-alias ordering test."
+        },
+        {
+          "test": "test_order_by_scalar_expression",
+          "reason": "ORDER BY over scalar expressions; ordering-track surface."
+        },
+        {
+          "test": "test_required_fields_walk_nested_scalar_expression",
+          "reason": "Planner contract: required-field analysis walks nested scalar expressions. Implementation-specific planning behaviour."
+        },
+        {
+          "test": "test_unary_arithmetic_is_recursive",
+          "reason": "Arithmetic unary recursion; scalar-expression track surface."
+        },
+        {
+          "test": "test_zero_divisor_returns_null",
+          "reason": "Division-by-zero NULL semantics; scalar-expression track surface."
         }
       ]
     }

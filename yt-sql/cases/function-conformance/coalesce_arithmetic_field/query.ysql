@@ -1,0 +1,5 @@
+SELECT
+    COALESCE(view_count + 1, 0) AS result
+FROM @yt_sql_fixture
+WHERE id IN ('vid001', 'vid006')
+ORDER BY id

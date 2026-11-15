@@ -1,0 +1,5 @@
+select
+	COUNT(*) 	 AS	n,
+  random(271828) 	 as	seeded 
+ FROM @yt_sql_fixture
+	where source_index 	 <=	3

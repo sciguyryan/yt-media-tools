@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "n",
+    "seeded"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      {
+        "type": "decimal",
+        "value": "0.75487423277625709250315821918775327503681182861328125"
+      }
+    ]
+  ]
+}

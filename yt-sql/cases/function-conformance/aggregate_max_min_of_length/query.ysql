@@ -1,0 +1,5 @@
+SELECT
+    MAX(LENGTH(title)) AS longest,
+    MIN(LENGTH(title)) AS shortest
+FROM @yt_sql_fixture
+WHERE id IN ('vid001', 'vid002', 'vid003')

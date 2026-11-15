@@ -1,0 +1,4 @@
+SELECT
+    GREATEST(MIN(source_index), COUNT(*)) AS result
+FROM @yt_sql_fixture
+WHERE source_index <= 3

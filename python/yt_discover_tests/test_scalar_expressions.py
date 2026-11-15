@@ -42,16 +42,6 @@ def test_unary_arithmetic_is_recursive() -> None:
     assert canonical_record_value(records[0], query.select[0]) == 25
 
 
-def test_nested_scalar_functions_accept_expressions() -> None:
-    records = [{"id": "a", "title": "Example", "view_count": 9}]
-    query = _resolve(
-        "SELECT LENGTH(LOWER(title)) AS chars, COALESCE(view_count + 1, 0) AS adjusted FROM @fixture",
-        records,
-    )
-    assert canonical_record_value(records[0], query.select[0]) == 7
-    assert canonical_record_value(records[0], query.select[1]) == 10
-
-
 def test_null_propagates_through_arithmetic() -> None:
     records = [{"id": "a", "duration": None}]
     query = _resolve("SELECT duration / 60 AS minutes FROM @fixture", records)
