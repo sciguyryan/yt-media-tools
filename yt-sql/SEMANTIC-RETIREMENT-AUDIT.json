@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1012,
+    "normative_manifests": 1018,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4132
@@ -1489,8 +1489,20 @@
       "manifest": "yt-sql/cases/relational/join_on_shared_identity/test.json"
     },
     {
+      "id": "relational.join_order_by_left_alias",
+      "manifest": "yt-sql/cases/relational/join_order_by_left_alias/test.json"
+    },
+    {
+      "id": "relational.join_relation_wildcard_expansion",
+      "manifest": "yt-sql/cases/relational/join_relation_wildcard_expansion/test.json"
+    },
+    {
       "id": "relational.join_semi_filters",
       "manifest": "yt-sql/cases/relational/join_semi_filters/test.json"
+    },
+    {
+      "id": "relational.join_where_null_filter",
+      "manifest": "yt-sql/cases/relational/join_where_null_filter/test.json"
     },
     {
       "id": "relational.normalisation_grouping",
@@ -3345,8 +3357,20 @@
       "manifest": "yt-sql/cases/torture-portable/relational/join_on_shared_identity/test.json"
     },
     {
+      "id": "torture.relational.join_order_by_left_alias",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_order_by_left_alias/test.json"
+    },
+    {
+      "id": "torture.relational.join_relation_wildcard_expansion",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_relation_wildcard_expansion/test.json"
+    },
+    {
       "id": "torture.relational.join_semi_filters",
       "manifest": "yt-sql/cases/torture-portable/relational/join_semi_filters/test.json"
+    },
+    {
+      "id": "torture.relational.join_where_null_filter",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_where_null_filter/test.json"
     },
     {
       "id": "torture.relational.normalisation_grouping",

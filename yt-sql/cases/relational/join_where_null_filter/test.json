@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "relational.join_where_null_filter",
+  "description": "The LEFT JOIN with IS NULL filter selects unmatched left rows",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered"
+}

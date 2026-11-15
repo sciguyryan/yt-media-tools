@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "relational.join_order_by_left_alias",
+  "description": "ORDER BY a projection alias orders a joined result",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered"
+}

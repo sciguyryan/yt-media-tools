@@ -1,0 +1,7 @@
+SELECT
+	l.id as id, 
+ l.view_count AS  left_views,
+	r.view_count 	 AS  right_views
+  from  @youtube_playlist 	 as l
+  LEFT  JOIN	@twitch_archive AS	r 	 ON 	 l.id = r.id
+ORDER by 	 left_views asc

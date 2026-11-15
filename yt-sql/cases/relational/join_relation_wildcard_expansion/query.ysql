@@ -1,0 +1,4 @@
+SELECT
+    l.*
+FROM @youtube_playlist AS l
+JOIN @twitch_archive AS r ON l.id = r.id

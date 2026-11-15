@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "left_views",
+    "right_views"
+  ],
+  "rows": [
+    [
+      "yt-playlist-1",
+      {
+        "type": "integer",
+        "value": "800"
+      },
+      null
+    ]
+  ]
+}

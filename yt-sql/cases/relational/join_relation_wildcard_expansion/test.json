@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "relational.join_relation_wildcard_expansion",
+  "description": "A relation wildcard expands to the relation's full column list",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered"
+}

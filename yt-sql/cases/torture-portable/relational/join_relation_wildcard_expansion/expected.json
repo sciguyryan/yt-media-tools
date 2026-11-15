@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "id",
+    "title",
+    "upload_date",
+    "publish_date",
+    "duration",
+    "view_count",
+    "like_count",
+    "comment_count",
+    "channel_follower_count",
+    "playlist_index",
+    "source_index",
+    "uploader",
+    "uploader_id",
+    "channel",
+    "channel_id",
+    "live_status",
+    "availability",
+    "is_live",
+    "was_live",
+    "webpage_url",
+    "playlist_id",
+    "playlist_title",
+    "timestamp",
+    "release_timestamp",
+    "modified_timestamp",
+    "extractor_value"
+  ],
+  "rows": [
+    [
+      "shared-id",
+      "Shared",
+      "20260904",
+      null,
+      {
+        "type": "integer",
+        "value": "90"
+      },
+      {
+        "type": "integer",
+        "value": "50"
+      },
+      null,
+      null,
+      null,
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      null,
+      "Channel B",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      {
+        "type": "integer",
+        "value": "10"
+      }
+    ]
+  ]
+}

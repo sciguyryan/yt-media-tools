@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.relational.join_relation_wildcard_expansion",
+  "description": "Seeded lexical stress of relational.join_relation_wildcard_expansion; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}

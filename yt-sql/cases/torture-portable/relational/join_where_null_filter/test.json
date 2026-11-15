@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "torture.relational.join_where_null_filter",
+  "description": "Seeded lexical stress of relational.join_where_null_filter; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical"
+  ]
+}
