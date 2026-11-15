@@ -31,6 +31,10 @@ def materialise(root: Path, *, check: bool = False) -> int:
         variants = lexical_variants(source_query, case_seed, 4)
         # Choose a genuine perturbation where possible, with deterministic ordering.
         query = next((variant for variant in variants if variant != source_query), variants[0])
+        # Whitespace perturbation may replace the file-final newline; every
+        # materialised file must still end with one.
+        if not query.endswith("\n"):
+            query += "\n"
         identifier = "torture." + manifest["id"]
         destination = output_root / manifest["id"].replace(".", "/")
         new_manifest = dict(manifest)
