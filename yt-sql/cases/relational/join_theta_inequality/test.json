@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_theta_inequality",
+  "description": "A join predicate may compare values with an inequality",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "relational.join_theta_order_limit",
+  "source_query_sha256": "2d265f70f9502cf562f18cb55b6faf9c93e659bf60baf269127f6a8fba3f59db",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from independently approved source case"
+}

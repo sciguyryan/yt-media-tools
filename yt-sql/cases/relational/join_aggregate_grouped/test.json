@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "relational.join_aggregate_grouped",
+  "description": "Aggregation composes over a joined relation",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner",
+    "aggregate.group_by"
+  ]
+}

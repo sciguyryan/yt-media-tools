@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_theta_order_limit",
+  "description": "Ordering and limiting apply to a theta-joined result",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner"
+  ]
+}

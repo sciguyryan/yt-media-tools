@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.join_self_reference",
+  "description": "One source can be joined to itself through distinct aliases",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner"
+  ]
+}

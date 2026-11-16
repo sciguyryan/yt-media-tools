@@ -4430,6 +4430,14 @@
       "path": "yt-sql/cases/relational/facet_selection/test.json"
     },
     {
+      "id": "relational.join_aggregate_grouped",
+      "features": [
+        "join.inner",
+        "aggregate.group_by"
+      ],
+      "path": "yt-sql/cases/relational/join_aggregate_grouped/test.json"
+    },
+    {
       "id": "relational.join_anti_filters",
       "features": [
         "join.anti"
@@ -4476,11 +4484,32 @@
       "path": "yt-sql/cases/relational/join_relation_wildcard_expansion/test.json"
     },
     {
+      "id": "relational.join_self_reference",
+      "features": [
+        "join.inner"
+      ],
+      "path": "yt-sql/cases/relational/join_self_reference/test.json"
+    },
+    {
       "id": "relational.join_semi_filters",
       "features": [
         "join.semi"
       ],
       "path": "yt-sql/cases/relational/join_semi_filters/test.json"
+    },
+    {
+      "id": "relational.join_theta_inequality",
+      "features": [
+        "join.inner"
+      ],
+      "path": "yt-sql/cases/relational/join_theta_inequality/test.json"
+    },
+    {
+      "id": "relational.join_theta_order_limit",
+      "features": [
+        "join.inner"
+      ],
+      "path": "yt-sql/cases/relational/join_theta_order_limit/test.json"
     },
     {
       "id": "relational.join_where_null_filter",
@@ -8192,6 +8221,15 @@
       "path": "yt-sql/cases/torture-portable/relational/facet_selection/test.json"
     },
     {
+      "id": "torture.relational.join_aggregate_grouped",
+      "features": [
+        "aggregate.group_by",
+        "join.inner",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_aggregate_grouped/test.json"
+    },
+    {
       "id": "torture.relational.join_anti_filters",
       "features": [
         "join.anti",
@@ -8247,12 +8285,36 @@
       "path": "yt-sql/cases/torture-portable/relational/join_relation_wildcard_expansion/test.json"
     },
     {
+      "id": "torture.relational.join_self_reference",
+      "features": [
+        "join.inner",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_self_reference/test.json"
+    },
+    {
       "id": "torture.relational.join_semi_filters",
       "features": [
         "join.semi",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/relational/join_semi_filters/test.json"
+    },
+    {
+      "id": "torture.relational.join_theta_inequality",
+      "features": [
+        "join.inner",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_theta_inequality/test.json"
+    },
+    {
+      "id": "torture.relational.join_theta_order_limit",
+      "features": [
+        "join.inner",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/join_theta_order_limit/test.json"
     },
     {
       "id": "torture.relational.join_where_null_filter",

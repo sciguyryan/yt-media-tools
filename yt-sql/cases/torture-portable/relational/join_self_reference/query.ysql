@@ -1,0 +1,7 @@
+SELECT
+	a.id 	 as  left_id,
+	b.id	AS right_id
+  FROM @youtube_channel	AS	a 
+ join 	 @youtube_channel	as  b	ON	a.id	=  b.id
+  ORDER 	 BY  left_id ASC 
+ 

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "left_id",
+    "left_views",
+    "right_id",
+    "right_views"
+  ],
+  "rows": [
+    [
+      "yt-channel-1",
+      {
+        "type": "integer",
+        "value": "1200"
+      },
+      "shared-id",
+      {
+        "type": "integer",
+        "value": "50"
+      }
+    ],
+    [
+      "yt-channel-1",
+      {
+        "type": "integer",
+        "value": "1200"
+      },
+      "yt-playlist-1",
+      {
+        "type": "integer",
+        "value": "800"
+      }
+    ],
+    [
+      "yt-channel-2",
+      {
+        "type": "integer",
+        "value": "800"
+      },
+      "shared-id",
+      {
+        "type": "integer",
+        "value": "50"
+      }
+    ]
+  ]
+}

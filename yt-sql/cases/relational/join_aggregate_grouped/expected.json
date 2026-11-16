@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "uploader",
+    "n"
+  ],
+  "rows": [
+    [
+      "Channel B",
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ]
+  ]
+}

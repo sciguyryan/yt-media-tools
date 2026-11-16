@@ -1,0 +1,6 @@
+SELECT
+	l.uploader  as uploader, 
+ COUNT(*) AS 	 n
+FROM  @youtube_playlist 	 AS l
+  JOIN  @twitch_archive  AS  r 	 ON  l.id	= r.id
+group BY	l.uploader

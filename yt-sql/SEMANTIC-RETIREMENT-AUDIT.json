@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1018,
+    "normative_manifests": 1026,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4132
@@ -1469,6 +1469,10 @@
       "manifest": "yt-sql/cases/relational/facet_selection/test.json"
     },
     {
+      "id": "relational.join_aggregate_grouped",
+      "manifest": "yt-sql/cases/relational/join_aggregate_grouped/test.json"
+    },
+    {
       "id": "relational.join_anti_filters",
       "manifest": "yt-sql/cases/relational/join_anti_filters/test.json"
     },
@@ -1497,8 +1501,20 @@
       "manifest": "yt-sql/cases/relational/join_relation_wildcard_expansion/test.json"
     },
     {
+      "id": "relational.join_self_reference",
+      "manifest": "yt-sql/cases/relational/join_self_reference/test.json"
+    },
+    {
       "id": "relational.join_semi_filters",
       "manifest": "yt-sql/cases/relational/join_semi_filters/test.json"
+    },
+    {
+      "id": "relational.join_theta_inequality",
+      "manifest": "yt-sql/cases/relational/join_theta_inequality/test.json"
+    },
+    {
+      "id": "relational.join_theta_order_limit",
+      "manifest": "yt-sql/cases/relational/join_theta_order_limit/test.json"
     },
     {
       "id": "relational.join_where_null_filter",
@@ -3337,6 +3353,10 @@
       "manifest": "yt-sql/cases/torture-portable/relational/facet_selection/test.json"
     },
     {
+      "id": "torture.relational.join_aggregate_grouped",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_aggregate_grouped/test.json"
+    },
+    {
       "id": "torture.relational.join_anti_filters",
       "manifest": "yt-sql/cases/torture-portable/relational/join_anti_filters/test.json"
     },
@@ -3365,8 +3385,20 @@
       "manifest": "yt-sql/cases/torture-portable/relational/join_relation_wildcard_expansion/test.json"
     },
     {
+      "id": "torture.relational.join_self_reference",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_self_reference/test.json"
+    },
+    {
       "id": "torture.relational.join_semi_filters",
       "manifest": "yt-sql/cases/torture-portable/relational/join_semi_filters/test.json"
+    },
+    {
+      "id": "torture.relational.join_theta_inequality",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_theta_inequality/test.json"
+    },
+    {
+      "id": "torture.relational.join_theta_order_limit",
+      "manifest": "yt-sql/cases/torture-portable/relational/join_theta_order_limit/test.json"
     },
     {
       "id": "torture.relational.join_where_null_filter",

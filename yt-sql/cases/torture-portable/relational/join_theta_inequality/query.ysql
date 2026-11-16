@@ -1,0 +1,9 @@
+select
+	l.id AS  left_id,
+l.view_count 	 as left_views,
+	r.id AS right_id, 
+ r.view_count  AS  right_views
+  from	@youtube_channel	AS	l
+	JOIN	@youtube_playlist  AS  r ON  l.view_count 	 > r.view_count
+	order BY 	 left_views DESC,	right_views ASC
+  

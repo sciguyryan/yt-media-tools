@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.join_theta_order_limit",
+  "description": "Seeded lexical stress of relational.join_theta_order_limit; approved expectation unchanged",
+  "datasets": [
+    "heterogeneous-facets-v1"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "join.inner",
+    "torture.lexical"
+  ]
+}
