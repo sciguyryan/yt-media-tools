@@ -6922,32 +6922,60 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_first",
+            "function-conformance.cardinality_null_elements",
+            "scalar.cardinality_first_tags"
+          ],
+          "justification": "CARDINALITY over a collection field parses and resolves, counting NULL elements."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_two",
+            "function-conformance.cardinality_zero"
+          ],
+          "justification": "Zero-argument and two-argument CARDINALITY are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_empty_collection",
+            "function-conformance.cardinality_null_collection",
+            "function-conformance.cardinality_null_elements"
+          ],
+          "justification": "CARDINALITY counts NULL elements, propagates a NULL collection to NULL and yields zero for the empty collection."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_scalar_operand_rejected"
+          ],
+          "justification": "CARDINALITY over a scalar operand is rejected as a type diagnostic."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_empty_collection",
+            "function-conformance.cardinality_null_collection"
+          ],
+          "justification": "The empty and NULL collection boundaries are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_filter",
+            "interaction.filter_cardinality"
+          ],
+          "justification": "CARDINALITY composes over FILTER results."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_filter"
+          ],
+          "justification": "CARDINALITY over a filtered collection with a predicate that matches a single tagged element is pinned."
         }
       }
     },
@@ -6958,32 +6986,72 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_ascii",
+            "function-conformance.char_gothic_scalar",
+            "function-conformance.char_integer_expression"
+          ],
+          "justification": "CHAR over decimal, astral and integer-expression code points parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_invalid_above_max",
+            "function-conformance.char_invalid_float",
+            "function-conformance.char_invalid_negative",
+            "function-conformance.char_invalid_surrogate_high",
+            "function-conformance.char_invalid_surrogate_low",
+            "function-conformance.char_invalid_text",
+            "function-conformance.char_zero_args"
+          ],
+          "justification": "Out-of-range, surrogate, negative, fractional and text code points are rejected."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_ascii",
+            "function-conformance.char_lower_sigma",
+            "function-conformance.char_null",
+            "function-conformance.char_three_null",
+            "function-conformance.char_upper_expansion"
+          ],
+          "justification": "CHAR maps scalar values exactly (including astral planes), expands sharp s via UPPER afterwards, and propagates NULL."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_invalid_text",
+            "function-conformance.char_null",
+            "function-conformance.char_three_null"
+          ],
+          "justification": "Text arguments are rejected; NULL arguments propagate to NULL in any position."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_invalid_above_max",
+            "function-conformance.char_invalid_surrogate_high",
+            "function-conformance.char_invalid_surrogate_low"
+          ],
+          "justification": "The Unicode scalar-value boundaries (0x10FFFF ceiling, surrogate exclusion) are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_lower_sigma",
+            "function-conformance.char_upper_sharp_s",
+            "function-conformance.length_char"
+          ],
+          "justification": "CHAR composes inside LOWER, UPPER and LENGTH."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_decomposed_length",
+            "function-conformance.char_invalid_computed_overflow"
+          ],
+          "justification": "Computed code points that overflow the scalar range are rejected, and composed-accent construction is pinned as two code points."
         }
       }
     },
@@ -6994,32 +7062,66 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_field_fallback",
+            "function-conformance.coalesce_first",
+            "function-conformance.coalesce_second",
+            "function-conformance.coalesce_three"
+          ],
+          "justification": "COALESCE over constants and over a field with a fallback parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_one",
+            "function-conformance.coalesce_zero"
+          ],
+          "justification": "Zero-argument and one-argument COALESCE are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_all_null",
+            "function-conformance.coalesce_empty_string",
+            "function-conformance.coalesce_falsey_zero",
+            "function-conformance.coalesce_second",
+            "function-conformance.coalesce_string_null"
+          ],
+          "justification": "COALESCE returns the first non-NULL argument, treats zero and empty strings as non-NULL values, and propagates NULL when all arguments are NULL."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_all_null",
+            "function-conformance.coalesce_field_fallback"
+          ],
+          "justification": "The all-NULL result is NULL; a NULL field value takes the fallback."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_empty_string",
+            "function-conformance.coalesce_falsey_zero"
+          ],
+          "justification": "Falsey-value boundaries (zero, empty string) are pinned as returned values."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_arithmetic_field",
+            "function-conformance.coalesce_nested",
+            "function-conformance.coalesce_nullif_distinct",
+            "interaction.coalesce_nullif_concat"
+          ],
+          "justification": "COALESCE composes over NULLIF, CONCAT, nested COALESCE and scalar arithmetic over fields."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_short_circuit"
+          ],
+          "justification": "COALESCE does not evaluate later arguments when an earlier one is non-NULL (division-by-zero guard pinned)."
         }
       }
     },
@@ -7030,32 +7132,69 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_field_projection_order",
+            "function-conformance.concat_four_with_empty",
+            "function-conformance.concat_video_title"
+          ],
+          "justification": "CONCAT over constants, fields and empty arguments parses and resolves in argument order."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_invalid_text_integer",
+            "function-conformance.concat_zero",
+            "negative.invalid_count_text"
+          ],
+          "justification": "Non-text arguments are rejected as type diagnostics; zero-argument CONCAT is a syntax diagnostic."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_middle_null",
+            "function-conformance.concat_null_later",
+            "function-conformance.concat_three_null",
+            "scalar.concat_nested_null",
+            "scalar.concat_null"
+          ],
+          "justification": "Any NULL argument propagates to NULL, in every argument position."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_invalid_text_integer",
+            "function-conformance.concat_middle_null"
+          ],
+          "justification": "Integer arguments are rejected as type diagnostics; NULL propagation is pinned per position."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_empty",
+            "function-conformance.concat_four_with_empty"
+          ],
+          "justification": "Empty-string arguments concatenate as zero-width values."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_nested_upper",
+            "function-conformance.length_concat",
+            "function-conformance.length_null_chain",
+            "scalar.concat_nested_null"
+          ],
+          "justification": "CONCAT composes inside LENGTH, nests UPPER/LOWER, and participates in NULL chains."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_unicode_emoji",
+            "scalar.concat_unicode",
+            "unicode.concat_emoji",
+            "unicode.concat_multiscript"
+          ],
+          "justification": "Multi-script, emoji and combining-mark concatenation is pinned byte-exactly, blocking normalising or lossy implementations."
         }
       }
     },
@@ -7066,32 +7205,68 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.count_all_rows",
+            "function-conformance.aggregate_count_expression",
+            "function-conformance.aggregate_count_literal",
+            "function-conformance.collection_count_true_only"
+          ],
+          "justification": "COUNT(*) and COUNT over expressions, literals and collection bindings parse and resolve."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_count_scalar_operand_rejected",
+            "function-conformance.count_two",
+            "negative.invalid_count_text"
+          ],
+          "justification": "Two-argument COUNT, text-argument COUNT and scalar-operand collection COUNT are rejected."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.count_all_rows",
+            "function-conformance.aggregate_count_expression_skips_null",
+            "function-conformance.aggregate_count_null",
+            "function-conformance.collection_count_null_elements",
+            "function-conformance.collection_count_outer_field"
+          ],
+          "justification": "COUNT(*) counts rows, expression COUNT skips NULLs, collection COUNT counts true predicate results including explicit NULL elements and references outer row fields."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_count_null",
+            "function-conformance.collection_count_scalar_operand_rejected"
+          ],
+          "justification": "COUNT(NULL) is zero and collection COUNT over a scalar operand is a type diagnostic."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_empty_input",
+            "function-conformance.collection_count_null_elements"
+          ],
+          "justification": "COUNT over empty input is zero and explicit NULL-element counting is a boundary shape."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_count_expression_skips_null",
+            "function-conformance.aggregate_filter_after_where",
+            "statement-conformance.cte_aggregate",
+            "statement-conformance.group_count"
+          ],
+          "justification": "COUNT composes with GROUP BY, CTEs and aggregate FILTER applied per-aggregate after WHERE."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_group_by_rejected",
+            "function-conformance.aggregate_nested_rejected"
+          ],
+          "justification": "Nested aggregates and aggregate GROUP BY expressions are rejected, blocking runaway recursion shapes."
         }
       }
     },
@@ -7102,32 +7277,64 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.filter_one",
+            "function-conformance.filter_outer_field",
+            "function-conformance.filter_true_only_order"
+          ],
+          "justification": "FILTER over a collection field with a predicate parses and resolves, including predicates that reference outer row fields."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.filter_binding_syntax_rejected",
+            "function-conformance.filter_zero"
+          ],
+          "justification": "Zero-argument FILTER and the missing-AS binding form are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.filter_keep_null_elements",
+            "function-conformance.filter_null_vs_empty",
+            "function-conformance.filter_outer_field",
+            "function-conformance.filter_true_only_order"
+          ],
+          "justification": "FILTER keeps only true results in original order, distinguishes NULL from empty collections, keeps explicit NULL elements and references outer row fields."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.filter_scalar_operand_rejected"
+          ],
+          "justification": "FILTER over a scalar operand is rejected as a type diagnostic."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.filter_none",
+            "function-conformance.filter_null_vs_empty"
+          ],
+          "justification": "The no-match and empty-collection boundaries are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.cardinality_filter",
+            "function-conformance.filter_index_after_filter",
+            "function-conformance.map_filter_pipeline",
+            "interaction.filter_then_map"
+          ],
+          "justification": "FILTER composes with CARDINALITY, MAP and indexing, in pipelines and standalone."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.filter_keep_null_elements",
+            "function-conformance.filter_outer_field"
+          ],
+          "justification": "Explicit NULL-element retention and outer-field resolution are pinned against implementations that drop or mis-scope them."
         }
       }
     },
@@ -7138,32 +7345,64 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.greatest_negative",
+            "function-conformance.greatest_text",
+            "function-conformance.least_field_argument"
+          ],
+          "justification": "GREATEST over numeric and text constants and over a field argument parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.greatest_one",
+            "function-conformance.greatest_zero"
+          ],
+          "justification": "One-argument and zero-argument GREATEST are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.greatest_equal",
+            "function-conformance.greatest_negative",
+            "function-conformance.greatest_null",
+            "function-conformance.greatest_null_first",
+            "function-conformance.greatest_unicode_codepoint_order"
+          ],
+          "justification": "GREATEST handles equal values, negatives, NULL propagation in either position and exact Unicode code-point ordering."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.greatest_mixed_types_rejected",
+            "function-conformance.greatest_null"
+          ],
+          "justification": "Incompatible argument types are rejected as type diagnostics; any NULL argument propagates to NULL."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.greatest_equal",
+            "function-conformance.greatest_negative"
+          ],
+          "justification": "Equal-value and all-negative boundaries are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_greatest_of_aggregates",
+            "function-conformance.greatest_single_nested",
+            "interaction.greatest_least_nested"
+          ],
+          "justification": "Greatest composes with its opposite, nested, across aggregate results and in facet-join torture shapes."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.greatest_unicode_codepoint_order"
+          ],
+          "justification": "Code-point ordering over composed, decomposed and sharp-s arguments is pinned exactly."
         }
       }
     },
@@ -7174,32 +7413,63 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_field_argument",
+            "function-conformance.least_negative",
+            "function-conformance.least_text"
+          ],
+          "justification": "LEAST over numeric and text constants and over a field argument parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_one",
+            "function-conformance.least_zero"
+          ],
+          "justification": "One-argument and zero-argument LEAST are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_equal",
+            "function-conformance.least_unicode_codepoint_order",
+            "scalar.least_null",
+            "scalar.least_signed_integer"
+          ],
+          "justification": "LEAST handles equal values, three-argument NULL propagation, signed integers and exact Unicode ordering."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_mixed_types_rejected",
+            "function-conformance.least_null"
+          ],
+          "justification": "Incompatible argument types are rejected as type diagnostics; any NULL argument propagates to NULL."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_equal",
+            "scalar.least_signed_integer"
+          ],
+          "justification": "Equal-value and signed-integer boundaries are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_field_argument",
+            "function-conformance.least_single_nested",
+            "interaction.greatest_least_nested"
+          ],
+          "justification": "Least composes with its opposite, nested, over field arguments and in facet-join torture shapes."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.least_unicode_codepoint_order"
+          ],
+          "justification": "Code-point ordering over composed, decomposed and sharp-s arguments is pinned exactly."
         }
       }
     },
@@ -7210,32 +7480,71 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_ascii",
+            "function-conformance.length_fixture_decomposed",
+            "function-conformance.length_fixture_family"
+          ],
+          "justification": "LENGTH over constants and committed fixture titles (composed and decomposed) parses and resolves to integer counts."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_two",
+            "function-conformance.length_two_arguments_rejected",
+            "function-conformance.length_zero"
+          ],
+          "justification": "Zero-argument and two-argument LENGTH forms are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_arabic",
+            "function-conformance.length_cjk",
+            "function-conformance.length_emoji",
+            "function-conformance.length_family_zwj",
+            "function-conformance.length_null"
+          ],
+          "justification": "LENGTH counts code points across scripts, emoji, ZWJ families, and propagates NULL."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_invalid_numeric_field",
+            "function-conformance.length_null"
+          ],
+          "justification": "LENGTH over a numeric field is rejected as a type diagnostic; NULL arguments propagate to NULL."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_combining",
+            "function-conformance.length_composed_accent",
+            "function-conformance.length_decomposed_accent",
+            "function-conformance.length_emoji_flag",
+            "function-conformance.length_empty"
+          ],
+          "justification": "Empty strings, regional-indicator pairs, combining marks and composed/decomposed accents are boundary shapes with pinned counts."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_char",
+            "function-conformance.length_concat",
+            "function-conformance.length_null_chain"
+          ],
+          "justification": "LENGTH composes inside LENGTH(CONCAT(...)), LENGTH(CHAR(...)) and NULL chains; aggregate-context LENGTH composition is recorded under MIN and MAX."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_composed_accent",
+            "function-conformance.length_decomposed_accent",
+            "function-conformance.length_emoji_flag",
+            "function-conformance.length_family_zwj"
+          ],
+          "justification": "Grapheme-deceptive shapes (ZWJ families, flag pairs, composed versus decomposed accents) are pinned as code-point counts, blocking grapheme-cluster implementations."
         }
       }
     },
@@ -7246,32 +7555,69 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.lower_ascii",
+            "function-conformance.lower_fixture_greek",
+            "function-conformance.lower_fixture_turkish",
+            "function-conformance.lower_greek_sigma"
+          ],
+          "justification": "LOWER over constants, Greek sigma forms and committed fixture titles (including Turkish dotted I) parse and resolve to case-folded results."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.lower_two",
+            "function-conformance.lower_two_arguments_rejected",
+            "function-conformance.lower_zero"
+          ],
+          "justification": "Zero-argument, two-constant-argument and field-pair LOWER forms are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.lower_kelvin",
+            "function-conformance.lower_mixed",
+            "function-conformance.lower_null",
+            "function-conformance.lower_sharp_s",
+            "function-conformance.lower_turkish_dotted_i"
+          ],
+          "justification": "Case folding covers mixed-case ASCII, sharp s, Turkish dotted I, the Kelvin sign, and NULL propagation."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.lower_invalid_numeric_field",
+            "function-conformance.lower_null"
+          ],
+          "justification": "LOWER over a numeric field is rejected as a type diagnostic; NULL arguments propagate to NULL."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.lower_digit",
+            "function-conformance.lower_empty",
+            "function-conformance.lower_punctuation"
+          ],
+          "justification": "Empty strings, digit-only and punctuation-only arguments are boundary shapes with pinned results."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.concat_nested_upper",
+            "function-conformance.length_of_nested_lower_field",
+            "function-conformance.nested_text"
+          ],
+          "justification": "LOWER composes inside LENGTH, inside UPPER(CONCAT(...)) and alongside UPPER inside CONCAT."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.lower_greek_sigma",
+            "function-conformance.lower_sharp_s",
+            "function-conformance.lower_turkish_dotted_i"
+          ],
+          "justification": "Locale-sensitive and expansion-sensitive folding shapes (final sigma, sharp s, dotted I) are pinned exactly, blocking naive ASCII fold implementations."
         }
       }
     },
@@ -7282,32 +7628,68 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_filter_pipeline",
+            "function-conformance.map_lower",
+            "function-conformance.map_null_elements_preserved",
+            "function-conformance.map_upper"
+          ],
+          "justification": "MAP over a collection field with a SELECT projection parses and resolves, including outer-row references in the projection."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_aggregate_projection_rejected",
+            "function-conformance.map_binding_syntax_rejected",
+            "function-conformance.map_select_syntax_rejected",
+            "function-conformance.map_zero"
+          ],
+          "justification": "Zero-argument MAP, missing binding, missing SELECT and aggregate projections are rejected."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_index_after_projection",
+            "function-conformance.map_null_elements_preserved",
+            "function-conformance.map_null_vs_empty",
+            "function-conformance.map_upper"
+          ],
+          "justification": "MAP projects each element in order, preserves NULL elements in position, distinguishes NULL from empty collections and can be indexed after projection."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_aggregate_projection_rejected",
+            "function-conformance.map_scalar_operand_rejected"
+          ],
+          "justification": "Scalar operands and aggregate projections are rejected as type diagnostics."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_index_after_projection",
+            "function-conformance.map_null_vs_empty"
+          ],
+          "justification": "The NULL-versus-empty and post-projection indexing boundaries are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_filter_pipeline",
+            "interaction.filter_then_map",
+            "interaction.map_cardinality",
+            "interaction.map_then_filter"
+          ],
+          "justification": "MAP composes with FILTER, CARDINALITY and pipelines in both orders, with outer-row visibility preserved."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.map_filter_pipeline",
+            "function-conformance.map_null_elements_preserved"
+          ],
+          "justification": "NULL-element position preservation and fused-pipeline outer-row visibility are pinned against lossy implementations."
         }
       }
     },
@@ -7318,32 +7700,61 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.maximum_source_position",
+            "function-conformance.aggregate_first_max_source"
+          ],
+          "justification": "MAX over a field, a single record and an arithmetic expression parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.max_two",
+            "function-conformance.max_zero"
+          ],
+          "justification": "Zero-argument and two-argument MAX are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.maximum_source_position",
+            "function-conformance.aggregate_max_min_of_length",
+            "function-conformance.aggregate_max_null",
+            "function-conformance.greatest_unicode_codepoint_order"
+          ],
+          "justification": "MAX propagates an all-NULL argument to NULL and orders text exactly by code points."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.avg_text_type_error",
+            "function-conformance.aggregate_max_null"
+          ],
+          "justification": "All-NULL MAX is NULL; the text-argument rejection family is pinned for SUM/AVG."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.maximum_source_position",
+            "function-conformance.aggregate_empty_input"
+          ],
+          "justification": "MAX over empty input is NULL; the population maximum boundary is pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_greatest_of_aggregates",
+            "function-conformance.aggregate_max_min_of_length"
+          ],
+          "justification": "MAX composes inside GREATEST across aggregates, over LENGTH and with arithmetic."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_max_min_of_length"
+          ],
+          "justification": "Code-point text extrema and arithmetic-expression arguments are pinned."
         }
       }
     },
@@ -7354,32 +7765,58 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.minimum_source_position",
+            "function-conformance.aggregate_first_min_source"
+          ],
+          "justification": "MIN over a field, a single record and an arithmetic expression parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.min_two",
+            "function-conformance.min_zero"
+          ],
+          "justification": "Zero-argument and two-argument MIN are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.minimum_source_position",
+            "function-conformance.aggregate_min_null"
+          ],
+          "justification": "MIN propagates an all-NULL argument to NULL and computes the population minimum."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.sum_text_type_error",
+            "function-conformance.aggregate_min_null"
+          ],
+          "justification": "All-NULL MIN is NULL; text arguments are rejected for SUM/AVG (MIN accepts text and orders it)."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.minimum_source_position",
+            "function-conformance.aggregate_empty_input"
+          ],
+          "justification": "MIN over empty input is NULL; the population minimum boundary is pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_greatest_of_aggregates"
+          ],
+          "justification": "MIN composes inside GREATEST across aggregates and with arithmetic."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.minimum_source_position"
+          ],
+          "justification": "The population minimum boundary and arithmetic-expression arguments are pinned."
         }
       }
     },
@@ -7390,32 +7827,67 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.nullif_field_projection",
+            "function-conformance.nullif_text_unequal",
+            "function-conformance.nullif_unequal_numeric"
+          ],
+          "justification": "NULLIF over unequal constants and over field arguments parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.nullif_one",
+            "function-conformance.nullif_three",
+            "function-conformance.nullif_zero"
+          ],
+          "justification": "One-, three- and zero-argument NULLIF are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.nullif_equal_numeric",
+            "function-conformance.nullif_first_null",
+            "function-conformance.nullif_nested",
+            "function-conformance.nullif_second_null"
+          ],
+          "justification": "NULLIF yields NULL on true equality in every NULL arrangement."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.nullif_first_null",
+            "function-conformance.nullif_mixed_types_rejected"
+          ],
+          "justification": "Incompatible argument types are rejected as type diagnostics; NULL arguments propagate."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.nullif_empty",
+            "function-conformance.nullif_text_equal"
+          ],
+          "justification": "Empty-string and equal-text boundaries are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.coalesce_nullif_distinct",
+            "function-conformance.nested_nullif",
+            "function-conformance.nullif_coalesce",
+            "interaction.null_chain_fallback",
+            "scalar.nullif_distinct",
+            "scalar.nullif_equal"
+          ],
+          "justification": "NULLIF composes with COALESCE in both orders, nested, and inside NULL chains."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.nullif_normalisation_inequality"
+          ],
+          "justification": "NULLIF compares exact code points without normalisation: composed and decomposed accents are unequal."
         }
       }
     },
@@ -7426,32 +7898,76 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_cte_inner_sequence",
+            "function-conformance.position_descending_offset",
+            "function-conformance.position_descending_order",
+            "function-conformance.position_source_sequence"
+          ],
+          "justification": "POSITION projection over ascending, descending, paginated and CTE-nested query blocks parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_argument_identifier",
+            "function-conformance.position_in_arithmetic",
+            "function-conformance.position_in_group",
+            "function-conformance.position_in_order",
+            "function-conformance.position_in_where",
+            "function-conformance.position_nested_coalesce",
+            "function-conformance.position_order_alias",
+            "function-conformance.position_zero_arguments_two"
+          ],
+          "justification": "POSITION is rejected outside a standalone final projection: argument shapes, ORDER BY dependence, WHERE, ORDER BY clauses, arithmetic, grouping and nesting."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_derived_inner_sequence",
+            "function-conformance.position_distinct_numbering",
+            "function-conformance.position_grouped_multi_count",
+            "function-conformance.position_observed_sequence",
+            "function-conformance.position_outer_numbering_after_slice",
+            "function-conformance.position_second_after_offset",
+            "function-conformance.position_source_sequence"
+          ],
+          "justification": "POSITION numbers the final result after DISTINCT and aggregation, across groups, without ordering, over sliced derived relations and surviving outer reordering."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_union_first_arm",
+            "function-conformance.position_union_second_arm"
+          ],
+          "justification": "POSITION in set-operation projections is rejected as unsupported in both arms."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_empty_result",
+            "function-conformance.position_second_after_offset",
+            "ordering.offset_limit"
+          ],
+          "justification": "Empty results, pagination windows and the OFFSET/LIMIT boundary over a tied-order window are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_cte_inner_offset",
+            "function-conformance.position_derived_inner_sequence",
+            "function-conformance.position_outer_numbering_after_slice",
+            "function-conformance.position_union_first_arm"
+          ],
+          "justification": "POSITION interacts with CTEs, derived tables, slices and set operations with defined scoping."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.position_descending_offset",
+            "function-conformance.position_order_alias"
+          ],
+          "justification": "DESC-ordered pagination windows with continued numbering, and the alias-ordering rejection, are pinned."
         }
       }
     },
@@ -7462,32 +7978,65 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_seeded_range",
+            "function-conformance.random_seeded_value",
+            "function-conformance.random_seeded_value_large_seed",
+            "function-conformance.random_seeded_value_other_seed"
+          ],
+          "justification": "Seeded RANDOM over several (seed, record) pairs parses and resolves, with values pinned under the ruled derivation."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_two"
+          ],
+          "justification": "Two-argument RANDOM is rejected as a syntax diagnostic."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_seeded_determinism",
+            "function-conformance.random_seeded_order",
+            "function-conformance.random_unseeded_order_completeness"
+          ],
+          "justification": "Seeded RANDOM orders deterministically, equals itself per record within one execution, and unseeded RANDOM preserves the complete window."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_aggregate_filter_rejected",
+            "function-conformance.random_group_by_rejected",
+            "function-conformance.random_having_rejected",
+            "function-conformance.random_join_on_rejected",
+            "function-conformance.random_where_rejected"
+          ],
+          "justification": "All five volatile placements (WHERE, GROUP BY, HAVING, aggregate FILTER, JOIN ON) are rejected as syntax diagnostics."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_seeded_range",
+            "function-conformance.random_unseeded_range"
+          ],
+          "justification": "The [0, 1) value range is pinned for seeded and unseeded calls through volatility-unobservable predicates."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_seeded_order",
+            "function-conformance.random_seeded_with_aggregate"
+          ],
+          "justification": "Seeded randomness coexists with aggregation and ORDER BY deterministically."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.random_seeded_determinism",
+            "function-conformance.random_seeded_value_large_seed"
+          ],
+          "justification": "Large seeds and the per-record determinism contract are pinned, blocking time-based or shared-state implementations."
         }
       }
     },
@@ -7498,32 +8047,60 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.sum_source_positions",
+            "function-conformance.aggregate_first_sum_source",
+            "function-conformance.aggregate_sum_add"
+          ],
+          "justification": "SUM over a field, a single record and an arithmetic expression parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.sum_two",
+            "function-conformance.sum_zero"
+          ],
+          "justification": "Zero-argument and two-argument SUM are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.sum_source_positions",
+            "function-conformance.aggregate_sum_ignore_null",
+            "function-conformance.aggregate_sum_null"
+          ],
+          "justification": "SUM ignores NULL inputs, sums integers exactly and propagates an all-NULL argument to NULL."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.sum_text_type_error",
+            "function-conformance.aggregate_sum_null"
+          ],
+          "justification": "SUM over a text field is rejected as a type diagnostic; NULL inputs are skipped."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_empty_input",
+            "function-conformance.aggregate_sum_add"
+          ],
+          "justification": "SUM over empty input is NULL and arithmetic-expression arguments are pinned."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_filter_after_where"
+          ],
+          "justification": "SUM composes with aggregate FILTER applied per-aggregate after WHERE, over a window with a NULL duration row."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_sum_ignore_null"
+          ],
+          "justification": "Integer exactness is pinned over a 22-record window with NULLs, blocking float accumulation drift."
         }
       }
     },
@@ -7534,32 +8111,65 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_upper",
+            "function-conformance.upper_ascii",
+            "function-conformance.upper_fixture_german"
+          ],
+          "justification": "UPPER over constants and committed fixture titles (German sharp s expansion) parses and resolves."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.upper_invalid_numeric_field",
+            "function-conformance.upper_two",
+            "function-conformance.upper_zero"
+          ],
+          "justification": "Zero-argument, two-argument and numeric-field UPPER forms are rejected (syntax and type diagnostics respectively)."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_upper_expansion",
+            "function-conformance.upper_ascii",
+            "function-conformance.upper_digit",
+            "function-conformance.upper_null"
+          ],
+          "justification": "Uppercasing covers ASCII, digit invariance, NULL propagation and the German sharp-s expansion to SS."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.upper_invalid_numeric_field",
+            "function-conformance.upper_null"
+          ],
+          "justification": "UPPER over a numeric field is rejected as a type diagnostic; NULL arguments propagate to NULL."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.upper_digit",
+            "function-conformance.upper_empty"
+          ],
+          "justification": "Empty strings and digit-only arguments are boundary shapes with pinned results."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.length_upper",
+            "function-conformance.map_upper",
+            "function-conformance.nested_text"
+          ],
+          "justification": "UPPER composes inside UPPER(CONCAT(LOWER(...))), inside LENGTH and inside MAP projections."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.char_upper_expansion",
+            "function-conformance.upper_fixture_german"
+          ],
+          "justification": "The sharp-s expansion (one code point to two) is pinned exactly, blocking case-mapping implementations that map one-to-one."
         }
       }
     }
