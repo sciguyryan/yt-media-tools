@@ -10,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COVERAGE = ROOT / "yt-sql/COVERAGE-INVENTORY.json"
 SURFACE = ROOT / "yt-sql/LANGUAGE-SURFACE-AUDIT.json"
+EVIDENCE = ROOT / "yt-sql/COVERAGE-EVIDENCE.json"
+CORPUS = ROOT / "yt-sql/cases"
 PARSER = ROOT / "python/yt_media_tools/query_parser.py"
 OUTPUT = ROOT / "yt-sql/COVERAGE-GAP-MATRIX.json"
 DIMENSIONS = (
@@ -56,36 +58,83 @@ def _calls(method: ast.FunctionDef, attr: str) -> list[str]:
     return sorted(values)
 
 
+def load_evidence() -> dict[str, dict[str, object]]:
+    """Load the hand-maintained certification evidence, if any.
+
+    The evidence file maps ``"function:<name>"`` / ``"feature:<name>"`` keys to
+    per-dimension reviewed case IDs with a one-line justification. Cells whose
+    evidence names an unknown case are rejected: recorded evidence must point
+    at admitted corpus cases, or the certification claim is hollow.
+    """
+    if not EVIDENCE.exists():
+        return {}
+    evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    if evidence.get("version") != 1:
+        raise ValueError("COVERAGE-EVIDENCE.json must be version 1")
+    known_cases = {str(path.parent.relative_to(CORPUS)).replace("/", ".") for path in CORPUS.rglob("expected.json")}
+    reviewed: dict[str, dict[str, object]] = {}
+    for key, entry in evidence.get("cells", {}).items():
+        for dimension, record in entry.get("dimensions", {}).items():
+            if dimension not in DIMENSIONS:
+                raise ValueError(f"Unknown coverage dimension {dimension!r} for {key}")
+            case_ids = sorted(set(record.get("case_ids", [])))
+            unknown = [case_id for case_id in case_ids if case_id not in known_cases]
+            if unknown:
+                raise ValueError(f"Evidence for {key}/{dimension} names cases outside the corpus: {unknown}")
+            if not record.get("justification"):
+                raise ValueError(f"Evidence for {key}/{dimension} carries no justification")
+            reviewed.setdefault(key, {})[dimension] = {
+                "status": "reviewed",
+                "reviewed_case_ids": case_ids,
+                "justification": record["justification"],
+            }
+    return reviewed
+
+
 def generate() -> dict[str, object]:
     coverage = json.loads(COVERAGE.read_text(encoding="utf-8"))
     surface = json.loads(SURFACE.read_text(encoding="utf-8"))
+    evidence = load_evidence()
     tree = ast.parse(PARSER.read_text(encoding="utf-8"))
     parser = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Parser")
     methods = {n.name: n for n in parser.body if isinstance(n, ast.FunctionDef)}
     registered = sorted(set(coverage["parser_functions"]["scalar"] + coverage["parser_functions"]["aggregate"]))
     if set(registered) != set(SIGNATURES):
         raise ValueError("Function registry and reviewed parser signatures differ; audit the change")
+    functions = []
+    for name in registered:
+        record = evidence.get("function:" + name, {})
+        dimensions = {}
+        for dimension in DIMENSIONS:
+            if dimension in record:
+                dimensions[dimension] = dict(record[dimension])
+            else:
+                dimensions[dimension] = {"status": "unverified", "reviewed_case_ids": []}
+        functions.append(
+            {
+                "name": name,
+                "kind": "aggregate" if name in coverage["parser_functions"]["aggregate"] else "scalar",
+                "parser_argument_shape": SIGNATURES[name],
+                "signature_status": "source_review_required_for_semantics_and_types",
+                "dimensions": dimensions,
+            }
+        )
     features = []
     for name in sorted(coverage["registered_features"]):
+        record = evidence.get("feature:" + name, {})
+        feature_dimensions = {}
+        for dimension in DIMENSIONS:
+            if dimension in record:
+                feature_dimensions[dimension] = dict(record[dimension])
+            else:
+                feature_dimensions[dimension] = {"status": "unverified", "reviewed_case_ids": []}
         features.append(
             {
                 "feature": name,
                 "tagged_existing_cases": sorted(coverage["feature_to_existing_cases"].get(name, [])),
-                "dimensions": {
-                    dimension: {"status": "unverified", "reviewed_case_ids": []} for dimension in DIMENSIONS
-                },
+                "dimensions": feature_dimensions,
             }
         )
-    functions = [
-        {
-            "name": name,
-            "kind": "aggregate" if name in coverage["parser_functions"]["aggregate"] else "scalar",
-            "parser_argument_shape": SIGNATURES[name],
-            "signature_status": "source_review_required_for_semantics_and_types",
-            "dimensions": {dimension: {"status": "unverified", "reviewed_case_ids": []} for dimension in DIMENSIONS},
-        }
-        for name in registered
-    ]
     grammar = [
         {
             "method": name,

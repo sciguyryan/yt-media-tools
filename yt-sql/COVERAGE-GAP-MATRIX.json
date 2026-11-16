@@ -6856,32 +6856,62 @@
       "signature_status": "source_review_required_for_semantics_and_types",
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.avg_source_positions",
+            "function-conformance.aggregate_first_avg_source",
+            "function-conformance.aggregate_three_avg"
+          ],
+          "justification": "AVG over one field value, over the full fixture population and over a three-record window parse, resolve and produce decimal results."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.avg_two",
+            "function-conformance.avg_zero"
+          ],
+          "justification": "Zero-argument and two-argument AVG are rejected as syntax diagnostics."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.avg_source_positions",
+            "function-conformance.aggregate_avg_null",
+            "function-conformance.aggregate_avg_rounding",
+            "function-conformance.aggregate_sum_avg_ignore_null"
+          ],
+          "justification": "AVG ignores NULL inputs, propagates an all-NULL argument to NULL, produces exact terminating decimals and applies the ruled six-digit half-even rounding to non-terminating quotients."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.avg_text_type_error",
+            "function-conformance.aggregate_avg_null"
+          ],
+          "justification": "AVG over a text field is rejected as a type diagnostic; NULL inputs are skipped and an all-NULL argument yields NULL."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_avg_rounding",
+            "function-conformance.aggregate_empty_input"
+          ],
+          "justification": "AVG over empty input yields a single NULL row, and the ruled rounding boundary (non-terminating quotient, half-even at six digits) is pinned normatively."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.aggregate_in_scalar_wrapper"
+          ],
+          "justification": "AVG composes inside scalar wrappers (COALESCE with a NULL AVG taking the fallback, then scalar addition)."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "aggregate.avg_source_positions",
+            "function-conformance.aggregate_avg_rounding"
+          ],
+          "justification": "The rounding contract is exercised on a non-terminating quotient and verified against an independent oracle; the exact terminating decimal rules out float-noise contamination."
         }
       }
     },
