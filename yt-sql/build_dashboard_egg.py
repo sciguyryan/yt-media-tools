@@ -1,20 +1,21 @@
-"""Regenerate the dashboard easter egg's encrypted briefing.
+"""Regenerate the dashboard easter egg's encrypted briefings.
 
-The briefing shown for the observer's incantation is stored in
-``dashboard/egg.js`` as an RC4-encrypted, base64-encoded blob. This utility is
+The briefings shown for the observer's incantations are stored in
+``dashboard/egg.js`` as RC4-encrypted, base64-encoded blobs. This utility is
 the transparent counterpart to that obfuscation: it reads the plain payload
-source (``dashboard/egg-payload.js``), encrypts it with a normalised key, and
-rewrites the blob inside ``egg.js``.
+sources (``dashboard/egg-payload-*.js``), encrypts each with a normalised key,
+and rewrites the blob inside ``egg.js``.
 
-The cipher is deliberately public and simple; the key is what is withheld. The
-key is the incantation itself, normalised to lowercase with all
-non-alphanumeric characters removed. Passing a different key via ``--key``
-regenerates a blob that the page can no longer decrypt, so only change the key
-together with the trigger phrase in ``egg.js``.
+The cipher is deliberately public and simple; the key is what is withheld.
+Each briefing's key is its own incantation, normalised to lowercase with all
+non-alphanumeric characters removed, exactly as the page derives it from the
+typed trigger. Changing a payload requires regenerating its blob with the
+matching trigger phrase, so the keys and the trigger phrases in ``egg.js``
+must stay in step.
 
 Usage:
-    python yt-sql/build_dashboard_egg.py            # regenerate the blob
-    python yt-sql/build_dashboard_egg.py --check    # verify blob matches payload and key
+    python yt-sql/build_dashboard_egg.py            # regenerate both blobs
+    python yt-sql/build_dashboard_egg.py --check    # verify blobs match payloads and keys
 """
 
 from __future__ import annotations
@@ -25,10 +26,13 @@ import re
 from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent / "dashboard"
-PAYLOAD_PATH = ASSETS / "egg-payload.js"
 EGG_PATH = ASSETS / "egg.js"
-BLOB_PATTERN = re.compile(r'const CIPHER_BLOB = "([^"]*)";')
-TRIGGER_PATTERN = re.compile(r'const TRIGGER = "([^"]*)";')
+# One incantation per briefing: (payload source, blob constant, trigger phrase).
+# The trigger phrase doubles as the key by design.
+BRIEFINGS = (
+    ("egg-payload-convergence.js", "CIPHER_CONVERGENCE", "el psy kongroo"),
+    ("egg-payload-reading-steiner.js", "CIPHER_READING_STEINER", "reading steiner"),
+)
 
 
 def normalise_key(raw: str) -> bytes:
@@ -57,52 +61,50 @@ def encrypt_payload(payload: bytes, key: bytes) -> str:
     return base64.b64encode(rc4(payload, key)).decode("ascii")
 
 
-def extract_blob(egg_source: str) -> str:
-    match = BLOB_PATTERN.search(egg_source)
+def extract_blob(egg_source: str, constant: str) -> str:
+    match = re.search(rf'const {constant} = "([^"]*)";', egg_source)
     if not match:
-        raise SystemExit("egg.js does not contain a CIPHER_BLOB assignment")
+        raise SystemExit(f"egg.js does not contain a {constant} assignment")
     return match.group(1)
 
 
-def default_key(egg_source: str) -> bytes:
-    """The trigger phrase is the key by design; extract and normalise it."""
-    match = TRIGGER_PATTERN.search(egg_source)
-    if not match:
-        raise SystemExit("egg.js does not contain a TRIGGER assignment")
-    return normalise_key(match.group(1))
-
-
-def regenerate(key: bytes) -> None:
-    payload = PAYLOAD_PATH.read_bytes()
+def regenerate() -> None:
     egg_source = EGG_PATH.read_text(encoding="utf-8")
-    blob = encrypt_payload(payload, key)
-    updated = BLOB_PATTERN.sub(f'const CIPHER_BLOB = "{blob}";', egg_source, count=1)
-    EGG_PATH.write_text(updated, encoding="utf-8")
-    print(f"Regenerated CIPHER_BLOB ({len(blob)} characters) from {PAYLOAD_PATH.name}.")
+    for payload_name, constant, trigger in BRIEFINGS:
+        payload = (ASSETS / payload_name).read_bytes()
+        blob = encrypt_payload(payload, normalise_key(trigger))
+        pattern = re.compile(rf'const {constant} = "([^"]*)";')
+        if not pattern.search(egg_source):
+            raise SystemExit(f"egg.js does not contain a {constant} assignment")
+        egg_source = pattern.sub(f'const {constant} = "{blob}";', egg_source, count=1)
+        print(f"Regenerated {constant} ({len(blob)} characters) from {payload_name}.")
+    EGG_PATH.write_text(egg_source, encoding="utf-8")
 
 
-def check(key: bytes) -> bool:
-    """Return whether the committed blob decrypts to the committed payload."""
+def check() -> bool:
+    """Return whether every committed blob decrypts to its committed payload."""
     egg_source = EGG_PATH.read_text(encoding="utf-8")
-    payload = PAYLOAD_PATH.read_bytes()
-    return rc4(base64.b64decode(extract_blob(egg_source)), key) == payload
+    for payload_name, constant, trigger in BRIEFINGS:
+        payload = (ASSETS / payload_name).read_bytes()
+        blob = extract_blob(egg_source, constant)
+        if rc4(base64.b64decode(blob), normalise_key(trigger)) != payload:
+            return False
+    return True
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--key", help="Key phrase; defaults to the trigger phrase in egg.js, normalised")
-    parser.add_argument("--check", action="store_true", help="Verify the blob without rewriting it")
+    parser.add_argument("--check", action="store_true", help="Verify the blobs without rewriting them")
     args = parser.parse_args()
-    key = normalise_key(args.key) if args.key else default_key(EGG_PATH.read_text(encoding="utf-8"))
     if args.check:
-        current = check(key)
+        current = check()
         print(
-            "The committed briefing matches the payload and key."
+            "The committed briefings match the payloads and key."
             if current
-            else "The committed briefing does NOT match the payload and key."
+            else "The committed briefings do NOT match the payloads and key."
         )
         return 0 if current else 1
-    regenerate(key)
+    regenerate()
     return 0
 
 

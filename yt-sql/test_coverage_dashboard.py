@@ -65,11 +65,17 @@ class CorpusDataTests(unittest.TestCase):
             self.assertGreater(len(payload["cases"]), 100)
             self.assertIn("overview", payload)
 
-    def test_egg_blob_matches_its_plain_payload(self) -> None:
-        from build_dashboard_egg import default_key, EGG_PATH, check
+    def test_egg_blobs_match_their_plain_payloads(self) -> None:
+        from build_dashboard_egg import BRIEFINGS, EGG_PATH, check
 
-        key = default_key(EGG_PATH.read_text(encoding="utf-8"))
-        self.assertTrue(check(key))
+        self.assertTrue(check())
+        # Each briefing must have its own readable source and its own blob,
+        # keyed by its own incantation.
+        dashboard = Path(__file__).resolve().parent / "dashboard"
+        for payload_name, constant, _trigger in BRIEFINGS:
+            self.assertTrue((dashboard / payload_name).is_file())
+            egg_source = EGG_PATH.read_text(encoding="utf-8")
+            self.assertIn(f'const {constant} = "', egg_source)
 
     def test_every_asset_referenced_by_the_page_is_served(self) -> None:
         """Regression: /egg.js was referenced but never routed, 404ing silently."""
