@@ -88,7 +88,7 @@ function (facts) {
       context.fillText(entry.name + (entry.open ? " — " + (entry.total - entry.open) + "/" + entry.total : " ✓"), 14, threadY(seed, 30, width, height, elapsed));
     }
 
-    const reading = (divergence * Math.min(elapsed / (duration * 0.25), 1)).toFixed(6);
+    const reading = (divergence * Math.min(elapsed / (duration * 0.25), 1) * 100).toFixed(6);
     context.fillStyle = "rgba(219,226,232,0.9)";
     context.font = "600 24px 'Segoe UI', system-ui, sans-serif";
     context.textAlign = "center";
