@@ -1,4 +1,9 @@
-"""Static contract for the provisional YT-SQL coverage-gap matrix."""
+"""Static contract for the provisional YT-SQL coverage-gap matrix.
+
+The matrix starts as gap discovery (every cell unverified). Phase 6.6 records
+reviewed evidence per cell through COVERAGE-EVIDENCE.json, so cells may now
+carry either status; the evidence merge itself is validated by the builder.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +22,12 @@ def test_gap_matrix_matches_source() -> None:
     spec.loader.exec_module(module)
     actual = json.loads((ROOT / "yt-sql/COVERAGE-GAP-MATRIX.json").read_text(encoding="utf-8"))
     assert actual == module.generate()
-    assert all(
-        all(entry["status"] == "unverified" for entry in feature["dimensions"].values())
-        for feature in actual["registered_features"]
-    )
+    # Every cell must be either unverified (gap discovery) or reviewed with
+    # cited case IDs and a justification from the evidence file.
+    for section in ("registered_features", "functions"):
+        for entry in actual[section]:
+            for review in entry["dimensions"].values():
+                assert review["status"] in {"unverified", "reviewed"}
+                if review["status"] == "reviewed":
+                    assert review["reviewed_case_ids"]
+                    assert review.get("justification")
