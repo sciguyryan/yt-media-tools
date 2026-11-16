@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.temporal.today_relative",
+  "description": "Seeded lexical stress of temporal.today_relative; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.today_fixed",
+    "torture.lexical"
+  ]
+}

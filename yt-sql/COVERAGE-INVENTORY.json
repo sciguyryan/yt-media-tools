@@ -5229,6 +5229,83 @@
       "path": "yt-sql/cases/statement-conformance/where_or_dedup/test.json"
     },
     {
+      "id": "temporal.date_compact",
+      "features": [
+        "date.compact"
+      ],
+      "path": "yt-sql/cases/temporal/date_compact/test.json"
+    },
+    {
+      "id": "temporal.date_iso",
+      "features": [
+        "date.iso"
+      ],
+      "path": "yt-sql/cases/temporal/date_iso/test.json"
+    },
+    {
+      "id": "temporal.date_slash",
+      "features": [
+        "date.slash"
+      ],
+      "path": "yt-sql/cases/temporal/date_slash/test.json"
+    },
+    {
+      "id": "temporal.duration_compound",
+      "features": [
+        "duration.compound"
+      ],
+      "path": "yt-sql/cases/temporal/duration_compound/test.json"
+    },
+    {
+      "id": "temporal.duration_hours",
+      "features": [
+        "duration.clock_hms"
+      ],
+      "path": "yt-sql/cases/temporal/duration_hours/test.json"
+    },
+    {
+      "id": "temporal.duration_range",
+      "features": [
+        "duration.compound"
+      ],
+      "path": "yt-sql/cases/temporal/duration_range/test.json"
+    },
+    {
+      "id": "temporal.duration_seconds",
+      "features": [
+        "duration.clock_hms"
+      ],
+      "path": "yt-sql/cases/temporal/duration_seconds/test.json"
+    },
+    {
+      "id": "temporal.infinity_negative_empty",
+      "features": [
+        "temporal.infinity_negative"
+      ],
+      "path": "yt-sql/cases/temporal/infinity_negative_empty/test.json"
+    },
+    {
+      "id": "temporal.infinity_positive_empty",
+      "features": [
+        "temporal.infinity_positive"
+      ],
+      "path": "yt-sql/cases/temporal/infinity_positive_empty/test.json"
+    },
+    {
+      "id": "temporal.infinity_precedes_all",
+      "features": [
+        "temporal.infinity_between"
+      ],
+      "path": "yt-sql/cases/temporal/infinity_precedes_all/test.json"
+    },
+    {
+      "id": "temporal.today_relative",
+      "features": [
+        "temporal.today_fixed"
+      ],
+      "path": "yt-sql/cases/temporal/today_relative/test.json"
+    },
+    {
       "id": "temporal.upload_date_exact",
       "features": [
         "temporal.comparison"
@@ -9131,6 +9208,94 @@
         "where"
       ],
       "path": "yt-sql/cases/torture-portable/statement/where_or_dedup/test.json"
+    },
+    {
+      "id": "torture.temporal.date_compact",
+      "features": [
+        "date.compact",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/date_compact/test.json"
+    },
+    {
+      "id": "torture.temporal.date_iso",
+      "features": [
+        "date.iso",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/date_iso/test.json"
+    },
+    {
+      "id": "torture.temporal.date_slash",
+      "features": [
+        "date.slash",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/date_slash/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_compound",
+      "features": [
+        "duration.compound",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_compound/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_hours",
+      "features": [
+        "duration.clock_hms",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_hours/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_range",
+      "features": [
+        "duration.compound",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_range/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_seconds",
+      "features": [
+        "duration.clock_hms",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_seconds/test.json"
+    },
+    {
+      "id": "torture.temporal.infinity_negative_empty",
+      "features": [
+        "temporal.infinity_negative",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/infinity_negative_empty/test.json"
+    },
+    {
+      "id": "torture.temporal.infinity_positive_empty",
+      "features": [
+        "temporal.infinity_positive",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/infinity_positive_empty/test.json"
+    },
+    {
+      "id": "torture.temporal.infinity_precedes_all",
+      "features": [
+        "temporal.infinity_between",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/infinity_precedes_all/test.json"
+    },
+    {
+      "id": "torture.temporal.today_relative",
+      "features": [
+        "temporal.today_fixed",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/today_relative/test.json"
     },
     {
       "id": "torture.temporal.upload_date_exact",

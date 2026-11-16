@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.infinity_positive_empty",
+  "description": "Positive infinity matches no finite record in the committed fixture",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.infinity_positive"
+  ]
+}

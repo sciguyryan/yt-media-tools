@@ -1,0 +1,6 @@
+select 
+ id
+FROM	@yt_sql_fixture
+	WHERE  upload_date 	 >= 	 TODAY() 	 - 	 1d
+  ORDER	BY  source_index
+	

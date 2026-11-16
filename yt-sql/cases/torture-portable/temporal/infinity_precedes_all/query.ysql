@@ -1,0 +1,4 @@
+SELECT
+	COUNT(*) as 	 n
+  FROM	@yt_sql_fixture
+  where	release_timestamp  <	INFINITY()

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.duration_compound",
+  "description": "A compound duration literal (minutes and seconds) filters duration",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "duration.compound"
+  ]
+}

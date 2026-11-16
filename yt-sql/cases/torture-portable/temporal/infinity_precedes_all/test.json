@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.temporal.infinity_precedes_all",
+  "description": "Seeded lexical stress of temporal.infinity_precedes_all; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.infinity_between",
+    "torture.lexical"
+  ]
+}

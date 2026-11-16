@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.date_slash",
+  "description": "A slashed date literal resolves under the configured date order",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "date.slash"
+  ]
+}

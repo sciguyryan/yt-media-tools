@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1026,
+    "normative_manifests": 1048,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4134
@@ -1897,6 +1897,50 @@
       "manifest": "yt-sql/cases/statement-conformance/where_or_dedup/test.json"
     },
     {
+      "id": "temporal.date_compact",
+      "manifest": "yt-sql/cases/temporal/date_compact/test.json"
+    },
+    {
+      "id": "temporal.date_iso",
+      "manifest": "yt-sql/cases/temporal/date_iso/test.json"
+    },
+    {
+      "id": "temporal.date_slash",
+      "manifest": "yt-sql/cases/temporal/date_slash/test.json"
+    },
+    {
+      "id": "temporal.duration_compound",
+      "manifest": "yt-sql/cases/temporal/duration_compound/test.json"
+    },
+    {
+      "id": "temporal.duration_hours",
+      "manifest": "yt-sql/cases/temporal/duration_hours/test.json"
+    },
+    {
+      "id": "temporal.duration_range",
+      "manifest": "yt-sql/cases/temporal/duration_range/test.json"
+    },
+    {
+      "id": "temporal.duration_seconds",
+      "manifest": "yt-sql/cases/temporal/duration_seconds/test.json"
+    },
+    {
+      "id": "temporal.infinity_negative_empty",
+      "manifest": "yt-sql/cases/temporal/infinity_negative_empty/test.json"
+    },
+    {
+      "id": "temporal.infinity_positive_empty",
+      "manifest": "yt-sql/cases/temporal/infinity_positive_empty/test.json"
+    },
+    {
+      "id": "temporal.infinity_precedes_all",
+      "manifest": "yt-sql/cases/temporal/infinity_precedes_all/test.json"
+    },
+    {
+      "id": "temporal.today_relative",
+      "manifest": "yt-sql/cases/temporal/today_relative/test.json"
+    },
+    {
       "id": "temporal.upload_date_exact",
       "manifest": "yt-sql/cases/temporal/upload_date_exact/test.json"
     },
@@ -3779,6 +3823,50 @@
     {
       "id": "torture.statement.where_or_dedup",
       "manifest": "yt-sql/cases/torture-portable/statement/where_or_dedup/test.json"
+    },
+    {
+      "id": "torture.temporal.date_compact",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_compact/test.json"
+    },
+    {
+      "id": "torture.temporal.date_iso",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_iso/test.json"
+    },
+    {
+      "id": "torture.temporal.date_slash",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_slash/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_compound",
+      "manifest": "yt-sql/cases/torture-portable/temporal/duration_compound/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_hours",
+      "manifest": "yt-sql/cases/torture-portable/temporal/duration_hours/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_range",
+      "manifest": "yt-sql/cases/torture-portable/temporal/duration_range/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_seconds",
+      "manifest": "yt-sql/cases/torture-portable/temporal/duration_seconds/test.json"
+    },
+    {
+      "id": "torture.temporal.infinity_negative_empty",
+      "manifest": "yt-sql/cases/torture-portable/temporal/infinity_negative_empty/test.json"
+    },
+    {
+      "id": "torture.temporal.infinity_positive_empty",
+      "manifest": "yt-sql/cases/torture-portable/temporal/infinity_positive_empty/test.json"
+    },
+    {
+      "id": "torture.temporal.infinity_precedes_all",
+      "manifest": "yt-sql/cases/torture-portable/temporal/infinity_precedes_all/test.json"
+    },
+    {
+      "id": "torture.temporal.today_relative",
+      "manifest": "yt-sql/cases/torture-portable/temporal/today_relative/test.json"
     },
     {
       "id": "torture.temporal.upload_date_exact",

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.date_iso",
+  "description": "An ISO date literal filters upload_date",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "date.iso"
+  ]
+}

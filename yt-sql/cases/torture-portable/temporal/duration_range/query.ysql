@@ -1,0 +1,6 @@
+SELECT
+  id
+  FROM @yt_sql_fixture
+  WHERE	duration	>  30m 
+ order	BY	source_index
+	

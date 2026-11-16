@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.today_relative",
+  "description": "A relative TODAY() expression filters date fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.today_fixed"
+  ]
+}

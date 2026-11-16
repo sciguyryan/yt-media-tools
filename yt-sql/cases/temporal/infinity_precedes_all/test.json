@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.infinity_precedes_all",
+  "description": "Every finite timestamp precedes positive infinity",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.infinity_between"
+  ]
+}

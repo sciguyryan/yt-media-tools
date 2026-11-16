@@ -2661,46 +2661,53 @@
     "feature:date.compact": {
       "dimensions": {
         "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         },
         "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         },
         "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         },
         "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         },
         "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         },
         "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         },
         "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
           "case_ids": [
-            "temporal.upload_date_exact"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+            "temporal.date_compact"
+          ]
         }
       }
     },
@@ -5809,6 +5816,444 @@
             "function-conformance.least_unicode_codepoint_order"
           ],
           "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+        }
+      }
+    },
+    "feature:date.slash": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_slash"
+          ]
+        }
+      }
+    },
+    "feature:date.iso": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.date_iso"
+          ]
+        }
+      }
+    },
+    "feature:duration.clock_hms": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_seconds",
+            "temporal.duration_hours"
+          ]
+        }
+      }
+    },
+    "feature:duration.compound": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.duration_compound",
+            "temporal.duration_range"
+          ]
+        }
+      }
+    },
+    "feature:temporal.infinity_positive": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_positive_empty"
+          ]
+        }
+      }
+    },
+    "feature:temporal.infinity_negative": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_negative_empty"
+          ]
+        }
+      }
+    },
+    "feature:temporal.infinity_between": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.infinity_precedes_all"
+          ]
+        }
+      }
+    },
+    "feature:temporal.today_fixed": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
+        },
+        "semantics": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
+        },
+        "interactions": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "justification": "The cited temporal case exercises this feature through its declared query shape and committed fixture records.",
+          "case_ids": [
+            "temporal.today_relative"
+          ]
         }
       }
     }

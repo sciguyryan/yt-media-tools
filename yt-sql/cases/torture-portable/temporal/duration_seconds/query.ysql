@@ -1,0 +1,5 @@
+select 
+ id
+	FROM @yt_sql_fixture 
+ where duration  =  3599s
+  
