@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.projection_default_id",
+  "description": "A projection without an alias uses the field name as the output column",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.default_id"
+  ]
+}

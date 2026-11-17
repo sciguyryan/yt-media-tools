@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.is_unknown",
+  "description": "IS UNKNOWN selects rows where the expression is NULL",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "is.unknown"
+  ]
+}

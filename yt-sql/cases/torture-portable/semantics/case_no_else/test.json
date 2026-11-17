@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.case_no_else",
+  "description": "Seeded lexical stress of semantics.case_no_else; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.case.no_else",
+    "torture.lexical"
+  ]
+}

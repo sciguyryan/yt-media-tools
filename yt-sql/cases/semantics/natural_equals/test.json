@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.natural_equals",
+  "description": "The natural operator 'equals' means equal to",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.equals"
+  ]
+}

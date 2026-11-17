@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "semantics.arithmetic_multiply",
+  "source_query_sha256": "254ba0d95b3f7a334f4cd183651c2817d481c64e615ec3b2b0c5a8cbc9c19c4d",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from independently approved source case"
+}

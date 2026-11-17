@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.null_three_valued",
+  "description": "NULL participates in three-valued logic through predicates",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "null.three_valued"
+  ]
+}

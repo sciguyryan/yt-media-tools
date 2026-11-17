@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.case_order",
+  "description": "CASE evaluates WHEN branches in order and takes the first true branch",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.case.order"
+  ]
+}

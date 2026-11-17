@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE source_index <= 6 AND fixture_nullable IS NOT UNKNOWN
+ORDER BY source_index

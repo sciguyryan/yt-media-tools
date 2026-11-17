@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.arithmetic_divide",
+  "description": "Scalar division composes over fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.arithmetic.divide"
+  ]
+}

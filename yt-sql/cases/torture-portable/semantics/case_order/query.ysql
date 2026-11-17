@@ -1,0 +1,6 @@
+SELECT 
+ case 	 when source_index 	 <= 	 3	THEN	'early'	when source_index <=	6	THEN 'late'  end	as 	 result
+FROM  @yt_sql_fixture
+  WHERE 	 id	IN  ('vid001',  'vid005')
+ORDER BY  id  ASC
+	

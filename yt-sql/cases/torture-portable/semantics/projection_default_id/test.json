@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.projection_default_id",
+  "description": "Seeded lexical stress of semantics.projection_default_id; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.default_id",
+    "torture.lexical"
+  ]
+}

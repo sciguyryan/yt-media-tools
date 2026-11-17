@@ -1,0 +1,6 @@
+SELECT
+	id
+  FROM  @yt_sql_fixture 
+ WHERE  source_index 	 = 	 0x02 	 OR	source_index =	0b11 OR	source_index  =	0o4 
+ ORDER 	 by  source_index
+	

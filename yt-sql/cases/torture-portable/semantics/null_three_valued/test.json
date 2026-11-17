@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.null_three_valued",
+  "description": "Seeded lexical stress of semantics.null_three_valued; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "null.three_valued",
+    "torture.lexical"
+  ]
+}

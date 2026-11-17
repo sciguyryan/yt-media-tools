@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.case_no_else",
+  "description": "CASE without ELSE yields NULL when no branch matches",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.case.no_else"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.predicate_not_between",
+  "description": "NOT BETWEEN excludes an inclusive range",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.not_between"
+  ]
+}

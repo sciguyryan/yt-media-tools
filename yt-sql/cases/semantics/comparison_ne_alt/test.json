@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.comparison_ne_alt",
+  "description": "The <> operator is an alternative not-equal spelling",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.ne_alt"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.predicate_not_between",
+  "description": "Seeded lexical stress of semantics.predicate_not_between; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "predicate.not_between",
+    "torture.lexical"
+  ]
+}

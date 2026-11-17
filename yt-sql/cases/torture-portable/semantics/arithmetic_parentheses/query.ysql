@@ -1,0 +1,5 @@
+SELECT
+(view_count 	 +	100)	* 	 2	AS  grouped 
+ FROM 	 @yt_sql_fixture
+	WHERE  id	= 'vid001' 
+ 

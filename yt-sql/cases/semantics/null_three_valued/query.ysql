@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE fixture_nullable IS NULL OR fixture_nullable != 'g1'
+ORDER BY source_index

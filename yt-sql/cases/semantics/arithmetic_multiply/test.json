@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.arithmetic_multiply",
+  "description": "Scalar multiplication composes over fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.arithmetic.multiply"
+  ]
+}

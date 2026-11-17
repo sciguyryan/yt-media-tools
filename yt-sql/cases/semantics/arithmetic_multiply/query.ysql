@@ -1,0 +1,4 @@
+SELECT
+    view_count * 2 AS doubled
+FROM @yt_sql_fixture
+WHERE id = 'vid001'

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "adjusted"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1500100"
+      }
+    ]
+  ]
+}

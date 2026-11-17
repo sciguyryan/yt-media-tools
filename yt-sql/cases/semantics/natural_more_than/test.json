@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.natural_more_than",
+  "description": "The natural operator 'more than' means strictly greater than",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.more_than"
+  ]
+}

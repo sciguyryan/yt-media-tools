@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "doubled"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "3000000"
+      }
+    ]
+  ]
+}

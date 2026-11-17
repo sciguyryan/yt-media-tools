@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1090,
+    "normative_manifests": 1142,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4134
@@ -1605,12 +1605,64 @@
       "manifest": "yt-sql/cases/scalar/position_first_row/test.json"
     },
     {
+      "id": "semantics.arithmetic_add",
+      "manifest": "yt-sql/cases/semantics/arithmetic_add/test.json"
+    },
+    {
+      "id": "semantics.arithmetic_divide",
+      "manifest": "yt-sql/cases/semantics/arithmetic_divide/test.json"
+    },
+    {
+      "id": "semantics.arithmetic_multiply",
+      "manifest": "yt-sql/cases/semantics/arithmetic_multiply/test.json"
+    },
+    {
+      "id": "semantics.arithmetic_parentheses",
+      "manifest": "yt-sql/cases/semantics/arithmetic_parentheses/test.json"
+    },
+    {
       "id": "semantics.between_filter",
       "manifest": "yt-sql/cases/semantics/between_filter/test.json"
     },
     {
+      "id": "semantics.case_nested_result",
+      "manifest": "yt-sql/cases/semantics/case_nested_result/test.json"
+    },
+    {
+      "id": "semantics.case_no_else",
+      "manifest": "yt-sql/cases/semantics/case_no_else/test.json"
+    },
+    {
+      "id": "semantics.case_null_fallthrough",
+      "manifest": "yt-sql/cases/semantics/case_null_fallthrough/test.json"
+    },
+    {
+      "id": "semantics.case_order",
+      "manifest": "yt-sql/cases/semantics/case_order/test.json"
+    },
+    {
       "id": "semantics.comparison_equal",
       "manifest": "yt-sql/cases/semantics/comparison_equal/test.json"
+    },
+    {
+      "id": "semantics.comparison_ge",
+      "manifest": "yt-sql/cases/semantics/comparison_ge/test.json"
+    },
+    {
+      "id": "semantics.comparison_le",
+      "manifest": "yt-sql/cases/semantics/comparison_le/test.json"
+    },
+    {
+      "id": "semantics.comparison_lt",
+      "manifest": "yt-sql/cases/semantics/comparison_lt/test.json"
+    },
+    {
+      "id": "semantics.comparison_ne",
+      "manifest": "yt-sql/cases/semantics/comparison_ne/test.json"
+    },
+    {
+      "id": "semantics.comparison_ne_alt",
+      "manifest": "yt-sql/cases/semantics/comparison_ne_alt/test.json"
     },
     {
       "id": "semantics.comparison_not_equal",
@@ -1665,12 +1717,20 @@
       "manifest": "yt-sql/cases/semantics/is_not_null_filter/test.json"
     },
     {
+      "id": "semantics.is_not_unknown",
+      "manifest": "yt-sql/cases/semantics/is_not_unknown/test.json"
+    },
+    {
       "id": "semantics.is_null_filter",
       "manifest": "yt-sql/cases/semantics/is_null_filter/test.json"
     },
     {
       "id": "semantics.is_true_false_unknown",
       "manifest": "yt-sql/cases/semantics/is_true_false_unknown/test.json"
+    },
+    {
+      "id": "semantics.is_unknown",
+      "manifest": "yt-sql/cases/semantics/is_unknown/test.json"
     },
     {
       "id": "semantics.like_escaped_backslash_literal",
@@ -1725,6 +1785,30 @@
       "manifest": "yt-sql/cases/semantics/natural_below/test.json"
     },
     {
+      "id": "semantics.natural_equal_to",
+      "manifest": "yt-sql/cases/semantics/natural_equal_to/test.json"
+    },
+    {
+      "id": "semantics.natural_equals",
+      "manifest": "yt-sql/cases/semantics/natural_equals/test.json"
+    },
+    {
+      "id": "semantics.natural_greater_than",
+      "manifest": "yt-sql/cases/semantics/natural_greater_than/test.json"
+    },
+    {
+      "id": "semantics.natural_less_than",
+      "manifest": "yt-sql/cases/semantics/natural_less_than/test.json"
+    },
+    {
+      "id": "semantics.natural_more_than",
+      "manifest": "yt-sql/cases/semantics/natural_more_than/test.json"
+    },
+    {
+      "id": "semantics.natural_over",
+      "manifest": "yt-sql/cases/semantics/natural_over/test.json"
+    },
+    {
       "id": "semantics.newline_multi_wildcard",
       "manifest": "yt-sql/cases/semantics/newline_multi_wildcard/test.json"
     },
@@ -1761,6 +1845,10 @@
       "manifest": "yt-sql/cases/semantics/null_and_boolean_logic/test.json"
     },
     {
+      "id": "semantics.null_three_valued",
+      "manifest": "yt-sql/cases/semantics/null_three_valued/test.json"
+    },
+    {
       "id": "semantics.nullable_ilike_g_prefix",
       "manifest": "yt-sql/cases/semantics/nullable_ilike_g_prefix/test.json"
     },
@@ -1789,6 +1877,14 @@
       "manifest": "yt-sql/cases/semantics/order_multi/test.json"
     },
     {
+      "id": "semantics.predicate_between",
+      "manifest": "yt-sql/cases/semantics/predicate_between/test.json"
+    },
+    {
+      "id": "semantics.predicate_not_between",
+      "manifest": "yt-sql/cases/semantics/predicate_not_between/test.json"
+    },
+    {
       "id": "semantics.projection_alias",
       "manifest": "yt-sql/cases/semantics/projection_alias/test.json"
     },
@@ -1801,8 +1897,16 @@
       "manifest": "yt-sql/cases/semantics/projection_coalesce_fallback/test.json"
     },
     {
+      "id": "semantics.projection_default_id",
+      "manifest": "yt-sql/cases/semantics/projection_default_id/test.json"
+    },
+    {
       "id": "semantics.projection_star",
       "manifest": "yt-sql/cases/semantics/projection_star/test.json"
+    },
+    {
+      "id": "semantics.scalar_mixed_base",
+      "manifest": "yt-sql/cases/semantics/scalar_mixed_base/test.json"
     },
     {
       "id": "semantics.string_double_quote",
@@ -3617,12 +3721,64 @@
       "manifest": "yt-sql/cases/torture-portable/scalar/position_first_row/test.json"
     },
     {
+      "id": "torture.semantics.arithmetic_add",
+      "manifest": "yt-sql/cases/torture-portable/semantics/arithmetic_add/test.json"
+    },
+    {
+      "id": "torture.semantics.arithmetic_divide",
+      "manifest": "yt-sql/cases/torture-portable/semantics/arithmetic_divide/test.json"
+    },
+    {
+      "id": "torture.semantics.arithmetic_multiply",
+      "manifest": "yt-sql/cases/torture-portable/semantics/arithmetic_multiply/test.json"
+    },
+    {
+      "id": "torture.semantics.arithmetic_parentheses",
+      "manifest": "yt-sql/cases/torture-portable/semantics/arithmetic_parentheses/test.json"
+    },
+    {
       "id": "torture.semantics.between_filter",
       "manifest": "yt-sql/cases/torture-portable/semantics/between_filter/test.json"
     },
     {
+      "id": "torture.semantics.case_nested_result",
+      "manifest": "yt-sql/cases/torture-portable/semantics/case_nested_result/test.json"
+    },
+    {
+      "id": "torture.semantics.case_no_else",
+      "manifest": "yt-sql/cases/torture-portable/semantics/case_no_else/test.json"
+    },
+    {
+      "id": "torture.semantics.case_null_fallthrough",
+      "manifest": "yt-sql/cases/torture-portable/semantics/case_null_fallthrough/test.json"
+    },
+    {
+      "id": "torture.semantics.case_order",
+      "manifest": "yt-sql/cases/torture-portable/semantics/case_order/test.json"
+    },
+    {
       "id": "torture.semantics.comparison_equal",
       "manifest": "yt-sql/cases/torture-portable/semantics/comparison_equal/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_ge",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_ge/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_le",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_le/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_lt",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_lt/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_ne",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_ne/test.json"
+    },
+    {
+      "id": "torture.semantics.comparison_ne_alt",
+      "manifest": "yt-sql/cases/torture-portable/semantics/comparison_ne_alt/test.json"
     },
     {
       "id": "torture.semantics.comparison_not_equal",
@@ -3677,12 +3833,20 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/is_not_null_filter/test.json"
     },
     {
+      "id": "torture.semantics.is_not_unknown",
+      "manifest": "yt-sql/cases/torture-portable/semantics/is_not_unknown/test.json"
+    },
+    {
       "id": "torture.semantics.is_null_filter",
       "manifest": "yt-sql/cases/torture-portable/semantics/is_null_filter/test.json"
     },
     {
       "id": "torture.semantics.is_true_false_unknown",
       "manifest": "yt-sql/cases/torture-portable/semantics/is_true_false_unknown/test.json"
+    },
+    {
+      "id": "torture.semantics.is_unknown",
+      "manifest": "yt-sql/cases/torture-portable/semantics/is_unknown/test.json"
     },
     {
       "id": "torture.semantics.like_escaped_backslash_literal",
@@ -3737,6 +3901,30 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/natural_below/test.json"
     },
     {
+      "id": "torture.semantics.natural_equal_to",
+      "manifest": "yt-sql/cases/torture-portable/semantics/natural_equal_to/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_equals",
+      "manifest": "yt-sql/cases/torture-portable/semantics/natural_equals/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_greater_than",
+      "manifest": "yt-sql/cases/torture-portable/semantics/natural_greater_than/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_less_than",
+      "manifest": "yt-sql/cases/torture-portable/semantics/natural_less_than/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_more_than",
+      "manifest": "yt-sql/cases/torture-portable/semantics/natural_more_than/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_over",
+      "manifest": "yt-sql/cases/torture-portable/semantics/natural_over/test.json"
+    },
+    {
       "id": "torture.semantics.newline_multi_wildcard",
       "manifest": "yt-sql/cases/torture-portable/semantics/newline_multi_wildcard/test.json"
     },
@@ -3773,6 +3961,10 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/null_and_boolean_logic/test.json"
     },
     {
+      "id": "torture.semantics.null_three_valued",
+      "manifest": "yt-sql/cases/torture-portable/semantics/null_three_valued/test.json"
+    },
+    {
       "id": "torture.semantics.nullable_ilike_g_prefix",
       "manifest": "yt-sql/cases/torture-portable/semantics/nullable_ilike_g_prefix/test.json"
     },
@@ -3801,6 +3993,14 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/order_multi/test.json"
     },
     {
+      "id": "torture.semantics.predicate_between",
+      "manifest": "yt-sql/cases/torture-portable/semantics/predicate_between/test.json"
+    },
+    {
+      "id": "torture.semantics.predicate_not_between",
+      "manifest": "yt-sql/cases/torture-portable/semantics/predicate_not_between/test.json"
+    },
+    {
       "id": "torture.semantics.projection_alias",
       "manifest": "yt-sql/cases/torture-portable/semantics/projection_alias/test.json"
     },
@@ -3813,8 +4013,16 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/projection_coalesce_fallback/test.json"
     },
     {
+      "id": "torture.semantics.projection_default_id",
+      "manifest": "yt-sql/cases/torture-portable/semantics/projection_default_id/test.json"
+    },
+    {
       "id": "torture.semantics.projection_star",
       "manifest": "yt-sql/cases/torture-portable/semantics/projection_star/test.json"
+    },
+    {
+      "id": "torture.semantics.scalar_mixed_base",
+      "manifest": "yt-sql/cases/torture-portable/semantics/scalar_mixed_base/test.json"
     },
     {
       "id": "torture.semantics.string_double_quote",

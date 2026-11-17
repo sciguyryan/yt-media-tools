@@ -1,0 +1,6 @@
+SELECT
+id
+	from 	 @yt_sql_fixture
+  WHERE view_count  greater 	 than 	 1000000
+ORDER 	 BY  source_index 
+ 

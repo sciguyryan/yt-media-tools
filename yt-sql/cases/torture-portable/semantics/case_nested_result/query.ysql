@@ -1,0 +1,5 @@
+select
+  CASE  WHEN source_index  <=  3 	 then 	 length(title)	ELSE  0 	 END 	 AS  result 
+ FROM	@yt_sql_fixture
+  where  id =	'vid001'
+	

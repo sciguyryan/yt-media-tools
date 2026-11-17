@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.natural_over",
+  "description": "Seeded lexical stress of semantics.natural_over; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.over",
+    "torture.lexical"
+  ]
+}

@@ -1,0 +1,4 @@
+SELECT
+    CASE WHEN fixture_nullable IS NULL THEN 'null' ELSE 'not-null' END AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid010'

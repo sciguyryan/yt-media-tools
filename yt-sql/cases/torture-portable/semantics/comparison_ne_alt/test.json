@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.comparison_ne_alt",
+  "description": "Seeded lexical stress of semantics.comparison_ne_alt; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.ne_alt",
+    "torture.lexical"
+  ]
+}

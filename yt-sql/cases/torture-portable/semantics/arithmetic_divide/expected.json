@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "halved"
+  ],
+  "rows": [
+    [
+      {
+        "type": "decimal",
+        "value": "750000"
+      }
+    ]
+  ]
+}

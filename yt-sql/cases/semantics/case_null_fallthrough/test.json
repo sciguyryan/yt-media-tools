@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.case_null_fallthrough",
+  "description": "CASE with a NULL condition falls through to ELSE or NULL",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.case.null_fallthrough"
+  ]
+}

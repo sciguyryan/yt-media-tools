@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.arithmetic_add",
+  "description": "Seeded lexical stress of semantics.arithmetic_add; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "scalar.arithmetic.add",
+    "torture.lexical"
+  ]
+}

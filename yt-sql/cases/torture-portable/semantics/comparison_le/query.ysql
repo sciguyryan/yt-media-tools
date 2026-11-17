@@ -1,0 +1,6 @@
+SELECT
+	id
+	FROM 	 @yt_sql_fixture
+WHERE 	 view_count 	 <= 	 999999	and	source_index  <= 	 6 
+ ORDER  BY source_index
+	

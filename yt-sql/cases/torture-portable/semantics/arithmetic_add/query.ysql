@@ -1,0 +1,5 @@
+SELECT
+view_count 	 +	100 as 	 adjusted
+  from 	 @yt_sql_fixture
+  where  id	=	'vid001'
+	

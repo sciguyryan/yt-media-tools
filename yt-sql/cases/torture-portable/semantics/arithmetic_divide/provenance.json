@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "semantics.arithmetic_divide",
+  "source_query_sha256": "2d5cfc0186ef9ed32d635f2024ff78950bbe1735fcbe1f3d9c118c94c558575f",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from independently approved source case"
+}

@@ -1,0 +1,4 @@
+SELECT
+    view_count / 2 AS halved
+FROM @yt_sql_fixture
+WHERE id = 'vid001'

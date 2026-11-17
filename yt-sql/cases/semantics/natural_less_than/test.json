@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.natural_less_than",
+  "description": "The natural operator 'less than' means strictly less than",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.less_than"
+  ]
+}
