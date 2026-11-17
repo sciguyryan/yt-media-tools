@@ -1,0 +1,6 @@
+SELECT
+	id 
+ FROM	@yt_sql_fixture 
+ where 	 title ILIKE 	 '%straße%'
+order 	 BY	source_index
+	

@@ -1,0 +1,6 @@
+select
+  id
+FROM  @yt_sql_fixture
+	ORDER	BY	source_index
+	OFFSET 	 0_3 
+ 

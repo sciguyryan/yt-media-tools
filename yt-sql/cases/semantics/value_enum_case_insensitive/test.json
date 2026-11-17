@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.value_enum_case_insensitive",
+  "description": "Enumeration values are case-insensitive",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "value.enum_case_insensitive"
+  ]
+}

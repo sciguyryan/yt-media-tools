@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.is_predicate_unknown",
+  "description": "IS UNKNOWN in a predicate context selects NULL-valued rows",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "is.predicate_unknown"
+  ]
+}

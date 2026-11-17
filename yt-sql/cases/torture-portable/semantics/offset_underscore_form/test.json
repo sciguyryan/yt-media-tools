@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.offset_underscore_form",
+  "description": "Seeded lexical stress of semantics.offset_underscore_form; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "offset.underscore",
+    "torture.lexical"
+  ]
+}

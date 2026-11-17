@@ -4872,6 +4872,13 @@
       "path": "yt-sql/cases/semantics/is_null_filter/test.json"
     },
     {
+      "id": "semantics.is_predicate_unknown",
+      "features": [
+        "is.predicate_unknown"
+      ],
+      "path": "yt-sql/cases/semantics/is_predicate_unknown/test.json"
+    },
+    {
       "id": "semantics.is_true_false_unknown",
       "features": [
         "is.true",
@@ -5120,6 +5127,13 @@
       "path": "yt-sql/cases/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
+      "id": "semantics.offset_bare",
+      "features": [
+        "offset"
+      ],
+      "path": "yt-sql/cases/semantics/offset_bare/test.json"
+    },
+    {
       "id": "semantics.offset_underscore",
       "features": [
         "offset.underscore"
@@ -5127,11 +5141,32 @@
       "path": "yt-sql/cases/semantics/offset_underscore/test.json"
     },
     {
+      "id": "semantics.offset_underscore_form",
+      "features": [
+        "offset.underscore"
+      ],
+      "path": "yt-sql/cases/semantics/offset_underscore_form/test.json"
+    },
+    {
+      "id": "semantics.offset_without_limit",
+      "features": [
+        "offset.without_limit"
+      ],
+      "path": "yt-sql/cases/semantics/offset_without_limit/test.json"
+    },
+    {
       "id": "semantics.order_default_asc",
       "features": [
         "order.default_asc"
       ],
       "path": "yt-sql/cases/semantics/order_default_asc/test.json"
+    },
+    {
+      "id": "semantics.order_mixed_keys",
+      "features": [
+        "order.mixed"
+      ],
+      "path": "yt-sql/cases/semantics/order_mixed_keys/test.json"
     },
     {
       "id": "semantics.order_multi",
@@ -5204,6 +5239,34 @@
       "path": "yt-sql/cases/semantics/string_double_quote/test.json"
     },
     {
+      "id": "semantics.string_doubled_quote",
+      "features": [
+        "string.doubled_quote"
+      ],
+      "path": "yt-sql/cases/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "semantics.temporal_now_fixed",
+      "features": [
+        "temporal.now_fixed"
+      ],
+      "path": "yt-sql/cases/semantics/temporal_now_fixed/test.json"
+    },
+    {
+      "id": "semantics.temporal_today_calendar",
+      "features": [
+        "temporal.today_calendar"
+      ],
+      "path": "yt-sql/cases/semantics/temporal_today_calendar/test.json"
+    },
+    {
+      "id": "semantics.text_contain_short",
+      "features": [
+        "text.contain"
+      ],
+      "path": "yt-sql/cases/semantics/text_contain_short/test.json"
+    },
+    {
       "id": "semantics.text_contain_spelling",
       "features": [
         "text.contain"
@@ -5246,6 +5309,13 @@
       "path": "yt-sql/cases/semantics/text_does_not_matches/test.json"
     },
     {
+      "id": "semantics.text_like_escape",
+      "features": [
+        "text.like.escape"
+      ],
+      "path": "yt-sql/cases/semantics/text_like_escape/test.json"
+    },
+    {
       "id": "semantics.text_match_spelling",
       "features": [
         "text.match"
@@ -5281,6 +5351,48 @@
       "path": "yt-sql/cases/semantics/text_not_matches/test.json"
     },
     {
+      "id": "semantics.text_unquoted_literal",
+      "features": [
+        "text.unquoted_literal"
+      ],
+      "path": "yt-sql/cases/semantics/text_unquoted_literal/test.json"
+    },
+    {
+      "id": "semantics.unicode_casefold_contains",
+      "features": [
+        "unicode.casefold_contains"
+      ],
+      "path": "yt-sql/cases/semantics/unicode_casefold_contains/test.json"
+    },
+    {
+      "id": "semantics.unicode_ilike_case",
+      "features": [
+        "unicode.ilike_case"
+      ],
+      "path": "yt-sql/cases/semantics/unicode_ilike_case/test.json"
+    },
+    {
+      "id": "semantics.unicode_like_codepoint",
+      "features": [
+        "unicode.like_codepoint"
+      ],
+      "path": "yt-sql/cases/semantics/unicode_like_codepoint/test.json"
+    },
+    {
+      "id": "semantics.unicode_regex",
+      "features": [
+        "unicode.regex"
+      ],
+      "path": "yt-sql/cases/semantics/unicode_regex/test.json"
+    },
+    {
+      "id": "semantics.value_count_b",
+      "features": [
+        "value.count_b"
+      ],
+      "path": "yt-sql/cases/semantics/value_count_b/test.json"
+    },
+    {
       "id": "semantics.value_count_k",
       "features": [
         "value.count_k"
@@ -5288,11 +5400,46 @@
       "path": "yt-sql/cases/semantics/value_count_k/test.json"
     },
     {
+      "id": "semantics.value_count_m",
+      "features": [
+        "value.count_m"
+      ],
+      "path": "yt-sql/cases/semantics/value_count_m/test.json"
+    },
+    {
+      "id": "semantics.value_count_underscore",
+      "features": [
+        "value.count_underscore"
+      ],
+      "path": "yt-sql/cases/semantics/value_count_underscore/test.json"
+    },
+    {
+      "id": "semantics.value_enum_case_insensitive",
+      "features": [
+        "value.enum_case_insensitive"
+      ],
+      "path": "yt-sql/cases/semantics/value_enum_case_insensitive/test.json"
+    },
+    {
+      "id": "semantics.value_integer_binary",
+      "features": [
+        "value.integer.binary"
+      ],
+      "path": "yt-sql/cases/semantics/value_integer_binary/test.json"
+    },
+    {
       "id": "semantics.value_integer_hex",
       "features": [
         "value.integer.hex"
       ],
       "path": "yt-sql/cases/semantics/value_integer_hex/test.json"
+    },
+    {
+      "id": "semantics.value_integer_octal",
+      "features": [
+        "value.integer.octal"
+      ],
+      "path": "yt-sql/cases/semantics/value_integer_octal/test.json"
     },
     {
       "id": "smoke.source_order_limit",
@@ -9140,6 +9287,14 @@
       "path": "yt-sql/cases/torture-portable/semantics/is_null_filter/test.json"
     },
     {
+      "id": "torture.semantics.is_predicate_unknown",
+      "features": [
+        "is.predicate_unknown",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/is_predicate_unknown/test.json"
+    },
+    {
       "id": "torture.semantics.is_true_false_unknown",
       "features": [
         "is.false",
@@ -9424,6 +9579,14 @@
       "path": "yt-sql/cases/torture-portable/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
+      "id": "torture.semantics.offset_bare",
+      "features": [
+        "offset",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/offset_bare/test.json"
+    },
+    {
       "id": "torture.semantics.offset_underscore",
       "features": [
         "offset.underscore",
@@ -9432,12 +9595,36 @@
       "path": "yt-sql/cases/torture-portable/semantics/offset_underscore/test.json"
     },
     {
+      "id": "torture.semantics.offset_underscore_form",
+      "features": [
+        "offset.underscore",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/offset_underscore_form/test.json"
+    },
+    {
+      "id": "torture.semantics.offset_without_limit",
+      "features": [
+        "offset.without_limit",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/offset_without_limit/test.json"
+    },
+    {
       "id": "torture.semantics.order_default_asc",
       "features": [
         "order.default_asc",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/order_default_asc/test.json"
+    },
+    {
+      "id": "torture.semantics.order_mixed_keys",
+      "features": [
+        "order.mixed",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/order_mixed_keys/test.json"
     },
     {
       "id": "torture.semantics.order_multi",
@@ -9520,6 +9707,38 @@
       "path": "yt-sql/cases/torture-portable/semantics/string_double_quote/test.json"
     },
     {
+      "id": "torture.semantics.string_doubled_quote",
+      "features": [
+        "string.doubled_quote",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "torture.semantics.temporal_now_fixed",
+      "features": [
+        "temporal.now_fixed",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/temporal_now_fixed/test.json"
+    },
+    {
+      "id": "torture.semantics.temporal_today_calendar",
+      "features": [
+        "temporal.today_calendar",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/temporal_today_calendar/test.json"
+    },
+    {
+      "id": "torture.semantics.text_contain_short",
+      "features": [
+        "text.contain",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/text_contain_short/test.json"
+    },
+    {
       "id": "torture.semantics.text_contain_spelling",
       "features": [
         "text.contain",
@@ -9568,6 +9787,14 @@
       "path": "yt-sql/cases/torture-portable/semantics/text_does_not_matches/test.json"
     },
     {
+      "id": "torture.semantics.text_like_escape",
+      "features": [
+        "text.like.escape",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/text_like_escape/test.json"
+    },
+    {
       "id": "torture.semantics.text_match_spelling",
       "features": [
         "text.match",
@@ -9608,6 +9835,54 @@
       "path": "yt-sql/cases/torture-portable/semantics/text_not_matches/test.json"
     },
     {
+      "id": "torture.semantics.text_unquoted_literal",
+      "features": [
+        "text.unquoted_literal",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/text_unquoted_literal/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_casefold_contains",
+      "features": [
+        "torture.lexical",
+        "unicode.casefold_contains"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/unicode_casefold_contains/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_ilike_case",
+      "features": [
+        "torture.lexical",
+        "unicode.ilike_case"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/unicode_ilike_case/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_like_codepoint",
+      "features": [
+        "torture.lexical",
+        "unicode.like_codepoint"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/unicode_like_codepoint/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_regex",
+      "features": [
+        "torture.lexical",
+        "unicode.regex"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/unicode_regex/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_b",
+      "features": [
+        "torture.lexical",
+        "value.count_b"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_count_b/test.json"
+    },
+    {
       "id": "torture.semantics.value_count_k",
       "features": [
         "torture.lexical",
@@ -9616,12 +9891,52 @@
       "path": "yt-sql/cases/torture-portable/semantics/value_count_k/test.json"
     },
     {
+      "id": "torture.semantics.value_count_m",
+      "features": [
+        "torture.lexical",
+        "value.count_m"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_count_m/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_underscore",
+      "features": [
+        "torture.lexical",
+        "value.count_underscore"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_count_underscore/test.json"
+    },
+    {
+      "id": "torture.semantics.value_enum_case_insensitive",
+      "features": [
+        "torture.lexical",
+        "value.enum_case_insensitive"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_enum_case_insensitive/test.json"
+    },
+    {
+      "id": "torture.semantics.value_integer_binary",
+      "features": [
+        "torture.lexical",
+        "value.integer.binary"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_integer_binary/test.json"
+    },
+    {
       "id": "torture.semantics.value_integer_hex",
       "features": [
         "torture.lexical",
         "value.integer.hex"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/value_integer_hex/test.json"
+    },
+    {
+      "id": "torture.semantics.value_integer_octal",
+      "features": [
+        "torture.lexical",
+        "value.integer.octal"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_integer_octal/test.json"
     },
     {
       "id": "torture.smoke.source_order_limit",

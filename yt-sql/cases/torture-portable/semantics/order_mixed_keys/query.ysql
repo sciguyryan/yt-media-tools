@@ -1,0 +1,7 @@
+SELECT
+id,
+  fixture_nullable 
+ FROM	@yt_sql_fixture
+  WHERE  source_index 	 <=	8
+ORDER	BY fixture_group  asc, 	 view_count DESC,	source_index	ASC
+	

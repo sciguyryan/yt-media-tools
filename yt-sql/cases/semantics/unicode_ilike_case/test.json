@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.unicode_ilike_case",
+  "description": "ILIKE applies Unicode case folding",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "unicode.ilike_case"
+  ]
+}

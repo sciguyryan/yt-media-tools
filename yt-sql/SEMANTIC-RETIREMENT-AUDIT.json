@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1142,
+    "normative_manifests": 1184,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4134
@@ -1725,6 +1725,10 @@
       "manifest": "yt-sql/cases/semantics/is_null_filter/test.json"
     },
     {
+      "id": "semantics.is_predicate_unknown",
+      "manifest": "yt-sql/cases/semantics/is_predicate_unknown/test.json"
+    },
+    {
       "id": "semantics.is_true_false_unknown",
       "manifest": "yt-sql/cases/semantics/is_true_false_unknown/test.json"
     },
@@ -1865,12 +1869,28 @@
       "manifest": "yt-sql/cases/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
+      "id": "semantics.offset_bare",
+      "manifest": "yt-sql/cases/semantics/offset_bare/test.json"
+    },
+    {
       "id": "semantics.offset_underscore",
       "manifest": "yt-sql/cases/semantics/offset_underscore/test.json"
     },
     {
+      "id": "semantics.offset_underscore_form",
+      "manifest": "yt-sql/cases/semantics/offset_underscore_form/test.json"
+    },
+    {
+      "id": "semantics.offset_without_limit",
+      "manifest": "yt-sql/cases/semantics/offset_without_limit/test.json"
+    },
+    {
       "id": "semantics.order_default_asc",
       "manifest": "yt-sql/cases/semantics/order_default_asc/test.json"
+    },
+    {
+      "id": "semantics.order_mixed_keys",
+      "manifest": "yt-sql/cases/semantics/order_mixed_keys/test.json"
     },
     {
       "id": "semantics.order_multi",
@@ -1913,6 +1933,22 @@
       "manifest": "yt-sql/cases/semantics/string_double_quote/test.json"
     },
     {
+      "id": "semantics.string_doubled_quote",
+      "manifest": "yt-sql/cases/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "semantics.temporal_now_fixed",
+      "manifest": "yt-sql/cases/semantics/temporal_now_fixed/test.json"
+    },
+    {
+      "id": "semantics.temporal_today_calendar",
+      "manifest": "yt-sql/cases/semantics/temporal_today_calendar/test.json"
+    },
+    {
+      "id": "semantics.text_contain_short",
+      "manifest": "yt-sql/cases/semantics/text_contain_short/test.json"
+    },
+    {
       "id": "semantics.text_contain_spelling",
       "manifest": "yt-sql/cases/semantics/text_contain_spelling/test.json"
     },
@@ -1937,6 +1973,10 @@
       "manifest": "yt-sql/cases/semantics/text_does_not_matches/test.json"
     },
     {
+      "id": "semantics.text_like_escape",
+      "manifest": "yt-sql/cases/semantics/text_like_escape/test.json"
+    },
+    {
       "id": "semantics.text_match_spelling",
       "manifest": "yt-sql/cases/semantics/text_match_spelling/test.json"
     },
@@ -1957,12 +1997,56 @@
       "manifest": "yt-sql/cases/semantics/text_not_matches/test.json"
     },
     {
+      "id": "semantics.text_unquoted_literal",
+      "manifest": "yt-sql/cases/semantics/text_unquoted_literal/test.json"
+    },
+    {
+      "id": "semantics.unicode_casefold_contains",
+      "manifest": "yt-sql/cases/semantics/unicode_casefold_contains/test.json"
+    },
+    {
+      "id": "semantics.unicode_ilike_case",
+      "manifest": "yt-sql/cases/semantics/unicode_ilike_case/test.json"
+    },
+    {
+      "id": "semantics.unicode_like_codepoint",
+      "manifest": "yt-sql/cases/semantics/unicode_like_codepoint/test.json"
+    },
+    {
+      "id": "semantics.unicode_regex",
+      "manifest": "yt-sql/cases/semantics/unicode_regex/test.json"
+    },
+    {
+      "id": "semantics.value_count_b",
+      "manifest": "yt-sql/cases/semantics/value_count_b/test.json"
+    },
+    {
       "id": "semantics.value_count_k",
       "manifest": "yt-sql/cases/semantics/value_count_k/test.json"
     },
     {
+      "id": "semantics.value_count_m",
+      "manifest": "yt-sql/cases/semantics/value_count_m/test.json"
+    },
+    {
+      "id": "semantics.value_count_underscore",
+      "manifest": "yt-sql/cases/semantics/value_count_underscore/test.json"
+    },
+    {
+      "id": "semantics.value_enum_case_insensitive",
+      "manifest": "yt-sql/cases/semantics/value_enum_case_insensitive/test.json"
+    },
+    {
+      "id": "semantics.value_integer_binary",
+      "manifest": "yt-sql/cases/semantics/value_integer_binary/test.json"
+    },
+    {
       "id": "semantics.value_integer_hex",
       "manifest": "yt-sql/cases/semantics/value_integer_hex/test.json"
+    },
+    {
+      "id": "semantics.value_integer_octal",
+      "manifest": "yt-sql/cases/semantics/value_integer_octal/test.json"
     },
     {
       "id": "smoke.source_order_limit",
@@ -3841,6 +3925,10 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/is_null_filter/test.json"
     },
     {
+      "id": "torture.semantics.is_predicate_unknown",
+      "manifest": "yt-sql/cases/torture-portable/semantics/is_predicate_unknown/test.json"
+    },
+    {
       "id": "torture.semantics.is_true_false_unknown",
       "manifest": "yt-sql/cases/torture-portable/semantics/is_true_false_unknown/test.json"
     },
@@ -3981,12 +4069,28 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
+      "id": "torture.semantics.offset_bare",
+      "manifest": "yt-sql/cases/torture-portable/semantics/offset_bare/test.json"
+    },
+    {
       "id": "torture.semantics.offset_underscore",
       "manifest": "yt-sql/cases/torture-portable/semantics/offset_underscore/test.json"
     },
     {
+      "id": "torture.semantics.offset_underscore_form",
+      "manifest": "yt-sql/cases/torture-portable/semantics/offset_underscore_form/test.json"
+    },
+    {
+      "id": "torture.semantics.offset_without_limit",
+      "manifest": "yt-sql/cases/torture-portable/semantics/offset_without_limit/test.json"
+    },
+    {
       "id": "torture.semantics.order_default_asc",
       "manifest": "yt-sql/cases/torture-portable/semantics/order_default_asc/test.json"
+    },
+    {
+      "id": "torture.semantics.order_mixed_keys",
+      "manifest": "yt-sql/cases/torture-portable/semantics/order_mixed_keys/test.json"
     },
     {
       "id": "torture.semantics.order_multi",
@@ -4029,6 +4133,22 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/string_double_quote/test.json"
     },
     {
+      "id": "torture.semantics.string_doubled_quote",
+      "manifest": "yt-sql/cases/torture-portable/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "torture.semantics.temporal_now_fixed",
+      "manifest": "yt-sql/cases/torture-portable/semantics/temporal_now_fixed/test.json"
+    },
+    {
+      "id": "torture.semantics.temporal_today_calendar",
+      "manifest": "yt-sql/cases/torture-portable/semantics/temporal_today_calendar/test.json"
+    },
+    {
+      "id": "torture.semantics.text_contain_short",
+      "manifest": "yt-sql/cases/torture-portable/semantics/text_contain_short/test.json"
+    },
+    {
       "id": "torture.semantics.text_contain_spelling",
       "manifest": "yt-sql/cases/torture-portable/semantics/text_contain_spelling/test.json"
     },
@@ -4053,6 +4173,10 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/text_does_not_matches/test.json"
     },
     {
+      "id": "torture.semantics.text_like_escape",
+      "manifest": "yt-sql/cases/torture-portable/semantics/text_like_escape/test.json"
+    },
+    {
       "id": "torture.semantics.text_match_spelling",
       "manifest": "yt-sql/cases/torture-portable/semantics/text_match_spelling/test.json"
     },
@@ -4073,12 +4197,56 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/text_not_matches/test.json"
     },
     {
+      "id": "torture.semantics.text_unquoted_literal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/text_unquoted_literal/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_casefold_contains",
+      "manifest": "yt-sql/cases/torture-portable/semantics/unicode_casefold_contains/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_ilike_case",
+      "manifest": "yt-sql/cases/torture-portable/semantics/unicode_ilike_case/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_like_codepoint",
+      "manifest": "yt-sql/cases/torture-portable/semantics/unicode_like_codepoint/test.json"
+    },
+    {
+      "id": "torture.semantics.unicode_regex",
+      "manifest": "yt-sql/cases/torture-portable/semantics/unicode_regex/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_b",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_count_b/test.json"
+    },
+    {
       "id": "torture.semantics.value_count_k",
       "manifest": "yt-sql/cases/torture-portable/semantics/value_count_k/test.json"
     },
     {
+      "id": "torture.semantics.value_count_m",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_count_m/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_underscore",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_count_underscore/test.json"
+    },
+    {
+      "id": "torture.semantics.value_enum_case_insensitive",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_enum_case_insensitive/test.json"
+    },
+    {
+      "id": "torture.semantics.value_integer_binary",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_integer_binary/test.json"
+    },
+    {
       "id": "torture.semantics.value_integer_hex",
       "manifest": "yt-sql/cases/torture-portable/semantics/value_integer_hex/test.json"
+    },
+    {
+      "id": "torture.semantics.value_integer_octal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_integer_octal/test.json"
     },
     {
       "id": "torture.smoke.source_order_limit",

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.string_doubled_quote",
+  "description": "Seeded lexical stress of semantics.string_doubled_quote; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "string.doubled_quote",
+    "torture.lexical"
+  ]
+}

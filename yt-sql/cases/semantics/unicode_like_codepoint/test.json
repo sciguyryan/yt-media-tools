@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.unicode_like_codepoint",
+  "description": "LIKE underscores count Unicode code points, not graphemes",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "unicode.like_codepoint"
+  ]
+}

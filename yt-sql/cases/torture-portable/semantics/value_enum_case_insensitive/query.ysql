@@ -1,0 +1,6 @@
+SELECT
+	id
+FROM  @yt_sql_fixture
+WHERE availability =	'PUBLIC'
+ORDER BY source_index
+  

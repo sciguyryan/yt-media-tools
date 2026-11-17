@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.string_doubled_quote",
+  "description": "Doubled single quotes escape to a single quote inside string literals",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "string.doubled_quote"
+  ]
+}

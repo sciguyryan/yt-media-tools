@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.unicode_regex",
+  "description": "MATCHES evaluates regular expressions over text",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "unicode.regex"
+  ]
+}

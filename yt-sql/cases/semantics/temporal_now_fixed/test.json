@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.temporal_now_fixed",
+  "description": "NOW() resolves to the fixture clock for timestamp comparisons",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.now_fixed"
+  ]
+}

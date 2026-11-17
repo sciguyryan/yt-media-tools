@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.text_unquoted_literal",
+  "description": "An unquoted text literal after a text predicate is a syntax diagnostic",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "text.unquoted_literal"
+  ]
+}

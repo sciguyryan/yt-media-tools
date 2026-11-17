@@ -1,0 +1,6 @@
+SELECT
+id 
+ from @yt_sql_fixture
+  where 	 title like	'Zero width joiner A_B'
+	ORDER 	 by source_index 
+ 

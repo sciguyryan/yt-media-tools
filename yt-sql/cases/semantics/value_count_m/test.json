@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.value_count_m",
+  "description": "The m suffix scales count literals by 1000000",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "value.count_m"
+  ]
+}

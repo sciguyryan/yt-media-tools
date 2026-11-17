@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.order_mixed_keys",
+  "description": "Mixed-direction and mixed-type ORDER BY keys apply in sequence",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order.mixed"
+  ]
+}

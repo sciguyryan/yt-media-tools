@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.unicode_regex",
+  "description": "Seeded lexical stress of semantics.unicode_regex; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical",
+    "unicode.regex"
+  ]
+}

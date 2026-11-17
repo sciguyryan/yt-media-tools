@@ -1,0 +1,6 @@
+SELECT
+id
+	FROM 	 @yt_sql_fixture
+WHERE	title 	 CONTAINS 	 'strasse'
+ORDER 	 BY	source_index
+  

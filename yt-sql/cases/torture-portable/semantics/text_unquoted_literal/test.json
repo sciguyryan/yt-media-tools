@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.text_unquoted_literal",
+  "description": "Seeded lexical stress of semantics.text_unquoted_literal; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "text.unquoted_literal",
+    "torture.lexical"
+  ]
+}

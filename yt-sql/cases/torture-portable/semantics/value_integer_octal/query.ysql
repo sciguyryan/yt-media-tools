@@ -1,0 +1,6 @@
+select
+  id
+  from 	 @yt_sql_fixture
+	WHERE 	 source_index =  0o4
+	order  BY source_index
+  

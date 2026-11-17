@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE title = 'it''s'
+ORDER BY source_index

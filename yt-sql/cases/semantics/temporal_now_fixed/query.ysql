@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE release_timestamp != INFINITY()
+ORDER BY source_index
