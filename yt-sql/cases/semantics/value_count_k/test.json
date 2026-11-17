@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.value_count_k",
+  "description": "The k suffix scales count literals by 1000",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "value.count_k"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "semantics.comparison_operators",
+  "description": "The comparison operators pin exact semantics over numeric fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.eq",
+    "comparison.gt"
+  ]
+}

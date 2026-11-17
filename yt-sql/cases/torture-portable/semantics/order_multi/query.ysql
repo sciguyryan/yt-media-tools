@@ -1,0 +1,6 @@
+SELECT
+  id
+  from @yt_sql_fixture
+	WHERE	source_index	<= 	 8 
+ ORDER 	 by  fixture_group	ASC,  source_index	DESC 
+ 

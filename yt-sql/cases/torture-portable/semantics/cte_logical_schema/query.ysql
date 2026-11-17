@@ -1,0 +1,13 @@
+with  ranked	AS	(
+  SELECT
+	title,
+  id
+FROM  @yt_sql_fixture
+WHERE source_index	<=  3
+ORDER BY id  ASC
+	)
+  SELECT
+	title
+	FROM ranked
+	ORDER 	 by 	 id  ASC
+	

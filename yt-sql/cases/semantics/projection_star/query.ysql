@@ -1,0 +1,4 @@
+SELECT
+    *
+FROM @yt_sql_fixture
+WHERE id = 'vid001'

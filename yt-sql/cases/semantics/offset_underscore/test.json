@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.offset_underscore",
+  "description": "Underscore digit grouping is accepted in OFFSET",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "offset.underscore"
+  ]
+}

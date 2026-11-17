@@ -1,0 +1,11 @@
+SELECT
+    COUNT(*) AS true_count,
+    COUNT(*) AS false_count
+FROM @yt_sql_fixture
+WHERE is_live IS TRUE
+UNION ALL
+SELECT
+    COUNT(*) AS true_count,
+    COUNT(*) AS false_count
+FROM @yt_sql_fixture
+WHERE is_live IS FALSE

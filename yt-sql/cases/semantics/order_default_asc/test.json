@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.order_default_asc",
+  "description": "ORDER BY without ASC or DESC defaults to ascending",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "order.default_asc"
+  ]
+}

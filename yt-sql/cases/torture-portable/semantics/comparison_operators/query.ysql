@@ -1,0 +1,11 @@
+select 
+ id
+  FROM @yt_sql_fixture
+WHERE	view_count  = 1500000
+	UNION  ALL
+  SELECT
+	id
+  from 	 @yt_sql_fixture
+WHERE	view_count > 2000000
+  ORDER  BY 	 id 	 ASC 
+ 

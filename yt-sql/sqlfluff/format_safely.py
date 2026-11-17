@@ -201,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     changes = {}
     skipped_errors = 0
     skipped_torture = 0
+    blocked = 0
     try:
         engine = ReusableSQLFluff()
     except (ImportError, RuntimeError, ValueError) as exc:
@@ -226,7 +227,10 @@ def main(argv: list[str] | None = None) -> int:
             if interactive:
                 print(file=sys.stderr)
             print(f"Formatting blocked for {path}: {exc}", file=sys.stderr)
-            return 1
+            # A dialect gap is not a formatting failure: the authoritative
+            # YT-SQL parser accepted the file, so it passes through unchanged.
+            blocked += 1
+            continue
         _show_progress(index, len(paths), stream=sys.stderr, interactive=interactive)
     # Validate every target before writing any of them. This is not a
     # transactional filesystem operation; unexpected I/O errors can still occur.
@@ -235,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
             path.write_text(content, encoding="utf-8")
     print(
         f"Checked {len(paths) - skipped_errors - skipped_torture} .ysql files; skipped {skipped_errors} expected-error cases and {skipped_torture} portable torture cases; "
-        f"{len(changes)} would change" + (" (written)" if args.write else "")
+        f"{len(changes)} would change, {blocked} blocked" + (" (written)" if args.write else "")
     )
     if args.check and changes:
         for path in changes:

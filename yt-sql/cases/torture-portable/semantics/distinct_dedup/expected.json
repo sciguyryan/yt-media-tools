@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "fixture_nullable"
+  ],
+  "rows": [
+    [
+      "g0"
+    ],
+    [
+      "g1"
+    ],
+    [
+      "g2"
+    ],
+    [
+      null
+    ]
+  ]
+}

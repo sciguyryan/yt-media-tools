@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.cte_non_recursive",
+  "description": "Seeded lexical stress of semantics.cte_non_recursive; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "cte.non_recursive",
+    "torture.lexical"
+  ]
+}

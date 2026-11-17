@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.string_double_quote",
+  "description": "Double-quoted string literals are equivalent to single-quoted literals",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "string.double_quote"
+  ]
+}

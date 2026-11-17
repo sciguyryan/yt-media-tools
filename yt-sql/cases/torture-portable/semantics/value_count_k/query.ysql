@@ -1,0 +1,6 @@
+select
+  id 
+ FROM	@yt_sql_fixture
+	WHERE	view_count 	 = 1500k
+order 	 BY	source_index 
+ 

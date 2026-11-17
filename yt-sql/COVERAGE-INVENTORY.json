@@ -4693,6 +4693,42 @@
       "path": "yt-sql/cases/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "semantics.comparison_operators",
+      "features": [
+        "comparison.eq",
+        "comparison.gt"
+      ],
+      "path": "yt-sql/cases/semantics/comparison_operators/test.json"
+    },
+    {
+      "id": "semantics.cte_chained",
+      "features": [
+        "cte.chained"
+      ],
+      "path": "yt-sql/cases/semantics/cte_chained/test.json"
+    },
+    {
+      "id": "semantics.cte_logical_schema",
+      "features": [
+        "cte.logical_schema"
+      ],
+      "path": "yt-sql/cases/semantics/cte_logical_schema/test.json"
+    },
+    {
+      "id": "semantics.cte_non_recursive",
+      "features": [
+        "cte.non_recursive"
+      ],
+      "path": "yt-sql/cases/semantics/cte_non_recursive/test.json"
+    },
+    {
+      "id": "semantics.distinct_dedup",
+      "features": [
+        "distinct"
+      ],
+      "path": "yt-sql/cases/semantics/distinct_dedup/test.json"
+    },
+    {
       "id": "semantics.distinct_from_value",
       "features": [
         "comparison.distinct_from"
@@ -4736,6 +4772,14 @@
       "id": "semantics.is_null_filter",
       "features": [],
       "path": "yt-sql/cases/semantics/is_null_filter/test.json"
+    },
+    {
+      "id": "semantics.is_true_false_unknown",
+      "features": [
+        "is.true",
+        "is.false"
+      ],
+      "path": "yt-sql/cases/semantics/is_true_false_unknown/test.json"
     },
     {
       "id": "semantics.like_escaped_backslash_literal",
@@ -4787,11 +4831,46 @@
       "path": "yt-sql/cases/semantics/like_unquoted_pattern_error/test.json"
     },
     {
+      "id": "semantics.limit_underscore",
+      "features": [
+        "limit.underscore"
+      ],
+      "path": "yt-sql/cases/semantics/limit_underscore/test.json"
+    },
+    {
       "id": "semantics.matches_unterminated_regex_rejected",
       "features": [
         "predicate.matches"
       ],
       "path": "yt-sql/cases/semantics/matches_unterminated_regex_rejected/test.json"
+    },
+    {
+      "id": "semantics.natural_above",
+      "features": [
+        "natural.above"
+      ],
+      "path": "yt-sql/cases/semantics/natural_above/test.json"
+    },
+    {
+      "id": "semantics.natural_at_least",
+      "features": [
+        "natural.at_least"
+      ],
+      "path": "yt-sql/cases/semantics/natural_at_least/test.json"
+    },
+    {
+      "id": "semantics.natural_at_most",
+      "features": [
+        "natural.at_most"
+      ],
+      "path": "yt-sql/cases/semantics/natural_at_most/test.json"
+    },
+    {
+      "id": "semantics.natural_below",
+      "features": [
+        "natural.under"
+      ],
+      "path": "yt-sql/cases/semantics/natural_below/test.json"
     },
     {
       "id": "semantics.newline_multi_wildcard",
@@ -4887,6 +4966,62 @@
       "path": "yt-sql/cases/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
+      "id": "semantics.offset_underscore",
+      "features": [
+        "offset.underscore"
+      ],
+      "path": "yt-sql/cases/semantics/offset_underscore/test.json"
+    },
+    {
+      "id": "semantics.order_default_asc",
+      "features": [
+        "order.default_asc"
+      ],
+      "path": "yt-sql/cases/semantics/order_default_asc/test.json"
+    },
+    {
+      "id": "semantics.order_multi",
+      "features": [
+        "order.multi"
+      ],
+      "path": "yt-sql/cases/semantics/order_multi/test.json"
+    },
+    {
+      "id": "semantics.projection_alias",
+      "features": [
+        "projection.alias"
+      ],
+      "path": "yt-sql/cases/semantics/projection_alias/test.json"
+    },
+    {
+      "id": "semantics.projection_coalesce",
+      "features": [
+        "projection.coalesce"
+      ],
+      "path": "yt-sql/cases/semantics/projection_coalesce/test.json"
+    },
+    {
+      "id": "semantics.projection_coalesce_fallback",
+      "features": [
+        "projection.coalesce_fallback"
+      ],
+      "path": "yt-sql/cases/semantics/projection_coalesce_fallback/test.json"
+    },
+    {
+      "id": "semantics.projection_star",
+      "features": [
+        "projection.star"
+      ],
+      "path": "yt-sql/cases/semantics/projection_star/test.json"
+    },
+    {
+      "id": "semantics.string_double_quote",
+      "features": [
+        "string.double_quote"
+      ],
+      "path": "yt-sql/cases/semantics/string_double_quote/test.json"
+    },
+    {
       "id": "semantics.text_contain_spelling",
       "features": [
         "text.contain"
@@ -4962,6 +5097,20 @@
         "text.not_matches"
       ],
       "path": "yt-sql/cases/semantics/text_not_matches/test.json"
+    },
+    {
+      "id": "semantics.value_count_k",
+      "features": [
+        "value.count_k"
+      ],
+      "path": "yt-sql/cases/semantics/value_count_k/test.json"
+    },
+    {
+      "id": "semantics.value_integer_hex",
+      "features": [
+        "value.integer.hex"
+      ],
+      "path": "yt-sql/cases/semantics/value_integer_hex/test.json"
     },
     {
       "id": "smoke.source_order_limit",
@@ -8602,6 +8751,47 @@
       "path": "yt-sql/cases/torture-portable/semantics/comparison_not_equal_angle/test.json"
     },
     {
+      "id": "torture.semantics.comparison_operators",
+      "features": [
+        "comparison.eq",
+        "comparison.gt",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/comparison_operators/test.json"
+    },
+    {
+      "id": "torture.semantics.cte_chained",
+      "features": [
+        "cte.chained",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/cte_chained/test.json"
+    },
+    {
+      "id": "torture.semantics.cte_logical_schema",
+      "features": [
+        "cte.logical_schema",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/cte_logical_schema/test.json"
+    },
+    {
+      "id": "torture.semantics.cte_non_recursive",
+      "features": [
+        "cte.non_recursive",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/cte_non_recursive/test.json"
+    },
+    {
+      "id": "torture.semantics.distinct_dedup",
+      "features": [
+        "distinct",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/distinct_dedup/test.json"
+    },
+    {
       "id": "torture.semantics.distinct_from_value",
       "features": [
         "comparison.distinct_from",
@@ -8654,6 +8844,15 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/is_null_filter/test.json"
+    },
+    {
+      "id": "torture.semantics.is_true_false_unknown",
+      "features": [
+        "is.false",
+        "is.true",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/is_true_false_unknown/test.json"
     },
     {
       "id": "torture.semantics.like_escaped_backslash_literal",
@@ -8712,12 +8911,52 @@
       "path": "yt-sql/cases/torture-portable/semantics/like_unquoted_pattern_error/test.json"
     },
     {
+      "id": "torture.semantics.limit_underscore",
+      "features": [
+        "limit.underscore",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/limit_underscore/test.json"
+    },
+    {
       "id": "torture.semantics.matches_unterminated_regex_rejected",
       "features": [
         "predicate.matches",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/matches_unterminated_regex_rejected/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_above",
+      "features": [
+        "natural.above",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/natural_above/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_at_least",
+      "features": [
+        "natural.at_least",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/natural_at_least/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_at_most",
+      "features": [
+        "natural.at_most",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/natural_at_most/test.json"
+    },
+    {
+      "id": "torture.semantics.natural_below",
+      "features": [
+        "natural.under",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/natural_below/test.json"
     },
     {
       "id": "torture.semantics.newline_multi_wildcard",
@@ -8827,6 +9066,70 @@
       "path": "yt-sql/cases/torture-portable/semantics/nullable_not_like_g_prefix/test.json"
     },
     {
+      "id": "torture.semantics.offset_underscore",
+      "features": [
+        "offset.underscore",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/offset_underscore/test.json"
+    },
+    {
+      "id": "torture.semantics.order_default_asc",
+      "features": [
+        "order.default_asc",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/order_default_asc/test.json"
+    },
+    {
+      "id": "torture.semantics.order_multi",
+      "features": [
+        "order.multi",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/order_multi/test.json"
+    },
+    {
+      "id": "torture.semantics.projection_alias",
+      "features": [
+        "projection.alias",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/projection_alias/test.json"
+    },
+    {
+      "id": "torture.semantics.projection_coalesce",
+      "features": [
+        "projection.coalesce",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/projection_coalesce/test.json"
+    },
+    {
+      "id": "torture.semantics.projection_coalesce_fallback",
+      "features": [
+        "projection.coalesce_fallback",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/projection_coalesce_fallback/test.json"
+    },
+    {
+      "id": "torture.semantics.projection_star",
+      "features": [
+        "projection.star",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/projection_star/test.json"
+    },
+    {
+      "id": "torture.semantics.string_double_quote",
+      "features": [
+        "string.double_quote",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/string_double_quote/test.json"
+    },
+    {
       "id": "torture.semantics.text_contain_spelling",
       "features": [
         "text.contain",
@@ -8913,6 +9216,22 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/text_not_matches/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_k",
+      "features": [
+        "torture.lexical",
+        "value.count_k"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_count_k/test.json"
+    },
+    {
+      "id": "torture.semantics.value_integer_hex",
+      "features": [
+        "torture.lexical",
+        "value.integer.hex"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_integer_hex/test.json"
     },
     {
       "id": "torture.smoke.source_order_limit",

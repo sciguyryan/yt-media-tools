@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.natural_at_most",
+  "description": "The natural operator 'at most' means less than or equal",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.at_most"
+  ]
+}

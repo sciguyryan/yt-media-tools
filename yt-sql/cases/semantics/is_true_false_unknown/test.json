@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "semantics.is_true_false_unknown",
+  "description": "IS TRUE, IS FALSE and IS UNKNOWN partition Boolean values and NULL",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "is.true",
+    "is.false"
+  ]
+}

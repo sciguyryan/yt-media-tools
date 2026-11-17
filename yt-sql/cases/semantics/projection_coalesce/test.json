@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.projection_coalesce",
+  "description": "COALESCE projects through a NULL field with a fallback",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.coalesce"
+  ]
+}

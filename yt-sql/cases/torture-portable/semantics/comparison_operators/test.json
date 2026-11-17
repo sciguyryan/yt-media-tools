@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "torture.semantics.comparison_operators",
+  "description": "Seeded lexical stress of semantics.comparison_operators; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "comparison.eq",
+    "comparison.gt",
+    "torture.lexical"
+  ]
+}

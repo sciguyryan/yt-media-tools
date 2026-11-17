@@ -1,0 +1,5 @@
+SELECT
+coalesce(fixture_nullable,  'fallback')  AS 	 result
+	FROM	@yt_sql_fixture
+  WHERE 	 id  =  'vid010' 
+ 

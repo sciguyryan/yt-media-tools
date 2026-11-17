@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.projection_star",
+  "description": "Bare star projection returns every field of every source record",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "projection.star"
+  ]
+}

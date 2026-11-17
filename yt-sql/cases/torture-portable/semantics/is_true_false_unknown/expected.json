@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "true_count",
+    "false_count"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      }
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "59"
+      },
+      {
+        "type": "integer",
+        "value": "59"
+      }
+    ]
+  ]
+}

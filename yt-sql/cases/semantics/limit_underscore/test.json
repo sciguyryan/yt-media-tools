@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.limit_underscore",
+  "description": "Underscore digit grouping is accepted in LIMIT",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "limit.underscore"
+  ]
+}

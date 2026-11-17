@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.natural_at_least",
+  "description": "The natural operator 'at least' means greater than or equal",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.at_least"
+  ]
+}

@@ -1,0 +1,4 @@
+SELECT
+    COALESCE(view_count, 0) AS result
+FROM @yt_sql_fixture
+WHERE id = 'vid006'

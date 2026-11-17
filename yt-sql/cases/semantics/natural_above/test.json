@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.natural_above",
+  "description": "The natural operator 'above' means strictly greater than",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "natural.above"
+  ]
+}

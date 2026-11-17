@@ -1,0 +1,6 @@
+select
+	id
+  from @yt_sql_fixture
+WHERE	title 	 =  "Mars: New Dawn" 
+ order	by  source_index
+	

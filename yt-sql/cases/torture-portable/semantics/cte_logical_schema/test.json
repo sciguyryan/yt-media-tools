@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.cte_logical_schema",
+  "description": "Seeded lexical stress of semantics.cte_logical_schema; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "cte.logical_schema",
+    "torture.lexical"
+  ]
+}

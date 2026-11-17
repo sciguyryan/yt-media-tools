@@ -1,0 +1,6 @@
+SELECT
+  id 
+ from  @yt_sql_fixture 
+ WHERE  source_index 	 <= 6
+ORDER BY	source_index
+	OFFSET  0_3

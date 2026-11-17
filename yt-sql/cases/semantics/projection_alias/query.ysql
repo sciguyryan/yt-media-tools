@@ -1,0 +1,4 @@
+SELECT
+    LOWER(title) AS folded
+FROM @yt_sql_fixture
+WHERE id = 'vid001'

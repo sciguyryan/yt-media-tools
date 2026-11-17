@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "title"
+  ],
+  "rows": [
+    [
+      "Mars: New Dawn"
+    ],
+    [
+      "mars: new dawn"
+    ],
+    [
+      "Venus Weather"
+    ]
+  ]
+}

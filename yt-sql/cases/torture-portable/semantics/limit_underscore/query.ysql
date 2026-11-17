@@ -1,0 +1,5 @@
+select
+  id
+FROM @yt_sql_fixture
+limit  0_3
+	

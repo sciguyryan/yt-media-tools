@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.cte_non_recursive",
+  "description": "A non-recursive CTE scopes its own record set",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "cte.non_recursive"
+  ]
+}

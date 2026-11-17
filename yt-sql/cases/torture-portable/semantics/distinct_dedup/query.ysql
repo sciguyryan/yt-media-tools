@@ -1,0 +1,6 @@
+SELECT 	 DISTINCT
+  fixture_nullable 
+ FROM @yt_sql_fixture
+WHERE source_index	<= 8
+order 	 BY  fixture_nullable
+	
