@@ -2244,53 +2244,67 @@
     "feature:collection.index": {
       "dimensions": {
         "valid_syntax": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         },
         "invalid_syntax": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         },
         "semantics": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         },
         "types_and_null": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         },
         "boundaries": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         },
         "interactions": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         },
         "adversarial": {
-          "case_ids": [
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.collection_index_structured",
             "function-conformance.filter_index_after_filter",
             "function-conformance.map_index_after_projection"
           ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
         }
       }
     },
@@ -9401,6 +9415,1827 @@
           "case_ids": [
             "function-conformance.structured_quantifier_all"
           ]
+        }
+      }
+    },
+    "feature:date.dot": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_dot"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:date.local_dmy": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_dmy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:date.local_mdy": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_local_mdy"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:date.named": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_named"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:date.relative_ago": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.date_relative_ago"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:datetime.offset": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_offset"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:datetime.zulu": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "temporal.datetime_zulu"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:is.predicate_unknown": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.is_predicate_unknown"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:offset": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_bare"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:offset.without_limit": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.offset_without_limit"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:order.mixed": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.order_mixed_keys"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:string.doubled_quote": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.string_doubled_quote"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:temporal.now_fixed": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_now_fixed"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:temporal.today_calendar": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.temporal_today_calendar"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:text.contain": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_contain_short"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:text.like.escape": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_like_escape"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:text.unquoted_literal": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.text_unquoted_literal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:unicode.casefold_contains": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_casefold_contains"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:unicode.ilike_case": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_ilike_case"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:unicode.like_codepoint": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_like_codepoint"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:unicode.regex": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.unicode_regex"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:value.count_b": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_b"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:value.count_m": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_m"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:value.count_underscore": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_underscore"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:value.enum_case_insensitive": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_enum_case_insensitive"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:value.integer.binary": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_binary"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:value.integer.octal": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_integer_octal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:collection.parameter": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
+        }
+      }
+    },
+    "feature:duration.clock_ms": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+        }
+      }
+    },
+    "feature:duration.decimal": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+        }
+      }
+    },
+    "feature:duration.localised": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+        }
+      }
+    },
+    "feature:duration.short_alias": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+        }
+      }
+    },
+    "feature:from.quoted_source": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+        }
+      }
+    },
+    "feature:temporal.localised": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+        }
+      }
+    },
+    "feature:temporal.unit_baktun": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+        }
+      }
+    },
+    "feature:temporal.unit_decade": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+        }
+      }
+    },
+    "feature:value.number.negative": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+        },
+        "semantics": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+        },
+        "interactions": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "reviewed_case_ids": [],
+          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
         }
       }
     }

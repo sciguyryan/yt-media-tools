@@ -83,11 +83,14 @@ def load_evidence() -> dict[str, dict[str, object]]:
                 raise ValueError(f"Evidence for {key}/{dimension} names cases outside the corpus: {unknown}")
             if not record.get("justification"):
                 raise ValueError(f"Evidence for {key}/{dimension} carries no justification")
-            reviewed.setdefault(key, {})[dimension] = {
-                "status": "reviewed",
-                "reviewed_case_ids": case_ids,
-                "justification": record["justification"],
-            }
+            if case_ids:
+                reviewed.setdefault(key, {})[dimension] = {
+                    "status": "reviewed",
+                    "reviewed_case_ids": case_ids,
+                    "justification": record["justification"],
+                }
+            # Cells with empty case_ids stay unverified: they carry a
+            # deferral justification but no reviewed evidence.
     return reviewed
 
 

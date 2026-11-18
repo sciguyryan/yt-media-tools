@@ -1396,60 +1396,32 @@
       ],
       "dimensions": {
         "valid_syntax": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         },
         "invalid_syntax": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         },
         "semantics": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         },
         "types_and_null": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         },
         "boundaries": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         },
         "interactions": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         },
         "adversarial": {
-          "status": "reviewed",
-          "reviewed_case_ids": [
-            "function-conformance.filter_index_after_filter",
-            "function-conformance.map_index_after_projection"
-          ],
-          "justification": "The cited normative cases collectively evidence this feature's syntax, semantics and observable outcomes."
+          "status": "unverified",
+          "reviewed_case_ids": []
         }
       }
     },
