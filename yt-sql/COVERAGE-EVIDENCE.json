@@ -9093,6 +9093,225 @@
           ]
         }
       }
+    },
+    "feature:structured.member": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_member"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:collection.structured": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any",
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:collection.quantifier.any": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_any"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
+    },
+    "feature:collection.quantifier.all": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.structured_quantifier_all"
+          ],
+          "justification": "Unlocked by the CollectionOrdering promotion; the cited case exercises this feature through its declared query shape and committed fixture records."
+        }
+      }
     }
   }
 }

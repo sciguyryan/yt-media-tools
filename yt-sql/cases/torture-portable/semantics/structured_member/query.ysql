@@ -1,0 +1,5 @@
+select 
+ formats[0].width	as	w
+	from @yt_sql_fixture
+WHERE	id 	 = 'vid001' 
+ 

@@ -20,7 +20,7 @@ def test_known_multivalued_metadata_has_explicit_collection_types() -> None:
     assert formats is not None and formats.query_type.is_collection
     assert formats.query_type.element_type is not None
     assert formats.query_type.element_type.kind == "structured"
-    assert formats.query_type.ordering is CollectionOrdering.UNKNOWN
+    assert formats.query_type.ordering is CollectionOrdering.STABLE
 
 
 def test_scalar_taxonomy_collections_use_backend_independent_lexical_order() -> None:
@@ -36,7 +36,10 @@ def test_scalar_taxonomy_collections_use_backend_independent_lexical_order() -> 
     assert "_raw" not in record
 
 
-def test_structured_collection_backend_order_is_not_promoted_to_logical_order() -> None:
+def test_structured_collection_ordering_is_promoted_to_logical_order() -> None:
+    """The committed fixture is the normative record sequence for structured
+    collections: ordering is promoted from the backend's JSON array to the
+    logical contract."""
     record = normalise_record(
         {
             "formats": [{"format_id": "late"}, {"format_id": "early"}],
@@ -49,8 +52,8 @@ def test_structured_collection_backend_order_is_not_promoted_to_logical_order() 
     for name in ("formats", "chapters", "thumbnails"):
         field = schema.resolve(name)
         assert field is not None
-        assert field.query_type.ordering is CollectionOrdering.UNKNOWN
-        assert field.query_type.supports_positional_indexing is False
+        assert field.query_type.ordering is CollectionOrdering.STABLE
+        assert field.query_type.supports_positional_indexing is True
 
 
 def test_source_capabilities_publish_collection_element_and_ordering_contracts() -> None:
@@ -59,7 +62,7 @@ def test_source_capabilities_publish_collection_element_and_ordering_contracts()
 
     assert logical_fields["tags"].query_type.ordering is CollectionOrdering.STABLE
     assert logical_fields["categories"].query_type.ordering is CollectionOrdering.STABLE
-    assert logical_fields["formats"].query_type.ordering is CollectionOrdering.UNKNOWN
+    assert logical_fields["formats"].query_type.ordering is CollectionOrdering.STABLE
     assert field_capability("tags").logical_type == logical_fields["tags"].query_type
     assert field_capability("formats").logical_type == logical_fields["formats"].query_type
 

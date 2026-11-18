@@ -1,0 +1,5 @@
+SELECT
+id 
+ from @yt_sql_fixture
+WHERE all(formats  as f	WHERE	f.width > 	 0)
+	order  BY id	asc

@@ -314,7 +314,7 @@ def test_text_explain_exposes_collection_contract() -> None:
     assert "exact-indexed-acquisition=no" in result.stdout
 
 
-def test_json_explain_marks_unknown_ordered_collection_as_non_positional() -> None:
+def test_json_explain_marks_stable_ordered_collection_as_positional() -> None:
     result = run_cli(
         "--tab",
         "videos",
@@ -330,13 +330,13 @@ def test_json_explain_marks_unknown_ordered_collection_as_non_positional() -> No
     assert formats["type"].startswith("collection<structured<declared>{")
     assert "format_id:string?" in formats["type"]
     assert "height:count?" in formats["type"]
-    assert formats["type"].endswith("}?>[unknown]?")
+    assert formats["type"].endswith("}?>[stable]?")
     assert formats["element_type"].startswith("structured<declared>{")
     assert "format_id:string?" in formats["element_type"]
     assert "height:count?" in formats["element_type"]
     assert formats["element_type"].endswith("}?")
-    assert formats["ordering"] == "unknown"
-    assert formats["positional_indexing"] is False
+    assert formats["ordering"] == "stable"
+    assert formats["positional_indexing"] is True
     assert formats["exact_indexed_acquisition"] is False
 
 

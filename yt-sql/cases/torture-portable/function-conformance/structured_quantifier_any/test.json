@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.structured_quantifier_any",
+  "description": "Seeded lexical stress of function-conformance.structured_quantifier_any; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.quantifier.any",
+    "torture.lexical"
+  ]
+}

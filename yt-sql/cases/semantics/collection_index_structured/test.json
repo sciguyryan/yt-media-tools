@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.collection_index_structured",
+  "description": "Collection indexing on a structured collection resolves member values",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.index"
+  ]
+}

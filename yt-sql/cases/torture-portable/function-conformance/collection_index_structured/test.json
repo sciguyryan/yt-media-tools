@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.collection_index_structured",
+  "description": "Seeded lexical stress of function-conformance.collection_index_structured; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.index",
+    "torture.lexical"
+  ]
+}

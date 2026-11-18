@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.structured_member",
+  "description": "Seeded lexical stress of semantics.structured_member; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "structured.member",
+    "torture.lexical"
+  ]
+}

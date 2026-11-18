@@ -2571,6 +2571,13 @@
       "path": "yt-sql/cases/function-conformance/collection_count_true_only/test.json"
     },
     {
+      "id": "function-conformance.collection_index_structured",
+      "features": [
+        "collection.index"
+      ],
+      "path": "yt-sql/cases/function-conformance/collection_index_structured/test.json"
+    },
+    {
       "id": "function-conformance.concat_char_combining",
       "features": [
         "projection.concat"
@@ -3747,6 +3754,27 @@
       "path": "yt-sql/cases/function-conformance/random_where_rejected/test.json"
     },
     {
+      "id": "function-conformance.structured_member",
+      "features": [
+        "structured.member"
+      ],
+      "path": "yt-sql/cases/function-conformance/structured_member/test.json"
+    },
+    {
+      "id": "function-conformance.structured_quantifier_all",
+      "features": [
+        "collection.quantifier.all"
+      ],
+      "path": "yt-sql/cases/function-conformance/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "function-conformance.structured_quantifier_any",
+      "features": [
+        "collection.quantifier.any"
+      ],
+      "path": "yt-sql/cases/function-conformance/structured_quantifier_any/test.json"
+    },
+    {
       "id": "function-conformance.sum_text",
       "features": [
         "aggregate.sum"
@@ -4728,6 +4756,13 @@
       "path": "yt-sql/cases/semantics/case_order/test.json"
     },
     {
+      "id": "semantics.collection_index_structured",
+      "features": [
+        "collection.index"
+      ],
+      "path": "yt-sql/cases/semantics/collection_index_structured/test.json"
+    },
+    {
       "id": "semantics.comparison_equal",
       "features": [
         "comparison.eq"
@@ -5244,6 +5279,27 @@
         "string.doubled_quote"
       ],
       "path": "yt-sql/cases/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "semantics.structured_member",
+      "features": [
+        "structured.member"
+      ],
+      "path": "yt-sql/cases/semantics/structured_member/test.json"
+    },
+    {
+      "id": "semantics.structured_quantifier_all",
+      "features": [
+        "collection.quantifier.all"
+      ],
+      "path": "yt-sql/cases/semantics/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "semantics.structured_quantifier_any",
+      "features": [
+        "collection.quantifier.any"
+      ],
+      "path": "yt-sql/cases/semantics/structured_quantifier_any/test.json"
     },
     {
       "id": "semantics.temporal_now_fixed",
@@ -6651,6 +6707,14 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/collection_count_true_only/test.json"
     },
     {
+      "id": "torture.function-conformance.collection_index_structured",
+      "features": [
+        "collection.index",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/collection_index_structured/test.json"
+    },
+    {
       "id": "torture.function-conformance.concat_char_combining",
       "features": [
         "projection.concat",
@@ -7993,6 +8057,30 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/random_where_rejected/test.json"
     },
     {
+      "id": "torture.function-conformance.structured_member",
+      "features": [
+        "structured.member",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/structured_member/test.json"
+    },
+    {
+      "id": "torture.function-conformance.structured_quantifier_all",
+      "features": [
+        "collection.quantifier.all",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "torture.function-conformance.structured_quantifier_any",
+      "features": [
+        "collection.quantifier.any",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/structured_quantifier_any/test.json"
+    },
+    {
       "id": "torture.function-conformance.sum_text",
       "features": [
         "aggregate.sum",
@@ -9120,6 +9208,14 @@
       "path": "yt-sql/cases/torture-portable/semantics/case_order/test.json"
     },
     {
+      "id": "torture.semantics.collection_index_structured",
+      "features": [
+        "collection.index",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/collection_index_structured/test.json"
+    },
+    {
       "id": "torture.semantics.comparison_equal",
       "features": [
         "comparison.eq",
@@ -9713,6 +9809,30 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "torture.semantics.structured_member",
+      "features": [
+        "structured.member",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/structured_member/test.json"
+    },
+    {
+      "id": "torture.semantics.structured_quantifier_all",
+      "features": [
+        "collection.quantifier.all",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "torture.semantics.structured_quantifier_any",
+      "features": [
+        "collection.quantifier.any",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/structured_quantifier_any/test.json"
     },
     {
       "id": "torture.semantics.temporal_now_fixed",

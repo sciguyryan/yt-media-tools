@@ -201,7 +201,7 @@ def test_source_field_facts_preserve_declared_collection_type_and_ordering() -> 
     assert tags.query_type.element_type is not None
     assert tags.query_type.element_type.describe() == "string?"
     assert formats.query_type is not None and formats.query_type.is_collection
-    assert formats.collection_ordering is CollectionOrdering.UNKNOWN
+    assert formats.collection_ordering is CollectionOrdering.STABLE
     assert formats.query_type.element_type is not None
     assert formats.query_type.element_type.is_structured
 

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "function-conformance.structured_quantifier_all",
+  "description": "ALL over a structured collection filters on member values",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "collection.quantifier.all"
+  ]
+}

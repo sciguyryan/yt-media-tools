@@ -1,0 +1,5 @@
+SELECT
+    id
+FROM @yt_sql_fixture
+WHERE ANY(formats AS f WHERE f.width > 700)
+ORDER BY id ASC

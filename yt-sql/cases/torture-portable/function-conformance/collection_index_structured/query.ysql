@@ -1,0 +1,5 @@
+SELECT
+formats[1].height  AS h
+  FROM 	 @yt_sql_fixture
+where 	 id  =  'vid001'
+	

@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1184,
+    "normative_manifests": 1200,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4134
@@ -443,6 +443,10 @@
     {
       "id": "function-conformance.collection_count_true_only",
       "manifest": "yt-sql/cases/function-conformance/collection_count_true_only/test.json"
+    },
+    {
+      "id": "function-conformance.collection_index_structured",
+      "manifest": "yt-sql/cases/function-conformance/collection_index_structured/test.json"
     },
     {
       "id": "function-conformance.concat_char_combining",
@@ -1109,6 +1113,18 @@
       "manifest": "yt-sql/cases/function-conformance/random_where_rejected/test.json"
     },
     {
+      "id": "function-conformance.structured_member",
+      "manifest": "yt-sql/cases/function-conformance/structured_member/test.json"
+    },
+    {
+      "id": "function-conformance.structured_quantifier_all",
+      "manifest": "yt-sql/cases/function-conformance/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "function-conformance.structured_quantifier_any",
+      "manifest": "yt-sql/cases/function-conformance/structured_quantifier_any/test.json"
+    },
+    {
       "id": "function-conformance.sum_text",
       "manifest": "yt-sql/cases/function-conformance/sum_text/test.json"
     },
@@ -1641,6 +1657,10 @@
       "manifest": "yt-sql/cases/semantics/case_order/test.json"
     },
     {
+      "id": "semantics.collection_index_structured",
+      "manifest": "yt-sql/cases/semantics/collection_index_structured/test.json"
+    },
+    {
       "id": "semantics.comparison_equal",
       "manifest": "yt-sql/cases/semantics/comparison_equal/test.json"
     },
@@ -1935,6 +1955,18 @@
     {
       "id": "semantics.string_doubled_quote",
       "manifest": "yt-sql/cases/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "semantics.structured_member",
+      "manifest": "yt-sql/cases/semantics/structured_member/test.json"
+    },
+    {
+      "id": "semantics.structured_quantifier_all",
+      "manifest": "yt-sql/cases/semantics/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "semantics.structured_quantifier_any",
+      "manifest": "yt-sql/cases/semantics/structured_quantifier_any/test.json"
     },
     {
       "id": "semantics.temporal_now_fixed",
@@ -2645,6 +2677,10 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/collection_count_true_only/test.json"
     },
     {
+      "id": "torture.function-conformance.collection_index_structured",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/collection_index_structured/test.json"
+    },
+    {
       "id": "torture.function-conformance.concat_char_combining",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/concat_char_combining/test.json"
     },
@@ -3309,6 +3345,18 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/random_where_rejected/test.json"
     },
     {
+      "id": "torture.function-conformance.structured_member",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/structured_member/test.json"
+    },
+    {
+      "id": "torture.function-conformance.structured_quantifier_all",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "torture.function-conformance.structured_quantifier_any",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/structured_quantifier_any/test.json"
+    },
+    {
       "id": "torture.function-conformance.sum_text",
       "manifest": "yt-sql/cases/torture-portable/function-conformance/sum_text/test.json"
     },
@@ -3841,6 +3889,10 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/case_order/test.json"
     },
     {
+      "id": "torture.semantics.collection_index_structured",
+      "manifest": "yt-sql/cases/torture-portable/semantics/collection_index_structured/test.json"
+    },
+    {
       "id": "torture.semantics.comparison_equal",
       "manifest": "yt-sql/cases/torture-portable/semantics/comparison_equal/test.json"
     },
@@ -4135,6 +4187,18 @@
     {
       "id": "torture.semantics.string_doubled_quote",
       "manifest": "yt-sql/cases/torture-portable/semantics/string_doubled_quote/test.json"
+    },
+    {
+      "id": "torture.semantics.structured_member",
+      "manifest": "yt-sql/cases/torture-portable/semantics/structured_member/test.json"
+    },
+    {
+      "id": "torture.semantics.structured_quantifier_all",
+      "manifest": "yt-sql/cases/torture-portable/semantics/structured_quantifier_all/test.json"
+    },
+    {
+      "id": "torture.semantics.structured_quantifier_any",
+      "manifest": "yt-sql/cases/torture-portable/semantics/structured_quantifier_any/test.json"
     },
     {
       "id": "torture.semantics.temporal_now_fixed",
@@ -26044,7 +26108,7 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_structured_collection_backend_order_is_not_promoted_to_logical_order",
+          "name": "test_structured_collection_ordering_is_promoted_to_logical_order",
           "assertion_sites": [
             {
               "kind": "assert"
@@ -29451,7 +29515,7 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_json_explain_marks_unknown_ordered_collection_as_non_positional",
+          "name": "test_json_explain_marks_stable_ordered_collection_as_positional",
           "assertion_sites": [
             {
               "kind": "assert"
@@ -42892,10 +42956,10 @@
           "replacement_review": "not_reviewed"
         },
         {
-          "name": "test_declared_member_schema_does_not_change_structured_collection_ordering",
+          "name": "test_declared_member_schema_preserves_structured_collection_ordering",
           "assertion_sites": [
             {
-              "kind": "raises"
+              "kind": "assert"
             }
           ],
           "replacement_case_ids": [],

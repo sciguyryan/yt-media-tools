@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
 
 from yt_media_tools.dates import DateContext
 from yt_media_tools.metadata import normalise_record
-from yt_media_tools.query import QuerySyntaxError, parse_query, resolve_query
+from yt_media_tools.query import parse_query, resolve_query
 from yt_media_tools.query_types import CollectionOrdering, StructuredShape
 from yt_media_tools.schema import QuerySchema
 
@@ -23,7 +22,7 @@ def test_format_metadata_has_closed_declared_member_schema() -> None:
     schema = QuerySchema([normalise_record({"formats": [{"format_id": "18"}]})])
     collection_type, element_type = _element_type(schema, "formats")
 
-    assert collection_type.ordering is CollectionOrdering.UNKNOWN
+    assert collection_type.ordering is CollectionOrdering.STABLE
     assert element_type.structured_shape is StructuredShape.DECLARED
     assert [member.name for member in element_type.members] == [
         "format_id",
@@ -59,7 +58,7 @@ def test_chapter_metadata_has_closed_declared_member_schema() -> None:
     schema = QuerySchema([normalise_record({"chapters": [{"title": "Intro"}]})])
     collection_type, element_type = _element_type(schema, "chapters")
 
-    assert collection_type.ordering is CollectionOrdering.UNKNOWN
+    assert collection_type.ordering is CollectionOrdering.STABLE
     assert element_type.structured_shape is StructuredShape.DECLARED
     assert [member.name for member in element_type.members] == ["title", "start_time", "end_time"]
     assert element_type.declared_member_type("title").kind == "string"
@@ -72,7 +71,7 @@ def test_thumbnail_metadata_has_closed_declared_member_schema() -> None:
     schema = QuerySchema([normalise_record({"thumbnails": [{"id": "0"}]})])
     collection_type, element_type = _element_type(schema, "thumbnails")
 
-    assert collection_type.ordering is CollectionOrdering.UNKNOWN
+    assert collection_type.ordering is CollectionOrdering.STABLE
     assert element_type.structured_shape is StructuredShape.DECLARED
     assert [member.name for member in element_type.members] == ["id", "url", "width", "height"]
     assert element_type.declared_member_type("id").kind == "string"
@@ -103,11 +102,10 @@ def test_structured_metadata_schema_does_not_promote_backend_specific_members() 
     assert element_type.declared_member_type("provider_private_flag") is None
 
 
-def test_declared_member_schema_does_not_change_structured_collection_ordering() -> None:
+def test_declared_member_schema_preserves_structured_collection_ordering() -> None:
+    """The committed fixture is the normative record sequence for structured
+    collections; indexing is now supported."""
     schema = QuerySchema([normalise_record({"formats": [{"format_id": "18"}]})])
 
-    with pytest.raises(
-        QuerySyntaxError,
-        match="Collection indexing requires a stable logical collection ordering\\.",
-    ):
-        resolve_query(parse_query("SELECT formats[0].height FROM @fixture"), schema, DateContext())
+    query = resolve_query(parse_query("SELECT formats[0].height FROM @fixture"), schema, DateContext())
+    assert query.select[0].output_name == "formats[0].height"

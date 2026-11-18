@@ -93,8 +93,10 @@ THUMBNAIL_RECORD_TYPE = QueryType.structured(
 
 KNOWN_COLLECTION_TYPES = {
     # Scalar collections receive an explicit yt-sql order independent of backend
-    # return order. Structured collections remain non-positional until a logical
-    # ordering contract is established for their record semantics.
+    # return order. Structured collections are ordered by the committed fixture:
+    # the JSON array is the normative record sequence, so indexing and member
+    # access are positional. This does not assert that the extractor preserves
+    # the same order across acquisitions — only that the committed fixture does.
     "tags": QueryType.collection(
         QueryType.scalar("string", nullable=True),
         ordering=CollectionOrdering.STABLE,
@@ -105,15 +107,15 @@ KNOWN_COLLECTION_TYPES = {
     ),
     "formats": QueryType.collection(
         FORMAT_RECORD_TYPE,
-        ordering=CollectionOrdering.UNKNOWN,
+        ordering=CollectionOrdering.STABLE,
     ),
     "chapters": QueryType.collection(
         CHAPTER_RECORD_TYPE,
-        ordering=CollectionOrdering.UNKNOWN,
+        ordering=CollectionOrdering.STABLE,
     ),
     "thumbnails": QueryType.collection(
         THUMBNAIL_RECORD_TYPE,
-        ordering=CollectionOrdering.UNKNOWN,
+        ordering=CollectionOrdering.STABLE,
     ),
 }
 
