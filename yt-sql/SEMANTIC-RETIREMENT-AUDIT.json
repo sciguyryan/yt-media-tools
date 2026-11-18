@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1200,
+    "normative_manifests": 1214,
     "legacy_test_files": 224,
     "test_functions": 1639,
     "assertion_sites": 4134
@@ -2205,12 +2205,40 @@
       "manifest": "yt-sql/cases/temporal/date_compact/test.json"
     },
     {
+      "id": "temporal.date_dot",
+      "manifest": "yt-sql/cases/temporal/date_dot/test.json"
+    },
+    {
       "id": "temporal.date_iso",
       "manifest": "yt-sql/cases/temporal/date_iso/test.json"
     },
     {
+      "id": "temporal.date_local_dmy",
+      "manifest": "yt-sql/cases/temporal/date_local_dmy/test.json"
+    },
+    {
+      "id": "temporal.date_local_mdy",
+      "manifest": "yt-sql/cases/temporal/date_local_mdy/test.json"
+    },
+    {
+      "id": "temporal.date_named",
+      "manifest": "yt-sql/cases/temporal/date_named/test.json"
+    },
+    {
+      "id": "temporal.date_relative_ago",
+      "manifest": "yt-sql/cases/temporal/date_relative_ago/test.json"
+    },
+    {
       "id": "temporal.date_slash",
       "manifest": "yt-sql/cases/temporal/date_slash/test.json"
+    },
+    {
+      "id": "temporal.datetime_offset",
+      "manifest": "yt-sql/cases/temporal/datetime_offset/test.json"
+    },
+    {
+      "id": "temporal.datetime_zulu",
+      "manifest": "yt-sql/cases/temporal/datetime_zulu/test.json"
     },
     {
       "id": "temporal.duration_compound",
@@ -4437,12 +4465,40 @@
       "manifest": "yt-sql/cases/torture-portable/temporal/date_compact/test.json"
     },
     {
+      "id": "torture.temporal.date_dot",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_dot/test.json"
+    },
+    {
       "id": "torture.temporal.date_iso",
       "manifest": "yt-sql/cases/torture-portable/temporal/date_iso/test.json"
     },
     {
+      "id": "torture.temporal.date_local_dmy",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_local_dmy/test.json"
+    },
+    {
+      "id": "torture.temporal.date_local_mdy",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_local_mdy/test.json"
+    },
+    {
+      "id": "torture.temporal.date_named",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_named/test.json"
+    },
+    {
+      "id": "torture.temporal.date_relative_ago",
+      "manifest": "yt-sql/cases/torture-portable/temporal/date_relative_ago/test.json"
+    },
+    {
       "id": "torture.temporal.date_slash",
       "manifest": "yt-sql/cases/torture-portable/temporal/date_slash/test.json"
+    },
+    {
+      "id": "torture.temporal.datetime_offset",
+      "manifest": "yt-sql/cases/torture-portable/temporal/datetime_offset/test.json"
+    },
+    {
+      "id": "torture.temporal.datetime_zulu",
+      "manifest": "yt-sql/cases/torture-portable/temporal/datetime_zulu/test.json"
     },
     {
       "id": "torture.temporal.duration_compound",

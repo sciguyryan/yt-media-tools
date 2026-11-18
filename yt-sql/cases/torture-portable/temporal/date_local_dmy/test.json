@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "id": "torture.temporal.date_local_dmy",
+  "description": "Seeded lexical stress of temporal.date_local_dmy; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "date.local_dmy",
+    "torture.lexical"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {
+          "date_order": "dmy"
+        }
+      }
+    ]
+  }
+}

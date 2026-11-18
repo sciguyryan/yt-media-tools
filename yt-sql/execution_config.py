@@ -26,8 +26,10 @@ def validate_execution(value: object) -> None:
             raise ExecutionConfigError("invalid or duplicate execution configuration ID")
         seen.add(name)
         settings = config["settings"]
-        if not isinstance(settings, dict) or set(settings) - {"optimisation", "clock"}:
+        if not isinstance(settings, dict) or set(settings) - {"optimisation", "clock", "date_order"}:
             raise ExecutionConfigError("unknown portable execution setting")
+        if "date_order" in settings and settings["date_order"] not in ("dmy", "mdy", "ymd"):
+            raise ExecutionConfigError("date_order must be dmy, mdy, or ymd")
         if "optimisation" in settings and settings["optimisation"] not in ("enabled", "disabled"):
             raise ExecutionConfigError("optimisation must be enabled or disabled")
 

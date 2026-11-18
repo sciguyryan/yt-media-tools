@@ -1,0 +1,6 @@
+SELECT
+id 
+ FROM  @yt_sql_fixture
+	WHERE  upload_date	>=  2d 	 ago
+	ORDER 	 by source_index
+  

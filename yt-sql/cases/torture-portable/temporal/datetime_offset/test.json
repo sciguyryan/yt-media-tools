@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.temporal.datetime_offset",
+  "description": "Seeded lexical stress of temporal.datetime_offset; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "datetime.offset",
+    "torture.lexical"
+  ]
+}

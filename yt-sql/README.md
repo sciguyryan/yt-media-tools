@@ -180,6 +180,8 @@ Case-sensitive named parameters are substituted as YT-SQL literals using the por
 
 An execution configuration may set `settings.clock` to an offset-aware RFC 3339 timestamp, such as `2026-09-01T10:30:00Z`. Invalid timestamps and missing offsets are rejected. Without this setting, the adapter uses its historical fixed instant, `2026-09-01T00:00:00Z`. The clock is passed to the Python date-resolution context; it is not a general clock contract for all future implementations. Temporal parameter regressions exercise offset conversion and actual fixture timestamp boundaries through the parser, resolver and evaluator.
 
+An execution configuration may set `settings.date_order` to one of `dmy` (default), `mdy`, or `ymd`. The value is passed to the Python date-resolution context and controls how ambiguous date literals (e.g. `03/04/2026`) are resolved. The default matches the adapter's historical behaviour.
+
 ### Diagnostic classification and safety
 
 Lexical and grammatical failures produce portable `syntax` observations. Only reviewed, structured semantic reasons are mapped to other categories: `unknown-field`, `unknown-relation-alias` and `ambiguous-field` map to `resolution`; `non-numeric-aggregate` maps to `type`. Classification never relies on human-readable exception messages.

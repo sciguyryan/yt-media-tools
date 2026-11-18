@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.date_relative_ago",
+  "description": "A relative date expression filters upload_date",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "date.relative_ago"
+  ]
+}

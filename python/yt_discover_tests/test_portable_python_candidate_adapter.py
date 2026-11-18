@@ -509,9 +509,10 @@ def test_explicit_clock_reaches_python_date_context(tmp_path: Path, monkeypatch:
     captured: list[datetime] = []
     original = dates.DateContext
 
-    def capture_context(*, now: datetime) -> dates.DateContext:
-        captured.append(now)
-        return original(now=now)
+    def capture_context(**kwargs) -> dates.DateContext:
+        captured.append(kwargs.get("now"))
+        kwargs.pop("now", None)
+        return original(**kwargs)
 
     monkeypatch.setattr(dates, "DateContext", capture_context)
     result = _adapter().observe(case, configuration="offset", root=root)

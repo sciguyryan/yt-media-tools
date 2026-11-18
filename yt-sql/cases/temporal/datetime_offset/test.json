@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.datetime_offset",
+  "description": "An offset-aware datetime literal filters timestamp fields",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "datetime.offset"
+  ]
+}

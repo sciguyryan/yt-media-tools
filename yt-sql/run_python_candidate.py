@@ -243,11 +243,13 @@ def observe(
             record["_yt_sql_source_facet"] = facet
             execution_records.append(record)
     source_schemas = {request: QuerySchema([records[i] for i in bindings[request]]) for request in requests}
+    date_order = settings.get("date_order", "dmy")
     try:
         resolved = resolve_query(
             query,
             QuerySchema(execution_records),
             DateContext(
+                date_order=date_order,
                 now=datetime.fromisoformat(settings["clock"].replace("Z", "+00:00"))
                 if "clock" in settings
                 else datetime(2026, 9, 1, tzinfo=timezone.utc)

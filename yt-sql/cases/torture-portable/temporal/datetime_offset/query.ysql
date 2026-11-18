@@ -1,0 +1,5 @@
+SELECT
+  COUNT(*)  as	n
+  FROM 	 @yt_sql_fixture
+WHERE 	 release_timestamp	=  '2026-09-01T00:00:00Z'
+	
