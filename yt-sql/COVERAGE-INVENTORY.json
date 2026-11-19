@@ -5211,6 +5211,13 @@
       "path": "yt-sql/cases/semantics/order_multi/test.json"
     },
     {
+      "id": "semantics.parameter_binding",
+      "features": [
+        "parameter.binding"
+      ],
+      "path": "yt-sql/cases/semantics/parameter_binding/test.json"
+    },
+    {
       "id": "semantics.predicate_between",
       "features": [
         "predicate.between"
@@ -5447,6 +5454,13 @@
         "value.count_b"
       ],
       "path": "yt-sql/cases/semantics/value_count_b/test.json"
+    },
+    {
+      "id": "semantics.value_count_decimal",
+      "features": [
+        "value.count_decimal_suffix"
+      ],
+      "path": "yt-sql/cases/semantics/value_count_decimal/test.json"
     },
     {
       "id": "semantics.value_count_k",
@@ -9780,6 +9794,14 @@
       "path": "yt-sql/cases/torture-portable/semantics/order_multi/test.json"
     },
     {
+      "id": "torture.semantics.parameter_binding",
+      "features": [
+        "parameter.binding",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/parameter_binding/test.json"
+    },
+    {
       "id": "torture.semantics.predicate_between",
       "features": [
         "predicate.between",
@@ -10050,6 +10072,14 @@
         "value.count_b"
       ],
       "path": "yt-sql/cases/torture-portable/semantics/value_count_b/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_decimal",
+      "features": [
+        "torture.lexical",
+        "value.count_decimal_suffix"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_count_decimal/test.json"
     },
     {
       "id": "torture.semantics.value_count_k",

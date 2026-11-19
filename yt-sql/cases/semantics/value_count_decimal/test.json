@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "semantics.value_count_decimal",
+  "description": "Count literals with decimal suffixes compare numerically (1.5m matches 1500000; 0.5k matches 500)",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "value.count_decimal_suffix"
+  ]
+}

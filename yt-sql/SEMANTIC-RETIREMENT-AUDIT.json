@@ -10,10 +10,10 @@
   ],
   "counts": {
     "language_elements": 279,
-    "normative_manifests": 1214,
-    "legacy_test_files": 224,
-    "test_functions": 1639,
-    "assertion_sites": 4134
+    "normative_manifests": 1218,
+    "legacy_test_files": 225,
+    "test_functions": 1640,
+    "assertion_sites": 4141
   },
   "normative_cases": [
     {
@@ -1917,6 +1917,10 @@
       "manifest": "yt-sql/cases/semantics/order_multi/test.json"
     },
     {
+      "id": "semantics.parameter_binding",
+      "manifest": "yt-sql/cases/semantics/parameter_binding/test.json"
+    },
+    {
       "id": "semantics.predicate_between",
       "manifest": "yt-sql/cases/semantics/predicate_between/test.json"
     },
@@ -2051,6 +2055,10 @@
     {
       "id": "semantics.value_count_b",
       "manifest": "yt-sql/cases/semantics/value_count_b/test.json"
+    },
+    {
+      "id": "semantics.value_count_decimal",
+      "manifest": "yt-sql/cases/semantics/value_count_decimal/test.json"
     },
     {
       "id": "semantics.value_count_k",
@@ -4177,6 +4185,10 @@
       "manifest": "yt-sql/cases/torture-portable/semantics/order_multi/test.json"
     },
     {
+      "id": "torture.semantics.parameter_binding",
+      "manifest": "yt-sql/cases/torture-portable/semantics/parameter_binding/test.json"
+    },
+    {
       "id": "torture.semantics.predicate_between",
       "manifest": "yt-sql/cases/torture-portable/semantics/predicate_between/test.json"
     },
@@ -4311,6 +4323,10 @@
     {
       "id": "torture.semantics.value_count_b",
       "manifest": "yt-sql/cases/torture-portable/semantics/value_count_b/test.json"
+    },
+    {
+      "id": "torture.semantics.value_count_decimal",
+      "manifest": "yt-sql/cases/torture-portable/semantics/value_count_decimal/test.json"
     },
     {
       "id": "torture.semantics.value_count_k",
@@ -35452,6 +35468,41 @@
             },
             {
               "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
+      "path": "python/yt_discover_tests/test_portable_certification.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_certification_gate_holds",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
             }
           ],
           "replacement_case_ids": [],

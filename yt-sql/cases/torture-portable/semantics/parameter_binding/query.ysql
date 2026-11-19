@@ -1,0 +1,6 @@
+select
+id 
+ from	@yt_sql_fixture
+	where	id  =	:target 	 and	view_count 	 >=	:min_views 
+ ORDER BY source_index
+	

@@ -16921,6 +16921,317 @@
           "justification": "The feature is normatively covered by the cited cases through their declared feature tags and committed fixture records."
         }
       }
+    },
+    "feature:text.like.single": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
+        }
+      }
+    },
+    "feature:set.global_order_limit": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
+        }
+      }
+    },
+    "feature:parameter.binding": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
+        }
+      }
+    },
+    "feature:value.count_decimal_suffix": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
+        }
+      }
+    },
+    "feature:output.auto_multi": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "semantics": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "interactions": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected multi-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        }
+      }
+    },
+    "feature:output.auto_single": {
+      "dimensions": {
+        "valid_syntax": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "invalid_syntax": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "semantics": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "types_and_null": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "boundaries": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "interactions": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        },
+        "adversarial": {
+          "status": "unverified",
+          "case_ids": [],
+          "justification": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
+        }
+      }
     }
   }
 }

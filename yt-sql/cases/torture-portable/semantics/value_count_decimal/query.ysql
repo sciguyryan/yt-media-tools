@@ -1,0 +1,6 @@
+SELECT
+	id
+	from @yt_sql_fixture
+  WHERE	view_count  =	1.5m	OR view_count	= 	 0.5k
+order by 	 source_index 
+ 

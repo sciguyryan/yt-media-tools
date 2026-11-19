@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.semantics.value_count_decimal",
+  "description": "Seeded lexical stress of semantics.value_count_decimal; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical",
+    "value.count_decimal_suffix"
+  ]
+}

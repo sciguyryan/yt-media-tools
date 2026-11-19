@@ -6420,32 +6420,53 @@
       ],
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.parameter_binding"
+          ],
+          "justification": "The parameter_binding case declares typed parameters in the manifest; the text parameter preserves case and matches exactly, the integer parameter compares numerically, and the adapter rejects missing and unused bindings."
         }
       }
     },
@@ -8247,32 +8268,53 @@
       ],
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "statement-conformance.union_page"
+          ],
+          "justification": "The union_page case applies ORDER BY, LIMIT and OFFSET across the deduplicated UNION result, so ordering and pagination are global over the set operation rather than per-arm."
         }
       }
     },
@@ -9495,32 +9537,74 @@
       ],
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.like_escaped_underscore_literal",
+            "semantics.like_literal_underscore",
+            "semantics.newline_single_wildcard",
+            "semantics.nullable_like_g_one_character"
+          ],
+          "justification": "The single-character wildcard is exercised by the admitted LIKE cases: an unescaped underscore matches exactly one character (including a newline), a doubled underscore matches literally, and an escaped underscore loses its wildcard meaning."
         }
       }
     },
@@ -10485,32 +10569,53 @@
       ],
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": []
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "semantics.value_count_decimal"
+          ],
+          "justification": "The value_count_decimal case shows decimal-suffixed count literals compare numerically: 1.5m matches 1500000 and 0.5k matches 500."
         }
       }
     },

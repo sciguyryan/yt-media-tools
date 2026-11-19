@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "id": "semantics.parameter_binding",
+  "description": "Declared case parameters bind as typed scalar literals; the text parameter preserves case and the integer parameter compares numerically",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "parameter.binding"
+  ],
+  "parameters": {
+    "target": "vid001",
+    "min_views": {
+      "type": "integer",
+      "value": "1500"
+    }
+  }
+}
