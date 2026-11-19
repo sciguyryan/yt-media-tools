@@ -1,20 +1,20 @@
 {
   "version": 1,
   "status": "certified",
-  "certified_on": "2026-11-18",
+  "certified_on": "2026-11-19",
   "reviewer": "GLM-5.3-Flash assisted session (OpenCode), on behalf of the repository maintainer",
   "scope": "Phase 6.6: the portable corpus is certified modulo explicitly deferred features",
   "corpus": {
-    "cases": 1218,
-    "normative": 609,
-    "torture": 609,
-    "validated": 1218
+    "cases": 1236,
+    "normative": 618,
+    "torture": 618,
+    "validated": 1236
   },
   "conformance": {
     "implementation": "python",
     "configuration": "default",
     "counts": {
-      "pass": 1218,
+      "pass": 1236,
       "fail": 0,
       "error": 0,
       "xfail": 0,
@@ -25,8 +25,8 @@
   },
   "coverage": {
     "total_cells": 1456,
-    "reviewed_cells": 1372,
-    "deferred_cells": 84,
+    "reviewed_cells": 1435,
+    "deferred_cells": 21,
     "function_cells": {
       "total": 133,
       "reviewed": 133,
@@ -34,8 +34,8 @@
     },
     "feature_cells": {
       "total": 1323,
-      "reviewed": 1239,
-      "deferred": 84
+      "reviewed": 1302,
+      "deferred": 21
     },
     "deferred_features": [
       {
@@ -48,66 +48,6 @@
           "boundaries": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types.",
           "interactions": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types.",
           "adversarial": "Deferred: Collection parameters are not supported by the YT-SQL grammar: parameters bind in predicates, not as collection element types."
-        }
-      },
-      {
-        "feature": "duration.clock_ms",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups.",
-          "invalid_syntax": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups.",
-          "semantics": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups.",
-          "types_and_null": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups.",
-          "boundaries": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups.",
-          "interactions": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups.",
-          "adversarial": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
-        }
-      },
-      {
-        "feature": "duration.decimal",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number.",
-          "invalid_syntax": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number.",
-          "semantics": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number.",
-          "types_and_null": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number.",
-          "boundaries": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number.",
-          "interactions": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number.",
-          "adversarial": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
-        }
-      },
-      {
-        "feature": "duration.localised",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration.",
-          "invalid_syntax": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration.",
-          "semantics": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration.",
-          "types_and_null": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration.",
-          "boundaries": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration.",
-          "interactions": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration.",
-          "adversarial": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
-        }
-      },
-      {
-        "feature": "duration.short_alias",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The unit alias 'sec' is not registered in the duration unit registry.",
-          "invalid_syntax": "Deferred: The unit alias 'sec' is not registered in the duration unit registry.",
-          "semantics": "Deferred: The unit alias 'sec' is not registered in the duration unit registry.",
-          "types_and_null": "Deferred: The unit alias 'sec' is not registered in the duration unit registry.",
-          "boundaries": "Deferred: The unit alias 'sec' is not registered in the duration unit registry.",
-          "interactions": "Deferred: The unit alias 'sec' is not registered in the duration unit registry.",
-          "adversarial": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
-        }
-      },
-      {
-        "feature": "from.quoted_source",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared.",
-          "invalid_syntax": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared.",
-          "semantics": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared.",
-          "types_and_null": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared.",
-          "boundaries": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared.",
-          "interactions": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared.",
-          "adversarial": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
         }
       },
       {
@@ -132,54 +72,6 @@
           "boundaries": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract.",
           "interactions": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract.",
           "adversarial": "Deferred: The auto-selected single-column output layout is a CLI presentation behaviour: the portable execution contract records rows and diagnostics, not terminal formatting. Deferred pending a separate CLI conformance contract."
-        }
-      },
-      {
-        "feature": "temporal.localised",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format.",
-          "invalid_syntax": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format.",
-          "semantics": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format.",
-          "types_and_null": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format.",
-          "boundaries": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format.",
-          "interactions": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format.",
-          "adversarial": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
-        }
-      },
-      {
-        "feature": "temporal.unit_baktun",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case.",
-          "invalid_syntax": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case.",
-          "semantics": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case.",
-          "types_and_null": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case.",
-          "boundaries": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case.",
-          "interactions": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case.",
-          "adversarial": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
-        }
-      },
-      {
-        "feature": "temporal.unit_decade",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative.",
-          "invalid_syntax": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative.",
-          "semantics": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative.",
-          "types_and_null": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative.",
-          "boundaries": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative.",
-          "interactions": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative.",
-          "adversarial": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
-        }
-      },
-      {
-        "feature": "value.number.negative",
-        "deferred_dimensions": {
-          "valid_syntax": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug.",
-          "invalid_syntax": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug.",
-          "semantics": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug.",
-          "types_and_null": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug.",
-          "boundaries": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug.",
-          "interactions": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug.",
-          "adversarial": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
         }
       }
     ]

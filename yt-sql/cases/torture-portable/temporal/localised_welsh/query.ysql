@@ -1,0 +1,5 @@
+SELECT
+	id
+  from  @yt_sql_fixture
+WHERE	upload_date  >= 1 wythnos	ago
+	ORDER BY	source_index

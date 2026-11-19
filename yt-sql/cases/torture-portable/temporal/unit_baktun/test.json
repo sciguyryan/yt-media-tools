@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.temporal.unit_baktun",
+  "description": "Seeded lexical stress of temporal.unit_baktun; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.unit_baktun",
+    "torture.lexical"
+  ]
+}

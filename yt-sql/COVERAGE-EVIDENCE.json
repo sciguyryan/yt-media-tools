@@ -11598,351 +11598,477 @@
     "feature:duration.clock_ms": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support milliseconds: 59:59.999 fails to lex because the TIME token regex stops at two fractional groups."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_clock_ms"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:duration.decimal": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support fractional duration components: 59.99m is lexed as a plain number."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_decimal"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:duration.localised": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The duration lexer does not support comma-decimal separators: 59,59 is not lexed as a duration."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_comma_rejected"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:duration.short_alias": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The unit alias 'sec' is not registered in the duration unit registry."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.duration_short_alias"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:from.quoted_source": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Quoted source handles need a heterogeneous dataset binding; python-v6-small was declared."
+          "status": "reviewed",
+          "case_ids": [
+            "relational.quoted_source"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records: a backtick-quoted source handle resolves to the same physical binding as the unquoted spelling."
         }
       }
     },
     "feature:temporal.localised": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: Localised date/duration parsing requires a non-default date order and a committed fixture record with a localised format."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.localised_welsh"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:temporal.unit_baktun": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'baktun' is not registered in the duration unit registry; the rejection is already normative through the duration-unknown-unit case."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_baktun"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:temporal.unit_decade": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The calendar unit 'decade' is not registered in the duration unit registry; the rejection is already normative."
+          "status": "reviewed",
+          "case_ids": [
+            "temporal.unit_decade"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },
     "feature:value.number.negative": {
       "dimensions": {
         "valid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "invalid_syntax": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "semantics": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "types_and_null": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "boundaries": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "interactions": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         },
         "adversarial": {
-          "status": "unverified",
-          "reviewed_case_ids": [],
-          "justification": "Deferred: The count-literal grammar consumes the minus sign before the parser sees it; needs the same count-literal grammar fix as the GROUP BY glue bug."
+          "status": "reviewed",
+          "case_ids": [
+            "semantics.value_number_negative"
+          ],
+          "justification": "The cited case exercises this feature through its declared query shape and committed fixture records under the reviewed language contract."
         }
       }
     },

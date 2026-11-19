@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.duration_comma_rejected",
+  "description": "A comma is not accepted as a decimal separator in a duration literal",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "duration.localised"
+  ]
+}

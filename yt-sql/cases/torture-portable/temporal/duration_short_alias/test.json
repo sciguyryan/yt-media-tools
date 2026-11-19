@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.temporal.duration_short_alias",
+  "description": "Seeded lexical stress of temporal.duration_short_alias; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "duration.short_alias",
+    "torture.lexical"
+  ]
+}

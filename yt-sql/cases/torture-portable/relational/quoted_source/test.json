@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "torture.relational.quoted_source",
+  "description": "Seeded lexical stress of relational.quoted_source; approved expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "from.quoted_source",
+    "torture.lexical"
+  ]
+}

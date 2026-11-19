@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.localised_welsh",
+  "description": "A Welsh localised unit spelling (wythnos, week) resolves like its English counterpart",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "temporal.localised"
+  ]
+}

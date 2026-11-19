@@ -1,0 +1,6 @@
+SELECT
+  id
+	from  @yt_sql_fixture
+	WHERE  upload_date 	 >= 	 1 	 baktun 	 ago
+	order by	source_index
+LIMIT 3

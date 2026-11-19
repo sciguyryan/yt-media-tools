@@ -86,17 +86,23 @@ def _random_position(node: Any, default: int = 0) -> int:
 
 def _parse_duration_text(text: str, source: str, position: int) -> int:
     value = " ".join(text.strip().split())
-    if re.fullmatch(r"\d+(?::\d{1,2}){1,2}", value):
-        parts = [int(part) for part in value.split(":")]
+    if re.fullmatch(r"\d+(?::\d{1,2}){1,2}(?:\.\d{1,3})?", value):
+        clock = value.split(":")
+        fraction = 0.0
+        if "." in clock[-1]:
+            whole, raw_fraction = clock[-1].split(".", 1)
+            clock[-1] = whole
+            fraction = float("0." + raw_fraction)
+        parts = [int(part) for part in clock]
         if len(parts) == 2:
             minutes, seconds = parts
             if seconds >= 60:
                 raise QuerySemanticError(source, "Duration seconds must be below 60.", position)
-            return minutes * 60 + seconds
+            return round(minutes * 60 + seconds + fraction)
         hours, minutes, seconds = parts
         if minutes >= 60 or seconds >= 60:
             raise QuerySemanticError(source, "Duration minutes and seconds must be below 60.", position)
-        return hours * 3600 + minutes * 60 + seconds
+        return round(hours * 3600 + minutes * 60 + seconds + fraction)
 
     if re.fullmatch(r"\d+(?:\.\d+)?", value):
         raise QuerySemanticError(
@@ -143,12 +149,13 @@ def _parse_count_text(text: str, source: str, position: int) -> int:
     if re.match(r"[+-]?0[xXoObB]", compact):
         return _parse_integer_literal_text(compact, source, position)
 
-    match = re.fullmatch(r"(\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?)([kKmMbB]?)", compact)
+    match = re.fullmatch(r"([+-]?)(\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?)([kKmMbB]?)", compact)
     if not match:
         raise QuerySemanticError(source, f"Could not understand count {text!r}.", position)
-    multiplier = {"": 1, "k": 1_000, "m": 1_000_000, "b": 1_000_000_000}[match.group(2).lower()]
-    number = match.group(1).replace("_", "")
-    return round(float(number) * multiplier)
+    multiplier = {"": 1, "k": 1_000, "m": 1_000_000, "b": 1_000_000_000}[match.group(3).lower()]
+    number = match.group(2).replace("_", "")
+    value = round(float(number) * multiplier)
+    return -value if match.group(1) == "-" else value
 
 
 def _resolve_field(field: Field | RelationField, schema: QuerySchema, source: str) -> Field | RelationField:

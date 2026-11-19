@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.duration_short_alias",
+  "description": "The short unit alias sec behaves like seconds in a duration comparison",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "duration.short_alias"
+  ]
+}

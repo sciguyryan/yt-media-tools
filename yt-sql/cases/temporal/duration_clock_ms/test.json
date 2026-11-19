@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.duration_clock_ms",
+  "description": "A clock-form duration may carry up to three fractional digits on its seconds part, rounded to the nearest whole second",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "duration.clock_ms"
+  ]
+}

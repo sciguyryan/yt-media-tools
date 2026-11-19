@@ -729,9 +729,15 @@
     },
     {
       "module": "query_resolver.py",
+      "scope": "_parse_count_text",
+      "kind": "IfExp",
+      "sites": 1
+    },
+    {
+      "module": "query_resolver.py",
       "scope": "_parse_duration_text",
       "kind": "If",
-      "sites": 9
+      "sites": 10
     },
     {
       "module": "query_resolver.py",

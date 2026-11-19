@@ -4553,6 +4553,13 @@
       "path": "yt-sql/cases/relational/normalisation_grouping/test.json"
     },
     {
+      "id": "relational.quoted_source",
+      "features": [
+        "from.quoted_source"
+      ],
+      "path": "yt-sql/cases/relational/quoted_source/test.json"
+    },
+    {
       "id": "relational.union_all_keeps_duplicates",
       "features": [
         "set.union_all"
@@ -5512,6 +5519,13 @@
       "path": "yt-sql/cases/semantics/value_integer_octal/test.json"
     },
     {
+      "id": "semantics.value_number_negative",
+      "features": [
+        "value.number.negative"
+      ],
+      "path": "yt-sql/cases/semantics/value_number_negative/test.json"
+    },
+    {
       "id": "smoke.source_order_limit",
       "features": [
         "from.handle",
@@ -5847,11 +5861,32 @@
       "path": "yt-sql/cases/temporal/datetime_zulu/test.json"
     },
     {
+      "id": "temporal.duration_clock_ms",
+      "features": [
+        "duration.clock_ms"
+      ],
+      "path": "yt-sql/cases/temporal/duration_clock_ms/test.json"
+    },
+    {
+      "id": "temporal.duration_comma_rejected",
+      "features": [
+        "duration.localised"
+      ],
+      "path": "yt-sql/cases/temporal/duration_comma_rejected/test.json"
+    },
+    {
       "id": "temporal.duration_compound",
       "features": [
         "duration.compound"
       ],
       "path": "yt-sql/cases/temporal/duration_compound/test.json"
+    },
+    {
+      "id": "temporal.duration_decimal",
+      "features": [
+        "duration.decimal"
+      ],
+      "path": "yt-sql/cases/temporal/duration_decimal/test.json"
     },
     {
       "id": "temporal.duration_hours",
@@ -5875,6 +5910,13 @@
       "path": "yt-sql/cases/temporal/duration_seconds/test.json"
     },
     {
+      "id": "temporal.duration_short_alias",
+      "features": [
+        "duration.short_alias"
+      ],
+      "path": "yt-sql/cases/temporal/duration_short_alias/test.json"
+    },
+    {
       "id": "temporal.infinity_negative_empty",
       "features": [
         "temporal.infinity_negative"
@@ -5896,11 +5938,32 @@
       "path": "yt-sql/cases/temporal/infinity_precedes_all/test.json"
     },
     {
+      "id": "temporal.localised_welsh",
+      "features": [
+        "temporal.localised"
+      ],
+      "path": "yt-sql/cases/temporal/localised_welsh/test.json"
+    },
+    {
       "id": "temporal.today_relative",
       "features": [
         "temporal.today_fixed"
       ],
       "path": "yt-sql/cases/temporal/today_relative/test.json"
+    },
+    {
+      "id": "temporal.unit_baktun",
+      "features": [
+        "temporal.unit_baktun"
+      ],
+      "path": "yt-sql/cases/temporal/unit_baktun/test.json"
+    },
+    {
+      "id": "temporal.unit_decade",
+      "features": [
+        "temporal.unit_decade"
+      ],
+      "path": "yt-sql/cases/temporal/unit_decade/test.json"
     },
     {
       "id": "temporal.upload_date_exact",
@@ -9039,6 +9102,14 @@
       "path": "yt-sql/cases/torture-portable/relational/normalisation_grouping/test.json"
     },
     {
+      "id": "torture.relational.quoted_source",
+      "features": [
+        "from.quoted_source",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/relational/quoted_source/test.json"
+    },
+    {
       "id": "torture.relational.union_all_keeps_duplicates",
       "features": [
         "set.union_all",
@@ -10138,6 +10209,14 @@
       "path": "yt-sql/cases/torture-portable/semantics/value_integer_octal/test.json"
     },
     {
+      "id": "torture.semantics.value_number_negative",
+      "features": [
+        "torture.lexical",
+        "value.number.negative"
+      ],
+      "path": "yt-sql/cases/torture-portable/semantics/value_number_negative/test.json"
+    },
+    {
       "id": "torture.smoke.source_order_limit",
       "features": [
         "from.handle",
@@ -10513,12 +10592,36 @@
       "path": "yt-sql/cases/torture-portable/temporal/datetime_zulu/test.json"
     },
     {
+      "id": "torture.temporal.duration_clock_ms",
+      "features": [
+        "duration.clock_ms",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_clock_ms/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_comma_rejected",
+      "features": [
+        "duration.localised",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_comma_rejected/test.json"
+    },
+    {
       "id": "torture.temporal.duration_compound",
       "features": [
         "duration.compound",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/temporal/duration_compound/test.json"
+    },
+    {
+      "id": "torture.temporal.duration_decimal",
+      "features": [
+        "duration.decimal",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_decimal/test.json"
     },
     {
       "id": "torture.temporal.duration_hours",
@@ -10545,6 +10648,14 @@
       "path": "yt-sql/cases/torture-portable/temporal/duration_seconds/test.json"
     },
     {
+      "id": "torture.temporal.duration_short_alias",
+      "features": [
+        "duration.short_alias",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/duration_short_alias/test.json"
+    },
+    {
       "id": "torture.temporal.infinity_negative_empty",
       "features": [
         "temporal.infinity_negative",
@@ -10569,12 +10680,36 @@
       "path": "yt-sql/cases/torture-portable/temporal/infinity_precedes_all/test.json"
     },
     {
+      "id": "torture.temporal.localised_welsh",
+      "features": [
+        "temporal.localised",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/localised_welsh/test.json"
+    },
+    {
       "id": "torture.temporal.today_relative",
       "features": [
         "temporal.today_fixed",
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/temporal/today_relative/test.json"
+    },
+    {
+      "id": "torture.temporal.unit_baktun",
+      "features": [
+        "temporal.unit_baktun",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/unit_baktun/test.json"
+    },
+    {
+      "id": "torture.temporal.unit_decade",
+      "features": [
+        "temporal.unit_decade",
+        "torture.lexical"
+      ],
+      "path": "yt-sql/cases/torture-portable/temporal/unit_decade/test.json"
     },
     {
       "id": "torture.temporal.upload_date_exact",

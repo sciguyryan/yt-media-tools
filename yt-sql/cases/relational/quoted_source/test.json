@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "relational.quoted_source",
+  "description": "A backtick-quoted source handle resolves to the same physical binding as the unquoted spelling",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "from.quoted_source"
+  ]
+}

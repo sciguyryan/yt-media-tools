@@ -1,0 +1,5 @@
+select
+  id
+  FROM `@yt_sql_fixture`
+  WHERE id =  'vid001'
+  ORDER 	 by  source_index

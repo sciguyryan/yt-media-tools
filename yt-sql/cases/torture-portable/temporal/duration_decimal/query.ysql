@@ -1,0 +1,5 @@
+SELECT
+	id
+  from	@yt_sql_fixture 
+ where  duration =	59.99m 
+ ORDER	by source_index

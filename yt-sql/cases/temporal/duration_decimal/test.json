@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "temporal.duration_decimal",
+  "description": "A fractional duration component compares numerically (59.99m rounds to the nearest second)",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "duration.decimal"
+  ]
+}
