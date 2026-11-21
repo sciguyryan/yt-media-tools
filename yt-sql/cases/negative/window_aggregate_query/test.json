@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "negative.window_aggregate_query",
+  "description": "Window functions are not allowed in aggregate queries",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

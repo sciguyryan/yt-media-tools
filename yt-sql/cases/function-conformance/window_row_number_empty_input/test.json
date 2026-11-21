@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "function-conformance.window_row_number_empty_input",
+  "description": "An empty input relation produces no numbered rows",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

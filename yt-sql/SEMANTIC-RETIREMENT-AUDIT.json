@@ -9,11 +9,11 @@
     "yt-sql/REVIEWED-RETIREMENTS.json"
   ],
   "counts": {
-    "language_elements": 279,
-    "normative_manifests": 1236,
-    "legacy_test_files": 225,
-    "test_functions": 1641,
-    "assertion_sites": 4144
+    "language_elements": 283,
+    "normative_manifests": 1260,
+    "legacy_test_files": 226,
+    "test_functions": 1686,
+    "assertion_sites": 4239
   },
   "normative_cases": [
     {
@@ -1301,6 +1301,50 @@
       "manifest": "yt-sql/cases/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
+      "id": "function-conformance.window_row_number_alias_expression",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_alias_expression/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_alias_order",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_alias_order/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_case_insensitive",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_case_insensitive/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_empty_input",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_empty_input/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_null_ordering_asc",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_null_ordering_asc/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_null_ordering_desc",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_null_ordering_desc/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_partition",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_partition/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_partition_null_keys",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_partition_null_keys/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_reordered",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_reordered/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_slice",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_slice/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_unordered_output",
+      "manifest": "yt-sql/cases/function-conformance/window_row_number_unordered_output/test.json"
+    },
+    {
       "id": "interaction.boolean_not_and_page",
       "manifest": "yt-sql/cases/interaction/boolean_not_and_page/test.json"
     },
@@ -1373,6 +1417,22 @@
       "manifest": "yt-sql/cases/interaction/predicate_empty_page/test.json"
     },
     {
+      "id": "interaction.window_cte_outer_reorder",
+      "manifest": "yt-sql/cases/interaction/window_cte_outer_reorder/test.json"
+    },
+    {
+      "id": "interaction.window_distinct_numbered",
+      "manifest": "yt-sql/cases/interaction/window_distinct_numbered/test.json"
+    },
+    {
+      "id": "interaction.window_position_coexistence",
+      "manifest": "yt-sql/cases/interaction/window_position_coexistence/test.json"
+    },
+    {
+      "id": "interaction.window_union_branch_numbering",
+      "manifest": "yt-sql/cases/interaction/window_union_branch_numbering/test.json"
+    },
+    {
       "id": "negative.invalid_count_text",
       "manifest": "yt-sql/cases/negative/invalid_count_text/test.json"
     },
@@ -1407,6 +1467,42 @@
     {
       "id": "negative.where_missing_operand",
       "manifest": "yt-sql/cases/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "negative.window_aggregate_query",
+      "manifest": "yt-sql/cases/negative/window_aggregate_query/test.json"
+    },
+    {
+      "id": "negative.window_arguments",
+      "manifest": "yt-sql/cases/negative/window_arguments/test.json"
+    },
+    {
+      "id": "negative.window_empty_spec",
+      "manifest": "yt-sql/cases/negative/window_empty_spec/test.json"
+    },
+    {
+      "id": "negative.window_frame_unsupported",
+      "manifest": "yt-sql/cases/negative/window_frame_unsupported/test.json"
+    },
+    {
+      "id": "negative.window_malformed_spec",
+      "manifest": "yt-sql/cases/negative/window_malformed_spec/test.json"
+    },
+    {
+      "id": "negative.window_missing_over",
+      "manifest": "yt-sql/cases/negative/window_missing_over/test.json"
+    },
+    {
+      "id": "negative.window_nested_spec",
+      "manifest": "yt-sql/cases/negative/window_nested_spec/test.json"
+    },
+    {
+      "id": "negative.window_placement_where",
+      "manifest": "yt-sql/cases/negative/window_placement_where/test.json"
+    },
+    {
+      "id": "negative.window_volatile_spec",
+      "manifest": "yt-sql/cases/negative/window_volatile_spec/test.json"
     },
     {
       "id": "ordering.offset_limit",
@@ -15616,6 +15712,59 @@
       "migration_status": "not_certified"
     },
     {
+      "id": "feature:window.row-number",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
       "id": "function:AVG",
       "category": "function",
       "primary_phase": 3,
@@ -16465,6 +16614,59 @@
     },
     {
       "id": "function:RANDOM",
+      "category": "function",
+      "primary_phase": 3,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
+      "id": "function:ROW_NUMBER",
       "category": "function",
       "primary_phase": 3,
       "required_dimensions": [
@@ -18585,6 +18787,112 @@
     },
     {
       "id": "keyword:OUTER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
+      "id": "keyword:OVER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "reviewed_case_ids": [],
+      "dimension_evidence": {
+        "valid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "invalid_syntax": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "semantics": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "types_and_null": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "boundaries": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "interactions": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        },
+        "adversarial": {
+          "status": "pending_review",
+          "case_ids": [],
+          "not_applicable_reason": null
+        }
+      },
+      "migration_status": "not_certified"
+    },
+    {
+      "id": "keyword:PARTITION",
       "category": "keyword",
       "primary_phase": 2,
       "required_dimensions": [
@@ -30316,6 +30624,12 @@
         {
           "name": "test_formal_grammar_is_parser_neutral_and_versioned",
           "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
             {
               "kind": "assert"
             },
@@ -44575,6 +44889,607 @@
       "retirement_decision": "retain_pending_assertion_level_review"
     },
     {
+      "path": "python/yt_discover_tests/test_window_functions.py",
+      "previous_classification": "retain: implementation/integration pending review",
+      "tests": [
+        {
+          "name": "test_aggregate_queries_reject_window_functions",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            },
+            {
+              "kind": "raises"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_alias_reference_inside_a_window_specification_is_an_unknown_field",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_cte_window_numbering_survives_outer_reordering",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_derived_relation_window_numbering_is_scoped_to_the_nested_query",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_direct_window_call_in_order_by_is_rejected",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_distinct_operates_on_numbered_rows",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_duplicate_window_output_names_are_rejected",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_empty_input_produces_no_rows",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_human_explain_reports_window_evaluation",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_incompatible_window_ordering_values_raise_a_comparison_error",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_malformed_window_specifications_are_rejected_deterministically",
+          "assertion_sites": [
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_of_facet_projection_timing_is_not_regressed_by_windows",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_optimiser_leaves_window_specifications_untouched",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_over_after_a_non_window_function_is_not_a_window_specification",
+          "assertion_sites": [
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_over_natural_comparison_still_applies_to_fields",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_partition_keys_group_by_exact_equality_including_nulls",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_plain_union_deduplicates_numbered_rows_independently",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_position_and_window_numbering_are_independent",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_position_and_window_projections_coexist",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_predicate_only_query_rejects_window_functions",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_required_query_fields_include_window_specification_fields",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_row_number_rejects_arguments",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_row_number_requires_an_over_specification",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_row_number_without_call_remains_an_ordinary_field",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_slicing_applies_after_numbering",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_tied_window_ordering_keys_receive_distinct_consecutive_numbers",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_union_branches_number_their_own_rows",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_where_filtering_precedes_window_numbering",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_alias_may_order_the_final_result",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_alias_orders_inside_larger_expressions",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_canonical_round_trip_preserves_semantics",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_function_in_where_parses_then_fails_at_resolution",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_functions_disable_source_prefix_early_limit",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_inside_a_larger_projection_expression_is_rejected",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_numbering_survives_a_reordering_final_order_by",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_numbering_without_a_final_order_by",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_ordering_accepts_only_scalar_expressions",
+          "assertion_sites": [
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_ordering_places_nulls_last_in_both_directions",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_placement_rejections",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "raises"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_projection_canonicalises_deterministically",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_projection_parses_into_window_nodes",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_projection_resolves_to_non_nullable_integer",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_properties_are_window_stage_with_specification_requirements",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_queries_are_differentially_stable",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_window_specification_parses_partition_and_order_terms",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        }
+      ],
+      "retirement_decision": "retain_pending_assertion_level_review"
+    },
+    {
       "path": "python/yt_discover_tests/test_youtubejs_bridge_diagnostics.py",
       "previous_classification": "retain: implementation/integration pending review",
       "tests": [
@@ -46240,6 +47155,10 @@
         {
           "test": "test_unformatted_fixture_query",
           "reason": "Formatter contract: unformatted input must be normalised. Tooling behaviour."
+        },
+        {
+          "test": "test_window_specification_parses_and_formats",
+          "reason": "Formatter contract: the SQLFluff dialect must round-trip ROW_NUMBER() OVER (...) window specifications. The language semantics are normative through the window function-conformance and negative cases."
         }
       ]
     },

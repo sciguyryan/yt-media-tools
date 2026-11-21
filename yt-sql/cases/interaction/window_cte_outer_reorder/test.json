@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "interaction.window_cte_outer_reorder",
+  "description": "A CTE numbers its own rows; the enclosing query reorders freely",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

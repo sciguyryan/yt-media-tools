@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "interaction.window_position_coexistence",
+  "description": "POSITION() and ROW_NUMBER() are evaluated independently at their own stages",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

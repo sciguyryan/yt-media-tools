@@ -228,7 +228,9 @@
         "parse_collection_predicate",
         "parse_predicate",
         "parse_query",
-        "parse_scalar_function"
+        "parse_scalar_function",
+        "parse_window_function",
+        "parse_window_specification"
       ],
       "classification": "structural_token_not_language_keyword",
       "approved_case_ids": []
@@ -253,7 +255,9 @@
         "parse_query",
         "parse_relation_references",
         "parse_scalar_atom",
-        "parse_scalar_function"
+        "parse_scalar_function",
+        "parse_window_function",
+        "parse_window_specification"
       ],
       "classification": "structural_token_not_language_keyword",
       "approved_case_ids": []

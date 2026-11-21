@@ -45,7 +45,11 @@ def generate() -> dict[str, object]:
     coverage = json.loads(COVERAGE.read_text(encoding="utf-8"))
     gaps = json.loads(GAPS.read_text(encoding="utf-8"))
     functions = {entry["name"]: entry for entry in gaps["functions"]}
-    registered = set(coverage["parser_functions"]["scalar"]) | set(coverage["parser_functions"]["aggregate"])
+    registered = (
+        set(coverage["parser_functions"]["scalar"])
+        | set(coverage["parser_functions"]["aggregate"])
+        | set(coverage["parser_functions"].get("window", []))
+    )
     if set(functions) != registered:
         raise ValueError("Function inventory drift: review function registrations")
     sites: list[dict[str, object]] = []

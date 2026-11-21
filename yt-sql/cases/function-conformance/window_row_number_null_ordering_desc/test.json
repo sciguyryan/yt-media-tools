@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "function-conformance.window_row_number_null_ordering_desc",
+  "description": "NULL window ordering keys sort last with DESC",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

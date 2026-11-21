@@ -1,0 +1,1 @@
+SELECT ROW_NUMBER() OVER (ORDER BY RANDOM()) AS n, id FROM @yt_sql_fixture

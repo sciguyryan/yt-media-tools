@@ -1015,6 +1015,10 @@
         {
           "test": "test_unformatted_fixture_query",
           "reason": "Formatter contract: unformatted input must be normalised. Tooling behaviour."
+        },
+        {
+          "test": "test_window_specification_parses_and_formats",
+          "reason": "Formatter contract: the SQLFluff dialect must round-trip ROW_NUMBER() OVER (...) window specifications. The language semantics are normative through the window function-conformance and negative cases."
         }
       ]
     },

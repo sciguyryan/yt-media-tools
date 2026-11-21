@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "function-conformance.window_row_number_reordered",
+  "description": "Chronological window numbering survives a reordering final ORDER BY",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

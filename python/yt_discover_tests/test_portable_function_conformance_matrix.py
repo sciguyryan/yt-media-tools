@@ -25,6 +25,7 @@ FUNCTIONS = (
     "NULLIF",
     "POSITION",
     "RANDOM",
+    "ROW_NUMBER",
     "SUM",
     "UPPER",
 )

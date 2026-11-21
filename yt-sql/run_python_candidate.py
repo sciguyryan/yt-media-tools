@@ -205,6 +205,17 @@ def observe(
             return _validate({"version": 1, "outcome": "error", "error": {"category": "syntax"}})
         if exc.context.category == "semantic" and exc.context.reason == "unsupported-position-set-operation":
             return _validate({"version": 1, "outcome": "error", "error": {"category": "unsupported"}})
+        if exc.context.category == "semantic" and exc.context.reason in {
+            "invalid-window-placement",
+            "window-order-required",
+            "invalid-window-volatile",
+        }:
+            return _validate({"version": 1, "outcome": "error", "error": {"category": "syntax"}})
+        if exc.context.category == "semantic" and exc.context.reason in {
+            "unsupported-window-aggregate-query",
+            "unsupported-window-nesting",
+        }:
+            return _validate({"version": 1, "outcome": "error", "error": {"category": "unsupported"}})
         raise AdapterError(
             f"unclassified Python language diagnostic: {exc.context.category}/{exc.context.reason}"
         ) from exc

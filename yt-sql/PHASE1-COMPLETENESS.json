@@ -2,11 +2,11 @@
   "version": 1,
   "status": "phase1_review_obligations_not_conformance_certification",
   "registry": {
-    "total": 279,
+    "total": 283,
     "categories": {
-      "feature": 201,
-      "function": 19,
-      "keyword": 47,
+      "feature": 202,
+      "function": 20,
+      "keyword": 49,
       "operator": 12
     },
     "approved_element_count": 0,
@@ -212,6 +212,7 @@
       "feature:value.integer.hex",
       "feature:value.integer.octal",
       "feature:value.number.negative",
+      "feature:window.row-number",
       "function:AVG",
       "function:CARDINALITY",
       "function:CHAR",
@@ -229,6 +230,7 @@
       "function:NULLIF",
       "function:POSITION",
       "function:RANDOM",
+      "function:ROW_NUMBER",
       "function:SUM",
       "function:UPPER",
       "keyword:ALL",
@@ -269,6 +271,8 @@
       "keyword:OR",
       "keyword:ORDER",
       "keyword:OUTER",
+      "keyword:OVER",
+      "keyword:PARTITION",
       "keyword:SELECT",
       "keyword:SEMI",
       "keyword:THEN",
@@ -293,7 +297,7 @@
     ]
   },
   "function_review": {
-    "total": 19,
+    "total": 20,
     "names": [
       "AVG",
       "CARDINALITY",
@@ -312,6 +316,7 @@
       "NULLIF",
       "POSITION",
       "RANDOM",
+      "ROW_NUMBER",
       "SUM",
       "UPPER"
     ],

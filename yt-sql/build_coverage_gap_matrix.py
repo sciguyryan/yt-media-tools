@@ -24,7 +24,7 @@ DIMENSIONS = (
     "adversarial",
 )
 
-# These signatures describe explicit parse_scalar_function checks, not complete
+# These signatures describe explicit parser argument checks, not complete
 # resolver/evaluator typing contracts. Changes require source review.
 SIGNATURES = {
     "LOWER": "exactly_one",
@@ -46,6 +46,9 @@ SIGNATURES = {
     "MIN": "exactly_one",
     "MAX": "exactly_one",
     "AVG": "exactly_one",
+    # Window functions are parsed by parse_window_function; the signature
+    # describes its zero-argument call plus mandatory OVER specification.
+    "ROW_NUMBER": "zero_with_window_specification",
 }
 
 
@@ -101,7 +104,10 @@ def generate() -> dict[str, object]:
     tree = ast.parse(PARSER.read_text(encoding="utf-8"))
     parser = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Parser")
     methods = {n.name: n for n in parser.body if isinstance(n, ast.FunctionDef)}
-    registered = sorted(set(coverage["parser_functions"]["scalar"] + coverage["parser_functions"]["aggregate"]))
+    window_functions = coverage["parser_functions"].get("window", [])
+    registered = sorted(
+        set(coverage["parser_functions"]["scalar"] + coverage["parser_functions"]["aggregate"] + window_functions)
+    )
     if set(registered) != set(SIGNATURES):
         raise ValueError("Function registry and reviewed parser signatures differ; audit the change")
     functions = []
@@ -113,10 +119,16 @@ def generate() -> dict[str, object]:
                 dimensions[dimension] = dict(record[dimension])
             else:
                 dimensions[dimension] = {"status": "unverified", "reviewed_case_ids": []}
+        if name in window_functions:
+            kind = "window"
+        elif name in coverage["parser_functions"]["aggregate"]:
+            kind = "aggregate"
+        else:
+            kind = "scalar"
         functions.append(
             {
                 "name": name,
-                "kind": "aggregate" if name in coverage["parser_functions"]["aggregate"] else "scalar",
+                "kind": kind,
                 "parser_argument_shape": SIGNATURES[name],
                 "signature_status": "source_review_required_for_semantics_and_types",
                 "dimensions": dimensions,

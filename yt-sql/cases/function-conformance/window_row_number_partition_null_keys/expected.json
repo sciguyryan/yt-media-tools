@@ -1,0 +1,491 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "n",
+    "fixture_nullable",
+    "id"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "g0",
+      "vid003"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "g0",
+      "vid006"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "g0",
+      "vid009"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      "g0",
+      "vid012"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      "g0",
+      "vid018"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      "g0",
+      "vid021"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      "g0",
+      "vid024"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      "g0",
+      "vid027"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      "g0",
+      "vid033"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      "g0",
+      "vid036"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      "g0",
+      "vid039"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      "g0",
+      "vid042"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      "g0",
+      "vid048"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      "g0",
+      "vid051"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      "g0",
+      "vid054"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "16"
+      },
+      "g0",
+      "vid057"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "g1",
+      "vid001"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "g1",
+      "vid004"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "g1",
+      "vid007"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      "g1",
+      "vid013"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      "g1",
+      "vid016"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      "g1",
+      "vid019"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      "g1",
+      "vid022"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      "g1",
+      "vid028"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      "g1",
+      "vid031"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      "g1",
+      "vid034"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      "g1",
+      "vid037"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      "g1",
+      "vid043"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      "g1",
+      "vid046"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      "g1",
+      "vid049"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      "g1",
+      "vid052"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "16"
+      },
+      "g1",
+      "vid058"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "g2",
+      "vid002"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "g2",
+      "vid008"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "g2",
+      "vid011"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      "g2",
+      "vid014"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      "g2",
+      "vid017"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      "g2",
+      "vid023"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      "g2",
+      "vid026"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      "g2",
+      "vid029"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      "g2",
+      "vid032"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      "g2",
+      "vid038"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      "g2",
+      "vid041"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      "g2",
+      "vid044"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      "g2",
+      "vid047"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      "g2",
+      "vid053"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      "g2",
+      "vid056"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "16"
+      },
+      "g2",
+      "vid059"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      null,
+      "vid005"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      null,
+      "vid010"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      null,
+      "vid015"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      null,
+      "vid020"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      null,
+      "vid025"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      null,
+      "vid030"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      null,
+      "vid035"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      null,
+      "vid040"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      null,
+      "vid045"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      null,
+      "vid050"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      null,
+      "vid055"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      null,
+      "vid060"
+    ]
+  ]
+}

@@ -1,0 +1,1 @@
+SELECT COUNT(*), ROW_NUMBER() OVER (ORDER BY id) AS n FROM @yt_sql_fixture

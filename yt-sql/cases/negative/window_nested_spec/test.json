@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "negative.window_nested_spec",
+  "description": "Window functions cannot be nested inside another window specification",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

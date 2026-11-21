@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "n",
+    "id"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid060"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      "vid059"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      "vid058"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      "vid057"
+    ]
+  ]
+}

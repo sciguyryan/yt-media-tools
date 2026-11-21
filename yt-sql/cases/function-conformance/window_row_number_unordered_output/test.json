@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "function-conformance.window_row_number_unordered_output",
+  "description": "Fully distinguished window keys give a deterministic result multiset without final ordering",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "unordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

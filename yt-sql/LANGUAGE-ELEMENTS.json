@@ -1417,6 +1417,13 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:window.row-number",
+      "category": "feature",
+      "name": "window.row-number",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
       "id": "function:AVG",
       "category": "function",
       "name": "AVG",
@@ -1532,6 +1539,13 @@
       "id": "function:RANDOM",
       "category": "function",
       "name": "RANDOM",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:ROW_NUMBER",
+      "category": "function",
+      "name": "ROW_NUMBER",
       "review_status": "pending",
       "approved_case_ids": []
     },
@@ -1812,6 +1826,20 @@
       "id": "keyword:OUTER",
       "category": "keyword",
       "name": "OUTER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OVER",
+      "category": "keyword",
+      "name": "OVER",
+      "review_status": "pending",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:PARTITION",
+      "category": "keyword",
+      "name": "PARTITION",
       "review_status": "pending",
       "approved_case_ids": []
     },

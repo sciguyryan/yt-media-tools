@@ -12437,6 +12437,96 @@
       }
     },
     {
+      "name": "ROW_NUMBER",
+      "kind": "window",
+      "parser_argument_shape": "zero_with_window_specification",
+      "signature_status": "source_review_required_for_semantics_and_types",
+      "dimensions": {
+        "valid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.window_row_number_case_insensitive",
+            "function-conformance.window_row_number_partition",
+            "function-conformance.window_row_number_reordered",
+            "function-conformance.window_row_number_unordered_output"
+          ],
+          "justification": "ROW_NUMBER over an OVER specification with window ordering, partitioning and case-insensitive spellings parses into window nodes and canonicalises deterministically."
+        },
+        "invalid_syntax": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "negative.window_arguments",
+            "negative.window_empty_spec",
+            "negative.window_frame_unsupported",
+            "negative.window_malformed_spec",
+            "negative.window_missing_over",
+            "negative.window_placement_where",
+            "negative.window_volatile_spec"
+          ],
+          "justification": "Missing OVER, argument shapes, malformed window specification, frame syntax, WHERE placement, empty specification and volatile ordering keys are rejected with deterministic portable categories."
+        },
+        "semantics": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.window_row_number_alias_expression",
+            "function-conformance.window_row_number_alias_order",
+            "function-conformance.window_row_number_empty_input",
+            "function-conformance.window_row_number_null_ordering_asc",
+            "function-conformance.window_row_number_null_ordering_desc",
+            "function-conformance.window_row_number_partition",
+            "function-conformance.window_row_number_partition_null_keys",
+            "function-conformance.window_row_number_reordered",
+            "function-conformance.window_row_number_slice",
+            "function-conformance.window_row_number_unordered_output",
+            "interaction.window_cte_outer_reorder",
+            "interaction.window_distinct_numbered",
+            "interaction.window_position_coexistence",
+            "interaction.window_union_branch_numbering"
+          ],
+          "justification": "Numbering restarts per partition, places NULL ordering keys last in both directions, survives reordering final ordering, alias ordering and post-numbering slicing, and every admitted case matches an independently written plain-Python oracle over the committed fixture."
+        },
+        "types_and_null": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.window_row_number_null_ordering_asc",
+            "function-conformance.window_row_number_null_ordering_desc",
+            "function-conformance.window_row_number_partition_null_keys"
+          ],
+          "justification": "The result is a non-nullable integer; NULL partition keys group together and NULL window ordering keys sort after non-NULL values in both directions."
+        },
+        "boundaries": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.window_row_number_empty_input",
+            "function-conformance.window_row_number_null_ordering_desc",
+            "function-conformance.window_row_number_unordered_output"
+          ],
+          "justification": "Empty input relations produce no numbered rows; fully distinguished window keys give a deterministic result multiset even without final ordering."
+        },
+        "interactions": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "function-conformance.window_row_number_alias_expression",
+            "function-conformance.window_row_number_alias_order",
+            "function-conformance.window_row_number_slice",
+            "interaction.window_cte_outer_reorder",
+            "interaction.window_distinct_numbered",
+            "interaction.window_position_coexistence",
+            "interaction.window_union_branch_numbering"
+          ],
+          "justification": "CTE materialisation, per-branch UNION ALL numbering, DISTINCT over numbered rows, POSITION coexistence, alias-based final ordering and post-numbering slicing keep their documented scoping."
+        },
+        "adversarial": {
+          "status": "reviewed",
+          "reviewed_case_ids": [
+            "interaction.window_position_coexistence",
+            "interaction.window_union_branch_numbering"
+          ],
+          "justification": "Per-branch composition over a 120-row UNION ALL result with two independently numbered branches, and POSITION/window coexistence with two deferred numbering stages in one query, are pinned. Maximal torture composition remains a recorded limitation."
+        }
+      }
+    },
+    {
       "name": "SUM",
       "kind": "aggregate",
       "parser_argument_shape": "exactly_one",
@@ -12904,6 +12994,33 @@
       "literal_expect_keywords": [],
       "literal_consume_keywords": [],
       "alternatives_status": "not_yet_exhaustively_reviewed"
+    },
+    {
+      "method": "parse_window_function",
+      "literal_expect_tokens": [
+        "LPAREN",
+        "RPAREN"
+      ],
+      "literal_expect_keywords": [],
+      "literal_consume_keywords": [
+        "OVER"
+      ],
+      "alternatives_status": "not_yet_exhaustively_reviewed"
+    },
+    {
+      "method": "parse_window_specification",
+      "literal_expect_tokens": [
+        "LPAREN",
+        "RPAREN"
+      ],
+      "literal_expect_keywords": [
+        "BY"
+      ],
+      "literal_consume_keywords": [
+        "ORDER",
+        "PARTITION"
+      ],
+      "alternatives_status": "not_yet_exhaustively_reviewed"
     }
   ],
   "diagnostic_raise_sites": [
@@ -13213,6 +13330,14 @@
     },
     {
       "method": "parse_text_literal",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_window_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_window_function",
       "exception": "QuerySyntaxError"
     },
     {

@@ -98,6 +98,12 @@
     },
     {
       "name": "parse_text_literal"
+    },
+    {
+      "name": "parse_window_function"
+    },
+    {
+      "name": "parse_window_specification"
     }
   ],
   "literal_keyword_calls": {
@@ -127,7 +133,8 @@
       "parse_predicate"
     ],
     "BY": [
-      "parse_query"
+      "parse_query",
+      "parse_window_specification"
     ],
     "CASE": [
       "parse_scalar_atom",
@@ -252,10 +259,17 @@
     "ORDER": [
       "_at_expression_boundary",
       "_statement_clause_at_current",
-      "parse_query"
+      "parse_query",
+      "parse_window_specification"
     ],
     "OUTER": [
       "parse_join_clause"
+    ],
+    "OVER": [
+      "parse_window_function"
+    ],
+    "PARTITION": [
+      "parse_window_specification"
     ],
     "RECURSIVE": [
       "parse_query"
@@ -607,6 +621,14 @@
       "exception": "QuerySyntaxError"
     },
     {
+      "method": "parse_window_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
+      "method": "parse_window_function",
+      "exception": "QuerySyntaxError"
+    },
+    {
       "method": "tokenise",
       "exception": "QueryLexicalError"
     },
@@ -654,6 +676,9 @@
       "MAX",
       "MIN",
       "SUM"
+    ],
+    "window": [
+      "ROW_NUMBER"
     ]
   },
   "registered_features_without_tagged_existing_cases": [],

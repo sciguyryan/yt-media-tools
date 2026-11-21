@@ -1,0 +1,6 @@
+SELECT
+    ROW_NUMBER() OVER (PARTITION BY fixture_group ORDER BY id ASC) AS n,
+    fixture_group,
+    id
+FROM @yt_sql_fixture
+ORDER BY fixture_group ASC, n ASC

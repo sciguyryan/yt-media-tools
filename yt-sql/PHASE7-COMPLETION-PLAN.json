@@ -4447,6 +4447,28 @@
       "approved_case_ids": []
     },
     {
+      "id": "feature:window.row-number",
+      "category": "feature",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
       "id": "function:AVG",
       "category": "function",
       "primary_phase": 3,
@@ -4800,6 +4822,28 @@
     },
     {
       "id": "function:RANDOM",
+      "category": "function",
+      "primary_phase": 3,
+      "required_phases": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "function:ROW_NUMBER",
       "category": "function",
       "primary_phase": 3,
       "required_phases": [
@@ -5680,6 +5724,50 @@
     },
     {
       "id": "keyword:OUTER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:OVER",
+      "category": "keyword",
+      "primary_phase": 2,
+      "required_phases": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "required_dimensions": [
+        "valid_syntax",
+        "invalid_syntax",
+        "semantics",
+        "types_and_null",
+        "boundaries",
+        "interactions",
+        "adversarial"
+      ],
+      "coverage_status": "unverified",
+      "approved_case_ids": []
+    },
+    {
+      "id": "keyword:PARTITION",
       "category": "keyword",
       "primary_phase": 2,
       "required_phases": [

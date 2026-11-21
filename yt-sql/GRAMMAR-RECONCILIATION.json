@@ -55,7 +55,8 @@
     {
       "word": "BY",
       "methods": [
-        "parse_query"
+        "parse_query",
+        "parse_window_specification"
       ],
       "registry_keyword_present": true
     },
@@ -296,7 +297,8 @@
     {
       "word": "ORDER",
       "methods": [
-        "parse_query"
+        "parse_query",
+        "parse_window_specification"
       ],
       "registry_keyword_present": true
     },
@@ -304,6 +306,20 @@
       "word": "OUTER",
       "methods": [
         "parse_join_clause"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "OVER",
+      "methods": [
+        "parse_window_function"
+      ],
+      "registry_keyword_present": true
+    },
+    {
+      "word": "PARTITION",
+      "methods": [
+        "parse_window_specification"
       ],
       "registry_keyword_present": true
     },
@@ -395,7 +411,9 @@
         "parse_collection_predicate",
         "parse_predicate",
         "parse_query",
-        "parse_scalar_function"
+        "parse_scalar_function",
+        "parse_window_function",
+        "parse_window_specification"
       ]
     },
     {
@@ -414,7 +432,9 @@
         "parse_query",
         "parse_relation_references",
         "parse_scalar_atom",
-        "parse_scalar_function"
+        "parse_scalar_function",
+        "parse_window_function",
+        "parse_window_specification"
       ]
     }
   ],
@@ -454,7 +474,7 @@
     {
       "module": "query_parser.py",
       "exception": "QuerySyntaxError",
-      "scope_groups": 22
+      "scope_groups": 23
     },
     {
       "module": "query_resolver.py",
@@ -464,7 +484,7 @@
     {
       "module": "query_resolver.py",
       "exception": "QuerySemanticError",
-      "scope_groups": 19
+      "scope_groups": 20
     },
     {
       "module": "query_resolver.py",

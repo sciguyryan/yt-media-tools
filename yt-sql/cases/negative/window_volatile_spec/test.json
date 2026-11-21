@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "negative.window_volatile_spec",
+  "description": "RANDOM is not allowed inside a window specification",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

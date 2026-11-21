@@ -1814,6 +1814,9 @@
       "MAX",
       "MIN",
       "SUM"
+    ],
+    "window": [
+      "ROW_NUMBER"
     ]
   },
   "shared_cases": [
@@ -4081,6 +4084,83 @@
       "path": "yt-sql/cases/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
+      "id": "function-conformance.window_row_number_alias_expression",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_alias_expression/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_alias_order",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_alias_order/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_case_insensitive",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_case_insensitive/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_empty_input",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_empty_input/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_null_ordering_asc",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_null_ordering_asc/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_null_ordering_desc",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_null_ordering_desc/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_partition",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_partition/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_partition_null_keys",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_partition_null_keys/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_reordered",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_reordered/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_slice",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_slice/test.json"
+    },
+    {
+      "id": "function-conformance.window_row_number_unordered_output",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/function-conformance/window_row_number_unordered_output/test.json"
+    },
+    {
       "id": "interaction.boolean_not_and_page",
       "features": [
         "not",
@@ -4260,6 +4340,34 @@
       "path": "yt-sql/cases/interaction/predicate_empty_page/test.json"
     },
     {
+      "id": "interaction.window_cte_outer_reorder",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/interaction/window_cte_outer_reorder/test.json"
+    },
+    {
+      "id": "interaction.window_distinct_numbered",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/interaction/window_distinct_numbered/test.json"
+    },
+    {
+      "id": "interaction.window_position_coexistence",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/interaction/window_position_coexistence/test.json"
+    },
+    {
+      "id": "interaction.window_union_branch_numbering",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/interaction/window_union_branch_numbering/test.json"
+    },
+    {
       "id": "negative.invalid_count_text",
       "features": [],
       "path": "yt-sql/cases/negative/invalid_count_text/test.json"
@@ -4303,6 +4411,69 @@
       "id": "negative.where_missing_operand",
       "features": [],
       "path": "yt-sql/cases/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "negative.window_aggregate_query",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_aggregate_query/test.json"
+    },
+    {
+      "id": "negative.window_arguments",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_arguments/test.json"
+    },
+    {
+      "id": "negative.window_empty_spec",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_empty_spec/test.json"
+    },
+    {
+      "id": "negative.window_frame_unsupported",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_frame_unsupported/test.json"
+    },
+    {
+      "id": "negative.window_malformed_spec",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_malformed_spec/test.json"
+    },
+    {
+      "id": "negative.window_missing_over",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_missing_over/test.json"
+    },
+    {
+      "id": "negative.window_nested_spec",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_nested_spec/test.json"
+    },
+    {
+      "id": "negative.window_placement_where",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_placement_where/test.json"
+    },
+    {
+      "id": "negative.window_volatile_spec",
+      "features": [
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/negative/window_volatile_spec/test.json"
     },
     {
       "id": "ordering.offset_limit",

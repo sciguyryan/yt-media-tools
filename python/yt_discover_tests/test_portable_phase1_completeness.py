@@ -18,4 +18,4 @@ def test_phase1_completeness_matches_source() -> None:
     actual = json.loads((ROOT / "yt-sql/PHASE1-COMPLETENESS.json").read_text(encoding="utf-8"))
     assert actual == module.generate()
     assert actual["registry"]["approved_element_count"] == 0
-    assert actual["function_review"]["total"] == 19
+    assert actual["function_review"]["total"] == 20

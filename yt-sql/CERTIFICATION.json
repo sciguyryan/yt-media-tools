@@ -1,20 +1,20 @@
 {
   "version": 1,
   "status": "certified",
-  "certified_on": "2026-11-19",
+  "certified_on": "2026-11-21",
   "reviewer": "GLM-5.3-Flash assisted session (OpenCode), on behalf of the repository maintainer",
   "scope": "Phase 6.6: the portable corpus is certified modulo explicitly deferred features",
   "corpus": {
-    "cases": 1236,
-    "normative": 618,
+    "cases": 1260,
+    "normative": 642,
     "torture": 618,
-    "validated": 1236
+    "validated": 1260
   },
   "conformance": {
     "implementation": "python",
     "configuration": "default",
     "counts": {
-      "pass": 1236,
+      "pass": 1260,
       "fail": 0,
       "error": 0,
       "xfail": 0,
@@ -24,12 +24,12 @@
     "declared_xfails": []
   },
   "coverage": {
-    "total_cells": 1456,
-    "reviewed_cells": 1435,
+    "total_cells": 1463,
+    "reviewed_cells": 1442,
     "deferred_cells": 21,
     "function_cells": {
-      "total": 133,
-      "reviewed": 133,
+      "total": 140,
+      "reviewed": 140,
       "deferred": 0
     },
     "feature_cells": {

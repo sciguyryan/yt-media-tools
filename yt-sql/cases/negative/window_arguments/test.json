@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "negative.window_arguments",
+  "description": "ROW_NUMBER takes no arguments",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

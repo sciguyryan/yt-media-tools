@@ -584,6 +584,7 @@
     "python/yt_discover_tests/test_unicode_semantics.py": "review: language semantics",
     "python/yt_discover_tests/test_union_acquisition_planning.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_units.py": "retain: implementation/integration pending review",
+    "python/yt_discover_tests/test_window_functions.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_youtubejs_bridge_diagnostics.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_youtubejs_production_acquisition.py": "retain: implementation/integration pending review",
     "python/yt_discover_tests/test_youtubejs_publish_date.py": "retain: implementation/integration pending review",

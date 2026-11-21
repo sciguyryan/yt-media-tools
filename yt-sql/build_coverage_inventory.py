@@ -103,6 +103,14 @@ def main() -> None:
                             functions[target.id] = sorted(ast.literal_eval(statement.value))
     if set(functions) != {"scalar_names", "aggregate_names"}:
         raise ValueError("Parser function registry layout changed; manual audit required")
+    window_functions: list[str] = []
+    for node in ast.walk(parser_tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_WINDOW_FUNCTION_NAMES":
+                    window_functions = sorted(ast.literal_eval(node.value))
+    if not window_functions:
+        raise ValueError("Parser window function registry changed; manual audit required")
     shared_cases = []
     for manifest in sorted((ROOT / "yt-sql/cases").glob("**/test.json")):
         obj = json.loads(manifest.read_text(encoding="utf-8"))
@@ -120,7 +128,11 @@ def main() -> None:
         "feature_to_existing_cases": {feature: sorted(by_feature.get(feature, [])) for feature in features},
         "existing_cases": sorted(cases, key=lambda x: x["id"]),
         "unregistered_existing_case_tags": sorted(set(by_feature) - set(features)),
-        "parser_functions": {"scalar": functions["scalar_names"], "aggregate": functions["aggregate_names"]},
+        "parser_functions": {
+            "scalar": functions["scalar_names"],
+            "aggregate": functions["aggregate_names"],
+            "window": window_functions,
+        },
         "shared_cases": shared_cases,
         "coverage_dimensions": [
             "valid_syntax",

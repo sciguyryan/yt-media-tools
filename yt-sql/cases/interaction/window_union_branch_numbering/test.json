@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "id": "interaction.window_union_branch_numbering",
+  "description": "Each UNION ALL branch numbers its own rows before composition",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "unordered",
+  "features": [
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

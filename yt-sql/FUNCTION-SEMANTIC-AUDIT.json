@@ -280,6 +280,22 @@
       "review_status": "pending"
     },
     {
+      "name": "ROW_NUMBER",
+      "kind": "window",
+      "parser_argument_shape": "zero_with_window_specification",
+      "review_requirements": [
+        "arity",
+        "accepted_argument_types",
+        "coercion",
+        "return_type",
+        "null_semantics",
+        "invalid_arguments",
+        "boundary_values",
+        "nested_and_relational_interactions"
+      ],
+      "review_status": "pending"
+    },
+    {
       "name": "SUM",
       "kind": "aggregate",
       "parser_argument_shape": "exactly_one",
@@ -483,6 +499,13 @@
     },
     {
       "module": "query_parser.py",
+      "scope": "parse_window_function",
+      "exception": "QuerySyntaxError",
+      "count": 2,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_parser.py",
       "scope": "tokenise",
       "exception": "QueryLexicalError",
       "count": 6,
@@ -590,7 +613,7 @@
       "module": "query_resolver.py",
       "scope": "_resolve_scalar_expression",
       "exception": "QuerySemanticError",
-      "count": 27,
+      "count": 31,
       "classification": "requires_review"
     },
     {
@@ -640,6 +663,13 @@
       "scope": "_validate_random_placement",
       "exception": "QuerySemanticError",
       "count": 4,
+      "classification": "requires_review"
+    },
+    {
+      "module": "query_resolver.py",
+      "scope": "_validate_window_placement",
+      "exception": "QuerySemanticError",
+      "count": 2,
       "classification": "requires_review"
     },
     {
@@ -709,7 +739,7 @@
       "module": "query_evaluator.py",
       "scope": "_evaluate_scalar_expression",
       "exception": "AssertionError",
-      "count": 3,
+      "count": 4,
       "classification": "requires_review"
     },
     {
@@ -723,7 +753,7 @@
       "module": "query_evaluator.py",
       "scope": "canonical_record_value",
       "exception": "AssertionError",
-      "count": 1,
+      "count": 2,
       "classification": "requires_review"
     }
   ],
