@@ -45,12 +45,14 @@ from .query_model import (
     TextPredicate,
     TruthTest,
     Unary,
+    WindowFunction,
 )
 from .query_semantics import (
     _aggregate_query,
     _contains_aggregate,
     _contains_random,
     query_physical_source_requests,
+    semantic_key,
 )
 from .query_values import comparison_values as _comparison_values
 from .query_values import hashable_group_value as _hashable_group_value
@@ -158,6 +160,14 @@ def _evaluate_scalar_expression(expression: Any, context: dict[str, Any] | Evalu
         return canonical_record_value(record, expression)
     if isinstance(expression, Literal):
         return expression.value
+    if isinstance(expression, WindowFunction):
+        # Window values are established once per query body at the window stage
+        # and carried by the row under their semantic identity. An absent entry
+        # means a window expression escaped the projection-only placement rules.
+        value = record.get("_yt_sql_window_values", {}).get(semantic_key(expression))
+        if value is None:
+            raise AssertionError("Window functions must be evaluated at the window stage")
+        return value
     if isinstance(expression, ScalarUnary):
         value = _evaluate_scalar_expression(expression.operand, context)
         if value is None:
@@ -375,12 +385,15 @@ def canonical_record_value(
         aggregate_projection = field.expression is not None and _contains_aggregate(field.expression)
         volatile_projection = field.expression is not None and _contains_random(field.expression)
         deferred_position = _is_final_position(field)
+        window_projection = isinstance(field.expression, WindowFunction)
         if field.output_name in record and (
-            materialised_result or aggregate_projection or volatile_projection or deferred_position
+            materialised_result or aggregate_projection or volatile_projection or deferred_position or window_projection
         ):
             return record.get(field.output_name)
         if deferred_position:
             raise AssertionError("POSITION() must be evaluated at the final-result stage")
+        if window_projection:
+            raise AssertionError("Window functions must be evaluated at the window stage")
         if field.expression is not None:
             return evaluate_scalar_expression(field.expression, record)
         name, field_kind = field.field, field.kind
@@ -823,6 +836,60 @@ def _order_rows(rows: list[Any], term: OrderTerm, value_of: Callable[[Any], Any]
     return [row for row, _ in present] + missing
 
 
+def _apply_window_values(rows: list[dict[str, Any]], select: tuple[SelectTerm, ...]) -> list[dict[str, Any]]:
+    """Establish window projections over the filtered input relation.
+
+    Window numbering is computed once per query body over its complete filtered
+    input, before final ordering, deduplication and slicing. Each materialised
+    row carries standalone window values under their output names and a
+    semantic-key environment for ordering expressions that reference them.
+    """
+    window_terms = [term for term in select if isinstance(term.expression, WindowFunction)]
+    if not window_terms:
+        return rows
+    environments: list[dict[Any, int]] = [{} for _ in rows]
+    for term in window_terms:
+        numbers = _window_numbers(rows, term.expression)
+        for environment, number in zip(environments, numbers):
+            environment[semantic_key(term.expression)] = number
+    materialised = []
+    for record, environment in zip(rows, environments):
+        row = dict(record)
+        for term in window_terms:
+            row[term.output_name] = environment[semantic_key(term.expression)]
+        row["_yt_sql_window_values"] = environment
+        materialised.append(row)
+    return materialised
+
+
+def _window_numbers(rows: list[dict[str, Any]], expression: WindowFunction) -> list[int]:
+    """Number rows one-based within each partition, in window order.
+
+    Rows whose complete window-ordering keys compare equal keep encounter order
+    through the stable sort, but that relative numbering is not a language
+    guarantee: yt-sql does not add an implicit tie-breaker.
+    """
+    specification = expression.specification
+    partitions: dict[tuple[Any, ...], list[int]] = {}
+    encounter: list[tuple[Any, ...]] = []
+    for index, record in enumerate(rows):
+        key = tuple(
+            _hashable_group_value(evaluate_scalar_expression(item, record)) for item in specification.partition_by
+        )
+        if key not in partitions:
+            partitions[key] = []
+            encounter.append(key)
+        partitions[key].append(index)
+    numbers = [0] * len(rows)
+    for key in encounter:
+        ordered = list(partitions[key])
+        for term in reversed(specification.order_by):
+            ordered = _order_rows(ordered, term, lambda index: canonical_record_value(rows[index], term))
+        for position, index in enumerate(ordered, start=1):
+            numbers[index] = position
+    return numbers
+
+
 def _apply_aggregate_query(records: Sequence[dict[str, Any]], query: Query) -> list[dict[str, Any]]:
     filtered = [record for record in records if evaluate(query.predicate, record) is True]
     grouped: list[tuple[tuple[Any, ...], list[dict[str, Any]]]] = []
@@ -884,6 +951,10 @@ def _apply_query_body(records: Sequence[dict[str, Any]], query: Query) -> list[d
     if _aggregate_query(query):
         return _apply_aggregate_query(records, query)
     result = [record for record in records if evaluate(query.predicate, record) is True]
+
+    # Window values are established over the complete filtered input relation
+    # before ordering, deduplication and slicing can observe them.
+    result = _apply_window_values(result, query.select)
 
     # Sort from the last term backwards so each ORDER BY direction remains independent.
     # Python's stable sort may retain encounter order for ties, but yt-sql does not guarantee it.
@@ -1469,7 +1540,12 @@ def apply_query(
 
     # Result-row markers are an internal execution detail used while materialising
     # CTEs and set operations. They must never escape through the public query API.
-    execution_only_keys = {"_yt_sql_result_row", "_yt_sql_aggregate_result", "_yt_sql_random_cache"}
+    execution_only_keys = {
+        "_yt_sql_result_row",
+        "_yt_sql_aggregate_result",
+        "_yt_sql_random_cache",
+        "_yt_sql_window_values",
+    }
     return [{key: value for key, value in row.items() if key not in execution_only_keys} for row in result]
 
 

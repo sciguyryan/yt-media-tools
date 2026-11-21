@@ -20,9 +20,11 @@ LANGUAGE_REFERENCE = ROOT / "docs" / "YT-SQL.md"
 
 def test_formal_grammar_is_parser_neutral_and_versioned() -> None:
     text = GRAMMAR.read_text(encoding="utf-8")
-    assert "Grammar revision: 2" in text
+    assert "Grammar revision: 3" in text
     assert "Revision 1 introduced by: yt-discover 0.29.15" in text
     assert "Revision 2 introduced by: yt-discover 0.31.0 development" in text
+    assert "Revision 3 introduced by: yt-discover 0.32.0 development" in text
+    assert "Revision 3: window functions with OVER window specifications" in text
     assert "Lark" not in text
     assert "TatSu" not in text
     for production in (
@@ -35,6 +37,10 @@ def test_formal_grammar_is_parser_neutral_and_versioned() -> None:
         "postfix-expression",
         "case-expression",
         "aggregate-function",
+        "window-function",
+        "window-specification",
+        "window-partition",
+        "window-order",
         "identifier",
         "number",
         "string",
@@ -57,6 +63,7 @@ def test_language_reference_links_formal_grammar_and_authority_model() -> None:
     (
         "SELECT id FROM @fixture",
         "SELECT POSITION() AS position, id FROM @fixture ORDER BY id LIMIT 2 OFFSET 1",
+        "SELECT ROW_NUMBER() OVER (PARTITION BY id ORDER BY upload_date DESC) AS n, id FROM @fixture ORDER BY n ASC LIMIT 3",
         "duration > 10m AND title CONTAINS mars",
         "SELECT DISTINCT id, formats[0].height AS height FROM @fixture WHERE title ILIKE 'mars%' ORDER BY height DESC LIMIT 10 OFFSET 2",
         "WITH known AS (SELECT id FROM @known) SELECT l.id FROM @left AS l LEFT JOIN known AS k ON l.id = k.id WHERE l.id IS NOT NULL",
@@ -85,6 +92,8 @@ def test_major_formal_grammar_families_parse_and_round_trip(source: str) -> None
         "SELECT id FROM @a OF",
         "SELECT LOWER() FROM @a",
         "SELECT NULLIF(id) FROM @a",
+        "SELECT ROW_NUMBER() FROM @a",
+        "SELECT ROW_NUMBER(id) OVER (ORDER BY id) FROM @a",
     ),
 )
 def test_formal_grammar_near_misses_remain_rejected(source: str) -> None:

@@ -36,6 +36,7 @@ from yt_media_tools.query import (
     ScalarComparison,
     Binary,
     SelectTerm,
+    WindowFunction,
     explain_expression,
     format_expression,
     format_query,
@@ -779,6 +780,15 @@ def explain_user_query(
         lines.append(f"  Safe lower upload-date boundary: {plan.lower_date_bound.isoformat()}")
         lines.append(f"  Conservative enumeration stop threshold: {plan.stop_before.isoformat()}")
         lines.append(f"  Boundary confirmations required: {plan.confirmation_entries}")
+    window_terms = [term for term in query.select if isinstance(term.expression, WindowFunction)]
+    if window_terms:
+        lines.append(
+            "  Window evaluation: " + ", ".join(format_scalar_expression(term.expression) for term in window_terms)
+        )
+        lines.append(
+            "           Window functions require the complete filtered input; numbering is established"
+            " before ordering, deduplication and slicing."
+        )
 
     lines.extend(["", "Optimisation paths"])
     if offline:

@@ -42,6 +42,8 @@ from .query_model import (
     TruthTest,
     Unary,
     QuerySemanticError,
+    WindowFunction,
+    WindowSpecification,
 )
 from .query_traversal import walk_ast
 
@@ -105,6 +107,15 @@ def semantic_key(node: Any) -> Any:
             tuple(semantic_key(arg) for arg in node.args),
             node.count_star,
             semantic_key(node.filter_predicate),
+            node.kind,
+        )
+    if isinstance(node, WindowFunction):
+        return ("window-function", node.name, semantic_key(node.specification), node.kind)
+    if isinstance(node, WindowSpecification):
+        return (
+            "window-specification",
+            tuple(semantic_key(item) for item in node.partition_by),
+            tuple(semantic_key(term) for term in node.order_by),
             node.kind,
         )
     if isinstance(node, CaseWhen):
@@ -205,6 +216,11 @@ def _contains_aggregate(expression: Any) -> bool:
         return any(_contains_aggregate(branch.result) for branch in expression.whens) or (
             expression.else_result is not None and _contains_aggregate(expression.else_result)
         )
+    if isinstance(expression, WindowFunction):
+        specification = expression.specification
+        return any(_contains_aggregate(item) for item in specification.partition_by) or any(
+            _contains_aggregate(term.expression) for term in specification.order_by if term.expression is not None
+        )
     return False
 
 
@@ -234,6 +250,11 @@ def _having_contains_aggregate(node: Any) -> bool:
 def _contains_random(expression: Any) -> bool:
     """Return whether an expression contains a volatile or seeded RANDOM call."""
     return any(isinstance(node, ScalarFunction) and node.name == "RANDOM" for node in walk_ast(expression))
+
+
+def _contains_window(expression: Any) -> bool:
+    """Return whether an expression subtree contains a window function."""
+    return any(isinstance(node, WindowFunction) for node in walk_ast(expression))
 
 
 def _direct_from_sources(query: Query) -> tuple[str, ...]:

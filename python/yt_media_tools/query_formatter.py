@@ -35,6 +35,7 @@ from .query_model import (
     TextPredicate,
     TruthTest,
     Unary,
+    WindowFunction,
 )
 
 
@@ -182,6 +183,21 @@ def format_scalar_expression(expression: Any) -> str:
             f"MAP({format_scalar_expression(expression.collection)} AS {_format_identifier_component(expression.binding)} "
             f"SELECT {format_scalar_expression(expression.projection)})"
         )
+    if isinstance(expression, WindowFunction):
+        parts: list[str] = []
+        if expression.specification.partition_by:
+            parts.append(
+                "PARTITION BY "
+                + ", ".join(format_scalar_expression(item) for item in expression.specification.partition_by)
+            )
+        if expression.specification.order_by:
+            parts.append(
+                "ORDER BY "
+                + ", ".join(
+                    f"{term.field} {'DESC' if term.descending else 'ASC'}" for term in expression.specification.order_by
+                )
+            )
+        return f"{expression.name}() OVER ({' '.join(parts)})"
     if isinstance(expression, ScalarFunction):
         return f"{expression.name}({', '.join(format_scalar_expression(arg) for arg in expression.args)})"
     if isinstance(expression, AggregateFunction):

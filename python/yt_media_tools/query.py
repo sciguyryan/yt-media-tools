@@ -59,6 +59,8 @@ from .query_model import (
     TextPredicate as TextPredicate,
     Token as Token,
     Unary as Unary,
+    WindowFunction as WindowFunction,
+    WindowSpecification as WindowSpecification,
 )
 from .query_parser import (
     Parser as Parser,

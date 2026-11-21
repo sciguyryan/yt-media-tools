@@ -37,6 +37,7 @@ from .query_model import (
     TextPredicate,
     TruthTest,
     Unary,
+    WindowFunction,
 )
 from .query_semantics import _contains_aggregate, query_physical_source_requests
 from .schema import ALIASES, KNOWN_FIELD_TYPES
@@ -57,6 +58,7 @@ STAGE_CONSTANT = "constant"
 STAGE_ENUMERATION = "enumeration"
 STAGE_DETAILED = "detailed"
 STAGE_GROUP = "group"
+STAGE_WINDOW = "window"
 STAGE_RELATION = "relation"
 STAGE_FINAL_RESULT = "final-result"
 
@@ -74,8 +76,9 @@ _STAGE_RANK = {
     STAGE_ENUMERATION: 1,
     STAGE_DETAILED: 2,
     STAGE_GROUP: 3,
-    STAGE_RELATION: 4,
-    STAGE_FINAL_RESULT: 5,
+    STAGE_WINDOW: 4,
+    STAGE_RELATION: 5,
+    STAGE_FINAL_RESULT: 6,
 }
 _METADATA_RANK = {
     METADATA_NONE: 0,
@@ -691,6 +694,29 @@ def analyse_expression(expression: Any, *, source: SourceSpec | None = None) -> 
         if expression.name == "NULLIF":
             return _combine(children, resolved_type=expression.kind, null_sensitive=True, may_return_null=True)
         return _combine(children, resolved_type=expression.kind, null_sensitive=True)
+    if isinstance(expression, WindowFunction):
+        # A window value is established over the complete window input at the
+        # window stage. Its specification expressions carry the field
+        # requirements, but the resulting number is neither a source field nor
+        # row-local, and tied window ordering keys make the numbering
+        # encounter-order dependent, so it is treated as non-deterministic for
+        # optimisation purposes.
+        specification = expression.specification
+        spec_children = tuple(analyse_expression(item, source=source) for item in specification.partition_by) + tuple(
+            analyse_expression(term.expression, source=source)
+            for term in specification.order_by
+            if term.expression is not None
+        )
+        return _combine(
+            spec_children,
+            resolved_type=expression.kind or "integer",
+            constant=False,
+            deterministic=False,
+            null_sensitive=False,
+            may_return_null=False,
+            earliest_stage=STAGE_WINDOW,
+            metadata_depth=METADATA_NONE,
+        )
     if isinstance(expression, AggregateFunction):
         children = tuple(analyse_expression(arg, source=source) for arg in expression.args)
         if expression.filter_predicate is not None:

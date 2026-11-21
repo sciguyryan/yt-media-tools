@@ -2,6 +2,8 @@
 
 GitHub issue #150 introduces `POSITION()` as a deferred, one-based result-sequence value. It is evaluated after ordering and DISTINCT but before OFFSET and LIMIT, including grouped results. Explicit set-operation projections remain rejected pending composition-aware execution support.
 
+`POSITION()` is distinct from window functions, whose contract is defined in [`WINDOW-DESIGN.md`](WINDOW-DESIGN.md). A query may project both `POSITION()` and `ROW_NUMBER() OVER (...)`; each is evaluated at its own stage, and neither is implemented as an implicit form of the other.
+
 `POSITION()` belongs to the completed logical sequence after WHERE, grouping, HAVING, set operations, DISTINCT and final ORDER BY, but before OFFSET and LIMIT. For an ordered query with `LIMIT 10 OFFSET 100`, returned positions start at 101. With no deterministic final ORDER BY, positions reflect the observed execution order without promising repeatability; ties remain unspecified unless the ordering breaks them. The function does not impose a hidden sort or tie-breaker.
 
 The initial placement contract permits only a standalone SELECT projection such as `SELECT POSITION() AS position, id FROM @source ORDER BY id`. It rejects use inside other scalar expressions, predicates, grouping keys and ORDER BY expressions. ORDER BY dependencies on POSITION aliases are rejected to avoid circular ordering. Explicit compound-result projection placement remains unsupported and is rejected rather than silently assigning incorrect positions; nested query scopes require additional conformance coverage. DISTINCT must operate on the underlying values before the deferred position is attached, so POSITION cannot make otherwise identical rows distinct.

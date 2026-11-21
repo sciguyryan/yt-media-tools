@@ -39,6 +39,8 @@ from .query_model import (
     TextPredicate,
     TruthTest,
     Unary,
+    WindowFunction,
+    WindowSpecification,
 )
 
 # Leaf nodes deliberately have no entries here. Keeping the structural node set
@@ -79,6 +81,10 @@ def ast_children(node: Any) -> tuple[Any, ...]:
         return (node.condition, node.result)
     if isinstance(node, ScalarCase):
         return (*node.whens, *((node.else_result,) if node.else_result is not None else ()))
+    if isinstance(node, WindowFunction):
+        return (node.specification,)
+    if isinstance(node, WindowSpecification):
+        return (*node.partition_by, *node.order_by)
     if isinstance(node, ScalarIsNull):
         return (node.expression,)
     if isinstance(node, (SelectTerm, OrderTerm)):

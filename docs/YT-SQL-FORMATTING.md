@@ -34,6 +34,10 @@ JOINs place the joined relation on its own line and indent the `ON` predicate by
 
 CTE bodies are placed on indented lines inside their parentheses. `UNION` and `UNION ALL` operators occupy their own lines. Grouped set branches use an explicit parenthesised block. Trailing completed-result `ORDER BY`, `LIMIT` and `OFFSET` remain outside the branch block to which they do not belong.
 
+## Window specifications
+
+A window function projects as `NAME() OVER (PARTITION BY ... ORDER BY ...)` in one deterministic spelling. The specification always renders `PARTITION BY` before `ORDER BY`, omits absent clauses, and emits ordering directions explicitly with the same `ASC`/`DESC` suffixes as the final `ORDER BY`. Contextual window keywords use their uppercase canonical spellings, and the function name uses its canonical spelling, so `row_number() over(order by x asc)` formats as `ROW_NUMBER() OVER (ORDER BY x ASC)`.
+
 ## Literals and spellings
 
 Canonical strings use single quotes regardless of the accepted source quote style. Embedded single quotes are doubled, and supported control and backslash escapes are emitted deterministically from the literal value. LIKE and ILIKE patterns retain their pattern-level backslash escapes rather than having those escapes reinterpreted as ordinary string escapes.

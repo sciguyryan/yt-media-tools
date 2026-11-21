@@ -382,9 +382,35 @@ yt-sql supports `COUNT(*)`, `COUNT(expr)`, `SUM(expr)`, `AVG(expr)`, `MIN(expr)`
 
 yt-sql does not implement `COUNT(DISTINCT expr)` or other DISTINCT aggregate arguments. Those may be considered separately if they fit the language cleanly. Aggregate queries require complete input groups, so the source-order early-LIMIT acquisition optimisation is disabled for them.
 
+## Window functions
+
+Window functions attach values to result rows from their own window specification rather than evaluating per input row or from the final presentation order. The first supported window function is `ROW_NUMBER()`, which numbers rows one-based within each partition of its window in the window's own ordering:
+
+```sql
+SELECT
+    ROW_NUMBER() OVER (
+        ORDER BY upload_date ASC, release_timestamp ASC
+    ) AS chronological_position,
+    id,
+    title
+FROM @example
+WHERE title IS NOT NULL
+ORDER BY
+    upload_date ASC,
+    release_timestamp ASC
+```
+
+Window expressions are evaluated once per query body over the complete filtered input relation: after `WHERE` and, when grouped windows are supported later, after grouping and `HAVING`; before `DISTINCT`, final `ORDER BY`, `OFFSET` and `LIMIT`. Numbering therefore survives a reordering final `ORDER BY`, and a final `ORDER BY` is not required for numbering to be defined. `PARTITION BY` groups rows by exact resolved scalar equality, with NULL partition keys grouped together and no implicit Unicode normalisation. Window-local `ORDER BY` reuses the final `ORDER BY` contract: NULL ordering values sort after non-NULL values in both directions, text compares by Unicode code points without normalisation, and incompatible non-NULL ordering values raise a comparison error. Rows whose complete window-ordering keys compare equal receive no guaranteed relative numbers, and yt-sql does not add an implicit tie-breaker; queries that need repeatable numbers must provide ordering keys that distinguish the rows they number.
+
+Window function calls are accepted only as standalone `SELECT` projections. A projection alias bound to a window expression may be referenced in the final `ORDER BY`, including inside larger ordering expressions. Window functions in `WHERE`, `GROUP BY`, `HAVING`, `JOIN ON`, aggregate `FILTER`, collection element scopes or `ORDER BY`, and inside other window specifications, are rejected; aggregate queries reject window functions in the current release. `ROW_NUMBER()` requires a window ordering, so `OVER ()` and partition-only specifications are rejected for it. `RANDOM()` is not allowed in window specifications, because a volatile ordering key would make the numbering itself volatile. Composing a row number into a larger scalar expression is available by materialising the numbered relation through a CTE or derived relation.
+
+Each query body owns its window evaluation. CTEs, derived relations and explicit `UNION` branches evaluate their own window expressions before any enclosing reordering, filtering or set composition, so plain `UNION` deduplicates complete projected rows including window results. Projection over a multi-facet `OF` expansion happens after composition, so a window expression there numbers the complete composed facet set.
+
+`ROW_NUMBER()` takes no arguments and never returns NULL. Canonical formatting emits `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` with absent clauses omitted, reusing the ordering-term spelling of the final `ORDER BY`. The full design contract, including evaluation stages, optimiser constraints and the grammar revision, is defined in [`WINDOW-DESIGN.md`](WINDOW-DESIGN.md).
+
 ## Analytical status and future expansion
 
-General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, and the first aggregate query architecture are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
+General scalar expressions, arithmetic, nested scalar functions, expression-based ordering, searched `CASE`, Unicode `CHAR()` construction, decimal/hexadecimal/octal/binary integer literals, deterministic `SELECT *`, the first aggregate query architecture, and the first window function `ROW_NUMBER()` over an `OVER (...)` window specification are implemented. Integer digit grouping uses underscores, for example `1_000_000`, `0xFF_FF`, `0o755`, and `0b1010_0101`; comma-grouped numbers are not supported. Different integer bases may be mixed freely inside scalar arithmetic. Later expression work may add useful date extraction functions. Explicit NULL ordering and PostgreSQL-inspired `DISTINCT ON` remain later analytical work.
 
 ## Compound query grouping and scope
 

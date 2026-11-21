@@ -16,9 +16,11 @@ Window-local `ORDER BY` reuses the final `ORDER BY` contract: NULL ordering valu
 
 ## Placement
 
-The initial contract permits window function calls only inside `SELECT` projection expressions of a query body. A projection alias bound to a window expression may be referenced in the final `ORDER BY`, where explicit projection aliases already take precedence over same-spelled input fields. Direct window function calls in `ORDER BY` are rejected in the initial implementation; the alias route is explicit, avoids duplicate window-specification evaluation, and can be revisited later without changing evaluation order.
+The initial contract permits window function calls only as standalone `SELECT` projection terms of a query body, mirroring the standalone-projection rule of `POSITION()`. Composing a row number into a larger scalar expression, such as arithmetic on the number, is deliberately not supported in the initial implementation: a CTE over the numbered relation provides that composition today, and direct composition is a later additive extension. A projection alias bound to a window expression may be referenced in the final `ORDER BY`, both as a bare alias and inside larger ordering expressions, where explicit projection aliases already take precedence over same-spelled input fields. Direct window function calls in `ORDER BY` are rejected in the initial implementation; the alias route is explicit, avoids duplicate window-specification evaluation, and can be revisited later without changing evaluation order.
 
-Window function calls are rejected in every other position: `WHERE` predicates, `GROUP BY` expressions, `HAVING`, `JOIN ... ON` predicates, aggregate `FILTER (WHERE ...)` predicates, collection predicates and transforms, predicate-only queries, and the window specifications of other window functions. These placements are either evaluated before the window stage exists or would make numbering depend on a value that has not been established; each rejection is deterministic and diagnosed by reason code rather than by message text.
+Window specification expressions reference the input relation only. Projection aliases are not visible inside a specification, so an alias reference there is an unknown-field error rather than a silent capture.
+
+Window function calls are rejected in every other position: `WHERE` predicates, `GROUP BY` expressions, `HAVING`, `JOIN ... ON` predicates, aggregate `FILTER (WHERE ...)` predicates, collection element scopes (the element predicates and projections inside `ANY`/`ALL`, scoped `COUNT`, `FILTER` and `MAP`), predicate-only queries, and the window specifications of other window functions. The outer row-context operand of a collection transform remains part of the projection's row context and is therefore not a separate rejection position. These placements are either evaluated before the window stage exists or would make numbering depend on a value that has not been established; each rejection is deterministic and diagnosed by reason code rather than by message text.
 
 Window functions are rejected in aggregate queries (`GROUP BY` or aggregate projections present) in the initial implementation. The evaluation-order contract already reserves the post-grouping stage, so a later increment can enable windows over grouped rows with group-compatible specification expressions; enabling that combination is deliberately deferred because it interacts with the aggregate projection compatibility rules and deserves its own conformance coverage. Aggregate functions inside a window specification are likewise rejected: in a non-aggregate query an aggregate has no established group, and aggregate queries reject windows outright.
 
@@ -34,7 +36,7 @@ Final `ORDER BY`, `OFFSET` and `LIMIT` apply to rows that already carry their wi
 
 Window evaluation belongs to a query body. CTEs and derived relations evaluate their own window expressions and materialise numbered rows; an enclosing query then reorders, filters or composes those rows freely. This is the documented `POSITION()` scoping behaviour applied at the window stage.
 
-Explicit `UNION` and `UNION ALL` branch projections may contain window expressions in the initial implementation: each branch is an ordinary query body, evaluated and materialised before positional reconciliation, so per-branch numbering is well defined without new composition machinery. Branch-local numbering inside parenthesised boundaries follows the same rule. Whether this per-branch allowance is kept or initially rejected like `POSITION()` set-operation projections is recorded as an open question below.
+Explicit `UNION` and `UNION ALL` branch projections may contain window expressions in the initial implementation: each branch is an ordinary query body, evaluated and materialised before positional reconciliation, so per-branch numbering is well defined without new composition machinery. Branch-local numbering inside parenthesised boundaries follows the same rule. The `POSITION()` precedent of rejecting set-operation projections before operand splitting was considered and deliberately not followed here: that rejection exists because `POSITION()` defers to a final-result stage the branch does not own, whereas window evaluation happens at each body's own projection stage. A consequence that must be documented with the feature: plain `UNION` deduplicates complete projected rows including window results, so the same logical row from two branches with different numbers survives as two rows.
 
 Multi-facet `OF` expansion follows the documented `OF` contract: query-level `WHERE` and grouping apply per facet before composition, and projection is evaluated over the composed rows. A window expression in an `OF`-expanded query therefore numbers the composed facet set continuously. This is a deliberate consequence of the stronger `OF` sugar semantics and must be documented alongside the explicit-`UNION ALL` per-branch contrast, because the two spellings produce different numbering for otherwise similar queries. The evaluator's actual `OF` expansion path must be verified against this contract during implementation; if the current implementation projects per facet, that is a defect in this feature's interaction with the documented `OF` contract, not an argument for changing the contract silently.
 
@@ -48,8 +50,8 @@ The accepted-syntax change advances the EBNF to grammar revision 3, updating the
 
 ```text
 scalar-atom           = ... | window-function ;
-window-function       = row-number-call, window-specification ;
-row-number-call       = "ROW_NUMBER", "(", ")" ;
+window-function       = window-function-name, "(", ")", window-specification ;
+window-function-name  = "ROW_NUMBER" ;
 window-specification  = "OVER", "(", [ window-partition ], [ window-order ], ")" ;
 window-partition      = "PARTITION", "BY", scalar-expression, { ",", scalar-expression } ;
 window-order          = "ORDER", "BY", order-term, { ",", order-term } ;
@@ -95,10 +97,13 @@ The curated registry gains entries for `OVER`, `PARTITION`, `ROW_NUMBER` and the
 
 Documentation updates accompany the code in one coherent change: `YT-SQL.md` gains a window-functions section, the EBNF and grammar contract move to revision 3, `YT-SQL-FORMATTING.md` records the layout, `YT-SQL-TEST-COVERAGE.md` records the coverage standard, and `POSITION-DESIGN.md` notes the coexistence boundary. Changelog entries follow at release time.
 
-## Open questions for review
+## Decision conclusions
 
-1. Explicit set-operation branch projections: the recommendation above permits per-branch window expressions because each branch is an independently evaluated query body. The alternative is rejecting them initially like `POSITION()` set-operation projections. Permitting them costs little and matches the foundation requirement; rejecting them is the more conservative reading of the existing precedent.
-2. Aggregate queries: the recommendation rejects window functions in aggregate queries initially, with the evaluation-order contract already reserving the post-grouping stage. Confirm this staging rather than enabling grouped windows in the first increment.
-3. Direct window calls in final `ORDER BY`: the recommendation permits alias references only. Standard SQL allows direct calls; enabling them later is additive once alias-based coverage exists.
-4. `OVER ()` and partition-only specifications: recognised syntactically, rejected semantically for `ROW_NUMBER()`. The alternative is a grammar-level rejection, which would forfeit the foundation value of the shared window-specification production.
-5. Explain presentation: minimal reporting of window functions and the early-termination barrier is recommended; a dedicated plan operator is deferred.
+The following decisions were reviewed after some careful consideration, and decided prior to implementation:
+
+1. Explicit set-operation branch projections permit window expressions, evaluated per branch; the `POSITION()` pre-split rejection pattern was considered and not followed for the reason recorded above.
+2. Window functions are rejected in aggregate queries in the initial implementation, with the post-grouping evaluation stage already reserved by this contract for a later increment.
+3. Final `ORDER BY` references window results through projection aliases only; direct window calls in `ORDER BY` are rejected initially and remain an additive future extension.
+4. `OVER ()` and partition-only specifications are recognised syntactically and rejected semantically for `ROW_NUMBER()`, preserving a single shared window-specification production; a grammar-level rejection was considered and rejected because it would fork the specification grammar for one function.
+5. Explain output reports window functions, their specifications and the disabled early-LIMIT termination; a dedicated window plan operator is deferred until window execution becomes a visible multi-stage plan concern.
+6. Window functions are standalone projection terms in the initial implementation. Composing window results into larger scalar expressions is available through a CTE today and is an additive later extension; alias references in final `ORDER BY` expressions, including inside larger ordering expressions, are supported.

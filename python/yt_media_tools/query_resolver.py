@@ -44,6 +44,8 @@ from .query_model import (
     TextPredicate,
     TruthTest,
     Unary,
+    WindowFunction,
+    WindowSpecification,
 )
 from .query_parser import _parse_integer_literal_text, _parse_number_text, _validate_like_pattern
 from .join_resolution import prepare_join_query
@@ -53,6 +55,7 @@ from .query_semantics import (
     _aggregate_query,
     _contains_aggregate,
     _contains_random,
+    _contains_window,
     _direct_from_sources,
 )
 from .query_types import QueryType
@@ -709,6 +712,69 @@ def _resolve_scalar_expression(
             result_type,
             evaluation_fusion_safe,
         )
+    if isinstance(expression, WindowFunction):
+        # Window expressions are established from the SELECT projection only.
+        # Every other resolution context (WHERE, GROUP BY, HAVING, JOIN ON,
+        # ORDER BY, collection element scopes) evaluates before or outside the
+        # window stage, so a window encountered there is a placement error.
+        if not select_context or collection_scopes:
+            raise QuerySemanticError(
+                source,
+                "Window functions are allowed only in SELECT projections.",
+                expression.position,
+                reason="invalid-window-placement",
+            )
+        specification = expression.specification
+        spec_items = tuple(specification.partition_by) + tuple(
+            term.expression for term in specification.order_by if term.expression is not None
+        )
+        if any(_contains_window(item) for item in spec_items):
+            raise QuerySemanticError(
+                source,
+                "Window functions cannot be nested inside another window specification.",
+                expression.position,
+                reason="unsupported-window-nesting",
+            )
+        if any(_contains_random(item) for item in spec_items):
+            raise QuerySemanticError(
+                source,
+                "RANDOM is not allowed in window specifications.",
+                expression.position,
+                reason="invalid-window-volatile",
+            )
+        if expression.name == "ROW_NUMBER" and not specification.order_by:
+            raise QuerySemanticError(
+                source,
+                f"{expression.name} requires an ORDER BY inside its window specification.",
+                expression.position,
+                reason="window-order-required",
+            )
+        # Window specification expressions reference the input relation only:
+        # projection aliases are not visible inside a specification, and the
+        # false select context keeps nested window functions out of the recursion.
+        partition_by = tuple(
+            _resolve_scalar_expression(item, schema, source, dates, None, select_context=False)
+            for item in specification.partition_by
+        )
+        order_by = tuple(
+            OrderTerm(
+                format_scalar_expression(resolved),
+                term.descending,
+                term.position,
+                expression=resolved,
+            )
+            for term, resolved in (
+                (term, _resolve_scalar_expression(term.expression, schema, source, dates, None, select_context=False))
+                for term in specification.order_by
+            )
+        )
+        return WindowFunction(
+            expression.name,
+            WindowSpecification(partition_by, order_by, specification.position),
+            expression.position,
+            "integer",
+            QueryType.scalar("integer", nullable=False),
+        )
     if isinstance(expression, AggregateFunction):
         args = tuple(
             _resolve_scalar_expression(
@@ -1239,12 +1305,56 @@ def _validate_position_placement(query: Query) -> None:
             )
 
 
+def _window_position(expression: Any) -> int:
+    """Return the source position of the first window function in an expression."""
+    for node in walk_ast(expression):
+        if isinstance(node, WindowFunction):
+            return node.position
+    return 0
+
+
+def _validate_window_placement(query: Query) -> None:
+    """Reject window functions in the query positions the initial surface does not support.
+
+    Per-position placement (WHERE, ORDER BY, collection scopes, nesting) is
+    enforced while the respective expressions resolve. This validator covers the
+    query-level rule that windows are not yet supported in aggregate queries;
+    the post-grouping evaluation stage is reserved for a later increment.
+    """
+    window_nodes = [
+        node
+        for node in walk_ast(query, descend=lambda node: node is query or not isinstance(node, Query))
+        if isinstance(node, WindowFunction)
+    ]
+    if not window_nodes:
+        return
+    for term in query.select:
+        expression = term.expression
+        if expression is None or not _contains_window(expression):
+            continue
+        if not isinstance(expression, WindowFunction):
+            raise QuerySemanticError(
+                query.source,
+                "Window functions are allowed only as standalone SELECT projections.",
+                _window_position(expression),
+                reason="invalid-window-placement",
+            )
+    if _aggregate_query(query):
+        raise QuerySemanticError(
+            query.source,
+            "Window functions are not allowed in aggregate queries.",
+            window_nodes[0].position,
+            reason="unsupported-window-aggregate-query",
+        )
+
+
 def _resolve_query_body(query: Query, schema: QuerySchema, dates: DateContext | None = None) -> Query:
     """Resolve fields and typed literals after metadata has established a schema."""
     context = dates or DateContext()
     source = query.source
     _validate_random_placement(query)
     _validate_position_placement(query)
+    _validate_window_placement(query)
 
     predicate = _resolve_predicate(query.predicate, schema, source, context)
     group_by = tuple(_resolve_scalar_expression(item, schema, source, context) for item in query.group_by)

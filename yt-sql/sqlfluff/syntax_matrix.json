@@ -153,6 +153,10 @@
     {
       "id": "duration_unit",
       "query": "SELECT id FROM @yt_sql_fixture WHERE duration = 3599 sec ORDER BY source_index\n"
+    },
+    {
+      "id": "window_row_number",
+      "query": "SELECT ROW_NUMBER() OVER (PARTITION BY title ORDER BY upload_date ASC) AS seq, id FROM @yt_sql_fixture ORDER BY seq LIMIT 5\n"
     }
   ]
 }

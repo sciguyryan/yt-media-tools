@@ -65,6 +65,24 @@ class SQLFluffYTSQLTests(unittest.TestCase):
                 formatted = format_checked(query, engine=engine)
                 self.assertEqual(formatted, format_checked(formatted, engine=engine))
 
+    def test_window_specification_parses_and_formats(self) -> None:
+        """The inherited grammar must preserve the ROW_NUMBER window form."""
+        from format_safely import format_checked
+
+        if _ENGINE is None:
+            engine = ReusableSQLFluff()
+        else:
+            engine = _ENGINE
+        for query in (
+            "SELECT ROW_NUMBER() OVER (ORDER BY upload_date ASC) AS seq, id FROM @yt_sql_fixture LIMIT 3\n",
+            "SELECT ROW_NUMBER() OVER (PARTITION BY title ORDER BY upload_date DESC) AS seq, id FROM @yt_sql_fixture LIMIT 3\n",
+        ):
+            with self.subTest(query=query):
+                formatted = format_checked(query, engine=engine)
+                self.assertIn("ROW_NUMBER()", formatted)
+                self.assertIn("OVER", formatted)
+                self.assertEqual(formatted, format_checked(formatted, engine=engine))
+
     def test_cli_parse_and_format_smoke(self) -> None:
         """Retain genuine subprocess coverage for the SQLFluff entry point."""
         query = "SELECT id FROM @yt_sql_fixture LIMIT 1\n"

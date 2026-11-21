@@ -1,8 +1,10 @@
 (* yt-sql formal grammar
- * Grammar revision: 2
+ * Grammar revision: 3
  * Revision 1 introduced by: yt-discover 0.29.15
  * Revision 2 introduced by: yt-discover 0.31.0 development
+ * Revision 3 introduced by: yt-discover 0.32.0 development
  * Revision 2: derived relation operands in FROM and JOIN
+ * Revision 3: window functions with OVER window specifications
  *
  * This parser-neutral EBNF is authoritative for yt-sql syntactic structure.
  * docs/YT-SQL.md is authoritative for semantics and context-sensitive rules.
@@ -105,6 +107,7 @@ scalar-atom           = identifier
                       | scalar-literal
                       | scalar-function
                       | aggregate-function
+                      | window-function
                       | collection-transform
                       | case-expression
                       | "(", scalar-expression, ")" ;
@@ -128,6 +131,12 @@ aggregate-name        = "SUM" | "MIN" | "MAX" | "AVG" ;
 aggregate-filter      = "FILTER", "(", "WHERE", boolean-expression, ")" ;
 collection-transform  = "FILTER", "(", scalar-expression, "AS", identifier, "WHERE", boolean-expression, ")"
                       | "MAP", "(", scalar-expression, "AS", identifier, "SELECT", scalar-expression, ")" ;
+
+window-function       = window-function-name, "(", ")", window-specification ;
+window-function-name  = "ROW_NUMBER" ;
+window-specification  = "OVER", "(", [ window-partition ], [ window-order ], ")" ;
+window-partition      = "PARTITION", "BY", scalar-expression, { ",", scalar-expression } ;
+window-order          = "ORDER", "BY", order-term, { ",", order-term } ;
 
 scalar-literal        = unit-literal | number | string | "TRUE" | "FALSE" | "NULL" ;
 literal-value         = scalar-literal | temporal-literal | identifier | literal-sequence ;

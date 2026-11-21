@@ -394,6 +394,36 @@ class OrderTerm:
 
 
 @dataclass(frozen=True)
+class WindowSpecification:
+    """The OVER (...) definition of a window: partitioning and window-local ordering.
+
+    Both parts are optional at the grammar level because future window functions
+    give an empty or partition-only specification meaning. Whether a particular
+    window function accepts either part is resolved separately.
+    """
+
+    partition_by: tuple[Any, ...] = ()
+    order_by: tuple[OrderTerm, ...] = ()
+    position: int = 0
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
+class WindowFunction:
+    """A window function evaluated over its window specification.
+
+    The function name is recorded so future window functions extend the same
+    node rather than adding an isolated ROW_NUMBER special case.
+    """
+
+    name: str
+    specification: WindowSpecification
+    position: int = 0
+    kind: str | None = None
+    resolved_type: Any | None = None
+
+
+@dataclass(frozen=True)
 class SelectTerm:
     field: str
     alias: str | None = None

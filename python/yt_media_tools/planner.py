@@ -12,7 +12,7 @@ from .query_traversal import walk_ast
 from .optimizer_proofs import TRUTH_TRUE, OptimisationProof, prove_predicate_truth
 from .semantic_provability import prove_join_consequences
 from .planning_heuristics import AcquisitionHeuristicPlan, plan_acquisition_heuristics
-from .query_semantics import query_physical_source_requests
+from .query_semantics import _contains_window, query_physical_source_requests
 from .relation_simplification import RelationSimplificationPlan, plan_relation_simplification
 from .query_properties import (
     CollectionQueryRequirement,
@@ -106,6 +106,16 @@ def plan_limit_termination(
         return LimitTerminationPlan(
             False,
             "POSITION() requires final-result numbering; source-prefix early LIMIT is not yet certified",
+            query.limit,
+            required_matches,
+        )
+    # Window functions number rows over the complete filtered input relation, so
+    # a source-prefix slice cannot prove the requested prefix before acquisition
+    # completes.
+    if any(term.expression is not None and _contains_window(term.expression) for term in query.select):
+        return LimitTerminationPlan(
+            False,
+            "window functions require complete input numbering; source-prefix early LIMIT is not applicable",
             query.limit,
             required_matches,
         )

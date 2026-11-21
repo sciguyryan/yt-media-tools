@@ -44,6 +44,8 @@ from .query_model import (
     TruthTest,
     Token,
     Unary,
+    WindowFunction,
+    WindowSpecification,
 )
 
 
@@ -130,6 +132,8 @@ _CONTEXTUAL_KEYWORDS = {
     "OR",
     "ORDER",
     "OUTER",
+    "OVER",
+    "PARTITION",
     "RECURSIVE",
     "RIGHT",
     "SELECT",
@@ -191,6 +195,11 @@ _MEMBER_TERMINATOR_KEYWORDS = {
     "ANTI",
     "ON",
 }
+
+# Window functions are parsed as dedicated scalar atoms carrying their OVER
+# specification. The set is the extension point for future window functions;
+# each name must remain an ordinary identifier where no function call follows.
+_WINDOW_FUNCTION_NAMES = {"ROW_NUMBER"}
 
 
 def _unescape_string(text: str) -> str:
@@ -910,6 +919,8 @@ class Parser:
                 )
             self.advance()
             if self.current.kind == "LPAREN":
+                if token.text.upper() in _WINDOW_FUNCTION_NAMES:
+                    return self.parse_window_function(token)
                 return self.parse_scalar_function(token)
             if token.text.casefold() == "raw" or token.text.casefold().startswith("raw."):
                 raise QuerySyntaxError(
@@ -1108,6 +1119,53 @@ class Parser:
         if name == "RANDOM" and len(args) > 1:
             raise QuerySyntaxError(self.source, "RANDOM accepts zero or one seed argument.", name_token.position)
         return ScalarFunction(name, tuple(args), name_token.position)
+
+    def parse_window_function(self, name_token: Token) -> WindowFunction:
+        """Parse a window function call together with its mandatory OVER specification.
+
+        The window specification is part of the window-function production, so a
+        call without OVER is a syntax error rather than a semantic placement
+        diagnostic. Future window functions join ``_WINDOW_FUNCTION_NAMES`` and
+        reuse this method unchanged.
+        """
+        name = name_token.text.upper()
+        self.expect("LPAREN", f"Expected '(' after {name}.")
+        if self.current.kind != "RPAREN":
+            raise QuerySyntaxError(self.source, f"{name} requires no arguments.", self.current.position)
+        self.expect("RPAREN", f"Expected ')' after the {name} argument list.")
+        over_token = self.consume_keyword("OVER")
+        if over_token is None:
+            raise QuerySyntaxError(
+                self.source,
+                f"{name} requires an OVER window specification.",
+                self.current.position,
+                reason="missing-window-specification",
+            )
+        specification = self.parse_window_specification(over_token)
+        return WindowFunction(name, specification, name_token.position)
+
+    def parse_window_specification(self, over_token: Token) -> WindowSpecification:
+        """Parse ``OVER ( [PARTITION BY ...] [ORDER BY ...] )``.
+
+        An empty or partition-only specification parses because future window
+        functions give those forms meaning; whether the calling window function
+        accepts them is decided during semantic resolution.
+        """
+        self.expect("LPAREN", "Expected '(' to open the window specification.")
+        partition_by: list[Any] = []
+        order_by: tuple[OrderTerm, ...] = ()
+        if self.consume_keyword("PARTITION"):
+            self.expect_keyword("BY", "Expected BY after PARTITION in the window specification.")
+            while True:
+                partition_by.append(self.parse_scalar_expression())
+                if self.current.kind != "COMMA":
+                    break
+                self.advance()
+        if self.consume_keyword("ORDER"):
+            self.expect_keyword("BY", "Expected BY after ORDER in the window specification.")
+            order_by = self.parse_order_by()
+        self.expect("RPAREN", "Expected ')' to close the window specification.")
+        return WindowSpecification(tuple(partition_by), order_by, over_token.position)
 
     def parse_from_source(self) -> str:
         """Parse one physical or logical relation source token."""

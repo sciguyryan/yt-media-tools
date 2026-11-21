@@ -31,7 +31,7 @@ from .query import (
     format_expression,
     format_scalar_expression,
 )
-from .query_model import TruthTest
+from .query_model import TruthTest, WindowFunction
 from .optimizer_proofs import (
     TRUTH_FALSE,
     TRUTH_TRUE,
@@ -371,6 +371,11 @@ def _optimise_scalar_expression(
         decisions.extend(else_decisions)
         optimised = replace(expression, whens=tuple(branches), else_result=else_result)
         return optimised, decisions
+    if isinstance(expression, WindowFunction):
+        # A window expression is established from its specification over the
+        # complete input relation. It is never folded and its specification is
+        # not rewritten: any rewrite would alter the numbering contract.
+        return expression, []
     return expression, []
 
 

@@ -19,6 +19,7 @@ from .query_model import (
     RelationField,
     RelationWildcard,
     SelectTerm,
+    WindowFunction,
 )
 from .query_scope import SemanticScope, relation_binding
 from .query_traversal import walk_ast
@@ -161,6 +162,13 @@ def _validate_join_predicate(predicate: Any, source: str) -> None:
                 source,
                 "Aggregate functions are not allowed in JOIN ON predicates.",
                 node.position,
+            )
+        if isinstance(node, WindowFunction):
+            raise QuerySemanticError(
+                source,
+                "Window functions are not allowed in JOIN ON predicates.",
+                node.position,
+                reason="invalid-window-placement",
             )
         if isinstance(node, ScalarFunction) and node.name == "RANDOM":
             raise QuerySemanticError(
