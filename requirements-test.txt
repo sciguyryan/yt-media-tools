@@ -1,1 +1,2 @@
-pytest-xdist==3.8.0
+# Compatibility requirements entry point for repository-root installation.
+-r python/requirements-test.txt

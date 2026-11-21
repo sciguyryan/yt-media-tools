@@ -1,2 +1,5 @@
+# The benchmark suite shares the routine pytest pin: pytest 9.2.0 removed
+# Function._nodeid, which pytest-benchmark 5.3.0 still reads at fixture setup.
+pytest==9.1.1
 pytest-benchmark==5.3.0
 rich==15.0.0

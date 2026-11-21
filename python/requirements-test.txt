@@ -1,1 +1,5 @@
+# The routine pytest suite pins the runtime the whole gate is verified against.
+# pytest 9.2.0 removed Function._nodeid, which pytest-benchmark 5.3.0 still
+# reads (benchmark fixture.py setup); re-test the benchmark smoke before bumping.
+pytest==9.1.1
 pytest-xdist==3.8.0
