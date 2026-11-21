@@ -1,0 +1,28 @@
+[package]
+name = "yt-sql"
+version = "0.1.0"
+edition = "2024"
+description = "Rust implementation of the YT-SQL portable conformance language"
+license-file = "../../../LICENSE"
+publish = false
+
+[[bin]]
+name = "yt-sql-conformance"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+correctness = "deny"
+# The QueryError diagnostic carries span, category, reason and expected tokens;
+# boxing it at every construction site costs more than the large-Err copy.
+result_large_err = "allow"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive", "std"] }
+serde_json = { version = "1.0", features = ["std", "preserve_order"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "alloc"] }
+caseless = "0.2"
+regex = "1"
+unicode-ident = "1.0"

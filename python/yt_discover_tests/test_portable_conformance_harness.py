@@ -21,7 +21,24 @@ def test_approved_smoke_case_passes() -> None:
 
 def test_unknown_implementation_fails_closed() -> None:
     with pytest.raises(HarnessError, match="no execution adapter"):
-        run(implementation="rust")
+        run(implementation="cobol")
+
+
+def test_registered_rust_adapter_smoke_case(tmp_path: Path) -> None:
+    """The registered Rust adapter passes the smoke case when the binary is built.
+
+    The routine suite never requires a cargo build; the full Rust conformance
+    run is an explicit Phase 7 verification step.
+    """
+    from conformance_adapters import ADAPTERS, _rust_binary
+
+    binary = _rust_binary(ROOT / "yt-sql")
+    if not binary.exists():
+        pytest.skip("Rust conformance binary has not been built")
+    result = run(implementation="rust", case_ids=("smoke.source_order_limit",))
+    assert result["counts"] == {"pass": 1, "fail": 0, "error": 0, "xfail": 0, "xpass": 0}
+    assert ADAPTERS["rust"] is not None
+    assert tmp_path is not None
 
 
 def test_changed_approved_expectation_is_failure(tmp_path: Path) -> None:

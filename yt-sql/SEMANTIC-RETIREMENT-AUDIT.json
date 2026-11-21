@@ -12,8 +12,8 @@
     "language_elements": 279,
     "normative_manifests": 1236,
     "legacy_test_files": 225,
-    "test_functions": 1640,
-    "assertion_sites": 4141
+    "test_functions": 1641,
+    "assertion_sites": 4144
   },
   "normative_cases": [
     {
@@ -35690,6 +35690,22 @@
         },
         {
           "name": "test_registered_adapter_is_invoked_with_explicit_context",
+          "assertion_sites": [
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            },
+            {
+              "kind": "assert"
+            }
+          ],
+          "replacement_case_ids": [],
+          "replacement_review": "not_reviewed"
+        },
+        {
+          "name": "test_registered_rust_adapter_smoke_case",
           "assertion_sites": [
             {
               "kind": "assert"

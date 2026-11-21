@@ -10,7 +10,7 @@
     "youtubei.js": "18.2.0"
   },
   "scripts": {
-    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\""
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!.venv/**\" \"!rust/target/**\""
   },
   "devDependencies": {
     "markdownlint-cli2": "0.23.2"
