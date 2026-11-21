@@ -22,12 +22,18 @@ def load_runner():
 
 def test_default_runs_both_suites_even_when_python_fails(capsys):
     runner = load_runner()
-    with patch.object(runner.subprocess, "call", side_effect=[1, 0]) as call:
+    # Python fails; the Rust suite then runs its cargo test, build and the
+    # portable corpus conformance through the built binary.
+    with patch.object(runner.subprocess, "call", side_effect=[1, 0, 0, 0]) as call:
         assert runner.main([]) == 1
-    assert call.call_count == 2
+    assert call.call_count == 4
     assert call.call_args_list[0].args[0][:2] == [sys.executable, str(ROOT / "python" / "run-tests.py")]
-    assert call.call_args_list[1].args[0] == ["cargo", "test", "--workspace"]
+    assert call.call_args_list[1].args[0][:2] == ["cargo", "--locked"]
+    assert call.call_args_list[1].args[0][2:4] == ["test", "--workspace"]
     assert call.call_args_list[1].kwargs["cwd"] == ROOT / "rust"
+    assert call.call_args_list[2].args[0][2] == "build"
+    assert call.call_args_list[3].args[0][1:3] == [str(ROOT / "yt-sql" / "run_conformance.py"), "--implementation"]
+    assert call.call_args_list[3].kwargs["cwd"] == ROOT
     assert "python: FAIL" in capsys.readouterr().out
 
 

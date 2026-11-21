@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "semantics.cte_logical_schema",
-  "source_query_sha256": "5c6be1141e3f22c4d43b75d517c3a62d75d270896d0d19d5dd806361fe99fd15",
+  "source_query_sha256": "f4fad77b038d0426ed3a51ae0f08f7b77068c8164595c44ccb28e284f4465a6a",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

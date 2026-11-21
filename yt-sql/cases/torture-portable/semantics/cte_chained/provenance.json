@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "semantics.cte_chained",
-  "source_query_sha256": "47fb822941b93dd1c54026855660f374b75232f05fb0958c7f316854f9745651",
+  "source_query_sha256": "fc85301edaba70cbb8fe1ad6ec27cf22e1fa33c0d1db3095577d2410a7e7a32e",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

@@ -93,11 +93,15 @@ class SafeFormattingTests(unittest.TestCase):
             normal.mkdir(parents=True)
             (normal / "query.ysql").write_text("SELECT id FROM @yt_sql_fixture\n", encoding="utf-8")
             with patch("format_safely.ReusableSQLFluff") as factory:
+                factory.return_value.parse.return_value = None
                 factory.return_value.format.side_effect = lambda source: source
                 self.assertEqual(main(["--check", str(root)]), 0)
                 self.assertEqual(factory.return_value.format.call_count, 2)
                 factory.return_value.format.reset_mock()
-                factory.return_value.format.side_effect = lambda source: source + " "
+                factory.return_value.parse.return_value = None
+                factory.return_value.format.side_effect = lambda source: (
+                    source if source.endswith(" ") else source + " "
+                )
                 self.assertEqual(main(["--check", str(root)]), 1)
                 self.assertEqual(factory.return_value.format.call_count, 2)
 

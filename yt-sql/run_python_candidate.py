@@ -252,7 +252,7 @@ def observe(
                 date_order=date_order,
                 now=datetime.fromisoformat(settings["clock"].replace("Z", "+00:00"))
                 if "clock" in settings
-                else datetime(2026, 9, 1, tzinfo=timezone.utc)
+                else datetime(2026, 9, 1, tzinfo=timezone.utc),
             ),
             source_schemas=source_schemas,
         )

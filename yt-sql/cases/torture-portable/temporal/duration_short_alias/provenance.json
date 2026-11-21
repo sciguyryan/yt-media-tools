@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "temporal.duration_short_alias",
-  "source_query_sha256": "6a539ceed0e08fd3a67fd67db32de14604ac822d3ce205298074bc511bbd12ee",
+  "source_query_sha256": "df293e5feeaec89107b05596e912b329c2b510c61e7c6422bbe2a55ba2c692b0",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

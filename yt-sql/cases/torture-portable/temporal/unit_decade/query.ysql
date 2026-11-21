@@ -4,3 +4,4 @@ FROM	@yt_sql_fixture
 WHERE 	 upload_date  >=  2 decade  ago 
  ORDER 	 BY	source_index
   LIMIT	3
+  

@@ -35,6 +35,9 @@ jobs:
         run: cargo test --workspace --all-targets --locked
       - name: Check documentation
         run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+      - name: Check Rust portable conformance
+        run: python yt-sql/run_conformance.py --implementation rust
+        working-directory: .
 
   security:
     name: Rust dependency advisories

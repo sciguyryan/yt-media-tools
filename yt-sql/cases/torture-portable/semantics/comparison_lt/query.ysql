@@ -1,5 +1,6 @@
 SELECT
 id
 	from @yt_sql_fixture
-	WHERE view_count  < 100 ORDER  BY  source_index 
+	WHERE view_count  < 100
+ORDER  BY  source_index 
  

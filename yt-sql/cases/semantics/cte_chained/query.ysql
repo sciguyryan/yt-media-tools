@@ -3,11 +3,14 @@ WITH a AS (
         id
     FROM @yt_sql_fixture
     WHERE source_index <= 3
-), b AS (
+),
+
+b AS (
     SELECT
         id
     FROM a
 )
+
 SELECT
     id
 FROM b

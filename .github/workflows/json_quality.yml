@@ -26,3 +26,8 @@ jobs:
           python yt-sql/build_coverage_inventory.py --check
           python yt-sql/build_semantic_retirement_audit.py --check
           python yt-sql/build_unicode_fixture_audit.py --check
+          python yt-sql/build_coverage_gap_matrix.py --check
+          python yt-sql/build_semantic_surface_audit.py --check
+          python yt-sql/build_language_element_registry.py --check
+          python yt-sql/build_certification.py --check
+          python yt-sql/check_portable_fixtures.py

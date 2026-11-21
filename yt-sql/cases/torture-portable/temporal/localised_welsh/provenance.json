@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "temporal.localised_welsh",
-  "source_query_sha256": "38717b90fc7f48feecd0bf759c93f8f10d866b0fd96e53ea1fda6b2e20f7f3f3",
+  "source_query_sha256": "e7fea59bc98b7fbf1b24a5d04330d600bf440ce0d63580ffaa93a2be0f61102d",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

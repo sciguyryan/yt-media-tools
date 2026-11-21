@@ -34,6 +34,4 @@ def test_certification_gate_holds() -> None:
     assert function_cells["reviewed"] == function_cells["total"]
     deferred = generated["coverage"]["deferred_features"]
     assert len(deferred) > 0
-    assert generated["coverage"]["deferred_cells"] == sum(
-        len(entry["deferred_dimensions"]) for entry in deferred
-    )
+    assert generated["coverage"]["deferred_cells"] == sum(len(entry["deferred_dimensions"]) for entry in deferred)

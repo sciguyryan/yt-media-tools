@@ -6,6 +6,7 @@ WITH ranked AS (
     WHERE source_index <= 3
     ORDER BY id ASC
 )
+
 SELECT
     title
 FROM ranked

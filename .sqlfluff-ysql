@@ -10,7 +10,26 @@ max_line_length = 120
 # AM05 spells JOIN as INNER JOIN and AL09 drops self-aliases; both rewrite
 # the authoritative parse tree without changing observable output, so the
 # guarded formatter must not apply them.
-exclude_rules = LT05, AM09, CV04, ST06, AM05, AL09
+# AM04 rejects wildcard projections, but SELECT * and alias.* are normative
+# YT-SQL (semantics.projection_star, relational.join_relation_wildcard_
+# expansion); the rule cannot be configured to accept them and its remedy
+# rewrites the projection list, so exclude it with the rewrite rules.
+# RF01 resolves qualified references against FROM-clause sources only. YT-SQL
+# resolves collection element bindings lexically inside quantifier and
+# binding predicates (ANY(formats AS f WHERE f.width > 700)), and fields and
+# binding results carry postfix structured access and indexing
+# (formats[1].height, FILTER(...)[0]); those spellings are normative corpus
+# cases the rule cannot model, and its remedy rewrites the reference.
+exclude_rules = LT05, AM09, CV04, ST06, AM05, AL09, AM04, RF01
+
+# YT-SQL quoted identifiers (the backtick form) may hold any non-empty
+# content per the authoritative lexer, and double-quoted strings are a
+# normative YT-SQL spelling that SQLFluff lexes as a quoted identifier
+# (semantics.string_double_quote, relational.quoted_source). The quoted
+# half of references.special_chars is therefore not a YT-SQL constraint;
+# unquoted identifiers stay fully checked.
+[sqlfluff:rules:references.special_chars]
+quoted_identifiers_policy = none
 
 [sqlfluff:indentation]
 indent_unit = space

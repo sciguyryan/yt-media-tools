@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "semantics.value_number_negative",
-  "source_query_sha256": "2e4581a9291b719f464064c2e7b88e10155ab32dcfbec2a785065969ca9ce8e5",
+  "source_query_sha256": "341bbcf996f128869337f8ab355d91de217876782f11d8ebac3f3ae0ab48745a",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

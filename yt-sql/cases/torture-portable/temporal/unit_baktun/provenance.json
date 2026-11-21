@@ -4,7 +4,7 @@
   "generator_version": 1,
   "seed": 6404,
   "source_case": "temporal.unit_baktun",
-  "source_query_sha256": "f3726a699b47cdc003149bfc301b6143920a309dbe2670e6205900ad5e98e118",
+  "source_query_sha256": "433f6265a952990a028432fdfd1ead16c9215ebc8e7f508d94535e4f53389500",
   "transformation": "lexical keyword case and existing whitespace only",
   "expectation": "copied verbatim from independently approved source case"
 }

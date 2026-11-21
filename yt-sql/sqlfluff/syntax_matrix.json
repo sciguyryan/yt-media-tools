@@ -109,6 +109,50 @@
     {
       "id": "collection_map",
       "query": "SELECT MAP(tags AS tag SELECT UPPER(tag)) AS result FROM @yt_sql_fixture LIMIT 1\n"
+    },
+    {
+      "id": "structured_index_member",
+      "query": "SELECT formats[1].height AS h FROM @yt_sql_fixture WHERE id = 'vid001' LIMIT 1\n"
+    },
+    {
+      "id": "collection_quantifier_any",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE ANY(formats AS f WHERE f.width > 700) ORDER BY id ASC\n"
+    },
+    {
+      "id": "collection_quantifier_all",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE ALL(formats AS f WHERE f.width > 0) ORDER BY id ASC\n"
+    },
+    {
+      "id": "natural_operator",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE view_count at least 1200 ORDER BY source_index\n"
+    },
+    {
+      "id": "natural_operator_phrase",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE view_count greater than 1000000 LIMIT 5\n"
+    },
+    {
+      "id": "offset_bare",
+      "query": "SELECT id FROM @yt_sql_fixture ORDER BY source_index OFFSET 3\n"
+    },
+    {
+      "id": "underscore_number",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE view_count = 1_500_000 LIMIT 3\n"
+    },
+    {
+      "id": "count_suffix",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE view_count = 1.5m OR view_count = 0.5k ORDER BY source_index\n"
+    },
+    {
+      "id": "relative_date_ago",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE upload_date >= 2d ago ORDER BY source_index\n"
+    },
+    {
+      "id": "clock_duration",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE duration = 59:59.999 ORDER BY source_index\n"
+    },
+    {
+      "id": "duration_unit",
+      "query": "SELECT id FROM @yt_sql_fixture WHERE duration = 3599 sec ORDER BY source_index\n"
     }
   ]
 }

@@ -63,7 +63,9 @@ def _coverage(matrix: dict[str, object]) -> tuple[dict[str, object], list[str]]:
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8")) if EVIDENCE.exists() else {"cells": {}}
     cells = evidence.get("cells", {})
 
-    def collect(section: str, prefix: str, name_field: str) -> tuple[dict[str, int], list[dict[str, object]], list[str]]:
+    def collect(
+        section: str, prefix: str, name_field: str
+    ) -> tuple[dict[str, int], list[dict[str, object]], list[str]]:
         total = reviewed = 0
         deferred: list[dict[str, object]] = []
         unadjudicated: list[str] = []
@@ -75,7 +77,9 @@ def _coverage(matrix: dict[str, object]) -> tuple[dict[str, object], list[str]]:
                 if record["status"] == "reviewed":
                     reviewed += 1
                     continue
-                justification = cells.get(prefix + name, {}).get("dimensions", {}).get(dimension, {}).get("justification")
+                justification = (
+                    cells.get(prefix + name, {}).get("dimensions", {}).get(dimension, {}).get("justification")
+                )
                 if not justification:
                     unadjudicated.append(f"{prefix}{name}/{dimension}")
                 else:

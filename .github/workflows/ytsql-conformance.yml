@@ -43,6 +43,35 @@ jobs:
           path: conformance-python.json
           if-no-files-found: ignore
 
+  rust-conformance:
+    name: Rust conformance on ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build the conformance binary
+        run: cargo build --locked -p yt-sql
+        working-directory: rust
+      - name: Check Rust portable conformance
+        run: python yt-sql/run_conformance.py --implementation rust --report-file conformance-rust.json
+      - name: Validate generated conformance report
+        if: always()
+        shell: bash
+        run: |
+          if [ -f conformance-rust.json ]; then
+            python yt-sql/validate_report.py conformance-rust.json
+          else
+            echo "No conformance report was generated (execution or setup may have failed)."
+          fi
+      - name: Preserve conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ytsql-rust-ubuntu-latest
+          path: conformance-rust.json
+          if-no-files-found: ignore
+
   platform-parity:
     name: Compare portable platform reports
     needs: python-conformance

@@ -3,7 +3,8 @@ select
 	id 
  from	@yt_sql_fixture
 where source_index  <=	3
-  ),  b	AS	( 
+  ),
+  b	AS	( 
  select 
  id
   FROM a

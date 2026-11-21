@@ -3,3 +3,4 @@ SELECT
  from @yt_sql_fixture
 	where	duration  = 3599  sec
 ORDER 	 BY	source_index
+  

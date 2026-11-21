@@ -2,4 +2,5 @@ SELECT
  id
 FROM	@yt_sql_fixture
 	WHERE 	 duration	= 59:59.4 	 OR duration =  59:59.999
-  ORDER  by	source_index
+  ORDER  by	source_index 
+ 
