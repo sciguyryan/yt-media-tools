@@ -25,6 +25,8 @@ def test_proxy_fetch_adapter_accepts_platform_native_request() -> None:
     node = shutil.which("node")
     if node is None:
         pytest.skip("Node.js is unavailable")
+    if not (ROOT / "node_modules" / "node-fetch").is_dir():
+        pytest.skip("The optional YouTube.js adapter Node dependencies are not installed")
 
     script = """
 import { nodeFetchArguments } from %s;
