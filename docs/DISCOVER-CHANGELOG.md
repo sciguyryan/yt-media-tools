@@ -4,6 +4,11 @@ This file is the authoritative changelog for yt-discover. Active development and
 
 ## Active development
 
+- [feat] Add `ROW_NUMBER() OVER (...)` window functions with grammar revision 3, partition-aware one-based numbering and standalone-projection placement rules.
+- [feat] Port the window surface to the Rust yt-sql implementation so both conformance adapters reproduce the complete certified corpus.
+- [docs] Define the window evaluation-order contract, canonical formatting, diagnostics and coverage standard alongside the corpus certification.
+- [test] Cover window parsing, placement, evaluation, optimiser differential, portable conformance cases and torture materialisation across both implementations.
+
 - [test] Check approved portable YT-SQL cases under surrounding-whitespace and CRLF transport variations against independently authored outcomes.
 - [docs] Define the narrow Phase 5.3 metamorphic scope and retain the cross-platform and Phase 6 coverage limitations.
 

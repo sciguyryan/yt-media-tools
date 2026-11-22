@@ -1,7 +1,7 @@
 {
   "version": 1,
   "status": "certified",
-  "certified_on": "2026-11-21",
+  "certified_on": "2026-11-22",
   "reviewer": "GLM-5.3-Flash assisted session (OpenCode), on behalf of the repository maintainer",
   "scope": "Phase 6.6: the portable corpus is certified modulo explicitly deferred features",
   "corpus": {

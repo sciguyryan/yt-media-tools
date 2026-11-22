@@ -26,6 +26,8 @@ Window functions are rejected in aggregate queries (`GROUP BY` or aggregate proj
 
 `RANDOM()` is rejected inside window specification expressions (both `PARTITION BY` and window-local `ORDER BY`). A volatile ordering key would make the numbering itself volatile, which contradicts the deterministic-expectation requirement of the conformance corpus. `RANDOM()` elsewhere in a projection is unaffected and remains per-row volatile under the existing rules.
 
+Query parameters substitute before parsing, so a bound parameter used inside a window specification becomes an ordinary literal under the established substitution boundary. No separate window parameter contract exists.
+
 ## Distinct, slicing and acquisition
 
 Window values are ordinary projected values once established. `SELECT DISTINCT` therefore operates on complete projected rows including window results, so two rows identical in every other projection can both survive when their numbers differ. This differs deliberately from `POSITION()`, which is attached after `DISTINCT` so it cannot make identical rows distinct; the difference is the same evaluation-order boundary that gives windows their numbering semantics.

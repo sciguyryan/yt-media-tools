@@ -21,7 +21,7 @@ EVIDENCE = ROOT / "COVERAGE-EVIDENCE.json"
 OVERRIDES = ROOT / "expectations/python.json"
 
 # Bump when re-certifying after material corpus or evidence changes.
-CERTIFIED_ON = "2026-11-21"
+CERTIFIED_ON = "2026-11-22"
 REVIEWER = "GLM-5.3-Flash assisted session (OpenCode), on behalf of the repository maintainer"
 
 GATE = (

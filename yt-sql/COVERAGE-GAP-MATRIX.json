@@ -12522,7 +12522,7 @@
             "interaction.window_position_coexistence",
             "interaction.window_union_branch_numbering"
           ],
-          "justification": "Per-branch composition over a 120-row UNION ALL result with two independently numbered branches, and POSITION/window coexistence with two deferred numbering stages in one query, are pinned. Maximal torture composition remains a recorded limitation."
+          "justification": "Per-branch composition over a 120-row UNION ALL result with two independently numbered branches, POSITION/window coexistence with two deferred numbering stages in one query, and a window projection inside the maximal parser composition query are covered. A deliberately maximal portable corpus case dedicated to window composition remains open."
         }
       }
     },

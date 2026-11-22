@@ -187,6 +187,8 @@ This is a major architectural phase. Window evaluation order, aliases, partition
 
 Do not attempt the entire SQL window specification in one release. Window frames can remain unsupported until a concrete need appears.
 
+Status: the first increment is implemented (`ROW_NUMBER()` over `OVER (...)`, grammar revision 3) with the evaluation-order contract, placement rules, partition identity and NULL ordering specified in `WINDOW-DESIGN.md`; `RANK()` and `DENSE_RANK()` remain outstanding on the same foundation.
+
 ## Phase 15 - advanced windows
 
 Once the window foundation is proven, add:

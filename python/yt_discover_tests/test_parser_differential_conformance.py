@@ -176,7 +176,8 @@ SELECT DISTINCT POSITION() AS `result position`, id, title, tags, formats, durat
        LEAST(COALESCE(view_count, 0), 0xFF, 0o755, 0b1010_0101) AS lo_num,
        CASE WHEN is_live IS TRUE THEN 0x1 WHEN is_live IS FALSE THEN 0o2 ELSE 0b11 END AS live_rank,
        RANDOM(31415926) AS seeded,
-       (+0x10 + 0o7 * 0b10 - 3) / 2 % 5 AS arithmetic
+       (+0x10 + 0o7 * 0b10 - 3) / 2 % 5 AS arithmetic,
+       ROW_NUMBER() OVER (ORDER BY upload_date ASC, id ASC) AS chronology
 FROM @yt_sql_fixture OF videos, shorts
 WHERE ((ANY(tags AS tag WHERE tag = 'mars' OR tag = 'unicode')
         OR ALL(tags AS tag WHERE tag IS NOT NULL))
