@@ -73,3 +73,18 @@ The operation does not change scope, name resolution, relation shape or evaluati
 The policy should be applied to new language proposals before implementation work begins. A proposal may still be rejected when it passes one criterion if its overall benefit does not justify the additional language surface, and existing coherent syntax should not be rewritten merely because this policy might have produced a different design if it had existed earlier.
 
 When a review identifies a genuine missing language feature, implementation should be tracked separately with its syntax or function contract, typing, NULL behaviour, evaluation semantics, optimiser implications, diagnostics and conformance requirements made explicit. Design reviews should not silently grow into implementation work.
+
+## Deliberately outside the language
+
+The following are not planned unless the project's purpose changes substantially:
+
+- Cartesian, `RIGHT`, `FULL`, `CROSS` or `NATURAL` joins without a separately accepted concrete media-query justification;
+- recursive CTEs;
+- DDL or DML;
+- transactions;
+- stored procedures;
+- database schemas;
+- user-defined SQL functions;
+- gratuitous aliases for existing functions/operators;
+- loose implicit type conversion;
+- a general list/array/lambda language without a demonstrated need.

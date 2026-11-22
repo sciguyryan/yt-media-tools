@@ -91,7 +91,7 @@ GitHub Actions runs pinned `markdownlint-cli2` checks for the project Markdown. 
 
 ## Future work
 
-The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/`. Completed Discover series are retained in release history and durable architecture documentation rather than the active roadmap directory. Discover 0.32.0 adds grammar-revision-2 derived relations, line comments and base-aware row slicing while retaining the hand-written parser after the completed replacement investigation. Downloader 1.23.0 adds collection-aware acquisition on top of the established machine-interface foundation.
+The longer-term programmes are documented under `docs/`, with active Discover version-series plans under `docs/roadmap/` and outstanding language work tracked by category in [`docs/TODO.md`](docs/TODO.md). Completed Discover series are retained in release history and durable architecture documentation rather than the active roadmap directory. Discover 0.32.0 adds grammar-revision-2 derived relations, line comments and base-aware row slicing while retaining the hand-written parser after the completed replacement investigation. Downloader 1.23.0 adds collection-aware acquisition on top of the established machine-interface foundation.
 
 ## External tool diagnostics
 
