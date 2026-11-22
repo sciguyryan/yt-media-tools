@@ -347,6 +347,36 @@ pub fn format_scalar_expression(expression: &Expr) -> String {
             format_identifier_component(&projection.binding),
             format_scalar_expression(&projection.projection)
         ),
+        Expr::Window(window) => {
+            let mut parts: Vec<String> = Vec::new();
+            if !window.specification.partition_by.is_empty() {
+                let items = window
+                    .specification
+                    .partition_by
+                    .iter()
+                    .map(format_scalar_expression)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                parts.push(format!("PARTITION BY {}", items));
+            }
+            if !window.specification.order_by.is_empty() {
+                let terms = window
+                    .specification
+                    .order_by
+                    .iter()
+                    .map(|term| {
+                        format!(
+                            "{} {}",
+                            term.field,
+                            if term.descending { "DESC" } else { "ASC" }
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                parts.push(format!("ORDER BY {}", terms));
+            }
+            format!("{}() OVER ({})", window.name, parts.join(" "))
+        }
         Expr::Function(function) => format!(
             "{}({})",
             function.name,

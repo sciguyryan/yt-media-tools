@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.unicode_regex",
-  "description": "Seeded lexical stress of semantics.unicode_regex; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.unicode_regex; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

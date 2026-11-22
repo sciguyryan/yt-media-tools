@@ -6,5 +6,5 @@
   "source_case": "statement.limit_offset_middle",
   "source_query_sha256": "61316c67762bc70c8ed48d24f242ec324cccae29e7417e01711aef9dbdd9467c",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

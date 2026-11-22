@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.ordering.order_tied_view_count_ascending",
-  "description": "Seeded lexical stress of ordering.order_tied_view_count_ascending; approved expectation unchanged",
+  "description": "Seeded lexical stress of ordering.order_tied_view_count_ascending; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

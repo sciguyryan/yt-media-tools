@@ -6,5 +6,5 @@
   "source_case": "function-conformance.cardinality_scalar_operand_rejected",
   "source_query_sha256": "36c8f10ea7a1e65352981605a2dea5b6904c446a175f088462eb2d0a1c7fc634",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

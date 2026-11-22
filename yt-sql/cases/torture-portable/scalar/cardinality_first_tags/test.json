@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.cardinality_first_tags",
-  "description": "Seeded lexical stress of scalar.cardinality_first_tags; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.cardinality_first_tags; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -6,5 +6,5 @@
   "source_case": "function-conformance.aggregate_sum_add",
   "source_query_sha256": "8c47e5ea587655442ad018cbc268f8b468e5c8cde8daa49ee8fdfdd373900d1b",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

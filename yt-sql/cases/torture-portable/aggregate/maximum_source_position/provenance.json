@@ -6,5 +6,5 @@
   "source_case": "aggregate.maximum_source_position",
   "source_query_sha256": "8ab56c6cb2d8ad654260b003631a4112d7abf838b8c7f40985cabeccb7d86371",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

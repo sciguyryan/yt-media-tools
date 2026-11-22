@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "negative.window_placement_where",
+  "source_query_sha256": "5aea4ad0ddf02ab866f989f73f527339f2e1719826557f18073d3e1a13560f43",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from intermediate working tests"
+}

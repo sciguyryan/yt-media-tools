@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.null_through_nested_scalar",
-  "description": "Seeded lexical stress of interaction.null_through_nested_scalar; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.null_through_nested_scalar; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

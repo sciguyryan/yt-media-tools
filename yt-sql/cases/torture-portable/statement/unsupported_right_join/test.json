@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.unsupported_right_join",
-  "description": "Seeded lexical stress of statement.unsupported_right_join; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.unsupported_right_join; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

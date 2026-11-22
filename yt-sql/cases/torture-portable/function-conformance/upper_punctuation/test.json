@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.upper_punctuation",
-  "description": "Seeded lexical stress of function-conformance.upper_punctuation; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.upper_punctuation; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

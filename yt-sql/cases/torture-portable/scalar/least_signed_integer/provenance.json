@@ -6,5 +6,5 @@
   "source_case": "scalar.least_signed_integer",
   "source_query_sha256": "6fcdbf2b9ccc0c156b2119910dc47a1f826a2bafd9f26f8fd401349a60ff0220",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

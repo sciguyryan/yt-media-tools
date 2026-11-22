@@ -234,6 +234,10 @@ fn classify_semantic(reason: &str) -> Result<Json, String> {
         | "having-requires-group-by" => "type",
         "invalid-random-placement" | "invalid-position-placement" => "syntax",
         "unsupported-position-set-operation" => "unsupported",
+        "invalid-window-placement" | "window-order-required" | "invalid-window-volatile" => {
+            "syntax"
+        }
+        "unsupported-window-aggregate-query" | "unsupported-window-nesting" => "unsupported",
         other => {
             return Err(adapter_error(format!(
                 "unclassified language diagnostic reason: {other}"

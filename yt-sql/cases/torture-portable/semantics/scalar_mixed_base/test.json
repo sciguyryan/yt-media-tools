@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.scalar_mixed_base",
-  "description": "Seeded lexical stress of semantics.scalar_mixed_base; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.scalar_mixed_base; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

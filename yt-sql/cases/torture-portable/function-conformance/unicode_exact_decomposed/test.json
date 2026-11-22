@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_exact_decomposed",
-  "description": "Seeded lexical stress of function-conformance.unicode_exact_decomposed; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_exact_decomposed; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

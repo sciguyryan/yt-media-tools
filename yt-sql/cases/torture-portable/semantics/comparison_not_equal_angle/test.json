@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.comparison_not_equal_angle",
-  "description": "Seeded lexical stress of semantics.comparison_not_equal_angle; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.comparison_not_equal_angle; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

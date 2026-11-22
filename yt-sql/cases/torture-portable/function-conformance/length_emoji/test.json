@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.length_emoji",
-  "description": "Seeded lexical stress of function-conformance.length_emoji; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.length_emoji; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

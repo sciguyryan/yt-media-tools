@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.null_three_valued",
-  "description": "Seeded lexical stress of semantics.null_three_valued; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.null_three_valued; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

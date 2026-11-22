@@ -6,5 +6,5 @@
   "source_case": "function-conformance.length_fixture_decomposed",
   "source_query_sha256": "fb677b4aa853b5436fba5ce092bf3298a4b2b9de99c3acc2be31fed85cacca46",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

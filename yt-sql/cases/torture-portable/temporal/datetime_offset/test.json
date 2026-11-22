@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.datetime_offset",
-  "description": "Seeded lexical stress of temporal.datetime_offset; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.datetime_offset; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

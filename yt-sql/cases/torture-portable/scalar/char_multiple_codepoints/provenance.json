@@ -6,5 +6,5 @@
   "source_case": "scalar.char_multiple_codepoints",
   "source_query_sha256": "6262a357b727a2d369e248151a2497b71769cdd02067dcadb92dc8b0a87d8fb5",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

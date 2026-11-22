@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.order_multi",
-  "description": "Seeded lexical stress of semantics.order_multi; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.order_multi; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -6,5 +6,5 @@
   "source_case": "statement.where_not_in",
   "source_query_sha256": "7dba92d2417bc7345adc39403dd591ecbc481ef022bb77d6b476d1f4ed3ab181",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

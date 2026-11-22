@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.natural_equal_to",
-  "description": "Seeded lexical stress of semantics.natural_equal_to; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.natural_equal_to; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

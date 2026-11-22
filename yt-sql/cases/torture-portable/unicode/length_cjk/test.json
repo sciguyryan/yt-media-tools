@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.length_cjk",
-  "description": "Seeded lexical stress of unicode.length_cjk; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.length_cjk; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

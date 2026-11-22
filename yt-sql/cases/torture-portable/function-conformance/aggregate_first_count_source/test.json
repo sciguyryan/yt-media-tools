@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_first_count_source",
-  "description": "Seeded lexical stress of function-conformance.aggregate_first_count_source; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_first_count_source; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

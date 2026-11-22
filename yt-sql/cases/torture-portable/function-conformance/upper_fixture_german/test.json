@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.upper_fixture_german",
-  "description": "Seeded lexical stress of function-conformance.upper_fixture_german; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.upper_fixture_german; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -6,5 +6,5 @@
   "source_case": "unicode.lower_armenian",
   "source_query_sha256": "43da73aaaccdeedf577b803fcb1adec5bf0fa5b2b2e3a8918468b025f3c6dda7",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

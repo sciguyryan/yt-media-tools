@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_having_alias_and_null_test",
-  "description": "Seeded lexical stress of function-conformance.aggregate_having_alias_and_null_test; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_having_alias_and_null_test; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

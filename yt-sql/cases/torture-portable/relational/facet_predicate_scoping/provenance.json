@@ -6,5 +6,5 @@
   "source_case": "relational.facet_predicate_scoping",
   "source_query_sha256": "55390dd776e7b6cca5399bf5370a35b213d80c2f5f07e30ddb2808a99a6280b4",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -6,5 +6,5 @@
   "source_case": "interaction.filter_cardinality",
   "source_query_sha256": "bd80a59ecf006523ec6bf303b2ae129fbf04b59a033d443f450d96674f3ecea0",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

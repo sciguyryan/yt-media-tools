@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.case_no_else",
-  "description": "Seeded lexical stress of semantics.case_no_else; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.case_no_else; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

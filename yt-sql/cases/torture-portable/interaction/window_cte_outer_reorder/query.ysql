@@ -1,0 +1,12 @@
+with  ranked	AS  ( 
+ select
+	ROW_NUMBER() OVER (order 	 BY	upload_date	asc, id 	 ASC) 	 AS  n,
+  id
+from	@yt_sql_fixture
+  )
+	SELECT
+  n,
+  id
+	from  ranked
+	ORDER	BY id  DESC 
+ 

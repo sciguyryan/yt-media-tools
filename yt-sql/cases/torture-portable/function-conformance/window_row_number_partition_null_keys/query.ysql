@@ -1,0 +1,7 @@
+SELECT
+	ROW_NUMBER() OVER 	 (PARTITION  by	fixture_nullable 	 order  BY  id	asc)	as  n, 
+ fixture_nullable,
+	id
+FROM 	 @yt_sql_fixture
+ORDER BY 	 fixture_nullable asc,	n  ASC
+	

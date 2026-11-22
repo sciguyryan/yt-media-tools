@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.union_collapses_duplicates",
-  "description": "Seeded lexical stress of relational.union_collapses_duplicates; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.union_collapses_duplicates; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

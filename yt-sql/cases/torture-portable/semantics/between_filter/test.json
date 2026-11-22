@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.between_filter",
-  "description": "Seeded lexical stress of semantics.between_filter; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.between_filter; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

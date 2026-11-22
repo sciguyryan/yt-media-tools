@@ -6,5 +6,5 @@
   "source_case": "semantics.arithmetic_add",
   "source_query_sha256": "52e8ad6fb9b2be3216dd64d49881f7d7c51a387f94d142c076fd6fce4b707c5a",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

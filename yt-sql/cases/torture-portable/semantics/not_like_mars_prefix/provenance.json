@@ -6,5 +6,5 @@
   "source_case": "semantics.not_like_mars_prefix",
   "source_query_sha256": "17219603fc24afef40fa5a6e850c34b386d5e96a304fb1f4e799fb69e74d048d",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

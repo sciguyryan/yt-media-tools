@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "id": "torture.function-conformance.window_row_number_slice",
+  "description": "Seeded lexical stress of function-conformance.window_row_number_slice; source expectation unchanged",
+  "datasets": [
+    "python-v6-small"
+  ],
+  "query": "query.ysql",
+  "expected": "expected.json",
+  "order": "ordered",
+  "features": [
+    "torture.lexical",
+    "window.row-number"
+  ],
+  "execution": {
+    "configurations": [
+      {
+        "id": "default",
+        "settings": {}
+      }
+    ]
+  }
+}

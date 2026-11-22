@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.value_integer_octal",
-  "description": "Seeded lexical stress of semantics.value_integer_octal; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.value_integer_octal; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

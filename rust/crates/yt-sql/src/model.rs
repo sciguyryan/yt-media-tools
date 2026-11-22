@@ -427,10 +427,37 @@ pub enum Expr {
     Case(ScalarCase),
     Function(ScalarFunction),
     Aggregate(AggregateFunction),
+    Window(WindowFunction),
     CollectionElement(CollectionElementReference),
     CollectionCount(CollectionCount),
     CollectionFilter(CollectionFilter),
     CollectionProjection(CollectionProjection),
+}
+
+/// The OVER (...) definition of a window: partitioning and window-local ordering.
+///
+/// Both parts are optional at the grammar level because future window functions
+/// give an empty or partition-only specification meaning. Whether a particular
+/// window function accepts either part is resolved separately.
+#[derive(Debug, Clone, PartialEq)]
+pub struct WindowSpecification {
+    pub partition_by: Vec<Expr>,
+    pub order_by: Vec<OrderTerm>,
+    pub position: usize,
+    pub kind: Option<String>,
+}
+
+/// A window function evaluated over its window specification.
+///
+/// The function name is recorded so future window functions extend the same
+/// node rather than adding an isolated ROW_NUMBER special case.
+#[derive(Debug, Clone, PartialEq)]
+pub struct WindowFunction {
+    pub name: String,
+    pub specification: WindowSpecification,
+    pub position: usize,
+    pub kind: Option<String>,
+    pub resolved_type: Option<crate::types::QueryType>,
 }
 
 /// Comparison between scalar expressions, used by aggregate HAVING and joins.

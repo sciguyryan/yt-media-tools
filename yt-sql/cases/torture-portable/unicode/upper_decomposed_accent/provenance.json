@@ -6,5 +6,5 @@
   "source_case": "unicode.upper_decomposed_accent",
   "source_query_sha256": "9faab193913ae7924f49e303401dc4dd9e22a84446dff3bb61baa466aad78e80",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

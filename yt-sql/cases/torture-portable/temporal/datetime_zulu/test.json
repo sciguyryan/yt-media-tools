@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.datetime_zulu",
-  "description": "Seeded lexical stress of temporal.datetime_zulu; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.datetime_zulu; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

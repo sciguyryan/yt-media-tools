@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_like_codepoint_3",
-  "description": "Seeded lexical stress of function-conformance.unicode_like_codepoint_3; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_like_codepoint_3; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

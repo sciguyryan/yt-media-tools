@@ -6,5 +6,5 @@
   "source_case": "temporal.localised_welsh",
   "source_query_sha256": "e7fea59bc98b7fbf1b24a5d04330d600bf440ce0d63580ffaa93a2be0f61102d",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

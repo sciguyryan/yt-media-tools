@@ -8729,6 +8729,94 @@
       "path": "yt-sql/cases/torture-portable/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
+      "id": "torture.function-conformance.window_row_number_alias_expression",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_alias_expression/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_alias_order",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_alias_order/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_case_insensitive",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_case_insensitive/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_empty_input",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_empty_input/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_null_ordering_asc",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_null_ordering_asc/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_null_ordering_desc",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_null_ordering_desc/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_partition",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_partition/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_partition_null_keys",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_partition_null_keys/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_reordered",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_reordered/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_slice",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_slice/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_unordered_output",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/function-conformance/window_row_number_unordered_output/test.json"
+    },
+    {
       "id": "torture.interaction.boolean_not_and_page",
       "features": [
         "and",
@@ -8926,6 +9014,38 @@
       "path": "yt-sql/cases/torture-portable/interaction/predicate_empty_page/test.json"
     },
     {
+      "id": "torture.interaction.window_cte_outer_reorder",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/window_cte_outer_reorder/test.json"
+    },
+    {
+      "id": "torture.interaction.window_distinct_numbered",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/window_distinct_numbered/test.json"
+    },
+    {
+      "id": "torture.interaction.window_position_coexistence",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/window_position_coexistence/test.json"
+    },
+    {
+      "id": "torture.interaction.window_union_branch_numbering",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/interaction/window_union_branch_numbering/test.json"
+    },
+    {
       "id": "torture.negative.invalid_count_text",
       "features": [
         "torture.lexical"
@@ -8987,6 +9107,78 @@
         "torture.lexical"
       ],
       "path": "yt-sql/cases/torture-portable/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "torture.negative.window_aggregate_query",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_aggregate_query/test.json"
+    },
+    {
+      "id": "torture.negative.window_arguments",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_arguments/test.json"
+    },
+    {
+      "id": "torture.negative.window_empty_spec",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_empty_spec/test.json"
+    },
+    {
+      "id": "torture.negative.window_frame_unsupported",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_frame_unsupported/test.json"
+    },
+    {
+      "id": "torture.negative.window_malformed_spec",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_malformed_spec/test.json"
+    },
+    {
+      "id": "torture.negative.window_missing_over",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_missing_over/test.json"
+    },
+    {
+      "id": "torture.negative.window_nested_spec",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_nested_spec/test.json"
+    },
+    {
+      "id": "torture.negative.window_placement_where",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_placement_where/test.json"
+    },
+    {
+      "id": "torture.negative.window_volatile_spec",
+      "features": [
+        "torture.lexical",
+        "window.row-number"
+      ],
+      "path": "yt-sql/cases/torture-portable/negative/window_volatile_spec/test.json"
     },
     {
       "id": "torture.ordering.offset_limit",

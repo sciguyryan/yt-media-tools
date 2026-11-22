@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.join_theta_inequality",
-  "description": "Seeded lexical stress of relational.join_theta_inequality; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.join_theta_inequality; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

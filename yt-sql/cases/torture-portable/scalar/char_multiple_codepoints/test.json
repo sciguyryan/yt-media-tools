@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.char_multiple_codepoints",
-  "description": "Seeded lexical stress of scalar.char_multiple_codepoints; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.char_multiple_codepoints; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

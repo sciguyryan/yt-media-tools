@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.length_crlf",
-  "description": "Seeded lexical stress of unicode.length_crlf; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.length_crlf; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

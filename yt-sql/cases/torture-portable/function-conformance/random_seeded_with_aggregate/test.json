@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.random_seeded_with_aggregate",
-  "description": "Seeded lexical stress of function-conformance.random_seeded_with_aggregate; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.random_seeded_with_aggregate; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

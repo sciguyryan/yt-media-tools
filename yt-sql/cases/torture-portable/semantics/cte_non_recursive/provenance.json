@@ -6,5 +6,5 @@
   "source_case": "semantics.cte_non_recursive",
   "source_query_sha256": "4235c973ad402b2b1ffe9ce0aed11ea99a9fee383aefcddd67a43e77423d7e77",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

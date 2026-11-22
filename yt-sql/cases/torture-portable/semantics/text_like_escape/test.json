@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.text_like_escape",
-  "description": "Seeded lexical stress of semantics.text_like_escape; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.text_like_escape; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

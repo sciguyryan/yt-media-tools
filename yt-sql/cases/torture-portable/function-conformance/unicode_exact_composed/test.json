@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_exact_composed",
-  "description": "Seeded lexical stress of function-conformance.unicode_exact_composed; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_exact_composed; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

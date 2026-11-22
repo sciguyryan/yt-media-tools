@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.where_in_null",
-  "description": "Seeded lexical stress of statement.where_in_null; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.where_in_null; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

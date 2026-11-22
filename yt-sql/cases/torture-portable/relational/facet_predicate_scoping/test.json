@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.facet_predicate_scoping",
-  "description": "Seeded lexical stress of relational.facet_predicate_scoping; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.facet_predicate_scoping; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

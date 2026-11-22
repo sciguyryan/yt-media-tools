@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.nested_casefold_length",
-  "description": "Seeded lexical stress of interaction.nested_casefold_length; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.nested_casefold_length; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

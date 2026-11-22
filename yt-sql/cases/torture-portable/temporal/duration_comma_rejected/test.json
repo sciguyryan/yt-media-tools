@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.duration_comma_rejected",
-  "description": "Seeded lexical stress of temporal.duration_comma_rejected; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.duration_comma_rejected; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

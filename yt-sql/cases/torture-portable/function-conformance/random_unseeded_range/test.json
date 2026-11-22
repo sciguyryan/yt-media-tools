@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.random_unseeded_range",
-  "description": "Seeded lexical stress of function-conformance.random_unseeded_range; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.random_unseeded_range; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

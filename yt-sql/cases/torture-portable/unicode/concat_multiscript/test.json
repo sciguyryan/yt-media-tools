@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.concat_multiscript",
-  "description": "Seeded lexical stress of unicode.concat_multiscript; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.concat_multiscript; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

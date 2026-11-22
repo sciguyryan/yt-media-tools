@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.least_null",
-  "description": "Seeded lexical stress of scalar.least_null; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.least_null; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

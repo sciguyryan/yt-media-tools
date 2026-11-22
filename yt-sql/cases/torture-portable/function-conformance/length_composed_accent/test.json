@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.length_composed_accent",
-  "description": "Seeded lexical stress of function-conformance.length_composed_accent; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.length_composed_accent; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

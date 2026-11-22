@@ -6,5 +6,5 @@
   "source_case": "function-conformance.length_turkish_dotted_i",
   "source_query_sha256": "46a9aa83e67320b07a08a71b1e7258e28277c123260469184137b659eb8f3ed8",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

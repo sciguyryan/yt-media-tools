@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_normalisation_inequality",
-  "description": "Seeded lexical stress of function-conformance.char_normalisation_inequality; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_normalisation_inequality; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

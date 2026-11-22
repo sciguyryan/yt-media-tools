@@ -1,0 +1,6 @@
+SELECT
+	ROW_NUMBER() 	 OVER 	 (ORDER 	 BY  upload_date ASC, id ASC) AS  n,
+id
+	FROM	@yt_sql_fixture 
+ order BY 	 id ASC
+	

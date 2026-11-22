@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.negative.unknown_column",
-  "description": "Seeded lexical stress of negative.unknown_column; approved expectation unchanged",
+  "description": "Seeded lexical stress of negative.unknown_column; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

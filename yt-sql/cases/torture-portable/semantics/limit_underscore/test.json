@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.limit_underscore",
-  "description": "Seeded lexical stress of semantics.limit_underscore; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.limit_underscore; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.position_nested_coalesce",
-  "description": "Seeded lexical stress of function-conformance.position_nested_coalesce; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.position_nested_coalesce; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

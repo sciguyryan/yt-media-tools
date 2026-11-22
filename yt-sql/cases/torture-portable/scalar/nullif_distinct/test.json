@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.nullif_distinct",
-  "description": "Seeded lexical stress of scalar.nullif_distinct; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.nullif_distinct; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

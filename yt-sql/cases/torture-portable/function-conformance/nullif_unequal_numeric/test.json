@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.nullif_unequal_numeric",
-  "description": "Seeded lexical stress of function-conformance.nullif_unequal_numeric; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.nullif_unequal_numeric; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

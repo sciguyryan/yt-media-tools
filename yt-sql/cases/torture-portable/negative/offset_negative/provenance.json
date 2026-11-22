@@ -6,5 +6,5 @@
   "source_case": "negative.offset_negative",
   "source_query_sha256": "2350af6997a65097875bd66e406d766bb7944a84794364f92db819c36625d4e7",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.date_relative_ago",
-  "description": "Seeded lexical stress of temporal.date_relative_ago; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.date_relative_ago; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

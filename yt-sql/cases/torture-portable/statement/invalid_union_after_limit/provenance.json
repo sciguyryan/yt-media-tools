@@ -6,5 +6,5 @@
   "source_case": "statement.invalid_union_after_limit",
   "source_query_sha256": "8472691795f168902b06f7a177fc9b819751e7500656cdfe0a5405d16f78b9df",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

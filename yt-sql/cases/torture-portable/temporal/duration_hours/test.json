@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.duration_hours",
-  "description": "Seeded lexical stress of temporal.duration_hours; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.duration_hours; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

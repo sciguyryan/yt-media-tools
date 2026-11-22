@@ -27,7 +27,7 @@ use crate::dates::{
     DateContext, parse_date_literal, parse_datetime_literal, parse_temporal_infinity,
 };
 use crate::evaluator::{
-    aggregate_query, coerce_char_codepoint, contains_aggregate, contains_random,
+    aggregate_query, coerce_char_codepoint, contains_aggregate, contains_random, contains_window,
 };
 use crate::formatter::{canonicalise_temporal_expression, format_scalar_expression};
 use crate::join_resolution::prepare_join_query;
@@ -37,6 +37,7 @@ use crate::model::{
     Field, InList, IsNull, JoinClause, Literal, LiteralValue, OrderTerm, Query, QueryError,
     ScalarBinary, ScalarCase, ScalarComparison, ScalarFunction, ScalarIndex, ScalarIsNull,
     ScalarMember, ScalarUnary, SelectTerm, SetOperation, TextPredicate, TruthTest, Unary,
+    WindowFunction, WindowSpecification,
 };
 use crate::parser::{parse_integer_literal_text, parse_number_text, validate_like_pattern};
 use crate::schema::{FieldInfo, QuerySchema};
@@ -359,6 +360,23 @@ pub fn ast_children<'a>(node: &AstNode<'a>) -> Vec<AstNode<'a>> {
                 children
             }
             Expr::Function(function) => function.args.iter().map(AstNode::Expr).collect(),
+            Expr::Window(window) => {
+                let mut children: Vec<AstNode<'a>> = window
+                    .specification
+                    .partition_by
+                    .iter()
+                    .map(AstNode::Expr)
+                    .collect();
+                children.extend(
+                    window
+                        .specification
+                        .order_by
+                        .iter()
+                        .filter_map(|term| term.expression.as_deref())
+                        .map(AstNode::Expr),
+                );
+                children
+            }
             Expr::Aggregate(aggregate) => {
                 let mut children: Vec<AstNode<'a>> =
                     aggregate.args.iter().map(AstNode::Expr).collect();
@@ -440,6 +458,7 @@ pub fn expr_position(expression: &Expr) -> usize {
         Expr::Case(scalar_case) => scalar_case.position,
         Expr::Function(function) => function.position,
         Expr::Aggregate(aggregate) => aggregate.position,
+        Expr::Window(window) => window.position,
         Expr::CollectionElement(element) => element.position,
         Expr::CollectionCount(count) => count.position,
         Expr::CollectionFilter(filter) => filter.position,
@@ -1074,6 +1093,7 @@ pub fn scalar_kind(expression: &Expr) -> Option<String> {
         Expr::Case(scalar_case) => scalar_case.kind.clone(),
         Expr::Function(function) => function.kind.clone(),
         Expr::Aggregate(aggregate) => aggregate.kind.clone(),
+        Expr::Window(window) => window.kind.clone(),
         Expr::CollectionElement(element) => element.kind.clone(),
         Expr::CollectionCount(count) => count.kind.clone(),
         Expr::CollectionFilter(filter) => filter.kind.clone(),
@@ -1090,6 +1110,7 @@ fn node_resolved_type(expression: &Expr) -> Option<&QueryType> {
         Expr::Index(index) => index.resolved_type.as_ref(),
         Expr::Member(member) => member.resolved_type.as_ref(),
         Expr::Function(function) => function.resolved_type.as_ref(),
+        Expr::Window(window) => window.resolved_type.as_ref(),
         _ => None,
     }
 }
@@ -1862,6 +1883,108 @@ pub fn resolve_scalar_expression(
                 evaluation_fusion_safe,
             }))
         }
+        Expr::Window(expression) => {
+            // Window expressions are established from the SELECT projection
+            // only. Every other resolution context (WHERE, GROUP BY, HAVING,
+            // JOIN ON, ORDER BY, collection element scopes) evaluates before or
+            // outside the window stage, so a window encountered there is a
+            // placement error.
+            if !select_context || !collection_scopes.is_empty() {
+                return Err(QueryError::semantic(
+                    source,
+                    "Window functions are allowed only in SELECT projections.",
+                    expression.position,
+                    "invalid-window-placement",
+                ));
+            }
+            let specification = &expression.specification;
+            let mut spec_items: Vec<&Expr> = specification.partition_by.iter().collect();
+            spec_items.extend(
+                specification
+                    .order_by
+                    .iter()
+                    .filter_map(|term| term.expression.as_deref()),
+            );
+            if spec_items.iter().any(|item| contains_window(item)) {
+                return Err(QueryError::semantic(
+                    source,
+                    "Window functions cannot be nested inside another window specification.",
+                    expression.position,
+                    "unsupported-window-nesting",
+                ));
+            }
+            if spec_items.iter().any(|item| contains_random(item)) {
+                return Err(QueryError::semantic(
+                    source,
+                    "RANDOM is not allowed in window specifications.",
+                    expression.position,
+                    "invalid-window-volatile",
+                ));
+            }
+            if expression.name == "ROW_NUMBER" && specification.order_by.is_empty() {
+                return Err(QueryError::semantic(
+                    source,
+                    format!(
+                        "{} requires an ORDER BY inside its window specification.",
+                        expression.name
+                    ),
+                    expression.position,
+                    "window-order-required",
+                ));
+            }
+            // Window specification expressions reference the input relation
+            // only: projection aliases are not visible inside a specification,
+            // and the false select context keeps nested window functions out of
+            // the recursion.
+            let mut partition_by: Vec<Expr> = Vec::new();
+            for item in &specification.partition_by {
+                partition_by.push(resolve_scalar_expression(
+                    item,
+                    schema,
+                    source,
+                    dates,
+                    None,
+                    false,
+                    false,
+                    &[],
+                )?);
+            }
+            let mut order_by: Vec<OrderTerm> = Vec::new();
+            for term in &specification.order_by {
+                let Some(term_expression) = &term.expression else {
+                    continue;
+                };
+                let resolved = resolve_scalar_expression(
+                    term_expression,
+                    schema,
+                    source,
+                    dates,
+                    None,
+                    false,
+                    false,
+                    &[],
+                )?;
+                order_by.push(OrderTerm {
+                    field: format_scalar_expression(&resolved),
+                    descending: term.descending,
+                    position: term.position,
+                    kind: None,
+                    expression: Some(Box::new(resolved)),
+                });
+            }
+            Ok(Expr::Window(WindowFunction {
+                name: expression.name.clone(),
+                specification: WindowSpecification {
+                    partition_by,
+                    order_by,
+                    position: specification.position,
+                    kind: None,
+                },
+                position: expression.position,
+                kind: Some("integer".to_string()),
+                resolved_type: Some(QueryType::scalar("integer", false)),
+            }))
+        }
         Expr::Aggregate(expression) => {
             let mut args: Vec<Expr> = Vec::new();
             for argument in &expression.args {
@@ -2151,6 +2274,16 @@ fn collect_fields_outside_aggregates(expression: &Expr, fields: &mut Vec<String>
         Expr::Binary(binary) => {
             collect_fields_outside_aggregates(&binary.left, fields);
             collect_fields_outside_aggregates(&binary.right, fields);
+        }
+        Expr::Window(window) => {
+            for item in &window.specification.partition_by {
+                collect_fields_outside_aggregates(item, fields);
+            }
+            for term in &window.specification.order_by {
+                if let Some(item) = &term.expression {
+                    collect_fields_outside_aggregates(item, fields);
+                }
+            }
         }
         Expr::Index(index) => {
             collect_fields_outside_aggregates(&index.collection, fields);
@@ -2910,6 +3043,71 @@ fn validate_position_placement(query: &Query) -> Result<(), QueryError> {
     Ok(())
 }
 
+/// `_validate_window_placement`: reject window functions in the query positions
+/// the initial surface does not support.
+///
+/// Per-position placement (WHERE, ORDER BY, collection scopes, nesting) is
+/// enforced while the respective expressions resolve. This validator covers the
+/// standalone-projection restriction and the query-level rule that windows are
+/// not yet supported in aggregate queries; the post-grouping evaluation stage
+/// is reserved for a later increment.
+fn validate_window_placement(query: &Query) -> Result<(), QueryError> {
+    let root: AstNode<'_> = AstNode::Query(query);
+    let mut window_nodes: Vec<&Expr> = Vec::new();
+    for node in walk_ast(root, &|visited: &AstNode<'_>| match visited {
+        AstNode::Query(candidate) => std::ptr::eq(*candidate, query),
+        _ => true,
+    }) {
+        if let AstNode::Expr(expression) = node
+            && let Expr::Window(_) = expression
+        {
+            window_nodes.push(expression);
+        }
+    }
+    if window_nodes.is_empty() {
+        return Ok(());
+    }
+    for term in &query.select {
+        let Some(expression) = term.expression.as_deref() else {
+            continue;
+        };
+        if !contains_window(expression) {
+            continue;
+        }
+        if !matches!(expression, Expr::Window(_)) {
+            return Err(QueryError::semantic(
+                &query.source,
+                "Window functions are allowed only as standalone SELECT projections.",
+                window_position(expression),
+                "invalid-window-placement",
+            ));
+        }
+    }
+    if aggregate_query(query) {
+        return Err(QueryError::semantic(
+            &query.source,
+            "Window functions are not allowed in aggregate queries.",
+            window_nodes
+                .first()
+                .map(|expression| expr_position(expression))
+                .unwrap_or(0),
+            "unsupported-window-aggregate-query",
+        ));
+    }
+    Ok(())
+}
+
+fn window_position(expression: &Expr) -> usize {
+    let mut found = 0;
+    for node in walk_expr(expression) {
+        if let AstNode::Expr(Expr::Window(window)) = node {
+            found = window.position;
+            break;
+        }
+    }
+    found
+}
+
 // ---------------------------------------------------------------------------
 // Query body resolution
 // ---------------------------------------------------------------------------
@@ -2924,6 +3122,7 @@ pub fn resolve_query_body(
     let source = query.source.as_str();
     validate_random_placement(query)?;
     validate_position_placement(query)?;
+    validate_window_placement(query)?;
 
     let predicate = match &query.predicate {
         Some(predicate) => Some(Box::new(resolve_predicate(

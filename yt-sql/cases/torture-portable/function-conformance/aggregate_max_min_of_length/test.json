@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_max_min_of_length",
-  "description": "Seeded lexical stress of function-conformance.aggregate_max_min_of_length; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_max_min_of_length; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

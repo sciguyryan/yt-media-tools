@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.aggregate.sum_text_type_error",
-  "description": "Seeded lexical stress of aggregate.sum_text_type_error; approved expectation unchanged",
+  "description": "Seeded lexical stress of aggregate.sum_text_type_error; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

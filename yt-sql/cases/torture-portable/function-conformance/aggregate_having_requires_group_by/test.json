@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_having_requires_group_by",
-  "description": "Seeded lexical stress of function-conformance.aggregate_having_requires_group_by; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_having_requires_group_by; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

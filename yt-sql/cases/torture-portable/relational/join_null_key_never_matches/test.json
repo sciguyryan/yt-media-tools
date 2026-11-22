@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.join_null_key_never_matches",
-  "description": "Seeded lexical stress of relational.join_null_key_never_matches; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.join_null_key_never_matches; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.position_descending_order",
-  "description": "Seeded lexical stress of function-conformance.position_descending_order; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.position_descending_order; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

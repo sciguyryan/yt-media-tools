@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_contains_casefold_sharp_s",
-  "description": "Seeded lexical stress of function-conformance.unicode_contains_casefold_sharp_s; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_contains_casefold_sharp_s; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

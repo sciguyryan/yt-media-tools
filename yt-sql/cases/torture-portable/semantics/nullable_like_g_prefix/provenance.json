@@ -6,5 +6,5 @@
   "source_case": "semantics.nullable_like_g_prefix",
   "source_query_sha256": "f822d38b8e3e0c35376c7c0879f5fe5191f6549ba770f44a4c1997ace5fc6cb4",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.negative.invalid_count_text",
-  "description": "Seeded lexical stress of negative.invalid_count_text; approved expectation unchanged",
+  "description": "Seeded lexical stress of negative.invalid_count_text; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

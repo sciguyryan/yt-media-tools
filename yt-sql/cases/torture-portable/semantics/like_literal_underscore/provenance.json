@@ -6,5 +6,5 @@
   "source_case": "semantics.like_literal_underscore",
   "source_query_sha256": "8738b2de32181016bf4363699b474c24d7a2448595fea449b8447a14d34a2fd8",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

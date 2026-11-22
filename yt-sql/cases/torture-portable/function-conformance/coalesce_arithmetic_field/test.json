@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.coalesce_arithmetic_field",
-  "description": "Seeded lexical stress of function-conformance.coalesce_arithmetic_field; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.coalesce_arithmetic_field; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

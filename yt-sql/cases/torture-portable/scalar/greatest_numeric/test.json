@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.greatest_numeric",
-  "description": "Seeded lexical stress of scalar.greatest_numeric; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.greatest_numeric; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

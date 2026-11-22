@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.pagination_reverse_tail",
-  "description": "Seeded lexical stress of interaction.pagination_reverse_tail; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.pagination_reverse_tail; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

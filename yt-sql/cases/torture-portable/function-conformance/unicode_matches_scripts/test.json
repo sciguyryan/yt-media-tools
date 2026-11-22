@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_matches_scripts",
-  "description": "Seeded lexical stress of function-conformance.unicode_matches_scripts; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_matches_scripts; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

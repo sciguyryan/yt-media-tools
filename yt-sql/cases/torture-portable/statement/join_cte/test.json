@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.join_cte",
-  "description": "Seeded lexical stress of statement.join_cte; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.join_cte; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

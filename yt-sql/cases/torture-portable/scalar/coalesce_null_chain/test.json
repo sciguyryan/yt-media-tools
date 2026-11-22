@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.coalesce_null_chain",
-  "description": "Seeded lexical stress of scalar.coalesce_null_chain; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.coalesce_null_chain; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_having_direct",
-  "description": "Seeded lexical stress of function-conformance.aggregate_having_direct; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_having_direct; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

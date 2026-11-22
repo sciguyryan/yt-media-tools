@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_decomposed_length",
-  "description": "Seeded lexical stress of function-conformance.char_decomposed_length; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_decomposed_length; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

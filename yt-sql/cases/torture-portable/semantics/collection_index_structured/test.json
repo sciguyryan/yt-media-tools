@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.collection_index_structured",
-  "description": "Seeded lexical stress of semantics.collection_index_structured; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.collection_index_structured; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

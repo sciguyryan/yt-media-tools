@@ -6,5 +6,5 @@
   "source_case": "function-conformance.concat_unicode_emoji",
   "source_query_sha256": "8602ae1f863abc63208f9543d8b269b53a92a4c3b608afa7a186226d946d9935",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_group_null_together",
-  "description": "Seeded lexical stress of function-conformance.aggregate_group_null_together; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_group_null_together; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

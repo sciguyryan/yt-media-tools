@@ -6,5 +6,5 @@
   "source_case": "statement.join_self_subset",
   "source_query_sha256": "286f1fe82eec2b5ecb030b490007c1865230298cffeaf966daf2b6e7eb985a6c",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

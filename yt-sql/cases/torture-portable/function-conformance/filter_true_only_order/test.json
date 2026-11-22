@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.filter_true_only_order",
-  "description": "Seeded lexical stress of function-conformance.filter_true_only_order; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.filter_true_only_order; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

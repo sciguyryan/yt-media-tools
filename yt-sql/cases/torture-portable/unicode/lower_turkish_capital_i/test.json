@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.lower_turkish_capital_i",
-  "description": "Seeded lexical stress of unicode.lower_turkish_capital_i; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.lower_turkish_capital_i; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

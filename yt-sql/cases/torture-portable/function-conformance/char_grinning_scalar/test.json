@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_grinning_scalar",
-  "description": "Seeded lexical stress of function-conformance.char_grinning_scalar; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_grinning_scalar; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

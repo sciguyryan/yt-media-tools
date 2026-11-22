@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.facet_selection",
-  "description": "Seeded lexical stress of relational.facet_selection; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.facet_selection; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.arithmetic_divide",
-  "description": "Seeded lexical stress of semantics.arithmetic_divide; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.arithmetic_divide; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

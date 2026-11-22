@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.concat_field_projection_order",
-  "description": "Seeded lexical stress of function-conformance.concat_field_projection_order; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.concat_field_projection_order; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

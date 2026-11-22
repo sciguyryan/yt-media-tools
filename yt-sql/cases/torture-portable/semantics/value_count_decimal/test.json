@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.value_count_decimal",
-  "description": "Seeded lexical stress of semantics.value_count_decimal; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.value_count_decimal; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

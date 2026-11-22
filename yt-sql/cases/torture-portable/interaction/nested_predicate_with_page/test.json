@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.nested_predicate_with_page",
-  "description": "Seeded lexical stress of interaction.nested_predicate_with_page; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.nested_predicate_with_page; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

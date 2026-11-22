@@ -6,5 +6,5 @@
   "source_case": "interaction.coalesce_nullif_concat",
   "source_query_sha256": "640d88fe23e865a4f283dcd72bded80d73e19f1efb5c8058be490f3ecb38c1b4",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.ordering.order_nulls_last_asc",
-  "description": "Seeded lexical stress of ordering.order_nulls_last_asc; approved expectation unchanged",
+  "description": "Seeded lexical stress of ordering.order_nulls_last_asc; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

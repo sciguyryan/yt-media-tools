@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.length_of_nested_lower_field",
-  "description": "Seeded lexical stress of function-conformance.length_of_nested_lower_field; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.length_of_nested_lower_field; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

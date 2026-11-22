@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.predicate_not_between",
-  "description": "Seeded lexical stress of semantics.predicate_not_between; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.predicate_not_between; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

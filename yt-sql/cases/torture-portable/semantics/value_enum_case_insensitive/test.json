@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.value_enum_case_insensitive",
-  "description": "Seeded lexical stress of semantics.value_enum_case_insensitive; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.value_enum_case_insensitive; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

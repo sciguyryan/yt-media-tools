@@ -6,5 +6,5 @@
   "source_case": "semantics.order_mixed_keys",
   "source_query_sha256": "24dc5993f4118ceaf68cf2d0d1bfc37ea3001b79f6e809b5900978ab5697c2c5",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,8 +1,9 @@
 """Materialise reviewed-expectation lexical variants as portable YT-SQL cases.
 
 This is an authoring tool, never a requirement for executing the normative corpus.
-It copies approved expectations, not implementation observations. Review the
-resulting queries and their semantic equivalence before accepting a commit.
+It copies the source cases' existing expectations, not implementation
+observations. Review the resulting queries and their semantic equivalence before
+accepting a commit.
 """
 
 from __future__ import annotations
@@ -39,7 +40,7 @@ def materialise(root: Path, *, check: bool = False) -> int:
         destination = output_root / manifest["id"].replace(".", "/")
         new_manifest = dict(manifest)
         new_manifest["id"] = identifier
-        new_manifest["description"] = f"Seeded lexical stress of {manifest['id']}; approved expectation unchanged"
+        new_manifest["description"] = f"Seeded lexical stress of {manifest['id']}; source expectation unchanged"
         new_manifest["features"] = sorted(set(manifest.get("features", [])) | {"torture.lexical"})
         provenance = {
             "version": 1,
@@ -49,7 +50,7 @@ def materialise(root: Path, *, check: bool = False) -> int:
             "source_case": manifest["id"],
             "source_query_sha256": hashlib.sha256(source_query.encode()).hexdigest(),
             "transformation": "lexical keyword case and existing whitespace only",
-            "expectation": "copied verbatim from independently approved source case",
+            "expectation": "copied verbatim from intermediate working tests",
         }
         payloads = {
             "query.ysql": query.encode("utf-8"),
@@ -69,7 +70,7 @@ def materialise(root: Path, *, check: bool = False) -> int:
     if check:
         actual_paths = {p for p in output_root.rglob("*") if p.is_file()}
         if actual_paths != expected_paths:
-            raise ValueError("Materialised torture fixture set differs from approved source inventory")
+            raise ValueError("Materialised torture fixture set differs from the source case inventory")
     return len(source_paths)
 
 

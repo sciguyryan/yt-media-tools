@@ -1844,6 +1844,22 @@ fn evaluate_scalar(expression: &Expr, context: &EvaluationContext) -> Value {
             )
         }
         Expr::Literal(literal) => decode_literal(literal, None),
+        Expr::Window(_) => {
+            // Window values are established once per query body at the window
+            // stage and carried by the row under their semantic identity. A
+            // missing entry means a window expression escaped the
+            // projection-only placement rules.
+            let key = semantic_key(expression);
+            let environment = record_get(context.record(), "_yt_sql_window_values");
+            match environment {
+                Some(Value::Record(pairs)) => pairs
+                    .iter()
+                    .find(|(existing, _)| existing == &key)
+                    .map(|(_, value)| value.clone())
+                    .unwrap_or(Value::Null),
+                _ => Value::Null,
+            }
+        }
         Expr::CollectionElement(reference) => context.collection_element(reference.scope_distance),
         Expr::Unary(unary) => {
             let value = evaluate_scalar(&unary.operand, context);
@@ -2070,12 +2086,14 @@ pub fn canonical_record_value(
                 .map(|expression| contains_random(expression))
                 .unwrap_or(false);
             let deferred_position = is_final_position(term);
+            let window_projection = matches!(term.expression.as_deref(), Some(Expr::Window(_)));
             let output_name = term.output_name().to_string();
             if record_get(record, &output_name).is_some()
                 && (materialised_result
                     || aggregate_projection
                     || volatile_projection
-                    || deferred_position)
+                    || deferred_position
+                    || window_projection)
             {
                 return record_get(record, &output_name)
                     .cloned()
@@ -2083,6 +2101,10 @@ pub fn canonical_record_value(
             }
             if deferred_position {
                 // POSITION() must be evaluated at the final-result stage.
+                return Value::Null;
+            }
+            if window_projection {
+                // Window functions must be evaluated at the window stage.
                 return Value::Null;
             }
             if let Some(expression) = &term.expression {
@@ -2684,6 +2706,76 @@ fn union_row_key(row: &Record, output_names: &[String]) -> Vec<Value> {
 // Query semantics (port of query_semantics.py)
 // ---------------------------------------------------------------------------
 
+/// Whether a scalar expression subtree contains a window function.
+pub fn contains_window(expression: &Expr) -> bool {
+    match expression {
+        Expr::Window(_) => true,
+        Expr::Field(_) | Expr::RelationField(_) | Expr::Literal(_) | Expr::CollectionElement(_) => {
+            false
+        }
+        Expr::Unary(unary) => contains_window(&unary.operand),
+        Expr::Binary(binary) => contains_window(&binary.left) || contains_window(&binary.right),
+        Expr::Index(index) => contains_window(&index.collection) || contains_window(&index.index),
+        Expr::Member(member) => contains_window(&member.value),
+        Expr::Function(function) => function.args.iter().any(contains_window),
+        Expr::Aggregate(aggregate) => {
+            aggregate.args.iter().any(contains_window)
+                || aggregate
+                    .filter_predicate
+                    .as_deref()
+                    .map(having_contains_window)
+                    .unwrap_or(false)
+        }
+        Expr::Case(case) => {
+            case.whens.iter().any(|branch| {
+                bool_contains_window(&branch.condition) || contains_window(&branch.result)
+            }) || case
+                .else_result
+                .as_deref()
+                .map(contains_window)
+                .unwrap_or(false)
+        }
+        Expr::CollectionCount(count) => {
+            contains_window(&count.collection) || having_contains_window(&count.predicate)
+        }
+        Expr::CollectionFilter(filter) => {
+            contains_window(&filter.collection) || having_contains_window(&filter.predicate)
+        }
+        Expr::CollectionProjection(projection) => {
+            contains_window(&projection.collection) || contains_window(&projection.projection)
+        }
+    }
+}
+
+fn having_contains_window(node: &BoolExpr) -> bool {
+    match node {
+        BoolExpr::Unary(unary) => having_contains_window(&unary.operand),
+        BoolExpr::Binary(binary) if binary.operator == "AND" || binary.operator == "OR" => {
+            having_contains_window(&binary.left) || having_contains_window(&binary.right)
+        }
+        BoolExpr::ScalarComparison(comparison) => {
+            contains_window(&comparison.left) || contains_window(&comparison.right)
+        }
+        BoolExpr::ScalarIsNull(is_null) => contains_window(&is_null.expression),
+        BoolExpr::TruthTest(truth) => having_contains_window(&truth.operand),
+        _ => false,
+    }
+}
+
+fn bool_contains_window(node: &BoolExpr) -> bool {
+    match node {
+        BoolExpr::Unary(unary) => having_contains_window(&unary.operand),
+        BoolExpr::Binary(binary) => {
+            having_contains_window(&binary.left) || having_contains_window(&binary.right)
+        }
+        BoolExpr::ScalarComparison(comparison) => {
+            contains_window(&comparison.left) || contains_window(&comparison.right)
+        }
+        BoolExpr::ScalarIsNull(is_null) => contains_window(&is_null.expression),
+        _ => false,
+    }
+}
+
 /// Whether a scalar expression contains an aggregate function.
 pub fn contains_aggregate(expression: &Expr) -> bool {
     match expression {
@@ -2709,6 +2801,19 @@ pub fn contains_aggregate(expression: &Expr) -> bool {
         }
         Expr::Member(member) => contains_aggregate(&member.value),
         Expr::Function(function) => function.args.iter().any(contains_aggregate),
+        Expr::Window(window) => {
+            window
+                .specification
+                .partition_by
+                .iter()
+                .any(contains_aggregate)
+                || window
+                    .specification
+                    .order_by
+                    .iter()
+                    .filter_map(|term| term.expression.as_deref())
+                    .any(contains_aggregate)
+        }
         Expr::Case(case) => {
             case.whens
                 .iter()
@@ -2772,6 +2877,19 @@ pub fn contains_random(expression: &Expr) -> bool {
                     .map(|predicate| bool_contains_random(predicate))
                     .unwrap_or(false)
         }
+        Expr::Window(window) => {
+            window
+                .specification
+                .partition_by
+                .iter()
+                .any(contains_random)
+                || window
+                    .specification
+                    .order_by
+                    .iter()
+                    .filter_map(|term| term.expression.as_deref())
+                    .any(contains_random)
+        }
         Expr::CollectionCount(count) => {
             contains_random(&count.collection) || bool_contains_random(&count.predicate)
         }
@@ -2803,6 +2921,259 @@ fn bool_contains_random(node: &BoolExpr) -> bool {
         BoolExpr::ScalarComparison(comparison) => {
             contains_random(&comparison.left) || contains_random(&comparison.right)
         }
+    }
+}
+
+/// Structural semantic identity that ignores non-semantic source positions.
+///
+/// This is the Rust counterpart of the Python reference's `semantic_key`,
+/// rendered as a deterministic string so it can key the per-row window value
+/// environment. Window expressions carry their full specification so that two
+/// structurally identical projections share one numbering.
+pub fn semantic_key(expression: &Expr) -> String {
+    match expression {
+        Expr::Field(field) => format!("field:{}|{:?}", field.name, field.kind),
+        Expr::RelationField(field) => {
+            format!(
+                "relation-field:{}:{}|{:?}",
+                field.qualifier, field.name, field.kind
+            )
+        }
+        Expr::Literal(literal) => {
+            let decoded = decode_literal(literal, None);
+            let text = match &decoded {
+                Value::Null => "null".to_string(),
+                Value::Bool(value) => format!("bool:{}", value),
+                Value::Int(value) => format!("int:{}", value),
+                Value::Float(value) => format!("float:{}", value),
+                Value::Text(value) => format!("text:{}|{}", value, literal.quoted),
+                other => format!("other:{:?}", other),
+            };
+            format!("literal:{}", text)
+        }
+        Expr::Unary(unary) => {
+            format!(
+                "scalar-unary:{}|{}|{:?}",
+                unary.operator,
+                semantic_key(&unary.operand),
+                unary.kind
+            )
+        }
+        Expr::Binary(binary) => format!(
+            "scalar-binary:{}|{}|{}|{:?}",
+            binary.operator,
+            semantic_key(&binary.left),
+            semantic_key(&binary.right),
+            binary.kind
+        ),
+        Expr::Index(index) => format!(
+            "scalar-index:{}|{}|{:?}",
+            semantic_key(&index.collection),
+            semantic_key(&index.index),
+            index.kind
+        ),
+        Expr::Member(member) => {
+            format!(
+                "scalar-member:{}|{}|{:?}",
+                semantic_key(&member.value),
+                member.member,
+                member.kind
+            )
+        }
+        Expr::Case(case) => {
+            let branches = case
+                .whens
+                .iter()
+                .map(|branch| {
+                    format!(
+                        "{}=>{}",
+                        bool_semantic_key(&branch.condition),
+                        semantic_key(&branch.result)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            let else_key = case
+                .else_result
+                .as_ref()
+                .map(|else_result| semantic_key(else_result))
+                .unwrap_or_else(|| "none".to_string());
+            format!("scalar-case:{}|else:{}|{:?}", branches, else_key, case.kind)
+        }
+        Expr::Function(function) => {
+            let args = function
+                .args
+                .iter()
+                .map(semantic_key)
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                "scalar-function:{}|{}|{:?}",
+                function.name, args, function.kind
+            )
+        }
+        Expr::Aggregate(aggregate) => {
+            let args = aggregate
+                .args
+                .iter()
+                .map(semantic_key)
+                .collect::<Vec<_>>()
+                .join(",");
+            let filter = aggregate
+                .filter_predicate
+                .as_deref()
+                .map(bool_semantic_key)
+                .unwrap_or_else(|| "none".to_string());
+            format!(
+                "aggregate:{}|{}|star:{}|{}|{:?}",
+                aggregate.name, args, aggregate.count_star, filter, aggregate.kind
+            )
+        }
+        Expr::Window(window) => format!(
+            "window-function:{}|{}|{:?}",
+            window.name,
+            window_specification_key(&window.specification),
+            window.kind
+        ),
+        Expr::CollectionElement(reference) => {
+            format!(
+                "collection-element:{}|{}",
+                reference.binding, reference.scope_distance
+            )
+        }
+        Expr::CollectionCount(count) => format!(
+            "collection-count:{}|{}|{}|{:?}",
+            semantic_key(&count.collection),
+            count.binding,
+            bool_semantic_key(&count.predicate),
+            count.kind
+        ),
+        Expr::CollectionFilter(filter) => format!(
+            "collection-filter:{}|{}|{}|{:?}",
+            semantic_key(&filter.collection),
+            filter.binding,
+            bool_semantic_key(&filter.predicate),
+            filter.kind
+        ),
+        Expr::CollectionProjection(projection) => format!(
+            "collection-projection:{}|{}|{}|{:?}",
+            semantic_key(&projection.collection),
+            projection.binding,
+            semantic_key(&projection.projection),
+            projection.kind
+        ),
+    }
+}
+
+fn window_specification_key(specification: &crate::model::WindowSpecification) -> String {
+    let partition = specification
+        .partition_by
+        .iter()
+        .map(semantic_key)
+        .collect::<Vec<_>>()
+        .join(",");
+    let order = specification
+        .order_by
+        .iter()
+        .map(|term| {
+            let expression = term
+                .expression
+                .as_deref()
+                .map(semantic_key)
+                .unwrap_or_else(|| term.field.clone());
+            format!(
+                "order:{}|{}|{:?}|{:?}",
+                term.field, term.descending, term.kind, expression
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        "specification:{}|{}|{:?}",
+        partition, order, specification.kind
+    )
+}
+
+fn field_semantic_key(field: &crate::model::Field) -> String {
+    format!("field:{}|{:?}", field.name, field.kind)
+}
+
+fn bool_semantic_key(node: &BoolExpr) -> String {
+    match node {
+        BoolExpr::Literal(literal) => format!("bool-literal:{:?}", literal),
+        BoolExpr::Unary(unary) => format!(
+            "bool-unary:{}|{}",
+            unary.operator,
+            bool_semantic_key(&unary.operand)
+        ),
+        BoolExpr::Binary(binary) => format!(
+            "bool-binary:{}|{}|{}",
+            binary.operator,
+            bool_semantic_key(&binary.left),
+            bool_semantic_key(&binary.right)
+        ),
+        BoolExpr::Between(between) => format!(
+            "between:{}|{:?}|{:?}|{}",
+            field_semantic_key(&between.field),
+            decode_literal(&between.lower, None),
+            decode_literal(&between.upper, None),
+            between.negated
+        ),
+        BoolExpr::InList(in_list) => {
+            let values = in_list
+                .values
+                .iter()
+                .map(|literal| format!("{:?}", decode_literal(literal, None)))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                "in:{}|{}|{}",
+                field_semantic_key(&in_list.field),
+                values,
+                in_list.negated
+            )
+        }
+        BoolExpr::IsNull(is_null) => {
+            format!(
+                "is-null:{}|{}",
+                field_semantic_key(&is_null.field),
+                is_null.negated
+            )
+        }
+        BoolExpr::TextPredicate(predicate) => format!(
+            "text:{}|{}|{:?}|{}|{}",
+            predicate.operator,
+            field_semantic_key(&predicate.field),
+            decode_literal(&predicate.value, None),
+            predicate.value.quoted,
+            predicate.negated
+        ),
+        BoolExpr::TruthTest(truth) => format!(
+            "truth-test:{}|{}|{}",
+            bool_semantic_key(&truth.operand),
+            truth.truth,
+            truth.negated
+        ),
+        BoolExpr::CollectionPredicate(predicate) => format!(
+            "collection-predicate:{}|{}|{}|{}",
+            predicate.quantifier,
+            semantic_key(&predicate.collection),
+            predicate.binding,
+            bool_semantic_key(&predicate.predicate)
+        ),
+        BoolExpr::ScalarIsNull(is_null) => {
+            format!(
+                "scalar-is-null:{}|{}",
+                semantic_key(&is_null.expression),
+                is_null.negated
+            )
+        }
+        BoolExpr::ScalarComparison(comparison) => format!(
+            "scalar-comparison:{}|{}|{}",
+            comparison.operator,
+            semantic_key(&comparison.left),
+            semantic_key(&comparison.right)
+        ),
     }
 }
 
@@ -3387,6 +3758,99 @@ fn project_result_rows(records: &[Record], query: &Query) -> Vec<Record> {
 }
 
 /// Port of `_apply_aggregate_query`.
+/// Establish window projections over the filtered input relation.
+///
+/// Window numbering is computed once per query body over its complete filtered
+/// input, before final ordering, deduplication and slicing. Each materialised
+/// row carries standalone window values under their output names and a
+/// semantic-key environment for ordering expressions that reference them.
+fn apply_window_values(rows: Vec<Record>, select: &[SelectTerm]) -> Result<Vec<Record>, String> {
+    let window_terms: Vec<&SelectTerm> = select
+        .iter()
+        .filter(|term| matches!(term.expression.as_deref(), Some(Expr::Window(_))))
+        .collect();
+    if window_terms.is_empty() {
+        return Ok(rows);
+    }
+    let mut environments: Vec<Vec<(String, Value)>> = vec![Vec::new(); rows.len()];
+    for term in &window_terms {
+        let Some(Expr::Window(expression)) = term.expression.as_deref() else {
+            continue;
+        };
+        let numbers = window_numbers(&rows, expression)?;
+        let key = semantic_key(term.expression.as_deref().expect("window expression"));
+        for (environment, number) in environments.iter_mut().zip(numbers) {
+            environment.retain(|(existing, _)| existing != &key);
+            environment.push((key.clone(), Value::Int(number)));
+        }
+    }
+    let mut materialised = Vec::with_capacity(rows.len());
+    for (record, environment) in rows.into_iter().zip(environments) {
+        let mut row = record;
+        for term in &window_terms {
+            let key = semantic_key(term.expression.as_deref().expect("window expression"));
+            let number = environment
+                .iter()
+                .find(|(existing, _)| existing == &key)
+                .map(|(_, value)| value.clone())
+                .unwrap_or(Value::Null);
+            record_set(&mut row, term.output_name(), number);
+        }
+        record_set(
+            &mut row,
+            "_yt_sql_window_values",
+            Value::Record(environment),
+        );
+        materialised.push(row);
+    }
+    Ok(materialised)
+}
+
+/// Number rows one-based within each partition, in window order.
+///
+/// Rows whose complete window-ordering keys compare equal keep encounter order
+/// through the stable sort, but that relative numbering is not a language
+/// guarantee: yt-sql does not add an implicit tie-breaker.
+fn window_numbers(
+    rows: &[Record],
+    expression: &crate::model::WindowFunction,
+) -> Result<Vec<i64>, String> {
+    let specification = &expression.specification;
+    let mut partitions: Vec<(Vec<Value>, Vec<usize>)> = Vec::new();
+    for (index, record) in rows.iter().enumerate() {
+        let mut key: Vec<Value> = Vec::with_capacity(specification.partition_by.len());
+        for item in &specification.partition_by {
+            let value = evaluate_scalar(item, &EvaluationContext::new(record.clone()));
+            key.push(hashable_group_value(&value));
+        }
+        match partitions
+            .iter_mut()
+            .find(|(existing, _)| keys_equal(existing, &key))
+        {
+            Some((_, members)) => members.push(index),
+            None => partitions.push((key, vec![index])),
+        }
+    }
+    let mut numbers = vec![0i64; rows.len()];
+    for (_, members) in &partitions {
+        let mut ordered = members.clone();
+        for term in specification.order_by.iter().rev() {
+            let term = term.clone();
+            ordered = order_items(ordered, &term, |index| {
+                canonical_record_value(
+                    &rows[*index],
+                    &CanonicalField::OrderTerm(term.clone()),
+                    false,
+                )
+            })?;
+        }
+        for (position, index) in ordered.into_iter().enumerate() {
+            numbers[index] = position as i64 + 1;
+        }
+    }
+    Ok(numbers)
+}
+
 fn apply_aggregate_query(records: &[Record], query: &Query) -> Result<Vec<Record>, String> {
     let filtered: Vec<Record> = records
         .iter()
@@ -3475,6 +3939,10 @@ fn apply_query_body(records: &[Record], query: &Query) -> Result<Vec<Record>, St
         })
         .cloned()
         .collect();
+
+    // Window values are established over the complete filtered input relation
+    // before ordering, deduplication and slicing can observe them.
+    result = apply_window_values(result, &query.select)?;
 
     // Sort from the last term backwards so each ORDER BY direction remains
     // independent; the stable sort retains encounter order for ties.
@@ -3769,10 +4237,11 @@ fn apply_composed_query(
     Ok(rows)
 }
 
-const EXECUTION_ONLY_KEYS: [&str; 3] = [
+const EXECUTION_ONLY_KEYS: [&str; 4] = [
     "_yt_sql_result_row",
     "_yt_sql_aggregate_result",
     "_yt_sql_random_cache",
+    "_yt_sql_window_values",
 ];
 
 /// Apply a resolved query, materialising CTEs and set-composed relations.

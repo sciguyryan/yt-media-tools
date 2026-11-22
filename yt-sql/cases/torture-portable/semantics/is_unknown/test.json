@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.is_unknown",
-  "description": "Seeded lexical stress of semantics.is_unknown; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.is_unknown; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

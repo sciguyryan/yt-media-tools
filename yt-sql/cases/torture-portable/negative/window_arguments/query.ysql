@@ -1,0 +1,2 @@
+select 	 ROW_NUMBER(id)	OVER 	 (order BY id) as 	 n FROM @yt_sql_fixture
+  

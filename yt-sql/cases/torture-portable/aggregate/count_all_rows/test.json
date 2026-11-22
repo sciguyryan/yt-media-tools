@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.aggregate.count_all_rows",
-  "description": "Seeded lexical stress of aggregate.count_all_rows; approved expectation unchanged",
+  "description": "Seeded lexical stress of aggregate.count_all_rows; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

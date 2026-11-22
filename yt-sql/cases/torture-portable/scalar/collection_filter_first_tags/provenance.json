@@ -6,5 +6,5 @@
   "source_case": "scalar.collection_filter_first_tags",
   "source_query_sha256": "52dbfc85029e84cf9bd4375450458349cf3f20638a9202a410bda12b1847be81",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.length_arabic",
-  "description": "Seeded lexical stress of function-conformance.length_arabic; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.length_arabic; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

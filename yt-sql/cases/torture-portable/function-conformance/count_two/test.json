@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.count_two",
-  "description": "Seeded lexical stress of function-conformance.count_two; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.count_two; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

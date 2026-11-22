@@ -6,5 +6,5 @@
   "source_case": "function-conformance.lower_null",
   "source_query_sha256": "efb9bab5d81e616c7e2754fd2cc12da5f1d66e8e92a5445dfc2c3a3c1abd365e",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

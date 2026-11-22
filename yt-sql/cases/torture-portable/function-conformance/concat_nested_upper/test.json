@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.concat_nested_upper",
-  "description": "Seeded lexical stress of function-conformance.concat_nested_upper; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.concat_nested_upper; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

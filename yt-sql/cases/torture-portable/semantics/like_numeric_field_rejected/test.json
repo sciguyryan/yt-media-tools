@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.like_numeric_field_rejected",
-  "description": "Seeded lexical stress of semantics.like_numeric_field_rejected; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.like_numeric_field_rejected; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

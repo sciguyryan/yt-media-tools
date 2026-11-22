@@ -6,5 +6,5 @@
   "source_case": "statement.cte_chain",
   "source_query_sha256": "d733b828c4fa6fcea622f81bad12c2d650842c3356d6240902bacb9303ba1e25",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -6,5 +6,5 @@
   "source_case": "temporal.date_named",
   "source_query_sha256": "e2f559b2bb3b61909eccb1187e981447cc348c34bbd771945674151b50f4d4fe",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

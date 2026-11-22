@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.order_mixed_keys",
-  "description": "Seeded lexical stress of semantics.order_mixed_keys; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.order_mixed_keys; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

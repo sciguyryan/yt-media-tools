@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generator": "materialise_torture.py",
+  "generator_version": 1,
+  "seed": 6404,
+  "source_case": "negative.window_nested_spec",
+  "source_query_sha256": "a8ba23a9b160284ef6f21468a2c003f81f9e2e17f3fe84a3462d2cc707ecda53",
+  "transformation": "lexical keyword case and existing whitespace only",
+  "expectation": "copied verbatim from intermediate working tests"
+}

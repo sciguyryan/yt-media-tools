@@ -6,5 +6,5 @@
   "source_case": "interaction.null_through_nested_scalar",
   "source_query_sha256": "e7a0ed5f90fc8de9efb71226c6118597f1448d9827d23e54c179b1cd41298e94",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

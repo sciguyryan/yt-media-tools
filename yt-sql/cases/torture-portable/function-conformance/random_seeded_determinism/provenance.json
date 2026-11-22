@@ -6,5 +6,5 @@
   "source_case": "function-conformance.random_seeded_determinism",
   "source_query_sha256": "a6632caa4b35182a981b1ac90497a137f2f75780f53388e060723c35587ea76a",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

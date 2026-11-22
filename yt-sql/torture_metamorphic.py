@@ -1,7 +1,7 @@
 """Seeded lexical stress tests against independently reviewed portable expectations.
 
 This runner does not generate normative expectations. Every successful mutation
-must continue to satisfy the original approved expectation. Only lexically safe
+must continue to satisfy the original source expectation. Only lexically safe
 transformations are used; strings, quoted identifiers and comments are opaque.
 """
 

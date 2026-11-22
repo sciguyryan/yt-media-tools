@@ -6,5 +6,5 @@
   "source_case": "semantics.structured_quantifier_all",
   "source_query_sha256": "8a23805119a3133224a684c9c3b1d80db371e5e5f3219c6ff68ef05f2dee7fb3",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.temporal_now_fixed",
-  "description": "Seeded lexical stress of semantics.temporal_now_fixed; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.temporal_now_fixed; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.comparison_ne",
-  "description": "Seeded lexical stress of semantics.comparison_ne; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.comparison_ne; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

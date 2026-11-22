@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.nested_unicode_concat",
-  "description": "Seeded lexical stress of interaction.nested_unicode_concat; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.nested_unicode_concat; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -6,5 +6,5 @@
   "source_case": "temporal.infinity_precedes_all",
   "source_query_sha256": "d8bb6df23032b13a4591a1c021230748d2dec95d11f5138be85c2f4cadfeeba7",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

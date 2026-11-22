@@ -1,0 +1,5 @@
+SELECT	distinct
+	ROW_NUMBER()  OVER  (order	BY  id asc) 	 AS 	 n 
+ FROM 	 @yt_sql_fixture
+ORDER	by 	 n  asc
+	

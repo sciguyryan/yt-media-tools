@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.join_aggregate_grouped",
-  "description": "Seeded lexical stress of relational.join_aggregate_grouped; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.join_aggregate_grouped; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

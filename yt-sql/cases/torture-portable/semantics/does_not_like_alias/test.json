@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.does_not_like_alias",
-  "description": "Seeded lexical stress of semantics.does_not_like_alias; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.does_not_like_alias; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

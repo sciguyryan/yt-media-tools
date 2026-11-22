@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.projection_coalesce",
-  "description": "Seeded lexical stress of semantics.projection_coalesce; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.projection_coalesce; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

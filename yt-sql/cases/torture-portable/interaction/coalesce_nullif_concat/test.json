@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.coalesce_nullif_concat",
-  "description": "Seeded lexical stress of interaction.coalesce_nullif_concat; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.coalesce_nullif_concat; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

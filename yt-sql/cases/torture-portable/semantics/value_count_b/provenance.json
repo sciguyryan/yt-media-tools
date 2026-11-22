@@ -6,5 +6,5 @@
   "source_case": "semantics.value_count_b",
   "source_query_sha256": "cfa474a69e0c73d917f30514f29aaf1cbecd6bdb40db65ba62722f1843981e23",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

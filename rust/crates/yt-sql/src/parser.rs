@@ -62,11 +62,16 @@ use crate::model::{
     TOKEN_DOT, TOKEN_EOF, TOKEN_IDENT, TOKEN_LBRACKET, TOKEN_LITERAL_WORD, TOKEN_LPAREN,
     TOKEN_MINUS, TOKEN_NUMBER, TOKEN_OP, TOKEN_PERCENT, TOKEN_PLUS, TOKEN_QIDENT, TOKEN_RBRACKET,
     TOKEN_RPAREN, TOKEN_SLASH, TOKEN_STAR, TOKEN_STRING, TOKEN_TEMPORAL, TOKEN_TIME, TextPredicate,
-    Token, TruthTest, Unary,
+    Token, TruthTest, Unary, WindowFunction, WindowSpecification,
 };
 
 /// Reserved literal words an ordinary identifier component may not spell.
 const RESERVED_LITERAL_WORDS: [&str; 3] = ["TRUE", "FALSE", "NULL"];
+
+/// Window functions are parsed as dedicated scalar atoms carrying their OVER
+/// specification. The set is the extension point for future window functions;
+/// each name must remain an ordinary identifier where no function call follows.
+const WINDOW_FUNCTION_NAMES: [&str; 1] = ["ROW_NUMBER"];
 
 /// Keywords that terminate a bare dotted member access after an explicit dot.
 const MEMBER_TERMINATOR_KEYWORDS: [&str; 16] = [
@@ -668,6 +673,36 @@ fn format_scalar_expression(expression: &Expr) -> String {
             format_identifier_component(&projection.binding),
             format_scalar_expression(&projection.projection)
         ),
+        Expr::Window(window) => {
+            let mut parts: Vec<String> = Vec::new();
+            if !window.specification.partition_by.is_empty() {
+                let items = window
+                    .specification
+                    .partition_by
+                    .iter()
+                    .map(format_scalar_expression)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                parts.push(format!("PARTITION BY {}", items));
+            }
+            if !window.specification.order_by.is_empty() {
+                let terms = window
+                    .specification
+                    .order_by
+                    .iter()
+                    .map(|term| {
+                        format!(
+                            "{} {}",
+                            term.field,
+                            if term.descending { "DESC" } else { "ASC" }
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                parts.push(format!("ORDER BY {}", terms));
+            }
+            format!("{}() OVER ({})", window.name, parts.join(" "))
+        }
         Expr::Function(function) => format!(
             "{}({})",
             function.name,
@@ -1785,6 +1820,9 @@ impl Parser {
             }
             self.advance();
             if self.current().kind == TOKEN_LPAREN {
+                if WINDOW_FUNCTION_NAMES.contains(&token.text.to_uppercase().as_str()) {
+                    return self.parse_window_function(token);
+                }
                 return self.parse_scalar_function(token);
             }
             let lowered = token.text.to_lowercase();
@@ -2247,6 +2285,99 @@ impl Parser {
             kind: None,
             resolved_type: None,
         }))
+    }
+
+    /// Parse a window function call together with its mandatory OVER specification.
+    ///
+    /// The window specification is part of the window-function production, so a
+    /// call without OVER is a syntax error rather than a semantic placement
+    /// diagnostic. Future window functions join `WINDOW_FUNCTION_NAMES` and
+    /// reuse this method unchanged.
+    fn parse_window_function(&mut self, name_token: Token) -> Result<Expr, QueryError> {
+        let name = name_token.text.to_uppercase();
+        self.expect(TOKEN_LPAREN, &format!("Expected '(' after {}.", name))?;
+        if self.current().kind != TOKEN_RPAREN {
+            return Err(QueryError::syntax(
+                &self.source,
+                format!("{} requires no arguments.", name),
+                self.current().position,
+                None,
+                "invalid",
+            ));
+        }
+        self.expect(
+            TOKEN_RPAREN,
+            &format!("Expected ')' after the {} argument list.", name),
+        )?;
+        let over_token = match self.consume_keyword("OVER") {
+            Some(token) => token,
+            None => {
+                return Err(QueryError::syntax(
+                    &self.source,
+                    format!("{} requires an OVER window specification.", name),
+                    self.current().position,
+                    None,
+                    "missing-window-specification",
+                ));
+            }
+        };
+        let specification = self.parse_window_specification(over_token.position)?;
+        Ok(Expr::Window(WindowFunction {
+            name,
+            specification,
+            position: name_token.position,
+            kind: None,
+            resolved_type: None,
+        }))
+    }
+
+    /// Parse `OVER ( [PARTITION BY ...] [ORDER BY ...] )`.
+    ///
+    /// An empty or partition-only specification parses because future window
+    /// functions give those forms meaning; whether the calling window function
+    /// accepts them is decided during semantic resolution.
+    fn parse_window_specification(
+        &mut self,
+        over_position: usize,
+    ) -> Result<WindowSpecification, QueryError> {
+        self.expect(
+            TOKEN_LPAREN,
+            "Expected '(' to open the window specification.",
+        )?;
+        let mut partition_by: Vec<Expr> = Vec::new();
+        let mut order_by: Vec<OrderTerm> = Vec::new();
+        if self.consume_keyword("PARTITION").is_some() {
+            self.expect_keyword(
+                "BY",
+                Some("Expected BY after PARTITION in the window specification."),
+                "invalid",
+            )?;
+            loop {
+                partition_by.push(self.parse_scalar_expression()?);
+                if self.current().kind != TOKEN_COMMA {
+                    break;
+                }
+                self.advance();
+            }
+        }
+        if self.consume_keyword("ORDER").is_some() {
+            self.expect_keyword(
+                "BY",
+                Some("Expected BY after ORDER in the window specification."),
+                "invalid",
+            )?;
+            order_by = self.parse_order_by()?;
+        }
+        self.expect(
+            TOKEN_RPAREN,
+            "Expected ')' to close the window specification.",
+        )?;
+        Ok(WindowSpecification {
+            partition_by,
+            order_by,
+            position: over_position,
+            kind: None,
+        })
     }
 
     // -----------------------------------------------------------------------

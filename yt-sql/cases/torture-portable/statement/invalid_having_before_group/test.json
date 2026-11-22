@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.invalid_having_before_group",
-  "description": "Seeded lexical stress of statement.invalid_having_before_group; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.invalid_having_before_group; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

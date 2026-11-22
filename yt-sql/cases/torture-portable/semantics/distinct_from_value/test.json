@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.distinct_from_value",
-  "description": "Seeded lexical stress of semantics.distinct_from_value; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.distinct_from_value; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

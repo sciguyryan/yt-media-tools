@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.string_double_quote",
-  "description": "Seeded lexical stress of semantics.string_double_quote; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.string_double_quote; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

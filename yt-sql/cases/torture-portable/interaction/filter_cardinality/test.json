@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.filter_cardinality",
-  "description": "Seeded lexical stress of interaction.filter_cardinality; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.filter_cardinality; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

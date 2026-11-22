@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_filter_after_where",
-  "description": "Seeded lexical stress of function-conformance.aggregate_filter_after_where; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_filter_after_where; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

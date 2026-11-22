@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.position_distinct_numbering",
-  "description": "Seeded lexical stress of function-conformance.position_distinct_numbering; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.position_distinct_numbering; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

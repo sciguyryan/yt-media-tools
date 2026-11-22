@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.upper_emoji_unchanged",
-  "description": "Seeded lexical stress of unicode.upper_emoji_unchanged; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.upper_emoji_unchanged; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

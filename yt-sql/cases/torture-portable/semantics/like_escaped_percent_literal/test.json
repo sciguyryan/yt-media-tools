@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.like_escaped_percent_literal",
-  "description": "Seeded lexical stress of semantics.like_escaped_percent_literal; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.like_escaped_percent_literal; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

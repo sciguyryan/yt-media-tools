@@ -6,5 +6,5 @@
   "source_case": "relational.empty_facet",
   "source_query_sha256": "ff3b23d3cf1478ae245996364a7f0e2ec212af6c676dbebdaf1671a855972d14",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

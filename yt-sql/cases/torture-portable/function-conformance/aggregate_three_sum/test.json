@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_three_sum",
-  "description": "Seeded lexical stress of function-conformance.aggregate_three_sum; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_three_sum; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

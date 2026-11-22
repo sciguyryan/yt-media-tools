@@ -1,0 +1,7 @@
+select
+  ROW_NUMBER()	OVER (ORDER  BY 	 upload_date 	 ASC,	id	ASC)  as	n,
+id 
+ from 	 @yt_sql_fixture
+  WHERE id = 'not-a-real-id'
+ORDER  by	id ASC
+	

@@ -6,5 +6,5 @@
   "source_case": "statement.aggregate_filter",
   "source_query_sha256": "fb2ab9d73b9097c3b4d775ef2fea41f5efccea0d8564c9bfad5868bbe1cfdb7f",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

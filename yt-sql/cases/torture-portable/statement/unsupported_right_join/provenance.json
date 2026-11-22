@@ -6,5 +6,5 @@
   "source_case": "statement.unsupported_right_join",
   "source_query_sha256": "def2101fc95af887dbff41ee601feeeb38aeb88a237bf21cf4c7e576adb075d5",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

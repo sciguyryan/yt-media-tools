@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.value_integer_hex",
-  "description": "Seeded lexical stress of semantics.value_integer_hex; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.value_integer_hex; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

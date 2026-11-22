@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_invalid_surrogate_high",
-  "description": "Seeded lexical stress of function-conformance.char_invalid_surrogate_high; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_invalid_surrogate_high; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

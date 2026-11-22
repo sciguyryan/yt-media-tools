@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_in_scalar_wrapper",
-  "description": "Seeded lexical stress of function-conformance.aggregate_in_scalar_wrapper; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_in_scalar_wrapper; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.ordering.offset_limit",
-  "description": "Seeded lexical stress of ordering.offset_limit; approved expectation unchanged",
+  "description": "Seeded lexical stress of ordering.offset_limit; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

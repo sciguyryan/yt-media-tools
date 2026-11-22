@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_ascii",
-  "description": "Seeded lexical stress of function-conformance.char_ascii; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_ascii; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

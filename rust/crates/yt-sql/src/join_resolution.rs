@@ -13,7 +13,7 @@ use crate::model::{
     CollectionPredicate, CollectionProjection, Expr, Field, InList, IsNull, JoinClause, OrderTerm,
     Query, QueryError, RelationField, ScalarBinary, ScalarCase, ScalarComparison, ScalarFunction,
     ScalarIndex, ScalarIsNull, ScalarMember, ScalarUnary, SelectTerm, TextPredicate, TruthTest,
-    Unary,
+    Unary, WindowFunction, WindowSpecification,
 };
 use crate::resolver::{SemanticScope, SourceSchemas, relation_binding};
 use crate::schema::{FieldInfo, QuerySchema};
@@ -194,6 +194,28 @@ fn rewrite_expr(
             position: member.position,
             kind: member.kind.clone(),
             resolved_type: member.resolved_type.clone(),
+        })),
+        Expr::Window(window) => Ok(Expr::Window(WindowFunction {
+            name: window.name.clone(),
+            specification: WindowSpecification {
+                partition_by: window
+                    .specification
+                    .partition_by
+                    .iter()
+                    .map(|item| rewrite_expr(item, scope, source, preserved_field_names))
+                    .collect::<Result<Vec<_>, _>>()?,
+                order_by: rewrite_order_terms(
+                    &window.specification.order_by,
+                    scope,
+                    source,
+                    preserved_field_names,
+                )?,
+                position: window.specification.position,
+                kind: window.specification.kind.clone(),
+            },
+            position: window.position,
+            kind: window.kind.clone(),
+            resolved_type: window.resolved_type.clone(),
         })),
         Expr::Case(scalar_case) => {
             let mut whens = Vec::new();
@@ -515,6 +537,19 @@ fn rewrite_order_term(
         kind: term.kind.clone(),
         expression,
     })
+}
+
+/// Rebuild the order terms of a window specification through relation rewriting.
+fn rewrite_order_terms(
+    terms: &[OrderTerm],
+    scope: &SemanticScope,
+    source: &str,
+    preserved_field_names: &HashSet<String>,
+) -> Result<Vec<OrderTerm>, QueryError> {
+    terms
+        .iter()
+        .map(|term| rewrite_order_term(term, scope, source, preserved_field_names))
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -1048,6 +1083,28 @@ pub fn prepare_join_query(
                 position: member.position,
                 kind: member.kind.clone(),
                 resolved_type: member.resolved_type.clone(),
+            })),
+            Expr::Window(window) => Ok(Expr::Window(WindowFunction {
+                name: window.name.clone(),
+                specification: WindowSpecification {
+                    partition_by: window
+                        .specification
+                        .partition_by
+                        .iter()
+                        .map(|item| left_only_expr(item, primary_alias, kind_label, source))
+                        .collect::<Result<Vec<_>, _>>()?,
+                    order_by: left_only_order_terms(
+                        &window.specification.order_by,
+                        primary_alias,
+                        kind_label,
+                        source,
+                    )?,
+                    position: window.specification.position,
+                    kind: window.specification.kind.clone(),
+                },
+                position: window.position,
+                kind: window.kind.clone(),
+                resolved_type: window.resolved_type.clone(),
             })),
             Expr::Case(scalar_case) => {
                 let mut whens = Vec::new();

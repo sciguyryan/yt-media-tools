@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.random_unseeded_order_completeness",
-  "description": "Seeded lexical stress of function-conformance.random_unseeded_order_completeness; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.random_unseeded_order_completeness; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

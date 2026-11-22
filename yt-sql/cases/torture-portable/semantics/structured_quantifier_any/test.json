@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.structured_quantifier_any",
-  "description": "Seeded lexical stress of semantics.structured_quantifier_any; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.structured_quantifier_any; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

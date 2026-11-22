@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.least_mixed_types_rejected",
-  "description": "Seeded lexical stress of function-conformance.least_mixed_types_rejected; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.least_mixed_types_rejected; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

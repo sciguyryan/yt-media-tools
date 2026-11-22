@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.where_not_in",
-  "description": "Seeded lexical stress of statement.where_not_in; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.where_not_in; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

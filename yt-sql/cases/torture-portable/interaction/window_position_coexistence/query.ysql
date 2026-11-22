@@ -1,0 +1,8 @@
+select
+	POSITION()  AS  p,
+  ROW_NUMBER() OVER  (order  by 	 id ASC) as n,
+id
+	FROM	@yt_sql_fixture
+	ORDER BY id 	 ASC
+  limit  5 
+ 

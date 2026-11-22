@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.length_regional_indicator",
-  "description": "Seeded lexical stress of unicode.length_regional_indicator; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.length_regional_indicator; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

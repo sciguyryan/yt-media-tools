@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_ordering_raw_titles",
-  "description": "Seeded lexical stress of function-conformance.unicode_ordering_raw_titles; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_ordering_raw_titles; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

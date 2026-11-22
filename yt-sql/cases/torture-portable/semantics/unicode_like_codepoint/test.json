@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.unicode_like_codepoint",
-  "description": "Seeded lexical stress of semantics.unicode_like_codepoint; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.unicode_like_codepoint; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

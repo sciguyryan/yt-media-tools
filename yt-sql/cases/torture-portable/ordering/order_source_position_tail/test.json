@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.ordering.order_source_position_tail",
-  "description": "Seeded lexical stress of ordering.order_source_position_tail; approved expectation unchanged",
+  "description": "Seeded lexical stress of ordering.order_source_position_tail; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

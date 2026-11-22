@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.filter_then_map",
-  "description": "Seeded lexical stress of interaction.filter_then_map; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.filter_then_map; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

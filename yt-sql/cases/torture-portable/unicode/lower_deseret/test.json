@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.lower_deseret",
-  "description": "Seeded lexical stress of unicode.lower_deseret; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.lower_deseret; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

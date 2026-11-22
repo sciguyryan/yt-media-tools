@@ -6,5 +6,5 @@
   "source_case": "relational.join_where_null_filter",
   "source_query_sha256": "e6e34767e2830e1a43e4b3c1440dd3aca5b4ec8abb76d4cb6e3f34bc181527c2",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -6,5 +6,5 @@
   "source_case": "relational.join_relation_wildcard_expansion",
   "source_query_sha256": "61e4313292898660bbacd99a66659d975e91767f606cad2db23223f8b9eb8ab7",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

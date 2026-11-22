@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.offset_bare",
-  "description": "Seeded lexical stress of semantics.offset_bare; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.offset_bare; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

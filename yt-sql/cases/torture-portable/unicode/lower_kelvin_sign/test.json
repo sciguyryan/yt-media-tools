@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.lower_kelvin_sign",
-  "description": "Seeded lexical stress of unicode.lower_kelvin_sign; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.lower_kelvin_sign; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -6,5 +6,5 @@
   "source_case": "function-conformance.upper_punctuation",
   "source_query_sha256": "dc5e91e6657a93112c02efab1ce6f79532844efc6052ba446f90eb8c64ee21fd",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.length_combining_sequence",
-  "description": "Seeded lexical stress of scalar.length_combining_sequence; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.length_combining_sequence; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

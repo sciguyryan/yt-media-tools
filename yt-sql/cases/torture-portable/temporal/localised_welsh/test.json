@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.localised_welsh",
-  "description": "Seeded lexical stress of temporal.localised_welsh; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.localised_welsh; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

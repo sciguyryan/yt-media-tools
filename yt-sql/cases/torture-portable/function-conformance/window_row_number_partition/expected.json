@@ -1,0 +1,671 @@
+{
+  "version": 1,
+  "outcome": "rows",
+  "columns": [
+    "n",
+    "fixture_group",
+    "id"
+  ],
+  "rows": [
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid004"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid008"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid012"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid016"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid020"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid024"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid028"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid032"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid036"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid040"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid044"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid048"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid052"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid056"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      {
+        "type": "integer",
+        "value": "0"
+      },
+      "vid060"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid001"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid005"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid009"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid013"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid017"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid021"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid025"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid029"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid033"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid037"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid041"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid045"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid049"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid053"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      "vid057"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid002"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid006"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid010"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid014"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid018"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid022"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid026"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid030"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid034"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid038"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid042"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid046"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid050"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid054"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      "vid058"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid003"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid007"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid011"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "4"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid015"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "5"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid019"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "6"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid023"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "7"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid027"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "8"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid031"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "9"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid035"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "10"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid039"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "11"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid043"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "12"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid047"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "13"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid051"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "14"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid055"
+    ],
+    [
+      {
+        "type": "integer",
+        "value": "15"
+      },
+      {
+        "type": "integer",
+        "value": "3"
+      },
+      "vid059"
+    ]
+  ]
+}

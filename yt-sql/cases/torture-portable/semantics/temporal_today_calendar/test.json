@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.temporal_today_calendar",
-  "description": "Seeded lexical stress of semantics.temporal_today_calendar; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.temporal_today_calendar; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

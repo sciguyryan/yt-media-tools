@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.order_multiple_keys",
-  "description": "Seeded lexical stress of statement.order_multiple_keys; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.order_multiple_keys; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

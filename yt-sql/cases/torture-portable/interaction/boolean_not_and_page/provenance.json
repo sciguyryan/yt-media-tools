@@ -6,5 +6,5 @@
   "source_case": "interaction.boolean_not_and_page",
   "source_query_sha256": "4c782dccfc08ecf446ae0320fa305966c1fa071a53ea3c78428d3c3257b84c3e",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

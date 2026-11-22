@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.normalisation_grouping",
-  "description": "Seeded lexical stress of relational.normalisation_grouping; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.normalisation_grouping; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

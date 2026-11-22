@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.map_upper",
-  "description": "Seeded lexical stress of function-conformance.map_upper; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.map_upper; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

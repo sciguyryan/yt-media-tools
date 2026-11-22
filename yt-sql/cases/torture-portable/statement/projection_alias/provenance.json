@@ -6,5 +6,5 @@
   "source_case": "statement.projection_alias",
   "source_query_sha256": "64613a747e2b3b8d705dd89dbce97be0d682823a28056b16f8f8e40c73713c3a",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

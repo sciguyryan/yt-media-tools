@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.boolean_parentheses_page",
-  "description": "Seeded lexical stress of interaction.boolean_parentheses_page; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.boolean_parentheses_page; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

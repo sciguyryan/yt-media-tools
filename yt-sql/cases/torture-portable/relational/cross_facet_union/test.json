@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.cross_facet_union",
-  "description": "Seeded lexical stress of relational.cross_facet_union; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.cross_facet_union; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

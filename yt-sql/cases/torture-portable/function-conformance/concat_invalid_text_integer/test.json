@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.concat_invalid_text_integer",
-  "description": "Seeded lexical stress of function-conformance.concat_invalid_text_integer; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.concat_invalid_text_integer; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

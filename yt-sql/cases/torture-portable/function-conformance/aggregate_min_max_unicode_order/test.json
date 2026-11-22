@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.aggregate_min_max_unicode_order",
-  "description": "Seeded lexical stress of function-conformance.aggregate_min_max_unicode_order; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.aggregate_min_max_unicode_order; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

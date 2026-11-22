@@ -1,0 +1,9 @@
+select
+  ROW_NUMBER() 	 OVER 	 (ORDER 	 BY 	 id	ASC) AS	n,
+id
+	FROM  @yt_sql_fixture
+	UNION	ALL
+  select
+ROW_NUMBER() OVER 	 (ORDER 	 BY  id 	 ASC) 	 AS 	 n,
+  id
+FROM  @yt_sql_fixture

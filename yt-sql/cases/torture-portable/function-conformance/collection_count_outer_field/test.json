@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.collection_count_outer_field",
-  "description": "Seeded lexical stress of function-conformance.collection_count_outer_field; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.collection_count_outer_field; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

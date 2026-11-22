@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.join_on_shared_identity",
-  "description": "Seeded lexical stress of relational.join_on_shared_identity; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.join_on_shared_identity; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

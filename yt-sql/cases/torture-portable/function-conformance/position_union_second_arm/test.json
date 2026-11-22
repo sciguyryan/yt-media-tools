@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.position_union_second_arm",
-  "description": "Seeded lexical stress of function-conformance.position_union_second_arm; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.position_union_second_arm; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

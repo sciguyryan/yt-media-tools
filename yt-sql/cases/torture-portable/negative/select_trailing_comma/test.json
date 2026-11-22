@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.negative.select_trailing_comma",
-  "description": "Seeded lexical stress of negative.select_trailing_comma; approved expectation unchanged",
+  "description": "Seeded lexical stress of negative.select_trailing_comma; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

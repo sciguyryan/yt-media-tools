@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.filter_none",
-  "description": "Seeded lexical stress of function-conformance.filter_none; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.filter_none; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

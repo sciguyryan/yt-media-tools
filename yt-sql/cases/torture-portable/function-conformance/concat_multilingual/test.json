@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.concat_multilingual",
-  "description": "Seeded lexical stress of function-conformance.concat_multilingual; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.concat_multilingual; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.position_first_row",
-  "description": "Seeded lexical stress of scalar.position_first_row; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.position_first_row; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -6,5 +6,5 @@
   "source_case": "function-conformance.unicode_ilike_turkish_i",
   "source_query_sha256": "03234571a3c8b0a36ad72ad7934bec6888dbe7bda14c3857e2d7154e0323e995",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

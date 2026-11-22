@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.nullif_equal",
-  "description": "Seeded lexical stress of scalar.nullif_equal; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.nullif_equal; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

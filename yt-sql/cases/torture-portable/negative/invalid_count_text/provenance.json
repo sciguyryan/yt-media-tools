@@ -6,5 +6,5 @@
   "source_case": "negative.invalid_count_text",
   "source_query_sha256": "fa148e75873f031301157f85f2952d705089887095dfafff94bffbfa879e7107",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

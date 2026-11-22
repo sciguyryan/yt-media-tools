@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.text_contain_spelling",
-  "description": "Seeded lexical stress of semantics.text_contain_spelling; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.text_contain_spelling; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

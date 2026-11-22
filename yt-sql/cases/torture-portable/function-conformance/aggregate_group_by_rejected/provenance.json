@@ -6,5 +6,5 @@
   "source_case": "function-conformance.aggregate_group_by_rejected",
   "source_query_sha256": "20113bd2c2c2120d38f1a1ab1ae2c4650c7169032cbdedd4f6bf3bde81fe4bbd",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

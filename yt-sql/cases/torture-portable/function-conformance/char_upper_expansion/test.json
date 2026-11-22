@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_upper_expansion",
-  "description": "Seeded lexical stress of function-conformance.char_upper_expansion; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_upper_expansion; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

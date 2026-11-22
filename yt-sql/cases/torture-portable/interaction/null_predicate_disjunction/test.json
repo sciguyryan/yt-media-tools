@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.interaction.null_predicate_disjunction",
-  "description": "Seeded lexical stress of interaction.null_predicate_disjunction; approved expectation unchanged",
+  "description": "Seeded lexical stress of interaction.null_predicate_disjunction; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.text_not_contain",
-  "description": "Seeded lexical stress of semantics.text_not_contain; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.text_not_contain; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

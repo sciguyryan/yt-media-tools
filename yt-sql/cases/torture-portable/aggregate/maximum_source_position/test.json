@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.aggregate.maximum_source_position",
-  "description": "Seeded lexical stress of aggregate.maximum_source_position; approved expectation unchanged",
+  "description": "Seeded lexical stress of aggregate.maximum_source_position; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

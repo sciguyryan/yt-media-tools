@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.arithmetic_add",
-  "description": "Seeded lexical stress of semantics.arithmetic_add; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.arithmetic_add; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

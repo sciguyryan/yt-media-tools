@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.relational.join_inner_null_cells",
-  "description": "Seeded lexical stress of relational.join_inner_null_cells; approved expectation unchanged",
+  "description": "Seeded lexical stress of relational.join_inner_null_cells; source expectation unchanged",
   "datasets": [
     "heterogeneous-facets-v1"
   ],

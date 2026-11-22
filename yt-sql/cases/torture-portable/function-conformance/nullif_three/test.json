@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.nullif_three",
-  "description": "Seeded lexical stress of function-conformance.nullif_three; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.nullif_three; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

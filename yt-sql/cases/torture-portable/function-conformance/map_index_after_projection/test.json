@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.map_index_after_projection",
-  "description": "Seeded lexical stress of function-conformance.map_index_after_projection; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.map_index_after_projection; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

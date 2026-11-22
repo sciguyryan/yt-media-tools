@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.cte_chained",
-  "description": "Seeded lexical stress of semantics.cte_chained; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.cte_chained; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

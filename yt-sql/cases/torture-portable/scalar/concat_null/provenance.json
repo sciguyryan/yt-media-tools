@@ -6,5 +6,5 @@
   "source_case": "scalar.concat_null",
   "source_query_sha256": "e45bcae7b251dec9b4116aab765dd7b2b3618b2a39bf137103f6dd52a44aa2db",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

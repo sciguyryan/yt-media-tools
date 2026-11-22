@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.like_unquoted_pattern_error",
-  "description": "Seeded lexical stress of semantics.like_unquoted_pattern_error; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.like_unquoted_pattern_error; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

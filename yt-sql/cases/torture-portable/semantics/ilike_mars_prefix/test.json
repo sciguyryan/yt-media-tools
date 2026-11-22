@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.ilike_mars_prefix",
-  "description": "Seeded lexical stress of semantics.ilike_mars_prefix; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.ilike_mars_prefix; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

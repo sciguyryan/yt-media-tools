@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.lower_fixture_greek",
-  "description": "Seeded lexical stress of function-conformance.lower_fixture_greek; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.lower_fixture_greek; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

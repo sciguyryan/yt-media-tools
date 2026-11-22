@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.unicode_projection_anchor_titles",
-  "description": "Seeded lexical stress of function-conformance.unicode_projection_anchor_titles; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.unicode_projection_anchor_titles; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

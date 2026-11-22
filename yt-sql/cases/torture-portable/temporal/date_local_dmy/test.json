@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.temporal.date_local_dmy",
-  "description": "Seeded lexical stress of temporal.date_local_dmy; approved expectation unchanged",
+  "description": "Seeded lexical stress of temporal.date_local_dmy; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

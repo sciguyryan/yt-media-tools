@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.projection_expression",
-  "description": "Seeded lexical stress of statement.projection_expression; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.projection_expression; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

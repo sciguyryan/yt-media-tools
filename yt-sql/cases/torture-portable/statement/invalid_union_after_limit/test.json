@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.invalid_union_after_limit",
-  "description": "Seeded lexical stress of statement.invalid_union_after_limit; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.invalid_union_after_limit; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

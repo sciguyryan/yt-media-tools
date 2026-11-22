@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.semantics.arithmetic_parentheses",
-  "description": "Seeded lexical stress of semantics.arithmetic_parentheses; approved expectation unchanged",
+  "description": "Seeded lexical stress of semantics.arithmetic_parentheses; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

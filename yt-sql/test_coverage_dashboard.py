@@ -41,7 +41,7 @@ class CorpusDataTests(unittest.TestCase):
 
     def test_gap_matrix_covers_all_registered_functions(self) -> None:
         audits = load_audits()
-        self.assertEqual(len(audits["gap_functions"]), 19)
+        self.assertEqual(len(audits["gap_functions"]), 20)
         for function in audits["gap_functions"]:
             self.assertIn("valid_syntax", function["dimensions"])
             self.assertIn("semantics", function["dimensions"])

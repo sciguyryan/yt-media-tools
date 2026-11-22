@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.lower_digit",
-  "description": "Seeded lexical stress of function-conformance.lower_digit; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.lower_digit; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

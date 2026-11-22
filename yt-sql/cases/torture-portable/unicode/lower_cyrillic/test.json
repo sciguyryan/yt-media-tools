@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.lower_cyrillic",
-  "description": "Seeded lexical stress of unicode.lower_cyrillic; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.lower_cyrillic; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

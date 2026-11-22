@@ -6,5 +6,5 @@
   "source_case": "statement.group_count",
   "source_query_sha256": "f9b196a55e73a3677ba3eeaf5ddaaa2f0ffb9dc0cdba0da8de4e15eed6d4c8ac",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

@@ -10,7 +10,7 @@
   ],
   "counts": {
     "language_elements": 283,
-    "normative_manifests": 1260,
+    "normative_manifests": 1284,
     "legacy_test_files": 226,
     "test_functions": 1686,
     "assertion_sites": 4239
@@ -3701,6 +3701,50 @@
       "manifest": "yt-sql/cases/torture-portable/function-conformance/upper_zero_arguments_rejected/test.json"
     },
     {
+      "id": "torture.function-conformance.window_row_number_alias_expression",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_alias_expression/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_alias_order",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_alias_order/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_case_insensitive",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_case_insensitive/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_empty_input",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_empty_input/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_null_ordering_asc",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_null_ordering_asc/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_null_ordering_desc",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_null_ordering_desc/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_partition",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_partition/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_partition_null_keys",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_partition_null_keys/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_reordered",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_reordered/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_slice",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_slice/test.json"
+    },
+    {
+      "id": "torture.function-conformance.window_row_number_unordered_output",
+      "manifest": "yt-sql/cases/torture-portable/function-conformance/window_row_number_unordered_output/test.json"
+    },
+    {
       "id": "torture.interaction.boolean_not_and_page",
       "manifest": "yt-sql/cases/torture-portable/interaction/boolean_not_and_page/test.json"
     },
@@ -3773,6 +3817,22 @@
       "manifest": "yt-sql/cases/torture-portable/interaction/predicate_empty_page/test.json"
     },
     {
+      "id": "torture.interaction.window_cte_outer_reorder",
+      "manifest": "yt-sql/cases/torture-portable/interaction/window_cte_outer_reorder/test.json"
+    },
+    {
+      "id": "torture.interaction.window_distinct_numbered",
+      "manifest": "yt-sql/cases/torture-portable/interaction/window_distinct_numbered/test.json"
+    },
+    {
+      "id": "torture.interaction.window_position_coexistence",
+      "manifest": "yt-sql/cases/torture-portable/interaction/window_position_coexistence/test.json"
+    },
+    {
+      "id": "torture.interaction.window_union_branch_numbering",
+      "manifest": "yt-sql/cases/torture-portable/interaction/window_union_branch_numbering/test.json"
+    },
+    {
       "id": "torture.negative.invalid_count_text",
       "manifest": "yt-sql/cases/torture-portable/negative/invalid_count_text/test.json"
     },
@@ -3807,6 +3867,42 @@
     {
       "id": "torture.negative.where_missing_operand",
       "manifest": "yt-sql/cases/torture-portable/negative/where_missing_operand/test.json"
+    },
+    {
+      "id": "torture.negative.window_aggregate_query",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_aggregate_query/test.json"
+    },
+    {
+      "id": "torture.negative.window_arguments",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_arguments/test.json"
+    },
+    {
+      "id": "torture.negative.window_empty_spec",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_empty_spec/test.json"
+    },
+    {
+      "id": "torture.negative.window_frame_unsupported",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_frame_unsupported/test.json"
+    },
+    {
+      "id": "torture.negative.window_malformed_spec",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_malformed_spec/test.json"
+    },
+    {
+      "id": "torture.negative.window_missing_over",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_missing_over/test.json"
+    },
+    {
+      "id": "torture.negative.window_nested_spec",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_nested_spec/test.json"
+    },
+    {
+      "id": "torture.negative.window_placement_where",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_placement_where/test.json"
+    },
+    {
+      "id": "torture.negative.window_volatile_spec",
+      "manifest": "yt-sql/cases/torture-portable/negative/window_volatile_spec/test.json"
     },
     {
       "id": "torture.ordering.offset_limit",

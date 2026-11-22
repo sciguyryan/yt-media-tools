@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.cardinality_null_collection",
-  "description": "Seeded lexical stress of function-conformance.cardinality_null_collection; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.cardinality_null_collection; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

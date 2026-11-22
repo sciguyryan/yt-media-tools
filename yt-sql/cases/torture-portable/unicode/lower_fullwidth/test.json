@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.unicode.lower_fullwidth",
-  "description": "Seeded lexical stress of unicode.lower_fullwidth; approved expectation unchanged",
+  "description": "Seeded lexical stress of unicode.lower_fullwidth; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

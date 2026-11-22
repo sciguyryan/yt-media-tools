@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.where_or_dedup",
-  "description": "Seeded lexical stress of statement.where_or_dedup; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.where_or_dedup; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

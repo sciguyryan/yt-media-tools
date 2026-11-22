@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.upper_turkish_dotless_i",
-  "description": "Seeded lexical stress of function-conformance.upper_turkish_dotless_i; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.upper_turkish_dotless_i; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

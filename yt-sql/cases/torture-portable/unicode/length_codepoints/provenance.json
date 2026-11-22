@@ -6,5 +6,5 @@
   "source_case": "unicode.length_codepoints",
   "source_query_sha256": "29783e80d584a6765fda663de29c28802c092fa0cf206b0b8835a20a2ceda395",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

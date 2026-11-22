@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.coalesce_field_fallback",
-  "description": "Seeded lexical stress of function-conformance.coalesce_field_fallback; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.coalesce_field_fallback; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

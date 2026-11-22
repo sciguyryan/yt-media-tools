@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.char_space",
-  "description": "Seeded lexical stress of function-conformance.char_space; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.char_space; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

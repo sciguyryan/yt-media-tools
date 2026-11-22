@@ -6,5 +6,5 @@
   "source_case": "semantics.unicode_casefold_contains",
   "source_query_sha256": "6b908b8e06c787e38e322365dd28b9acd5140a0eddd64d0a364860fe69207a6d",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

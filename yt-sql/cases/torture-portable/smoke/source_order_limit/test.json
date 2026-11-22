@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.smoke.source_order_limit",
-  "description": "Seeded lexical stress of smoke.source_order_limit; approved expectation unchanged",
+  "description": "Seeded lexical stress of smoke.source_order_limit; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

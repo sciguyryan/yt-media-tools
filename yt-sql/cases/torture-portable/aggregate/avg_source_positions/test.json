@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.aggregate.avg_source_positions",
-  "description": "Seeded lexical stress of aggregate.avg_source_positions; approved expectation unchanged",
+  "description": "Seeded lexical stress of aggregate.avg_source_positions; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

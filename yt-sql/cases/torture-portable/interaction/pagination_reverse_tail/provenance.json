@@ -6,5 +6,5 @@
   "source_case": "interaction.pagination_reverse_tail",
   "source_query_sha256": "5f33f91d132435b588bdb1a8499550b8fa0fe9f0aef8e494d1badf6f160c4281",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

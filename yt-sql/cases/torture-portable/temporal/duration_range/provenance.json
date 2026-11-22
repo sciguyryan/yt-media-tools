@@ -6,5 +6,5 @@
   "source_case": "temporal.duration_range",
   "source_query_sha256": "6f44ba8a5803b1b3f8256996c11ead71f0be30f7172c11a485dd84b6032a2da4",
   "transformation": "lexical keyword case and existing whitespace only",
-  "expectation": "copied verbatim from independently approved source case"
+  "expectation": "copied verbatim from intermediate working tests"
 }

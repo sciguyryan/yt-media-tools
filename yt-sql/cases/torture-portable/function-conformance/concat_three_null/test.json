@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.function-conformance.concat_three_null",
-  "description": "Seeded lexical stress of function-conformance.concat_three_null; approved expectation unchanged",
+  "description": "Seeded lexical stress of function-conformance.concat_three_null; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

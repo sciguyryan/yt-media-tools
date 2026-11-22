@@ -1,0 +1,1 @@
+select ROW_NUMBER()	OVER  (ORDER	BY	id  ROWS 	 BETWEEN UNBOUNDED  PRECEDING 	 AND  CURRENT ROW) 	 AS  n  FROM 	 @yt_sql_fixture

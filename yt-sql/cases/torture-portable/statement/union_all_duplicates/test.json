@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.statement.union_all_duplicates",
-  "description": "Seeded lexical stress of statement.union_all_duplicates; approved expectation unchanged",
+  "description": "Seeded lexical stress of statement.union_all_duplicates; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

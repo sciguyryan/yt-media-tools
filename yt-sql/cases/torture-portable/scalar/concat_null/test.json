@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "torture.scalar.concat_null",
-  "description": "Seeded lexical stress of scalar.concat_null; approved expectation unchanged",
+  "description": "Seeded lexical stress of scalar.concat_null; source expectation unchanged",
   "datasets": [
     "python-v6-small"
   ],

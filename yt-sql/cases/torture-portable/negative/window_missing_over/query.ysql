@@ -1,0 +1,2 @@
+SELECT	ROW_NUMBER()	as n  FROM 	 @yt_sql_fixture
+  
